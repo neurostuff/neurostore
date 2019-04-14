@@ -87,12 +87,14 @@ ENV/
 
 # Spyder project settings
 .spyderproject
+.vscode
 
 # Rope project settings
 .ropeproject
 
 *.DS_Store
 *.orig
+*.db
 
 # Sphinx
 doc/_build/

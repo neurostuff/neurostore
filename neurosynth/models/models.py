@@ -1,12 +1,11 @@
-from sqlalchemy.ext.declarative import declarative_base
+# from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy import (Column, Integer, String, Boolean, ForeignKey, JSON,
                         Table, Float)
 from sqlalchemy.orm import reconstructor, relationship, backref, object_session
 
-
-Base = declarative_base()
+from ..database import Base
 
 
 class Study(Base):
@@ -18,6 +17,7 @@ class Study(Base):
     publication = Column(String)
     doi = Column(String)
     pmid = Column(String)
+    data = Column(JSON)
 
 
 class Analysis(Base):
@@ -27,7 +27,7 @@ class Analysis(Base):
     study_id = Column(ForeignKey('studies.id'))
     name = Column(String)
     description = Column(String)
-    study = relationship('Study', backref=backref('conditions'))
+    study = relationship('Study', backref=backref('analyses'))
     conditions = association_proxy('analysis_conditions', 'condition')
     weights = association_proxy('analysis_conditions', 'weight')
 
@@ -45,30 +45,31 @@ class AnalysisConditions(Base):
     __tablename__ = 'analysis_conditions'
 
     weight = Column(Float)
-    analysis_id = Column(ForeignKey('analyses.id'))
-    condition_id = Column(ForeignKey('conditions.id'))
+    analysis_id = Column(ForeignKey('analyses.id'), primary_key=True)
+    condition_id = Column(ForeignKey('conditions.id'), primary_key=True)
     analysis = relationship('Analysis', backref=backref('analysis_conditions'))
     condition = relationship('Condition', backref=backref('analysis_conditions'))
 
 
 PointEntityMap = Table('point_entities', Base.metadata,
-    Column('point', Integer, ForeignKey('point.id')),
-    Column('entity', Integer, ForeignKey('entity.id')))
+    Column('point', Integer, ForeignKey('points.id')),
+    Column('entity', Integer, ForeignKey('entities.id')))
 
 
 ImageEntityMap = Table('image_entities', Base.metadata,
-    Column('image', Integer, ForeignKey('image.id')),
-    Column('entity', Integer, ForeignKey('entity.id')))
+    Column('image', Integer, ForeignKey('images.id')),
+    Column('entity', Integer, ForeignKey('entities.id')))
 
 
 class Entity(Base):
     __tablename__ = 'entities'
 
     id = Column(Integer, primary_key=True)
+    study_id = Column(ForeignKey("studies.id"))
     label = Column(String)
     level = Column(String)
     data = Column(JSON)
-    study = relationship('Study', backref=backref('conditions'))
+    study = relationship('Study', backref=backref('entities'))
 
 
 class Point(Base):
@@ -110,6 +111,6 @@ class PointValue(Base):
     point = relationship('Point', backref=backref('values'))
 
 
-class Collection(Base): pass
+# class Collection(Base): pass
 
 
