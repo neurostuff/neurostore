@@ -6,6 +6,7 @@ from graphene_sqlalchemy import (SQLAlchemyConnectionField,
 from .models import Study as StudyModel
 from .models import Analysis as AnalysisModel
 from .models import Entity as EntityModel
+from .models import Image as ImageModel
 
 
 class Study(SQLAlchemyObjectType):
@@ -20,6 +21,12 @@ class Analysis(SQLAlchemyObjectType):
         interfaces = (relay.Node, )
 
 
+class Image(SQLAlchemyObjectType):
+    class Meta:
+        model = ImageModel
+        interfaces = (relay.Node, )
+
+
 class Entity(SQLAlchemyObjectType):
     class Meta:
         model = EntityModel
@@ -30,6 +37,7 @@ class Query(graphene.ObjectType):
     node = relay.Node.Field()
     studies = SQLAlchemyConnectionField(Study)
     analyses = SQLAlchemyConnectionField(Analysis)
+    images = SQLAlchemyConnectionField(Image)
 
 
-schema = graphene.Schema(query=Query, types=[Study, Analysis])
+schema = graphene.Schema(query=Query, types=[Study, Analysis, Image])

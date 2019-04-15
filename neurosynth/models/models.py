@@ -38,7 +38,7 @@ class Condition(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     description = Column(String)
-    analyses = association_proxy('analysis_conditions', 'analysis')
+    # analyses = association_proxy('analysis_conditions', 'analysis')
 
 
 class AnalysisConditions(Base):
@@ -83,21 +83,26 @@ class Point(Base):
     kind = Column(String)
     image = Column(String)
     label_id = Column(Float, default=None)
-    condition_id = Column(ForeignKey('conditions.id'))
+    analysis_id = Column(ForeignKey('analyses.id'))
+
     entities = relationship("Entity", secondary=PointEntityMap,
                             backref=backref("points"))
+    analysis = relationship("Analysis", backref=backref("points"))
 
 
 class Image(Base):
     __tablename__ = 'images'
 
     id = Column(Integer, primary_key=True)
-    space = Column(String)
     path = Column(String)
+    space = Column(String)
     value_type = Column(String)
-    condition_id = Column(ForeignKey('conditions.id'))
+    analysis_id = Column(ForeignKey('analyses.id'))
+    data = Column(JSON)
+
     entities = relationship("Entity", secondary=ImageEntityMap,
                             backref=backref("images"))
+    analysis = relationship("Analysis", backref=backref("images"))
 
 
 class PointValue(Base):
