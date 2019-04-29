@@ -7,6 +7,7 @@ from .models import Study as StudyModel
 from .models import Analysis as AnalysisModel
 from .models import Entity as EntityModel
 from .models import Image as ImageModel
+from .models import Condition as ConditionModel
 
 
 class Study(SQLAlchemyObjectType):
@@ -33,11 +34,40 @@ class Entity(SQLAlchemyObjectType):
         interfaces = (relay.Node, )
 
 
+class SearchResult(graphene.Union):
+    class Meta:
+        types = (Study, Analysis)
+
+
 class Query(graphene.ObjectType):
     node = relay.Node.Field()
+    search = graphene.List(SearchResult, q=graphene.String())
+
     studies = SQLAlchemyConnectionField(Study)
     analyses = SQLAlchemyConnectionField(Analysis)
     images = SQLAlchemyConnectionField(Image)
 
+    def resolve_search(self, info, **args):
+        q = args.get("q")
 
-schema = graphene.Schema(query=Query, types=[Study, Analysis, Image])
+        # Get queries
+        study_q = Study.get_query(info)
+        analysis_q = Analysis.get_query(info)
+
+        studies = study_q.filter((StudyModel.name.contains(q)) |
+                                 (StudyModel.description.contains(q)) |
+                                 (StudyModel.analyses.any(
+                                     AnalysisModel.name.contains(q) |
+                                     AnalysisModel.description.contains(q)))
+                                ).all()
+
+        authors = analysis_q.filter(AnalysisModel.name.contains(q) |
+                                    AnalysisModel.description.contains(q)
+                                   ).all()
+
+        return studies + authors
+
+
+
+schema = graphene.Schema(query=Query, types=[Study, Analysis, Image,
+                                             SearchResult])
