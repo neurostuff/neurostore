@@ -1,4 +1,4 @@
-from .models import Base, Study, Analysis, Condition, Entity, Point, Image
+from .data import Base, Study, Analysis, Condition, Entity, Point, Image
 
 __all__ = [
     'Base',

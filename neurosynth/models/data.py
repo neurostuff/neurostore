@@ -1,4 +1,3 @@
-# from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy import (Column, Integer, String, Boolean, ForeignKey, JSON,
@@ -6,6 +5,18 @@ from sqlalchemy import (Column, Integer, String, Boolean, ForeignKey, JSON,
 from sqlalchemy.orm import reconstructor, relationship, backref, object_session
 
 from ..database import Base
+
+
+class Dataset(Base):
+    __tablename__ = 'datasets'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    description = Column(String)
+    publication = Column(String)
+    doi = Column(String)
+    pmid = Column(String)
+    nimads_data = Column(JSON)  
 
 
 class Study(Base):
@@ -38,7 +49,6 @@ class Condition(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     description = Column(String)
-    # analyses = association_proxy('analysis_conditions', 'analysis')
 
 
 class AnalysisConditions(Base):
@@ -114,8 +124,3 @@ class PointValue(Base):
     value = Column(String)
     dtype = Column(String, default='str')
     point = relationship('Point', backref=backref('values'))
-
-
-# class Collection(Base): pass
-
-
