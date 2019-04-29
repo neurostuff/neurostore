@@ -3,7 +3,7 @@ Ingest and sync data from various sources (Neurosynth, NeuroVault, etc.).
 """
 
 from neurosynth.models import Study, Analysis, Condition, Image
-from neurosynth import database as db
+from neurosynth.database import db
 import requests
 import re
 

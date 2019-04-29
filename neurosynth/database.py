@@ -1,15 +1,21 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import scoped_session, sessionmaker
+from flask_sqlalchemy import SQLAlchemy
 
 
-engine = create_engine('sqlite:///development.db')
-session = scoped_session(sessionmaker(autocommit=False,
-                                         bind=engine))
+db = SQLAlchemy()
 Base = declarative_base()
-Base.query = session.query_property()
+
+
+def init_db(app):
+    # Make Flask-Security, Flask-SQLAlchemy, and Graphene all play nice.
+    # See https://github.com/mattupstate/flask-security/issues/766#issuecomment-393567456
+    with app.app_context():
+        db.init_app(app)
+        Base.metadata.bind = db.engine
+        Base.query = db.session.query_property()
 
 
 def reset_database():
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
+    db.drop_all()
+    db.create_all()
