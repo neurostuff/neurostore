@@ -2,12 +2,12 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy import (Column, Integer, String, Boolean, ForeignKey, JSON,
                         Table, Float)
-from sqlalchemy.orm import reconstructor, relationship, backref, object_session
+from sqlalchemy.orm import reconstructor, relationship, backref
 
-from ..database import Base
+from ..database import db
 
 
-class Dataset(Base):
+class Dataset(db.Model):
     __tablename__ = 'datasets'
 
     id = Column(Integer, primary_key=True)
@@ -19,7 +19,7 @@ class Dataset(Base):
     nimads_data = Column(JSON)  
 
 
-class Study(Base):
+class Study(db.Model):
     __tablename__ = 'studies'
 
     id = Column(Integer, primary_key=True)
@@ -31,7 +31,7 @@ class Study(Base):
     data = Column(JSON)
 
 
-class Analysis(Base):
+class Analysis(db.Model):
     __tablename__ = 'analyses'
 
     id = Column(Integer, primary_key=True)
@@ -43,7 +43,7 @@ class Analysis(Base):
     weights = association_proxy('analysis_conditions', 'weight')
 
 
-class Condition(Base):
+class Condition(db.Model):
     __tablename__ = 'conditions'
 
     id = Column(Integer, primary_key=True)
@@ -51,7 +51,7 @@ class Condition(Base):
     description = Column(String)
 
 
-class AnalysisConditions(Base):
+class AnalysisConditions(db.Model):
     __tablename__ = 'analysis_conditions'
 
     weight = Column(Float)
@@ -61,17 +61,17 @@ class AnalysisConditions(Base):
     condition = relationship('Condition', backref=backref('analysis_conditions'))
 
 
-PointEntityMap = Table('point_entities', Base.metadata,
+PointEntityMap = Table('point_entities', db.Model.metadata,
     Column('point', Integer, ForeignKey('points.id')),
     Column('entity', Integer, ForeignKey('entities.id')))
 
 
-ImageEntityMap = Table('image_entities', Base.metadata,
+ImageEntityMap = Table('image_entities', db.Model.metadata,
     Column('image', Integer, ForeignKey('images.id')),
     Column('entity', Integer, ForeignKey('entities.id')))
 
 
-class Entity(Base):
+class Entity(db.Model):
     __tablename__ = 'entities'
 
     id = Column(Integer, primary_key=True)
@@ -82,7 +82,7 @@ class Entity(Base):
     study = relationship('Study', backref=backref('entities'))
 
 
-class Point(Base):
+class Point(db.Model):
     __tablename__ = 'points'
 
     id = Column(Integer, primary_key=True)
@@ -100,7 +100,7 @@ class Point(Base):
     analysis = relationship("Analysis", backref=backref("points"))
 
 
-class Image(Base):
+class Image(db.Model):
     __tablename__ = 'images'
 
     id = Column(Integer, primary_key=True)
@@ -115,7 +115,7 @@ class Image(Base):
     analysis = relationship("Analysis", backref=backref("images"))
 
 
-class PointValue(Base):
+class PointValue(db.Model):
     __tablename__ = 'point_values'
 
     id = Column(Integer, primary_key=True)

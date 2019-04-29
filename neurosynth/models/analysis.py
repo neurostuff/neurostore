@@ -2,13 +2,13 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy import (Column, Integer, String, Boolean, ForeignKey, JSON,
                         Table, Float)
-from sqlalchemy.orm import reconstructor, relationship, backref, object_session
+from sqlalchemy.orm import reconstructor, relationship, backref
 
-from ..database import Base
 from .data import Image, Point
+from ..database import db
 
 
-class MetaAnalysis(Base):
+class MetaAnalysis(db.Model):
     __tablename__ = 'metaanalyses'
 
     id = Column(Integer, primary_key=True)
@@ -26,7 +26,7 @@ class MetaAnalysis(Base):
     point_weights = association_proxy('metanalysis_points', 'weight')
 
 
-class MetaAnalysisImage(Base):
+class MetaAnalysisImage(db.Model):
     __tablename__ = 'metaanalysis_images'
 
     weight = Column(Float)
@@ -38,7 +38,7 @@ class MetaAnalysisImage(Base):
     image = relationship('Image', backref=backref('metaanalysis_images'))
 
 
-class MetaAnalysisPoint(Base):
+class MetaAnalysisPoint(db.Model):
     __tablename__ = 'metaanalysis_points'
 
     weight = Column(Float)

@@ -3,12 +3,9 @@ Ingest and sync data from various sources (Neurosynth, NeuroVault, etc.).
 """
 
 from neurosynth.models import Study, Analysis, Condition, Image
-from neurosynth.database import db
+from neurosynth.core import db
 import requests
 import re
-
-
-session = db.session()
 
 
 def ingest_neurovault(verbose=False, limit=20):
@@ -16,17 +13,17 @@ def ingest_neurovault(verbose=False, limit=20):
     # Store existing studies for quick lookup
     all_studies = {s.doi: s for s in
                    Study.query.filter(Study.doi.isnot(None)).all()}
+    print(all_studies)
 
     def add_collection(data):
         if data['DOI'] in all_studies:
-            print("Skipping {}...".format(data['DOI']))
+            print("Skipping {} (already exists)...".format(data['DOI']))
             return
         s = Study(name=data['name'], doi=data['DOI'], data=data)
 
         # Process images
         url = "https://neurovault.org/api/collections/{}/images/?format=json"
         image_url = url.format(data['id'])
-        print("Getting from", image_url)
         data = requests.get(image_url).json()
         analyses = {}
         images = []
@@ -47,8 +44,8 @@ def ingest_neurovault(verbose=False, limit=20):
                           analysis=analysis, data=img)
             images.append(image)
 
-        session.add_all([s] + list(analyses.values()) + images)
-        session.commit()
+        db.session.add_all([s] + list(analyses.values()) + images)
+        db.session.commit()
         all_studies[s.name] = s
         return s
 
@@ -59,11 +56,13 @@ def ingest_neurovault(verbose=False, limit=20):
         url = data['next']
         studies = [add_collection(c) for c in data['results']
                    if c['DOI'] is not None and c['number_of_images']]
-        session.add_all(studies)
-        session.commit()
+        db.session.add_all(studies)
+        db.session.commit()
         count += len(studies)
         if (limit is not None and count >= limit) or not url:
             break
 
-# db.reset_database()
+db.drop_all()
+db.create_all()
+
 ingest_neurovault(limit=5)
