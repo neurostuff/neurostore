@@ -16,7 +16,9 @@ class Dataset(db.Model):
     publication = Column(String)
     doi = Column(String)
     pmid = Column(String)
-    nimads_data = Column(JSON)  
+    nimads_data = Column(JSON)
+    user_id = Column(ForeignKey('users.id'))
+    user = relationship('User', backref=backref('datasets'))
 
 
 class Study(db.Model):
@@ -29,6 +31,8 @@ class Study(db.Model):
     doi = Column(String)
     pmid = Column(String)
     data = Column(JSON)
+    user_id = Column(ForeignKey('users.id'))
+    user = relationship('User', backref=backref('studies'))
 
 
 class Analysis(db.Model):

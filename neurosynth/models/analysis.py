@@ -19,7 +19,9 @@ class MetaAnalysis(db.Model):
     variable_names = Column(JSON)
     variable_descs = Column(JSON)
     data = Column(JSON)
+    user_id = Column(ForeignKey('users.id'), primary_key=True)
 
+    user = relationship('User', backref=backref('metaanalyses'))
     images = association_proxy('metanalysis_images', 'image')
     points = association_proxy('metanalysis_points', 'point')
     image_weights = association_proxy('metanalysis_images', 'weight')

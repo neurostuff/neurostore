@@ -2,24 +2,32 @@
 Ingest and sync data from various sources (Neurosynth, NeuroVault, etc.).
 """
 
-from neurosynth.models import Study, Analysis, Condition, Image
-from neurosynth.core import db
+from neurosynth.models import Study, Analysis, Condition, Image, User
+from neurosynth.core import db, user_datastore
 import requests
 import re
 
 
+def reset_database():
+    db.drop_all()
+    db.create_all()
+    user_datastore.create_user(email='admin@neurostuff.org', password='password')
+    db.session.commit()
+
+
 def ingest_neurovault(verbose=False, limit=20):
+
+    user = User.query.filter_by(email='admin@neurostuff.org').first()
 
     # Store existing studies for quick lookup
     all_studies = {s.doi: s for s in
                    Study.query.filter(Study.doi.isnot(None)).all()}
-    print(all_studies)
 
     def add_collection(data):
         if data['DOI'] in all_studies:
             print("Skipping {} (already exists)...".format(data['DOI']))
             return
-        s = Study(name=data['name'], doi=data['DOI'], data=data)
+        s = Study(name=data['name'], doi=data['DOI'], data=data, user=user)
 
         # Process images
         url = "https://neurovault.org/api/collections/{}/images/?format=json"
@@ -62,7 +70,6 @@ def ingest_neurovault(verbose=False, limit=20):
         if (limit is not None and count >= limit) or not url:
             break
 
-db.drop_all()
-db.create_all()
 
+reset_database()
 ingest_neurovault(limit=5)
