@@ -2,8 +2,8 @@
 Ingest and sync data from various sources (Neurosynth, NeuroVault, etc.).
 """
 
-from neurosynth.models import Study, Analysis, Condition, Image, User
-from neurosynth.core import db, user_datastore
+from neurostuff.models import Study, Analysis, Condition, Image, User
+from neurostuff.core import db, user_datastore
 import requests
 import re
 
