@@ -3,7 +3,7 @@ from flask_graphql import GraphQLView
 from flask_security import Security, SQLAlchemyUserDatastore
 
 from .database import init_db
-from .schema import  schema
+from .schemas import import  graphql_schema
 from .models import User, Role
 
 
@@ -18,5 +18,5 @@ security = Security(app, user_datastore)
 
 # GraphQL API
 app.add_url_rule('/graphql', view_func=GraphQLView.as_view(
-                 'graphql',schema=schema, graphiql=True,
+                 'graphql',schema=graphql_schema, graphiql=True,
                  context_value={'session': db.session}))

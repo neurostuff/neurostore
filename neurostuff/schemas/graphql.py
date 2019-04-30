@@ -3,11 +3,11 @@ from graphene import relay
 from graphene_sqlalchemy import (SQLAlchemyConnectionField,
                                  SQLAlchemyObjectType, utils)
 
-from .models import Study as StudyModel
-from .models import Analysis as AnalysisModel
-from .models import Entity as EntityModel
-from .models import Image as ImageModel
-from .models import Condition as ConditionModel
+from ..models import Study as StudyModel
+from ..models import Analysis as AnalysisModel
+from ..models import Entity as EntityModel
+from ..models import Image as ImageModel
+from ..models import Condition as ConditionModel
 
 
 class Study(SQLAlchemyObjectType):
@@ -69,5 +69,5 @@ class Query(graphene.ObjectType):
 
 
 
-schema = graphene.Schema(query=Query, types=[Study, Analysis, Image,
-                                             SearchResult])
+graphql_schema = graphene.Schema(query=Query, types=[Study, Analysis, Image,
+                                                     SearchResult])
