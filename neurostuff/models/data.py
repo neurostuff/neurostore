@@ -7,10 +7,18 @@ from sqlalchemy.orm import reconstructor, relationship, backref
 from ..database import db
 
 
-class Dataset(db.Model):
-    __tablename__ = 'datasets'
+class BaseMixin(object):
 
     id = Column(Integer, primary_key=True)
+
+    @property
+    def IRI(self):
+        return f"http://neurostuff.org/{self.__tablename__}/{self.id}"
+
+
+class Dataset(BaseMixin, db.Model):
+    __tablename__ = 'datasets'
+
     name = Column(String)
     description = Column(String)
     publication = Column(String)
@@ -22,10 +30,9 @@ class Dataset(db.Model):
     user = relationship('User', backref=backref('datasets'))
 
 
-class Study(db.Model):
+class Study(BaseMixin, db.Model):
     __tablename__ = 'studies'
 
-    id = Column(Integer, primary_key=True)
     name = Column(String)
     description = Column(String)
     publication = Column(String)
@@ -37,10 +44,9 @@ class Study(db.Model):
     user = relationship('User', backref=backref('studies'))
 
 
-class Analysis(db.Model):
+class Analysis(BaseMixin, db.Model):
     __tablename__ = 'analyses'
 
-    id = Column(Integer, primary_key=True)
     study_id = Column(ForeignKey('studies.id'))
     name = Column(String)
     description = Column(String)
@@ -49,10 +55,9 @@ class Analysis(db.Model):
     weights = association_proxy('analysis_conditions', 'weight')
 
 
-class Condition(db.Model):
+class Condition(BaseMixin, db.Model):
     __tablename__ = 'conditions'
 
-    id = Column(Integer, primary_key=True)
     name = Column(String)
     description = Column(String)
 
@@ -77,10 +82,9 @@ ImageEntityMap = Table('image_entities', db.Model.metadata,
     Column('entity', Integer, ForeignKey('entities.id')))
 
 
-class Entity(db.Model):
+class Entity(BaseMixin, db.Model):
     __tablename__ = 'entities'
 
-    id = Column(Integer, primary_key=True)
     study_id = Column(ForeignKey("studies.id"))
     label = Column(String)
     level = Column(String)
@@ -88,10 +92,9 @@ class Entity(db.Model):
     study = relationship('Study', backref=backref('entities'))
 
 
-class Point(db.Model):
+class Point(BaseMixin, db.Model):
     __tablename__ = 'points'
 
-    id = Column(Integer, primary_key=True)
     x = Column(Float)
     y = Column(Float)
     z = Column(Float)
@@ -106,10 +109,9 @@ class Point(db.Model):
     analysis = relationship("Analysis", backref=backref("points"))
 
 
-class Image(db.Model):
+class Image(BaseMixin, db.Model):
     __tablename__ = 'images'
 
-    id = Column(Integer, primary_key=True)
     path = Column(String)
     space = Column(String)
     value_type = Column(String)
@@ -121,10 +123,9 @@ class Image(db.Model):
     analysis = relationship("Analysis", backref=backref("images"))
 
 
-class PointValue(db.Model):
+class PointValue(BaseMixin, db.Model):
     __tablename__ = 'point_values'
 
-    id = Column(Integer, primary_key=True)
     point_id = Column(ForeignKey('points.id'))
     kind = Column(String)
     value = Column(String)

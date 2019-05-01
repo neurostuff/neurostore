@@ -1,13 +1,9 @@
 from marshmallow import fields, Schema
 
-from ..models import Study
-
 
 class BaseSchema(Schema):
 
-    id = fields.Function(lambda x:
-            f"http://neurostuff.org/{x.__class__.__tablename__}/{x.id}",
-            dump_to="@id")
+    id = fields.String(attribute='IRI', dump_to="@id")
     type = fields.Function(lambda model: model.__class__.__name__,
                            dump_to="@type")
 
@@ -17,3 +13,19 @@ class StudySchema(BaseSchema):
     metadata = fields.Dict(attribute="metadata_")
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")
+
+
+class ConditionSchema(BaseSchema):
+
+    class Meta:
+        additional = ("name", "description")
+
+
+class AnalysisSchema(BaseSchema):
+
+    study = fields.Function(lambda analysis: analysis.study.IRI)
+    condition = fields.Nested(ConditionSchema, attribute='conditions',
+                              many=True)
+    weight = fields.List(fields.Float(), attribute='weights')
+    class Meta:
+        additional = ("name", "description")
