@@ -2,7 +2,8 @@ from marshmallow import fields, Schema
 
 
 class BaseSchema(Schema):
-
+    context = fields.Constant({"@vocab": "http://neurostuff.org/nimads/"},
+                              dump_to="@context", dump_only=True)
     id = fields.String(attribute='IRI', dump_to="@id")
     type = fields.Function(lambda model: model.__class__.__name__,
                            dump_to="@type")
