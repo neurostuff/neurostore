@@ -3,6 +3,7 @@ from flask import abort
 from flask_apispec import use_kwargs, marshal_with, MethodResource, Ref
 from sqlalchemy.orm import noload
 
+from ..core import db
 from ..schemas import (StudySchema, AnalysisSchema, ConditionSchema,
                        ImageSchema, PointSchema)
 from ..models import Dataset, Study, Analysis, Condition, Image, Point
@@ -28,12 +29,13 @@ class BaseResource(MethodResource):
 
     @use_kwargs({
         'nested': fields.Bool(missing=False,
-            description="Display mode for nested objects. If True, nested "
-                        "objects are displayed in-line. If False, JSON-LD "
-                        "identifiers (i.e., IRIs) are inserted."),
+                              description="Display mode for nested objects. If"
+                              "True, nested objects are displayed in-line. If "
+                              "False, JSON-LD identifiers (i.e., IRIs) are "
+                              "inserted."),
         'process': fields.String(missing='compact',
-            description="JSON-LD processing mode ('compact', 'expand', or "
-                        "'flatten').")
+                                 description="JSON-LD processing mode "
+                                 "('compact', 'expand', or 'flatten').")
         }, locations=['query'])
     @marshal_with(Ref('schema'))
     def get(self, id, **kwargs):
@@ -41,6 +43,15 @@ class BaseResource(MethodResource):
         if result is None:
             abort(404)
         return result
+
+    @use_kwargs(Ref('schema'))
+    def put(self, id, **kwargs):
+        resource = self._model.query.filter_by(id=id).first()
+        if resource is None:
+            abort(404)
+        resource.update(kwargs)
+        db.session.add(resource)
+        db.session.commit()
 
     @property
     def schema(self):
