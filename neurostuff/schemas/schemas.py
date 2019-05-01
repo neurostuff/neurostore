@@ -21,6 +21,7 @@ class BaseSchema(Schema):
         else:
             return jsonld.compact(data, context)
 
+
 class ConditionSchema(BaseSchema):
 
     class Meta:

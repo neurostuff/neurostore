@@ -7,7 +7,7 @@ from ..schemas import (StudySchema, AnalysisSchema, ConditionSchema,
 from ..models import Dataset, Study, Analysis, Condition, Image, Point
 
 
-def bind_resources(app):
+def bind_resources(app, docs):
     resources = {
         'studies/<id>': StudyResource,
         'analyses/<id>': AnalysisResource,
@@ -18,6 +18,7 @@ def bind_resources(app):
     for route, resource in resources.items():
         name = resource.__name__.lower()
         app.add_url_rule('/api/' + route, view_func=resource.as_view(name))
+        docs.register(resource, endpoint=name)
 
 
 class BaseResource(MethodResource):
