@@ -1,5 +1,5 @@
 from webargs import fields
-from flask import abort, request
+from flask import abort
 from flask_apispec import use_kwargs, marshal_with, MethodResource, Ref
 from sqlalchemy.orm import noload
 
@@ -26,8 +26,17 @@ class BaseResource(MethodResource):
 
     _model = None
 
+    @use_kwargs({
+        'nested': fields.Bool(missing=False,
+            description="Display mode for nested objects. If True, nested "
+                        "objects are displayed in-line. If False, JSON-LD "
+                        "identifiers (i.e., IRIs) are inserted."),
+        'process': fields.String(missing='compact',
+            description="JSON-LD processing mode ('compact', 'expand', or "
+                        "'flatten').")
+        }, locations=['query'])
     @marshal_with(Ref('schema'))
-    def get(self, id):
+    def get(self, id, **kwargs):
         result = self._model.query.filter_by(id=id).first()
         if result is None:
             abort(404)

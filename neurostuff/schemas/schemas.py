@@ -88,4 +88,3 @@ class StudySchema(BaseSchema):
     analysis = StringOrNested(AnalysisSchema, attribute='analyses', many=True)
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")
-
