@@ -1,4 +1,6 @@
-from marshmallow import fields, Schema
+from marshmallow import fields, Schema, post_dump
+from flask import request
+from pyld import jsonld
 
 
 class BaseSchema(Schema):
@@ -8,13 +10,16 @@ class BaseSchema(Schema):
     type = fields.Function(lambda model: model.__class__.__name__,
                            dump_to="@type")
 
-
-class StudySchema(BaseSchema):
-
-    metadata = fields.Dict(attribute="metadata_")
-    class Meta:
-        additional = ("name", "description", "publication", "doi", "pmid")
-
+    @post_dump
+    def process_jsonld(self, data):
+        method = request.args.get('method', 'compact')
+        context = {"@context": {"@vocab": "http://neurostuff.org/nimads/"}}
+        if method == 'flatten':
+            return jsonld.flatten(data, context)
+        elif method == 'expand':
+            return jsonld.expand(data)
+        else:
+            return jsonld.compact(data, context)
 
 class ConditionSchema(BaseSchema):
 
@@ -30,3 +35,11 @@ class AnalysisSchema(BaseSchema):
     weight = fields.List(fields.Float(), attribute='weights')
     class Meta:
         additional = ("name", "description")
+
+
+class StudySchema(BaseSchema):
+
+    metadata = fields.Dict(attribute="metadata_")
+    analysis = fields.Nested(AnalysisSchema, attribute='analyses', many=True)
+    class Meta:
+        additional = ("name", "description", "publication", "doi", "pmid")

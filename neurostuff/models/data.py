@@ -13,7 +13,7 @@ class BaseMixin(object):
 
     @property
     def IRI(self):
-        return f"http://neurostuff.org/{self.__tablename__}/{self.id}"
+        return f"http://neurostuff.org/api/{self.__tablename__}/{self.id}"
 
 
 class Dataset(BaseMixin, db.Model):
