@@ -3,6 +3,26 @@ from flask import request
 from pyld import jsonld
 
 
+class StringOrNested(fields.Field):
+    """ Custom Field that serializes a nested object as either an IRI string
+    or a full object, depending on "nested" request argument. """
+
+    def __init__(self, nested, **kwargs):
+        self.many = kwargs.pop('many', False)
+        self.kwargs = kwargs
+        self.schema = fields.Nested(nested, **self.kwargs).schema
+        super().__init__(self, **kwargs)
+
+    def _serialize(self, value, attr, obj, **ser_kwargs):
+        if value is None:
+            return None
+        nested = bool(int(request.args.get('nested', False)))
+        if nested:
+            return self.schema.dump(value, many=self.many, **ser_kwargs).data
+        else:
+            return [v.IRI for v in value] if self.many else value.IRI
+
+
 class BaseSchema(Schema):
     context = fields.Constant({"@vocab": "http://neurostuff.org/nimads/"},
                               dump_to="@context", dump_only=True)
@@ -55,8 +75,8 @@ class AnalysisSchema(BaseSchema):
     study = fields.Function(lambda analysis: analysis.study.IRI)
     condition = fields.Nested(ConditionSchema, attribute='conditions',
                               many=True)
-    image = fields.Nested(ImageSchema, attribute='images', many=True)
-    point = fields.Nested(PointSchema, attribute='points', many=True)
+    image = StringOrNested(ImageSchema, attribute='images', many=True)
+    point = StringOrNested(PointSchema, attribute='points', many=True)
     weight = fields.List(fields.Float(), attribute='weights')
     class Meta:
         additional = ("name", "description")
@@ -65,7 +85,7 @@ class AnalysisSchema(BaseSchema):
 class StudySchema(BaseSchema):
 
     metadata = fields.Dict(attribute="metadata_")
-    analysis = fields.Nested(AnalysisSchema, attribute='analyses', many=True)
+    analysis = StringOrNested(AnalysisSchema, attribute='analyses', many=True)
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")
 
