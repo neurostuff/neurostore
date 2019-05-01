@@ -14,6 +14,6 @@ class BaseSchema(Schema):
 
 class StudySchema(BaseSchema):
 
+    metadata = fields.Dict(attribute="metadata_")
     class Meta:
-        additional = ("name", "description", "publication", "doi", "pmid",
-                      "data")
+        additional = ("name", "description", "publication", "doi", "pmid")

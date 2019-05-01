@@ -27,7 +27,8 @@ def ingest_neurovault(verbose=False, limit=20):
         if data['DOI'] in all_studies:
             print("Skipping {} (already exists)...".format(data['DOI']))
             return
-        s = Study(name=data['name'], doi=data['DOI'], data=data, user=user)
+        s = Study(name=data['name'], doi=data['DOI'], metadata_=data,
+                  user=user)
 
         # Process images
         url = "https://neurovault.org/api/collections/{}/images/?format=json"

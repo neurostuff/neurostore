@@ -32,7 +32,7 @@ class Study(db.Model):
     doi = Column(String)
     pmid = Column(String)
     public = Column(Boolean, default=True)
-    data = Column(JSON)
+    metadata_ = Column(JSON)
     user_id = Column(ForeignKey('users.id'))
     user = relationship('User', backref=backref('studies'))
 
