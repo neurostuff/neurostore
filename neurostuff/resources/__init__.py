@@ -2,15 +2,18 @@ from webargs import fields
 from flask import abort
 from flask_apispec import use_kwargs, marshal_with, MethodResource, Ref
 
-from ..schemas import StudySchema, AnalysisSchema, ConditionSchema
-from ..models import Dataset, Study, Analysis, Condition
+from ..schemas import (StudySchema, AnalysisSchema, ConditionSchema,
+                       ImageSchema, PointSchema)
+from ..models import Dataset, Study, Analysis, Condition, Image, Point
 
 
 def bind_resources(app):
     resources = {
         'studies/<id>': StudyResource,
         'analyses/<id>': AnalysisResource,
-        'conditions/<id>': ConditionResource
+        'conditions/<id>': ConditionResource,
+        'images/<id>': ImageResource,
+        'points/<id>': PointResource,
     }
     for route, resource in resources.items():
         name = resource.__name__.lower()
@@ -41,3 +44,9 @@ class AnalysisResource(BaseResource):
 
 class ConditionResource(BaseResource):
     _model = Condition
+
+class ImageResource(BaseResource):
+    _model = Image
+
+class PointResource(BaseResource):
+    _model = Point

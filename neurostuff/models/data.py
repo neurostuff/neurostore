@@ -95,6 +95,10 @@ class Entity(BaseMixin, db.Model):
 class Point(BaseMixin, db.Model):
     __tablename__ = 'points'
 
+    @property
+    def coordinates(self):
+        return [self.x, self.y, self.z]
+
     x = Column(Float)
     y = Column(Float)
     z = Column(Float)
