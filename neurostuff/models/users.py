@@ -7,6 +7,7 @@ from flask_security import Security, SQLAlchemyUserDatastore, \
     UserMixin, RoleMixin, login_required
 
 from ..database import db
+from .data import BaseMixin
 
 
 roles_users = Table('roles_users', db.Model.metadata,
@@ -14,18 +15,16 @@ roles_users = Table('roles_users', db.Model.metadata,
         Column('role_id', Integer(), ForeignKey('roles.id')))
 
 
-class Role(db.Model, RoleMixin):
+class Role(BaseMixin, db.Model, RoleMixin):
     __tablename__ = 'roles'
 
-    id = Column(Integer, primary_key=True)
     name = Column(String(80), unique=True)
     description = Column(String(255))
 
 
-class User(db.Model, UserMixin):
+class User(BaseMixin, db.Model, UserMixin):
     __tablename__ = 'users'
 
-    id = Column(Integer, primary_key=True)
     email = Column(String(255), unique=True)
     password = Column(String(255))
     active = Column(Boolean())

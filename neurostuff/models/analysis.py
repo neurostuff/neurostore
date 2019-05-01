@@ -4,14 +4,13 @@ from sqlalchemy import (Column, Integer, String, Boolean, ForeignKey, JSON,
                         Table, Float)
 from sqlalchemy.orm import reconstructor, relationship, backref
 
-from .data import Image, Point
+from .data import Image, Point, BaseMixin
 from ..database import db
 
 
-class MetaAnalysis(db.Model):
+class MetaAnalysis(BaseMixin, db.Model):
     __tablename__ = 'metaanalyses'
 
-    id = Column(Integer, primary_key=True)
     name = Column(String)
     desc = Column(String)
     estimator = Column(String)

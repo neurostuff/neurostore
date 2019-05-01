@@ -1,8 +1,9 @@
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy import (Column, Integer, String, Boolean, ForeignKey, JSON,
-                        Table, Float)
+                        Table, Float, DateTime)
 from sqlalchemy.orm import reconstructor, relationship, backref
+from sqlalchemy.sql import func
 
 from ..database import db
 
@@ -10,6 +11,8 @@ from ..database import db
 class BaseMixin(object):
 
     id = Column(Integer, primary_key=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     @property
     def IRI(self):
