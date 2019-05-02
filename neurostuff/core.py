@@ -3,6 +3,7 @@ from flask_security import Security, SQLAlchemyUserDatastore
 from flask_apispec import FlaskApiSpec
 from flask_dance.consumer.storage.sqla import SQLAlchemyStorage
 from flask_dance.contrib.github import make_github_blueprint, github
+from flask_cors import CORS
 
 from .database import init_db
 from .models import User, Role, OAuth
@@ -17,6 +18,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['APISPEC_SWAGGER_URL'] = '/api/swagger.json'
 app.config['APISPEC_SWAGGER_UI_URL'] = '/api/'
 db = init_db(app)
+
+# enable CORS for development
+CORS(app)
 
 # Flask-Security
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
