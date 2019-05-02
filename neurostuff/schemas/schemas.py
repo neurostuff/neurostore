@@ -88,3 +88,12 @@ class StudySchema(BaseSchema):
     analysis = StringOrNested(AnalysisSchema, attribute='analyses', many=True)
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")
+
+
+class DatasetSchema(BaseSchema):
+
+    data = fields.Dict(attribute="nimads_data")
+    analysis = StringOrNested(AnalysisSchema, attribute='analyses', many=True)
+    user = fields.Function(lambda user: user.username)
+    class Meta:
+        additional = ("name", "description", "publication", "doi", "pmid")

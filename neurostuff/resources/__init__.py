@@ -5,12 +5,13 @@ from sqlalchemy.orm import noload
 
 from ..core import db
 from ..schemas import (StudySchema, AnalysisSchema, ConditionSchema,
-                       ImageSchema, PointSchema)
+                       ImageSchema, PointSchema, DatasetSchema)
 from ..models import Dataset, Study, Analysis, Condition, Image, Point
 
 
 def bind_resources(app, docs):
     resources = {
+        'datasets/<id>': DatasetResource,
         'studies/<id>': StudyResource,
         'analyses/<id>': AnalysisResource,
         'conditions/<id>': ConditionResource,
@@ -57,6 +58,9 @@ class BaseResource(MethodResource):
     def schema(self):
         return globals()[self._model.__name__ + 'Schema']
 
+
+class DatasetResource(BaseResource):
+    _model = Dataset
 
 class StudyResource(BaseResource):
     _model = Study

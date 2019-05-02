@@ -1,10 +1,11 @@
 from .schemas import (StudySchema, AnalysisSchema, ConditionSchema,
-                      ImageSchema, PointSchema)
+                      ImageSchema, PointSchema, DatasetSchema)
 
 __all__ = [
     'StudySchema',
     'AnalysisSchema',
     'ConditionSchema',
     'ImageSchema',
-    'PointSchema'
+    'PointSchema',
+    'DatasetSchema'
 ]

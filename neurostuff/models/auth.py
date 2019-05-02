@@ -26,16 +26,19 @@ class Role(BaseMixin, db.Model, RoleMixin):
 class User(BaseMixin, db.Model, UserMixin):
     __tablename__ = 'users'
 
+    name = Column(String(255))
     email = Column(String(255), unique=True)
     password = Column(String(255))
     active = Column(Boolean())
     confirmed_at = Column(DateTime)
     roles = relationship('Role', secondary=roles_users,
                          backref=backref('users', lazy='dynamic'))
+    username = association_proxy('oauth', 'provider_user_id')
 
 
 class OAuth(OAuthConsumerMixin, db.Model):
+    __tablename__ = 'oauth'
     user_id = Column(Integer, ForeignKey('users.id'))
-    user = relationship(User)
+    user = relationship(User, backref=backref('oauth'))
     provider_user_id = Column(String(256), unique=True, nullable=False)
     provider = Column(String(30))
