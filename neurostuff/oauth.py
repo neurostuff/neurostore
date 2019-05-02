@@ -26,7 +26,8 @@ twitter_bp = make_twitter_blueprint(
 )
 
 google_bp = make_google_blueprint(
-    storage=SQLAlchemyStorage(OAuth, db.session, user=current_user)
+    storage=SQLAlchemyStorage(OAuth, db.session, user=current_user,
+    scope=["profile", "email"])
 )
 
 
