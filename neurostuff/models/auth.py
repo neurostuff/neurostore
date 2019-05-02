@@ -3,8 +3,9 @@ from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy import (Column, Integer, String, Boolean, ForeignKey, JSON,
                         Table, Float, DateTime)
 from sqlalchemy.orm import reconstructor, relationship, backref
-from flask_security import Security, SQLAlchemyUserDatastore, \
-    UserMixin, RoleMixin, login_required
+from flask_security import UserMixin, RoleMixin, login_required
+from flask_dance.consumer.storage.sqla import OAuthConsumerMixin
+
 
 from ..database import db
 from .data import BaseMixin
@@ -31,3 +32,10 @@ class User(BaseMixin, db.Model, UserMixin):
     confirmed_at = Column(DateTime)
     roles = relationship('Role', secondary=roles_users,
                          backref=backref('users', lazy='dynamic'))
+
+
+class OAuth(OAuthConsumerMixin, db.Model):
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship(User)
+    provider_user_id = Column(String(256), unique=True, nullable=False)
+    provider = Column(String(30))

@@ -2,10 +2,12 @@ from flask import Flask
 from flask_graphql import GraphQLView
 from flask_security import Security, SQLAlchemyUserDatastore
 from flask_apispec import FlaskApiSpec
+from flask_dance.consumer.storage.sqla import SQLAlchemyStorage
+from flask_dance.contrib.github import make_github_blueprint, github
 
 from .database import init_db
 from .schemas import graphql_schema
-from .models import User, Role
+from .models import User, Role, OAuth
 
 
 app = Flask(__name__)
@@ -20,6 +22,15 @@ db = init_db(app)
 # Flask-Security
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
+
+# Flask-Dance (OAuth)
+app.secret_key = "temporary"
+blueprint = make_github_blueprint(
+    client_id="d5372fa09c97d5a98a84",
+    client_secret="dee86c2c9344f00a31d83854eb135e94957ac494",
+)
+app.register_blueprint(blueprint, url_prefix="/login")
+blueprint.storage = SQLAlchemyStorage(OAuth, db.session)
 
 # GraphQL API
 app.add_url_rule('/graphql', view_func=GraphQLView.as_view(
