@@ -24,34 +24,29 @@ export default {
         fields: [{
           type: "input",
           inputType: "text",
-          label: "Title",
-          model: "name",
+          label: "URL",
+          model: "path",
           // readonly: true,
           featured: true,
           styleClasses: "title",
         }, {
           type: "input",
           inputType: "text",
-          label: "Description",
-          model: "description",
+          label: "Space",
+          model: "space",
           // readonly: true,
         }, {
           type: "input",
           inputType: "text",
-          label: "Publication",
-          model: "publication",
+          label: "Value type",
+          model: "value_type",
           // readonly: true,
         }, {
           type: "input",
           inputType: "text",
-          label: "DOI",
-          model: "doi",
+          label: "Analysis IRI",
+          model: "analysis",
           // readonly: true,
-        }, {
-          type: "textArea",
-          label: "Metadata",
-          model: "metadata",
-          rows: 10
         }, {
           type: "submit",
           buttonText: "Save",
@@ -84,7 +79,7 @@ export default {
       }
     },
     getModel() {
-      const path = `http://localhost:5000/api/studies/${this.$route.params.id}?nested=1`;
+      const path = `http://localhost:5000/api/images/${this.$route.params.id}?nested=1`;
       axios.get(path)
         .then((res) => {
           res.data.metadata = this.prettyJSON(res.data.metadata);
@@ -97,7 +92,7 @@ export default {
     saveModel() {
       console.log(this.model);
       if (this.$route.params.id == 'new') {
-        var path = 'http://localhost:5000/api/studies/new';
+        var path = 'http://localhost:5000/api/images/new';
         var func = axios.post;
       } else {
         var path = this.model['@id'].replace('neurostuff.org', 'localhost:5000');
