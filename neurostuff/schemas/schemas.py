@@ -2,6 +2,8 @@ from marshmallow import fields, Schema, post_dump
 from flask import request
 from pyld import jsonld
 
+from ..models import Dataset, Study, Analysis, Condition, Image, Point
+
 
 class StringOrNested(fields.Field):
     """ Custom Field that serializes a nested object as either an IRI string
@@ -18,17 +20,29 @@ class StringOrNested(fields.Field):
             return None
         nested = bool(int(request.args.get('nested', False)))
         if nested:
-            return self.schema.dump(value, many=self.many, **ser_kwargs).data
+            return self.schema.dump(value, many=self.many).data
         else:
             return [v.IRI for v in value] if self.many else value.IRI
 
+    def _deserialize(self, value, attr, data, **ser_kwargs):
+        res = self.schema.load([value], many=self.many).data
+        return res
+
 
 class BaseSchema(Schema):
+
+    # Serialization fields
     context = fields.Constant({"@vocab": "http://neurostuff.org/nimads/"},
                               dump_to="@context", dump_only=True)
-    id = fields.String(attribute='IRI', dump_to="@id")
-    type = fields.Function(lambda model: model.__class__.__name__,
-                           dump_to="@type")
+    _id = fields.String(attribute='IRI', dump_to="@id", dump_only=True)
+    _type = fields.Function(lambda model: model.__class__.__name__,
+                            dump_to="@type", dump_only=True)
+
+    # De-serialization fields
+    id = fields.Method(None, '_extract_id', load_from='@id')
+
+    def _extract_id(self, iri):
+        return int(iri.strip('/').split('/')[-1])
 
     @post_dump
     def process_jsonld(self, data):
@@ -50,8 +64,13 @@ class ConditionSchema(BaseSchema):
 
 class ImageSchema(BaseSchema):
 
-    analysis = fields.Function(lambda image: image.analysis.IRI)
-    metadata = fields.Dict(attribute="data")
+    analysis = fields.Function(lambda image: image.analysis.IRI,
+                               dump_only=True)
+    metadata = fields.Dict(attribute="data", dump_only=True)
+
+    analysis_id = fields.Method(None, '_extract_id', load_from='analysis')
+    data = fields.Dict(attribute='metadata', load_only=True)
+
     class Meta:
         additional = ("path", "space", "value_type")
 
@@ -84,8 +103,14 @@ class AnalysisSchema(BaseSchema):
 
 class StudySchema(BaseSchema):
 
-    metadata = fields.Dict(attribute="metadata_")
-    analysis = StringOrNested(AnalysisSchema, attribute='analyses', many=True)
+    metadata = fields.Dict(attribute="metadata_", dump_only=True)
+    analysis = StringOrNested(AnalysisSchema, attribute='analyses', many=True,
+                              dump_only=True)
+
+    metadata_ = fields.Dict(attribute='metadata', load_only=True)
+    analyses = fields.Nested(AnalysisSchema, attribute='analysis', many=True,
+                      load_only=True)
+
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")
 

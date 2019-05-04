@@ -45,14 +45,17 @@ class BaseResource(MethodResource):
             abort(404)
         return result
 
+    @marshal_with(Ref('schema'))
     @use_kwargs(Ref('schema'))
     def put(self, id, **kwargs):
         resource = self._model.query.filter_by(id=id).first()
         if resource is None:
             abort(404)
-        resource.update(kwargs)
+        for k, v in kwargs.items():
+            setattr(resource, k, v)
         db.session.add(resource)
         db.session.commit()
+        return resource
 
     @property
     def schema(self):
