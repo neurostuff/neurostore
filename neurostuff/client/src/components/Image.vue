@@ -21,7 +21,6 @@ export default {
   data() {
     return {
       resource: 'images',
-      model: {},
       schema: {
         fields: [{
           type: "input",

@@ -1,7 +1,11 @@
 import axios from 'axios';
 
 export default {
-
+  data() {
+    return {
+      model: {},
+    };
+  },
   methods: {
     prettyJSON(json) {
       if (json) {
@@ -25,7 +29,7 @@ export default {
       }
     },
     getModel() {
-      const path = `http://localhost:5000/api/${resource}/${this.$route.params.id}?nested=1`;
+      const path = `http://localhost:5000/api/${this.resource}/${this.$route.params.id}?nested=1`;
       axios.get(path)
         .then((res) => {
           res.data.metadata = this.prettyJSON(res.data.metadata);
