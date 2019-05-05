@@ -1,4 +1,9 @@
+import Vue from 'vue';
 import axios from 'axios';
+import VueFormGenerator from 'vue-form-generator';
+import 'vue-form-generator/dist/vfg.css';
+
+Vue.use(VueFormGenerator);
 
 export default {
   data() {

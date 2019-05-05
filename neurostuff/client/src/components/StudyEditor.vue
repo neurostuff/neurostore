@@ -1,48 +1,45 @@
 <template>
-  <div class="container" id="form">
-    <div class="panel panel-default">
-      <div class="panel-body">
-        <vue-form-generator :schema="schema" :model="model" :options="formOptions"></vue-form-generator>
-      </div>
-    </div>
-  </div>
+  <vue-form-generator :schema="schema" :model="model" :options="formOptions" />
 </template>
 
 <script>
-import ajaxHandler from './mixins/ajaxHandler';
 
 export default {
-  mixins: [ajaxHandler],
+  props: ['model'],
   data() {
     return {
-      resource: 'images',
       schema: {
         fields: [{
           type: "input",
           inputType: "text",
-          label: "URL",
-          model: "path",
+          label: "Title",
+          model: "name",
           // readonly: true,
-          featured: true,
+          featured: false,
           styleClasses: "title",
         }, {
           type: "input",
           inputType: "text",
-          label: "Space",
-          model: "space",
+          label: "Description",
+          model: "description",
           // readonly: true,
         }, {
           type: "input",
           inputType: "text",
-          label: "Value type",
-          model: "value_type",
+          label: "Publication",
+          model: "publication",
           // readonly: true,
         }, {
           type: "input",
           inputType: "text",
-          label: "Analysis IRI",
-          model: "analysis",
+          label: "DOI",
+          model: "doi",
           // readonly: true,
+        }, {
+          type: "textArea",
+          label: "Metadata",
+          model: "metadata",
+          rows: 10
         }, {
           type: "submit",
           buttonText: "Save",
@@ -51,8 +48,6 @@ export default {
         ],
       },
     };
-  },
-  methods: {
   },
 };
 </script>
