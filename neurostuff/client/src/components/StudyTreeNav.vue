@@ -6,6 +6,7 @@
 
 <script>
 import { TreeView } from "@bosket/vue";
+import { EventBus } from './Study';
 
 export default {
   components: {
@@ -17,6 +18,7 @@ export default {
       resource: 'studies',
       tree: [],
       nodes: [],
+      activeNode: null,
       children: "children",
       selection: [],
       treeProps: {
@@ -37,6 +39,7 @@ export default {
     onSelect(selected, item) {
       if (selected.length) {
         this.selection.push(...selected);
+        EventBus.$emit('modelLoaded', item);
       } else {
         this.selection.splice(this.selection.indexOf(item), 1);
       }
@@ -45,20 +48,23 @@ export default {
       let res = {
         label: a.name,
         index: i,
+        data: a,
         type: "Analysis",
         children: [],
       }
       if (typeof(a.image) !== 'undefined') {
         const images = (Array.isArray(a.image) ? a.image : [a.image]);
         res.children.push(
-          {label: "Images", children: images.map(
-            (img, i) => ({label: img.path, index: i, type: "Image"}))})
+          {label: `Images [${images.length}]`, children: images.map(
+            (img, i) => ({label: img.path, index: i, type: "Image",
+                          data: img}))})
       }
       if (typeof(a.points) !== 'undefined') {
         const points = (Array.isArray(a.point) ? a.point : [a.point]);
         res.children.push(
           {label: "Points", children: points.map(
-            (pt, i) => ({label: pt.path, index: i, type: "Point"}))})
+            (pt, i) => ({label: pt.path, index: i, type: "Point",
+                         data: pt}))})
       }
       return res
     }
@@ -69,6 +75,7 @@ export default {
         {
           label: "Study",
           type: "Study",
+          data: this.model,
           children: [{ label: "Analyses",
             children: this.model.analysis.map(this.mapAnalysis) }]
         },
