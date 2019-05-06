@@ -2,12 +2,14 @@
   <TreeView :model="tree" :category="children" :selection="selection"
                   :onSelect="onSelect" :display="display"
                   :css="treeItemCSS" :dragndrop="treeDragConfig"
-                  :strategies="strategies" />
+                  :strategies="strategies" :search="search" />
 </template>
 
 <script>
 import { TreeView } from "@bosket/vue";
 import { EventBus } from './Study';
+import { string } from "@bosket/tools"
+import { dragndrop } from "@bosket/core"
 
 export default {
   components: {
@@ -38,7 +40,8 @@ export default {
         click: ["select"],
         selection: ["modifiers"],
         fold: ["opener-control"]
-      }
+      },
+      search: input => i => string(i.label).contains(input),
     };
   },
   methods: {
