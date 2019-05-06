@@ -1,7 +1,8 @@
 <template>
   <TreeView :model="tree" :category="children" :selection="selection"
                   :onSelect="onSelect" :display="display"
-                  :css="treeItemCSS" :dragndrop="treeDragConfig" />
+                  :css="treeItemCSS" :dragndrop="treeDragConfig"
+                  :strategies="strategies" />
 </template>
 
 <script>
@@ -33,6 +34,11 @@ export default {
         draggable: true,
         droppable: true
       },
+      strategies: {
+        click: ["select"],
+        selection: ["modifiers"],
+        fold: ["opener-control"]
+      }
     };
   },
   methods: {
@@ -47,11 +53,12 @@ export default {
     },
     display(item, inputs) {
         let _class = "";
-        let _id = item.type + item.index;
         if (typeof(item.type) !== 'undefined')
           _class = "label " + item.type;
-        _class += (item === this.activeNode) ? ' active' : '';
-        return <span id={_id} class={_class}>{item.label}</span>
+        else
+          _class = "group";
+        if (item === this.activeNode) { _class += ' active'; }
+        return <span class={_class}>{item.label}</span>
     },
     mapAnalysis(a, i) {
       let res = {
