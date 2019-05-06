@@ -9,14 +9,14 @@
 </template>
 
 <script>
-import ajaxHandler from './mixins/ajaxHandler';
+// import ajaxHandler from './mixins/ajaxHandler';
 
 export default {
-  mixins: [ajaxHandler],
+  // mixins: [ajaxHandler],
+  props: ['model'],
   data() {
     return {
       resource: 'analyses',
-      model: {},
       schema: {
         fields: [{
           type: "input",

@@ -1,6 +1,6 @@
 <template>
   <TreeView :model="tree" :category="children" :selection="selection"
-                  :onSelect="onSelect" :display="treeItemDisplay"
+                  :onSelect="onSelect" :display="display"
                   :css="treeItemCSS" :dragndrop="treeDragConfig" />
 </template>
 
@@ -25,10 +25,10 @@ export default {
         model: this.tree,
         category: "children",
         selection: this.selection,
-        onSelect: this.onSelect
+        onSelect: this.onSelect,
+        display: this.display
       },
-      treeItemDisplay: item => item.label,
-      treeItemCSS: { TreeView: 'TreeViewDemo' },
+      treeItemCSS: { TreeView: 'TreeView' },
       treeDragConfig: {
         draggable: true,
         droppable: true
@@ -40,9 +40,18 @@ export default {
       if (selected.length) {
         this.selection.push(...selected);
         EventBus.$emit('modelLoaded', item);
+        this.activeNode = item;
       } else {
         this.selection.splice(this.selection.indexOf(item), 1);
       }
+    },
+    display(item, inputs) {
+        let _class = "";
+        let _id = item.type + item.index;
+        if (typeof(item.type) !== 'undefined')
+          _class = "label " + item.type;
+        _class += (item === this.activeNode) ? ' active' : '';
+        return <span id={_id} class={_class}>{item.label}</span>
     },
     mapAnalysis(a, i) {
       let res = {
@@ -55,9 +64,9 @@ export default {
       if (typeof(a.image) !== 'undefined') {
         const images = (Array.isArray(a.image) ? a.image : [a.image]);
         res.children.push(
-          {label: `Images [${images.length}]`, children: images.map(
-            (img, i) => ({label: img.path, index: i, type: "Image",
-                          data: img}))})
+          {label: `Images (${images.length})`, children: images.map(
+            (img, i) => ({label: img.path.split('/').pop(), index: i,
+                          type: "Image", data: img}))})
       }
       if (typeof(a.points) !== 'undefined') {
         const points = (Array.isArray(a.point) ? a.point : [a.point]);
@@ -84,3 +93,7 @@ export default {
   },
 };
 </script>
+
+<style>
+@import '../assets/styles/treeview.css';
+</style>
