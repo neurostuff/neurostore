@@ -1,5 +1,14 @@
 <template>
   <div id="app">
+    <div>
+      <b-navbar toggleable="md" type="dark" variant="dark" id="navbar">
+        <b-navbar-brand href="#">NeuroStuff</b-navbar-brand>
+        <b-navbar-nav>
+          <b-nav-item href="/studies">Studies</b-nav-item>
+          <b-nav-item href="/faqs">FAQs</b-nav-item>
+        </b-navbar-nav>
+      </b-navbar>
+    </div>
     <router-view/>
   </div>
 </template>
@@ -11,12 +20,7 @@ export default {
 </script>
 
 <style>
-#app {
-  /* font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50; */
-  margin-top: 60px;
+#navbar {
+  margin-bottom: 20px;
 }
 </style>
