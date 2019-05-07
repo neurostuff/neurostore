@@ -17,6 +17,7 @@ import ajaxHandler from './mixins/ajaxHandler';
 import StudyEditor from './StudyEditor';
 import ImageEditor from './ImageEditor';
 import AnalysisEditor from './AnalysisEditor';
+import PointEditor from './PointEditor';
 import StudyTreeNav from './StudyTreeNav';
 import Vue from 'vue';
 
@@ -27,6 +28,7 @@ export default {
     StudyEditor,
     AnalysisEditor,
     ImageEditor,
+    PointEditor,
     StudyTreeNav
   },
   mixins: [ajaxHandler],
@@ -42,7 +44,7 @@ export default {
   },
   mounted() {
     EventBus.$on('modelLoaded', item => {
-      if (["Study", "Analysis", "Image"].includes(item.type)) {
+      if (["Study", "Analysis", "Image", "Point"].includes(item.type)) {
         this.item = item;
       }
     });

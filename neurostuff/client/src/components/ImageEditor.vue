@@ -10,14 +10,11 @@
 </template>
 
 <script>
-// import ajaxHandler from './mixins/ajaxHandler';
 
 export default {
-  // mixins: [ajaxHandler],
   props: ['model'],
   data() {
     return {
-      resource: 'images',
       schema: {
         fields: [{
           type: "input",

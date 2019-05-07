@@ -18,7 +18,6 @@ export default {
   props: ['model'],
   data() {
     return {
-      resource: 'studies',
       tree: [],
       nodes: [],
       activeNode: null,
@@ -71,20 +70,16 @@ export default {
         type: "Analysis",
         children: [],
       }
-      if (typeof(a.image) !== 'undefined') {
-        const images = (Array.isArray(a.image) ? a.image : [a.image]);
-        res.children.push(
-          {label: `Images (${images.length})`, children: images.map(
-            (img, i) => ({label: img.path.split('/').pop(), index: i,
-                          type: "Image", data: img}))})
-      }
-      if (typeof(a.points) !== 'undefined') {
-        const points = (Array.isArray(a.point) ? a.point : [a.point]);
-        res.children.push(
-          {label: "Points", children: points.map(
-            (pt, i) => ({label: pt.path, index: i, type: "Point",
-                         data: pt}))})
-      }
+      if (typeof(a.image) === 'undefined') { a.image = [] };
+      const images = (Array.isArray(a.image) ? a.image : [a.image]);
+      res.children.push(
+        {label: `Images (${images.length})`, children: images.map(
+          (img, i) => ({label: img.path.split('/').pop(), index: i,
+                        type: "Image", data: img}))});
+      if (typeof(a.points) === 'undefined') { a.point = [] };
+      const points = (Array.isArray(a.point) ? a.point : [a.point]);
+      res.children.push(
+        {label: `Points (${points.length})`, data:points, type: "Point"});
       return res
     }
   },
