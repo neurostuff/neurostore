@@ -55,7 +55,10 @@ class ListResource(BaseResource):
 
     def get(self, **kwargs):
         # TODO: Add filtering constraints
-        records = self._model.query.all()
+        page = request.args.get('page', 1, type=int)
+        page_size = request.args.get('page_size', 20, type=int)
+        page_size = min([page_size, 100])
+        records = self._model.query.paginate(page, page_size, False).items
         if not records:
             abort(404)
         return self.schema(only=self._only, many=True).dump(records).data

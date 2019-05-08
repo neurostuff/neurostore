@@ -18,4 +18,3 @@ def bind_resources(app):
     }
     for route, resource in resources.items():
         api.add_resource(resource, '/api/' + route)
-
