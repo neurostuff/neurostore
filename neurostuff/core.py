@@ -1,6 +1,5 @@
 from flask import Flask
 from flask_security import Security, SQLAlchemyUserDatastore
-from flask_apispec import FlaskApiSpec
 from flask_dance.consumer.storage.sqla import SQLAlchemyStorage
 from flask_dance.contrib.github import make_github_blueprint, github
 from flask_cors import CORS
@@ -45,5 +44,4 @@ blueprint.storage = SQLAlchemyStorage(OAuth, db.session)
 
 # Bind routes
 from .resources import bind_resources
-docs = FlaskApiSpec(app)
-bind_resources(app, docs)
+bind_resources(app)

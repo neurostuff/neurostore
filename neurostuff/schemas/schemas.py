@@ -25,8 +25,7 @@ class StringOrNested(fields.Field):
             return [v.IRI for v in value] if self.many else value.IRI
 
     def _deserialize(self, value, attr, data, **ser_kwargs):
-        res = self.schema.load([value], many=self.many).data
-        return res
+        return self.schema.load(value, many=self.many).data
 
 
 class BaseSchema(Schema):
@@ -39,13 +38,15 @@ class BaseSchema(Schema):
                             dump_to="@type", dump_only=True)
 
     # De-serialization fields
-    id = fields.Method(None, '_extract_id', load_from='@id')
+    id = fields.Method(None, '_extract_id', load_from='@id', load_only=True)
 
     def _extract_id(self, iri):
         return int(iri.strip('/').split('/')[-1])
 
-    @post_dump
-    def process_jsonld(self, data):
+    @post_dump(pass_original=True)
+    def process_jsonld(self, data, original):
+        if isinstance(original, (list, tuple)):
+            return data
         method = request.args.get('process', 'compact')
         context = {"@context": {"@vocab": "http://neurostuff.org/nimads/"}}
         if method == 'flatten':
@@ -69,7 +70,7 @@ class ImageSchema(BaseSchema):
     metadata = fields.Dict(attribute="data", dump_only=True)
 
     analysis_id = fields.Method(None, '_extract_id', load_from='analysis')
-    data = fields.Dict(attribute='metadata', load_only=True)
+    data = fields.Dict(load_from='metadata', load_only=True)
 
     class Meta:
         additional = ("path", "space", "value_type")
@@ -83,20 +84,40 @@ class PointValueSchema(BaseSchema):
 
 class PointSchema(BaseSchema):
 
-    analysis = fields.Function(lambda image: image.analysis.IRI)
-    value = fields.Nested(PointValueSchema, attribute='values')
+    analysis = fields.Function(lambda image: image.analysis.IRI,
+                               dump_only=True)
+    value = fields.Nested(PointValueSchema, attribute='values', dump_only=True)
+
+    analysis_id = fields.Method(None, '_extract_id', load_from='analysis')
+    values = fields.Nested(PointValueSchema, attribute='value',
+                           load_only=True)
+
     class Meta:
         additional = ("kind", "space", "coordinates", "image", "label_id")
 
 
 class AnalysisSchema(BaseSchema):
 
-    study = fields.Function(lambda analysis: analysis.study.IRI)
+    study = fields.Function(lambda analysis: analysis.study.IRI,
+                            dump_only=True)
     condition = fields.Nested(ConditionSchema, attribute='conditions',
-                              many=True)
-    image = StringOrNested(ImageSchema, attribute='images', many=True)
-    point = StringOrNested(PointSchema, attribute='points', many=True)
-    weight = fields.List(fields.Float(), attribute='weights')
+                              many=True, dump_only=True)
+    image = StringOrNested(ImageSchema, attribute='images', many=True,
+                           dump_only=True)
+    point = StringOrNested(PointSchema, attribute='points', many=True,
+                           dump_only=True)
+    weight = fields.List(fields.Float(), attribute='weights', dump_only=True)
+
+    # study_id = fields.Method(None, '_extract_id', load_from='study',
+    #                          load_only=True)
+    # conditions = fields.Nested(ConditionSchema, load_from='condition',
+    #                           many=True, load_only=True)
+    # images = fields.Nested(ImageSchema, load_from='image', many=True,
+    #                         load_only=True)
+    # points = fields.Nested(PointSchema, load_from='point', many=True,
+    #                        load_only=True)
+    # weights = fields.List(fields.Float(), load_from='weight', load_only=True)
+
     class Meta:
         additional = ("name", "description")
 
@@ -107,9 +128,9 @@ class StudySchema(BaseSchema):
     analysis = StringOrNested(AnalysisSchema, attribute='analyses', many=True,
                               dump_only=True)
 
-    metadata_ = fields.Dict(attribute='metadata', load_only=True)
-    analyses = fields.Nested(AnalysisSchema, attribute='analysis', many=True,
-                      load_only=True)
+    metadata_ = fields.Dict(load_from='metadata', load_only=True)
+    analyses = fields.Nested(AnalysisSchema, load_from='analysis', many=True,
+                             load_only=True)
 
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")
