@@ -2,6 +2,7 @@ from webargs import fields
 from flask import abort, request
 from flask_restful import Resource
 from sqlalchemy.orm import noload
+from sqlalchemy import or_
 
 from ..core import db
 from ..schemas import (StudySchema, AnalysisSchema, ConditionSchema,
@@ -52,13 +53,25 @@ class ObjectResource(BaseResource):
 class ListResource(BaseResource):
 
     _only = None
+    _search_fields = []
 
     def get(self, **kwargs):
-        # TODO: Add filtering constraints
+        q = self._model.query
+
+        # Search
+        s = request.args.get('search')
+        if s is not None and self._search_fields:
+            m = self._model # Purely for brevity
+            search_expr = [getattr(m, field).ilike(f"%{s}%")
+                           for field in self._search_fields]
+            q = q.filter(or_(*search_expr))
+
+        # Pagination
         page = request.args.get('page', 1, type=int)
         page_size = request.args.get('page_size', 20, type=int)
         page_size = min([page_size, 100])
-        records = self._model.query.paginate(page, page_size, False).items
+
+        records = q.paginate(page, page_size, False).items
         if not records:
             abort(404)
         return self.schema(only=self._only, many=True).dump(records).data
@@ -93,7 +106,8 @@ class PointResource(BaseResource):
 class StudyListResource(ListResource):
     _model = Study
     _only = ('name', 'description', 'doi', '_type', '_id')
+    _search_fields = ('name', 'description')
 
 class AnalysisListResource(ListResource):
     _model = Analysis
-    # _only = ('name', 'description', 'doi', '_type', '_id')
+    _search_fields = ('name', 'description')
