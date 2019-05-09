@@ -39,6 +39,7 @@ class Study(BaseMixin, db.Model):
     name = Column(String)
     description = Column(String)
     publication = Column(String)
+    # source_url = Column(String)
     doi = Column(String)
     pmid = Column(String)
     public = Column(Boolean, default=True)

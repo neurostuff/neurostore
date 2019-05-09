@@ -45,9 +45,13 @@
     </b-row>
     <b-row>
       <b-table striped small responsive :items="getItems" :fields="fields"
-               primary-key="@id" :filter="filter" :per-page="perPage">
+               primary-key="@id" :filter="filter" :per-page="perPage"
+               ref="studyTable" :sortBy="sortBy" :sortDesc="sortDesc">
         <template slot="name" slot-scope="data">
           <a :href="`/studies/${data.item.id}`">{{data.item.name}}</a>
+        </template>
+        <template slot="created_at" slot-scope="data">
+          {{(new Date(data.item.created_at)).toDateString()}}
         </template>
       </b-table>
     </b-row>
@@ -57,31 +61,40 @@
 <script>
 import Vue from 'vue';
 import axios from 'axios';
+import _ from 'lodash';
 
 export default {
   data() {
     return {
-      fields: ['name', 'description', 'doi'].map((f) => ({key: f, sortable: true})),
+      items: [],
+      fields: ['name', 'doi', 'created_at'].map((f) => (
+        {
+          key: f,
+          sortable: true,
+          label: (f === 'created_at') ? 'date' : f
+        })),
       filter: null,
       perPage: 20,
       pageOptions: [10, 20, 50, 100],
+      sortBy: 'created_at',
+      sortDesc: true
     }
   },
   methods: {
-    getItems(ctx) {
+    getItems: _.debounce((ctx) => {
       let url = `http://localhost:5000/api/studies/?page=${ctx.currentPage}`+
-                  `&page_size=${ctx.perPage}`
+                  `&page_size=${ctx.perPage}`;
       if (ctx.filter !== '') { url += `&search=${ctx.filter}`};
-      console.log(url);
+      if (ctx.sortBy !== '') { url += `&sort=${ctx.sortBy}&desc=${ctx.sortDesc | 0}` };
       let promise = axios.get(url)
       return promise.then(res => {
         let items = res.data;
         items.forEach((study) => {
           study.id = study['@id'].split('/').pop();
         });
-        return items || []
+        return items || [];
       });
-    },
-  }
+    }, 1000, {'leading': true, 'trailing': true}),
+  },
 }
 </script>

@@ -36,6 +36,7 @@ class BaseSchema(Schema):
     _id = fields.String(attribute='IRI', dump_to="@id", dump_only=True)
     _type = fields.Function(lambda model: model.__class__.__name__,
                             dump_to="@type", dump_only=True)
+    created_at = fields.DateTime()
 
     # De-serialization fields
     id = fields.Method(None, '_extract_id', load_from='@id', load_only=True)

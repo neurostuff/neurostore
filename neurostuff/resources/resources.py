@@ -2,7 +2,7 @@ from webargs import fields
 from flask import abort, request
 from flask_restful import Resource
 from sqlalchemy.orm import noload
-from sqlalchemy import or_
+import sqlalchemy.sql.expression as sae
 
 from ..core import db
 from ..schemas import (StudySchema, AnalysisSchema, ConditionSchema,
@@ -56,15 +56,23 @@ class ListResource(BaseResource):
     _search_fields = []
 
     def get(self, **kwargs):
-        q = self._model.query
+
+        m = self._model # for brevity
+        q = m.query
 
         # Search
         s = request.args.get('search')
         if s is not None and self._search_fields:
-            m = self._model # Purely for brevity
             search_expr = [getattr(m, field).ilike(f"%{s}%")
                            for field in self._search_fields]
-            q = q.filter(or_(*search_expr))
+            q = q.filter(sae.or_(*search_expr))
+
+        # Sort
+        col = request.args.get('sort', 'created_at')
+        desc = request.args.get('desc', 1 if col == 'created_at' else 0,
+                                type=int)
+        direction = sae.desc if desc else sae.asc
+        q = q.order_by(direction(getattr(m, col)))
 
         # Pagination
         page = request.args.get('page', 1, type=int)
@@ -105,7 +113,7 @@ class PointResource(BaseResource):
 
 class StudyListResource(ListResource):
     _model = Study
-    _only = ('name', 'description', 'doi', '_type', '_id')
+    _only = ('name', 'description', 'doi', '_type', '_id', 'created_at')
     _search_fields = ('name', 'description')
 
 class AnalysisListResource(ListResource):

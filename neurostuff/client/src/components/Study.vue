@@ -1,6 +1,8 @@
 <template>
   <b-container>
-    <h3>{{ model.name }}</h3>
+    <b-row>
+      <h3>{{ model.name }}</h3>
+    </b-row>
     <b-row>
       <b-col cols="4">
         <StudyTreeNav v-bind:model="model" />
