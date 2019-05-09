@@ -81,7 +81,7 @@ export default {
       res.children.push(  
         {label: `Points (${points.length})`, data:points, type: "Point"});
       return res
-    }
+    },
   },
   watch: {
     model: function() {
