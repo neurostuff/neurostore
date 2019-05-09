@@ -78,20 +78,22 @@ export default {
                         type: "Image", data: img}))});
       if (typeof(a.points) === 'undefined') { a.point = [] };
       const points = (Array.isArray(a.point) ? a.point : [a.point]);
-      res.children.push(
+      res.children.push(  
         {label: `Points (${points.length})`, data:points, type: "Point"});
       return res
     }
   },
   watch: {
     model: function() {
+      let _a = this.model.analysis;
+      const analyses = (Array.isArray(_a) ? _a : [_a]);
       this.tree = [
         {
           label: "Study",
           type: "Study",
           data: this.model,
           children: [{ label: "Analyses",
-            children: this.model.analysis.map(this.mapAnalysis) }]
+            children: analyses.map(this.mapAnalysis) }]
         },
       ];
     },
