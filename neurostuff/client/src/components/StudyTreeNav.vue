@@ -7,7 +7,6 @@
 
 <script>
 import { TreeView } from "@bosket/vue";
-import { EventBus } from './Study';
 import { string } from "@bosket/tools"
 import { dragndrop } from "@bosket/core"
 
@@ -15,7 +14,6 @@ export default {
   components: {
     TreeView
   },
-  props: ['model'],
   data() {
     return {
       tree: [],
@@ -47,7 +45,7 @@ export default {
     onSelect(selected, item) {
       if (selected.length) {
         this.selection.push(...selected);
-        EventBus.$emit('modelLoaded', item);
+        this.$store.commit({type: 'setActive', active: item});
         this.activeNode = item;
       } else {
         this.selection.splice(this.selection.indexOf(item), 1);
@@ -82,6 +80,11 @@ export default {
         {label: `Points (${points.length})`, data:points, type: "Point"});
       return res
     },
+  },
+  computed: {
+    model() {
+      return this.$store.state.model;
+    }
   },
   watch: {
     model: function() {

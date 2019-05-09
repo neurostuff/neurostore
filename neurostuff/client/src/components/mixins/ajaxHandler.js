@@ -34,11 +34,11 @@ export default {
       }
     },
     getModel() {
-      const path = `http://localhost:5000/api/${this.resource}/${this.$route.params.id}?nested=1`;
+      const path = `http://localhost:5000/api/studies/${this.$route.params.id}?nested=1`;
       axios.get(path)
         .then((res) => {
           res.data.metadata = this.prettyJSON(res.data.metadata);
-          this.model = res.data;
+          this.$store.commit({ type: 'setModel', model: res.data });
         })
         .catch((error) => {
           console.error(error);
@@ -47,14 +47,15 @@ export default {
     saveModel() {
       let path;
       let func;
+      let model = this.$store.state.model;
       if (this.$route.params.id === 'new') {
         path = `http://localhost:5000/api/${this.resource}/new`;
         func = axios.post;
       } else {
-        path = this.model['@id'].replace('neurostuff.org', 'localhost:5000');
+        path = model['@id'].replace('neurostuff.org', 'localhost:5000');
         func = axios.put;
       }
-      func(path, this.model)
+      func(path, model)
         .then((res) => {})
         .catch((error) => {
           console.error(error);

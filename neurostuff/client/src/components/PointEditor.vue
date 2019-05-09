@@ -34,7 +34,6 @@
 
 <script>
 export default {
-  // props: ['model'],
   data() {
     return {
       permaFields: ['X', 'Y', 'Z'],
@@ -93,6 +92,7 @@ export default {
     this.updateFields();
   },
   computed: {
+    model() { return this.$store.state.active; },
     allFields() { return this.permaFields.concat(this.extraFields, ['delete']) }
   }
 };

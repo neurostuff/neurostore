@@ -12,7 +12,6 @@
 <script>
 
 export default {
-  props: ['model'],
   data() {
     return {
       schema: {
@@ -50,6 +49,9 @@ export default {
         ],
       },
     };
+  },
+  computed: {
+    model() { return this.$store.state.active; },
   },
   methods: {
   },

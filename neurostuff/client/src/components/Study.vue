@@ -5,10 +5,10 @@
     </b-row>
     <b-row>
       <b-col cols="4">
-        <StudyTreeNav v-bind:model="model" />
+        <StudyTreeNav />
       </b-col>
       <b-col cols="8">
-        <component :is="editorComponent" v-bind:model="editorModel" />
+        <component :is="editorComponent" /> 
       </b-col>
     </b-row>
   </b-container>
@@ -23,8 +23,6 @@ import PointEditor from './PointEditor';
 import StudyTreeNav from './StudyTreeNav';
 import Vue from 'vue';
 
-export const EventBus = new Vue();
-
 export default {
   components: {
     StudyEditor,
@@ -36,20 +34,11 @@ export default {
   mixins: [ajaxHandler],
   data() {
     return {
-      resource: "studies",
-      item: {type: 'Study', data: this.model},
+      item: { type: 'Study', data: this.$store.state.model },
     }
   },
   computed: {
-    editorComponent() { return `${this.item.type}Editor` },
-    editorModel() { return this.item.data }
+    editorComponent() { return this.$store.state.editor + 'Editor'; }
   },
-  mounted() {
-    EventBus.$on('modelLoaded', item => {
-      if (["Study", "Analysis", "Image", "Point"].includes(item.type)) {
-        this.item = item;
-      }
-    });
-  }
 }
 </script>
