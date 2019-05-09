@@ -1,5 +1,5 @@
 <template>
-  <b-container fluid>
+  <b-container>
     <h3>Studies in NeuroStuff</h3>
     <b-row>
       <b-col md="6" class="my-1">
@@ -11,32 +11,7 @@
             </b-input-group-append>
           </b-input-group>
         </b-form-group>
-      </b-col>  
-
-      <!-- <b-col md="6" class="my-1">
-        <b-form-group label-cols-sm="3" label="Sort" class="mb-0">
-          <b-input-group>
-            <b-form-select v-model="sortBy" :options="sortOptions">
-              <option slot="first" :value="null">-- none --</option>
-            </b-form-select>
-            <b-form-select v-model="sortDesc" :disabled="!sortBy" slot="append">
-              <option :value="false">Asc</option> <option :value="true">Desc</option>
-            </b-form-select>
-          </b-input-group>
-        </b-form-group>
       </b-col>
-
-      <b-col md="6" class="my-1">
-        <b-form-group label-cols-sm="3" label="Sort direction" class="mb-0">
-          <b-input-group>
-            <b-form-select v-model="sortDirection" slot="append">
-              <option value="asc">Asc</option> <option value="desc">Desc</option>
-              <option value="last">Last</option>
-            </b-form-select>
-          </b-input-group>
-        </b-form-group>
-      </b-col> -->
-
       <b-col md="6" class="my-1">
         <b-form-group label-cols-sm="3" label="Per page" class="mb-0">
           <b-form-select v-model="perPage" :options="pageOptions"></b-form-select>
@@ -67,12 +42,18 @@ export default {
   data() {
     return {
       items: [],
-      fields: ['name', 'doi', 'created_at'].map((f) => (
+      fields: [
         {
-          key: f,
+          key: 'name',
+          label: 'name',
           sortable: true,
-          label: (f === 'created_at') ? 'date' : f
-        })),
+        }, {
+          key: 'created_at',
+          label: 'date',
+          sortable: true,
+          class: "min-width-200",
+        },
+      ],
       filter: null,
       perPage: 20,
       pageOptions: [10, 20, 50, 100],
@@ -98,3 +79,8 @@ export default {
   },
 }
 </script>
+<style>
+.min-width-200 {
+  min-width: 200px;
+}
+</style>
