@@ -2,7 +2,7 @@
   <TreeView :model="tree" :category="children" :selection="selection"
                   :onSelect="onSelect" :display="display"
                   :css="treeItemCSS" :dragndrop="treeDragConfig"
-                  :strategies="strategies" :search="search" />
+                  :strategies="strategies" :search="search" class="treeNav" />
 </template>
 
 <script>
@@ -103,4 +103,7 @@ export default {
 
 <style>
 @import '../assets/styles/treeview.css';
+.treeNav {
+  overflow-x: scroll;
+}
 </style>

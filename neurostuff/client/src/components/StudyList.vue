@@ -1,5 +1,5 @@
 <template>
-  <b-container>
+  <b-container fluid>
     <h3>Studies in NeuroStuff</h3>
     <b-row>
       <b-col md="6" class="my-1">
@@ -11,7 +11,7 @@
             </b-input-group-append>
           </b-input-group>
         </b-form-group>
-      </b-col>
+      </b-col>  
 
       <!-- <b-col md="6" class="my-1">
         <b-form-group label-cols-sm="3" label="Sort" class="mb-0">

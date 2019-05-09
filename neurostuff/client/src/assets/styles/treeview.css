@@ -106,24 +106,24 @@
 
 .TreeView li.category .item .label {
     display: inline-block;
-    border: 1px solid #333;
-    border-radius: 2px;
+    /* border: 1px solid #333;
+    border-radius: 2px; */
     margin-right: 7px;
     padding: 2px 3px;
 }
 
-.TreeView li.category .item .label.Analysis {
+/* .TreeView li.category .item .label.Analysis {
     background-color: #acacff;
 }
 
 .TreeView li.category .item .label.Image {
     background-color: #b5fabe;
-}
+} */
 
 .TreeView li.category .item .label.active {
-    border: 3px solid #430000;
+    border: 1px solid #430000;
     background-color: #febebe;
-    margin-top: 5px;
+    margin-top: 0px;
 }
 
 .TreeView li.category:not(.folded)>.item .group {
