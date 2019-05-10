@@ -1,7 +1,7 @@
 <template>
   <b-container>
     <b-row>
-      <h3>{{ model.name }}</h3>
+      <h3>{{ item.data.name }}</h3>
     </b-row>
     <b-row>
       <b-col cols="4">
@@ -19,7 +19,7 @@ import ajaxHandler from './mixins/ajaxHandler';
 import StudyEditor from './StudyEditor';
 import ImageEditor from './ImageEditor';
 import AnalysisEditor from './AnalysisEditor';
-import PointEditor from './PointEditor';
+import PointListEditor from './PointListEditor';
 import StudyTreeNav from './StudyTreeNav';
 import Vue from 'vue';
 
@@ -28,16 +28,12 @@ export default {
     StudyEditor,
     AnalysisEditor,
     ImageEditor,
-    PointEditor,
+    PointListEditor,
     StudyTreeNav
   },
   mixins: [ajaxHandler],
-  data() {
-    return {
-      item: { type: 'Study', data: this.$store.state.model },
-    }
-  },
   computed: {
+    item() { return { type: 'Study', data: this.$store.state.model }},
     editorComponent() { return this.$store.state.editor + 'Editor'; }
   },
 }

@@ -38,11 +38,11 @@ export default {
     return {
       permaFields: ['X', 'Y', 'Z'],
       extraFields: [],
-      model: [
-        {'@id': 4, coordinates: [-12, 24, 8], values: { p: 0.002, t: 2.85}},
-        {'@id': 'u', coordinates: [32, 17, 41], values: { p: 0.08, t: 1.8}},
-        {'@id': 'a', coordinates: [8, -3, 0], values: { p: 0.8, t: -0.7}},
-      ],
+      // model: [
+      //   {'@id': 4, coordinates: [-12, 24, 8], values: { p: 0.002, t: 2.85}},
+      //   {'@id': 'u', coordinates: [32, 17, 41], values: { p: 0.08, t: 1.8}},
+      //   {'@id': 'a', coordinates: [8, -3, 0], values: { p: 0.8, t: -0.7}},
+      // ],
       newColName: '',
       newColModalWarning: false
     };

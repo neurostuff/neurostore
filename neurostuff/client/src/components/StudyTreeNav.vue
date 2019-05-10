@@ -16,18 +16,9 @@ export default {
   },
   data() {
     return {
-      tree: [],
-      nodes: [],
       activeNode: null,
       children: "children",
       selection: [],
-      treeProps: {
-        model: this.tree,
-        category: "children",
-        selection: this.selection,
-        onSelect: this.onSelect,
-        display: this.display
-      },
       treeItemCSS: { TreeView: 'TreeView' },
       treeDragConfig: {
         draggable: true,
@@ -60,47 +51,11 @@ export default {
         if (item === this.activeNode) { _class += ' active'; }
         return <span class={_class}>{item.label}</span>
     },
-    mapAnalysis(a, i) {
-      let res = {
-        label: a.name,
-        index: i,
-        data: a,
-        type: "Analysis",
-        children: [],
-      }
-      if (typeof(a.image) === 'undefined') { a.image = [] };
-      const images = (Array.isArray(a.image) ? a.image : [a.image]);
-      res.children.push(
-        {label: `Images (${images.length})`, children: images.map(
-          (img, i) => ({label: img.path.split('/').pop(), index: i,
-                        type: "Image", data: img}))});
-      if (typeof(a.points) === 'undefined') { a.point = [] };
-      const points = (Array.isArray(a.point) ? a.point : [a.point]);
-      res.children.push(  
-        {label: `Points (${points.length})`, data:points, type: "Point"});
-      return res
-    },
   },
   computed: {
-    model() {
-      return this.$store.state.model;
-    }
+    tree() { return this.$store.state.tree; },
   },
-  watch: {
-    model: function() {
-      let _a = this.model.analysis;
-      const analyses = (Array.isArray(_a) ? _a : [_a]);
-      this.tree = [
-        {
-          label: "Study",
-          type: "Study",
-          data: this.model,
-          children: [{ label: "Analyses",
-            children: analyses.map(this.mapAnalysis) }]
-        },
-      ];
-    },
-  },
+
 };
 </script>
 
