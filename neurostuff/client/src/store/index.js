@@ -1,5 +1,6 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
+import { tree } from "@bosket/tools";
 
 Vue.use(Vuex);
 
@@ -11,6 +12,7 @@ class Node {
     this.label = label;
     this.children = [];
     this.parent = null;
+    this.expand = false;
   }
 
   addChild(child) {
@@ -21,16 +23,29 @@ class Node {
 
 
 function mapModelToTree(state) {
+  // store nodes that need to be expanded
+  const oldNodes = tree(state.tree, 'children').flatten();
+  const toExpand = {};
+  oldNodes.forEach((n) => {
+    if (n.expand) { toExpand[n.type + n.label] = true; }
+  });
+
+  function makeNode(...args) {
+    const node = new Node(...args);
+    node.expand = toExpand[node.type + node.label] || false;
+    return node;
+  }
+
   const model = state.model;
 
   // Study
-  const root = new Node(model, 'Study', 'Study');
+  const root = makeNode(model, 'Study', 'Study');
 
   // Analyses
   let analyses = model.analysis;
   if (!Array.isArray(analyses)) analyses = [analyses];
   const aNodes = analyses.forEach((a) => {
-    const aN = new Node(a, 'Analysis', a.name);
+    const aN = makeNode(a, 'Analysis', a.name);
     root.addChild(aN);
 
     // Images
@@ -39,11 +54,12 @@ function mapModelToTree(state) {
     } else if (!Array.isArray(a.image)) {
       a.image = [a.image];
     }
-    const imgListNode = new Node(null, 'ImageList',
+
+    const imgListNode = makeNode(null, 'ImageList',
       `Images (${a.image.length})`);
     aN.addChild(imgListNode);
     const iNodes = a.image.map(img =>
-      new Node(img, 'Image', img.path.split('/').pop()));
+      makeNode(img, 'Image', img.path.split('/').pop()));
     iNodes.forEach((node) => { imgListNode.addChild(node); });
 
     // Points
@@ -52,11 +68,10 @@ function mapModelToTree(state) {
     } else if (!Array.isArray(a.point)) {
       a.point = [a.point];
     }
-    const ptListNode = new Node(a.point, 'PointList', `Points (${a.point.length})`);
+    const ptListNode = makeNode(a.point, 'PointList', `Points (${a.point.length})`);
     aN.addChild(ptListNode);
   });
-  console.log(root);
-  return [root];
+  state.tree = [root];
 }
 
 const state = {
@@ -69,7 +84,7 @@ const state = {
 const mutations = {
   setModel(state, payload) {
     state.model = payload.model;
-    state.tree = mapModelToTree(state);
+    mapModelToTree(state);
   },
   setActive(state, payload) {
     const item = payload.active;
@@ -77,6 +92,19 @@ const mutations = {
     if (['Study', 'Analysis', 'Image', 'PointList'].includes(item.type)) {
       state.editor = item.type;
     }
+  },
+  moveNode(state, payload) {
+    const node = payload.node;
+    let target = payload.target;
+    // right now, only images are draggable
+    if (node.type !== 'Image') { return false; }
+    if (target.type === 'ImageList') { target = target.parent; }
+    // only update the data model--the tree gets recomputed reactively
+    target.data.image.push(node.data);
+    const oldAnalysis = node.parent.parent.data;
+    const index = oldAnalysis.image.find(img => img === node.data);
+    oldAnalysis.image.splice(index, 1);
+    mapModelToTree(state);
   },
 };
 
