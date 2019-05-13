@@ -1,3 +1,4 @@
+import json
 from webargs import fields
 from flask import abort, request
 from flask_restful import Resource
@@ -7,7 +8,8 @@ import sqlalchemy.sql.expression as sae
 from ..core import db
 from ..schemas import (StudySchema, AnalysisSchema, ConditionSchema,
                        ImageSchema, PointSchema, DatasetSchema)
-from ..models import Dataset, Study, Analysis, Condition, Image, Point
+from ..models import (Dataset, Study, Analysis, Condition, Image, Point,
+                      PointValue)
 
 
 __all__ = [
@@ -17,6 +19,7 @@ __all__ = [
     'ConditionResource',
     'ImageResource',
     'PointResource',
+    'PointValueResource',
     'StudyListResource',
     'AnalysisListResource'
 ]
@@ -25,28 +28,69 @@ __all__ = [
 class BaseResource(Resource):
 
     _model = None
+    _nested = {}
 
     @property
     def schema(self):
         return globals()[self._model.__name__ + 'Schema']
 
+    @classmethod
+    def update_or_create(cls, data, id=None, commit=True):
+
+        # Store all models so we can atomically update in one commit
+        to_commit = []
+
+        # TODO: do further validation
+        id = id or data.get('id')
+
+        if id is None:
+            # TODO: associate with user
+            record = cls._model()
+        else:
+            record = cls._model.query.filter_by(id=id).first()
+            if record is None:
+                abort(422)
+
+        # Update all non-nested attributes
+        for k, v in data.items():
+            if k not in cls._nested and k != 'id':
+                setattr(record, k, v)
+
+        to_commit.append(record)
+
+        # Update nested attributes recursively
+        for field, res_name in cls._nested.items():
+            ResCls = globals()[res_name]
+            nested = [ResCls.update_or_create(rec, commit=False)
+                      for rec in data[field]]
+            setattr(record, field, nested)
+            to_commit.extend(nested)
+
+        if commit:
+            db.session.add_all(to_commit)
+            db.session.commit()
+
+        return record
+
 
 class ObjectResource(BaseResource):
 
-    def get(self, id, **kwargs):
+    def get(self, id):
         record = self._model.query.filter_by(id=id).first()
         if record is None:
             abort(404)
         return self.schema().dump(record).data
 
-    def put(self, id, **kwargs):
-        record = self._model.query.filter_by(id=id).first()
-        if record is None:
-            abort(404)
-        for k, v in kwargs.items():
-            setattr(record, k, v)
-        db.session.add(record)
-        db.session.commit()
+    def put(self, id):
+        json_data = json.loads(request.get_data())
+        data, errors = self.schema().load(json_data)
+        if errors:
+            return errors, 422
+        if id != data['id']:
+            return 422
+
+        record = self.__class__.update_or_create(data, id)
+
         return self.schema().dump(record).data
 
 
@@ -55,7 +99,7 @@ class ListResource(BaseResource):
     _only = None
     _search_fields = []
 
-    def get(self, **kwargs):
+    def get(self):
 
         m = self._model # for brevity
         q = m.query
@@ -84,10 +128,12 @@ class ListResource(BaseResource):
             abort(404)
         return self.schema(only=self._only, many=True).dump(records).data
 
-    def post(self, **kwargs):
+    def post(self):
         # TODO: check to make sure current user hasn't already created a
         # record with most/all of the same details (e.g., DOI for studies)
-        record = self._model(**kwargs)
+        json_data = json.loads(request.get_data())
+        data = self.schema().load(json_data).data
+        record = self._model(**data)
         db.session.add(record)
         db.session.commit()
         return self.schema().dump(record).data
@@ -96,25 +142,46 @@ class ListResource(BaseResource):
 class DatasetResource(ObjectResource):
     _model = Dataset
 
+
 class StudyResource(ObjectResource):
     _model = Study
+    _nested = {
+        'analyses': 'AnalysisResource',
+    }
+
 
 class AnalysisResource(ObjectResource):
     _model = Analysis
+    _nested = {
+        'images': 'ImageResource',
+        'points': 'PointResource',
+    }
+
 
 class ConditionResource(ObjectResource):
     _model = Condition
 
+
 class ImageResource(BaseResource):
     _model = Image
 
+
 class PointResource(BaseResource):
     _model = Point
+    _nested = {
+        'values': 'PointValueResource',
+    }
+
+
+class PointValueResource(BaseResource):
+    _model = PointValue
+
 
 class StudyListResource(ListResource):
     _model = Study
     _only = ('name', 'description', 'doi', '_type', '_id', 'created_at')
     _search_fields = ('name', 'description')
+
 
 class AnalysisListResource(ListResource):
     _model = Analysis

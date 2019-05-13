@@ -1,4 +1,5 @@
-from .data import (Study, Analysis, Condition, Entity, Point, Image, Dataset)
+from .data import (Study, Analysis, Condition, Entity, Point, Image, Dataset,
+                   PointValue)
 from .auth import User, Role, OAuth
 
 __all__ = [
@@ -7,6 +8,7 @@ __all__ = [
     'Condition',
     'Entity',
     'Point',
+    'PointValue',
     'Image',
     'Dataset',
     'User',
