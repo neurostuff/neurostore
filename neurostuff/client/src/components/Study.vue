@@ -3,6 +3,9 @@
     <b-row>
       <h3>{{ item.data.name }}</h3>
     </b-row>
+    <b-row align-h="end" class="modelBar" @click="saveModel">
+      <b-button>Save</b-button>
+    </b-row>
     <b-row>
       <b-col cols="4">
         <StudyTreeNav />
@@ -38,3 +41,9 @@ export default {
   },
 }
 </script>
+
+<style>
+.modelBar {
+  margin-bottom: 30px;
+}
+</style>

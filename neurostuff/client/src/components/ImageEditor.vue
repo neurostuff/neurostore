@@ -10,10 +10,13 @@
 </template>
 
 <script>
-
 export default {
   data() {
     return {
+      params: {
+        worldspace: true,
+        images: ['https://neurovault.org/media/images/1056/Thalamus-maxprob-thr0-2mm.nii.gz'],
+      },
       schema: {
         fields: [{
           type: "input",

@@ -37,7 +37,7 @@ export default {
       const path = `http://localhost:5000/api/studies/${this.$route.params.id}?nested=1`;
       axios.get(path)
         .then((res) => {
-          res.data.metadata = this.prettyJSON(res.data.metadata);
+          // res.data.metadata = this.prettyJSON(res.data.metadata);
           this.$store.commit({ type: 'setModel', model: res.data });
         })
         .catch((error) => {
@@ -55,6 +55,7 @@ export default {
         path = model['@id'].replace('neurostuff.org', 'localhost:5000');
         func = axios.put;
       }
+      console.log(path, model);
       func(path, model)
         .then((res) => {})
         .catch((error) => {

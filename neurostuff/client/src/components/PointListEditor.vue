@@ -22,7 +22,7 @@
          style="max-width: 60px;" />
       </template>
       <template v-for="ef in extraFields" :slot="ef" slot-scope="data">
-        <input type="text" v-model="data.item.values[ef]"
+        <input type="text" v-model="getValueByKind(data.item, ef).value"
         style="width;" />
       </template>
       <template slot="delete" slot-scope="data">
@@ -39,9 +39,9 @@ export default {
       permaFields: ['X', 'Y', 'Z'],
       extraFields: [],
       // model: [
-      //   {'@id': 4, coordinates: [-12, 24, 8], values: { p: 0.002, t: 2.85}},
-      //   {'@id': 'u', coordinates: [32, 17, 41], values: { p: 0.08, t: 1.8}},
-      //   {'@id': 'a', coordinates: [8, -3, 0], values: { p: 0.8, t: -0.7}},
+      //   {'@id': 4, coordinates: [-12, 24, 8], value: { p: 0.002, t: 2.85}},
+      //   {'@id': 'u', coordinates: [32, 17, 41], value: { p: 0.08, t: 1.8}},
+      //   {'@id': 'a', coordinates: [8, -3, 0], value: { p: 0.8, t: -0.7}},
       // ],
       newColName: '',
       newColModalWarning: false
@@ -49,7 +49,8 @@ export default {
   },
   methods: {
     updateFields() {
-      const reducer = (acc, c) => acc.concat(Object.keys(c.values))
+      // const reducer = (acc, c) => acc.concat(Object.keys(c.value))
+      const reducer = (acc, c) => acc.concat(c.value.map(v => v.kind))
       let fields = this.model.reduce(reducer, []);
       this.extraFields = [...new Set(fields)];
     },
@@ -71,29 +72,44 @@ export default {
         return false;
       }
       this.model.forEach((point) => {
-        point.values[this.newColName] = null;
+        // point.value[this.newColName] = null;
+        point.value.push({
+          kind: this.newColName, value: null, '@type': 'PointValue',
+        });
       });
       this.newColName = '';
       this.newColModalWarning = false;
       this.updateFields();
     },
     addRow() {
-      this.model.push({coordinates: [0, 0, 0], values: {}})
+      this.model.push({
+        coordinates: [0, 0, 0],
+        value: this.extraFields.map(
+          f => ({kind: f, value: null, '@type': 'PointValue'})
+      )})
     },
     deleteRow(id) {
       const index = this.model.findIndex(item => item['@id'] === id);
       this.model.splice(index, 1);
+    },
+    getValueByKind(item, kind) {
+      return item.value.find(v => v.kind === kind);
     }
   },
   mounted() {
-    // call this explicitly when we need to, because we're abusing v-model by
-    // binding input fields. if we made this a computed prop, it would trigger
-    // on every keystroke edit in the table.
     this.updateFields();
   },
   computed: {
     model() { return this.$store.state.active; },
     allFields() { return this.permaFields.concat(this.extraFields, ['delete']) }
+  },
+  watch: {
+    // TODO: replace this with a more efficient solution.
+    // this is an ugly hack that causes field updating on every keystroke
+    // because we're abusing v-model and binding to input fields. putting this
+    // in mounted is insufficient, because vue-router won't trigger mounted
+    // after the first time a component is loaded.
+    model() { this.updateFields(); }
   }
 };
 </script>

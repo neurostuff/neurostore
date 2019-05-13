@@ -23,6 +23,11 @@ class Node {
 
 
 function mapModelToTree(state) {
+  // TODO: this is likely to become inefficient for very large studies, as we
+  // create the tree anew on any model update. at some point we may want to
+  // directly modify the tree and model independently when a change is
+  // triggered by the UI.
+
   // store nodes that need to be expanded
   const oldNodes = tree(state.tree, 'children').flatten();
   const toExpand = {};
@@ -43,10 +48,12 @@ function mapModelToTree(state) {
 
   // Analyses
   let analyses = model.analysis;
+  const aList = makeNode(null, 'AnalysisList', `Analyses (${analyses.length})`);
+  root.addChild(aList);
   if (!Array.isArray(analyses)) analyses = [analyses];
-  const aNodes = analyses.forEach((a) => {
+  analyses.forEach((a) => {
     const aN = makeNode(a, 'Analysis', a.name);
-    root.addChild(aN);
+    aList.addChild(aN);
 
     // Images
     if (typeof (a.image) === 'undefined') {

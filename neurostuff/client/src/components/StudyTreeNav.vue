@@ -44,12 +44,9 @@ export default {
   methods: {
     onSelect(selected, item) {
       if (selected.length) {
-        // this.selection.push(...selected);
         this.selection = [selected];
         this.$store.commit({type: 'setActive', active: item});
         this.activeNode = item;
-      // } else {
-      //   this.selection.splice(this.selection.indexOf(item), 1);
       }
     },
     onOpener(item, folded) {
