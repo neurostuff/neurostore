@@ -48,9 +48,9 @@ function mapModelToTree(state) {
 
   // Analyses
   let analyses = model.analysis;
+  if (!Array.isArray(analyses)) analyses = [analyses];
   const aList = makeNode(null, 'AnalysisList', `Analyses (${analyses.length})`);
   root.addChild(aList);
-  if (!Array.isArray(analyses)) analyses = [analyses];
   analyses.forEach((a) => {
     const aN = makeNode(a, 'Analysis', a.name);
     aList.addChild(aN);
