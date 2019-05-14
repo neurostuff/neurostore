@@ -21,7 +21,8 @@ __all__ = [
     'PointResource',
     'PointValueResource',
     'StudyListResource',
-    'AnalysisListResource'
+    'AnalysisListResource',
+    'ImageListResource',
 ]
 
 
@@ -111,6 +112,10 @@ class ListResource(BaseResource):
                            for field in self._search_fields]
             q = q.filter(sae.or_(*search_expr))
 
+        # Custom search (e.g., searching on parent fields)
+        if hasattr(self, '_search'):
+            q = self._search(q)
+
         # Sort
         col = request.args.get('sort', 'created_at')
         desc = request.args.get('desc', 1 if col == 'created_at' else 0,
@@ -190,3 +195,7 @@ class AnalysisListResource(ListResource):
 
 class ImageListResource(ListResource):
     _model = Image
+    _search_fields = ('path', 'space', 'value_type')
+
+    def _search(self, q):
+        return q

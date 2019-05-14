@@ -14,7 +14,8 @@ def bind_resources(app):
         'images/<int:id>': ImageResource,
         'points/<int:id>': PointResource,
         'studies/': StudyListResource,
-        'analyses/': AnalysisListResource
+        'analyses/': AnalysisListResource,
+        'images/': ImageListResource,
     }
     for route, resource in resources.items():
         api.add_resource(resource, '/api/' + route)
