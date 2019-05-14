@@ -99,6 +99,7 @@ class ListResource(BaseResource):
 
     _only = None
     _search_fields = []
+    _multi_search = None
 
     def get(self):
 
@@ -107,10 +108,19 @@ class ListResource(BaseResource):
 
         # Search
         s = request.args.get('search')
-        if s is not None and self._search_fields:
+
+        # For multi-column search, default to using search fields
+        fulltext_fields = self._multi_search or self._search_fields
+        if s is not None and fulltext_fields:
             search_expr = [getattr(m, field).ilike(f"%{s}%")
-                           for field in self._search_fields]
+                           for field in fulltext_fields]
             q = q.filter(sae.or_(*search_expr))
+
+        # Alternatively (or in addition), search on individual fields
+        for field in self._search_fields:
+            s = request.args.get(field)
+            if s is not None:
+                q = q.filter(getattr(m, field).ilike(f"%{s}%"))
 
         # Custom search (e.g., searching on parent fields)
         if hasattr(self, '_search'):
