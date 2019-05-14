@@ -126,6 +126,7 @@ class Image(BaseMixin, db.Model):
     analysis_id = Column(ForeignKey('analyses.id'))
     data = Column(JSON)
 
+    analysis_name = association_proxy('analysis', 'name')
     entities = relationship("Entity", secondary=ImageEntityMap,
                             backref=backref("images"))
     analysis = relationship("Analysis", backref=backref("images"))

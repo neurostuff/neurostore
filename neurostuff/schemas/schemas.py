@@ -75,7 +75,7 @@ class ImageSchema(BaseSchema):
     data = fields.Dict(load_from='metadata', load_only=True)
 
     class Meta:
-        additional = ("path", "space", "value_type")
+        additional = ("path", "space", "value_type", "analysis_name")
 
 
 class PointValueSchema(BaseSchema):
