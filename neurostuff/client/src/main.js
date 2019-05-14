@@ -13,7 +13,6 @@ Vue.use(BootstrapVue);
 Unicon.add([uniTrashAlt, uniEditAlt]);
 Vue.use(Unicon);
 
-
 Vue.config.productionTip = false;
 
 /* eslint-disable no-new */
