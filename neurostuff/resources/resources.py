@@ -162,18 +162,18 @@ class ConditionResource(ObjectResource):
     _model = Condition
 
 
-class ImageResource(BaseResource):
+class ImageResource(ObjectResource):
     _model = Image
 
 
-class PointResource(BaseResource):
+class PointResource(ObjectResource):
     _model = Point
     _nested = {
         'values': 'PointValueResource',
     }
 
 
-class PointValueResource(BaseResource):
+class PointValueResource(ObjectResource):
     _model = PointValue
 
 
