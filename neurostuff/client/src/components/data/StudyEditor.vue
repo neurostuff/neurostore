@@ -49,7 +49,7 @@ export default {
     };
   },
   computed: {
-    model() { return this.$store.state.model; }
+    model() { return this.$store.state.data.model; }
   }
 };
 </script>

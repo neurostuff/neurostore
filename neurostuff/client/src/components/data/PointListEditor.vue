@@ -100,7 +100,7 @@ export default {
     this.updateFields();
   },
   computed: {
-    model() { return this.$store.state.active; },
+    model() { return this.$store.state.data.active; },
     allFields() { return this.permaFields.concat(this.extraFields, ['delete']) }
   },
   watch: {

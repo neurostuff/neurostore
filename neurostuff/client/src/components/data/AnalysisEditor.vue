@@ -54,7 +54,7 @@ export default {
     };
   },
   computed: {
-    model() { return this.$store.state.active; },
+    model() { return this.$store.state.data.active; },
   },
   methods: {
   },

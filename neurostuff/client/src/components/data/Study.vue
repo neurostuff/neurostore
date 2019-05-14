@@ -18,7 +18,7 @@
 </template>
 
 <script>
-import ajaxHandler from './mixins/ajaxHandler';
+import ajaxHandler from '../mixins/ajaxHandler';
 import StudyEditor from './StudyEditor';
 import ImageEditor from './ImageEditor';
 import AnalysisEditor from './AnalysisEditor';
@@ -36,8 +36,8 @@ export default {
   },
   mixins: [ajaxHandler],
   computed: {
-    item() { return { type: 'Study', data: this.$store.state.model }},
-    editorComponent() { return this.$store.state.editor + 'Editor'; }
+    item() { return { type: 'Study', data: this.$store.state.data.model }},
+    editorComponent() { return this.$store.state.data.editor + 'Editor'; }
   },
 }
 </script>

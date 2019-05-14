@@ -75,14 +75,14 @@ export default {
     },
   },
   computed: {
-    tree() { return this.$store.state.tree; },
+    tree() { return this.$store.state.data.tree; },
   },
 
 };
 </script>
 
 <style>
-@import '../assets/styles/treeview.css';
+@import '../../assets/styles/treeview.css';
 .treeNav {
   overflow-x: scroll;
 }
