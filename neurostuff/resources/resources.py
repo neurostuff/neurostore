@@ -186,3 +186,7 @@ class StudyListResource(ListResource):
 class AnalysisListResource(ListResource):
     _model = Analysis
     _search_fields = ('name', 'description')
+
+
+class ImageListResource(ListResource):
+    _model = Image
