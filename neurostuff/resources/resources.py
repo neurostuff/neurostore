@@ -3,6 +3,7 @@ from webargs import fields
 from flask import abort, request
 from flask_restful import Resource
 from sqlalchemy.orm import noload
+# from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
 import sqlalchemy.sql.expression as sae
 
 from ..core import db
@@ -126,8 +127,15 @@ class ListResource(BaseResource):
         col = request.args.get('sort', 'created_at')
         desc = request.args.get('desc', 1 if col == 'created_at' else 0,
                                 type=int)
-        direction = sae.desc if desc else sae.asc
-        q = q.order_by(direction(getattr(m, col)))
+        desc = {0: 'asc', 1: 'desc'}[desc]
+
+        attr = getattr(m, col)
+        # TODO: if the sort field is proxied, bad stuff happens. In theory
+        # the next two lines should address this by joining the proxied model,
+        # but weird things are happening. look into this as time allows.
+        # if isinstance(attr, ColumnAssociationProxyInstance):
+        #     q = q.join(*attr.attr)
+        q = q.order_by(getattr(attr, desc)())
 
         # Pagination
         page = request.args.get('page', 1, type=int)
@@ -201,4 +209,4 @@ class AnalysisListResource(ListResource):
 
 class ImageListResource(ListResource):
     _model = Image
-    _search_fields = ('path', 'space', 'value_type')
+    _search_fields = ('path', 'space', 'value_type', 'analysis_name')
