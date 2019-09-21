@@ -1,33 +1,46 @@
 <template>
-  <b-container>
-    <h3>Neurosynth Images</h3>
+  <div>
     <b-row>
       <b-col md="6" class="my-1">
         <b-form-group label-cols-sm="3" label="All fields:" class="mb-0">
-            <b-form-input v-model="search.search" placeholder="Type to search"></b-form-input>
+            <b-form-input v-model="search.search" placeholder="Type to search"
+                          @input="debouncedGetItems">
+            </b-form-input>
         </b-form-group>
         <b-form-group label-cols-sm="3" label="Filename/URL:" class="mb-0">
-            <b-form-input v-model="search.path" placeholder="Type to search"></b-form-input>
+            <b-form-input v-model="search.path" placeholder="Type to search"
+                          @input="debouncedGetItems">
+            </b-form-input>
         </b-form-group>
       </b-col>
       <b-col md="6" class="my-1">
         <b-form-group label-cols-sm="3" label="Image type:" class="mb-0">
-            <b-form-input v-model="search.value_type" placeholder="Type to search"></b-form-input>
+            <b-form-input v-model="search.value_type" placeholder="Type to search"
+                          @input="debouncedGetItems">
+            </b-form-input>
         </b-form-group>
         <b-form-group label-cols-sm="3" label="Space:" class="mb-0">
-            <b-form-input v-model="search.space" placeholder="Type to search"></b-form-input>
+            <b-form-input v-model="search.space" placeholder="Type to search"
+                          @input="debouncedGetItems">
+            </b-form-input>
         </b-form-group>
         <b-form-group label-cols-sm="3" label="Per page" class="mb-0">
-          <b-form-select v-model="perPage" :options="pageOptions"></b-form-select>
+          <b-form-select v-model="perPage" :options="pageOptions"
+                        @input="debouncedGetItems"></b-form-select>
         </b-form-group>
-      </b-col>
       </b-col>
     </b-row>
 
     <b-row class="image-table">
-      <b-table striped small responsive :items="getItems" :fields="fields"
-               primary-key="@id" :per-page="perPage"
-               ref="imageTable" :sortBy="sortBy" :sortDesc="sortDesc">
+      <b-table striped small responsive
+        primary-key="@id"
+        :items="items"
+        :fields="fields"
+        :per-page="perPage"
+        :current-page="currentPage"
+        :sortBy="sortBy"
+        :sortDesc="sortDesc"
+        @sort-changed="getItems">
         <template slot="path" slot-scope="data">
           <a :href="`/images/${data.item.id}`">{{mapPath(data.item.path)}}</a>
         </template>
@@ -36,7 +49,19 @@
         </template>
       </b-table>
     </b-row>
-  </b-container>
+
+    <b-row>
+      <b-col md="6" class="my-1">
+        <b-pagination
+          v-model="currentPage"
+          :total-rows="totalRows"
+          :per-page="perPage"
+          class="my-0"
+        ></b-pagination>
+      </b-col>
+    </b-row>
+
+  </div>
 </template>
 
 <script>
@@ -77,33 +102,39 @@ export default {
       perPage: 20,
       pageOptions: [10, 20, 50, 100],
       sortBy: 'created_at',
-      sortDesc: true
+      sortDesc: true,
+      currentPage: 1,
+      totalRows: null,
     }
   },
   methods: {
-    getItems: _.debounce(function(ctx) {
-      let url = `http://localhost:5000/api/images/?page=${ctx.currentPage}`+
-                  `&page_size=${ctx.perPage}`;
+    getItems() {
+      let url = `http://localhost:5000/api/images/?page=${this.currentPage}`+
+                  `&page_size=${this.perPage}`;
       for (const [k, v] of Object.entries(this.search)) {
         if (v != null && v !== '') {
           url += `&${k}=${v}`
         }
       }
-      console.log("URL:", url);
-      // if (ctx.sortBy !== '') { url += `&sort=${ctx.sortBy}&desc=${ctx.sortDesc | 0}` };
+      if (this.sortBy !== '') { url += `&sort=${this.sortBy}&desc=${this.sortDesc | 0}` };
       let promise = axios.get(url)
       return promise.then(res => {
         let items = res.data;
-        console.log(items);
         items.forEach((img) => {
           img.id = img['@id'].split('/').pop();
           img.analysis = img['analysis'].split('/').pop();
         });
-        return items || [];
+        this.items = items || [];
+        this.totalRows = res.headers['X-Total-Count'];
       });
-    }, 1000, {'leading': true, 'trailing': true}),
+    },
     mapPath(path) { return path.split('/').pop(); },
   },
+  created() {
+    this.debouncedGetItems = _.debounce(this.getItems,  500,
+                                  {'leading': true, 'trailing': true});
+    this.getItems();
+  }
 }
 </script>
 <style>
