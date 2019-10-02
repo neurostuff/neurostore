@@ -48,13 +48,13 @@
         <template v-slot:cell(selected)="data">
           <b-form-checkbox :value=data.item.id v-model="selectedIds" />
         </template>
-        <template slot="filename" slot-scope="data">
+        <template v-slot:cell(filename)="data">
           <a :href="`/images/${data.item.id}`">{{data.item.filename}}</a>
         </template>
-        <template slot="analysis_name" slot-scope="data">
+        <template v-slot:cell(analysis_name)="data">
           <a :href="`/analyses/${data.item.analysis}`">{{data.item.analysis_name}}</a>
         </template>
-        <template slot="add_date" slot-scope="data">
+        <template v-slot:cell(add_date)="data">
           {{data.item.add_date | formatDate}}
         </template>
       </b-table>
