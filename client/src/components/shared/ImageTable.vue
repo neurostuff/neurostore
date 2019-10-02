@@ -34,8 +34,7 @@
     <b-row class="image-table">
       <b-col cols="12">
       <b-table striped small responsive
-        primary-key="@id"
-        :items="items"
+        :items="tableRows"
         :fields="fields"
         :per-page="0"
         :current-page="currentPage"
@@ -43,9 +42,11 @@
         :sort-desc="sortDesc"
         @sort-changed="changeSort"
         no-local-sorting>
-        <template slot="selected" slot-scope="data">
-          <b-form-checkbox :value=data.item.id v-model="store">
-          </b-form-checkbox>
+        <template v-slot:head(selected)="data">
+          <b-form-checkbox @change="toggleAll" />
+        </template>
+        <template v-slot:cell(selected)="data">
+          <b-form-checkbox :value=data.item.id v-model="selectedIds" />
         </template>
         <template slot="filename" slot-scope="data">
           <a :href="`/images/${data.item.id}`">{{data.item.filename}}</a>
@@ -86,10 +87,6 @@ export default {
     source: {
       type: String,
       default: 'server'
-    },
-    store: {
-      type: Array,
-      default: () => [],
     },
     filters: {
       type: Boolean,
@@ -138,7 +135,7 @@ export default {
           key: 'add_date',
           label: 'Date',
           sortable: true,
-        }
+        },
       ],
       filter: null,
       perPage: 20,
@@ -147,6 +144,24 @@ export default {
       sortDesc: true,
       currentPage: 1,
       totalRows: null,
+    }
+  },
+  computed: {
+    selectedItems() {
+        return this.$store.state.analysis.selectedItems;
+    },
+    selectedIds: {
+      get() {
+        return this.$store.state.analysis.selectedIds;
+      },
+      set(value) {
+        this.$store.commit('updateSelectedIds', value);
+      }
+    },
+    tableRows() {
+      if (this.source == "server")
+        return this.items;
+      return this.selectedItems;
     }
   },
   methods: {
@@ -158,6 +173,16 @@ export default {
       this.sortBy = e.sortBy;
       this.sortDesc = e.sortDesc;
       this.getItems();
+    },
+    toggleAll(checked) {
+      // Toggle selection status for all rows in table
+      const activeIds = this.items.map(item => item.id);
+      if (checked) {
+        this.selectedIds = [...new Set(activeIds.concat(this.selectedIds))];
+      } else {
+        let dropIds = new Set(activeIds);
+        this.selectedIds = this.selectedIds.filter(x => !dropIds.has(x));
+      }
     },
     getItems() {
       let url = `http://localhost:5000/api/images/?page=${this.currentPage}`+
@@ -179,12 +204,29 @@ export default {
         this.totalRows = res.headers['x-total-count'];
       });
     },
-    mapPath(path) { return path.split('/').pop(); },
+    deselectItem(id) {
+      this.$store.commit({type: 'deselectItem', id: id});
+    },
   },
   created() {
     this.debouncedGetItems = _.debounce(this.getItems,  500,
                                   {'leading': true, 'trailing': true});
     this.getItems();
+  },
+  watch: {
+    selectedIds: function(newItems, oldItems) {
+      var dropped = oldItems.filter((item) => !newItems.includes(item));
+      dropped.forEach((id) => {
+          this.$store.commit('deselectItem', id);
+      });
+
+      var added = newItems.filter((item) => !oldItems.includes(item));
+      added.forEach((id) => {
+        var item = Object.assign({}, this.items.find((item) => item.id == id));
+        this.$store.commit('selectItem', item);
+      });
+      console.log(this.selectedIds);
+    }
   }
 }
 </script>
