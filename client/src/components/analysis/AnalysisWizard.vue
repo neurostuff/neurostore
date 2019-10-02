@@ -8,12 +8,10 @@
         <b-button @click="saveModel">Save</b-button>
       </b-col>
     </b-row>
-    <b-tabs card vertical active-nav-item-class="wizard-tabs">
+    <b-tabs card vertical active-nav-item-class="wizard-tabs"
+            v-model="currentTab" @input="changeTab()">
       <b-tab title="Overview" active>
         <AnalysisOverview />
-      </b-tab>
-      <b-tab title="Settings">
-        <AnalysisSettings />
       </b-tab>
       <b-tab title="Data">
         <DataSelector />
@@ -27,13 +25,16 @@
 
 <script>
 import AnalysisOverview from './AnalysisOverview';
-import AnalysisSettings from './AnalysisSettings';
 import DataSelector from './DataSelector';
 
 export default {
+    data: function() {
+      return {
+        currentTab: 0
+      }
+    },
     components: {
         AnalysisOverview,
-        AnalysisSettings,
         DataSelector,
     },
     computed: {
@@ -41,7 +42,13 @@ export default {
     },
     methods: {
         saveModel() {},
+        changeTab() {
+          window.location.hash = this.currentTab;
+        },
     },
+    mounted() {
+      this.currentTab = parseInt(window.location.hash.replace('#',''), 10);
+    }
 }
 /*
 WIZARD

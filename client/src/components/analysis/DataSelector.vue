@@ -8,6 +8,7 @@
         </b-tab>
         <b-tab title="Selected">
           <h4>Currently selected {{model.type}}</h4>
+          <ImageTable v-if="model.type==='images'" :source="'store'" :filters="false" />
         </b-tab>
       </b-tabs>
     </b-row>

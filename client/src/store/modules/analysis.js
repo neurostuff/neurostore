@@ -1,7 +1,7 @@
 
 const state = {
   model: {
-    type: null,
+    type: 'images',
     numConditions: 1,
   },
 };
