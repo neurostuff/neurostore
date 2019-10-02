@@ -120,11 +120,13 @@ class Point(BaseMixin, db.Model):
 class Image(BaseMixin, db.Model):
     __tablename__ = 'images'
 
-    path = Column(String)
+    url = Column(String)
+    filename = Column(String)
     space = Column(String)
     value_type = Column(String)
     analysis_id = Column(ForeignKey('analyses.id'))
     data = Column(JSON)
+    add_date = Column(DateTime(timezone=True))
 
     analysis_name = association_proxy('analysis', 'name')
     entities = relationship("Entity", secondary=ImageEntityMap,

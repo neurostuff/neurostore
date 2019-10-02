@@ -70,12 +70,13 @@ class ImageSchema(BaseSchema):
     analysis = fields.Function(lambda image: image.analysis.IRI,
                                dump_only=True)
     metadata = fields.Dict(attribute="data", dump_only=True)
+    add_date = fields.DateTime(dump_only=True)
 
     # deserialization
     data = fields.Dict(load_from='metadata', load_only=True)
 
     class Meta:
-        additional = ("path", "space", "value_type", "analysis_name")
+        additional = ("url", "filename", "space", "value_type", "analysis_name")
 
 
 class PointValueSchema(BaseSchema):

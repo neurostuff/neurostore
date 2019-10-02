@@ -19,7 +19,7 @@ app.config['APISPEC_SWAGGER_UI_URL'] = '/api/'
 db = init_db(app)
 
 # enable CORS for development
-CORS(app)
+CORS(app, expose_headers='X-Total-Count')
 
 # Flask-Security
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)

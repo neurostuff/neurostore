@@ -1,10 +1,11 @@
 import json
-from webargs import fields
+
+
 from flask import abort, request
 from flask_restful import Resource
-from sqlalchemy.orm import noload
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
 import sqlalchemy.sql.expression as sae
+from sqlalchemy import func
 
 from ..core import db
 from ..schemas import (StudySchema, AnalysisSchema, ConditionSchema,
@@ -129,7 +130,9 @@ class ListResource(BaseResource):
                                 type=int)
         desc = {0: 'asc', 1: 'desc'}[desc]
 
-        attr = getattr(m, col)
+        # Case-insensitive sorting
+        attr = func.lower(getattr(m, col))
+
         # TODO: if the sort field is proxied, bad stuff happens. In theory
         # the next two lines should address this by joining the proxied model,
         # but weird things are happening. look into this as time allows.
@@ -210,4 +213,4 @@ class AnalysisListResource(ListResource):
 
 class ImageListResource(ListResource):
     _model = Image
-    _search_fields = ('path', 'space', 'value_type', 'analysis_name')
+    _search_fields = ('filename', 'space', 'value_type', 'analysis_name')

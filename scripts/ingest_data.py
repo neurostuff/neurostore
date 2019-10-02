@@ -1,11 +1,15 @@
 """
 Ingest and sync data from various sources (Neurosynth, NeuroVault, etc.).
 """
+import re
+import os.path as op
+from datetime import datetime
+from dateutil.parser import parse as parse_date
+
+import requests
 
 from neurostuff.models import Study, Analysis, Condition, Image, User
 from neurostuff.core import db, user_datastore
-import requests
-import re
 
 
 def reset_database():
@@ -49,8 +53,10 @@ def ingest_neurovault(verbose=False, limit=20):
             type_ = img.get('map_type', 'Unknown')
             if re.match('\w\smap.*', type_):
                 type_ = type_[0]
-            image = Image(path=img['file'], space=space, value_type=type_,
-                          analysis=analysis, data=img)
+            image = Image(url=img['file'], space=space, value_type=type_,
+                          analysis=analysis, data=img,
+                          filename=op.basename(img['file']),
+                          add_date=parse_date(img['add_date']))
             images.append(image)
 
         db.session.add_all([s] + list(analyses.values()) + images)
@@ -73,4 +79,4 @@ def ingest_neurovault(verbose=False, limit=20):
 
 
 reset_database()
-ingest_neurovault(limit=5)
+ingest_neurovault(limit=10)
