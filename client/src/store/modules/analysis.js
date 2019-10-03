@@ -1,8 +1,10 @@
 import Vue from 'vue';
 
 const state = {
-  model: {
+  config: {
+    name: null,
     type: 'images',
+    description: null,
     numConditions: 1,
   },
   selectedItems: [],

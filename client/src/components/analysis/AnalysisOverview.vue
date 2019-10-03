@@ -3,13 +3,13 @@
       <b-col md="6">
         <b-form-group :label="field[1] + ':'" v-for="field in textFields"
                       label-cols-md="4">
-          <b-form-input type="text" v-model="model[field[0]]" />
+          <b-form-input type="text" v-model="config[field[0]]" />
         </b-form-group>
         <b-form-group label="Analysis type:" label-cols-md="6">
-          <b-form-select v-model="model.type" :options="analysisTypeOptions" />
+          <b-form-select v-model="config.type" :options="analysisTypeOptions" />
         </b-form-group>
         <b-form-group label="Number of conditions:" label-cols-md="6">
-          <b-form-input v-model="model.numConditions" type="number" />
+          <b-form-input v-model="config.numConditions" type="number" />
         </b-form-group>
       </b-col>
     </b-row>
@@ -32,7 +32,7 @@ export default {
     }
   },
   computed: {
-    model() {   return this.$store.state.analysis.model; }
+    config() {   return this.$store.state.analysis.config; }
   }
 }
 </script>

@@ -3,12 +3,12 @@
     <b-row>
       <b-tabs content-class="mt-3">
         <b-tab title="Search" active>
-          <h4>Add {{model.type}}</h4>
-          <ImageTable v-if="model.type==='images'" />
+          <h4>Add {{config.type}}</h4>
+          <ImageTable v-if="config.type==='images'" />
         </b-tab>
         <b-tab title="Selected">
-          <h4>Currently selected {{model.type}}</h4>
-          <ImageTable v-if="model.type==='images'" :source="'store'" :filters="false" />
+          <h4>Currently selected {{config.type}}</h4>
+          <ImageTable v-if="config.type==='images'" :source="'store'" :filters="false" />
         </b-tab>
       </b-tabs>
     </b-row>
@@ -23,7 +23,7 @@ export default {
     ImageTable,
   },
   computed: {
-    model() {   return this.$store.state.analysis.model; },
+    config() {   return this.$store.state.analysis.config; },
   }
 }
 </script>

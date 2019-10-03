@@ -5,7 +5,7 @@
         <h1>Neurosynth analysis builder</h1>
       </b-col>
       <b-col cols="1">
-        <b-button @click="saveModel">Save</b-button>
+        <b-button @click="save">Save</b-button>
       </b-col>
     </b-row>
     <b-tabs card vertical active-nav-item-class="wizard-tabs"
@@ -42,10 +42,10 @@ export default {
         DataAnnotator,
     },
     computed: {
-        model() { return this.$store.state.analysis.model; },
+        config() { return this.$store.state.analysis.config; },
     },
     methods: {
-        saveModel() {},
+        save() {},
         changeTab() {
           window.location.hash = this.currentTab;
         },
