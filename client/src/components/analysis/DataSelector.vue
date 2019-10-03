@@ -3,12 +3,12 @@
     <b-row>
       <b-tabs content-class="mt-3">
         <b-tab title="Search" active>
-          <h4>Add {{config.type}}</h4>
-          <ImageTable v-if="config.type==='images'" />
+          <h4>Add {{analysis.type}}</h4>
+          <ImageTable v-if="analysis.type==='images'" />
         </b-tab>
         <b-tab title="Selected">
-          <h4>Currently selected {{config.type}}</h4>
-          <ImageTable v-if="config.type==='images'" :source="'store'" :filters="false" />
+          <h4>Currently selected {{analysis.type}}</h4>
+          <ImageTable v-if="analysis.type==='images'" :source="'store'" :filters="false" />
         </b-tab>
       </b-tabs>
     </b-row>
@@ -17,13 +17,12 @@
 
 <script>
 import ImageTable from '../shared/ImageTable';
+import AnalysisManagerMixin from './mixins.js';
 
 export default {
+  mixins: [AnalysisManagerMixin],
   components: {
     ImageTable,
   },
-  computed: {
-    config() {   return this.$store.state.analysis.config; },
-  }
 }
 </script>

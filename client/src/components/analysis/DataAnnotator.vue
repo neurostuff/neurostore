@@ -1,7 +1,7 @@
 <template>
   <div>
     <div id="add-col">
-      <b-button size="sm" @click="generateMatrix">Generate</b-button>
+      <b-button size="sm" @click="generateWeights">Generate</b-button>
       <b-button size="sm" v-b-modal.add-col-modal>Add variable</b-button>
     </div>
 
@@ -13,7 +13,7 @@
       </b-alert>
     </b-modal>
 
-    <b-table striped small responsive :items="model" :fields="allFields">
+    <b-table striped small responsive :items="weights" :fields="allFields">
       <template v-for="f in allFields" v-slot:[`cell(${f.key})`]="data">
         <b-input type="text" v-model="data.item[f.key]" />
       </template>
@@ -22,8 +22,10 @@
 </template>
 
 <script>
-export default {
+import AnalysisManagerMixin from './mixins.js';
 
+export default {
+  mixins: [AnalysisManagerMixin],
   data: function() {
     return {
       newColName: '',
@@ -32,18 +34,16 @@ export default {
     }
   },
 
-
   computed: {
-    model() { return this.$store.state.analysis.dataMatrix },
-    coreFields() { return this.$store.state.analysis.variables },
+    weights() { return this.analysis.weights },
+    coreFields() { return this.analysis.variables },
     allFields() { return this.coreFields.concat(this.extraFields) },
   },
 
-
   methods: {
 
-    generateMatrix: function() {
-      this.$store.commit('initializeAnnotation', {force: true});
+    generateWeights() {
+      this.analysis.createWeights();
     },
 
     addVariable(evt) {
@@ -51,7 +51,7 @@ export default {
         evt.preventDefault();
         return false;
       }
-      this.model.forEach((row) => { row[this.newColName] = 0 });
+      this.weights.forEach((row) => { row[this.newColName] = 0 });
       this.newColName = '';
       this.newColModalWarning = false;
       this.updateFields();
@@ -72,18 +72,12 @@ export default {
 
     updateFields() {
       const reducer = (obj, c) => Object.assign(obj, c);
-      const allFound = Object.keys(this.model.reduce(reducer, []));
+      const allFound = Object.keys(this.weights.reduce(reducer, []));
       const existing = this.allFields.map(f => f.key);
       allFound.filter(v => !existing.includes(v)).forEach(
         f => { this.extraFields.push({key: f})}
       )
     },
-  },
-
-
-
-  mounted() {
-    this.generateMatrix();
   },
 }
 

@@ -9,6 +9,7 @@ import App from './App';
 import router from './router';
 import store from './store';
 
+
 Vue.use(BootstrapVue);
 Unicon.add([uniTrashAlt, uniEditAlt]);
 Vue.use(Unicon);

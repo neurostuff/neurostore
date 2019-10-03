@@ -12,5 +12,5 @@ export default new Vuex.Store({
     data,
     analysis,
   },
-  plugins: [createPersistedState()],
+  // plugins: [createPersistedState()],
 });

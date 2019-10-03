@@ -26,6 +26,8 @@
 </template>
 
 <script>
+import {cloneDeep} from 'lodash';
+import Analysis from './models.js';
 import AnalysisOverview from './AnalysisOverview';
 import DataSelector from './DataSelector';
 import DataAnnotator from './DataAnnotator';
@@ -33,16 +35,14 @@ import DataAnnotator from './DataAnnotator';
 export default {
     data: function() {
       return {
-        currentTab: 0
+        currentTab: 0,
+        analysis: null,
       }
     },
     components: {
         AnalysisOverview,
         DataSelector,
         DataAnnotator,
-    },
-    computed: {
-        config() { return this.$store.state.analysis.config; },
     },
     methods: {
         save() {},
@@ -51,37 +51,6 @@ export default {
         },
     },
 }
-/*
-WIZARD
-- basic info
-    - name
-    - description
-    - hypotheses/predictions
-- type of meta-analysis
-    - coordinate, image, or mixed?
-    - single condition or meta-analytic contrast?
-    - levels of analysis?
-        - run, subject, study, etc.
-    - what space?
-    - whole-brain, voxels within ROI, or atlas-based?
-- data selection
-    - search by:
-        - terms in study, analysis, contrast, etc.
-        - type of image or coordinate
-        - space (MNI, unknown, etc.)
-- data assignment/annotation
-    - assign to condition (if meta-analytic contrast)
-    - matrix with arbitrary covariate columns
-    - add indicators for built-in variables (studies, space, etc.)
-- export/execute
-    - export to:
-        - GingerALE
-        - MKDA
-        - NiMARE
-    - execute in:
-        - NiMARE (if simple model)
-        - NiMARE in browser (eventually, via Pyodide)
-*/
 </script>
 
 <style>

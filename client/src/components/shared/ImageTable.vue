@@ -81,8 +81,10 @@ import Vue from 'vue';
 import axios from 'axios';
 import _ from 'lodash';
 import moment from 'moment';
+import AnalysisManagerMixin from '../analysis/mixins.js';
 
 export default {
+  mixins: [AnalysisManagerMixin],
   props: {
     source: {
       type: String,
@@ -149,14 +151,14 @@ export default {
   },
   computed: {
     selectedItems() {
-        return this.$store.state.analysis.selectedItems;
+        return this.analysis.selectedItems;
     },
     selectedIds: {
       get() {
-        return this.$store.state.analysis.selectedIds;
+        return this.analysis.selectedIds;
       },
       set(value) {
-        this.$store.commit('updateSelectedIds', value);
+        this.analysis.selectedIds = value;
       }
     },
     tableRows() {
@@ -206,7 +208,7 @@ export default {
       });
     },
     deselectItem(id) {
-      this.$store.commit({type: 'deselectItem', id: id});
+      this.analysis.deselectItem(id);
     },
   },
   created() {
@@ -218,13 +220,13 @@ export default {
     selectedIds: function(newItems, oldItems) {
       var dropped = oldItems.filter((item) => !newItems.includes(item));
       dropped.forEach((id) => {
-          this.$store.commit('deselectItem', id);
+          this.analysis.deselectItem(id);
       });
 
       var added = newItems.filter((item) => !oldItems.includes(item));
       added.forEach((id) => {
         var item = Object.assign({}, this.items.find((item) => item.id == id));
-        this.$store.commit('selectItem', item);
+        this.analysis.selectItem(item);
       });
 
       // also set the allToggled variable to reflect whether all ids currently

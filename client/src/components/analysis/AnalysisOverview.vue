@@ -3,13 +3,13 @@
       <b-col md="6">
         <b-form-group :label="field[1] + ':'" v-for="field in textFields"
                       label-cols-md="4">
-          <b-form-input type="text" v-model="config[field[0]]" />
+          <b-form-input type="text" v-model="analysis[field[0]]" />
         </b-form-group>
         <b-form-group label="Analysis type:" label-cols-md="6">
-          <b-form-select v-model="config.type" :options="analysisTypeOptions" />
+          <b-form-select v-model="analysis.type" :options="analysisTypeOptions" />
         </b-form-group>
         <b-form-group label="Number of conditions:" label-cols-md="6">
-          <b-form-input v-model="config.numConditions" type="number" />
+          <b-form-input v-model="analysis.conditions" type="number" />
         </b-form-group>
       </b-col>
     </b-row>
@@ -18,7 +18,10 @@
 </template>
 
 <script>
+import AnalysisManagerMixin from './mixins.js';
+
 export default {
+  mixins: [AnalysisManagerMixin],
   data() {
     return {
       textFields: [
@@ -31,8 +34,5 @@ export default {
       ]
     }
   },
-  computed: {
-    config() {   return this.$store.state.analysis.config; }
-  }
 }
 </script>
