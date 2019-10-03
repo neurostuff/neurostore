@@ -43,7 +43,7 @@
         @sort-changed="changeSort"
         no-local-sorting>
         <template v-slot:head(selected)="data">
-          <b-form-checkbox @change="toggleAll" />
+          <b-form-checkbox v-model="allSelected" @change="toggleAll" />
         </template>
         <template v-slot:cell(selected)="data">
           <b-form-checkbox :value=data.item.id v-model="selectedIds" />
@@ -144,6 +144,7 @@ export default {
       sortDesc: true,
       currentPage: 1,
       totalRows: null,
+      allSelected: false,
     }
   },
   computed: {
@@ -225,7 +226,10 @@ export default {
         var item = Object.assign({}, this.items.find((item) => item.id == id));
         this.$store.commit('selectItem', item);
       });
-      console.log(this.selectedIds);
+
+      // also set the allToggled variable to reflect whether all ids currently
+      // in the table are selected.
+      this.allSelected = this.items.every(item => this.selectedIds.includes(item.id));
     }
   }
 }
