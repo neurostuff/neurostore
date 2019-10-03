@@ -16,7 +16,9 @@
       <b-tab title="Data">
         <DataSelector />
       </b-tab>
-      <b-tab title="Code"><b-card-text>Tab Contents 3</b-card-text></b-tab>
+      <b-tab title="Code">
+        <DataAnnotator />
+      </b-tab>
       <b-tab title="Model"><b-card-text>Tab Contents 3</b-card-text></b-tab>
       <b-tab title="Run"><b-card-text>Tab Contents 3</b-card-text></b-tab>
     </b-tabs>
@@ -26,6 +28,7 @@
 <script>
 import AnalysisOverview from './AnalysisOverview';
 import DataSelector from './DataSelector';
+import DataAnnotator from './DataAnnotator';
 
 export default {
     data: function() {
@@ -36,6 +39,7 @@ export default {
     components: {
         AnalysisOverview,
         DataSelector,
+        DataAnnotator,
     },
     computed: {
         model() { return this.$store.state.analysis.model; },
@@ -46,9 +50,6 @@ export default {
           window.location.hash = this.currentTab;
         },
     },
-    mounted() {
-      this.currentTab = parseInt(window.location.hash.replace('#',''), 10);
-    }
 }
 /*
 WIZARD

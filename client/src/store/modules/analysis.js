@@ -7,7 +7,29 @@ const state = {
   },
   selectedItems: [],
   selectedIds: [],
+  variables: null,
+  dataMatrix: null,
 };
+
+function createMatrix(state) {
+  const nItems = state.selectedItems.length;
+  const nCond = state.numConditions;
+
+  // Array of fields
+  const variables = [{ key: 'observation', editable: false }];
+  variables.push(...new Array(nCond).fill(null).map((x, i) =>
+    ({ key: `condition${i+1}` })));
+  Vue.set(state, 'variables', variables);
+
+  // Array of rows, to populate table
+  const dm = new Array(nItems).fill(null).map(
+    (x, i) => {
+      x = { observation: state.selectedItems[i].filename };
+      Object.assign(x, ...variables.slice(1).map(v => ({ [v.key]: 0 })));
+      return x;
+    });
+  Vue.set(state, 'dataMatrix', dm);
+}
 
 const mutations = {
   selectItem(state, item) {
@@ -24,7 +46,12 @@ const mutations = {
   },
   updateSelectedIds(state, value) {
     state.selectedIds = value;
-  }
+  },
+  initializeAnnotation(state, payload) {
+    if (state.dataMatrix == null || (('force' in payload) && payload.force)) {
+      createMatrix(state);
+    }
+  },
 };
 
 export default {
