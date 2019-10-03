@@ -29,7 +29,6 @@ export default {
       newColName: '',
       newColModalWarning: false,
       extraFields: [],
-      testVar: 'observation',
     }
   },
 
@@ -45,7 +44,6 @@ export default {
 
     generateMatrix: function() {
       this.$store.commit('initializeAnnotation', {force: true});
-      console.log(this.allFields);
     },
 
     addVariable(evt) {
@@ -74,7 +72,11 @@ export default {
 
     updateFields() {
       const reducer = (obj, c) => Object.assign(obj, c);
-      this.extraFields = Object.keys(this.model.reduce(reducer, []));
+      const allFound = Object.keys(this.model.reduce(reducer, []));
+      const existing = this.allFields.map(f => f.key);
+      allFound.filter(v => !existing.includes(v)).forEach(
+        f => { this.extraFields.push({key: f})}
+      )
     },
   },
 
