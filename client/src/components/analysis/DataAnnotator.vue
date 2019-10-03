@@ -13,8 +13,10 @@
       </b-alert>
     </b-modal>
 
-    <b-table striped small responsive :items="model" :fields="allFields"
-             primary-key="@id">
+    <b-table striped small responsive :items="model" :fields="allFields">
+      <template v-for="f in allFields" v-slot:[`cell(${f.key})`]="data">
+        <b-input type="text" v-model="data.item[f.key]" />
+      </template>
     </b-table>
   </div>
 </template>
@@ -27,6 +29,7 @@ export default {
       newColName: '',
       newColModalWarning: false,
       extraFields: [],
+      testVar: 'observation',
     }
   },
 
@@ -42,6 +45,7 @@ export default {
 
     generateMatrix: function() {
       this.$store.commit('initializeAnnotation', {force: true});
+      console.log(this.allFields);
     },
 
     addVariable(evt) {
