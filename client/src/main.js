@@ -16,6 +16,9 @@ Vue.use(Unicon);
 
 Vue.config.productionTip = false;
 
+// declare globals
+Vue.prototype.$hostname = 'http://127.0.0.1:5000';
+
 /* eslint-disable no-new */
 new Vue({
   el: '#app',

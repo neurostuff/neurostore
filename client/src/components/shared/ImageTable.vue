@@ -188,7 +188,7 @@ export default {
       }
     },
     getItems() {
-      let url = `http://localhost:5000/api/images/?page=${this.currentPage}`+
+      let url = `${Vue.prototype.$hostname}/api/images/?page=${this.currentPage}`+
                   `&page_size=${this.perPage}`;
       for (const [k, v] of Object.entries(this.search)) {
         if (v != null && v !== '') {

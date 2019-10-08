@@ -63,7 +63,7 @@ export default {
   },
   methods: {
     getItems: _.debounce((ctx) => {
-      let url = `http://localhost:5000/api/studies/?page=${ctx.currentPage}`+
+      let url = `${Vue.prototype.$hostname}/api/studies/?page=${ctx.currentPage}`+
                   `&page_size=${ctx.perPage}`;
       if (ctx.filter !== '') { url += `&search=${ctx.filter}`};
       if (ctx.sortBy !== '') { url += `&sort=${ctx.sortBy}&desc=${ctx.sortDesc | 0}` };

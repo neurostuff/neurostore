@@ -19,7 +19,9 @@
       <b-tab title="Code">
         <DataAnnotator />
       </b-tab>
-      <b-tab title="Model"><b-card-text>Tab Contents 3</b-card-text></b-tab>
+      <b-tab title="Model">
+        <ModelBuilder />
+      </b-tab>
       <b-tab title="Run"><b-card-text>Tab Contents 3</b-card-text></b-tab>
     </b-tabs>
   </b-container>
@@ -31,6 +33,7 @@ import Analysis from './models.js';
 import AnalysisOverview from './AnalysisOverview';
 import DataSelector from './DataSelector';
 import DataAnnotator from './DataAnnotator';
+import ModelBuilder from './ModelBuilder';
 
 export default {
     data: function() {
@@ -43,6 +46,7 @@ export default {
         AnalysisOverview,
         DataSelector,
         DataAnnotator,
+        ModelBuilder,
     },
     methods: {
         save() {},

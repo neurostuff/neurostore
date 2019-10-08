@@ -34,7 +34,7 @@ export default {
       }
     },
     getModel() {
-      const path = `http://localhost:5000/api/studies/${this.$route.params.id}?nested=1`;
+      const path = `${Vue.prototype.$hostname}/api/studies/${this.$route.params.id}?nested=1`;
       axios.get(path)
         .then((res) => {
           // res.data.metadata = this.prettyJSON(res.data.metadata);
@@ -49,10 +49,10 @@ export default {
       let func;
       let model = this.$store.state.model;
       if (this.$route.params.id === 'new') {
-        path = `http://localhost:5000/api/${this.resource}/new`;
+        path = `${Vue.prototype.$hostname}/api/${this.resource}/new`;
         func = axios.post;
       } else {
-        path = model['@id'].replace('neurostuff.org', 'localhost:5000');
+        path = model['@id'].replace('neurostuff.org', '127.0.0.1:5000');
         func = axios.put;
       }
       console.log(path, model);
