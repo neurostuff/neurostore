@@ -4,13 +4,18 @@ from sqlalchemy import (Column, Integer, String, Boolean, ForeignKey, JSON,
                         Table, Float, DateTime)
 from sqlalchemy.orm import reconstructor, relationship, backref
 from sqlalchemy.sql import func
+import shortuuid
 
 from ..database import db
 
 
+def generate_id():
+    return shortuuid.ShortUUID().random(length=12)
+
+
 class BaseMixin(object):
 
-    id = Column(Integer, primary_key=True)
+    id = Column(String(12), primary_key=True, default=generate_id)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
