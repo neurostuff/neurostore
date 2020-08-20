@@ -3,7 +3,9 @@ import os
 from setuptools import setup, find_packages
 
 
-requirements = ['numpy', 'pandas']
+requirements = ['numpy', 'pandas', 'flask', 'flask_security',
+                'email_validator', 'flask-dance', 'sqlalchemy-utils',
+                'flask-cors', 'flask-sqlalchemy', 'flask-restful', 'pyld']
 
 print("PACKAGES:", find_packages(exclude=['tests', 'test_*']))
 
