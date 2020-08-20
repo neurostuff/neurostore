@@ -11,7 +11,7 @@ requirements = ['numpy', 'pandas', 'flask', 'flask_security',
 print("PACKAGES:", find_packages(exclude=['tests', 'test_*']))
 
 setup(
-    name="nsnew",
+    name="neurostuff",
     version='0.0.0',
     description="NeuroStuff",
     install_requires=requirements,
