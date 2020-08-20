@@ -82,7 +82,7 @@ class ObjectResource(BaseResource):
         record = self._model.query.filter_by(id=id).first()
         if record is None:
             abort(404)
-        return self.schema().dump(record).data
+        return self.schema().dump(record)
 
     def put(self, id):
         json_data = json.loads(request.get_data())
@@ -94,7 +94,7 @@ class ObjectResource(BaseResource):
 
         record = self.__class__.update_or_create(data, id)
 
-        return self.schema().dump(record).data
+        return self.schema().dump(record)
 
 
 class ListResource(BaseResource):
@@ -148,18 +148,18 @@ class ListResource(BaseResource):
         page_size = min([page_size, 100])
 
         records = q.paginate(page, page_size, False).items
-        content = self.schema(only=self._only, many=True).dump(records).data
+        content = self.schema(only=self._only, many=True).dump(records)
         return content, 200, {'X-Total-Count': count}
 
     def post(self):
         # TODO: check to make sure current user hasn't already created a
         # record with most/all of the same details (e.g., DOI for studies)
         json_data = json.loads(request.get_data())
-        data = self.schema().load(json_data).data
+        data = self.schema().load(json_data)
         record = self._model(**data)
         db.session.add(record)
         db.session.commit()
-        return self.schema().dump(record).data
+        return self.schema().dump(record)
 
 
 class DatasetResource(ObjectResource):

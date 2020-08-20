@@ -32,14 +32,14 @@ class BaseSchema(Schema):
 
     # Serialization fields
     context = fields.Constant({"@vocab": "http://neurostuff.org/nimads/"},
-                              dump_to="@context", dump_only=True)
-    _id = fields.String(attribute='IRI', dump_to="@id", dump_only=True)
+                              data_key="@context", dump_only=True)
+    _id = fields.String(attribute='IRI', data_key="@id", dump_only=True)
     _type = fields.Function(lambda model: model.__class__.__name__,
-                            dump_to="@type", dump_only=True)
+                            data_key="@type", dump_only=True)
     created_at = fields.DateTime(dump_only=True)
 
     # De-serialization fields
-    id = fields.Method(None, '_extract_id', load_from='@id', load_only=True)
+    id = fields.Method(None, '_extract_id', data_key='@id', load_only=True)
 
     def _extract_id(self, iri):
         return int(iri.strip('/').split('/')[-1])
@@ -73,7 +73,7 @@ class ImageSchema(BaseSchema):
     add_date = fields.DateTime(dump_only=True)
 
     # deserialization
-    data = fields.Dict(load_from='metadata', load_only=True)
+    data = fields.Dict(data_key='metadata', load_only=True)
 
     class Meta:
         additional = ("url", "filename", "space", "value_type", "analysis_name")
@@ -120,13 +120,13 @@ class AnalysisSchema(BaseSchema):
     weight = fields.List(fields.Float(), attribute='weights', dump_only=True)
 
     # deserialization
-    conditions = fields.Nested(ConditionSchema, load_from='condition',
+    conditions = fields.Nested(ConditionSchema, data_key='condition',
                               many=True, load_only=True)
-    images = fields.Nested(ImageSchema, load_from='image', many=True,
+    images = fields.Nested(ImageSchema, data_key='image', many=True,
                             load_only=True)
-    points = fields.Nested(PointSchema, load_from='point', many=True,
+    points = fields.Nested(PointSchema, data_key='point', many=True,
                            load_only=True)
-    weights = fields.List(fields.Float(), load_from='weight', load_only=True)
+    weights = fields.List(fields.Float(), data_key='weight', load_only=True)
 
     class Meta:
         additional = ("name", "description")
@@ -138,8 +138,8 @@ class StudySchema(BaseSchema):
     analysis = StringOrNested(AnalysisSchema, attribute='analyses',
                               many=True, dump_only=True)
 
-    metadata_ = fields.Dict(load_from='metadata', load_only=True)
-    analyses = fields.Nested(AnalysisSchema, load_from='analysis', many=True,
+    metadata_ = fields.Dict(data_key='metadata', load_only=True)
+    analyses = fields.Nested(AnalysisSchema, data_key='analysis', many=True,
                              load_only=True)
 
     class Meta:
