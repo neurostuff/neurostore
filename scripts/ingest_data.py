@@ -79,4 +79,4 @@ def ingest_neurovault(verbose=False, limit=20):
 
 
 reset_database()
-ingest_neurovault(limit=10)
+ingest_neurovault(limit=100)

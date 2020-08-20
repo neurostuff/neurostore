@@ -10,6 +10,9 @@ from .models import User, Role, OAuth
 
 app = Flask(__name__)
 
+# enable CORS for development
+CORS(app, expose_headers='X-Total-Count')
+
 # Move this stuff out when it gets big
 app.debug = True
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///development.db'
@@ -17,9 +20,6 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['APISPEC_SWAGGER_URL'] = '/api/swagger.json'
 app.config['APISPEC_SWAGGER_UI_URL'] = '/api/'
 db = init_db(app)
-
-# enable CORS for development
-CORS(app, expose_headers='X-Total-Count')
 
 # Flask-Security
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
