@@ -13,14 +13,14 @@ class StringOrNested(fields.Field):
         self.many = kwargs.pop('many', False)
         self.kwargs = kwargs
         self.schema = fields.Nested(nested, **self.kwargs).schema
-        super().__init__(self, **kwargs)
+        super().__init__(**kwargs)
 
     def _serialize(self, value, attr, obj, **ser_kwargs):
         if value is None:
             return None
         nested = bool(int(request.args.get('nested', False)))
         if nested:
-            return self.schema.dump(value, many=self.many).data
+            return self.schema.dump(value, many=self.many)
         else:
             return [v.IRI for v in value] if self.many else value.IRI
 
@@ -45,7 +45,7 @@ class BaseSchema(Schema):
         return int(iri.strip('/').split('/')[-1])
 
     @post_dump(pass_original=True)
-    def process_jsonld(self, data, original):
+    def process_jsonld(self, data, original, **kwargs):
         if isinstance(original, (list, tuple)):
             return data
         method = request.args.get('process', 'compact')
