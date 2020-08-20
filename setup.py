@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 requirements = ['numpy', 'pandas', 'flask', 'flask_security',
                 'email_validator', 'flask-dance', 'sqlalchemy-utils',
                 'flask-cors', 'flask-sqlalchemy', 'flask-restful', 'pyld',
-                'flask-graphql']
+                'flask-graphql', 'marshmallow>=3.0.0']
 
 print("PACKAGES:", find_packages(exclude=['tests', 'test_*']))
 
