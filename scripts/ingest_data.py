@@ -3,12 +3,16 @@ Ingest and sync data from various sources (Neurosynth, NeuroVault, etc.).
 """
 import re
 import os.path as op
+from pathlib import Path
 from datetime import datetime
 from dateutil.parser import parse as parse_date
+import tarfile
+import tempfile
 
+import pandas as pd
 import requests
 
-from neurostuff.models import Study, Analysis, Condition, Image, User
+from neurostuff.models import Study, Analysis, Condition, Image, User, Point
 from neurostuff.core import db, user_datastore
 
 
@@ -78,5 +82,47 @@ def ingest_neurovault(verbose=False, limit=20):
             break
 
 
-reset_database()
-ingest_neurovault(limit=100)
+def ingest_neurosynth(max_rows=None):
+
+    user = User.query.filter_by(email='admin@neurostuff.org').first()
+
+    # url = "https://github.com/neurosynth/neurosynth-data/blob/master/current_data.tar.gz?raw=true"
+    # response = requests.get(url, stream=True)
+
+    # with tempfile.TemporaryFile() as tf:
+        # tf.write(response.raw.read())
+        # tf.seek(0)
+
+    path = Path(__file__).parent / '..' / 'data' / 'data_0.7.July_2018.tar.gz'
+    with open(path, 'rb') as tf:
+        tar = tarfile.open(fileobj=tf)
+        f = tar.extractfile('database.txt')
+        data = pd.read_csv(f, sep='\t')
+
+        if max_rows is not None:
+            data = data.iloc[:max_rows]
+
+        for doi, study_df in data.groupby('doi'):
+            row = study_df.iloc[0]
+            md = {
+                'authors': row['authors'],
+                'year': int(row['year']),
+                'journal': row['journal']
+            }
+            s = Study(name=row['title'], metadata_ = md, doi=doi, user=user)
+            analyses = []
+            points = []
+            for t_id, df in study_df.groupby('table_id'):
+                a = Analysis(name=str(t_id), study=s)
+                analyses.append(a)
+                for _, p in df.iterrows():
+                    point = Point(x=p['x'], y=p['y'], z=p['z'],
+                                  space=p['space'], kind='unknown', analysis=a)
+                    points.append(point)
+            db.session.add_all([s] + analyses + points)
+            db.session.commit()
+
+
+# reset_database()
+# ingest_neurovault(limit=20)
+ingest_neurosynth(1000)

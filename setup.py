@@ -15,7 +15,8 @@ requirements = [
     'pyld',
     'flask-graphql',
     'marshmallow>=3.0.0',
-    'shortuuid'
+    'shortuuid',
+    'pandas'
     ]
 
 print("PACKAGES:", find_packages(exclude=['tests', 'test_*']))
