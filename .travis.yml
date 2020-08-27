@@ -10,11 +10,11 @@ matrix:
       script:
         - python -m pytest neurostuff/ --cov=./
       env:
-      - APP_SETTINGS=neuroscout.config.app.TravisConfig PYTHONHASHSEED=0
+      - APP_SETTINGS=neurostuff.config.app.TravisConfig PYTHONHASHSEED=0
       addons:
         postgresql: "9.4"
       before_script:
-        - cp neuroscout/config/example_app.py neuroscout/config/app.py
+        - cp neurostuff/config/example_app.py neurostuff/config/app.py
         - psql -c 'create database travis_ci_test;' -U postgres
         - CI="true"
       after_success:
