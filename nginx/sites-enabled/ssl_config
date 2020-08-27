@@ -1,0 +1,15 @@
+server {
+     server_name neurostuff.org www.neurostuff.org;
+
+     location /.well-known {
+         allow all;
+         root  /data/letsencrypt/;
+     }
+
+     location / {
+            return 301 https://$host$request_uri;
+     }
+
+     listen 80;
+
+}
