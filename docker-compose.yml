@@ -39,13 +39,6 @@ services:
     env_file:
       - .env
 
-  swagger-ui:
-    image: swaggerapi/swagger-ui
-    environment:
-      - "API_URL=http://localhost/swagger/"
-    expose:
-      - '8080'
-
 volumes:
   certs:
   certs-data:
