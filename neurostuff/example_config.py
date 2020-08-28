@@ -1,6 +1,7 @@
 """ This is an EXAMPLE config file
  Rename this file to app.py and set variables
 """
+import os
 
 
 class Config(object):
@@ -10,7 +11,10 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = False
 
-    SQLALCHEMY_DATABASE_URI = 'postgres://postgres:password@postgres:5432/neurostuff'
+    POSTGRES_PASSWORD = os.environ['POSTGRES_PASSWORD']
+    DB_NAME = 'neurostuff'
+    SQLALCHEMY_DATABASE_URI = "postgres://postgres:" \
+        f"{POSTGRES_PASSWORD}@postgres:5432/{DB_NAME}"
     PROPAGATE_EXCEPTIONS = True
 
     APISPEC_SWAGGER_URL = '/api/swagger.json'

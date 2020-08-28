@@ -15,7 +15,6 @@ import requests
 from neurostuff.models import Study, Analysis, Condition, Image, User, Point
 from neurostuff.core import db, user_datastore
 
-
 def reset_database():
     db.drop_all()
     db.create_all()
