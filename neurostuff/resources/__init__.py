@@ -1,7 +1,9 @@
-import wrapt
-from flask_restful import Resource, Api
+from flask_restful import Api
 
-from .resources import *
+from .resources import (
+    AnalysisResource, ConditionResource, ImageResource, PointResource,
+    DatasetResource, StudyResource, StudyListResource, AnalysisListResource,
+    ImageListResource)
 
 
 def bind_resources(app):

@@ -8,8 +8,6 @@ import sqlalchemy.sql.expression as sae
 from sqlalchemy import func
 
 from ..core import db
-from ..schemas import (StudySchema, AnalysisSchema, ConditionSchema,
-                       ImageSchema, PointSchema, DatasetSchema)
 from ..models import (Dataset, Study, Analysis, Condition, Image, Point,
                       PointValue)
 
