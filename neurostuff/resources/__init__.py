@@ -1,9 +1,6 @@
 from flask_restful import Api
 
-from .resources import (
-    AnalysisResource, ConditionResource, ImageResource, PointResource,
-    DatasetResource, StudyResource, StudyListResource, AnalysisListResource,
-    ImageListResource)
+from .resources import *
 
 
 def bind_resources(app):

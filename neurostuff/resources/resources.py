@@ -10,7 +10,8 @@ from sqlalchemy import func
 from ..core import db
 from ..models import (Dataset, Study, Analysis, Condition, Image, Point,
                       PointValue)
-
+from ..schemas import (StudySchema, AnalysisSchema, ConditionSchema,
+                       ImageSchema, PointSchema, DatasetSchema)
 
 __all__ = [
     'DatasetResource',
