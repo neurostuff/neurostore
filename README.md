@@ -7,9 +7,14 @@ Requirements: Docker and docker-compose.
 ## Configuration
 First, set up the main environment variables in `.env` (see: `.env.example`).
 
-Next, set up the Flask server's environment variables ....
+    cp .env.example .env
 
-Finally, set up the frontend's env variables by ....
+Next, set up the Flask server's environment variables:
+
+    cp neurostuff/example_config.py neurostuff/config.py
+
+
+Edit both of these template files to set the correct variables
 
 ## Initalizing backend
 Build the containers and start services using the development configuration:
@@ -26,12 +31,12 @@ Next, initialize, migrate and upgrade the database migrations.
     python manage.py db init
     python manage.py db migrate
     python manage.py db upgrade
-    python manage.py add_user useremail password
 
-## Setting up front end
+Finally, add an admin user, and ingest data
 
+    python manage.py add_user admin@neurostuff.org password
+    python manage.py ingest_neurosynth
 
-## Ingesting
 
 ## Maintaining docker image and db
 If you make a change to /neurostuff, you should be able to simply restart the server.
@@ -42,5 +47,3 @@ If you need to upgrade the db after changing any models:
 
     docker-compose exec neurostuff python manage.py db migrate
     docker-compose exec neurostuff python manage.py db upgrade
-
-To inspect the database using psql:

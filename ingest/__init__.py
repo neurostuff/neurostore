@@ -4,22 +4,14 @@ Ingest and sync data from various sources (Neurosynth, NeuroVault, etc.).
 import re
 import os.path as op
 from pathlib import Path
-from datetime import datetime
 from dateutil.parser import parse as parse_date
 import tarfile
-import tempfile
 
 import pandas as pd
 import requests
 
-from neurostuff.models import Study, Analysis, Condition, Image, User, Point
-from neurostuff.core import db, user_datastore
-
-def reset_database():
-    db.drop_all()
-    db.create_all()
-    user_datastore.create_user(email='admin@neurostuff.org', password='password')
-    db.session.commit()
+from neurostuff.models import Study, Analysis, Image, User, Point
+from neurostuff.core import db
 
 
 def ingest_neurovault(verbose=False, limit=20):
@@ -89,8 +81,8 @@ def ingest_neurosynth(max_rows=None):
     # response = requests.get(url, stream=True)
 
     # with tempfile.TemporaryFile() as tf:
-        # tf.write(response.raw.read())
-        # tf.seek(0)
+    #    tf.write(response.raw.read())
+    #   tf.seek(0)
 
     path = Path(__file__).parent / '..' / 'data' / 'data_0.7.July_2018.tar.gz'
     with open(path, 'rb') as tf:
@@ -108,7 +100,7 @@ def ingest_neurosynth(max_rows=None):
                 'year': int(row['year']),
                 'journal': row['journal']
             }
-            s = Study(name=row['title'], metadata_ = md, doi=doi, user=user)
+            s = Study(name=row['title'], metadata=md, doi=doi, user=user)
             analyses = []
             points = []
             for t_id, df in study_df.groupby('table_id'):
@@ -120,8 +112,3 @@ def ingest_neurosynth(max_rows=None):
                     points.append(point)
             db.session.add_all([s] + analyses + points)
             db.session.commit()
-
-
-# reset_database()
-# ingest_neurovault(limit=20)
-ingest_neurosynth(1000)
