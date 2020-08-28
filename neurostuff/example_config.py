@@ -13,6 +13,13 @@ class Config(object):
     SQLALCHEMY_DATABASE_URI = 'postgres://postgres:password@postgres:5432/neurostuff'
     PROPAGATE_EXCEPTIONS = True
 
+    APISPEC_SWAGGER_URL = '/api/swagger.json'
+    APISPEC_SWAGGER_UI_URL = '/api/'
+
+    GITHUB_CLIENT_ID = "github-id"
+    GITHUB_CLIENT_SECRET = "github-secret"
+    DANCE_SECRET_KEY = "temporary"
+
 
 class ProductionConfig(Config):
     ENV = 'production'
@@ -20,6 +27,7 @@ class ProductionConfig(Config):
 
 class DevelopmentConfig(Config):
     ENV = 'development'
+    DEBUG = True
 
 
 class TestingConfig(Config):

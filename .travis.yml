@@ -14,7 +14,7 @@ matrix:
       addons:
         postgresql: "9.4"
       before_script:
-        - cp neurostuff/config/example_app.py neurostuff/config/app.py
+        - cp neurostuff/example_config.py neurostuff/config.py
         - psql -c 'create database travis_ci_test;' -U postgres
         - CI="true"
       after_success:
