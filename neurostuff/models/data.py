@@ -1,8 +1,5 @@
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.orm.collections import attribute_mapped_collection
-from sqlalchemy import (Column, Integer, String, Boolean, ForeignKey, JSON,
-                        Table, Float, DateTime)
-from sqlalchemy.orm import reconstructor, relationship, backref
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 import shortuuid
 
@@ -15,9 +12,10 @@ def generate_id():
 
 class BaseMixin(object):
 
-    id = Column(String(12), primary_key=True, default=generate_id)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    id = db.Column(db.Text, primary_key=True, default=generate_id)
+    created_at = db.Column(
+        db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
 
     @property
     def IRI(self):
@@ -27,38 +25,38 @@ class BaseMixin(object):
 class Dataset(BaseMixin, db.Model):
     __tablename__ = 'datasets'
 
-    name = Column(String)
-    description = Column(String)
-    publication = Column(String)
-    doi = Column(String)
-    pmid = Column(String)
-    public = Column(Boolean, default=True)
-    nimads_data = Column(JSON)
-    user_id = Column(ForeignKey('users.id'))
+    name = db.Column(db.String)
+    description = db.Column(db.String)
+    publication = db.Column(db.String)
+    doi = db.Column(db.String)
+    pmid = db.Column(db.String)
+    public = db.Column(db.Boolean, default=True)
+    nimads_data = db.Column(db.JSON)
+    user_id = db.Column(db.Text, db.ForeignKey('users.id'))
     user = relationship('User', backref=backref('datasets'))
 
 
 class Study(BaseMixin, db.Model):
     __tablename__ = 'studies'
 
-    name = Column(String)
-    description = Column(String)
-    publication = Column(String)
-    # source_url = Column(String)
-    doi = Column(String)
-    pmid = Column(String)
-    public = Column(Boolean, default=True)
-    metadata_ = Column(JSON)
-    user_id = Column(ForeignKey('users.id'))
+    name = db.Column(db.String)
+    description = db.Column(db.String)
+    publication = db.Column(db.String)
+    # source_url = db.Column(db.String)
+    doi = db.Column(db.String)
+    pmid = db.Column(db.String)
+    public = db.Column(db.Boolean, default=True)
+    metadata_ = db.Column(db.JSON)
+    user_id = db.Column(db.Text, db.ForeignKey('users.id'))
     user = relationship('User', backref=backref('studies'))
 
 
 class Analysis(BaseMixin, db.Model):
     __tablename__ = 'analyses'
 
-    study_id = Column(ForeignKey('studies.id'))
-    name = Column(String)
-    description = Column(String)
+    study_id = db.Column(db.Text, db.ForeignKey('studies.id'))
+    name = db.Column(db.String)
+    description = db.Column(db.String)
     study = relationship('Study', backref=backref('analyses'))
     conditions = association_proxy('analysis_conditions', 'condition')
     weights = association_proxy('analysis_conditions', 'weight')
@@ -67,37 +65,42 @@ class Analysis(BaseMixin, db.Model):
 class Condition(BaseMixin, db.Model):
     __tablename__ = 'conditions'
 
-    name = Column(String)
-    description = Column(String)
+    name = db.Column(db.String)
+    description = db.Column(db.String)
 
 
 class AnalysisConditions(db.Model):
     __tablename__ = 'analysis_conditions'
 
-    weight = Column(Float)
-    analysis_id = Column(ForeignKey('analyses.id'), primary_key=True)
-    condition_id = Column(ForeignKey('conditions.id'), primary_key=True)
+    weight = db.Column(db.Float)
+    analysis_id = db.Column(
+        db.Text, db.ForeignKey('analyses.id'), primary_key=True)
+    condition_id = db.Column(
+        db.Text, db.ForeignKey('conditions.id'), primary_key=True)
     analysis = relationship('Analysis', backref=backref('analysis_conditions'))
-    condition = relationship('Condition', backref=backref('analysis_conditions'))
+    condition = relationship(
+        'Condition', backref=backref('analysis_conditions'))
 
 
-PointEntityMap = Table('point_entities', db.Model.metadata,
-    Column('point', Integer, ForeignKey('points.id')),
-    Column('entity', Integer, ForeignKey('entities.id')))
+PointEntityMap = db.Table(
+    'point_entities', db.Model.metadata,
+    db.Column('point', db.Text, db.ForeignKey('points.id')),
+    db.Column('entity', db.Text, db.ForeignKey('entities.id')))
 
 
-ImageEntityMap = Table('image_entities', db.Model.metadata,
-    Column('image', Integer, ForeignKey('images.id')),
-    Column('entity', Integer, ForeignKey('entities.id')))
+ImageEntityMap = db.Table(
+    'image_entities', db.Model.metadata,
+    db.Column('image', db.Text, db.ForeignKey('images.id')),
+    db.Column('entity', db.Text, db.ForeignKey('entities.id')))
 
 
 class Entity(BaseMixin, db.Model):
     __tablename__ = 'entities'
 
-    study_id = Column(ForeignKey("studies.id"))
-    label = Column(String)
-    level = Column(String)
-    data = Column(JSON)
+    study_id = db.Column(db.Text, db.ForeignKey("studies.id"))
+    label = db.Column(db.String)
+    level = db.Column(db.String)
+    data = db.Column(db.JSON)
     study = relationship('Study', backref=backref('entities'))
 
 
@@ -108,14 +111,14 @@ class Point(BaseMixin, db.Model):
     def coordinates(self):
         return [self.x, self.y, self.z]
 
-    x = Column(Float)
-    y = Column(Float)
-    z = Column(Float)
-    space = Column(String)
-    kind = Column(String)
-    image = Column(String)
-    label_id = Column(Float, default=None)
-    analysis_id = Column(ForeignKey('analyses.id'))
+    x = db.Column(db.Float)
+    y = db.Column(db.Float)
+    z = db.Column(db.Float)
+    space = db.Column(db.String)
+    kind = db.Column(db.String)
+    image = db.Column(db.String)
+    label_id = db.Column(db.Float, default=None)
+    analysis_id = db.Column(db.Text, db.ForeignKey('analyses.id'))
 
     entities = relationship("Entity", secondary=PointEntityMap,
                             backref=backref("points"))
@@ -125,13 +128,13 @@ class Point(BaseMixin, db.Model):
 class Image(BaseMixin, db.Model):
     __tablename__ = 'images'
 
-    url = Column(String)
-    filename = Column(String)
-    space = Column(String)
-    value_type = Column(String)
-    analysis_id = Column(ForeignKey('analyses.id'))
-    data = Column(JSON)
-    add_date = Column(DateTime(timezone=True))
+    url = db.Column(db.String)
+    filename = db.Column(db.String)
+    space = db.Column(db.String)
+    value_type = db.Column(db.String)
+    analysis_id = db.Column(db.Text, db.ForeignKey('analyses.id'))
+    data = db.Column(db.JSON)
+    add_date = db.Column(db.DateTime(timezone=True))
 
     analysis_name = association_proxy('analysis', 'name')
     entities = relationship("Entity", secondary=ImageEntityMap,
@@ -142,8 +145,8 @@ class Image(BaseMixin, db.Model):
 class PointValue(BaseMixin, db.Model):
     __tablename__ = 'point_values'
 
-    point_id = Column(ForeignKey('points.id'))
-    kind = Column(String)
-    value = Column(String)
-    dtype = Column(String, default='str')
+    point_id = db.Column(db.Text, db.ForeignKey('points.id'))
+    kind = db.Column(db.String)
+    value = db.Column(db.String)
+    dtype = db.Column(db.String, default='str')
     point = relationship('Point', backref=backref('values'))

@@ -1,24 +1,21 @@
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.orm.collections import attribute_mapped_collection
-from sqlalchemy import (Column, Integer, String, Boolean, ForeignKey, JSON,
-                        Table, Float)
-from sqlalchemy.orm import reconstructor, relationship, backref
+from sqlalchemy.orm import relationship, backref
 
-from .data import Image, Point, BaseMixin
+from .data import BaseMixin
 from ..database import db
 
 
 class MetaAnalysis(BaseMixin, db.Model):
     __tablename__ = 'metaanalyses'
 
-    name = Column(String)
-    desc = Column(String)
-    estimator = Column(String)
-    estimator_options = Column(JSON)
-    variable_names = Column(JSON)
-    variable_descs = Column(JSON)
-    data = Column(JSON)
-    user_id = Column(ForeignKey('users.id'), primary_key=True)
+    name = db.Column(db.Text)
+    desc = db.Column(db.Text)
+    estimator = db.Column(db.Text)
+    estimator_options = db.Column(db.JSON)
+    variable_names = db.Column(db.JSON)
+    variable_descs = db.Column(db.JSON)
+    data = db.Column(db.JSON)
+    user_id = db.Column(db.Text, db.ForeignKey('users.id'), primary_key=True)
 
     user = relationship('User', backref=backref('metaanalyses'))
     images = association_proxy('metanalysis_images', 'image')
@@ -30,9 +27,10 @@ class MetaAnalysis(BaseMixin, db.Model):
 class MetaAnalysisImage(db.Model):
     __tablename__ = 'metaanalysis_images'
 
-    weight = Column(Float)
-    metaanalysis_id = Column(ForeignKey('metaanalyses.id'), primary_key=True)
-    image_id = Column(ForeignKey('images.id'), primary_key=True)
+    weight = db.Column(db.Float)
+    metaanalysis_id = db.Column(
+        db.Text, db.ForeignKey('metaanalyses.id'), primary_key=True)
+    image_id = db.Column(db.Text, db.ForeignKey('images.id'), primary_key=True)
 
     metaanalysis = relationship('MetaAnalysis',
                                 backref=backref('metanalysis_images'))
@@ -42,9 +40,10 @@ class MetaAnalysisImage(db.Model):
 class MetaAnalysisPoint(db.Model):
     __tablename__ = 'metaanalysis_points'
 
-    weight = Column(Float)
-    metaanalysis_id = Column(ForeignKey('metaanalyses.id'), primary_key=True)
-    point_id = Column(ForeignKey('points.id'), primary_key=True)
+    weight = db.Column(db.Float)
+    metaanalysis_id = db.Column(
+        db.Text, db.ForeignKey('metaanalyses.id'), primary_key=True)
+    point_id = db.Column(db.Text, db.ForeignKey('points.id'), primary_key=True)
 
     metaanalysis = relationship('MetaAnalysis',
                                 backref=backref('metanalysis_points'))
