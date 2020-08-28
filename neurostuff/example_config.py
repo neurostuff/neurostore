@@ -17,9 +17,6 @@ class Config(object):
         f"{POSTGRES_PASSWORD}@postgres:5432/{DB_NAME}"
     PROPAGATE_EXCEPTIONS = True
 
-    APISPEC_SWAGGER_URL = '/api/swagger.json'
-    APISPEC_SWAGGER_UI_URL = '/api/'
-
     GITHUB_CLIENT_ID = "github-id"
     GITHUB_CLIENT_SECRET = "github-secret"
     DANCE_SECRET_KEY = "temporary"
