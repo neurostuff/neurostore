@@ -43,7 +43,7 @@ def ingest_neurosynth(max_rows=None):
 
 @manager.command
 def ingest_neurovault(verbose=False, limit=20):
-    ingest.ingest_neurosynth(verbose=verbose, limit=limit)
+    ingest.ingest_neurovault(verbose=verbose, limit=limit)
 
 
 if __name__ == '__main__':
