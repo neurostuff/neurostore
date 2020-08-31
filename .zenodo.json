@@ -1,0 +1,20 @@
+{
+  "creators": [
+     {
+      "affiliation": "University of Texas at Austin",
+      "name": "Yarkoni, Tal",
+      "orcid": "0000-0002-6558-5113"
+     },
+    {
+      "affiliation": "University of Texas at Austin",
+      "name": "De La Vega, Alejandro",
+      "orcid": "0000-0001-9062-3778"
+    },
+  ],
+  "keywords": [
+    "neuroimaging",
+    "meta-analysis",
+    "fMRI"
+  ],
+  "upload_type": "software"
+}

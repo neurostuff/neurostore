@@ -1,0 +1,21 @@
+matrix:
+  include:
+    - language: python
+      python:
+        - "3.6"
+      install:
+        - pip install -U setuptools==45
+        - pip install -r neurostuff/requirements.txt
+        - pip install pytest-cov
+      script:
+        - python -m pytest neurostuff/ --cov=./
+      env:
+      - APP_SETTINGS=neurostuff.config.app.TravisConfig PYTHONHASHSEED=0
+      addons:
+        postgresql: "9.4"
+      before_script:
+        - cp neurostuff/example_config.py neurostuff/config.py
+        - psql -c 'create database travis_ci_test;' -U postgres
+        - CI="true"
+      after_success:
+        - bash <(curl -s https://codecov.io/bash)

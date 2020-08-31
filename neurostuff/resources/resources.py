@@ -8,11 +8,10 @@ import sqlalchemy.sql.expression as sae
 from sqlalchemy import func
 
 from ..core import db
-from ..schemas import (StudySchema, AnalysisSchema, ConditionSchema,
-                       ImageSchema, PointSchema, DatasetSchema)
 from ..models import (Dataset, Study, Analysis, Condition, Image, Point,
                       PointValue)
-
+from ..schemas import (StudySchema, AnalysisSchema, ConditionSchema,
+                       ImageSchema, PointSchema, DatasetSchema)
 
 __all__ = [
     'DatasetResource',
@@ -104,8 +103,7 @@ class ListResource(BaseResource):
     _multi_search = None
 
     def get(self):
-
-        m = self._model # for brevity
+        m = self._model  # for brevity
         q = m.query
 
         # Search
@@ -130,8 +128,11 @@ class ListResource(BaseResource):
                                 type=int)
         desc = {0: 'asc', 1: 'desc'}[desc]
 
+        attr = getattr(m, col)
+
         # Case-insensitive sorting
-        attr = func.lower(getattr(m, col))
+        if col != 'created_at':
+            attr = func.lower(attr)
 
         # TODO: if the sort field is proxied, bad stuff happens. In theory
         # the next two lines should address this by joining the proxied model,

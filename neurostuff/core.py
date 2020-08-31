@@ -1,7 +1,8 @@
+import os
 from flask import Flask
 from flask_security import Security, SQLAlchemyUserDatastore
 from flask_dance.consumer.storage.sqla import SQLAlchemyStorage
-from flask_dance.contrib.github import make_github_blueprint, github
+from flask_dance.contrib.github import make_github_blueprint
 from flask_cors import CORS
 
 from .database import init_db
@@ -9,17 +10,11 @@ from .models import User, Role, OAuth
 
 
 app = Flask(__name__)
-
-# enable CORS for development
-CORS(app, expose_headers='X-Total-Count')
-
-# Move this stuff out when it gets big
-app.debug = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///development.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['APISPEC_SWAGGER_URL'] = '/api/swagger.json'
-app.config['APISPEC_SWAGGER_UI_URL'] = '/api/'
+app.config.from_object(os.environ['APP_SETTINGS'])
 db = init_db(app)
+
+# Enable CORS
+cors = CORS(app, expose_headers='X-Total-Count')
 
 # Flask-Security
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
@@ -27,10 +22,10 @@ security = Security(app, user_datastore)
 
 # Flask-Dance (OAuth)
 from . import oauth
-app.secret_key = "temporary"
+app.secret_key = app.config['DANCE_SECRET_KEY']
 blueprint = make_github_blueprint(
-    client_id="d5372fa09c97d5a98a84",
-    client_secret="dee86c2c9344f00a31d83854eb135e94957ac494",
+    client_id=app.config['GITHUB_CLIENT_ID'],
+    client_secret=app.config['GITHUB_CLIENT_SECRET'],
 )
 app.register_blueprint(blueprint, url_prefix="/login")
 blueprint.storage = SQLAlchemyStorage(OAuth, db.session)

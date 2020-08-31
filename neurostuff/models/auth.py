@@ -1,9 +1,6 @@
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.orm.collections import attribute_mapped_collection
-from sqlalchemy import (Column, Integer, String, Boolean, ForeignKey, JSON,
-                        Table, Float, DateTime)
-from sqlalchemy.orm import reconstructor, relationship, backref
-from flask_security import UserMixin, RoleMixin, login_required
+from sqlalchemy.orm import relationship, backref
+from flask_security import UserMixin, RoleMixin
 from flask_dance.consumer.storage.sqla import OAuthConsumerMixin
 
 
@@ -11,26 +8,27 @@ from ..database import db
 from .data import BaseMixin
 
 
-roles_users = Table('roles_users', db.Model.metadata,
-        Column('user_id', Integer(), ForeignKey('users.id')),
-        Column('role_id', Integer(), ForeignKey('roles.id')))
+roles_users = db.Table(
+    'roles_users', db.Model.metadata,
+    db.Column('user_id', db.Text, db.ForeignKey('users.id')),
+    db.Column('role_id', db.Text, db.ForeignKey('roles.id')))
 
 
 class Role(BaseMixin, db.Model, RoleMixin):
     __tablename__ = 'roles'
 
-    name = Column(String(80), unique=True)
-    description = Column(String(255))
+    name = db.Column(db.Text, unique=True)
+    description = db.Column(db.Text)
 
 
 class User(BaseMixin, db.Model, UserMixin):
     __tablename__ = 'users'
 
-    name = Column(String(255))
-    email = Column(String(255), unique=True)
-    password = Column(String(255))
-    active = Column(Boolean())
-    confirmed_at = Column(DateTime)
+    name = db.Column(db.Text)
+    email = db.Column(db.Text, unique=True)
+    password = db.Column(db.Text)
+    active = db.Column(db.Boolean)
+    confirmed_at = db.Column(db.DateTime)
     roles = relationship('Role', secondary=roles_users,
                          backref=backref('users', lazy='dynamic'))
     username = association_proxy('oauth', 'provider_user_id')
@@ -38,7 +36,8 @@ class User(BaseMixin, db.Model, UserMixin):
 
 class OAuth(OAuthConsumerMixin, db.Model):
     __tablename__ = 'oauth'
-    user_id = Column(Integer, ForeignKey('users.id'))
+
+    user_id = db.Column(db.Text, db.ForeignKey('users.id'))
     user = relationship(User, backref=backref('oauth'))
-    provider_user_id = Column(String(256), unique=True, nullable=False)
-    provider = Column(String(30))
+    provider_user_id = db.Column(db.Text, unique=True, nullable=False)
+    provider = db.Column(db.Text)
