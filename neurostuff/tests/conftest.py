@@ -106,4 +106,4 @@ def add_users(app, db, session):
 @pytest.fixture(scope="function")
 def ingest_neurosynth(session):
     """ Add a dataset with two subjects """
-    return ingest.ingest_neurosynth(1000)
+    return ingest.ingest_neurosynth(800)
