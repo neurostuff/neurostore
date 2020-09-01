@@ -16,4 +16,4 @@ def test_get_points(auth_client, ingest_neurosynth):
     assert point['@id'] == f'http://neurostuff.org/api/points/{point_id}'
     assert point['coordinates'] == [-34.0, -68.0, -15.0]
     assert point['space'] == 'TAL'
-    assert point['type'] == 'point'
+    assert point['@type'] == 'point'
