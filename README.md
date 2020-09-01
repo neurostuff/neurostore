@@ -1,6 +1,6 @@
 # neurostuff
 
-[Add badges]
+[![Build Status](https://travis-ci.com/PsychoinformaticsLab/neurostuff.svg?branch=master)](https://travis-ci.com/PsychoinformaticsLab/neurostuff)
 
 Requirements: Docker and docker-compose.
 
