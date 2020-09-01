@@ -11,7 +11,7 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = False
 
-    POSTGRES_PASSWORD = os.environ['POSTGRES_PASSWORD']
+    POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', '')
     DB_NAME = 'neurostuff'
     SQLALCHEMY_DATABASE_URI = "postgres://postgres:" \
         f"{POSTGRES_PASSWORD}@postgres:5432/{DB_NAME}"
