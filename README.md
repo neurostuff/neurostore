@@ -56,4 +56,4 @@ To run tests, after starting services, create a test database:
 
 and execute:
 
-    docker-compose run -e "APP_SETTINGS=neurostuff.config.app.DockerTestConfig" --rm -w /neurostuff neurostuff python -m pytest neurostuff/tests
+    docker-compose run -e "APP_SETTINGS=neurostuff.config.DockerTestConfig" --rm -w /neurostuff neurostuff python -m pytest neurostuff/tests
