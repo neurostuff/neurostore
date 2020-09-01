@@ -10,7 +10,7 @@ matrix:
       script:
         - python -m pytest neurostuff/ --cov=./
       env:
-      - APP_SETTINGS=neurostuff.config.app.TravisConfig PYTHONHASHSEED=0
+      - APP_SETTINGS=neurostuff.config.TravisConfig PYTHONHASHSEED=0
       addons:
         postgresql: "9.4"
       before_script:
