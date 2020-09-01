@@ -47,3 +47,13 @@ If you need to upgrade the db after changing any models:
 
     docker-compose exec neurostuff python manage.py db migrate
     docker-compose exec neurostuff python manage.py db upgrade
+
+
+## Running tests
+To run tests, after starting services, create a test database:
+
+    docker-compose exec postgres psql -h postgres -U postgres -c "create database test_db"
+
+and execute:
+
+    docker-compose run -e "APP_SETTINGS=neurostuff.config.app.DockerTestConfig" --rm -w /neurostuff neurostuff python -m pytest neurostuff/tests

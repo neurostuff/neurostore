@@ -21,6 +21,9 @@ class Config(object):
     GITHUB_CLIENT_SECRET = "github-secret"
     DANCE_SECRET_KEY = "temporary"
 
+    SECURITY_PASSWORD_HASH = 'pbkdf2_sha512'
+    SECURITY_PASSWORD_SALT = 'A_SECRET'
+
 
 class ProductionConfig(Config):
     ENV = 'production'
@@ -37,7 +40,7 @@ class TestingConfig(Config):
 
 
 class DockerTestConfig(TestingConfig):
-    SQLALCHEMY_DATABASE_URI = 'postgres://postgres@postgres:5432/scout_test'
+    SQLALCHEMY_DATABASE_URI = 'postgres://postgres@postgres:5432/test_db'
 
 
 class TravisConfig(TestingConfig):
