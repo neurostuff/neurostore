@@ -2,7 +2,7 @@ matrix:
   include:
     - language: python
       python:
-        - "3.6"
+        - "3.8"
       install:
         - pip install -U setuptools==45
         - pip install -r neurostuff/requirements.txt
@@ -10,7 +10,7 @@ matrix:
       script:
         - python -m pytest neurostuff/ --cov=./
       env:
-      - APP_SETTINGS=neurostuff.config.app.TravisConfig PYTHONHASHSEED=0
+      - APP_SETTINGS=neurostuff.config.TravisConfig PYTHONHASHSEED=0
       addons:
         postgresql: "9.4"
       before_script:

@@ -75,7 +75,7 @@ def auth_client(add_users):
     """ Return authorized client wrapper """
     from .request_utils import Client
 
-    _, ((email, password), _) = add_users
+    _, email, password = add_users
     client = Client(email=email, password=password)
     return client
 
@@ -96,7 +96,6 @@ def add_users(app, db, session):
     pass1 = 'test1'
 
     user_datastore.create_user(email=user1, password=encrypt_password(pass1),
-                               user_name='testuser',
                                confirmed_at=datetime.datetime.now())
     session.commit()
     id_1 = user_datastore.find_user(email=user1).id
@@ -107,4 +106,4 @@ def add_users(app, db, session):
 @pytest.fixture(scope="function")
 def ingest_neurosynth(session):
     """ Add a dataset with two subjects """
-    return ingest.ingest_neurosynth()
+    return ingest.ingest_neurosynth(800)

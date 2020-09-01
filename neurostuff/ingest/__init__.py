@@ -84,7 +84,7 @@ def ingest_neurosynth(max_rows=None):
     #    tf.write(response.raw.read())
     #   tf.seek(0)
 
-    path = Path(__file__).parent / '..' / 'data' / 'data_0.7.July_2018.tar.gz'
+    path = Path(__file__).parent.parent / 'data' / 'data_0.7.July_2018.tar.gz'
     with open(path, 'rb') as tf:
         tar = tarfile.open(fileobj=tf)
         f = tar.extractfile('database.txt')

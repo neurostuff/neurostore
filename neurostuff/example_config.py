@@ -11,7 +11,7 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = False
 
-    POSTGRES_PASSWORD = os.environ['POSTGRES_PASSWORD']
+    POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', '')
     DB_NAME = 'neurostuff'
     SQLALCHEMY_DATABASE_URI = "postgres://postgres:" \
         f"{POSTGRES_PASSWORD}@postgres:5432/{DB_NAME}"
@@ -20,6 +20,9 @@ class Config(object):
     GITHUB_CLIENT_ID = "github-id"
     GITHUB_CLIENT_SECRET = "github-secret"
     DANCE_SECRET_KEY = "temporary"
+
+    SECURITY_PASSWORD_HASH = 'pbkdf2_sha512'
+    SECURITY_PASSWORD_SALT = 'A_SECRET'
 
 
 class ProductionConfig(Config):
@@ -37,7 +40,7 @@ class TestingConfig(Config):
 
 
 class DockerTestConfig(TestingConfig):
-    SQLALCHEMY_DATABASE_URI = 'postgres://postgres@postgres:5432/scout_test'
+    SQLALCHEMY_DATABASE_URI = 'postgres://postgres@postgres:5432/test_db'
 
 
 class TravisConfig(TestingConfig):
