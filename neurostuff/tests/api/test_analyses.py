@@ -27,4 +27,4 @@ def test_get_analyses(auth_client, ingest_neurosynth):
     assert decode_json(resp) == analysis
 
     assert decode_json(resp)['@id'] == \
-        'http://neurostuff.org/api/points/{a_id}'
+        f'http://neurostuff.org/api/points/{a_id}'
