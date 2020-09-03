@@ -5,6 +5,7 @@ from flask.views import MethodView
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
 import sqlalchemy.sql.expression as sae
 from sqlalchemy import func
+from webargs.flaskparser import parser
 
 from ..core import db
 from ..models import (Dataset, Study, Analysis, Condition, Image, Point,
@@ -83,10 +84,7 @@ class ObjectResource(BaseResource):
         return jsonify(self.schema().dump(record))
 
     def put(self, id):
-        json_data = json.loads(request.get_data())
-        data, errors = self.schema().load(json_data)
-        if errors:
-            return errors, 422
+        data = parser.parse(self.schema, request)
         if id != data['id']:
             return 422
 
@@ -159,7 +157,7 @@ class ListResource(BaseResource):
         record = self._model(**data)
         db.session.add(record)
         db.session.commit()
-        return self.schema().dump(record)
+        return jsonify(self.schema().dump(record))
 
 
 class DatasetResource(ObjectResource):
