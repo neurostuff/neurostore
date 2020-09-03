@@ -11,7 +11,6 @@ requirements = [
     'sqlalchemy-utils',
     'flask-cors',
     'flask-sqlalchemy',
-    'flask-restful',
     'pyld',
     'flask-graphql',
     'marshmallow>=3.0.0',
