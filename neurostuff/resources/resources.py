@@ -78,9 +78,7 @@ class BaseResource(MethodView):
 class ObjectResource(BaseResource):
 
     def get(self, id):
-        record = self._model.query.filter_by(id=id).first()
-        if record is None:
-            abort(404)
+        record = self._model.query.filter_by(id=id).first_or_404()
         return jsonify(self.schema().dump(record))
 
     def put(self, id):
