@@ -1,8 +1,7 @@
 import json
 
-
-from flask import abort, request
-from flask_restful import Resource
+from flask import abort, request, jsonify
+from flask.views import MethodView
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
 import sqlalchemy.sql.expression as sae
 from sqlalchemy import func
@@ -27,7 +26,7 @@ __all__ = [
 ]
 
 
-class BaseResource(Resource):
+class BaseResource(MethodView):
 
     _model = None
     _nested = {}
@@ -81,7 +80,7 @@ class ObjectResource(BaseResource):
         record = self._model.query.filter_by(id=id).first()
         if record is None:
             abort(404)
-        return self.schema().dump(record)
+        return jsonify(self.schema().dump(record))
 
     def put(self, id):
         json_data = json.loads(request.get_data())
@@ -93,7 +92,7 @@ class ObjectResource(BaseResource):
 
         record = self.__class__.update_or_create(data, id)
 
-        return self.schema().dump(record)
+        return jsonify(self.schema().dump(record))
 
 
 class ListResource(BaseResource):
@@ -150,7 +149,7 @@ class ListResource(BaseResource):
 
         records = q.paginate(page, page_size, False).items
         content = self.schema(only=self._only, many=True).dump(records)
-        return content, 200, {'X-Total-Count': count}
+        return jsonify(content), 200, {'X-Total-Count': count}
 
     def post(self):
         # TODO: check to make sure current user hasn't already created a

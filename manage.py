@@ -37,7 +37,7 @@ def add_user(email, password):
 
 
 @manager.command
-def ingest_neurosynth(max_rows=None):
+def ingest_neurosynth(max_rows=1000):
     ingest.ingest_neurosynth(max_rows=max_rows)
 
 
