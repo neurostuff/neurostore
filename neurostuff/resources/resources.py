@@ -6,6 +6,7 @@ from flask.views import MethodView
 import sqlalchemy.sql.expression as sae
 from sqlalchemy import func
 from webargs.flaskparser import parser
+from webargs import fields
 
 from ..core import db
 from ..models import (Dataset, Study, Analysis, Condition, Image, Point,
@@ -98,14 +99,28 @@ class ListResource(BaseResource):
     _multi_search = None
 
     def get(self):
+        # Parse arguments using webargs
+        fulltext_fields = self._multi_search or self._search_fields
+        user_args = {
+            'search': fields.Boolean(),
+            'sort': fields.String(default='created_at'),
+            'page': fields.Int(default=1),
+            'desc': fields.Boolean(default=True),
+            'page_size': fields.Int(default=20, validate=lambda val: val < 100)
+        }
+        user_args = {
+            **user_args,
+            **{fname: fields.Str() for fname in fulltext_fields}
+            }
+        args = parser.parse(user_args, request)
+
         m = self._model  # for brevity
         q = m.query
 
         # Search
-        s = request.args.get('search')
+        s = args['search']
 
         # For multi-column search, default to using search fields
-        fulltext_fields = self._multi_search or self._search_fields
         if s is not None and fulltext_fields:
             search_expr = [getattr(m, field).ilike(f"%{s}%")
                            for field in fulltext_fields]
@@ -113,20 +128,19 @@ class ListResource(BaseResource):
 
         # Alternatively (or in addition), search on individual fields.
         for field in self._search_fields:
-            s = request.args.get(field)
+            s = args[field]
             if s is not None:
                 q = q.filter(getattr(m, field).ilike(f"%{s}%"))
 
         # Sort
-        col = request.args.get('sort', 'created_at')
-        desc = request.args.get('desc', 1 if col == 'created_at' else 0,
-                                type=int)
-        desc = {0: 'asc', 1: 'desc'}[desc]
+        sort_col = args['sort']
+        desc = False if sort_col != 'created_at' else desc
+        desc = {False: 'asc', True: 'desc'}[desc]
 
         attr = getattr(m, col)
 
         # Case-insensitive sorting
-        if col != 'created_at':
+        if sort_col != 'created_at':
             attr = func.lower(attr)
 
         # TODO: if the sort field is proxied, bad stuff happens. In theory
@@ -139,9 +153,8 @@ class ListResource(BaseResource):
         count = q.count()
 
         # Pagination
-        page = request.args.get('page', 1, type=int)
-        page_size = request.args.get('page_size', 20, type=int)
-        page_size = min([page_size, 100])
+        page = args['page']
+        page_size = args['page_size']
 
         records = q.paginate(page, page_size, False).items
         content = self.schema(only=self._only, many=True).dump(records)
@@ -150,8 +163,7 @@ class ListResource(BaseResource):
     def post(self):
         # TODO: check to make sure current user hasn't already created a
         # record with most/all of the same details (e.g., DOI for studies)
-        json_data = json.loads(request.get_data())
-        data = self.schema().load(json_data)
+        data = parser.parse(self.schema, request)
         record = self._model(**data)
         db.session.add(record)
         db.session.commit()
