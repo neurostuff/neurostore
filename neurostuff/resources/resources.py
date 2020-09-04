@@ -92,6 +92,15 @@ class ObjectResource(BaseResource):
         return self.schema().dump(record)
 
 
+LIST_USER_ARGS = {
+    'search': fields.Boolean(),
+    'sort': fields.String(default='created_at'),
+    'page': fields.Int(default=1),
+    'desc': fields.Boolean(default=True),
+    'page_size': fields.Int(default=20, validate=lambda val: val < 100)
+}
+
+
 class ListResource(BaseResource):
 
     _only = None
@@ -101,23 +110,13 @@ class ListResource(BaseResource):
     def __init__(self):
         # Initialize expected arguments based on class attributes
         self._fulltext_fields = self._multi_search or self._search_fields
-        user_args = {
-            'search': fields.Boolean(),
-            'sort': fields.String(default='created_at'),
-            'page': fields.Int(default=1),
-            'desc': fields.Boolean(default=True),
-            'page_size': fields.Int(default=20, validate=lambda val: val < 100)
-        }
-        user_args = {
-            **user_args,
-            **{fname: fields.Str() for fname in self._fulltext_fields}
+        self._user_args = {
+            **LIST_USER_ARGS,
+            **{f: fields.Str() for f in self._fulltext_fields}
             }
-
-        self._user_args = user_args
 
     def get(self):
         # Parse arguments using webargs
-
         args = parser.parse(self._user_args, request)
 
         m = self._model  # for brevity
@@ -140,10 +139,10 @@ class ListResource(BaseResource):
 
         # Sort
         sort_col = args['sort']
-        desc = False if sort_col != 'created_at' else desc
+        desc = False if sort_col != 'created_at' else args['dec']
         desc = {False: 'asc', True: 'desc'}[desc]
 
-        attr = getattr(m, col)
+        attr = getattr(m, sort_col)
 
         # Case-insensitive sorting
         if sort_col != 'created_at':
