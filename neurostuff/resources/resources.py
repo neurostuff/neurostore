@@ -41,7 +41,6 @@ class BaseResource(MethodView):
         # Store all models so we can atomically update in one commit
         to_commit = []
 
-        # TODO: do further validation
         id = id or data.get('id')
 
         if id is None:
@@ -155,11 +154,7 @@ class ListResource(BaseResource):
 
         count = q.count()
 
-        # Pagination
-        page = args['page']
-        page_size = args['page_size']
-
-        records = q.paginate(page, page_size, False).items
+        records = q.paginate(args['page'], args['page_size'], False).items
         content = self.schema(only=self._only, many=True).dump(records)
         return jsonify(content), 200, {'X-Total-Count': count}
 
@@ -167,9 +162,7 @@ class ListResource(BaseResource):
         # TODO: check to make sure current user hasn't already created a
         # record with most/all of the same details (e.g., DOI for studies)
         data = parser.parse(self.schema, request)
-        record = self._model(**data)
-        db.session.add(record)
-        db.session.commit()
+        record = self.__class__.update_or_create(data, id)
         return self.schema().dump(record)
 
 
