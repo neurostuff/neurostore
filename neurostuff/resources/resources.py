@@ -90,11 +90,11 @@ class ObjectResource(BaseResource):
 
 
 LIST_USER_ARGS = {
-    'search': fields.Boolean(),
-    'sort': fields.String(default='created_at'),
-    'page': fields.Int(default=1),
-    'desc': fields.Boolean(default=True),
-    'page_size': fields.Int(default=20, validate=lambda val: val < 100)
+    'search': fields.Boolean(missing=None),
+    'sort': fields.String(missing='created_at'),
+    'page': fields.Int(missing=1),
+    'desc': fields.Boolean(missing=True),
+    'page_size': fields.Int(missing=20, validate=lambda val: val < 100)
 }
 
 
@@ -130,13 +130,13 @@ class ListResource(BaseResource):
 
         # Alternatively (or in addition), search on individual fields.
         for field in self._search_fields:
-            s = args[field]
+            s = args.get(field, None)
             if s is not None:
                 q = q.filter(getattr(m, field).ilike(f"%{s}%"))
 
         # Sort
         sort_col = args['sort']
-        desc = False if sort_col != 'created_at' else args['dec']
+        desc = False if sort_col != 'created_at' else args['desc']
         desc = {False: 'asc', True: 'desc'}[desc]
 
         attr = getattr(m, sort_col)
