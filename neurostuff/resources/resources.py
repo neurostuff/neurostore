@@ -98,9 +98,9 @@ class ListResource(BaseResource):
     _search_fields = []
     _multi_search = None
 
-    def get(self):
-        # Parse arguments using webargs
-        fulltext_fields = self._multi_search or self._search_fields
+    def __init__(self):
+        # Initialize expected arguments based on class attributes
+        self._fulltext_fields = self._multi_search or self._search_fields
         user_args = {
             'search': fields.Boolean(),
             'sort': fields.String(default='created_at'),
@@ -110,9 +110,15 @@ class ListResource(BaseResource):
         }
         user_args = {
             **user_args,
-            **{fname: fields.Str() for fname in fulltext_fields}
+            **{fname: fields.Str() for fname in self._fulltext_fields}
             }
-        args = parser.parse(user_args, request)
+
+        self._user_args = user_args
+
+    def get(self):
+        # Parse arguments using webargs
+
+        args = parser.parse(self._user_args, request)
 
         m = self._model  # for brevity
         q = m.query
@@ -121,9 +127,9 @@ class ListResource(BaseResource):
         s = args['search']
 
         # For multi-column search, default to using search fields
-        if s is not None and fulltext_fields:
+        if s is not None and self._fulltext_fields:
             search_expr = [getattr(m, field).ilike(f"%{s}%")
-                           for field in fulltext_fields]
+                           for field in self._fulltext_fields]
             q = q.filter(sae.or_(*search_expr))
 
         # Alternatively (or in addition), search on individual fields.
