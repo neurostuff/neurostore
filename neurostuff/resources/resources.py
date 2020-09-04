@@ -79,7 +79,7 @@ class ObjectResource(BaseResource):
 
     def get(self, id):
         record = self._model.query.filter_by(id=id).first_or_404()
-        return jsonify(self.schema().dump(record))
+        return self.schema().dump(record)
 
     def put(self, id):
         data = parser.parse(self.schema, request)
@@ -88,7 +88,7 @@ class ObjectResource(BaseResource):
 
         record = self.__class__.update_or_create(data, id)
 
-        return jsonify(self.schema().dump(record))
+        return self.schema().dump(record)
 
 
 class ListResource(BaseResource):
@@ -155,7 +155,7 @@ class ListResource(BaseResource):
         record = self._model(**data)
         db.session.add(record)
         db.session.commit()
-        return jsonify(self.schema().dump(record))
+        return self.schema().dump(record)
 
 
 class DatasetResource(ObjectResource):
