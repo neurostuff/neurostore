@@ -1,5 +1,3 @@
-import json
-
 from flask import abort, request, jsonify
 from flask.views import MethodView
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
