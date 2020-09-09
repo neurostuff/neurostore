@@ -1,10 +1,11 @@
-from flask_restful import Api
-
-from .resources import *
+from .resources import (
+    DatasetResource, StudyResource, AnalysisResource,
+    ConditionResource, ImageResource, PointResource, StudyListResource,
+    AnalysisListResource, ImageListResource
+    )
 
 
 def bind_resources(app):
-    api = Api(app)
     resources = {
         'datasets/<string:id>': DatasetResource,
         'studies/<string:id>': StudyResource,
@@ -17,4 +18,8 @@ def bind_resources(app):
         'images/': ImageListResource,
     }
     for route, resource in resources.items():
-        api.add_resource(resource, '/api/' + route)
+        with app.app_context():
+            app.add_url_rule(
+                '/api/' + route,
+                view_func=getattr(resource, 'as_view')(route)
+                )

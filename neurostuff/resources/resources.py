@@ -1,11 +1,10 @@
-import json
-
-
-from flask import abort, request
-from flask_restful import Resource
+from flask import abort, request, jsonify
+from flask.views import MethodView
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
 import sqlalchemy.sql.expression as sae
 from sqlalchemy import func
+from webargs.flaskparser import parser
+from webargs import fields
 
 from ..core import db
 from ..models import (Dataset, Study, Analysis, Condition, Image, Point,
@@ -27,7 +26,7 @@ __all__ = [
 ]
 
 
-class BaseResource(Resource):
+class BaseResource(MethodView):
 
     _model = None
     _nested = {}
@@ -42,7 +41,6 @@ class BaseResource(Resource):
         # Store all models so we can atomically update in one commit
         to_commit = []
 
-        # TODO: do further validation
         id = id or data.get('id')
 
         if id is None:
@@ -78,16 +76,11 @@ class BaseResource(Resource):
 class ObjectResource(BaseResource):
 
     def get(self, id):
-        record = self._model.query.filter_by(id=id).first()
-        if record is None:
-            abort(404)
+        record = self._model.query.filter_by(id=id).first_or_404()
         return self.schema().dump(record)
 
     def put(self, id):
-        json_data = json.loads(request.get_data())
-        data, errors = self.schema().load(json_data)
-        if errors:
-            return errors, 422
+        data = parser.parse(self.schema, request)
         if id != data['id']:
             return 422
 
@@ -96,42 +89,60 @@ class ObjectResource(BaseResource):
         return self.schema().dump(record)
 
 
+LIST_USER_ARGS = {
+    'search': fields.Boolean(missing=None),
+    'sort': fields.String(missing='created_at'),
+    'page': fields.Int(missing=1),
+    'desc': fields.Boolean(missing=True),
+    'page_size': fields.Int(missing=20, validate=lambda val: val < 100)
+}
+
+
 class ListResource(BaseResource):
 
     _only = None
     _search_fields = []
     _multi_search = None
 
+    def __init__(self):
+        # Initialize expected arguments based on class attributes
+        self._fulltext_fields = self._multi_search or self._search_fields
+        self._user_args = {
+            **LIST_USER_ARGS,
+            **{f: fields.Str() for f in self._fulltext_fields}
+            }
+
     def get(self):
+        # Parse arguments using webargs
+        args = parser.parse(self._user_args, request)
+
         m = self._model  # for brevity
         q = m.query
 
         # Search
-        s = request.args.get('search')
+        s = args['search']
 
         # For multi-column search, default to using search fields
-        fulltext_fields = self._multi_search or self._search_fields
-        if s is not None and fulltext_fields:
+        if s is not None and self._fulltext_fields:
             search_expr = [getattr(m, field).ilike(f"%{s}%")
-                           for field in fulltext_fields]
+                           for field in self._fulltext_fields]
             q = q.filter(sae.or_(*search_expr))
 
         # Alternatively (or in addition), search on individual fields.
         for field in self._search_fields:
-            s = request.args.get(field)
+            s = args.get(field, None)
             if s is not None:
                 q = q.filter(getattr(m, field).ilike(f"%{s}%"))
 
         # Sort
-        col = request.args.get('sort', 'created_at')
-        desc = request.args.get('desc', 1 if col == 'created_at' else 0,
-                                type=int)
-        desc = {0: 'asc', 1: 'desc'}[desc]
+        sort_col = args['sort']
+        desc = False if sort_col != 'created_at' else args['desc']
+        desc = {False: 'asc', True: 'desc'}[desc]
 
-        attr = getattr(m, col)
+        attr = getattr(m, sort_col)
 
         # Case-insensitive sorting
-        if col != 'created_at':
+        if sort_col != 'created_at':
             attr = func.lower(attr)
 
         # TODO: if the sort field is proxied, bad stuff happens. In theory
@@ -143,23 +154,15 @@ class ListResource(BaseResource):
 
         count = q.count()
 
-        # Pagination
-        page = request.args.get('page', 1, type=int)
-        page_size = request.args.get('page_size', 20, type=int)
-        page_size = min([page_size, 100])
-
-        records = q.paginate(page, page_size, False).items
+        records = q.paginate(args['page'], args['page_size'], False).items
         content = self.schema(only=self._only, many=True).dump(records)
-        return content, 200, {'X-Total-Count': count}
+        return jsonify(content), 200, {'X-Total-Count': count}
 
     def post(self):
         # TODO: check to make sure current user hasn't already created a
         # record with most/all of the same details (e.g., DOI for studies)
-        json_data = json.loads(request.get_data())
-        data = self.schema().load(json_data)
-        record = self._model(**data)
-        db.session.add(record)
-        db.session.commit()
+        data = parser.parse(self.schema, request)
+        record = self.__class__.update_or_create(data, id)
         return self.schema().dump(record)
 
 
