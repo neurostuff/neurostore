@@ -24,13 +24,13 @@ Build the containers and start services using the development configuration:
 
 The server should now be running at http://localhost/
 
-Next, initialize, migrate and upgrade the database migrations.
+Next, migrate and upgrade the database migrations.
 
-    docker-compose exec neurostuff bash
-    rm -rf /migrations/migrations
-    python manage.py db init
-    python manage.py db migrate
-    python manage.py db upgrade
+    docker-compose exec neurostuff \
+    bash -c "python manage.py db stamp head && \
+    python manage.py db migrate && \
+    python manage.py db upgrade"
+    
 
 Finally, add an admin user, and ingest data
 
