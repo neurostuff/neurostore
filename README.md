@@ -27,15 +27,24 @@ The server should now be running at http://localhost/
 Next, migrate and upgrade the database migrations.
 
     docker-compose exec neurostuff \
-    bash -c "python manage.py db stamp head && \
-    python manage.py db migrate && \
-    python manage.py db upgrade"
-    
+        bash -c \
+            "python manage.py db merge heads && \
+             python manage.py db stamp head && \
+             python manage.py db migrate && \
+             python manage.py db upgrade"
+
+**Note**: `python manage.py db merge heads` is not strictly necessary
+unless you have multiple schema versions that are not from the same history
+(e.g., multiple files in the `versions` directory).
+However, `python manage.py db merge heads` makes the migration more robust
+when there are multiple versions from different histories.
 
 Finally, add an admin user, and ingest data
 
-    python manage.py add_user admin@neurostuff.org password
-    python manage.py ingest_neurosynth
+    docker-compose exec neurostuff \
+        bash -c \
+            "python manage.py add_user admin@neurostuff.org password && \
+             python manage.py ingest_neurosynth"
 
 
 ## Maintaining docker image and db
