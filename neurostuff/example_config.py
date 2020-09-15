@@ -40,9 +40,9 @@ class TestingConfig(Config):
 
 
 class DockerTestConfig(TestingConfig):
-    POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', '')
+    DB_NAME = 'test_db'
     SQLALCHEMY_DATABASE_URI = 'postgres://postgres:' \
-         f'{POSTGRES_PASSWORD}@postgres:5432/test_db'
+         f'{POSTGRES_PASSWORD}@postgres:5432/{DB_NAME}'
 
 
 class TravisConfig(TestingConfig):
