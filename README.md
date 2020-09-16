@@ -63,6 +63,9 @@ To run tests, after starting services, create a test database:
 
     docker-compose exec postgres psql -h postgres -U postgres -c "create database test_db"
 
+**NOTE**: This command will ask you for the postgres password which is defined
+in the `.env` file.
+
 and execute:
 
     docker-compose run -e "APP_SETTINGS=neurostuff.config.DockerTestConfig" --rm -w /neurostuff neurostuff python -m pytest neurostuff/tests
