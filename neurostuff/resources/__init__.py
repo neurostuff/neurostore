@@ -1,21 +1,21 @@
 from .resources import (
-    DatasetResource, StudyResource, AnalysisResource,
-    ConditionResource, ImageResource, PointResource, StudyListResource,
-    AnalysisListResource, ImageListResource
+    DatasetsView, StudiesView, AnalysesView,
+    ConditionsView, ImagesView, PointsView, StudiesListView,
+    AnalysesListView, ImagesListView
     )
 
 
 def bind_resources(app):
     resources = {
-        'datasets/<string:id>': DatasetResource,
-        'studies/<string:id>': StudyResource,
-        'analyses/<string:id>': AnalysisResource,
-        'conditions/<string:id>': ConditionResource,
-        'images/<string:id>': ImageResource,
-        'points/<string:id>': PointResource,
-        'studies/': StudyListResource,
-        'analyses/': AnalysisListResource,
-        'images/': ImageListResource,
+        'datasets/<string:id>': DatasetsView,
+        'studies/<string:id>': StudiesView,
+        'analyses/<string:id>': AnalysesView,
+        'conditions/<string:id>': ConditionsView,
+        'images/<string:id>': ImagesView,
+        'points/<string:id>': PointsView,
+        'studies/': StudiesListView,
+        'analyses/': AnalysesListView,
+        'images/': ImagesListView,
     }
     for route, resource in resources.items():
         with app.app_context():
