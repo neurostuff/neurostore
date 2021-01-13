@@ -8,7 +8,6 @@ import connexion
 from .resolver import MethodListViewResolver
 from .database import init_db
 from .models import User, Role, OAuth
-from .resources import bind_resources
 
 
 connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/", debug=True)
@@ -51,6 +50,5 @@ blueprint.storage = SQLAlchemyStorage(OAuth, db.session)
 #                  context_value={'session': db.session}))
 
 # Bind routes
+from .resources import bind_resources
 bind_resources(app)
-
-# connexion_app.run(port=8080)
