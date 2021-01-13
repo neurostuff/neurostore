@@ -19,6 +19,7 @@ db = init_db(app)
 options = {"swagger_ui": True}
 connexion_app.add_api(
     'neurostuff-api.v1.yml',
+    base_path='/api',
     options=options,
     arguments={"title": "NeuroStore API"},
     resolver=MethodListViewResolver("neurostuff.resources.resources"),
@@ -48,7 +49,3 @@ blueprint.storage = SQLAlchemyStorage(OAuth, db.session)
 # app.add_url_rule('/graphql', view_func=GraphQLView.as_view(
 #                  'graphql',schema=graphql_schema, graphiql=True,
 #                  context_value={'session': db.session}))
-
-# Bind routes
-from .resources import bind_resources
-bind_resources(app)
