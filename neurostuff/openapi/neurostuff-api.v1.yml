@@ -61,7 +61,7 @@ paths:
           description: OK
       description: Create/Update Study
       parameters: []
-  /studies:
+  /studies/:
     get:
       summary: Your GET endpoint
       tags: []
@@ -86,7 +86,8 @@ paths:
                     '@type':
                       type: string
       description: List all available studies
-  /analyses:
+    parameters: []
+  /analyses/:
     get:
       summary: Your GET endpoint
       tags: []
@@ -99,6 +100,9 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/analysis'
+      operationId: ''
+      description: ''
+    parameters: []
   '/analyses/{id}':
     parameters:
       - schema:
@@ -270,13 +274,5 @@ components:
           type: array
           items:
             type: string
-  responses:
-    analysis:
-      description: Example response
-      content:
-        application/json:
-          schema:
-            properties:
-              id:
-                type: string
+  responses: {}
   parameters: {}
