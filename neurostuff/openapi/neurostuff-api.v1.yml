@@ -1,0 +1,282 @@
+openapi: 3.0.0
+info:
+  title: neurostuff draft api
+  version: '1.0'
+  description: Query dataset and meta-analyses
+servers:
+  - url: 'http://localhost:3000'
+paths:
+  '/datasets/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    get:
+      summary: Get User Info by User ID
+      tags: []
+      responses:
+        '200':
+          description: Dataset found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/dataset'
+              examples: {}
+        '404':
+          description: Dataset Not Found
+      description: Retrieve the information of a dataset with the matching dataset ID.
+      parameters: []
+    put:
+      summary: ''
+      responses:
+        '200':
+          description: OK
+      description: Update/Create Dataset
+  '/studies/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          description: Study Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/study'
+        '404':
+          description: Study Not Found
+      description: Get Study ID
+    put:
+      summary: ''
+      responses:
+        '200':
+          description: OK
+      description: Create/Update Study
+      parameters: []
+  /studies:
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: array
+                items:
+                  type: object
+                  properties:
+                    '@context':
+                      type: object
+                      properties:
+                        '@vocab':
+                          type: string
+                    '@id':
+                      type: string
+                    '@type':
+                      type: string
+      description: List all available studies
+  /analyses:
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/analysis'
+  '/analyses/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/analysis'
+      description: ''
+  '/points/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/point'
+components:
+  schemas:
+    dataset:
+      title: dataset
+      type: object
+      description: ''
+      x-examples: {}
+      properties:
+        name:
+          type: string
+          description: Unique identifier for the given user.
+        description:
+          type: string
+        publication:
+          type: string
+        doi:
+          type: string
+        pmid:
+          type: string
+        public:
+          description: Set to true if the user's email has been verified.
+          type: boolean
+        nimads_data:
+          format: date
+          description: The date that the user was created.
+          type: object
+        user_id:
+          type: string
+        user:
+          type: string
+      required:
+        - name
+        - description
+        - publication
+        - public
+    study:
+      description: ''
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        publication:
+          type: string
+          minLength: 1
+        doi:
+          type: string
+          minLength: 1
+        pmid:
+          type: string
+          minLength: 1
+        public:
+          type: boolean
+        metadata_:
+          type: object
+        user_id:
+          type: string
+          minLength: 1
+        user:
+          type: string
+          minLength: 1
+      required:
+        - name
+        - description
+        - publication
+        - doi
+        - pmid
+        - public
+        - metadata_
+        - user_id
+        - user
+    analysis:
+      title: analysis
+      type: object
+      properties:
+        '@context':
+          type: object
+          properties:
+            '@vocab':
+              type: string
+        '@id':
+          type: string
+        '@type':
+          type: string
+        condition:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+        image:
+          type: array
+          items:
+            type: string
+        name:
+          type: string
+        point:
+          type: string
+        study:
+          type: string
+        weight:
+          type: array
+          items:
+            type: string
+    point:
+      title: point
+      type: object
+      properties:
+        '@context':
+          type: object
+          properties:
+            '@vocab':
+              type: string
+        '@id':
+          type: string
+        '@type':
+          type: string
+        analysis:
+          type: string
+        coordinates:
+          type: array
+          items:
+            type: number
+        created_at:
+          type: string
+        space:
+          type: string
+        kind:
+          type: string
+        value:
+          type: array
+          items:
+            type: string
+  responses:
+    analysis:
+      description: Example response
+      content:
+        application/json:
+          schema:
+            properties:
+              id:
+                type: string
+  parameters: {}
