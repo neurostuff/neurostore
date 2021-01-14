@@ -15,7 +15,8 @@ paths:
         required: true
     get:
       summary: Get User Info by User ID
-      tags: []
+      tags:
+        - datasets
       responses:
         '200':
           description: Dataset found
@@ -43,7 +44,8 @@ paths:
         required: true
     get:
       summary: Your GET endpoint
-      tags: []
+      tags:
+        - studies
       responses:
         '200':
           description: Study Found
@@ -64,7 +66,8 @@ paths:
   /studies/:
     get:
       summary: Your GET endpoint
-      tags: []
+      tags:
+        - studies
       responses:
         '200':
           description: OK
@@ -90,7 +93,8 @@ paths:
   /analyses/:
     get:
       summary: Your GET endpoint
-      tags: []
+      tags:
+        - analyses
       responses:
         '200':
           description: OK
@@ -100,8 +104,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/analysis'
-      operationId: ''
-      description: ''
+      description: List all analyses performed across studies and datasets
     parameters: []
   '/analyses/{id}':
     parameters:
@@ -112,7 +115,8 @@ paths:
         required: true
     get:
       summary: Your GET endpoint
-      tags: []
+      tags:
+        - analyses
       responses:
         '200':
           description: OK
@@ -120,8 +124,65 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/analysis'
-      description: ''
+      description: Information pertaining to a particular analysis within a study/dataset
   '/points/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags:
+        - points
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/point'
+      description: Information about a particular MRI coordinate
+  '/images/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags:
+        - images
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/image'
+            application/xml:
+              schema:
+                type: object
+                properties: {}
+      description: Retrieve information about a particular image from an analysis
+  /images/:
+    get:
+      summary: Your GET endpoint
+      tags:
+        - images
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/image'
+      description: Retrieve and list all images
+  '/conditions/{id}':
     parameters:
       - schema:
           type: string
@@ -137,7 +198,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/point'
+                $ref: '#/components/schemas/condition'
+      description: I do not rightly know (?)
 components:
   schemas:
     dataset:
@@ -176,71 +238,241 @@ components:
     study:
       description: ''
       type: object
+      title: ''
       properties:
-        name:
+        '@id':
           type: string
-          minLength: 1
-        description:
+          format: uri
+          example: 'http://neurostuff.org/api/studies/3SLFqPmGJVsC'
+        '@type':
           type: string
-          minLength: 1
-        publication:
+          example: Study
+        analysis:
+          anyOf:
+            - type: string
+              properties: {}
+              format: uri
+              example: 'http://neurostuff.org/api/analyses/6kwPw6p79Ljm'
+            - type: array
+              items:
+                type: string
+                format: uri
+        created_at:
           type: string
-          minLength: 1
+          format: date-time
+          example: '2021-01-14T03:33:07.996179+00:00'
         doi:
           type: string
-          minLength: 1
-        pmid:
+          example: 10.1016/S0926-6410(97)00020-7
+        name:
           type: string
-          minLength: 1
-        public:
-          type: boolean
-        metadata_:
+          example: 'Functional magnetic resonance imaging of category-specific cortical activation: evidence for semantic maps.'
+        '@context':
           type: object
-        user_id:
-          type: string
-          minLength: 1
-        user:
-          type: string
-          minLength: 1
+          required:
+            - '@vocab'
+          properties:
+            '@vocab':
+              type: string
+              format: uri
+              example: 'http://neurostuff.org/nimads/'
+        metadata:
+          type: object
+          properties:
+            DOI:
+              type: string
+            acquisition_orientation:
+              type: string
+            add_date:
+              type: string
+              format: date-time
+            authors:
+              type: string
+            autocorrelation_model:
+              type: string
+            b0_unwarping_software:
+              type: string
+            communities:
+              type: array
+              items: {}
+            contributors:
+              type: string
+            description:
+              type: string
+            doi_add_date:
+              type: string
+              format: date-time
+            download_url:
+              type: string
+              format: uri
+            full_dataset_url:
+              type: string
+              format: uri
+            functional_coregistration_method:
+              type: string
+            group_description:
+              type: string
+            group_estimation_type:
+              type: string
+            group_model_multilevel:
+              type: string
+            group_model_type:
+              type: string
+            group_modeling_software:
+              type: string
+            group_repeated_measures_method:
+              type: string
+            hemodynamic_response_function:
+              type: string
+            high_pass_filter_method:
+              type: string
+            id:
+              type: integer
+            inclusion_exclusion_criteria:
+              type: string
+            interpolation_method:
+              type: string
+            intersubject_registration_software:
+              type: string
+            intrasubject_estimation_type:
+              type: string
+            intrasubject_model_type:
+              type: string
+            intrasubject_modeling_software:
+              type: string
+            journal_name:
+              type: string
+            length_of_trials:
+              type: string
+            modify_date:
+              type: string
+            motion_correction_interpolation:
+              type: string
+            motion_correction_metric:
+              type: string
+            motion_correction_reference:
+              type: string
+            motion_correction_software:
+              type: string
+            name:
+              type: string
+            nonlinear_transform_type:
+              type: string
+            number_of_images:
+              type: integer
+            object_image_type:
+              type: string
+            optimization_method:
+              type: string
+            order_of_preprocessing_operations:
+              type: string
+            orthogonalization_description:
+              type: string
+            owner:
+              type: integer
+            owner_name:
+              type: string
+              example: ChrisFiloGorgolewski
+            paper_url:
+              type: string
+              format: uri
+              example: 'http://dx.plos.org/10.1371/journal.pone.0118733'
+            parallel_imaging:
+              type: string
+            private:
+              type: boolean
+            pulse_sequence:
+              type: string
+            quality_control:
+              type: string
+            scanner_make:
+              type: string
+            scanner_model:
+              type: string
+            slice_timing_correction_software:
+              type: string
+            smoothing_type:
+              type: string
+            software_package:
+              type: string
+            software_version:
+              type: string
+            target_template_image:
+              type: string
+            transform_similarity_metric:
+              type: string
+            url:
+              type: string
+              format: uri
+              example: 'https://neurovault.org/collections/1039/'
       required:
-        - name
-        - description
-        - publication
+        - '@id'
+        - '@type'
+        - analysis
+        - created_at
         - doi
-        - pmid
-        - public
-        - metadata_
-        - user_id
-        - user
+        - name
+        - '@context'
     analysis:
       title: analysis
       type: object
       properties:
         '@context':
           type: object
+          description: JSON-LD header
           properties:
             '@vocab':
               type: string
+              description: JSON-LD vocabulary
         '@id':
           type: string
+          format: uri
+          example: 'http://neurostuff.org/api/analyses/6kwPw6p79Ljm'
+          description: JSON-LD term?
         '@type':
           type: string
+          example: Analysis
+          description: JSON-LD term?
         condition:
-          type: array
-          items:
-            type: string
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - type: string
+              properties: {}
+          description: I do not know what condition means
         created_at:
           type: string
+          format: date-time
+          example: '2021-01-14T03:33:07.996179+00:00'
+          description: the time this analysis entry was added to the database.
         image:
-          type: array
-          items:
-            type: string
+          anyOf:
+            - type: array
+              items:
+                type: string
+                format: uri
+            - type: string
+              properties: {}
+              format: uri
+          description: URL(s) pointing towards image endpoints
         name:
           type: string
+          example: '"20356"'
         point:
-          type: string
+          anyOf:
+            - type: string
+              properties: {}
+              format: uri
+              example: 'http://neurostuff.org/api/points/3znXMsoGKBLZ'
+            - type: array
+              items:
+                type: string
+                format: uri
         study:
           type: string
+          format: uri
+          example: 'http://neurostuff.org/api/studies/3SLFqPmGJVsC'
         weight:
           type: array
           items:
@@ -258,21 +490,237 @@ components:
           type: string
         '@type':
           type: string
+          example: Point
         analysis:
           type: string
+          format: uri
+          example: 'http://neurostuff.org/api/analyses/6kwPw6p79Ljm'
         coordinates:
           type: array
+          minItems: 3
+          maxItems: 3
           items:
             type: number
+            format: float
+            example: '[     63.0,     65.0,     1.0   ]'
         created_at:
           type: string
+          format: date-time
         space:
           type: string
+          example: UNKNOWN
         kind:
           type: string
         value:
           type: array
           items:
             type: string
+    image:
+      title: image
+      type: object
+      description: ''
+      properties:
+        analysis:
+          type: string
+          format: uri
+          example: 'http://neurostuff.org/api/analyses/7UvrsaALJU9g'
+          description: URL to associated analysis this image is derived from
+        metadata:
+          type: object
+          properties:
+            add_date:
+              type: string
+              format: date-time
+              example: '2019-01-29T03:16:36.866569Z'
+              description: When the image was added
+            analysis_level:
+              type: string
+              example: group
+              description: whether the analysis was performed at group or participant level
+            brain_coverage:
+              type: number
+              format: float
+              example: 100
+              maximum: 100
+              minimum: 0
+              description: percentage of the brain covered by the statistical map
+            cognitive_paradigm_cogatlas:
+              type: string
+              example: 2-stage decision task
+              description: The cognitive atlas paradigm name
+            cognitive_paradigm_cogatlas_id:
+              type: string
+              example: trm_5667451917a34
+              description: cognitive atlas paradigm unique id
+            collection:
+              type: string
+              format: uri
+              example: 'https://neurovault.org/collections/4778/'
+              description: URL to the neurovault collection
+            collection_id:
+              type: integer
+              example: 4778
+              description: ID of the neurovault collection
+            data_origin:
+              type: string
+              example: volume
+              description: How the data was analyzed (volume or surface)
+            description:
+              type: string
+              description: description of the image
+            file:
+              type: string
+              format: uri
+              example: 'https://neurovault.org/media/images/4778/Positive_RPEs_zstat.nii.gz'
+              description: URL pointing to image file
+            file_size:
+              type: integer
+              minimum: 0
+              example: 838639
+              description: size of the image file (in bytes)
+            id:
+              type: integer
+              example: 113751
+              description: neurovault ID of the image
+            image_type:
+              type: string
+              example: statistic_map
+              description: the type of data the image represents
+            is_thresholded:
+              type: boolean
+              description: whether the image is thresholded
+            is_valid:
+              type: boolean
+              description: whether the image is valid (what does valid mean?)
+            map_type:
+              type: string
+              example: Z map
+              description: type of map represented in image
+            modality:
+              type: string
+              example: fMRI-BOLD
+              description: type of data collected from the scanner
+            modify_date:
+              type: string
+              format: date-time
+              example: '"2019-01-29T03:19:10.274381Z"'
+              description: time the image was modified
+            name:
+              type: string
+              example: Positive RPEs
+              description: name of the image
+            not_mni:
+              type: boolean
+              description: whether the image is not in MNI space
+            perc_bad_voxels:
+              type: number
+              format: float
+              example: 75.5340233916703
+              minimum: 0
+              maximum: 100
+              description: percentage of bad voxels (what makes voxels bad?)
+            perc_voxels_outside:
+              type: number
+              format: float
+              example: 100
+              minimum: 0
+              maximum: 100
+              description: percentage of voxels outside the mask (maybe?)
+            subject_species:
+              type: string
+              example: homo sapiens
+              description: species the data was collected from
+            surface_left_file:
+              type: string
+              format: uri
+              example: 'https://neurovault.org/media/images/4778/113751.L.func.gii'
+              description: URL to the left brain surface file
+            surface_right_file:
+              type: string
+              format: uri
+              description: URL to the right brain surface file
+              example: 'https://neurovault.org/media/images/4778/113751.R.func.gii'
+            target_template_image:
+              type: string
+              example: MNI152NLin2009cAsym
+              description: target template the image was registered to
+            thumbnail:
+              type: string
+              format: uri
+              example: 'https://neurovault.org/media/images/4778/glass_brain_113751.jpg'
+              description: thumbnail of the image
+            type:
+              type: string
+            url:
+              type: string
+              format: uri
+              description: neurovault URL to image endpoint
+            cognitive_paradigm_description_url:
+              type: string
+              format: uri
+              example: 'https://www.cognitiveatlas.org/concept/id/trm_5159c00c3dac3/'
+              description: URL to specific cognitive atlas concept
+            contrast_definition:
+              type: string
+            reduced_representation:
+              type: string
+              example: 'https://neurovault.org/media/images/4778/transform_4mm_113751.npy'
+              description: URL to the image converted to a numpy array
+        add_date:
+          type: string
+          format: date-time
+        '@id':
+          type: string
+        '@type':
+          type: string
+        '@context':
+          type: object
+          properties:
+            '@vocab':
+              type: string
+        url:
+          type: string
+          format: uri
+          example: 'https://neurovault.org/media/images/4778/Positive_RPEs_zstat.nii.gz'
+          description: URL to image file
+        filename:
+          type: string
+          example: Positive_RPEs_zstat.nii.gz
+          description: name of the image file
+        space:
+          type: string
+          example: unknown
+          description: the template space the image is in
+        value_type:
+          type: string
+          example: Z
+          description: The values the image represents
+        analysis_name:
+          type: string
+          example: Positive RPEs
+          description: name of the analysis
+    condition:
+      title: condition
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        '@context':
+          type: object
+          properties:
+            '@vocab':
+              type: string
+        '@id':
+          type: string
+        '@type':
+          type: string
   responses: {}
   parameters: {}
+tags:
+  - name: analyses
+  - name: datasets
+  - name: images
+  - name: points
+  - name: studies
