@@ -90,7 +90,7 @@ class ObjectView(BaseView):
 
 
 LIST_USER_ARGS = {
-    'search': fields.Boolean(missing=None),
+    'search': fields.String(missing=None),
     'sort': fields.String(missing='created_at'),
     'page': fields.Int(missing=1),
     'desc': fields.Boolean(missing=True),
@@ -114,7 +114,7 @@ class ListView(BaseView):
 
     def search(self):
         # Parse arguments using webargs
-        args = parser.parse(self._user_args, request)
+        args = parser.parse(self._user_args, request, location='query')
 
         m = self._model  # for brevity
         q = m.query
