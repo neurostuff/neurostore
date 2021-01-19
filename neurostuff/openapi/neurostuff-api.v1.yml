@@ -23,7 +23,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
+                anyOf:
                   - $ref: '#/components/schemas/dataset'
                   - $ref: '#/components/schemas/id-only'
               examples: {}
@@ -63,7 +63,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
+                anyOf:
                   - $ref: '#/components/schemas/study'
                   - $ref: '#/components/schemas/id-only'
               examples: {}
@@ -102,7 +102,7 @@ paths:
                 description: ''
                 type: array
                 items:
-                  allOf:
+                  anyOf:
                     - $ref: '#/components/schemas/study'
                     - $ref: '#/components/schemas/id-only'
               examples: {}
@@ -140,7 +140,7 @@ paths:
               schema:
                 type: array
                 items:
-                  allOf:
+                  anyOf:
                     - $ref: '#/components/schemas/analysis'
                     - $ref: '#/components/schemas/id-only'
       description: List all analyses performed across studies and datasets
@@ -180,7 +180,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
+                anyOf:
                   - $ref: '#/components/schemas/analysis'
                   - $ref: '#/components/schemas/id-only'
         '404':
@@ -219,7 +219,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
+                anyOf:
                   - $ref: '#/components/schemas/point'
                   - $ref: '#/components/schemas/id-only'
               examples: {}
@@ -257,7 +257,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
+                anyOf:
                   - $ref: '#/components/schemas/image'
                   - $ref: '#/components/schemas/id-only'
         '404':
@@ -291,7 +291,7 @@ paths:
               schema:
                 type: array
                 items:
-                  allOf:
+                  anyOf:
                     - $ref: '#/components/schemas/image'
                     - $ref: '#/components/schemas/id-only'
       description: Retrieve and list all images
@@ -330,7 +330,7 @@ paths:
           content:
             application/json:
               schema:
-                allOf:
+                anyOf:
                   - $ref: '#/components/schemas/condition'
                   - $ref: '#/components/schemas/id-only'
         '404':
@@ -403,8 +403,8 @@ components:
                 format: uri
             - type: array
               items:
-                allOf:
-                  - $ref: '#/components/schemas/study'
+                anyOf:
+                  - $ref: '#/components/schemas/analysis'
                   - $ref: '#/components/schemas/id-only'
           description: URL(s) to Analyses associated with the study
         created_at:
@@ -422,10 +422,7 @@ components:
           description: title of the study
         metadata:
           description: other metadata associated with the study
-          anyOf:
-            - type: 'null'
-              properties: {}
-            - type: object
+          type: object
     analysis:
       title: analysis
       type: object
@@ -479,13 +476,9 @@ components:
           type: array
           description: what is this?
           items:
-            type: string
+            type: number
         description:
-          anyOf:
-            - type: string
-              properties: {}
-            - type: 'null'
-              properties: {}
+          type: string
     point:
       title: point
       type: object
@@ -534,10 +527,7 @@ components:
           example: 'http://neurostuff.org/api/analyses/7UvrsaALJU9g'
           description: URL to associated analysis this image is derived from
         metadata:
-          anyOf:
-            - type: 'null'
-              properties: {}
-            - type: object
+          type: object
         url:
           type: string
           format: uri
