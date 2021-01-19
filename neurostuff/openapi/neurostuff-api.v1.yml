@@ -387,9 +387,9 @@ components:
         - publication
         - public
     study:
-      description: ''
+      description: elements of a study/published paper
       type: object
-      title: ''
+      title: study
       x-examples: {}
       properties:
         analysis:
@@ -423,6 +423,7 @@ components:
         metadata:
           description: other metadata associated with the study
           type: object
+          nullable: true
     analysis:
       title: analysis
       type: object
@@ -515,6 +516,7 @@ components:
           description: I do not know what this is supposed to represent?
           items:
             type: string
+      description: a coordinate in the brain
     image:
       title: image
       type: object
@@ -571,6 +573,7 @@ components:
           type: string
         '@type':
           type: string
+      description: JSON-LD elements for data tracking
     id-only:
       title: id-only
       type: object
@@ -624,12 +627,16 @@ components:
       schema:
         type: string
         minLength: 1
+        example: imagin
+      description: search for entries that meet certain criteria
     sort:
       name: sort
       in: query
       required: false
       schema:
         type: string
+        default: created_at
+      description: Parameter to sort results on
     page:
       name: page
       in: query
@@ -638,12 +645,14 @@ components:
         type: integer
         format: int32
         minimum: 0
+      description: page of results
     desc:
       name: desc
       in: query
       required: false
       schema:
         type: boolean
+      description: sort results by descending order (as opposed to ascending order)
     page_size:
       name: page_size
       in: query
@@ -654,12 +663,14 @@ components:
         exclusiveMaximum: true
         minimum: 1
         format: int32
+      description: number of results to show on a page
     nested:
       name: nested
       in: query
       required: false
       schema:
         type: boolean
+      description: whether to show the URI to a resource (false) or to embed the object in the response (true)
 tags:
   - name: analyses
   - name: datasets
