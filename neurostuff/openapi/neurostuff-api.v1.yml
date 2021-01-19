@@ -403,7 +403,9 @@ components:
                 format: uri
             - type: array
               items:
-                $ref: '#/components/schemas/analysis'
+                allOf:
+                  - $ref: '#/components/schemas/study'
+                  - $ref: '#/components/schemas/id-only'
           description: URL(s) to Analyses associated with the study
         created_at:
           type: string
