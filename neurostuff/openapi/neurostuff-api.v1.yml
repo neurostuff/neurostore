@@ -361,7 +361,7 @@ components:
       properties:
         name:
           type: string
-          description: Unique identifier for the given user.
+          description: ''
         description:
           type: string
         publication:
@@ -371,21 +371,16 @@ components:
         pmid:
           type: string
         public:
-          description: Set to true if the user's email has been verified.
+          description: ''
           type: boolean
         nimads_data:
           format: date
-          description: The date that the user was created.
+          description: ''
           type: object
         user_id:
           type: string
         user:
           type: string
-      required:
-        - name
-        - description
-        - publication
-        - public
     study:
       description: elements of a study/published paper
       type: object
@@ -435,7 +430,7 @@ components:
               items:
                 type: string
             - type: string
-          description: I do not know what condition means
+          description: 'term that describes '
         created_at:
           type: string
           format: date-time
@@ -475,7 +470,7 @@ components:
           example: 'http://neurostuff.org/api/studies/3SLFqPmGJVsC'
         weight:
           type: array
-          description: what is this?
+          description: 'weight applied to each condition, must be the same length as condition'
           items:
             type: number
         description:
@@ -530,6 +525,7 @@ components:
           description: URL to associated analysis this image is derived from
         metadata:
           type: object
+          description: metadata from image
         url:
           type: string
           format: uri
@@ -555,31 +551,55 @@ components:
       title: condition
       type: object
       x-examples: {}
+      description: ''
       properties:
         name:
           type: string
+          description: condition name
         description:
           type: string
+          description: condition description
+        cognitive_atlas_concept:
+          type: string
+          format: uri
+          description: URI to cogntive atlas concept
+        cognitive_atlas_phenotype:
+          type: string
+          format: uri
+          description: URI to cognitive atlas phenotype
+        cognitive_atlas_task:
+          type: string
+          format: uri
+          description: URI to cognitive atlas task
     json-ld:
       title: json-ld
       type: object
+      description: JSON-LD elements for data tracking
       properties:
         '@context':
           type: object
+          description: Context for the shorthand names
           properties:
             '@vocab':
               type: string
+              description: common URI prefix for @type
+              format: uri
         '@id':
           type: string
+          format: uri
+          description: URI of the resource
         '@type':
           type: string
-      description: JSON-LD elements for data tracking
+          description: One of the NiMADS data types
+          example: Study
     id-only:
       title: id-only
       type: object
       properties:
         id:
           type: string
+          format: uri
+          description: URI specifying the location of this resource
   responses:
     '404':
       description: Example response
@@ -628,7 +648,7 @@ components:
         type: string
         minLength: 1
         example: imagin
-      description: search for entries that meet certain criteria
+      description: search for entries that contain the substring
     sort:
       name: sort
       in: query
