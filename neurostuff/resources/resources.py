@@ -61,10 +61,11 @@ class BaseView(MethodView):
         # Update nested attributes recursively
         for field, res_name in cls._nested.items():
             ResCls = globals()[res_name]
-            nested = [ResCls.update_or_create(rec, commit=False)
-                      for rec in data[field]]
-            setattr(record, field, nested)
-            to_commit.extend(nested)
+            if data.get(field):
+                nested = [ResCls.update_or_create(rec, commit=False)
+                        for rec in data.get(field)]
+                setattr(record, field, nested)
+                to_commit.extend(nested)
 
         if commit:
             db.session.add_all(to_commit)
@@ -82,7 +83,7 @@ class ObjectView(BaseView):
     def put(self, id):
         data = parser.parse(self.schema, request)
         if id != data['id']:
-            return 422
+            return abort(422)
 
         record = self.__class__.update_or_create(data, id)
 
@@ -206,7 +207,7 @@ class PointValueView(ObjectView):
 
 class StudiesListView(ListView):
     _model = Study
-    _only = ('name', 'description', 'doi', '_type', '_id', 'created_at')
+    # _only = ('name', 'description', 'doi', '_type', '_id', 'created_at')
     _search_fields = ('name', 'description')
 
 
