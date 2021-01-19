@@ -1,4 +1,5 @@
 from ..request_utils import decode_json
+from ...models.data import Study
 
 
 def test_get_studies(auth_client, ingest_neurosynth):
@@ -14,9 +15,7 @@ def test_get_studies(auth_client, ingest_neurosynth):
     # Check study keys
     study = studies_list[0]
 
-    assert study['@context'] == {'@vocab': 'http://neurostuff.org/nimads/'}
-    assert study['@type'] == 'Study'
-    s_id = study['@id'].split('/')[-1]
+    s_id = study['id'].split('/')[-1]
 
     # Query specify analysis ID
     resp = auth_client.get(f"/api/studies/{s_id}")
@@ -29,5 +28,21 @@ def test_get_studies(auth_client, ingest_neurosynth):
 
     assert full_study['doi'] == '10.1016/S0896-6273(00)80456-0'
 
-    assert full_study['@id'] == \
+    assert full_study['id'] == \
         f'http://neurostuff.org/api/studies/{s_id}'
+
+
+def test_put_studies(auth_client, ingest_neurosynth):
+    study_entry = Study.query.first()
+    payload = auth_client.get(f"/api/studies/{study_entry.id}?nested=true").json
+    #payload = auth_client.get(f"/api/studies/{study_entry.id}").json
+    payload.pop("created_at")
+    payload['metadata'] = {'cool': 'important detail'}
+    [(pl.pop('created_at'), pl.pop('study')) for pl in payload['analysis']]
+    [(p.pop('created_at'), p.pop('analysis')) for pl in payload['analysis'] for p in pl['point']]
+    put_resp = auth_client.put(f"/api/studies/{study_entry.id}", data=payload)
+    assert put_resp.status_code == 200
+
+    updated_study_entry = Study.query.filter_by(id=study_entry.id).first()
+
+    assert put_resp.json['metadata'] == updated_study_entry.metadata_
