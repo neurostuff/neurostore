@@ -1,0 +1,60 @@
+name: Docker Workflow
+
+on: [pull_request,workflow_dispatch,push]
+
+jobs:
+  docker_test_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - 
+      name: Checkout
+      uses: actions/checkout@v2
+    -
+      name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+    - 
+      name: Configuration
+      run: |
+        cp .env.example .env
+        cp neurostuff/example_config.py neurostuff/config.py
+    - 
+      name: Build backend
+      run: |
+        docker-compose build
+        docker-compose \
+          -f docker-compose.yml \
+          -f docker-compose.dev.yml \
+          up -d
+    -
+      name: Migrate/Upgrade database
+      run: |
+        docker-compose exec neurostuff \
+        bash -c \
+            "python manage.py db merge heads && \
+             python manage.py db stamp head && \
+             python manage.py db migrate && \
+             python manage.py db upgrade"
+    -
+      name: Ingest Data
+      run: |
+        docker-compose exec neurostuff \
+        bash -c \
+            "python manage.py add_user admin@neurostuff.org password && \
+             python manage.py ingest_neurosynth"
+    - 
+      name: Create test database
+      run: |
+        docker-compose exec \
+        -e "PGPASSWORD=example" \
+        postgres \
+        psql -h postgres -U postgres -c "create database test_db"
+    - 
+      name: Run tests
+      run: |
+        docker-compose run \
+          -e "APP_SETTINGS=neurostuff.config.DockerTestConfig" \
+          --rm -w /neurostuff \
+          neurostuff \
+          python -m pytest neurostuff/tests
+
+    
