@@ -57,6 +57,8 @@ class Analysis(BaseMixin, db.Model):
     study_id = db.Column(db.Text, db.ForeignKey('studies.id'))
     name = db.Column(db.String)
     description = db.Column(db.String)
+    # sample_size or meta-data (number of units unspecified, determine from entity table)
+    # are people with groups
     study = relationship('Study', backref=backref('analyses'))
     conditions = association_proxy('analysis_conditions', 'condition')
     weights = association_proxy('analysis_conditions', 'weight')
@@ -94,13 +96,15 @@ ImageEntityMap = db.Table(
     db.Column('entity', db.Text, db.ForeignKey('entities.id')))
 
 
+# purpose of Entity: you have an image/coordinate, but you do not
+# know where it was from
 class Entity(BaseMixin, db.Model):
     __tablename__ = 'entities'
 
-    study_id = db.Column(db.Text, db.ForeignKey("studies.id"))
+    study_id = db.Column(db.Text, db.ForeignKey("studies.id")) # link to analysis
     label = db.Column(db.String)
     level = db.Column(db.String)
-    data = db.Column(db.JSON)
+    data = db.Column(db.JSON) # metadata
     study = relationship('Study', backref=backref('entities'))
 
 
