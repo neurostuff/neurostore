@@ -28,7 +28,7 @@ graphql-server-core==1.2.0
 idna==2.10
 itsdangerous==2.0.0a1
 Jinja2==3.0.0a1
-lxml==4.6.2
+lxml==4.6.3
 MarkupSafe==2.0.0a1
 marshmallow==3.7.1
 numpy==1.19.1
