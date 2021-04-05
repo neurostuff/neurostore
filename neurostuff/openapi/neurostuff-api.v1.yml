@@ -1,0 +1,700 @@
+openapi: 3.0.0
+info:
+  title: neurostuff draft api
+  version: '1.0'
+  description: Query dataset and meta-analyses
+servers:
+  - url: 'http://localhost:3000'
+paths:
+  '/datasets/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    get:
+      summary: Get User Info by User ID
+      tags:
+        - datasets
+      responses:
+        '200':
+          description: Dataset found
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/dataset'
+                  - $ref: '#/components/schemas/id-only'
+              examples: {}
+        '404':
+          $ref: '#/components/responses/404'
+      description: Retrieve the information of a dataset with the matching dataset ID.
+      parameters: []
+    put:
+      summary: ''
+      responses:
+        '200':
+          description: OK
+        '422':
+          $ref: '#/components/responses/422'
+      description: Update/Create Dataset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/dataset'
+      tags:
+        - datasets
+  '/studies/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags:
+        - studies
+      responses:
+        '200':
+          description: Study Found
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/study'
+                  - $ref: '#/components/schemas/id-only'
+              examples: {}
+        '404':
+          $ref: '#/components/responses/404'
+      description: Get Study ID
+      parameters:
+        - $ref: '#/components/parameters/nested'
+    put:
+      summary: ''
+      responses:
+        '200':
+          description: OK
+        '422':
+          $ref: '#/components/responses/422'
+      description: Create/Update Study
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/study'
+      tags:
+        - studies
+  /studies/:
+    get:
+      summary: Your GET endpoint
+      tags:
+        - studies
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                description: ''
+                type: array
+                items:
+                  anyOf:
+                    - $ref: '#/components/schemas/study'
+                    - $ref: '#/components/schemas/id-only'
+              examples: {}
+      description: List all available studies
+      parameters:
+        - $ref: '#/components/parameters/search'
+        - $ref: '#/components/parameters/sort'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/desc'
+        - $ref: '#/components/parameters/page_size'
+        - $ref: '#/components/parameters/nested'
+    parameters: []
+    post:
+      summary: ''
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/study'
+      tags:
+        - studies
+  /analyses/:
+    get:
+      summary: Your GET endpoint
+      tags:
+        - analyses
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  anyOf:
+                    - $ref: '#/components/schemas/analysis'
+                    - $ref: '#/components/schemas/id-only'
+      description: List all analyses performed across studies and datasets
+      parameters:
+        - $ref: '#/components/parameters/search'
+        - $ref: '#/components/parameters/sort'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/desc'
+        - $ref: '#/components/parameters/page_size'
+    parameters: []
+    post:
+      summary: ''
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/analysis'
+      tags:
+        - analyses
+  '/analyses/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags:
+        - analyses
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/analysis'
+                  - $ref: '#/components/schemas/id-only'
+        '404':
+          $ref: '#/components/responses/404'
+      description: Information pertaining to a particular analysis within a study/dataset
+      parameters:
+        - $ref: '#/components/parameters/nested'
+    put:
+      summary: ''
+      responses:
+        '200':
+          description: OK
+        '422':
+          $ref: '#/components/responses/422'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/analysis'
+      tags:
+        - analyses
+  '/points/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags:
+        - points
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/point'
+                  - $ref: '#/components/schemas/id-only'
+              examples: {}
+        '404':
+          description: Not Found
+      description: Information about a particular MRI coordinate
+    put:
+      summary: ''
+      responses:
+        '200':
+          description: OK
+        '422':
+          $ref: '#/components/responses/422'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/point'
+      tags:
+        - points
+  '/images/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags:
+        - images
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/image'
+                  - $ref: '#/components/schemas/id-only'
+        '404':
+          $ref: '#/components/responses/404'
+      description: Retrieve information about a particular image from an analysis
+    put:
+      summary: ''
+      responses:
+        '200':
+          description: OK
+        '422':
+          $ref: '#/components/responses/422'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/image'
+        description: ''
+      tags:
+        - images
+  /images/:
+    get:
+      summary: Your GET endpoint
+      tags:
+        - images
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  anyOf:
+                    - $ref: '#/components/schemas/image'
+                    - $ref: '#/components/schemas/id-only'
+      description: Retrieve and list all images
+      parameters:
+        - $ref: '#/components/parameters/search'
+        - $ref: '#/components/parameters/sort'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/desc'
+        - $ref: '#/components/parameters/page_size'
+    post:
+      summary: ''
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/image'
+      tags:
+        - images
+  '/conditions/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    get:
+      summary: Your GET endpoint
+      tags:
+        - conditions
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: '#/components/schemas/condition'
+                  - $ref: '#/components/schemas/id-only'
+        '404':
+          $ref: '#/components/responses/404'
+      description: I do not rightly know (?)
+    put:
+      summary: ''
+      responses:
+        '200':
+          description: OK
+        '422':
+          $ref: '#/components/responses/422'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/condition'
+        description: ''
+      tags:
+        - conditions
+components:
+  schemas:
+    dataset:
+      title: dataset
+      type: object
+      description: ''
+      x-examples: {}
+      properties:
+        name:
+          type: string
+          description: ''
+        description:
+          type: string
+        publication:
+          type: string
+        doi:
+          type: string
+        pmid:
+          type: string
+        public:
+          description: ''
+          type: boolean
+        nimads_data:
+          format: date
+          description: ''
+          type: object
+        user_id:
+          type: string
+        user:
+          type: string
+    study:
+      description: elements of a study/published paper
+      type: object
+      title: study
+      x-examples: {}
+      properties:
+        analysis:
+          anyOf:
+            - type: string
+              format: uri
+              example: 'http://neurostuff.org/api/analyses/6kwPw6p79Ljm'
+            - type: array
+              items:
+                type: string
+                format: uri
+            - type: array
+              items:
+                anyOf:
+                  - $ref: '#/components/schemas/analysis'
+                  - $ref: '#/components/schemas/id-only'
+          description: URL(s) to Analyses associated with the study
+        created_at:
+          type: string
+          format: date-time
+          example: '2021-01-14T03:33:07.996179+00:00'
+          description: The time this study was ingested into the database
+        doi:
+          type: string
+          example: 10.1016/S0926-6410(97)00020-7
+          description: digital object identifier of the study
+        name:
+          type: string
+          example: 'Functional magnetic resonance imaging of category-specific cortical activation: evidence for semantic maps.'
+          description: title of the study
+        metadata:
+          description: other metadata associated with the study
+          type: object
+          nullable: true
+    analysis:
+      title: analysis
+      type: object
+      x-examples: {}
+      properties:
+        condition:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - type: string
+          description: 'term that describes '
+        created_at:
+          type: string
+          format: date-time
+          example: '2021-01-14T03:33:07.996179+00:00'
+          description: the time this analysis entry was added to the database.
+        image:
+          anyOf:
+            - type: array
+              items:
+                type: string
+                format: uri
+            - type: string
+              format: uri
+            - type: array
+              items:
+                $ref: '#/components/schemas/image'
+          description: URL(s) pointing towards image endpoints
+        name:
+          type: string
+          example: '"20356"'
+        point:
+          anyOf:
+            - type: string
+              format: uri
+              example: 'http://neurostuff.org/api/points/3znXMsoGKBLZ'
+              description: URL(s) linking to coordinate endpoints
+            - type: array
+              items:
+                type: string
+                format: uri
+            - type: array
+              items:
+                $ref: '#/components/schemas/point'
+        study:
+          type: string
+          format: uri
+          example: 'http://neurostuff.org/api/studies/3SLFqPmGJVsC'
+        weight:
+          type: array
+          description: 'weight applied to each condition, must be the same length as condition'
+          items:
+            type: number
+        description:
+          type: string
+    point:
+      title: point
+      type: object
+      x-examples: {}
+      properties:
+        analysis:
+          type: string
+          format: uri
+          example: 'http://neurostuff.org/api/analyses/6kwPw6p79Ljm'
+          description: URL to analysis endpoints that reference this point
+        coordinates:
+          type: array
+          minItems: 3
+          maxItems: 3
+          description: location of the point
+          items:
+            type: number
+            format: float
+            example: 63
+        created_at:
+          type: string
+          format: date-time
+          description: time point was ingested into the database
+          example: '2021-01-16T20:50:38.009318+00:00'
+        space:
+          type: string
+          example: UNKNOWN
+          description: template space used to determine coordinate
+        kind:
+          type: string
+          description: I do not know what this is supposed to represent?
+        value:
+          type: array
+          description: I do not know what this is supposed to represent?
+          items:
+            type: string
+      description: a coordinate in the brain
+    image:
+      title: image
+      type: object
+      description: ''
+      x-examples: {}
+      properties:
+        analysis:
+          type: string
+          format: uri
+          example: 'http://neurostuff.org/api/analyses/7UvrsaALJU9g'
+          description: URL to associated analysis this image is derived from
+        metadata:
+          type: object
+          description: metadata from image
+        url:
+          type: string
+          format: uri
+          example: 'https://neurovault.org/media/images/4778/Positive_RPEs_zstat.nii.gz'
+          description: URL to image file
+        filename:
+          type: string
+          example: Positive_RPEs_zstat.nii.gz
+          description: name of the image file
+        space:
+          type: string
+          example: unknown
+          description: the template space the image is in
+        value_type:
+          type: string
+          example: Z
+          description: The values the image represents
+        analysis_name:
+          type: string
+          example: Positive RPEs
+          description: name of the analysis
+    condition:
+      title: condition
+      type: object
+      x-examples: {}
+      description: ''
+      properties:
+        name:
+          type: string
+          description: condition name
+        description:
+          type: string
+          description: condition description
+        cognitive_atlas_concept:
+          type: string
+          format: uri
+          description: URI to cogntive atlas concept
+        cognitive_atlas_phenotype:
+          type: string
+          format: uri
+          description: URI to cognitive atlas phenotype
+        cognitive_atlas_task:
+          type: string
+          format: uri
+          description: URI to cognitive atlas task
+    json-ld:
+      title: json-ld
+      type: object
+      description: JSON-LD elements for data tracking
+      properties:
+        '@context':
+          type: object
+          description: Context for the shorthand names
+          properties:
+            '@vocab':
+              type: string
+              description: common URI prefix for @type
+              format: uri
+        '@id':
+          type: string
+          format: uri
+          description: URI of the resource
+        '@type':
+          type: string
+          description: One of the NiMADS data types
+          example: Study
+    id-only:
+      title: id-only
+      type: object
+      properties:
+        id:
+          type: string
+          format: uri
+          description: URI specifying the location of this resource
+  responses:
+    '404':
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: '"The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again."'
+              status:
+                type: integer
+                enum:
+                  - 404
+              title:
+                type: string
+                example: '"Not Found"'
+              type:
+                type: string
+                example: '"about:blank"'
+    '422':
+      description: Example response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              detail:
+                type: string
+                example: The request was well-formed but was unable to be followed due to semantic errors.
+              status:
+                type: integer
+              title:
+                type: string
+                example: Unprocessable Entity
+              type:
+                type: string
+                example: 'about:blank'
+  parameters:
+    search:
+      name: search
+      in: query
+      required: false
+      schema:
+        type: string
+        minLength: 1
+        example: imagin
+      description: search for entries that contain the substring
+    sort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        default: created_at
+      description: Parameter to sort results on
+    page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+      description: page of results
+    desc:
+      name: desc
+      in: query
+      required: false
+      schema:
+        type: boolean
+      description: sort results by descending order (as opposed to ascending order)
+    page_size:
+      name: page_size
+      in: query
+      required: false
+      schema:
+        type: integer
+        maximum: 100
+        exclusiveMaximum: true
+        minimum: 1
+        format: int32
+      description: number of results to show on a page
+    nested:
+      name: nested
+      in: query
+      required: false
+      schema:
+        type: boolean
+      description: whether to show the URI to a resource (false) or to embed the object in the response (true)
+tags:
+  - name: analyses
+  - name: datasets
+  - name: images
+  - name: points
+  - name: studies
+  - name: conditions

@@ -13,20 +13,20 @@ from ..schemas import (StudySchema, AnalysisSchema, ConditionSchema,
                        ImageSchema, PointSchema, DatasetSchema)
 
 __all__ = [
-    'DatasetResource',
-    'StudyResource',
-    'AnalysisResource',
-    'ConditionResource',
-    'ImageResource',
-    'PointResource',
-    'PointValueResource',
-    'StudyListResource',
-    'AnalysisListResource',
-    'ImageListResource',
+    'DatasetsView',
+    'StudiesView',
+    'AnalysesView',
+    'ConditionsView',
+    'ImagesView',
+    'PointsView',
+    'PointValueView',
+    'StudiesListView',
+    'AnalysesListView',
+    'ImagesListView',
 ]
 
 
-class BaseResource(MethodView):
+class BaseView(MethodView):
 
     _model = None
     _nested = {}
@@ -61,10 +61,11 @@ class BaseResource(MethodView):
         # Update nested attributes recursively
         for field, res_name in cls._nested.items():
             ResCls = globals()[res_name]
-            nested = [ResCls.update_or_create(rec, commit=False)
-                      for rec in data[field]]
-            setattr(record, field, nested)
-            to_commit.extend(nested)
+            if data.get(field):
+                nested = [ResCls.update_or_create(rec, commit=False)
+                        for rec in data.get(field)]
+                setattr(record, field, nested)
+                to_commit.extend(nested)
 
         if commit:
             db.session.add_all(to_commit)
@@ -73,7 +74,7 @@ class BaseResource(MethodView):
         return record
 
 
-class ObjectResource(BaseResource):
+class ObjectView(BaseView):
 
     def get(self, id):
         record = self._model.query.filter_by(id=id).first_or_404()
@@ -82,7 +83,7 @@ class ObjectResource(BaseResource):
     def put(self, id):
         data = parser.parse(self.schema, request)
         if id != data['id']:
-            return 422
+            return abort(422)
 
         record = self.__class__.update_or_create(data, id)
 
@@ -90,7 +91,7 @@ class ObjectResource(BaseResource):
 
 
 LIST_USER_ARGS = {
-    'search': fields.Boolean(missing=None),
+    'search': fields.String(missing=None),
     'sort': fields.String(missing='created_at'),
     'page': fields.Int(missing=1),
     'desc': fields.Boolean(missing=True),
@@ -98,7 +99,7 @@ LIST_USER_ARGS = {
 }
 
 
-class ListResource(BaseResource):
+class ListView(BaseView):
 
     _only = None
     _search_fields = []
@@ -112,9 +113,9 @@ class ListResource(BaseResource):
             **{f: fields.Str() for f in self._fulltext_fields}
             }
 
-    def get(self):
+    def search(self):
         # Parse arguments using webargs
-        args = parser.parse(self._user_args, request)
+        args = parser.parse(self._user_args, request, location='query')
 
         m = self._model  # for brevity
         q = m.query
@@ -166,55 +167,55 @@ class ListResource(BaseResource):
         return self.schema().dump(record)
 
 
-class DatasetResource(ObjectResource):
+class DatasetsView(ObjectView):
     _model = Dataset
 
 
-class StudyResource(ObjectResource):
+class StudiesView(ObjectView):
     _model = Study
     _nested = {
-        'analyses': 'AnalysisResource',
+        'analyses': 'AnalysesView',
     }
 
 
-class AnalysisResource(ObjectResource):
+class AnalysesView(ObjectView):
     _model = Analysis
     _nested = {
-        'images': 'ImageResource',
-        'points': 'PointResource',
+        'images': 'ImagesView',
+        'points': 'PointsView',
     }
 
 
-class ConditionResource(ObjectResource):
+class ConditionsView(ObjectView):
     _model = Condition
 
 
-class ImageResource(ObjectResource):
+class ImagesView(ObjectView):
     _model = Image
 
 
-class PointResource(ObjectResource):
+class PointsView(ObjectView):
     _model = Point
     _nested = {
-        'values': 'PointValueResource',
+        'values': 'PointValueView',
     }
 
 
-class PointValueResource(ObjectResource):
+class PointValueView(ObjectView):
     _model = PointValue
 
 
-class StudyListResource(ListResource):
+class StudiesListView(ListView):
     _model = Study
-    _only = ('name', 'description', 'doi', '_type', '_id', 'created_at')
+    # _only = ('name', 'description', 'doi', '_type', '_id', 'created_at')
     _search_fields = ('name', 'description')
 
 
-class AnalysisListResource(ListResource):
+class AnalysesListView(ListView):
     _model = Analysis
     _search_fields = ('name', 'description')
 
 
-class ImageListResource(ListResource):
+class ImagesListView(ListView):
     _model = Image
     _search_fields = ('filename', 'space', 'value_type', 'analysis_name')
