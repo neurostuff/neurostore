@@ -21,9 +21,9 @@ requirements = [
 print("PACKAGES:", find_packages(exclude=['tests', 'test_*']))
 
 setup(
-    name="neurostuff",
+    name="neurostore",
     version='0.0.0',
-    description="NeuroStuff",
+    description="neurostore",
     install_requires=requirements,
     maintainer='Tal Yarkoni',
     maintainer_email='tyarkoni@gmail.com',

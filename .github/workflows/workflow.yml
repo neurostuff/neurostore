@@ -16,7 +16,7 @@ jobs:
       name: Configuration
       run: |
         cp .env.example .env
-        cp neurostuff/example_config.py neurostuff/config.py
+        cp neurostore/example_config.py neurostore/config.py
     - 
       name: Build backend
       run: |
@@ -28,7 +28,7 @@ jobs:
     -
       name: Migrate/Upgrade database
       run: |
-        docker-compose exec neurostuff \
+        docker-compose exec neurostore \
         bash -c \
             "python manage.py db merge heads && \
              python manage.py db stamp head && \
@@ -37,9 +37,9 @@ jobs:
     -
       name: Ingest Data
       run: |
-        docker-compose exec neurostuff \
+        docker-compose exec neurostore \
         bash -c \
-            "python manage.py add_user admin@neurostuff.org password && \
+            "python manage.py add_user admin@neurostore.org password && \
              python manage.py ingest_neurosynth"
     - 
       name: Create test database
@@ -52,9 +52,9 @@ jobs:
       name: Run tests
       run: |
         docker-compose run \
-          -e "APP_SETTINGS=neurostuff.config.DockerTestConfig" \
-          --rm -w /neurostuff \
-          neurostuff \
-          python -m pytest neurostuff/tests
+          -e "APP_SETTINGS=neurostore.config.DockerTestConfig" \
+          --rm -w /neurostore \
+          neurostore \
+          python -m pytest neurostore/tests
 
     

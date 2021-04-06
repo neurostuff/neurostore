@@ -10,13 +10,13 @@ import tarfile
 import pandas as pd
 import requests
 
-from neurostuff.models import Study, Analysis, Image, User, Point
-from neurostuff.core import db
+from neurostore.models import Study, Analysis, Image, User, Point
+from neurostore.core import db
 
 
 def ingest_neurovault(verbose=False, limit=20):
 
-    user = User.query.filter_by(email='admin@neurostuff.org').first()
+    user = User.query.filter_by(email='admin@neurostore.org').first()
 
     # Store existing studies for quick lookup
     all_studies = {s.doi: s for s in
@@ -75,7 +75,7 @@ def ingest_neurovault(verbose=False, limit=20):
 
 def ingest_neurosynth(max_rows=None):
 
-    user = User.query.filter_by(email='admin@neurostuff.org').first()
+    user = User.query.filter_by(email='admin@neurostore.org').first()
 
     # url = "https://github.com/neurosynth/neurosynth-data/blob/master/current_data.tar.gz?raw=true"
     # response = requests.get(url, stream=True)

@@ -29,7 +29,7 @@ def test_get_studies(auth_client, ingest_neurosynth):
     assert full_study['doi'] == '10.1016/S0896-6273(00)80456-0'
 
     assert full_study['id'] == \
-        f'http://neurostuff.org/api/studies/{s_id}'
+        f'http://neurostore.org/api/studies/{s_id}'
 
 
 def test_put_studies(auth_client, ingest_neurosynth):

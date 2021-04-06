@@ -1,5 +1,5 @@
 server {
-     server_name neurostuff.org www.neurostuff.org;
+     server_name neurostore.org www.neurostore.org;
 
      location /.well-known {
          allow all;

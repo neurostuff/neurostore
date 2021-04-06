@@ -18,11 +18,11 @@ db = init_db(app)
 
 options = {"swagger_ui": True}
 connexion_app.add_api(
-    'neurostuff-api.v1.yml',
+    'neurostore-api.v1.yml',
     base_path='/api',
     options=options,
     arguments={"title": "NeuroStore API"},
-    resolver=MethodListViewResolver("neurostuff.resources.resources"),
+    resolver=MethodListViewResolver("neurostore.resources.resources"),
     strict_validation=True,
     validate_responses=True,
 )

@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: neurostuff draft api
+  title: neurostore draft api
   version: '1.0'
   description: Query dataset and meta-analyses
 servers:
@@ -391,7 +391,7 @@ components:
           anyOf:
             - type: string
               format: uri
-              example: 'http://neurostuff.org/api/analyses/6kwPw6p79Ljm'
+              example: 'http://neurostore.org/api/analyses/6kwPw6p79Ljm'
             - type: array
               items:
                 type: string
@@ -455,7 +455,7 @@ components:
           anyOf:
             - type: string
               format: uri
-              example: 'http://neurostuff.org/api/points/3znXMsoGKBLZ'
+              example: 'http://neurostore.org/api/points/3znXMsoGKBLZ'
               description: URL(s) linking to coordinate endpoints
             - type: array
               items:
@@ -467,7 +467,7 @@ components:
         study:
           type: string
           format: uri
-          example: 'http://neurostuff.org/api/studies/3SLFqPmGJVsC'
+          example: 'http://neurostore.org/api/studies/3SLFqPmGJVsC'
         weight:
           type: array
           description: 'weight applied to each condition, must be the same length as condition'
@@ -483,7 +483,7 @@ components:
         analysis:
           type: string
           format: uri
-          example: 'http://neurostuff.org/api/analyses/6kwPw6p79Ljm'
+          example: 'http://neurostore.org/api/analyses/6kwPw6p79Ljm'
           description: URL to analysis endpoints that reference this point
         coordinates:
           type: array
@@ -521,7 +521,7 @@ components:
         analysis:
           type: string
           format: uri
-          example: 'http://neurostuff.org/api/analyses/7UvrsaALJU9g'
+          example: 'http://neurostore.org/api/analyses/7UvrsaALJU9g'
           description: URL to associated analysis this image is derived from
         metadata:
           type: object

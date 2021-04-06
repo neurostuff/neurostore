@@ -12,7 +12,7 @@ class Config(object):
     WTF_CSRF_ENABLED = False
 
     POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', '')
-    DB_NAME = 'neurostuff'
+    DB_NAME = 'neurostore'
     SQLALCHEMY_DATABASE_URI = "postgres://postgres:" \
         f"{POSTGRES_PASSWORD}@postgres:5432/{DB_NAME}"
     PROPAGATE_EXCEPTIONS = True
