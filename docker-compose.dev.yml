@@ -5,5 +5,5 @@ services:
       - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
 
   neurostuff:
-    command: /usr/local/bin/gunicorn -w 2 -b :8000 neurostuff.core:app --log-level debug --timeout 120 --reload
+    command: /usr/local/bin/gunicorn -w 2 -b :8000 neurostore.core:app --log-level debug --timeout 120 --reload
     restart: "no"
