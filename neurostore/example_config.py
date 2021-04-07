@@ -14,8 +14,8 @@ class Config(object):
     POSTGRES_HOST = os.environ.get('POSTGRES_HOST')
     POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', '')
     DB_NAME = 'neurostore'
-    SQLALCHEMY_DATABASE_URI = f"postgres://{POSTGRES_HOST}:" \
-        f"{POSTGRES_PASSWORD}@postgres:5432/{DB_NAME}"
+    SQLALCHEMY_DATABASE_URI = f"postgres://postgres:" \
+        f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
     PROPAGATE_EXCEPTIONS = True
 
     GITHUB_CLIENT_ID = "github-id"
@@ -44,8 +44,8 @@ class DockerTestConfig(TestingConfig):
     DB_NAME = 'test_db'
     POSTGRES_HOST = os.environ.get('POSTGRES_HOST')
     POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', '')
-    SQLALCHEMY_DATABASE_URI = f'postgres://{POSTGRES_HOST}:' \
-         f'{POSTGRES_PASSWORD}@postgres:5432/{DB_NAME}'
+    SQLALCHEMY_DATABASE_URI = f'postgres://postgres:' \
+         f'{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}'
 
 
 class TravisConfig(TestingConfig):
