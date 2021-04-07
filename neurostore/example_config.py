@@ -11,9 +11,10 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = False
 
+    POSTGRES_HOST = os.environ.get('POSTGRES_HOST')
     POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', '')
     DB_NAME = 'neurostore'
-    SQLALCHEMY_DATABASE_URI = "postgres://postgres:" \
+    SQLALCHEMY_DATABASE_URI = f"postgres://{POSTGRES_HOST}:" \
         f"{POSTGRES_PASSWORD}@postgres:5432/{DB_NAME}"
     PROPAGATE_EXCEPTIONS = True
 
@@ -41,8 +42,9 @@ class TestingConfig(Config):
 
 class DockerTestConfig(TestingConfig):
     DB_NAME = 'test_db'
+    POSTGRES_HOST = os.environ.get('POSTGRES_HOST')
     POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', '')
-    SQLALCHEMY_DATABASE_URI = 'postgres://postgres:' \
+    SQLALCHEMY_DATABASE_URI = f'postgres://{POSTGRES_HOST}:' \
          f'{POSTGRES_PASSWORD}@postgres:5432/{DB_NAME}'
 
 
