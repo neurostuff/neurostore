@@ -31,7 +31,7 @@ services:
     volumes_from:
       - neurostore
 
-  postgres:
+  pgsql:
     restart: always
     build: ./postgres
     volumes:
