@@ -48,7 +48,7 @@ Finally, add an admin user, and ingest data
 
 
 ## Maintaining docker image and db
-If you make a change to /neurostore, you should be able to simply restart the server.
+If you make a change to neurostore, you should be able to simply restart the server.
 
     docker-compose restart neurostore
 
@@ -61,7 +61,7 @@ If you need to upgrade the db after changing any models:
 ## Running tests
 To run tests, after starting services, create a test database:
 
-    docker-compose exec postgres psql -h postgres -U postgres -c "create database test_db"
+    docker-compose exec pgsql psql -U postgres -c "create database test_db"
 
 **NOTE**: This command will ask you for the postgres password which is defined
 in the `.env` file.
