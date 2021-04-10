@@ -1,0 +1,11 @@
+version: "2"
+services:
+  nginx:
+    environment:
+      - VIRTUAL_HOST=neurostore.org,www.neurostore.org,test.neurostore.org
+      - LETSENCRYPT_HOST=neurostore.org,www.neurostore.org,test.neurostore.org
+
+networks:
+  default:
+    external:
+      name: nginx-proxy
