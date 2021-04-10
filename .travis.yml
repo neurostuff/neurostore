@@ -5,16 +5,16 @@ matrix:
         - "3.8"
       install:
         - pip install -U setuptools==45
-        - pip install -r neurostuff/requirements.txt
+        - pip install -r neurostore/requirements.txt
         - pip install pytest-cov
       script:
-        - python -m pytest neurostuff/ --cov=./
+        - python -m pytest neurostore/ --cov=./
       env:
-      - APP_SETTINGS=neurostuff.config.TravisConfig PYTHONHASHSEED=0
+      - APP_SETTINGS=neurostore.config.TravisConfig PYTHONHASHSEED=0
       addons:
         postgresql: "9.4"
       before_script:
-        - cp neurostuff/example_config.py neurostuff/config.py
+        - cp neurostore/example_config.py neurostore/config.py
         - psql -c 'create database travis_ci_test;' -U postgres
         - CI="true"
       after_success:

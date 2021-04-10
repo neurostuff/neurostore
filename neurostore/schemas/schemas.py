@@ -64,7 +64,7 @@ class BaseSchema(Schema):
 class JSONLDBaseSchema(BaseSchema):
     id_key = '@id'
     # Serialization fields
-    context = fields.Constant({"@vocab": "http://neurostuff.org/nimads/"},
+    context = fields.Constant({"@vocab": "http://neurostore.org/nimads/"},
                               data_key="@context", dump_only=True)
     _type = fields.Function(lambda model: model.__class__.__name__,
                             data_key="@type", dump_only=True)
@@ -74,7 +74,7 @@ class JSONLDBaseSchema(BaseSchema):
         if isinstance(original, (list, tuple)):
             return data
         method = request.args.get('process', 'compact')
-        context = {"@context": {"@vocab": "http://neurostuff.org/nimads/"}}
+        context = {"@context": {"@vocab": "http://neurostore.org/nimads/"}}
         if method == 'flatten':
             return jsonld.flatten(data, context)
         elif method == 'expand':

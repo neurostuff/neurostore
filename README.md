@@ -1,6 +1,6 @@
-# neurostuff
+# neurostore
 
-[![Build Status](https://travis-ci.com/PsychoinformaticsLab/neurostuff.svg?branch=master)](https://travis-ci.com/PsychoinformaticsLab/neurostuff)
+[![Build Status](https://travis-ci.com/PsychoinformaticsLab/neurostore.svg?branch=master)](https://travis-ci.com/PsychoinformaticsLab/neurostore)
 
 Requirements: Docker and docker-compose.
 
@@ -11,7 +11,7 @@ First, set up the main environment variables in `.env` (see: `.env.example`).
 
 Next, set up the Flask server's environment variables:
 
-    cp neurostuff/example_config.py neurostuff/config.py
+    cp neurostore/example_config.py neurostore/config.py
 
 
 Edit both of these template files to set the correct variables
@@ -26,7 +26,7 @@ The server should now be running at http://localhost/
 
 Next, migrate and upgrade the database migrations.
 
-    docker-compose exec neurostuff \
+    docker-compose exec neurostore \
         bash -c \
             "python manage.py db merge heads && \
              python manage.py db stamp head && \
@@ -41,31 +41,31 @@ when there are multiple versions from different histories.
 
 Finally, add an admin user, and ingest data
 
-    docker-compose exec neurostuff \
+    docker-compose exec neurostore \
         bash -c \
-            "python manage.py add_user admin@neurostuff.org password && \
+            "python manage.py add_user admin@neurostore.org password && \
              python manage.py ingest_neurosynth"
 
 
 ## Maintaining docker image and db
-If you make a change to /neurostuff, you should be able to simply restart the server.
+If you make a change to neurostore, you should be able to simply restart the server.
 
-    docker-compose restart neurostuff
+    docker-compose restart neurostore
 
 If you need to upgrade the db after changing any models:
 
-    docker-compose exec neurostuff python manage.py db migrate
-    docker-compose exec neurostuff python manage.py db upgrade
+    docker-compose exec neurostore python manage.py db migrate
+    docker-compose exec neurostore python manage.py db upgrade
 
 
 ## Running tests
 To run tests, after starting services, create a test database:
 
-    docker-compose exec postgres psql -h postgres -U postgres -c "create database test_db"
+    docker-compose exec pgsql psql -U postgres -c "create database test_db"
 
 **NOTE**: This command will ask you for the postgres password which is defined
 in the `.env` file.
 
 and execute:
 
-    docker-compose run -e "APP_SETTINGS=neurostuff.config.DockerTestConfig" --rm -w /neurostuff neurostuff python -m pytest neurostuff/tests
+    docker-compose run -e "APP_SETTINGS=neurostore.config.DockerTestConfig" --rm -w /neurostore neurostore python -m pytest neurostore/tests
