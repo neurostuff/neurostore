@@ -28,7 +28,7 @@ jobs:
     -
       name: Migrate/Upgrade database
       run: |
-        docker-compose exec neurostore \
+        docker-compose exec -T neurostore \
         bash -c \
             "python manage.py db merge heads && \
              python manage.py db stamp head && \
@@ -37,17 +37,16 @@ jobs:
     -
       name: Ingest Data
       run: |
-        docker-compose exec neurostore \
+        docker-compose exec -T neurostore \
         bash -c \
             "python manage.py add_user admin@neurostore.org password && \
              python manage.py ingest_neurosynth"
     - 
       name: Create test database
       run: |
-        docker-compose exec \
-        -e "PGPASSWORD=example" \
-        postgres \
-        psql -h postgres -U postgres -c "create database test_db"
+        docker-compose exec -T \
+        psql \
+        psql -U postgres -c "create database test_db"
     - 
       name: Run tests
       run: |
