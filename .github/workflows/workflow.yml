@@ -34,6 +34,10 @@ jobs:
              python manage.py db stamp head && \
              python manage.py db migrate && \
              python manage.py db upgrade"
+    - 
+      name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+      timeout-minutes: 60
     -
       name: Ingest Data
       run: |
