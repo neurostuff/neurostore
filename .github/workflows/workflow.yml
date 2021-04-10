@@ -34,10 +34,10 @@ jobs:
              python manage.py db stamp head && \
              python manage.py db migrate && \
              python manage.py db upgrade"
-    - 
-      name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
-      timeout-minutes: 60
+    # - 
+    #   name: Setup tmate session
+    #   uses: mxschmitt/action-tmate@v3
+    #   timeout-minutes: 60
     -
       name: Ingest Data
       run: |
@@ -49,7 +49,7 @@ jobs:
       name: Create test database
       run: |
         docker-compose exec -T \
-        psql \
+        pgsql \
         psql -U postgres -c "create database test_db"
     - 
       name: Run tests
