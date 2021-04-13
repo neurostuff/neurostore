@@ -165,4 +165,5 @@ class Annotation(BaseMixin, db.Model):
     annotations = db.Column(db.Text)
     user_id = db.Column(db.Text, db.ForeignKey('users.id'))
     user = relationship('User', backref=backref('annotations'))
+    dataset_id = db.Column(db.Text, db.ForeignKey('datasets.id'))
     dataset = relationship('Dataset', backref=backref('annotations'))
