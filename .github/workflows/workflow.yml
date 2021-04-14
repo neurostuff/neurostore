@@ -9,6 +9,8 @@ jobs:
     - 
       name: Checkout
       uses: actions/checkout@v2
+      with:
+        submodules: true
     -
       name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
@@ -25,10 +27,6 @@ jobs:
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
           up -d
-    - 
-      name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
-      timeout-minutes: 60
     -
       name: Migrate/Upgrade database
       run: |
