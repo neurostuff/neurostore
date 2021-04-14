@@ -2,7 +2,7 @@
 
 def test_post_and_get_datasets(auth_client, ingest_neurosynth):
     # create a dataset
-    payload = auth_client.get('/api/studies/?search=priming').json
+    payload = auth_client.get('/api/studies/?search=priming&nested=true').json
     nimads_data = {'dataset': payload}
     post_data = {
         "name": "rock road",
