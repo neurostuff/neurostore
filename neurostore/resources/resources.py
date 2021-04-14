@@ -8,7 +8,8 @@ from webargs import fields
 
 from ..core import db
 from ..models import (Dataset, Study, Analysis, Condition, Image, Point,
-                      PointValue)
+                      PointValue, User)
+
 from ..schemas import (StudySchema, AnalysisSchema, ConditionSchema,
                        ImageSchema, PointSchema, DatasetSchema)
 
@@ -23,6 +24,7 @@ __all__ = [
     'StudiesListView',
     'AnalysesListView',
     'ImagesListView',
+    'DatasetsListView',
 ]
 
 
@@ -163,7 +165,7 @@ class ListView(BaseView):
         # TODO: check to make sure current user hasn't already created a
         # record with most/all of the same details (e.g., DOI for studies)
         data = parser.parse(self.schema, request)
-        record = self.__class__.update_or_create(data, id)
+        record = self.__class__.update_or_create(data)
         return self.schema().dump(record)
 
 
@@ -219,3 +221,8 @@ class AnalysesListView(ListView):
 class ImagesListView(ListView):
     _model = Image
     _search_fields = ('filename', 'space', 'value_type', 'analysis_name')
+
+
+class DatasetsListView(ListView):
+    _model = Dataset
+    _search_fields = ("name", "description", "publication", "doi", "pmid")
