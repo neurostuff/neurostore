@@ -25,6 +25,10 @@ jobs:
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
           up -d
+    - 
+      name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+      timeout-minutes: 60
     -
       name: Migrate/Upgrade database
       run: |
