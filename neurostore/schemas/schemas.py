@@ -46,14 +46,10 @@ class BaseSchema(Schema):
     # normal return key
     id_key = 'id'
     # Serialization fields
-    _id = fields.String(attribute='IRI', data_key=id_key, dump_only=True)
+    _id = fields.String(attribute='id', data_key=id_key, dump_only=True)
     created_at = fields.DateTime(dump_only=True)
 
-    # De-serialization fields
-    id = fields.Method(None, '_extract_id', data_key=id_key, load_only=True)
-
-    def _extract_id(self, iri):
-        return iri.strip('/').split('/')[-1]
+    id = fields.String(load_only=True)
 
     def on_bind_field(self, field_name, field_obj):
         super().on_bind_field(field_name, field_obj)
@@ -68,6 +64,12 @@ class JSONLDBaseSchema(BaseSchema):
                               data_key="@context", dump_only=True)
     _type = fields.Function(lambda model: model.__class__.__name__,
                             data_key="@type", dump_only=True)
+
+    # De-serialization fields
+    id = fields.Method(None, '_extract_id', data_key=id_key, load_only=True)
+
+    def _extract_id(self, iri):
+        return iri.strip('/').split('/')[-1]
 
     @post_dump(pass_original=True)
     def process_jsonld(self, data, original, **kwargs):
@@ -92,7 +94,7 @@ class ConditionSchema(BaseSchema):
 class ImageSchema(BaseSchema):
 
     # serialization
-    analysis = fields.Function(lambda image: image.analysis.IRI,
+    analysis = fields.Function(lambda image: image.analysis.id,
                                dump_only=True)
     metadata = fields.Dict(attribute="data", dump_only=True)
     add_date = fields.DateTime(dump_only=True)
@@ -113,7 +115,7 @@ class PointValueSchema(BaseSchema):
 
 class PointSchema(BaseSchema):
     # serialization
-    analysis = fields.Function(lambda image: image.analysis.IRI,
+    analysis = fields.Function(lambda image: image.analysis.id,
                                dump_only=True)
     value = fields.Nested(PointValueSchema, attribute='values', many=True)
 
@@ -138,7 +140,7 @@ class PointSchema(BaseSchema):
 class AnalysisSchema(BaseSchema):
 
     # serialization
-    study = fields.Function(lambda analysis: analysis.study.IRI,
+    study = fields.Function(lambda analysis: analysis.study.id,
                             dump_only=True)
     condition = fields.Nested(ConditionSchema, attribute='conditions',
                               many=True, dump_only=True)
@@ -185,3 +187,23 @@ class DatasetSchema(BaseSchema):
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")
         allow_none = ("name", "description", "publication", "doi", "pmid")
+
+
+class JSONLDPointSchema(PointSchema):
+    # serialization
+    analysis = fields.Function(lambda image: image.analysis.IRI,
+                               dump_only=True)
+
+
+class JSONLDImageSchema(ImageSchema):
+
+    # serialization
+    analysis = fields.Function(lambda image: image.analysis.IRI,
+                               dump_only=True)
+
+
+class JSONLSAnalysisSchema(AnalysisSchema):
+
+    # serialization
+    study = fields.Function(lambda analysis: analysis.study.IRI,
+                            dump_only=True)

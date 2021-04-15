@@ -15,7 +15,7 @@ def test_get_studies(auth_client, ingest_neurosynth):
     # Check study keys
     study = studies_list[0]
 
-    s_id = study['id'].split('/')[-1]
+    s_id = study['id']
 
     # Query specify analysis ID
     resp = auth_client.get(f"/api/studies/{s_id}")
@@ -28,9 +28,7 @@ def test_get_studies(auth_client, ingest_neurosynth):
 
     assert full_study['doi'] == '10.1016/S0896-6273(00)80456-0'
 
-    assert full_study['id'] == \
-        f'http://neurostore.org/api/studies/{s_id}'
-
+    assert full_study['id'] == s_id
 
 def test_put_studies(auth_client, ingest_neurosynth):
     study_entry = Study.query.first()
