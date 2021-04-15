@@ -2,7 +2,7 @@ from marshmallow import fields, Schema, SchemaOpts, post_dump, pre_load, post_lo
 from flask import request
 from pyld import jsonld
 
-from ..models import Dataset, Study, Analysis, Condition, Image, Point
+from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue
 
 
 class StringOrNested(fields.Field):
@@ -22,7 +22,7 @@ class StringOrNested(fields.Field):
         if nested:
             return self.schema.dump(value, many=self.many)
         else:
-            return [v.IRI for v in value] if self.many else value.IRI
+            return [v.id for v in value] if self.many else value.id
 
     def _deserialize(self, value, attr, data, **ser_kwargs):
 
@@ -84,7 +84,6 @@ class JSONLDBaseSchema(BaseSchema):
 
 
 class ConditionSchema(BaseSchema):
-
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
@@ -179,10 +178,9 @@ class StudySchema(BaseSchema):
 
 
 class DatasetSchema(BaseSchema):
-
-    data = fields.Dict(attribute="nimads_data")
-    analysis = StringOrNested(AnalysisSchema, attribute='analyses', many=True)
-    user = fields.Function(lambda user: user.username)
+    # serialize
+    user = fields.Function(lambda user: user.user, dump_only=True)
+    nimads_data = fields.Dict()
 
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")

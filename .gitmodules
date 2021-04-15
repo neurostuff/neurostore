@@ -1,0 +1,3 @@
+[submodule "neurostore/openapi"]
+	path = neurostore/openapi
+	url = git@github.com:neurostuff/neurostore-spec.git
