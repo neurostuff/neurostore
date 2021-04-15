@@ -17,12 +17,11 @@ def test_get_analyses(auth_client, ingest_neurosynth):
     for k in keys:
         assert k in analysis
 
-    a_id = analysis['id'].split('/')[-1]
+    a_id = analysis['id']
 
     # Query specify analysis ID
     resp = auth_client.get(f"/api/analyses/{a_id}")
     assert resp.status_code == 200
     assert decode_json(resp) == analysis
 
-    assert decode_json(resp)['id'] == \
-        f'http://neurostore.org/api/analyses/{a_id}'
+    assert decode_json(resp)['id'] == a_id
