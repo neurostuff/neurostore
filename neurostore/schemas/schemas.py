@@ -49,11 +49,7 @@ class BaseSchema(Schema):
     _id = fields.String(attribute='id', data_key=id_key, dump_only=True)
     created_at = fields.DateTime(dump_only=True)
 
-    # De-serialization fields
-    id = fields.Method(None, '_extract_id', data_key=id_key, load_only=True)
-
-    def _extract_id(self, iri):
-        return iri.strip('/').split('/')[-1]
+    id = fields.String(load_only=True)
 
     def on_bind_field(self, field_name, field_obj):
         super().on_bind_field(field_name, field_obj)
@@ -68,6 +64,12 @@ class JSONLDBaseSchema(BaseSchema):
                               data_key="@context", dump_only=True)
     _type = fields.Function(lambda model: model.__class__.__name__,
                             data_key="@type", dump_only=True)
+
+    # De-serialization fields
+    id = fields.Method(None, '_extract_id', data_key=id_key, load_only=True)
+
+    def _extract_id(self, iri):
+        return iri.strip('/').split('/')[-1]
 
     @post_dump(pass_original=True)
     def process_jsonld(self, data, original, **kwargs):
