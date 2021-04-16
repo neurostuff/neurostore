@@ -1,7 +1,7 @@
-'''
+"""
 OAuth-related authentication via various providers. Adapted from
 https://flask-dance.readthedocs.io/en/latest/multi-user.html
-'''
+"""
 
 from flask import flash
 from flask_security import current_user, login_user
@@ -77,8 +77,9 @@ def github_logged_in(blueprint, token):
 
 @oauth_authorized.connect_via(twitter_bp)
 def twitter_logged_in(blueprint, token):
-    info = _retrieve_user_data(twitter_bp, token, "Twitter",
-                               "account/verify_credentials.json")
+    info = _retrieve_user_data(
+        twitter_bp, token, "Twitter", "account/verify_credentials.json"
+    )
     if info is None:
         return False
     user_id = info["id_str"]
@@ -88,8 +89,7 @@ def twitter_logged_in(blueprint, token):
 
 @oauth_authorized.connect_via(google_bp)
 def google_logged_in(blueprint, token):
-    info = _retrieve_user_data(twitter_bp, token, "Google",
-                               "/oauth2/v2/userinfo")
+    info = _retrieve_user_data(twitter_bp, token, "Google", "/oauth2/v2/userinfo")
     if info is None:
         return False
     user_id = info["id"]
