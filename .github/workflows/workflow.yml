@@ -59,7 +59,6 @@ jobs:
           python -m pytest neurostore/tests
 
   style_check:
-    if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
     - 
@@ -69,11 +68,6 @@ jobs:
         submodules: true
     -
       name: run flake8
-      uses: grantmcconnaughey/lintly-flake8-github-action@v1.0
-      with:
-        # The GitHub API token to create reviews with
-        token: ${{ secrets.GITHUB_TOKEN }}
-        # Fail if "new" violations detected or "any", default "new"
-        failIf: new
-        # Additional arguments to pass to flake8, default "." (current directory)
-        args: "./neurostore"
+      run: |
+        pip install flake8
+        flake8 ./neurostore
