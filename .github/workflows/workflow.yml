@@ -1,4 +1,4 @@
-name: Docker Workflow
+name: Pull Request Workflow
 
 on: [pull_request,workflow_dispatch,push]
 
@@ -58,4 +58,22 @@ jobs:
           neurostore \
           python -m pytest neurostore/tests
 
-    
+  style_check:
+    runs-on: ubuntu-latest
+    steps:
+    - 
+      name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    -
+      name: run flake8
+      uses: grantmcconnaughey/lintly-flake8-github-action@v1.0
+      if: github.event_name == 'pull_request'
+        with:
+          # The GitHub API token to create reviews with
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # Fail if "new" violations detected or "any", default "new"
+          failIf: new
+          # Additional arguments to pass to flake8, default "." (current directory)
+          args: "./neurostore"
