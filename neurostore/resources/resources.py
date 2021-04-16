@@ -8,9 +8,9 @@ from webargs.flaskparser import parser
 from webargs import fields
 
 from ..core import db
-from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue, User
+from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue
 
-from ..schemas import (
+from ..schemas import (  # noqa E401
     StudySchema,
     AnalysisSchema,
     ConditionSchema,

@@ -1,12 +1,11 @@
 import graphene
 from graphene import relay
-from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType, utils
+from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
 
 from ..models import Study as StudyModel
 from ..models import Analysis as AnalysisModel
 from ..models import Entity as EntityModel
 from ..models import Image as ImageModel
-from ..models import Condition as ConditionModel
 
 
 class Study(SQLAlchemyObjectType):

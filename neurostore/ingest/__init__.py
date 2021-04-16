@@ -43,7 +43,7 @@ def ingest_neurovault(verbose=False, limit=20):
             # TODO: could parse Analysis into Conditions here
             space = "unknown" if not img.get("not_mni", False) else "MNI"
             type_ = img.get("map_type", "Unknown")
-            if re.match("\w\smap.*", type_):
+            if re.match(r"\w\smap.*", type_):
                 type_ = type_[0]
             image = Image(
                 url=img["file"],
@@ -81,13 +81,6 @@ def ingest_neurovault(verbose=False, limit=20):
 def ingest_neurosynth(max_rows=None):
 
     user = User.query.filter_by(email="admin@neurostore.org").first()
-
-    # url = "https://github.com/neurosynth/neurosynth-data/blob/master/current_data.tar.gz?raw=true"
-    # response = requests.get(url, stream=True)
-
-    # with tempfile.TemporaryFile() as tf:
-    #    tf.write(response.raw.read())
-    #   tf.seek(0)
 
     path = Path(__file__).parent.parent / "data" / "data_0.7.July_2018.tar.gz"
     with open(path, "rb") as tf:

@@ -13,5 +13,5 @@ def test_StudySchema(auth_client, ingest_neurosynth):
         for pl in payload["analysis"]
         for p in pl["point"]
     ]
-    result = StudySchema().load(payload)
+    StudySchema().load(payload)
     StudySchema().validate(payload)
