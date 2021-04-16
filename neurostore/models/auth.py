@@ -1,6 +1,6 @@
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship, backref
-from flask_security import UserMixin, RoleMixin
+from flask_security import UserMixin, RoleMixin, SQLAlchemyUserDatastore
 from flask_dance.consumer.storage.sqla import OAuthConsumerMixin
 
 
@@ -44,3 +44,6 @@ class OAuth(OAuthConsumerMixin, db.Model):
     user = relationship(User, backref=backref("oauth"))
     provider_user_id = db.Column(db.Text, unique=True, nullable=False)
     provider = db.Column(db.Text)
+
+
+user_datastore = SQLAlchemyUserDatastore(db, User, Role)
