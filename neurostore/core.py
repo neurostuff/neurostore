@@ -13,13 +13,13 @@ from .models import User, Role, OAuth
 connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/", debug=True)
 app = connexion_app.app
 
-app.config.from_object(os.environ['APP_SETTINGS'])
+app.config.from_object(os.environ["APP_SETTINGS"])
 db = init_db(app)
 
 options = {"swagger_ui": True}
 connexion_app.add_api(
-    'neurostore-openapi.yml',
-    base_path='/api',
+    "neurostore-openapi.yml",
+    base_path="/api",
     options=options,
     arguments={"title": "NeuroStore API"},
     resolver=MethodListViewResolver("neurostore.resources.resources"),
@@ -28,17 +28,17 @@ connexion_app.add_api(
 )
 
 # Enable CORS
-cors = CORS(app, expose_headers='X-Total-Count')
+cors = CORS(app, expose_headers="X-Total-Count")
 
 # Flask-Security
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
 
 # Flask-Dance (OAuth)
-app.secret_key = app.config['DANCE_SECRET_KEY']
+app.secret_key = app.config["DANCE_SECRET_KEY"]
 blueprint = make_github_blueprint(
-    client_id=app.config['GITHUB_CLIENT_ID'],
-    client_secret=app.config['GITHUB_CLIENT_SECRET'],
+    client_id=app.config["GITHUB_CLIENT_ID"],
+    client_secret=app.config["GITHUB_CLIENT_SECRET"],
 )
 app.register_blueprint(blueprint, url_prefix="/login")
 blueprint.storage = SQLAlchemyStorage(OAuth, db.session)

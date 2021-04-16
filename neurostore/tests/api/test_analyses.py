@@ -3,7 +3,7 @@ from ..request_utils import decode_json
 
 def test_get_analyses(auth_client, ingest_neurosynth):
     # List of analyses
-    resp = auth_client.get('/api/analyses/')
+    resp = auth_client.get("/api/analyses/")
     assert resp.status_code == 200
     analysis_list = decode_json(resp)
     assert type(analysis_list) == list
@@ -12,16 +12,24 @@ def test_get_analyses(auth_client, ingest_neurosynth):
 
     # Check analysis keys
     analysis = analysis_list[0]
-    keys = ['id', 'condition', 'created_at', 'image',
-            'name', 'point', 'study', 'weight']
+    keys = [
+        "id",
+        "condition",
+        "created_at",
+        "image",
+        "name",
+        "point",
+        "study",
+        "weight",
+    ]
     for k in keys:
         assert k in analysis
 
-    a_id = analysis['id']
+    a_id = analysis["id"]
 
     # Query specify analysis ID
     resp = auth_client.get(f"/api/analyses/{a_id}")
     assert resp.status_code == 200
     assert decode_json(resp) == analysis
 
-    assert decode_json(resp)['id'] == a_id
+    assert decode_json(resp)["id"] == a_id

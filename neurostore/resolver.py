@@ -35,11 +35,11 @@ class MethodListViewResolver(MethodViewResolver):
 
         # Use RestyResolver to get operation_id for us (follow their naming conventions/structure)
         operation_id = self.resolve_operation_id_using_rest_semantics(operation)
-        module_name, view_base, meth_name = operation_id.rsplit('.', 2)
+        module_name, view_base, meth_name = operation_id.rsplit(".", 2)
         if re.search(r"\{.*\}$", operation.path):
-            view_suffix = 'View'
+            view_suffix = "View"
         else:
-            view_suffix = 'ListView'
+            view_suffix = "ListView"
 
         view_name = view_base[0].upper() + view_base[1:] + view_suffix
 
@@ -53,8 +53,8 @@ class MethodListViewResolver(MethodViewResolver):
         """
 
         try:
-            module_name, view_name, meth_name = operation_id.rsplit('.', 2)
-            if operation_id and not view_name.endswith('View'):
+            module_name, view_name, meth_name = operation_id.rsplit(".", 2)
+            if operation_id and not view_name.endswith("View"):
                 # If operation_id is not a view then assume it is a standard function
                 return self.function_resolver(operation_id)
 
@@ -67,7 +67,8 @@ class MethodListViewResolver(MethodViewResolver):
             return func
         except ImportError as e:
             msg = 'Cannot resolve operationId "{}"! Import error was "{}"'.format(
-                operation_id, str(e))
+                operation_id, str(e)
+            )
             raise ResolverError(msg, sys.exc_info())
         except (AttributeError, ValueError) as e:
             raise ResolverError(str(e), sys.exc_info())

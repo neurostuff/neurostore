@@ -13,11 +13,11 @@ Session / db managment tools
 """
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def app():
     """Session-wide test `Flask` application."""
-    if 'APP_SETTINGS' not in environ:
-        _app.config.from_object('config.app.TestingConfig')
+    if "APP_SETTINGS" not in environ:
+        _app.config.from_object("config.app.TestingConfig")
 
     # Establish an application context before running the tests.
     ctx = _app.app_context()
@@ -28,7 +28,7 @@ def app():
     ctx.pop()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def db(app):
     """Session-wide test database."""
     _db.init_app(app)
@@ -40,10 +40,10 @@ def db(app):
     _db.drop_all()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def session(db):
     """Creates a new db session for a test.
-    Changes in session are rolled back """
+    Changes in session are rolled back"""
     connection = db.engine.connect()
     transaction = connection.begin()
 
@@ -55,7 +55,7 @@ def session(db):
     # session is actually a scoped_session
     # for the `after_transaction_end` event, we need a session instance to
     # listen for, hence the `session()` call
-    @sa.event.listens_for(session(), 'after_transaction_end')
+    @sa.event.listens_for(session(), "after_transaction_end")
     def resetart_savepoint(sess, trans):
         if trans.nested and not trans._parent.nested:
             session.expire_all()
@@ -92,11 +92,14 @@ def add_users(app, db, session):
 
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 
-    user1 = 'test1@gmail.com'
-    pass1 = 'test1'
+    user1 = "test1@gmail.com"
+    pass1 = "test1"
 
-    user_datastore.create_user(email=user1, password=encrypt_password(pass1),
-                               confirmed_at=datetime.datetime.now())
+    user_datastore.create_user(
+        email=user1,
+        password=encrypt_password(pass1),
+        confirmed_at=datetime.datetime.now(),
+    )
     session.commit()
     id_1 = user_datastore.find_user(email=user1).id
 

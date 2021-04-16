@@ -1,7 +1,6 @@
 import graphene
 from graphene import relay
-from graphene_sqlalchemy import (SQLAlchemyConnectionField,
-                                 SQLAlchemyObjectType, utils)
+from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType, utils
 
 from ..models import Study as StudyModel
 from ..models import Analysis as AnalysisModel
@@ -13,25 +12,25 @@ from ..models import Condition as ConditionModel
 class Study(SQLAlchemyObjectType):
     class Meta:
         model = StudyModel
-        interfaces = (relay.Node, )
+        interfaces = (relay.Node,)
 
 
 class Analysis(SQLAlchemyObjectType):
     class Meta:
         model = AnalysisModel
-        interfaces = (relay.Node, )
+        interfaces = (relay.Node,)
 
 
 class Image(SQLAlchemyObjectType):
     class Meta:
         model = ImageModel
-        interfaces = (relay.Node, )
+        interfaces = (relay.Node,)
 
 
 class Entity(SQLAlchemyObjectType):
     class Meta:
         model = EntityModel
-        interfaces = (relay.Node, )
+        interfaces = (relay.Node,)
 
 
 class SearchResult(graphene.Union):
@@ -54,20 +53,24 @@ class Query(graphene.ObjectType):
         study_q = Study.get_query(info)
         analysis_q = Analysis.get_query(info)
 
-        studies = study_q.filter((StudyModel.name.contains(q)) |
-                                 (StudyModel.description.contains(q)) |
-                                 (StudyModel.analyses.any(
-                                     AnalysisModel.name.contains(q) |
-                                     AnalysisModel.description.contains(q)))
-                                ).all()
+        studies = study_q.filter(
+            (StudyModel.name.contains(q))
+            | (StudyModel.description.contains(q))
+            | (
+                StudyModel.analyses.any(
+                    AnalysisModel.name.contains(q)
+                    | AnalysisModel.description.contains(q)
+                )
+            )
+        ).all()
 
-        authors = analysis_q.filter(AnalysisModel.name.contains(q) |
-                                    AnalysisModel.description.contains(q)
-                                   ).all()
+        authors = analysis_q.filter(
+            AnalysisModel.name.contains(q) | AnalysisModel.description.contains(q)
+        ).all()
 
         return studies + authors
 
 
-
-graphql_schema = graphene.Schema(query=Query, types=[Study, Analysis, Image,
-                                                     SearchResult])
+graphql_schema = graphene.Schema(
+    query=Query, types=[Study, Analysis, Image, SearchResult]
+)
