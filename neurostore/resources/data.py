@@ -6,6 +6,7 @@ import sqlalchemy.sql.expression as sae
 from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
+from flask_jwt_extended import jwt_required  # jwt_required
 
 from ..core import db
 from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue
@@ -89,6 +90,7 @@ class ObjectView(BaseView):
         record = self._model.query.filter_by(id=id).first_or_404()
         return self.schema().dump(record)
 
+    @jwt_required()
     def put(self, id):
         data = parser.parse(self.schema, request)
         if id != data["id"]:
@@ -169,6 +171,7 @@ class ListView(BaseView):
         content = self.schema(only=self._only, many=True).dump(records)
         return jsonify(content), 200, {"X-Total-Count": count}
 
+    @jwt_required()
     def post(self):
         # TODO: check to make sure current user hasn't already created a
         # record with most/all of the same details (e.g., DOI for studies)
