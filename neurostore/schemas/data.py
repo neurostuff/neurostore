@@ -4,12 +4,8 @@ from marshmallow import (
     SchemaOpts,
     post_dump,
     pre_load,
-    validates,
-    ValidationError,
-    EXCLUDE
 )
 from flask import request
-from flask_security import encrypt_password
 from pyld import jsonld
 
 
@@ -191,28 +187,6 @@ class DatasetSchema(BaseSchema):
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")
         allow_none = ("name", "description", "publication", "doi", "pmid")
-
-
-class UserSchema(BaseSchema):
-    email = fields.Email(required=True)
-    name = fields.Str(required=True, description='User full name')
-    username = fields.Str(description='User name')
-    password = fields.Str(load_only=True,
-                          description='Password. Minimum 6 characters.')
-
-    @validates('password')
-    def validate_pass(self, value):
-        if len(value) < 6:
-            raise ValidationError('Password must be at least 6 characters.')
-
-    @post_load
-    def encrypt_password(self, in_data, **kwargs):
-        if 'password' in in_data:
-            in_data['password'] = encrypt_password(in_data['password'])
-        return in_data
-
-    class Meta:
-        unknown = EXCLUDE
 
 
 class JSONLDPointSchema(PointSchema):
