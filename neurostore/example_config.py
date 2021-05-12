@@ -5,49 +5,48 @@ import os
 
 
 class Config(object):
-    SERVER_NAME = "localhost"  # Set to external server name in production
+    SERVER_NAME = 'localhost'  # Set to external server name in production
 
-    MIGRATIONS_DIR = "/migrations/migrations"
+    MIGRATIONS_DIR = '/migrations/migrations'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = False
 
-    POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
-    POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
-    DB_NAME = "neurostore"
-    SQLALCHEMY_DATABASE_URI = (
-        f"postgres://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
-    )
+    POSTGRES_HOST = os.environ.get('POSTGRES_HOST')
+    POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', '')
+    DB_NAME = 'neurostore'
+    SQLALCHEMY_DATABASE_URI = f"postgres://postgres:" \
+        f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
     PROPAGATE_EXCEPTIONS = True
 
     GITHUB_CLIENT_ID = "github-id"
     GITHUB_CLIENT_SECRET = "github-secret"
     DANCE_SECRET_KEY = "temporary"
+    JWT_SECRET_KEY = "also_temporary"
 
-    SECURITY_PASSWORD_HASH = "pbkdf2_sha512"
-    SECURITY_PASSWORD_SALT = "A_SECRET"
+    SECURITY_PASSWORD_HASH = 'pbkdf2_sha512'
+    SECURITY_PASSWORD_SALT = 'A_SECRET'
 
 
 class ProductionConfig(Config):
-    ENV = "production"
+    ENV = 'production'
 
 
 class DevelopmentConfig(Config):
-    ENV = "development"
+    ENV = 'development'
     DEBUG = True
 
 
 class TestingConfig(Config):
-    ENV = "testing"
+    ENV = 'testing'
     TESTING = True
 
 
 class DockerTestConfig(TestingConfig):
-    DB_NAME = "test_db"
-    POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
-    POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
-    SQLALCHEMY_DATABASE_URI = (
-        f"postgres://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
-    )
+    DB_NAME = 'test_db'
+    POSTGRES_HOST = os.environ.get('POSTGRES_HOST')
+    POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', '')
+    SQLALCHEMY_DATABASE_URI = f'postgres://postgres:' \
+        f'{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}'
 
 
 class TravisConfig(TestingConfig):
