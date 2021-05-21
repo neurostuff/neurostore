@@ -93,7 +93,7 @@ def add_users(app, db, session):
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 
     user1 = "test1@gmail.com"
-    pass1 = "test1"
+    pass1 = "testtest1"
 
     user_datastore.create_user(
         email=user1,

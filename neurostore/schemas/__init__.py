@@ -1,4 +1,4 @@
-from .schemas import (
+from .data import (
     StudySchema,
     AnalysisSchema,
     ConditionSchema,
@@ -7,6 +7,8 @@ from .schemas import (
     DatasetSchema,
 )
 
+from .auth import UserSchema
+
 __all__ = [
     "StudySchema",
     "AnalysisSchema",
@@ -14,4 +16,5 @@ __all__ = [
     "ImageSchema",
     "PointSchema",
     "DatasetSchema",
+    "UserSchema",
 ]

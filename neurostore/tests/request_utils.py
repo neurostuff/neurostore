@@ -14,11 +14,18 @@ class Client(object):
 
         self.client = test_client
         self.prepend = prepend
+        self.token = None
 
         if email is not None and password is not None:
             self.email = email
             self.password = password
             self.authorize(email, password)
+
+    def _get_headers(self):
+        if self.token is not None:
+            return {'Authorization': 'Bearer %s' % self.token}
+        else:
+            return None
 
     def _make_request(
         self,
@@ -32,6 +39,7 @@ class Client(object):
     ):
         """ Generic request handler """
         request_function = getattr(self.client, request)
+        headers = headers or self._get_headers()
 
         if content_type is None:
             content_type = "application/json"
@@ -53,7 +61,18 @@ class Client(object):
             return request_function(route, json=data, headers=headers, params=params)
 
     def authorize(self, email=None, password=None):
-        pass
+        if email is not None and password is not None:
+            self.email = email
+            self.password = password
+
+        rv = self.post(
+            '/api/login',
+            data={'email': self.email, 'password': self.password})
+
+        if self.client_flask:
+            self.token = json.loads(rv.data.decode())['access_token']
+        else:
+            self.token = rv.json()['access_token']
 
     get = partialmethod(_make_request, "get")
     post = partialmethod(_make_request, "post")
