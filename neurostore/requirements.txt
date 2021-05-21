@@ -2,6 +2,7 @@ aniso8601>=8.1.0
 connexion[swagger-ui]>=2.7.0
 email-validator>=1.1.2
 flake8>=3.8.4
+flask>=1.1.2,<2.0.0
 flask-cors>=3.0.10
 flask-dance>=3.2.0
 git+https://github.com/graphql-python/flask-graphql.git@0d45561#egg=flask_graphql
