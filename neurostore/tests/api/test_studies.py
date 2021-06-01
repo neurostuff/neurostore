@@ -49,3 +49,8 @@ def test_put_studies(auth_client, ingest_neurosynth):
     updated_study_entry = Study.query.filter_by(id=study_entry.id).first()
 
     assert put_resp.json["metadata"] == updated_study_entry.metadata_
+
+
+def test_clone_studies(auth_client, ingest_neurosynth):
+    study_entry = Study.query.first()
+    auth_client.post(f"/api/studies/?clone={study_entry.id}")

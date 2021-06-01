@@ -42,6 +42,7 @@ class Study(BaseMixin, db.Model):
     description = db.Column(db.String)
     publication = db.Column(db.String)
     # source_url = db.Column(db.String)
+    # purely a frontend problem, pull from pubmed/neurovault
     doi = db.Column(db.String)
     pmid = db.Column(db.String)
     public = db.Column(db.Boolean, default=True)

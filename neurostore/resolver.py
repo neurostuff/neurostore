@@ -36,7 +36,10 @@ class MethodListViewResolver(MethodViewResolver):
         # Use RestyResolver to get operation_id for us (follow their naming conventions/structure)
         operation_id = self.resolve_operation_id_using_rest_semantics(operation)
         module_name, view_base, meth_name = operation_id.rsplit(".", 2)
-        if re.search(r"\{.*\}$", operation.path) or operation.path in ['/login', '/register']:
+        if (
+              re.search(r"\{.*\}$", operation.path)
+              or operation.path in ['/login', '/register']
+        ):
             view_suffix = "View"
         else:
             view_suffix = "ListView"

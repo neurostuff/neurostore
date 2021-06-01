@@ -9,22 +9,24 @@ from flask import request
 from pyld import jsonld
 
 
-class StringOrNested(fields.Field):
-    """Custom Field that serializes a nested object as either an IRI string
-    or a full object, depending on "nested" request argument."""
+class StringOrNested(fields.Nested):
+    """Custom Field that serializes a nested object as either a string
+    or a full object, depending on "nested" or "clone" request argument"""
 
-    def __init__(self, nested, **kwargs):
-        self.many = kwargs.pop("many", False)
-        self.kwargs = kwargs
-        self.schema = fields.Nested(nested, **self.kwargs).schema
-        super().__init__(**kwargs)
+    # def __init__(self, nested, **kwargs):
+    #     self.many = kwargs.pop("many", False)
+    #     self.kwargs = kwargs
+    #     # self.schema = fields.Nested(nested, **self.kwargs).schema
+    #     self.schema = nested
+    #     super().__init__(**kwargs)
 
     def _serialize(self, value, attr, obj, **ser_kwargs):
         if value is None:
             return None
-        nested = bool(request.args.get("nested", False))
-        if nested:
-            return self.schema.dump(value, many=self.many)
+        cloned = bool(request.args.get('clone', False))
+        nested = bool(request.args.get('nested', False))
+        if nested or cloned:
+            return self.nested(clone=cloned).dump(value, many=self.many)
         else:
             return [v.id for v in value] if self.many else value.id
 
@@ -44,12 +46,21 @@ class BaseSchemaOpts(SchemaOpts):
 
 class BaseSchema(Schema):
 
+    def __init__(self, clone=False, *args, **kwargs):
+        exclude = list(kwargs.pop("exclude", []))
+        if clone:
+            exclude.extend([
+                field for field, f_obj in self._declared_fields.items()
+                if f_obj.metadata.get("db_only")
+            ])
+        super().__init__(*args, exclude=exclude, **kwargs)
+
     OPTIONS_CLASS = BaseSchemaOpts
     # normal return key
     id_key = "id"
     # Serialization fields
-    _id = fields.String(attribute="id", data_key=id_key, dump_only=True)
-    created_at = fields.DateTime(dump_only=True)
+    _id = fields.String(attribute="id", data_key=id_key, dump_only=True, db_only=True)
+    created_at = fields.DateTime(dump_only=True, db_only=True)
 
     id = fields.String(load_only=True)
 
@@ -98,9 +109,9 @@ class ConditionSchema(BaseSchema):
 class ImageSchema(BaseSchema):
 
     # serialization
-    analysis = fields.Function(lambda image: image.analysis.id, dump_only=True)
+    analysis = fields.Function(lambda image: image.analysis.id, dump_only=True, db_only=True)
     metadata = fields.Dict(attribute="data", dump_only=True)
-    add_date = fields.DateTime(dump_only=True)
+    add_date = fields.DateTime(dump_only=True, db_only=True)
 
     # deserialization
     data = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
@@ -117,7 +128,7 @@ class PointValueSchema(BaseSchema):
 
 class PointSchema(BaseSchema):
     # serialization
-    analysis = fields.Function(lambda image: image.analysis.id, dump_only=True)
+    analysis = fields.Function(lambda image: image.analysis.id, dump_only=True, db_only=True)
     value = fields.Nested(PointValueSchema, attribute="values", many=True)
 
     # deserialization
@@ -141,7 +152,7 @@ class PointSchema(BaseSchema):
 class AnalysisSchema(BaseSchema):
 
     # serialization
-    study = fields.Function(lambda analysis: analysis.study.id, dump_only=True)
+    study = fields.Function(lambda analysis: analysis.study.id, dump_only=True, db_only=True)
     condition = fields.Nested(
         ConditionSchema, attribute="conditions", many=True, dump_only=True
     )
@@ -166,7 +177,7 @@ class StudySchema(BaseSchema):
 
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     analysis = StringOrNested(
-        AnalysisSchema, attribute="analyses", many=True, dump_only=True
+        AnalysisSchema, attribute="analyses", many=True, dump_only=True,
     )
 
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)

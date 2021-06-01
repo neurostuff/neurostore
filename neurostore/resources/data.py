@@ -107,6 +107,7 @@ LIST_USER_ARGS = {
     "page": fields.Int(missing=1),
     "desc": fields.Boolean(missing=True),
     "page_size": fields.Int(missing=20, validate=lambda val: val < 100),
+    "clone": fields.String(missing=None),
 }
 
 
@@ -175,7 +176,15 @@ class ListView(BaseView):
     def post(self):
         # TODO: check to make sure current user hasn't already created a
         # record with most/all of the same details (e.g., DOI for studies)
-        data = parser.parse(self.schema, request)
+
+        # Parse arguments using webargs
+        args = parser.parse(self._user_args, request, location="query")
+        if args['clone']:
+            study = self._model.query.filter_by(id=args['clone']).first_or_404()
+            data = self.schema(clone=True).dump(study)
+        else:
+            data = parser.parse(self.schema, request)
+
         record = self.__class__.update_or_create(data)
         return self.schema().dump(record)
 
@@ -220,7 +229,9 @@ class PointValueView(ObjectView):
 
 class StudiesListView(ListView):
     _model = Study
-    # _only = ('name', 'description', 'doi', '_type', '_id', 'created_at')
+    _nested = {
+        "analyses": "AnalysesView",
+    }
     _search_fields = ("name", "description")
 
 
