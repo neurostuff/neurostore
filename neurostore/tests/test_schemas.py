@@ -6,6 +6,7 @@ def test_StudySchema(auth_client, ingest_neurosynth):
     study_entry = Study.query.first()
     payload = auth_client.get(f"/api/studies/{study_entry.id}?nested=true").json
     payload.pop("created_at")
+    payload.pop("user")
     payload["metadata"] = {"cool": "important detail"}
     [(pl.pop("created_at"), pl.pop("study")) for pl in payload["analysis"]]
     [

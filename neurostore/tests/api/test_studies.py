@@ -33,24 +33,18 @@ def test_get_studies(auth_client, ingest_neurosynth):
 
 def test_put_studies(auth_client, ingest_neurosynth):
     study_entry = Study.query.first()
-    payload = auth_client.get(f"/api/studies/{study_entry.id}?nested=true").json
-    # payload = auth_client.get(f"/api/studies/{study_entry.id}").json
-    payload.pop("created_at")
-    payload["metadata"] = {"cool": "important detail"}
-    [(pl.pop("created_at"), pl.pop("study")) for pl in payload["analysis"]]
-    [
-        (p.pop("created_at"), p.pop("analysis"))
-        for pl in payload["analysis"]
-        for p in pl["point"]
-    ]
-    put_resp = auth_client.put(f"/api/studies/{study_entry.id}", data=payload)
+    study_clone_id = auth_client.post(f"/api/studies/?clone={study_entry.id}").json['id']
+    payload = {'metadata': {"cool": "important detail"}, 'id': study_clone_id}
+    put_resp = auth_client.put(f"/api/studies/{study_clone_id}", data=payload)
     assert put_resp.status_code == 200
 
-    updated_study_entry = Study.query.filter_by(id=study_entry.id).first()
+    updated_study_entry = Study.query.filter_by(id=study_clone_id).first()
 
     assert put_resp.json["metadata"] == updated_study_entry.metadata_
 
 
 def test_clone_studies(auth_client, ingest_neurosynth):
     study_entry = Study.query.first()
-    auth_client.post(f"/api/studies/?clone={study_entry.id}")
+    resp = auth_client.post(f"/api/studies/?clone={study_entry.id}")
+    data = resp.json
+    assert data['name'] == study_entry.name
