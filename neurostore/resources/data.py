@@ -6,7 +6,7 @@ import sqlalchemy.sql.expression as sae
 from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
-from flask_jwt_extended import jwt_required  # jwt_required
+from flask_jwt_extended import jwt_required, current_user  # jwt_required
 
 from ..core import db
 from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue
@@ -53,16 +53,18 @@ class BaseView(MethodView):
         id = id or data.get("id")
 
         if id is None:
-            # TODO: associate with user
             record = cls._model()
+            record.user = current_user
         else:
             record = cls._model.query.filter_by(id=id).first()
             if record is None:
                 abort(422)
+            elif record.user_id != current_user.id:
+                abort(403)
 
         # Update all non-nested attributes
         for k, v in data.items():
-            if k not in cls._nested and k != "id":
+            if k not in cls._nested and k not in ["id", "user"]:
                 setattr(record, k, v)
 
         to_commit.append(record)
@@ -182,6 +184,7 @@ class ListView(BaseView):
         if args['clone']:
             study = self._model.query.filter_by(id=args['clone']).first_or_404()
             data = self.schema(clone=True).dump(study)
+            data['analyses'] = data.pop('analysis')
         else:
             data = parser.parse(self.schema, request)
 
