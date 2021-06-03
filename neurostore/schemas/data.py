@@ -8,7 +8,6 @@ from marshmallow import (
 from flask import request
 from pyld import jsonld
 
-
 class StringOrNested(fields.Nested):
     """Custom Field that serializes a nested object as either a string
     or a full object, depending on "nested" or "clone" request argument"""
@@ -179,6 +178,7 @@ class StudySchema(BaseSchema):
     analysis = StringOrNested(
         AnalysisSchema, attribute="analyses", many=True, dump_only=True,
     )
+    user = fields.Function(lambda user: user.user_id, dump_only=True, db_only=True)
 
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
     analyses = StringOrNested(
@@ -192,7 +192,7 @@ class StudySchema(BaseSchema):
 
 class DatasetSchema(BaseSchema):
     # serialize
-    user = fields.Function(lambda user: user.user, dump_only=True)
+    user = fields.Function(lambda user: user.user_id, dump_only=True, db_only=True)
     nimads_data = fields.Dict()
 
     class Meta:
