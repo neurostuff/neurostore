@@ -1,15 +1,15 @@
 from .data import (
-    DatasetsView,
-    StudiesView,
-    AnalysesView,
-    ConditionsView,
-    ImagesView,
-    PointsView,
+    DatasetView,
+    StudyView,
+    AnalysisView,
+    ConditionView,
+    ImageView,
+    PointView,
     PointValueView,
-    DatasetsListView,
-    StudiesListView,
-    AnalysesListView,
-    ImagesListView,
+    DatasetListView,
+    StudyListView,
+    AnalysisListView,
+    ImageListView,
 )
 
 from .auth import (
@@ -18,17 +18,17 @@ from .auth import (
 )
 
 __all__ = [
-    "DatasetsView",
-    "StudiesView",
-    "AnalysesView",
-    "ConditionsView",
-    "ImagesView",
-    "PointsView",
+    "DatasetView",
+    "StudyView",
+    "AnalysisView",
+    "ConditionView",
+    "ImageView",
+    "PointView",
     "PointValueView",
-    "StudiesListView",
-    "AnalysesListView",
-    "ImagesListView",
-    "DatasetsListView",
+    "StudyListView",
+    "AnalysisListView",
+    "ImageListView",
+    "DatasetListView",
     "RegisterView",
     "LoginView"
 ]
