@@ -10,7 +10,7 @@ from pyld import jsonld
 
 class StringOrNested(fields.Nested):
     """Custom Field that serializes a nested object as either a string
-    or a full object, depending on "nested" or "clone" request argument"""
+    or a full object, depending on "nested" or "source" request argument"""
 
     # def __init__(self, nested, **kwargs):
     #     self.many = kwargs.pop("many", False)
@@ -22,10 +22,10 @@ class StringOrNested(fields.Nested):
     def _serialize(self, value, attr, obj, **ser_kwargs):
         if value is None:
             return None
-        cloned = bool(request.args.get('clone', False))
+        copied = bool(request.args.get('source_id', False))
         nested = bool(request.args.get('nested', False))
-        if nested or cloned:
-            return self.nested(clone=cloned).dump(value, many=self.many)
+        if nested or copied:
+            return self.nested(copy=copied).dump(value, many=self.many)
         else:
             return [v.id for v in value] if self.many else value.id
 
@@ -45,9 +45,9 @@ class BaseSchemaOpts(SchemaOpts):
 
 class BaseSchema(Schema):
 
-    def __init__(self, clone=False, *args, **kwargs):
+    def __init__(self, copy=False, *args, **kwargs):
         exclude = list(kwargs.pop("exclude", []))
-        if clone:
+        if copy:
             exclude.extend([
                 field for field, f_obj in self._declared_fields.items()
                 if f_obj.metadata.get("db_only")
@@ -175,15 +175,13 @@ class AnalysisSchema(BaseSchema):
 class StudySchema(BaseSchema):
 
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
-    analysis = StringOrNested(
-        AnalysisSchema, attribute="analyses", many=True, dump_only=True,
-    )
     user = fields.Function(lambda user: user.user_id, dump_only=True, db_only=True)
 
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
-    analyses = StringOrNested(
-        AnalysisSchema, data_key="analysis", many=True, load_only=True
-    )
+    analyses = StringOrNested(AnalysisSchema, many=True)
+    source = fields.String(dump_only=True, db_only=True, allow_none=True)
+    source_id = fields.String(dump_only=True, db_only=True, allow_none=True)
+    source_updated_at = fields.DateTime(dump_only=True, db_only=True)
 
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")
