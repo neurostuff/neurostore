@@ -1,3 +1,5 @@
+import re
+
 from flask import abort, request, jsonify
 from flask.views import MethodView
 
@@ -17,32 +19,43 @@ from ..schemas import (  # noqa E401
     ConditionSchema,
     ImageSchema,
     PointSchema,
+    PointValueSchema,
     DatasetSchema,
 )
 
 __all__ = [
-    "DatasetsView",
-    "StudiesView",
-    "AnalysesView",
-    "ConditionsView",
-    "ImagesView",
-    "PointsView",
+    "DatasetView",
+    "StudyView",
+    "AnalysisView",
+    "ConditionView",
+    "ImageView",
+    "PointView",
     "PointValueView",
-    "StudiesListView",
-    "AnalysesListView",
-    "ImagesListView",
-    "DatasetsListView",
+    "StudyListView",
+    "AnalysisListView",
+    "ImageListView",
+    "DatasetListView",
 ]
 
+ 
+# https://www.geeksforgeeks.org/python-split-camelcase-string-to-individual-strings/
+def camel_case_split(str):
+    return re.findall(r'[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))', str)
+
+def view_maker(cls):
+    basename = camel_case_split(cls.__name__)[0]
+    class ClassView(cls):
+        _model = globals()[basename]
+        _schema = globals()[basename + "Schema"]
+    
+    ClassView.__name__ = cls.__name__
+
+    return ClassView
 
 class BaseView(MethodView):
 
     _model = None
     _nested = {}
-
-    @property
-    def schema(self):
-        return globals()[self._model.__name__ + "Schema"]
 
     @classmethod
     def update_or_create(cls, data, id=None, commit=True):
@@ -90,17 +103,17 @@ class BaseView(MethodView):
 class ObjectView(BaseView):
     def get(self, id):
         record = self._model.query.filter_by(id=id).first_or_404()
-        return self.schema().dump(record)
+        return self.__class__._schema().dump(record)
 
     @jwt_required()
     def put(self, id):
-        data = parser.parse(self.schema, request)
+        data = parser.parse(self.__class__._schema, request)
         if id != data["id"]:
             return abort(422)
 
         record = self.__class__.update_or_create(data, id)
 
-        return self.schema().dump(record)
+        return self.__class__._schema().dump(record)
 
 
 LIST_USER_ARGS = {
@@ -109,7 +122,8 @@ LIST_USER_ARGS = {
     "page": fields.Int(missing=1),
     "desc": fields.Boolean(missing=True),
     "page_size": fields.Int(missing=20, validate=lambda val: val < 100),
-    "clone": fields.String(missing=None),
+    "source_id": fields.String(missing=None),
+    "source": fields.String(missing=None)
 }
 
 
@@ -171,7 +185,7 @@ class ListView(BaseView):
         count = q.count()
 
         records = q.paginate(args["page"], args["page_size"], False).items
-        content = self.schema(only=self._only, many=True).dump(records)
+        content = self.__class__._schema(only=self._only, many=True).dump(records)
         return jsonify(content), 200, {"X-Total-Count": count}
 
     @jwt_required()
@@ -181,73 +195,102 @@ class ListView(BaseView):
 
         # Parse arguments using webargs
         args = parser.parse(self._user_args, request, location="query")
-        if args['clone']:
-            study = self._model.query.filter_by(id=args['clone']).first_or_404()
-            data = self.schema(clone=True).dump(study)
-            data['analyses'] = data.pop('analysis')
+        source_id = args.get('source_id')
+        source = args['source'] or 'neurostore'
+        if source_id:    
+            data = self._load_from_source(source, source_id)
         else:
-            data = parser.parse(self.schema, request)
+            data = parser.parse(self.__class__._schema, request)
 
         record = self.__class__.update_or_create(data)
-        return self.schema().dump(record)
+        return self.__class__._schema().dump(record)
+
+@view_maker
+class DatasetView(ObjectView):
+    pass
 
 
-class DatasetsView(ObjectView):
-    _model = Dataset
-
-
-class StudiesView(ObjectView):
-    _model = Study
+@view_maker
+class StudyView(ObjectView):
     _nested = {
-        "analyses": "AnalysesView",
+        "analyses": "AnalysisView",
     }
 
 
-class AnalysesView(ObjectView):
-    _model = Analysis
+@view_maker
+class AnalysisView(ObjectView):
     _nested = {
-        "images": "ImagesView",
-        "points": "PointsView",
+        "images": "ImageView",
+        "points": "PointView",
     }
 
 
-class ConditionsView(ObjectView):
-    _model = Condition
+@view_maker
+class ConditionView(ObjectView):
+    pass
 
 
-class ImagesView(ObjectView):
-    _model = Image
+@view_maker
+class ImageView(ObjectView):
+    pass
 
-
-class PointsView(ObjectView):
-    _model = Point
+@view_maker
+class PointView(ObjectView):
     _nested = {
         "values": "PointValueView",
     }
 
-
+@view_maker
 class PointValueView(ObjectView):
-    _model = PointValue
+    pass
 
 
-class StudiesListView(ListView):
-    _model = Study
+@view_maker
+class StudyListView(ListView):
     _nested = {
-        "analyses": "AnalysesView",
+        "analyses": "AnalysisView",
     }
     _search_fields = ("name", "description")
 
+    @classmethod
+    def _load_from_source(cls, source, source_id):
+        if source == "neurostore":
+            return cls.load_from_neurostore(source_id)
+        elif source == "neurovault":
+            return cls.load_from_neurovault(source_id)
+        elif source == "pubmed":
+            return cls.load_from_pubmed(source_id)
+    
+    @classmethod
+    def load_from_neurostore(cls, source_id):
+        study = cls._model.query.filter_by(id=source_id).first_or_404()
+        data = cls._schema(copy=True).dump(study)
+        data['source'] = "neurostore"
+        data['source_id'] = source_id
+        data['source_updated_at'] = study.updated_at or study.created_at
+        return data
 
-class AnalysesListView(ListView):
-    _model = Analysis
+        
+
+    @classmethod
+    def load_from_neurovault(cls, source_id):
+        pass
+
+    @classmethod
+    def load_from_pubmed(cls, source_id):
+        pass
+
+
+@view_maker
+class AnalysisListView(ListView):
     _search_fields = ("name", "description")
 
 
-class ImagesListView(ListView):
-    _model = Image
+@view_maker
+class ImageListView(ListView):
     _search_fields = ("filename", "space", "value_type", "analysis_name")
 
 
-class DatasetsListView(ListView):
-    _model = Dataset
+@view_maker
+class DatasetListView(ListView):
     _search_fields = ("name", "description", "publication", "doi", "pmid")
