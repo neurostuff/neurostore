@@ -21,6 +21,23 @@ class MethodListViewResolver(MethodViewResolver):
                     return ...
     """
 
+    def singularize(self, word):
+        """Change word from plural to singular"""
+        if word[-3:] == "ies":
+            singular = word[:-3] + "y"
+        elif word[-3:] == "ses":
+            singular = word[:-2] + "is"
+        elif word[-3:] == "ges":
+            singular = word[:-1]
+        elif word[-2:] == "es":
+            singular = word[:-2]
+        elif word[-1] == "s":
+            singular = word[:-1]
+        else:
+            singular = word
+
+        return singular
+
     def resolve_operation_id(self, operation):
         """
         Resolves the operationId using REST semantics unless explicitly configured in the spec
@@ -44,7 +61,7 @@ class MethodListViewResolver(MethodViewResolver):
         else:
             view_suffix = "ListView"
 
-        view_name = view_base[0].upper() + view_base[1:] + view_suffix
+        view_name = self.singularize(view_base.capitalize()) + view_suffix
 
         return "{}.{}.{}".format(module_name, view_name, meth_name)
 
