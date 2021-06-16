@@ -1,5 +1,5 @@
 from ..request_utils import decode_json
-from ...models.data import Study, Analysis
+from ...models.data import Study
 
 
 def test_get_studies(auth_client, ingest_neurosynth):
@@ -51,4 +51,3 @@ def test_clone_studies(auth_client, ingest_neurosynth):
     assert data['source_id'] == study_entry.id
     assert data['source'] == 'neurostore'
     assert data['analyses'][0]['name'] == study_entry.analyses[0].name
-

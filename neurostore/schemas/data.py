@@ -8,6 +8,7 @@ from marshmallow import (
 from flask import request
 from pyld import jsonld
 
+
 class StringOrNested(fields.Nested):
     """Custom Field that serializes a nested object as either a string
     or a full object, depending on "nested" or "source" request argument"""

@@ -11,7 +11,7 @@ from webargs import fields
 from flask_jwt_extended import jwt_required, current_user  # jwt_required
 
 from ..core import db
-from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue
+from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue  # noqa E401
 
 from ..schemas import (  # noqa E401
     StudySchema,
@@ -37,20 +37,23 @@ __all__ = [
     "DatasetListView",
 ]
 
- 
+
 # https://www.geeksforgeeks.org/python-split-camelcase-string-to-individual-strings/
 def camel_case_split(str):
     return re.findall(r'[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))', str)
 
+
 def view_maker(cls):
     basename = camel_case_split(cls.__name__)[0]
+
     class ClassView(cls):
         _model = globals()[basename]
         _schema = globals()[basename + "Schema"]
-    
+
     ClassView.__name__ = cls.__name__
 
     return ClassView
+
 
 class BaseView(MethodView):
 
@@ -197,13 +200,14 @@ class ListView(BaseView):
         args = parser.parse(self._user_args, request, location="query")
         source_id = args.get('source_id')
         source = args['source'] or 'neurostore'
-        if source_id:    
+        if source_id:
             data = self._load_from_source(source, source_id)
         else:
             data = parser.parse(self.__class__._schema, request)
 
         record = self.__class__.update_or_create(data)
         return self.__class__._schema().dump(record)
+
 
 @view_maker
 class DatasetView(ObjectView):
@@ -234,11 +238,13 @@ class ConditionView(ObjectView):
 class ImageView(ObjectView):
     pass
 
+
 @view_maker
 class PointView(ObjectView):
     _nested = {
         "values": "PointValueView",
     }
+
 
 @view_maker
 class PointValueView(ObjectView):
@@ -260,7 +266,7 @@ class StudyListView(ListView):
             return cls.load_from_neurovault(source_id)
         elif source == "pubmed":
             return cls.load_from_pubmed(source_id)
-    
+
     @classmethod
     def load_from_neurostore(cls, source_id):
         study = cls._model.query.filter_by(id=source_id).first_or_404()
@@ -269,8 +275,6 @@ class StudyListView(ListView):
         data['source_id'] = source_id
         data['source_updated_at'] = study.updated_at or study.created_at
         return data
-
-        
 
     @classmethod
     def load_from_neurovault(cls, source_id):

@@ -15,6 +15,7 @@ class BaseMixin(object):
     id = db.Column(db.Text, primary_key=True, default=generate_id)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
+
     @property
     def IRI(self):
         return f"http://neurostore.org/api/{self.__tablename__}/{self.id}"
