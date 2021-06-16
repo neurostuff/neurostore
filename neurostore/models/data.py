@@ -15,7 +15,6 @@ class BaseMixin(object):
     id = db.Column(db.Text, primary_key=True, default=generate_id)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
-
     @property
     def IRI(self):
         return f"http://neurostore.org/api/{self.__tablename__}/{self.id}"
@@ -41,14 +40,15 @@ class Study(BaseMixin, db.Model):
     name = db.Column(db.String)
     description = db.Column(db.String)
     publication = db.Column(db.String)
-    # source_url = db.Column(db.String)
-    # purely a frontend problem, pull from pubmed/neurovault
     doi = db.Column(db.String)
     pmid = db.Column(db.String)
     public = db.Column(db.Boolean, default=True)
     metadata_ = db.Column(db.JSON)
     user_id = db.Column(db.Text, db.ForeignKey("users.id"))
     user = relationship("User", backref=backref("studies"))
+    source = db.Column(db.String)
+    source_id = db.Column(db.String)
+    source_updated_at = db.Column(db.DateTime(timezone=True))
 
 
 class Analysis(BaseMixin, db.Model):
@@ -57,8 +57,6 @@ class Analysis(BaseMixin, db.Model):
     study_id = db.Column(db.Text, db.ForeignKey("studies.id"))
     name = db.Column(db.String)
     description = db.Column(db.String)
-    # sample_size or meta-data (number of units unspecified, determine from entity table)
-    # are people with groups
     study = relationship("Study", backref=backref("analyses"))
     conditions = association_proxy("analysis_conditions", "condition")
     weights = association_proxy("analysis_conditions", "weight")
