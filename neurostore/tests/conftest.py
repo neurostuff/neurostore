@@ -110,3 +110,8 @@ def add_users(app, db, session):
 def ingest_neurosynth(session):
     """ Add a dataset with two subjects """
     return ingest.ingest_neurosynth(800)
+
+
+@pytest.fixture(scope="function")
+def ingest_neurovault(session):
+    return ingest.ingest_neurovault(limit=20)

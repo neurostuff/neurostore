@@ -63,18 +63,19 @@ def ingest_neurovault(verbose=False, limit=20):
 
     url = "https://neurovault.org/api/collections.json"
     count = 0
+
     while True:
         data = requests.get(url).json()
         url = data["next"]
-        studies = [
+        studies = list(filter(None, [
             add_collection(c)
             for c in data["results"]
             if c["DOI"] is not None and c["number_of_images"]
-        ]
+        ]))
         db.session.add_all(studies)
         db.session.commit()
         count += len(studies)
-        if (limit is not None and count >= limit) or not url:
+        if (limit is not None and count >= int(limit)) or not url:
             break
 
 
