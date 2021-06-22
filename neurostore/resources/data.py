@@ -1,3 +1,5 @@
+import re
+
 from flask import abort, request, jsonify
 from flask.views import MethodView
 
@@ -6,10 +8,10 @@ import sqlalchemy.sql.expression as sae
 from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
-from flask_jwt_extended import jwt_required  # jwt_required
+from flask_jwt_extended import jwt_required, current_user  # jwt_required
 
 from ..core import db
-from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue
+from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue  # noqa E401
 
 from ..schemas import (  # noqa E401
     StudySchema,
@@ -17,32 +19,46 @@ from ..schemas import (  # noqa E401
     ConditionSchema,
     ImageSchema,
     PointSchema,
+    PointValueSchema,
     DatasetSchema,
 )
 
 __all__ = [
-    "DatasetsView",
-    "StudiesView",
-    "AnalysesView",
-    "ConditionsView",
-    "ImagesView",
-    "PointsView",
+    "DatasetView",
+    "StudyView",
+    "AnalysisView",
+    "ConditionView",
+    "ImageView",
+    "PointView",
     "PointValueView",
-    "StudiesListView",
-    "AnalysesListView",
-    "ImagesListView",
-    "DatasetsListView",
+    "StudyListView",
+    "AnalysisListView",
+    "ImageListView",
+    "DatasetListView",
 ]
+
+
+# https://www.geeksforgeeks.org/python-split-camelcase-string-to-individual-strings/
+def camel_case_split(str):
+    return re.findall(r'[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))', str)
+
+
+def view_maker(cls):
+    basename = camel_case_split(cls.__name__)[0]
+
+    class ClassView(cls):
+        _model = globals()[basename]
+        _schema = globals()[basename + "Schema"]
+
+    ClassView.__name__ = cls.__name__
+
+    return ClassView
 
 
 class BaseView(MethodView):
 
     _model = None
     _nested = {}
-
-    @property
-    def schema(self):
-        return globals()[self._model.__name__ + "Schema"]
 
     @classmethod
     def update_or_create(cls, data, id=None, commit=True):
@@ -53,16 +69,18 @@ class BaseView(MethodView):
         id = id or data.get("id")
 
         if id is None:
-            # TODO: associate with user
             record = cls._model()
+            record.user = current_user
         else:
             record = cls._model.query.filter_by(id=id).first()
             if record is None:
                 abort(422)
+            elif record.user_id != current_user.id:
+                abort(403)
 
         # Update all non-nested attributes
         for k, v in data.items():
-            if k not in cls._nested and k != "id":
+            if k not in cls._nested and k not in ["id", "user"]:
                 setattr(record, k, v)
 
         to_commit.append(record)
@@ -88,17 +106,17 @@ class BaseView(MethodView):
 class ObjectView(BaseView):
     def get(self, id):
         record = self._model.query.filter_by(id=id).first_or_404()
-        return self.schema().dump(record)
+        return self.__class__._schema().dump(record)
 
     @jwt_required()
     def put(self, id):
-        data = parser.parse(self.schema, request)
+        data = parser.parse(self.__class__._schema, request)
         if id != data["id"]:
             return abort(422)
 
         record = self.__class__.update_or_create(data, id)
 
-        return self.schema().dump(record)
+        return self.__class__._schema().dump(record)
 
 
 LIST_USER_ARGS = {
@@ -107,6 +125,8 @@ LIST_USER_ARGS = {
     "page": fields.Int(missing=1),
     "desc": fields.Boolean(missing=True),
     "page_size": fields.Int(missing=20, validate=lambda val: val < 100),
+    "source_id": fields.String(missing=None),
+    "source": fields.String(missing=None)
 }
 
 
@@ -168,72 +188,113 @@ class ListView(BaseView):
         count = q.count()
 
         records = q.paginate(args["page"], args["page_size"], False).items
-        content = self.schema(only=self._only, many=True).dump(records)
+        content = self.__class__._schema(only=self._only, many=True).dump(records)
         return jsonify(content), 200, {"X-Total-Count": count}
 
     @jwt_required()
     def post(self):
         # TODO: check to make sure current user hasn't already created a
         # record with most/all of the same details (e.g., DOI for studies)
-        data = parser.parse(self.schema, request)
+
+        # Parse arguments using webargs
+        args = parser.parse(self._user_args, request, location="query")
+        source_id = args.get('source_id')
+        source = args['source'] or 'neurostore'
+        if source_id:
+            data = self._load_from_source(source, source_id)
+        else:
+            data = parser.parse(self.__class__._schema, request)
+
         record = self.__class__.update_or_create(data)
-        return self.schema().dump(record)
+        return self.__class__._schema().dump(record)
 
 
-class DatasetsView(ObjectView):
-    _model = Dataset
+@view_maker
+class DatasetView(ObjectView):
+    pass
 
 
-class StudiesView(ObjectView):
-    _model = Study
+@view_maker
+class StudyView(ObjectView):
     _nested = {
-        "analyses": "AnalysesView",
+        "analyses": "AnalysisView",
     }
 
 
-class AnalysesView(ObjectView):
-    _model = Analysis
+@view_maker
+class AnalysisView(ObjectView):
     _nested = {
-        "images": "ImagesView",
-        "points": "PointsView",
+        "images": "ImageView",
+        "points": "PointView",
     }
 
 
-class ConditionsView(ObjectView):
-    _model = Condition
+@view_maker
+class ConditionView(ObjectView):
+    pass
 
 
-class ImagesView(ObjectView):
-    _model = Image
+@view_maker
+class ImageView(ObjectView):
+    pass
 
 
-class PointsView(ObjectView):
-    _model = Point
+@view_maker
+class PointView(ObjectView):
     _nested = {
         "values": "PointValueView",
     }
 
 
+@view_maker
 class PointValueView(ObjectView):
-    _model = PointValue
+    pass
 
 
-class StudiesListView(ListView):
-    _model = Study
-    # _only = ('name', 'description', 'doi', '_type', '_id', 'created_at')
+@view_maker
+class StudyListView(ListView):
+    _nested = {
+        "analyses": "AnalysisView",
+    }
+    _search_fields = ("name", "description")
+
+    @classmethod
+    def _load_from_source(cls, source, source_id):
+        if source == "neurostore":
+            return cls.load_from_neurostore(source_id)
+        elif source == "neurovault":
+            return cls.load_from_neurovault(source_id)
+        elif source == "pubmed":
+            return cls.load_from_pubmed(source_id)
+
+    @classmethod
+    def load_from_neurostore(cls, source_id):
+        study = cls._model.query.filter_by(id=source_id).first_or_404()
+        data = cls._schema(copy=True).dump(study)
+        data['source'] = "neurostore"
+        data['source_id'] = source_id
+        data['source_updated_at'] = study.updated_at or study.created_at
+        return data
+
+    @classmethod
+    def load_from_neurovault(cls, source_id):
+        pass
+
+    @classmethod
+    def load_from_pubmed(cls, source_id):
+        pass
+
+
+@view_maker
+class AnalysisListView(ListView):
     _search_fields = ("name", "description")
 
 
-class AnalysesListView(ListView):
-    _model = Analysis
-    _search_fields = ("name", "description")
-
-
-class ImagesListView(ListView):
-    _model = Image
+@view_maker
+class ImageListView(ListView):
     _search_fields = ("filename", "space", "value_type", "analysis_name")
 
 
-class DatasetsListView(ListView):
-    _model = Dataset
+@view_maker
+class DatasetListView(ListView):
     _search_fields = ("name", "description", "publication", "doi", "pmid")
