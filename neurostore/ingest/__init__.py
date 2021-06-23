@@ -10,7 +10,7 @@ import tarfile
 import pandas as pd
 import requests
 
-from neurostore.models import Study, Analysis, Image, User, Point
+from neurostore.models import Study, Analysis, Image, User, Point, Condition
 from neurostore.core import db
 
 
@@ -33,14 +33,24 @@ def ingest_neurovault(verbose=False, limit=20):
         data = requests.get(image_url).json()
         analyses = {}
         images = []
+        conditions = []
         for img in data["results"]:
             aname = img["name"]
             if aname not in analyses:
-                analysis = Analysis(name=aname, description=img["description"], study=s)
+                condition = img.get('cognitive_paradigm_cogatlas')
+                analysis_kwargs = {
+                    "name": aname,
+                    "description": img['description'],
+                    "study": s,
+                }
+                if condition:
+                    conditions.append(condition)
+                    analysis_kwargs['conditions'] = [Condition(name=condition)]
+                    analysis_kwargs['weights'] = [1]
+                analysis = Analysis(**analysis_kwargs)
                 analyses[aname] = analysis
             else:
                 analysis = analyses[aname]
-            # TODO: could parse Analysis into Conditions here
             space = "unknown" if not img.get("not_mni", False) else "MNI"
             type_ = img.get("map_type", "Unknown")
             if re.match(r"\w\smap.*", type_):
@@ -56,7 +66,7 @@ def ingest_neurovault(verbose=False, limit=20):
             )
             images.append(image)
 
-        db.session.add_all([s] + list(analyses.values()) + images)
+        db.session.add_all([s] + list(analyses.values()) + images + conditions)
         db.session.commit()
         all_studies[s.name] = s
         return s
