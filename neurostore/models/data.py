@@ -69,6 +69,10 @@ class Condition(BaseMixin, db.Model):
     name = db.Column(db.String)
     description = db.Column(db.String)
 
+    def __init__(self, name=None, description=None):
+        self.name = name
+        self.description = description
+
 
 class AnalysisConditions(db.Model):
     __tablename__ = "analysis_conditions"
@@ -78,6 +82,10 @@ class AnalysisConditions(db.Model):
     condition_id = db.Column(db.Text, db.ForeignKey("conditions.id"), primary_key=True)
     analysis = relationship("Analysis", backref=backref("analysis_conditions"))
     condition = relationship("Condition", backref=backref("analysis_conditions"))
+
+    def __init__(self, condition=None, weight=None):
+        self.condition = condition
+        self.weight = weight
 
 
 PointEntityMap = db.Table(
@@ -97,7 +105,7 @@ ImageEntityMap = db.Table(
 
 
 # purpose of Entity: you have an image/coordinate, but you do not
-# know where it was from
+# know what level of analysis it represents
 class Entity(BaseMixin, db.Model):
     __tablename__ = "entities"
 
