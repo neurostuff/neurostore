@@ -11,7 +11,7 @@ from webargs import fields
 from flask_jwt_extended import jwt_required, current_user  # jwt_required
 
 from ..core import db
-from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue  # noqa E401
+from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions  # noqa E401
 
 from ..schemas import (  # noqa E401
     StudySchema,
@@ -21,6 +21,7 @@ from ..schemas import (  # noqa E401
     PointSchema,
     PointValueSchema,
     DatasetSchema,
+    AnalysisConditionSchema
 )
 
 __all__ = [
@@ -35,6 +36,7 @@ __all__ = [
     "AnalysisListView",
     "ImageListView",
     "DatasetListView",
+    "ConditionListView",
 ]
 
 
@@ -89,12 +91,17 @@ class BaseView(MethodView):
         for field, res_name in cls._nested.items():
             ResCls = globals()[res_name]
             if data.get(field):
-                nested = [
-                    ResCls.update_or_create(rec, commit=False)
-                    for rec in data.get(field)
-                ]
+                if isinstance(data.get(field), list):
+                    nested = [
+                        ResCls.update_or_create(rec, commit=False)
+                        for rec in data.get(field)
+                    ]
+                    to_commit.extend(nested)
+                else:
+                    nested = ResCls.update_or_create(data.get(field), commit=False)
+                    to_commit.append(nested)
+
                 setattr(record, field, nested)
-                to_commit.extend(nested)
 
         if commit:
             db.session.add_all(to_commit)
@@ -106,7 +113,8 @@ class BaseView(MethodView):
 class ObjectView(BaseView):
     def get(self, id):
         record = self._model.query.filter_by(id=id).first_or_404()
-        return self.__class__._schema().dump(record)
+        nested = request.args.get("nested")
+        return self.__class__._schema(context={'nested': nested}).dump(record)
 
     @jwt_required()
     def put(self, id):
@@ -114,7 +122,8 @@ class ObjectView(BaseView):
         if id != data["id"]:
             return abort(422)
 
-        record = self.__class__.update_or_create(data, id)
+        with db.session.no_autoflush:
+            record = self.__class__.update_or_create(data, id)
 
         return self.__class__._schema().dump(record)
 
@@ -205,8 +214,9 @@ class ListView(BaseView):
         else:
             data = parser.parse(self.__class__._schema, request)
 
+        nested = bool(request.args.get("nested") or request.args.get("source_id"))
         record = self.__class__.update_or_create(data)
-        return self.__class__._schema().dump(record)
+        return self.__class__._schema(context={'nested': nested}).dump(record)
 
 
 @view_maker
@@ -226,6 +236,7 @@ class AnalysisView(ObjectView):
     _nested = {
         "images": "ImageView",
         "points": "PointView",
+        "analysis_conditions": "AnalysisConditionResource"
     }
 
 
@@ -270,7 +281,8 @@ class StudyListView(ListView):
     @classmethod
     def load_from_neurostore(cls, source_id):
         study = cls._model.query.filter_by(id=source_id).first_or_404()
-        data = cls._schema(copy=True).dump(study)
+        schema = cls._schema(copy=True)
+        data = schema.load(schema.dump(study))
         data['source'] = "neurostore"
         data['source_id'] = source_id
         data['source_updated_at'] = study.updated_at or study.created_at
@@ -298,3 +310,14 @@ class ImageListView(ListView):
 @view_maker
 class DatasetListView(ListView):
     _search_fields = ("name", "description", "publication", "doi", "pmid")
+
+
+@view_maker
+class ConditionListView(ListView):
+    _search_fields = ("name", "description")
+
+
+class AnalysisConditionResource(BaseView):
+    _nested = {'condition': 'ConditionView'}
+    _model = AnalysisConditions
+    _schema = AnalysisConditionSchema

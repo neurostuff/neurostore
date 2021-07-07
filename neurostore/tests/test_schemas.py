@@ -11,11 +11,11 @@ def test_StudySchema(auth_client, ingest_neurosynth):
     payload.pop("source_id")
     payload.pop("source_updated_at")
     payload["metadata"] = {"cool": "important detail"}
-    [(pl.pop("created_at"), pl.pop("study")) for pl in payload["analyses"]]
+    [(pl.pop("created_at"), pl.pop("study"), pl.pop('user')) for pl in payload["analyses"]]
     [
-        (p.pop("created_at"), p.pop("analysis"))
+        (p.pop("created_at"), p.pop("analysis"), p.pop('user'))
         for pl in payload["analyses"]
-        for p in pl["point"]
+        for p in pl["points"]
     ]
     StudySchema().load(payload)
     StudySchema().validate(payload)

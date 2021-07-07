@@ -1,3 +1,5 @@
+import pytest
+
 from ..request_utils import decode_json
 from ...models.data import Study
 
@@ -31,10 +33,26 @@ def test_get_studies(auth_client, ingest_neurosynth):
     assert full_study["id"] == s_id
 
 
-def test_put_studies(auth_client, ingest_neurosynth):
+@pytest.mark.parametrize(
+    "data",
+    [
+        {'metadata': {"cool": "important detail"}},
+        {"analyses": [{"conditions": [{"name": "face"}, {"name": "house"}], "weights": [-1, 1]}]},
+    ]
+)
+def test_put_studies(auth_client, ingest_neurosynth, data):
     study_entry = Study.query.first()
-    study_clone_id = auth_client.post(f"/api/studies/?source_id={study_entry.id}").json['id']
-    payload = {'metadata': {"cool": "important detail"}, 'id': study_clone_id}
+    study_clone = auth_client.post(f"/api/studies/?source_id={study_entry.id}").json
+    study_clone_id = study_clone['id']
+    payload = {**data, 'id': study_clone_id}
+    if payload.get('analyses'):
+        if payload['analyses'][0].get("conditions"):
+            conditions = []
+            for cond in payload['analyses'][0]['conditions']:
+                conditions.append(auth_client.post("/api/conditions/", data=cond).json)
+            payload['analyses'][0]['conditions'] = [{'id': cond['id']} for cond in conditions]
+        analysis_clone_id = study_clone['analyses'][0]['id']
+        payload['analyses'][0]['id'] = analysis_clone_id
     put_resp = auth_client.put(f"/api/studies/{study_clone_id}", data=payload)
     assert put_resp.status_code == 200
 

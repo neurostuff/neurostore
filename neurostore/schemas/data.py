@@ -13,20 +13,15 @@ class StringOrNested(fields.Nested):
     """Custom Field that serializes a nested object as either a string
     or a full object, depending on "nested" or "source" request argument"""
 
-    # def __init__(self, nested, **kwargs):
-    #     self.many = kwargs.pop("many", False)
-    #     self.kwargs = kwargs
-    #     # self.schema = fields.Nested(nested, **self.kwargs).schema
-    #     self.schema = nested
-    #     super().__init__(**kwargs)
+    def __init__(self, nested, **kwargs):
+        super().__init__(nested, **kwargs)
 
     def _serialize(self, value, attr, obj, **ser_kwargs):
         if value is None:
             return None
-        copied = bool(request.args.get('source_id', False))
-        nested = bool(request.args.get('nested', False))
-        if nested or copied:
-            return self.nested(copy=copied).dump(value, many=self.many)
+        if self.context.get('nested') or self.context.get('copy'):
+            nested_schema = self.nested(context=self.context)
+            return nested_schema.dump(value, many=self.many)
         else:
             return [v.id for v in value] if self.many else value.id
 
@@ -46,8 +41,15 @@ class BaseSchemaOpts(SchemaOpts):
 
 class BaseSchema(Schema):
 
-    def __init__(self, copy=False, *args, **kwargs):
+    def __init__(self, copy=None, *args, **kwargs):
         exclude = list(kwargs.pop("exclude", []))
+        if copy is None and kwargs.get('context') and kwargs.get('context').get('copy'):
+            copy = kwargs.get('context').get('copy')
+
+        if kwargs.get('context'):
+            kwargs['context']['copy'] = copy
+        else:
+            kwargs['context'] = {'copy': copy}
         if copy:
             exclude.extend([
                 field for field, f_obj in self._declared_fields.items()
@@ -58,7 +60,7 @@ class BaseSchema(Schema):
     OPTIONS_CLASS = BaseSchemaOpts
     # normal return key
     id_key = "id"
-    # Serialization fields
+
     _id = fields.String(attribute="id", data_key=id_key, dump_only=True, db_only=True)
     created_at = fields.DateTime(dump_only=True, db_only=True)
 
@@ -68,6 +70,10 @@ class BaseSchema(Schema):
         super().on_bind_field(field_name, field_obj)
         if field_name in self.opts.allow_none:
             field_obj.allow_none = True
+
+
+class BaseDataSchema(BaseSchema):
+    user = fields.Function(lambda user: user.user_id, dump_only=True, db_only=True)
 
 
 class JSONLDBaseSchema(BaseSchema):
@@ -100,13 +106,13 @@ class JSONLDBaseSchema(BaseSchema):
             return jsonld.compact(data, context)
 
 
-class ConditionSchema(BaseSchema):
+class ConditionSchema(BaseDataSchema):
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
 
 
-class ImageSchema(BaseSchema):
+class ImageSchema(BaseDataSchema):
 
     # serialization
     analysis = fields.Function(lambda image: image.analysis.id, dump_only=True, db_only=True)
@@ -121,12 +127,12 @@ class ImageSchema(BaseSchema):
         allow_none = ("url", "filename", "space", "value_type", "analysis_name")
 
 
-class PointValueSchema(BaseSchema):
+class PointValueSchema(BaseDataSchema):
     class Meta:
         additional = allow_none = ("kind", "value")
 
 
-class PointSchema(BaseSchema):
+class PointSchema(BaseDataSchema):
     # serialization
     analysis = fields.Function(lambda image: image.analysis.id, dump_only=True, db_only=True)
     value = fields.Nested(PointValueSchema, attribute="values", many=True)
@@ -149,47 +155,61 @@ class PointSchema(BaseSchema):
         return data
 
 
-class AnalysisSchema(BaseSchema):
+class AnalysisConditionSchema(BaseDataSchema):
+    weight = fields.Float()
+    condition = fields.Nested(ConditionSchema)
+    analysis = fields.Function(lambda analysis: analysis.id, dump_only=True, db_only=True)
+
+
+class AnalysisSchema(BaseDataSchema):
 
     # serialization
     study = fields.Function(lambda analysis: analysis.study.id, dump_only=True, db_only=True)
-    condition = fields.Nested(
-        ConditionSchema, attribute="conditions", many=True, dump_only=True
-    )
-    image = StringOrNested(ImageSchema, attribute="images", many=True, dump_only=True)
-    point = StringOrNested(PointSchema, attribute="points", many=True, dump_only=True)
-    weight = fields.List(fields.Float(), attribute="weights", dump_only=True)
+    conditions = StringOrNested(ConditionSchema, many=True, dump_only=True)
+    weights = fields.List(fields.Float(), dump_only=True)
 
-    # deserialization
-    conditions = fields.Nested(
-        ConditionSchema, data_key="condition", many=True, load_only=True
-    )
-    images = fields.Nested(ImageSchema, data_key="image", many=True, load_only=True)
-    points = fields.Nested(PointSchema, data_key="point", many=True, load_only=True)
-    weights = fields.List(fields.Float(), data_key="weight", load_only=True)
+    analysis_conditions = fields.Nested(AnalysisConditionSchema, many=True, load_only=True)
+    images = StringOrNested(ImageSchema, many=True)
+    points = StringOrNested(PointSchema, many=True)
+    weights = fields.List(fields.Float())
 
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
 
+    @pre_load
+    def process_values(self, data, **kwargs):
+        # conditions/weights need special processing
+        if data.get("conditions") is not None and data.get("weights") is not None:
+            assert len(data.get("conditions")) == len(data.get("weights"))
+            data['analysis_conditions'] = [
+                {"condition": c, "weight": w} for c, w in
+                zip(data.get("conditions"), data.get("weights"))
+            ]
+        elif data.get("conditions") is not None:
+            data['analysis_conditions'] = [{"condition": cond} for cond in data.get("conditions")]
 
-class StudySchema(BaseSchema):
+        data.pop("conditions", None)
+        data.pop("weights", None)
+        return data
+
+
+class StudySchema(BaseDataSchema):
 
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
-    user = fields.Function(lambda user: user.user_id, dump_only=True, db_only=True)
 
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
     analyses = StringOrNested(AnalysisSchema, many=True)
     source = fields.String(dump_only=True, db_only=True, allow_none=True)
     source_id = fields.String(dump_only=True, db_only=True, allow_none=True)
-    source_updated_at = fields.DateTime(dump_only=True, db_only=True)
+    source_updated_at = fields.DateTime(dump_only=True, db_only=True, allow_none=True)
 
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")
         allow_none = ("name", "description", "publication", "doi", "pmid")
 
 
-class DatasetSchema(BaseSchema):
+class DatasetSchema(BaseDataSchema):
     # serialize
     user = fields.Function(lambda user: user.user_id, dump_only=True, db_only=True)
     nimads_data = fields.Dict()
