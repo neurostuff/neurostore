@@ -1,5 +1,4 @@
 from sqlalchemy.ext.associationproxy import association_proxy
-# from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 import shortuuid
@@ -17,13 +16,15 @@ class BaseMixin(object):
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
 
+    # this _should_ work, but user sometimes is not properly committed,
+    # look into as time permits
     # @declared_attr
     # def user_id(cls):
     #     return db.Column(db.Text, db.ForeignKey("users.id"))
 
-    # @declared_attr
+    # @declared_attr.cascading
     # def user(cls):
-    #     relationship("User", backref=backref(cls.__tablename__))
+    #     relationship("User", backref=cls.__tablename__, uselist=False)
 
     @property
     def IRI(self):
@@ -71,7 +72,6 @@ class Analysis(BaseMixin, db.Model):
     conditions = relationship(
         "Condition", secondary="analysis_conditions", backref=backref("analyses")
     )
-    # conditions = association_proxy("analysis_conditions", "condition")
     weights = association_proxy("analysis_conditions", "weight")
     user_id = db.Column(db.Text, db.ForeignKey("users.id"))
     user = relationship("User", backref=backref("analyses"))
@@ -92,9 +92,9 @@ class Condition(BaseMixin, db.Model):
 
 class AnalysisConditions(db.Model):
     __tablename__ = "analysis_conditions"
-    # __table_args__ = (
-    #     db.UniqueConstraint("analysis_id", "condition_id"),
-    # )
+    __table_args__ = (
+        db.UniqueConstraint("analysis_id", "condition_id"),
+    )
     weight = db.Column(db.Float)
     analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id"), primary_key=True)
     condition_id = db.Column(db.Text, db.ForeignKey("conditions.id"), primary_key=True)
