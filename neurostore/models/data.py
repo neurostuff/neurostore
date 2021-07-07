@@ -1,4 +1,5 @@
 from sqlalchemy.ext.associationproxy import association_proxy
+# from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 import shortuuid
@@ -15,6 +16,14 @@ class BaseMixin(object):
     id = db.Column(db.Text, primary_key=True, default=generate_id)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
+
+    # @declared_attr
+    # def user_id(cls):
+    #     return db.Column(db.Text, db.ForeignKey("users.id"))
+
+    # @declared_attr
+    # def user(cls):
+    #     relationship("User", backref=backref(cls.__tablename__))
 
     @property
     def IRI(self):
@@ -45,11 +54,11 @@ class Study(BaseMixin, db.Model):
     pmid = db.Column(db.String)
     public = db.Column(db.Boolean, default=True)
     metadata_ = db.Column(db.JSON)
-    user_id = db.Column(db.Text, db.ForeignKey("users.id"))
-    user = relationship("User", backref=backref("studies"))
     source = db.Column(db.String)
     source_id = db.Column(db.String)
     source_updated_at = db.Column(db.DateTime(timezone=True))
+    user_id = db.Column(db.Text, db.ForeignKey("users.id"))
+    user = relationship("User", backref=backref("studies"))
 
 
 class Analysis(BaseMixin, db.Model):
@@ -59,8 +68,13 @@ class Analysis(BaseMixin, db.Model):
     name = db.Column(db.String)
     description = db.Column(db.String)
     study = relationship("Study", backref=backref("analyses"))
-    conditions = association_proxy("analysis_conditions", "condition")
+    conditions = relationship(
+        "Condition", secondary="analysis_conditions", backref=backref("analyses")
+    )
+    # conditions = association_proxy("analysis_conditions", "condition")
     weights = association_proxy("analysis_conditions", "weight")
+    user_id = db.Column(db.Text, db.ForeignKey("users.id"))
+    user = relationship("User", backref=backref("analyses"))
 
 
 class Condition(BaseMixin, db.Model):
@@ -68,6 +82,8 @@ class Condition(BaseMixin, db.Model):
 
     name = db.Column(db.String)
     description = db.Column(db.String)
+    user_id = db.Column(db.Text, db.ForeignKey("users.id"))
+    user = relationship("User", backref=backref("conditions"))
 
     def __init__(self, name=None, description=None):
         self.name = name
@@ -76,7 +92,9 @@ class Condition(BaseMixin, db.Model):
 
 class AnalysisConditions(db.Model):
     __tablename__ = "analysis_conditions"
-
+    # __table_args__ = (
+    #     db.UniqueConstraint("analysis_id", "condition_id"),
+    # )
     weight = db.Column(db.Float)
     analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id"), primary_key=True)
     condition_id = db.Column(db.Text, db.ForeignKey("conditions.id"), primary_key=True)
@@ -110,9 +128,9 @@ class Entity(BaseMixin, db.Model):
     __tablename__ = "entities"
 
     study_id = db.Column(db.Text, db.ForeignKey("studies.id"))  # link to analysis
-    label = db.Column(db.String)
-    level = db.Column(db.String)
-    data = db.Column(db.JSON)  # metadata
+    label = db.Column(db.String)  # bids-entity
+    level = db.Column(db.String)  # constrained enumeration (bids-entity, run, session, subject)
+    data = db.Column(db.JSON)  # metadata (participants.tsv, or something else)
     study = relationship("Study", backref=backref("entities"))
 
 
@@ -128,7 +146,7 @@ class Point(BaseMixin, db.Model):
     z = db.Column(db.Float)
     space = db.Column(db.String)
     kind = db.Column(db.String)
-    image = db.Column(db.String)
+    image = db.Column(db.String)  # what does image represent
     label_id = db.Column(db.Float, default=None)
     analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id"))
 
@@ -136,6 +154,8 @@ class Point(BaseMixin, db.Model):
         "Entity", secondary=PointEntityMap, backref=backref("points")
     )
     analysis = relationship("Analysis", backref=backref("points"))
+    user_id = db.Column(db.Text, db.ForeignKey("users.id"))
+    user = relationship("User", backref=backref("points"))
 
 
 class Image(BaseMixin, db.Model):
@@ -154,6 +174,8 @@ class Image(BaseMixin, db.Model):
         "Entity", secondary=ImageEntityMap, backref=backref("images")
     )
     analysis = relationship("Analysis", backref=backref("images"))
+    user_id = db.Column(db.Text, db.ForeignKey("users.id"))
+    user = relationship("User", backref=backref("images"))
 
 
 class PointValue(BaseMixin, db.Model):
@@ -164,3 +186,5 @@ class PointValue(BaseMixin, db.Model):
     value = db.Column(db.String)
     dtype = db.Column(db.String, default="str")
     point = relationship("Point", backref=backref("values"))
+    user_id = db.Column(db.Text, db.ForeignKey("users.id"))
+    user = relationship("User", backref=backref("point_values"))
