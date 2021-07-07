@@ -14,13 +14,13 @@ def test_get_analyses(auth_client, ingest_neurosynth):
     analysis = analysis_list[0]
     keys = [
         "id",
-        "condition",
+        "conditions",
         "created_at",
-        "image",
+        "images",
         "name",
-        "point",
+        "points",
         "study",
-        "weight",
+        "weights",
     ]
     for k in keys:
         assert k in analysis
