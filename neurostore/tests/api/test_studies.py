@@ -69,3 +69,12 @@ def test_clone_studies(auth_client, ingest_neurosynth):
     assert data['source_id'] == study_entry.id
     assert data['source'] == 'neurostore'
     assert data['analyses'][0]['name'] == study_entry.analyses[0].name
+
+    # a clone of a clone should reference the original parent
+    resp2 = auth_client.post(f"/api/studies/?source_id={data['id']}")
+    data2 = resp2.json
+
+    assert data2['name'] == study_entry.name
+    assert data2['source_id'] == study_entry.id
+    assert data2['source'] == 'neurostore'
+    assert data2['analyses'][0]['name'] == study_entry.analyses[0].name
