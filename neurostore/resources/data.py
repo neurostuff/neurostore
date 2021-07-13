@@ -281,6 +281,13 @@ class StudyListView(ListView):
     @classmethod
     def load_from_neurostore(cls, source_id):
         study = cls._model.query.filter_by(id=source_id).first_or_404()
+        parent_source_id = study.source_id
+        while parent_source_id is not None:
+            source_id = parent_source_id
+            parent_source_id = cls._model.query.filter_by(
+                id=parent_source_id
+            ).first_or_404().source_id
+
         schema = cls._schema(copy=True)
         data = schema.load(schema.dump(study))
         data['source'] = "neurostore"
