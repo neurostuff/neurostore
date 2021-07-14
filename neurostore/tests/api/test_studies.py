@@ -42,7 +42,7 @@ def test_get_studies(auth_client, ingest_neurosynth):
 )
 def test_put_studies(auth_client, ingest_neurosynth, data):
     study_entry = Study.query.first()
-    study_clone = auth_client.post(f"/api/studies/?source_id={study_entry.id}").json
+    study_clone = auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={}).json
     study_clone_id = study_clone['id']
     payload = {**data, 'id': study_clone_id}
     if payload.get('analyses'):
@@ -63,7 +63,7 @@ def test_put_studies(auth_client, ingest_neurosynth, data):
 
 def test_clone_studies(auth_client, ingest_neurosynth):
     study_entry = Study.query.first()
-    resp = auth_client.post(f"/api/studies/?source_id={study_entry.id}")
+    resp = auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={})
     data = resp.json
     assert data['name'] == study_entry.name
     assert data['source_id'] == study_entry.id
@@ -71,7 +71,7 @@ def test_clone_studies(auth_client, ingest_neurosynth):
     assert data['analyses'][0]['name'] == study_entry.analyses[0].name
 
     # a clone of a clone should reference the original parent
-    resp2 = auth_client.post(f"/api/studies/?source_id={data['id']}")
+    resp2 = auth_client.post(f"/api/studies/?source_id={data['id']}", data={})
     data2 = resp2.json
 
     assert data2['name'] == study_entry.name
