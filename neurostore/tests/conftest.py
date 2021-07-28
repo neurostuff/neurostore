@@ -1,12 +1,11 @@
 import pytest
 from os import environ
-from flask_security.utils import encrypt_password
 from ..core import app as _app
 from ..database import db as _db
-import datetime
 import sqlalchemy as sa
 from .. import ingest
 from ..models import User, Role
+from auth0.v3.authentication import GetToken
 
 """
 Session / db managment tools
@@ -75,8 +74,9 @@ def auth_client(add_users):
     """ Return authorized client wrapper """
     from .request_utils import Client
 
-    _, email, password = add_users
-    client = Client(email=email, password=password)
+    tokens = add_users
+    first_user = list(tokens.keys())[0]
+    client = Client(token=tokens[first_user]['token'])
     return client
 
 
@@ -89,21 +89,49 @@ Data population fixtures
 def add_users(app, db, session):
     """ Adds a test user to db """
     from flask_security import SQLAlchemyUserDatastore
+    from neurostore.resources.auth import decode_token
 
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 
-    user1 = "test1@gmail.com"
-    pass1 = "testtest1"
+    domain = environ['AUTH0_BASE_URL'].split('://')[1]
+    token = GetToken(domain)
 
-    user_datastore.create_user(
-        email=user1,
-        password=encrypt_password(pass1),
-        confirmed_at=datetime.datetime.now(),
-    )
-    session.commit()
-    id_1 = user_datastore.find_user(email=user1).id
+    users = [
+        {
+            "name": "user1",
+            "password": "password1",
+        },
+        {
+            "name": "user2",
+            "password": "password2",
+        }
+    ]
 
-    yield id_1, user1, pass1
+    tokens = {}
+    for u in users:
+        name = u['name']
+        passw = u['password']
+        payload = token.login(
+            client_id=environ['AUTH0_CLIENT_ID'],
+            client_secret=environ['AUTH0_CLIENT_SECRET'],
+            username=name + "@email.com",
+            password=passw,
+            realm='Username-Password-Authentication',
+            audience=environ['AUTH0_API_AUDIENCE'],
+            scope='openid',
+        )
+        token_info = decode_token(payload['access_token'])
+        user_datastore.create_user(
+            name=name,
+            neuroid=token_info['sub'],
+        )
+
+        tokens[name] = {
+            'token': payload['access_token'],
+            'id': user_datastore.find_user(neuroid=token_info['sub']).id,
+        }
+
+    yield tokens
 
 
 @pytest.fixture(scope="function")

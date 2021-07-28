@@ -10,13 +10,11 @@ import tarfile
 import pandas as pd
 import requests
 
-from neurostore.models import Study, Analysis, Image, User, Point, Condition, AnalysisConditions
+from neurostore.models import Study, Analysis, Image, Point, Condition, AnalysisConditions
 from neurostore.core import db
 
 
 def ingest_neurovault(verbose=False, limit=20):
-
-    user = User.query.filter_by(email="admin@neurostore.org").first()
 
     # Store existing studies for quick lookup
     all_studies = {s.doi: s for s in Study.query.filter(Study.doi.isnot(None)).all()}
@@ -25,7 +23,7 @@ def ingest_neurovault(verbose=False, limit=20):
         if data["DOI"] in all_studies:
             print("Skipping {} (already exists)...".format(data["DOI"]))
             return
-        s = Study(name=data["name"], doi=data["DOI"], metadata_=data, user=user)
+        s = Study(name=data["name"], doi=data["DOI"], metadata_=data)
 
         # Process images
         url = "https://neurovault.org/api/collections/{}/images/?format=json"
@@ -100,8 +98,6 @@ def ingest_neurovault(verbose=False, limit=20):
 
 def ingest_neurosynth(max_rows=None):
 
-    user = User.query.filter_by(email="admin@neurostore.org").first()
-
     path = Path(__file__).parent.parent / "data" / "data_0.7.July_2018.tar.gz"
     with open(path, "rb") as tf:
         tar = tarfile.open(fileobj=tf)
@@ -118,7 +114,7 @@ def ingest_neurosynth(max_rows=None):
                 "year": int(row["year"]),
                 "journal": row["journal"],
             }
-            s = Study(name=row["title"], metadata=md, doi=doi, user=user)
+            s = Study(name=row["title"], metadata=md, doi=doi)
             analyses = []
             points = []
             for t_id, df in study_df.groupby("table_id"):

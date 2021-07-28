@@ -2,7 +2,7 @@ from .data import (
     Study, Analysis, Condition, Entity, Point,
     Image, Dataset, PointValue, AnalysisConditions
 )
-from .auth import User, Role, OAuth
+from .auth import User, Role
 
 __all__ = [
     "Study",
@@ -16,5 +16,4 @@ __all__ = [
     "AnalysisConditions",
     "User",
     "Role",
-    "OAuth",
 ]

@@ -1,0 +1,60 @@
+import connexion
+from flask import request, abort
+from webargs.flaskparser import parser
+
+from .data import ListView, ObjectView
+from ..models.auth import User
+from ..schemas import UserSchema # noqa E401
+from ..database import db
+
+
+class UserListView(ListView):
+    _model = User
+
+    @property
+    def schema(self):
+        return globals()[self._model.__name__ + 'Schema']
+
+    def post(self, **kwargs):
+        data = parser.parse(self.schema, request)
+        record = self._model()
+        # Store all models so we can atomically update in one commit
+        to_commit = []
+
+        # Update all non-nested attributes
+        for k, v in data.items():
+            setattr(record, k, v)
+
+        to_commit.append(record)
+
+        db.session.add_all(to_commit)
+        db.session.commit()
+
+        return self.schema().dump(record)
+
+
+class UserView(ObjectView):
+    _model = User
+
+    @property
+    def schema(self):
+        return globals()[self._model.__name__ + 'Schema']
+
+    def put(self, id):
+        current_user = User.query.filter_by(neuroid=connexion.context['user']).first()
+        data = parser.parse(self.__class__._schema, request)
+        if id != data["id"] or id != current_user.id:
+            return abort(422)
+
+        record = self._model.query.filter_by(id=id).first()
+
+        if record is None:
+            abort(422)
+
+        for k, v in data.items():
+            setattr(record, k, v)
+
+        db.session.add(record)
+        db.session.commit()
+
+        return self.__class__._schema().dump(record)

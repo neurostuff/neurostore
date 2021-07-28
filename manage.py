@@ -5,9 +5,8 @@ import os
 
 from flask_script import Manager, Shell
 from flask_migrate import Migrate, MigrateCommand
-from flask_security.utils import encrypt_password
 
-from neurostore.core import app, db, user_datastore
+from neurostore.core import app, db
 from neurostore import ingest
 from neurostore import models
 
@@ -24,15 +23,15 @@ manager.add_command("db", MigrateCommand)
 manager.add_command("shell", Shell(make_context=_make_context))
 
 
-@manager.command
-def add_user(email, password):
-    """Add a user to the database.
-    email - A valid email address (primary login key)
-    password - Any string
-    """
-    user_datastore.create_user(email=email, password=encrypt_password(password))
+# @manager.command
+# def add_user(email, password):
+#     """Add a user to the database.
+#     email - A valid email address (primary login key)
+#     password - Any string
+#     """
+#     user_datastore.create_user(email=email, password=encrypt_password(password))
 
-    db.session.commit()
+#     db.session.commit()
 
 
 @manager.command

@@ -1,7 +1,4 @@
-from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.orm import relationship, backref
 from flask_security import UserMixin, RoleMixin, SQLAlchemyUserDatastore
-from flask_dance.consumer.storage.sqla import OAuthConsumerMixin
 
 
 from ..database import db
@@ -25,25 +22,11 @@ class Role(BaseMixin, db.Model, RoleMixin):
 
 class User(BaseMixin, db.Model, UserMixin):
     __tablename__ = "users"
-
+    active = db.Column(db.Boolean())
     name = db.Column(db.Text)
-    email = db.Column(db.Text, unique=True)
-    password = db.Column(db.Text)
-    active = db.Column(db.Boolean)
-    confirmed_at = db.Column(db.DateTime)
-    roles = relationship(
-        "Role", secondary=roles_users, backref=backref("users", lazy="dynamic")
-    )
-    username = association_proxy("oauth", "provider_user_id")
-
-
-class OAuth(OAuthConsumerMixin, db.Model):
-    __tablename__ = "oauth"
-
-    user_id = db.Column(db.Text, db.ForeignKey("users.id"))
-    user = relationship(User, backref=backref("oauth"))
-    provider_user_id = db.Column(db.Text, unique=True, nullable=False)
-    provider = db.Column(db.Text)
+    neuroid = db.Column(db.Text, unique=True)
+    roles = db.relationship('Role', secondary=roles_users,
+                            backref=db.backref('users', lazy='dynamic'))
 
 
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)

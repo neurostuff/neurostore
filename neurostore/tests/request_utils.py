@@ -3,7 +3,7 @@ from functools import partialmethod
 
 
 class Client(object):
-    def __init__(self, test_client=None, prepend="", email=None, password=None):
+    def __init__(self, token, test_client=None, prepend=""):
         if test_client is None:
             from ..core import app
 
@@ -14,12 +14,7 @@ class Client(object):
 
         self.client = test_client
         self.prepend = prepend
-        self.token = None
-
-        if email is not None and password is not None:
-            self.email = email
-            self.password = password
-            self.authorize(email, password)
+        self.token = token
 
     def _get_headers(self):
         if self.token is not None:
@@ -59,20 +54,6 @@ class Client(object):
             )
         else:
             return request_function(route, json=data, headers=headers, params=params)
-
-    def authorize(self, email=None, password=None):
-        if email is not None and password is not None:
-            self.email = email
-            self.password = password
-
-        rv = self.post(
-            '/api/login',
-            data={'email': self.email, 'password': self.password})
-
-        if self.client_flask:
-            self.token = json.loads(rv.data.decode())['access_token']
-        else:
-            self.token = rv.json()['access_token']
 
     get = partialmethod(_make_request, "get")
     post = partialmethod(_make_request, "post")
