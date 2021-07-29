@@ -41,9 +41,7 @@ jobs:
       name: Ingest Data
       run: |
         docker-compose exec -T neurostore \
-        bash -c \
-            "python manage.py add_user admin@neurostore.org password && \
-             python manage.py ingest_neurosynth"
+        bash -c "python manage.py ingest_neurosynth"
     - 
       name: Create test database
       run: |
