@@ -1,6 +1,6 @@
-name: Pull Request Workflow
+name: Testing Workflow
 
-on: [pull_request,workflow_dispatch,push]
+on: [workflow_dispatch,push]
 
 jobs:
   docker_test_and_deploy:

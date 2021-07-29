@@ -42,9 +42,7 @@ when there are multiple versions from different histories.
 Finally, add an admin user, and ingest data
 
     docker-compose exec neurostore \
-        bash -c \
-            "python manage.py add_user admin@neurostore.org password && \
-             python manage.py ingest_neurosynth"
+        bash -c "python manage.py ingest_neurosynth"
 
 
 ## Maintaining docker image and db
