@@ -1,17 +1,24 @@
 """
 Ingest and sync data from various sources (Neurosynth, NeuroVault, etc.).
 """
-import re
 import os.path as op
-from pathlib import Path
-from dateutil.parser import parse as parse_date
+import re
 import tarfile
+from pathlib import Path
 
 import pandas as pd
 import requests
-
-from neurostore.models import Study, Analysis, Image, Point, Condition, AnalysisConditions
+from dateutil.parser import parse as parse_date
 from neurostore.core import db
+from neurostore.models import (
+    Analysis,
+    AnalysisConditions,
+    Condition,
+    Image,
+    Point,
+    Study,
+    User,
+)
 
 
 def ingest_neurovault(verbose=False, limit=20):
@@ -98,6 +105,7 @@ def ingest_neurovault(verbose=False, limit=20):
 
 def ingest_neurosynth(max_rows=None):
 
+<<<<<<< HEAD
     path = Path(__file__).parent.parent / "data" / "data_0.7.July_2018.tar.gz"
     with open(path, "rb") as tf:
         tar = tarfile.open(fileobj=tf)
@@ -132,3 +140,85 @@ def ingest_neurosynth(max_rows=None):
                     points.append(point)
             db.session.add_all([s] + analyses + points)
             db.session.commit()
+=======
+    user = User.query.filter_by(email="admin@neurostore.org").first()
+
+    coords_file = Path(__file__).parent.parent / "data" / "data-neurosynth_version-7_coordinates.tsv.gz"
+    metadata_file = Path(__file__).parent.parent / "data" / "data-neurosynth_version-7_metadata.tsv.gz"
+
+    coord_data = pd.read_table(coords_file)
+    metadata = pd.read_table(metadata_file, index_col="id")
+
+    for id_, study_coords_df in coord_data.groupby("id"):
+        study_metadata_series = metadata.loc[id_]
+        md = {
+            "authors": study_metadata_series["authors"],
+            "year": int(study_metadata_series["year"]),
+            "journal": study_metadata_series["journal"],
+        }
+        s = Study(
+            name=study_metadata_series["title"],
+            metadata=md,
+            doi=study_metadata_series["doi"],
+            user=user,
+        )
+        analyses = []
+        points = []
+        for t_id, df in study_coords_df.groupby("table_id"):
+            a = Analysis(name=str(t_id), study=s)
+            analyses.append(a)
+            for _, p in df.iterrows():
+                point = Point(
+                    x=p["x"],
+                    y=p["y"],
+                    z=p["z"],
+                    space=p["space"],
+                    kind="unknown",
+                    analysis=a,
+                )
+                points.append(point)
+        db.session.add_all([s] + analyses + points)
+        db.session.commit()
+
+
+def ingest_neuroquery(max_rows=None):
+
+    user = User.query.filter_by(email="admin@neurostore.org").first()
+
+    coords_file = (
+        Path(__file__).parent.parent / "data" / "data-neuroquery_version-1_coordinates.tsv.gz"
+    )
+    metadata_file = (
+        Path(__file__).parent.parent / "data" / "data-neuroquery_version-1_metadata.tsv.gz"
+    )
+
+    coord_data = pd.read_table(coords_file)
+    metadata = pd.read_table(metadata_file, index_col="id")
+
+    for id_, study_coords_df in coord_data.groupby("id"):
+        study_metadata_series = metadata.loc[id_]
+        md = dict()
+        s = Study(
+            name=study_metadata_series["title"],
+            metadata=md,
+            doi=None,
+            user=user,
+        )
+        analyses = []
+        points = []
+        for t_id, df in study_coords_df.groupby("table_id"):
+            a = Analysis(name=str(t_id), study=s)
+            analyses.append(a)
+            for _, p in df.iterrows():
+                point = Point(
+                    x=p["x"],
+                    y=p["y"],
+                    z=p["z"],
+                    space=p["space"],
+                    kind="unknown",
+                    analysis=a,
+                )
+                points.append(point)
+        db.session.add_all([s] + analyses + points)
+        db.session.commit()
+>>>>>>> Add files in new format and support NeuroQuery.
