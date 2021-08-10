@@ -115,14 +115,16 @@ def ingest_neurosynth(max_rows=None):
         Path(__file__).parent.parent / "data" / "data-neurosynth_version-7_metadata.tsv.gz"
     )
 
-    coord_data = pd.read_table(coords_file)
-    metadata = pd.read_table(metadata_file, index_col="id")
+    coord_data = pd.read_table(coords_file, dtype={"id": str})
+    coord_data = coord_data.set_index("id")
+    metadata = pd.read_table(metadata_file, dtype={"id": str})
+    metadata = metadata.set_index("id")
 
     if max_rows is not None:
         metadata = metadata.iloc[:max_rows]
 
     for id_, metadata_row in metadata.iterrows():
-        study_coord_data = coord_data.loc[coord_data["id"] == id_]
+        study_coord_data = coord_data.loc[id_]
         md = {
             "authors": metadata_row["authors"],
             "year": int(metadata_row["year"]),
@@ -165,14 +167,16 @@ def ingest_neuroquery(max_rows=None):
         Path(__file__).parent.parent / "data" / "data-neuroquery_version-1_metadata.tsv.gz"
     )
 
-    coord_data = pd.read_table(coords_file)
-    metadata = pd.read_table(metadata_file, index_col="id")
+    coord_data = pd.read_table(coords_file, dtype={"id": str})
+    coord_data = coord_data.set_index("id")
+    metadata = pd.read_table(metadata_file, dtype={"id": str})
+    metadata = metadata.set_index("id")
 
     if max_rows is not None:
         metadata = metadata.iloc[:max_rows]
 
     for id_, metadata_row in metadata.iterrows():
-        study_coord_data = coord_data.loc[coord_data["id"] == id_]
+        study_coord_data = coord_data.loc[id_]
         s = Study(
             name=metadata_row["title"],
             metadata=dict(),
