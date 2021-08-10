@@ -4,7 +4,7 @@ from ...models import User
 def test_create_user(auth_client):
     new_user = {
         'name': "fake name",
-        'neuroid': '1234',
+        'external_id': '1234',
     }
     resp = auth_client.post("/api/users/", data=new_user)
 
