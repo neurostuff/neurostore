@@ -1,85 +1,103 @@
-# import datetime
+import json
+from urllib.request import urlopen
 
 from flask import jsonify, request
-from flask.views import MethodView
-from flask_security.utils import verify_password
-from flask_jwt_extended import get_jwt_identity, jwt_required, create_access_token
-from webargs.flaskparser import parser
-
-from ..models.auth import User  # , user_datastore
-from ..schemas import UserSchema # noqa E401
-from ..database import db
-from ..core import jwt
+from jose import jwt
 
 
-# Register a callback function that takes whatever object is passed in as the
-# identity when creating JWTs and converts it to a JSON serializable format.
-@jwt.user_identity_loader
-def user_identity_lookup(user):
-    return user.id
+from ..core import app
 
 
-# Register a callback function that loades a user from your database whenever
-# a protected route is accessed. This should return any python object on a
-# successful lookup, or None if the lookup failed for any reason (for example
-# if the user has been deleted from the database).
-@jwt.user_lookup_loader
-def user_lookup_callback(_jwt_header, jwt_data):
-    identity = jwt_data["sub"]
-    return User.query.filter_by(id=identity).one_or_none()
+# Error handler
+class AuthError(Exception):
+    def __init__(self, error, status_code):
+        self.error = error
+        self.status_code = status_code
 
 
-class RegisterView(MethodView):
-    _model = User
-
-    @property
-    def schema(self):
-        return globals()[self._model.__name__ + 'Schema']
-
-    @jwt_required
-    def get(self):
-        return get_jwt_identity()
-
-    def post(self, **kwargs):
-        data = parser.parse(self.schema, request)
-        record = self._model()
-        # Store all models so we can atomically update in one commit
-        to_commit = []
-
-        # Update all non-nested attributes
-        for k, v in data.items():
-            setattr(record, k, v)
-
-        to_commit.append(record)
-
-        db.session.add_all(to_commit)
-        db.session.commit()
-
-        return self.schema().dump(record)
+@app.errorhandler(AuthError)
+def handle_auth_error(ex):
+    response = jsonify(ex.error)
+    response.status_code = ex.status_code
+    return response
 
 
-class LoginView(MethodView):
-    _model = User
+def get_token_auth_header():
+    """Obtains the Access Token from the Authorization Header
+    """
+    auth = request.headers.get("Authorization", None)
+    if not auth:
+        raise AuthError({"code": "authorization_header_missing",
+                        "description":
+                            "Authorization header is expected"}, 401)
 
-    @property
-    def schema(self):
-        return globals()[self._model.__name__ + 'Schema']
+    parts = auth.split()
 
-    def post(self, **kwargs):
-        login_schema = self.schema(only=('email', 'password'))
-        data = login_schema.load(request.json)
-        # do not want the encrypted password
-        data['password'] = request.json.get('password')
-        user = self._model.query.filter_by(email=data['email']).one_or_none()
-        if not user or not verify_password(data['password'], user.password):
-            abort(403, 'incorrect email or password')
+    if parts[0].lower() != "bearer":
+        raise AuthError({"code": "invalid_header",
+                        "description":
+                            "Authorization header must start with"
+                            " Bearer"}, 401)
+    elif len(parts) == 1:
+        raise AuthError({"code": "invalid_header",
+                        "description": "Token not found"}, 401)
+    elif len(parts) > 2:
+        raise AuthError({"code": "invalid_header",
+                        "description":
+                            "Authorization header must be"
+                            " Bearer token"}, 401)
 
-        user.access_token = create_access_token(identity=user)
+    token = parts[1]
+    return token
 
-        return self.schema(only=('access_token',)).dump(user)
 
+def decode_token(token):
+    jsonurl = urlopen(app.config['AUTH0_BASE_URL']+"/.well-known/jwks.json")
+    jwks = json.loads(jsonurl.read())
+    try:
+        unverified_header = jwt.get_unverified_header(token)
+    except jwt.JWTError:
+        raise AuthError({
+            "code": "invalid_header",
+            "description": "Unable to parse authentication"
+                           " token."},
+                        401)
 
-def abort(code, message=''):
-    """ JSONified abort """
-    from flask import abort, make_response
-    abort(make_response(jsonify(message=message), code))
+    rsa_key = {}
+    for key in jwks["keys"]:
+        if key["kid"] == unverified_header["kid"]:
+            rsa_key = {
+                "kty": key["kty"],
+                "kid": key["kid"],
+                "use": key["use"],
+                "n": key["n"],
+                "e": key["e"]
+            }
+    if rsa_key:
+        try:
+            payload = jwt.decode(
+                token,
+                rsa_key,
+                algorithms=["RS256"],
+                audience=app.config['AUTH0_API_AUDIENCE'],
+                # needs slash at end
+                issuer=app.config['AUTH0_BASE_URL'] + '/',
+            )
+        except jwt.ExpiredSignatureError:
+            raise AuthError({"code": "token_expired",
+                            "description": "token is expired"}, 401)
+        except jwt.JWTClaimsError:
+            raise AuthError({"code": "invalid_claims",
+                            "description":
+                                "incorrect claims,"
+                                "please check the audience and issuer"}, 401)
+        except Exception:
+            raise AuthError({"code": "invalid_header",
+                            "description":
+                                "Unable to parse authentication"
+                                " token."}, 401)
+
+        return payload
+
+    raise AuthError({"code": "invalid_header",
+                    "description": "Unable to find appropriate key"}, 401)

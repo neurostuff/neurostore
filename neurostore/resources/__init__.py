@@ -14,9 +14,9 @@ from .data import (
     AnalysisConditionResource,
 )
 
-from .auth import (
-    RegisterView,
-    LoginView
+from .users import (
+    UserView,
+    UserListView
 )
 
 __all__ = [
@@ -31,8 +31,8 @@ __all__ = [
     "AnalysisListView",
     "ImageListView",
     "DatasetListView",
-    "RegisterView",
-    "LoginView",
     "ConditionListView",
     "AnalysisConditionResource",
+    "UserView",
+    "UserListView",
 ]

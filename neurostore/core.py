@@ -1,25 +1,24 @@
 import os
-from flask_security import Security, SQLAlchemyUserDatastore
-# from flask_dance.consumer.storage.sqla import SQLAlchemyStorage
-# from flask_dance.contrib.github import make_github_blueprint
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager
 
+from authlib.integrations.flask_client import OAuth
 import connexion
 
 from .resolver import MethodListViewResolver
 from .database import init_db
-from .models import User, Role  # OAuth
 
 
 connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/", debug=True)
 app = connexion_app.app
 
 app.config.from_object(os.environ["APP_SETTINGS"])
+
+oauth = OAuth(app)
+
 db = init_db(app)
 
 # setup authentication
-jwt = JWTManager(app)
+# jwt = JWTManager(app)
 app.secret_key = app.config["JWT_SECRET_KEY"]
 
 options = {"swagger_ui": True}
@@ -36,9 +35,17 @@ connexion_app.add_api(
 # Enable CORS
 cors = CORS(app, expose_headers="X-Total-Count")
 
-# Flask-Security
-user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-security = Security(app, user_datastore)
+auth0 = oauth.register(
+    'auth0',
+    client_id=os.environ['AUTH0_CLIENT_ID'],
+    client_secret=os.environ['AUTH0_CLIENT_SECRET'],
+    api_base_url=app.config['AUTH0_BASE_URL'],
+    access_token_url=app.config['AUTH0_ACCESS_TOKEN_URL'],
+    authorize_url=app.config['AUTH0_AUTH_URL'],
+    client_kwargs={
+        'scope': 'openid profile email',
+    },
+)
 
 # Flask-Dance (OAuth)
 # app.secret_key = app.config["DANCE_SECRET_KEY"]

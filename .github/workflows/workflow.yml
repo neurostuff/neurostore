@@ -1,6 +1,6 @@
-name: Pull Request Workflow
+name: Testing Workflow
 
-on: [pull_request,workflow_dispatch,push]
+on: [workflow_dispatch,push]
 
 jobs:
   docker_test_and_deploy:
@@ -40,9 +40,7 @@ jobs:
       name: Ingest Data
       run: |
         docker-compose exec -T neurostore \
-        bash -c \
-            "python manage.py add_user admin@neurostore.org password && \
-             python manage.py ingest_neurosynth"
+        bash -c "python manage.py ingest_neurosynth"
     - 
       name: Create test database
       run: |
@@ -51,9 +49,21 @@ jobs:
         psql -U postgres -c "create database test_db"
     - 
       name: Run tests
+      env:
+        AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
+        AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET }}
+        AUTH0_BASE_URL: ${{ secrets.AUTH0_BASE_URL }}
+        AUTH0_ACCESS_TOKEN_URL: ${{ secrets.AUTH0_ACCESS_TOKEN_URL }}
+        AUTH0_AUTH_URL: ${{ secrets.AUTH0_AUTH_URL }}
+
       run: |
         docker-compose run \
           -e "APP_SETTINGS=neurostore.config.DockerTestConfig" \
+          -e "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
+          -e "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
+          -e "AUTH0_BASE_URL=${AUTH0_BASE_URL}" \
+          -e "AUTH0_ACCESS_TOKEN_URL=${AUTH0_ACCESS_TOKEN_URL}" \
+          -e "AUTH0_AUTH_URL=${AUTH0_AUTH_URL}" \
           --rm -w /neurostore \
           neurostore \
           python -m pytest neurostore/tests

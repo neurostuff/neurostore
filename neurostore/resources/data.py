@@ -1,5 +1,6 @@
 import re
 
+import connexion
 from flask import abort, request, jsonify
 from flask.views import MethodView
 
@@ -8,10 +9,9 @@ import sqlalchemy.sql.expression as sae
 from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
-from flask_jwt_extended import jwt_required, current_user  # jwt_required
 
 from ..core import db
-from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions  # noqa E401
+from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions, User  # noqa E401
 
 from ..schemas import (  # noqa E401
     StudySchema,
@@ -68,6 +68,14 @@ class BaseView(MethodView):
         # Store all models so we can atomically update in one commit
         to_commit = []
 
+        current_user = User.query.filter_by(external_id=connexion.context['user']).first()
+        if not current_user:
+            # user signed up with auth0, but has not made any queries yet...
+            # should have endpoint to "create user" after sign on with auth0
+            current_user = User(external_id=connexion.context['user'])
+            db.session.add(current_user)
+            db.session.commit()
+
         id = id or data.get("id")
 
         if id is None:
@@ -116,7 +124,6 @@ class ObjectView(BaseView):
         nested = request.args.get("nested")
         return self.__class__._schema(context={'nested': nested}).dump(record)
 
-    @jwt_required()
     def put(self, id):
         data = parser.parse(self.__class__._schema, request)
         if id != data["id"]:
@@ -200,7 +207,6 @@ class ListView(BaseView):
         content = self.__class__._schema(only=self._only, many=True).dump(records)
         return jsonify(content), 200, {"X-Total-Count": count}
 
-    @jwt_required()
     def post(self):
         # TODO: check to make sure current user hasn't already created a
         # record with most/all of the same details (e.g., DOI for studies)
