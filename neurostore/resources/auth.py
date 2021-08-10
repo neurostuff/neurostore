@@ -53,9 +53,17 @@ def get_token_auth_header():
 
 
 def decode_token(token):
-    jsonurl = urlopen(environ['AUTH0_BASE_URL']+"/.well-known/jwks.json")
+    jsonurl = urlopen(app.config['AUTH0_BASE_URL']+"/.well-known/jwks.json")
     jwks = json.loads(jsonurl.read())
-    unverified_header = jwt.get_unverified_header(token)
+    try:
+        unverified_header = jwt.get_unverified_header(token)
+    except jwt.JWTError:
+        raise AuthError({
+            "code": "invalid_header",
+            "description": "Unable to parse authentication"
+                           " token."},
+                        401)
+
     rsa_key = {}
     for key in jwks["keys"]:
         if key["kid"] == unverified_header["kid"]:
@@ -72,9 +80,9 @@ def decode_token(token):
                 token,
                 rsa_key,
                 algorithms=["RS256"],
-                audience=environ['AUTH0_API_AUDIENCE'],
+                audience=app.config['AUTH0_API_AUDIENCE'],
                 # needs slash at end
-                issuer=environ['AUTH0_BASE_URL'] + '/',
+                issuer=app.config['AUTH0_BASE_URL'] + '/',
             )
         except jwt.ExpiredSignatureError:
             raise AuthError({"code": "token_expired",
@@ -94,12 +102,3 @@ def decode_token(token):
 
     raise AuthError({"code": "invalid_header",
                     "description": "Unable to find appropriate key"}, 401)
-
-
-# 'iss':'https://dev-mui7zm42.us.auth0.com/'
-# 'sub':'6muhVth2DFp15Awhv3YQjP7nTM1Dug9g@clients'
-# 'aud':'localhost'
-# 'iat':1627404014
-# 'exp':1627490414
-# 'azp':'6muhVth2DFp15Awhv3YQjP7nTM1Dug9g'
-# 'gty':'client-credentials'
