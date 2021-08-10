@@ -68,11 +68,11 @@ class BaseView(MethodView):
         # Store all models so we can atomically update in one commit
         to_commit = []
 
-        current_user = User.query.filter_by(neuroid=connexion.context['user']).first()
+        current_user = User.query.filter_by(external_id=connexion.context['user']).first()
         if not current_user:
             # user signed up with auth0, but has not made any queries yet...
             # should have endpoint to "create user" after sign on with auth0
-            current_user = User(neuroid=connexion.context['user'])
+            current_user = User(external_id=connexion.context['user'])
             db.session.add(current_user)
             db.session.commit()
 

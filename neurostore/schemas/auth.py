@@ -8,7 +8,7 @@ from .data import BaseSchema
 
 class UserSchema(BaseSchema):
     name = fields.Str(description='User full name')
-    neuroid = fields.Str(description="universal id")
+    external_id = fields.Str(description="External authentication service user ID")
 
     class Meta:
         unknown = EXCLUDE

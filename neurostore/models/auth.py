@@ -24,7 +24,7 @@ class User(BaseMixin, db.Model, UserMixin):
     __tablename__ = "users"
     active = db.Column(db.Boolean())
     name = db.Column(db.Text)
-    neuroid = db.Column(db.Text, unique=True)
+    external_id = db.Column(db.Text, unique=True)
     roles = db.relationship('Role', secondary=roles_users,
                             backref=db.backref('users', lazy='dynamic'))
 

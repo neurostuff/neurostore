@@ -127,12 +127,12 @@ def add_users(app, db, session):
         token_info = decode_token(payload['access_token'])
         user_datastore.create_user(
             name=name,
-            neuroid=token_info['sub'],
+            external_id=token_info['sub'],
         )
 
         tokens[name] = {
             'token': payload['access_token'],
-            'id': user_datastore.find_user(neuroid=token_info['sub']).id,
+            'id': user_datastore.find_user(external_id=token_info['sub']).id,
         }
 
     yield tokens

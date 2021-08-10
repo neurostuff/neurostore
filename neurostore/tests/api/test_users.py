@@ -9,4 +9,4 @@ def test_create_user(auth_client):
     resp = auth_client.post("/api/users/", data=new_user)
 
     assert resp.status_code == 200
-    assert User.query.filter_by(neuroid='1234').first() is not None
+    assert User.query.filter_by(external_id='1234').first() is not None

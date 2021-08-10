@@ -41,7 +41,7 @@ class UserView(ObjectView):
         return globals()[self._model.__name__ + 'Schema']
 
     def put(self, id):
-        current_user = User.query.filter_by(neuroid=connexion.context['user']).first()
+        current_user = User.query.filter_by(external_id=connexion.context['user']).first()
         data = parser.parse(self.__class__._schema, request)
         if id != data["id"] or id != current_user.id:
             return abort(422)
