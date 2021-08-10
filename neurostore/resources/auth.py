@@ -1,6 +1,5 @@
 import json
 from urllib.request import urlopen
-from os import environ
 
 from flask import jsonify, request
 from jose import jwt
