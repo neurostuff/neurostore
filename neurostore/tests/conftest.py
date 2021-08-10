@@ -16,7 +16,11 @@ Session / db managment tools
 def app():
     """Session-wide test `Flask` application."""
     if "APP_SETTINGS" not in environ:
-        _app.config.from_object("config.app.TestingConfig")
+        config = 'neurostore.config.TestingConfig'
+    else:
+        config = environ['APP_SETTINGS']
+
+    _app.config.from_object(config)
 
     # Establish an application context before running the tests.
     ctx = _app.app_context()
@@ -93,7 +97,7 @@ def add_users(app, db, session):
 
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 
-    domain = environ['AUTH0_BASE_URL'].split('://')[1]
+    domain = app.config['AUTH0_BASE_URL'].split('://')[1]
     token = GetToken(domain)
 
     users = [
@@ -112,12 +116,12 @@ def add_users(app, db, session):
         name = u['name']
         passw = u['password']
         payload = token.login(
-            client_id=environ['AUTH0_CLIENT_ID'],
-            client_secret=environ['AUTH0_CLIENT_SECRET'],
+            client_id=app.config['AUTH0_CLIENT_ID'],
+            client_secret=app.config['AUTH0_CLIENT_SECRET'],
             username=name + "@email.com",
             password=passw,
             realm='Username-Password-Authentication',
-            audience=environ['AUTH0_API_AUDIENCE'],
+            audience=app.config['AUTH0_API_AUDIENCE'],
             scope='openid',
         )
         token_info = decode_token(payload['access_token'])

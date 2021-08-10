@@ -1,5 +1,5 @@
 """ This is an EXAMPLE config file
- Rename this file to app.py and set variables
+ Rename this file to config.py and set variables
 """
 import os
 
@@ -30,15 +30,36 @@ class Config(object):
 class ProductionConfig(Config):
     ENV = 'production'
 
+    AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")
+    AUTH0_CLIENT_SECRET = os.environ.get("AUTH0_CLIENT_SECRET")
+    AUTH0_BASE_URL = "neurosynth-staging.us.auth0.com"
+    AUTH0_ACCESS_TOKEN_URL = "neurosynth-staging.us.auth0.com/oauth/token"
+    AUTH0_AUTH_URL = "neurosynth-staging.us.auth0.com/authorize"
+    AUTH0_API_AUDIENCE = "https://neurostore.org/api"
+
 
 class DevelopmentConfig(Config):
     ENV = 'development'
     DEBUG = True
 
+    AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")
+    AUTH0_CLIENT_SECRET = os.environ.get("AUTH0_CLIENT_SECRET")
+    AUTH0_BASE_URL = "https://dev-mui7zm42.us.auth0.com"
+    AUTH0_ACCESS_TOKEN_URL = "https://dev-mui7zm42.us.auth0.com/oauth/token"
+    AUTH0_AUTH_URL = "https://dev-mui7zm42.us.auth0.com/authorize"
+    AUTH0_API_AUDIENCE = "localhost"
+
 
 class TestingConfig(Config):
     ENV = 'testing'
     TESTING = True
+
+    AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")
+    AUTH0_CLIENT_SECRET = os.environ.get("AUTH0_CLIENT_SECRET")
+    AUTH0_BASE_URL = "https://dev-mui7zm42.us.auth0.com"
+    AUTH0_ACCESS_TOKEN_URL = "https://dev-mui7zm42.us.auth0.com/oauth/token"
+    AUTH0_AUTH_URL = "https://dev-mui7zm42.us.auth0.com/authorize"
+    AUTH0_API_AUDIENCE = "localhost"
 
 
 class DockerTestConfig(TestingConfig):

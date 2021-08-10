@@ -39,9 +39,9 @@ auth0 = oauth.register(
     'auth0',
     client_id=os.environ['AUTH0_CLIENT_ID'],
     client_secret=os.environ['AUTH0_CLIENT_SECRET'],
-    api_base_url=os.environ['AUTH0_BASE_URL'],
-    access_token_url=os.environ['AUTH0_ACCESS_TOKEN_URL'],
-    authorize_url=os.environ['AUTH0_AUTH_URL'],
+    api_base_url=app.config['AUTH0_BASE_URL'],
+    access_token_url=app.config['AUTH0_ACCESS_TOKEN_URL'],
+    authorize_url=app.config['AUTH0_AUTH_URL'],
     client_kwargs={
         'scope': 'openid profile email',
     },
