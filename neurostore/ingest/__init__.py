@@ -3,7 +3,6 @@ Ingest and sync data from various sources (Neurosynth, NeuroVault, etc.).
 """
 import os.path as op
 import re
-import tarfile
 from pathlib import Path
 
 import pandas as pd
@@ -143,28 +142,35 @@ def ingest_neurosynth(max_rows=None):
 =======
     user = User.query.filter_by(email="admin@neurostore.org").first()
 
-    coords_file = Path(__file__).parent.parent / "data" / "data-neurosynth_version-7_coordinates.tsv.gz"
-    metadata_file = Path(__file__).parent.parent / "data" / "data-neurosynth_version-7_metadata.tsv.gz"
+    coords_file = (
+        Path(__file__).parent.parent / "data" / "data-neurosynth_version-7_coordinates.tsv.gz"
+    )
+    metadata_file = (
+        Path(__file__).parent.parent / "data" / "data-neurosynth_version-7_metadata.tsv.gz"
+    )
 
     coord_data = pd.read_table(coords_file)
     metadata = pd.read_table(metadata_file, index_col="id")
 
-    for id_, study_coords_df in coord_data.groupby("id"):
-        study_metadata_series = metadata.loc[id_]
+    if max_rows is not None:
+        metadata = metadata.iloc[:max_rows]
+
+    for id_, metadata_row in metadata.iterrows():
+        study_coord_data = coord_data.loc[coord_data["id"] == id_]
         md = {
-            "authors": study_metadata_series["authors"],
-            "year": int(study_metadata_series["year"]),
-            "journal": study_metadata_series["journal"],
+            "authors": metadata_row["authors"],
+            "year": int(metadata_row["year"]),
+            "journal": metadata_row["journal"],
         }
         s = Study(
-            name=study_metadata_series["title"],
+            name=metadata_row["title"],
             metadata=md,
-            doi=study_metadata_series["doi"],
+            doi=metadata_row["doi"],
             user=user,
         )
         analyses = []
         points = []
-        for t_id, df in study_coords_df.groupby("table_id"):
+        for t_id, df in study_coord_data.groupby("table_id"):
             a = Analysis(name=str(t_id), study=s)
             analyses.append(a)
             for _, p in df.iterrows():
@@ -177,6 +183,7 @@ def ingest_neurosynth(max_rows=None):
                     analysis=a,
                 )
                 points.append(point)
+
         db.session.add_all([s] + analyses + points)
         db.session.commit()
 
@@ -195,18 +202,20 @@ def ingest_neuroquery(max_rows=None):
     coord_data = pd.read_table(coords_file)
     metadata = pd.read_table(metadata_file, index_col="id")
 
-    for id_, study_coords_df in coord_data.groupby("id"):
-        study_metadata_series = metadata.loc[id_]
-        md = dict()
+    if max_rows is not None:
+        metadata = metadata.iloc[:max_rows]
+
+    for id_, metadata_row in metadata.iterrows():
+        study_coord_data = coord_data.loc[coord_data["id"] == id_]
         s = Study(
-            name=study_metadata_series["title"],
-            metadata=md,
+            name=metadata_row["title"],
+            metadata=dict(),
             doi=None,
             user=user,
         )
         analyses = []
         points = []
-        for t_id, df in study_coords_df.groupby("table_id"):
+        for t_id, df in study_coord_data.groupby("table_id"):
             a = Analysis(name=str(t_id), study=s)
             analyses.append(a)
             for _, p in df.iterrows():
@@ -219,6 +228,7 @@ def ingest_neuroquery(max_rows=None):
                     analysis=a,
                 )
                 points.append(point)
+
         db.session.add_all([s] + analyses + points)
         db.session.commit()
 >>>>>>> Add files in new format and support NeuroQuery.
