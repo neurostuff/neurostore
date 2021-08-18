@@ -1,9 +1,8 @@
 import re
 
 import connexion
-from flask import abort, request, jsonify, make_response
+from flask import abort, request, jsonify
 from flask.views import MethodView
-# from flask.helpers import make_response
 
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
 import sqlalchemy.sql.expression as sae
@@ -205,10 +204,16 @@ class ListView(BaseView):
         count = q.count()
 
         records = q.paginate(args["page"], args["page_size"], False).items
-        content = self.__class__._schema(only=self._only, many=True).dump(records)
-        response = make_response(jsonify(content), 200)
-        response.headers['X-Total-Count'] = count
-        return response
+        # check if results should be nested
+        nested = request.args.get("nested")
+        content = self.__class__._schema(
+            only=self._only, many=True, context={'nested': nested}
+        ).dump(records)
+        response = {
+            'metadata': {'total_count': count},
+            'results': content
+        }
+        return jsonify(response), 200
 
     def post(self):
         # TODO: check to make sure current user hasn't already created a
