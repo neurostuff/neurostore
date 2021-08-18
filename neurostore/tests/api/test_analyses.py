@@ -5,7 +5,7 @@ def test_get_analyses(auth_client, ingest_neurosynth):
     # List of analyses
     resp = auth_client.get("/api/analyses/")
     assert resp.status_code == 200
-    analysis_list = decode_json(resp)
+    analysis_list = decode_json(resp)['results']
     assert type(analysis_list) == list
 
     assert len(analysis_list) == 1

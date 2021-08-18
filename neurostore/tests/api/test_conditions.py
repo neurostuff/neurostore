@@ -1,7 +1,7 @@
 def test_get_conditions(auth_client, ingest_neurovault):
     resp = auth_client.get("/api/conditions/")
     assert resp.status_code == 200
-    assert len(resp.json) > 1
+    assert len(resp.json['results']) > 1
 
 
 def test_post_conditions(auth_client, ingest_neurovault):
