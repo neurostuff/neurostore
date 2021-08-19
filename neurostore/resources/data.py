@@ -217,7 +217,7 @@ class ListView(BaseView):
 
         records = q.paginate(args["page"], args["page_size"], False).items
         # check if results should be nested
-        nested = request.args.get("nested")
+        nested = True if request.args.get("nested") == 'true' else False
         content = self.__class__._schema(
             only=self._only, many=True, context={'nested': nested}
         ).dump(records)
