@@ -6,13 +6,13 @@ from ...models.data import Study
 
 def test_get_studies(auth_client, ingest_neurosynth):
     # List of studies
-    resp = auth_client.get("/api/studies/")
+    resp = auth_client.get("/api/studies/?nested=true")
     assert resp.status_code == 200
-    studies_list = decode_json(resp)
+    studies_list = decode_json(resp)['results']
 
     assert type(studies_list) == list
 
-    assert len(studies_list) == 1
+    assert len(studies_list) == resp.json['metadata']['total_count']
 
     # Check study keys
     study = studies_list[0]

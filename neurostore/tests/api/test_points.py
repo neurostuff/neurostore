@@ -4,7 +4,7 @@ from ..request_utils import decode_json
 def test_get_points(auth_client, ingest_neurosynth):
     # Get an analysis
     resp = auth_client.get("/api/analyses/")
-    analysis = decode_json(resp)[0]
+    analysis = decode_json(resp)['results'][0]
 
     point_id = analysis["points"][0]
 

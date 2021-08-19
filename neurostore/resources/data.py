@@ -202,10 +202,30 @@ class ListView(BaseView):
         q = q.order_by(getattr(attr, desc)())
 
         count = q.count()
+        # unique_count may need to represent user clones
+        # instead of original studies
+        # (e.g., a clone may have a different number of points
+        # than the original)
+        if hasattr(m, 'source_id'):
+            unique_count = q.filter_by(source_id=None).count()
+        elif hasattr(m, 'study'):
+            unique_count = q.join(Study).filter_by(source_id=None).count()
+        elif hasattr(m, 'analysis'):
+            unique_count = q.join(Analysis).join(Study).filter_by(source_id=None).count()
+        else:
+            unique_count = count
 
         records = q.paginate(args["page"], args["page_size"], False).items
-        content = self.__class__._schema(only=self._only, many=True).dump(records)
-        return jsonify(content), 200, {"X-Total-Count": count}
+        # check if results should be nested
+        nested = True if request.args.get("nested") == 'true' else False
+        content = self.__class__._schema(
+            only=self._only, many=True, context={'nested': nested}
+        ).dump(records)
+        response = {
+            'metadata': {'total_count': count, 'unique_count': unique_count},
+            'results': content,
+        }
+        return jsonify(response), 200
 
     def post(self):
         # TODO: check to make sure current user hasn't already created a

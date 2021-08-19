@@ -5,7 +5,7 @@ def test_get_images(auth_client, ingest_neurosynth):
     # List of datasets
     resp = auth_client.get("/api/images/")
     assert resp.status_code == 200
-    images_list = decode_json(resp)
+    images_list = decode_json(resp)['results']
 
     assert type(images_list) == list
 
