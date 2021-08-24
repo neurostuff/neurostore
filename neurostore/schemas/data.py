@@ -116,6 +116,9 @@ class ImageSchema(BaseDataSchema):
 
     # serialization
     analysis = fields.Function(lambda image: image.analysis.id, dump_only=True, db_only=True)
+    analysis_name = fields.Function(
+        lambda image: image.analysis.name, dump_only=True, db_only=True
+    )
     metadata = fields.Dict(attribute="data", dump_only=True)
     add_date = fields.DateTime(dump_only=True, db_only=True)
 
@@ -123,8 +126,8 @@ class ImageSchema(BaseDataSchema):
     data = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
 
     class Meta:
-        additional = ("url", "filename", "space", "value_type", "analysis_name")
-        allow_none = ("url", "filename", "space", "value_type", "analysis_name")
+        additional = ("url", "filename", "space", "value_type")
+        allow_none = ("url", "filename", "space", "value_type")
 
 
 class PointValueSchema(BaseDataSchema):
