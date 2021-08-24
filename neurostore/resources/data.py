@@ -241,7 +241,8 @@ class ListView(BaseView):
             data = parser.parse(self.__class__._schema, request)
 
         nested = bool(request.args.get("nested") or request.args.get("source_id"))
-        record = self.__class__.update_or_create(data)
+        with db.session.no_autoflush:
+            record = self.__class__.update_or_create(data)
         return self.__class__._schema(context={'nested': nested}).dump(record)
 
 
