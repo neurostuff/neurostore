@@ -146,4 +146,4 @@ def ingest_neurosynth(session):
 
 @pytest.fixture(scope="function")
 def ingest_neurovault(session):
-    return ingest.ingest_neurovault(limit=20)
+    return ingest.ingest_neurovault(limit=5)
