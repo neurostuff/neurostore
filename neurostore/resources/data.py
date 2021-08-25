@@ -142,7 +142,9 @@ LIST_USER_ARGS = {
     "desc": fields.Boolean(missing=True),
     "page_size": fields.Int(missing=20, validate=lambda val: val < 100),
     "source_id": fields.String(missing=None),
-    "source": fields.String(missing=None)
+    "source": fields.String(missing=None),
+    "unique": fields.Boolean(missing=True),
+    "nested": fields.Boolean(missing=False),
 }
 
 
@@ -201,13 +203,13 @@ class ListView(BaseView):
         #     q = q.join(*attr.attr)
         q = q.order_by(getattr(attr, desc)())
 
-        if args.get('unique') == 'true':
+        if args.get('unique'):
             if hasattr(m, 'source_id'):
                 q = q.filter_by(source_id=None)
             elif hasattr(m, 'study'):
                 q = q.join(Study).filter_by(source_id=None)
             elif hasattr(m, 'analysis'):
-                q = q.join(Analysis).join(Study).filter_by(source_id=None).count()
+                q = q.join(Analysis).join(Study).filter_by(source_id=None)
             else:
                 # nothing to do here
                 pass
@@ -228,7 +230,7 @@ class ListView(BaseView):
 
         records = q.paginate(args["page"], args["page_size"], False).items
         # check if results should be nested
-        nested = True if request.args.get("nested") == 'true' else False
+        nested = True if args.get("nested") else False
         content = self.__class__._schema(
             only=self._only, many=True, context={'nested': nested}
         ).dump(records)
