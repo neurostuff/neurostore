@@ -201,6 +201,17 @@ class ListView(BaseView):
         #     q = q.join(*attr.attr)
         q = q.order_by(getattr(attr, desc)())
 
+        if args.get('unique') == 'true':
+            if hasattr(m, 'source_id'):
+                q = q.filter_by(source_id=None)
+            elif hasattr(m, 'study'):
+                q = q.join(Study).filter_by(source_id=None)
+            elif hasattr(m, 'analysis'):
+                q = q.join(Analysis).join(Study).filter_by(source_id=None).count()
+            else:
+                # nothing to do here
+                pass
+
         count = q.count()
         # unique_count may need to represent user clones
         # instead of original studies
@@ -294,7 +305,7 @@ class StudyListView(ListView):
     _nested = {
         "analyses": "AnalysisView",
     }
-    _search_fields = ("name", "description")
+    _search_fields = ("name", "description", "source_id")
 
     @classmethod
     def _load_from_source(cls, source, source_id):
@@ -309,11 +320,14 @@ class StudyListView(ListView):
     def load_from_neurostore(cls, source_id):
         study = cls._model.query.filter_by(id=source_id).first_or_404()
         parent_source_id = study.source_id
-        while parent_source_id is not None:
+        parent_source = study.source
+        while parent_source_id is not None and parent_source == 'neurostore':
             source_id = parent_source_id
-            parent_source_id = cls._model.query.filter_by(
-                id=parent_source_id
-            ).first_or_404().source_id
+            parent = cls._model.query.filter_by(
+                id=source_id
+            ).first_or_404()
+            parent_source = parent.source
+            parent_source_id = parent.source_id
 
         schema = cls._schema(copy=True)
         data = schema.load(schema.dump(study))
