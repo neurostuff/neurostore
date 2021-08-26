@@ -16,7 +16,6 @@ from neurostore.models import (
     Image,
     Point,
     Study,
-    User,
 )
 
 
@@ -104,44 +103,6 @@ def ingest_neurovault(verbose=False, limit=20):
 
 def ingest_neurosynth(max_rows=None):
 
-<<<<<<< HEAD
-    path = Path(__file__).parent.parent / "data" / "data_0.7.July_2018.tar.gz"
-    with open(path, "rb") as tf:
-        tar = tarfile.open(fileobj=tf)
-        f = tar.extractfile("database.txt")
-        data = pd.read_csv(f, sep="\t")
-
-        if max_rows is not None:
-            data = data.iloc[:max_rows]
-
-        for doi, study_df in data.groupby("doi"):
-            row = study_df.iloc[0]
-            md = {
-                "authors": row["authors"],
-                "year": int(row["year"]),
-                "journal": row["journal"],
-            }
-            s = Study(name=row["title"], metadata=md, doi=doi)
-            analyses = []
-            points = []
-            for t_id, df in study_df.groupby("table_id"):
-                a = Analysis(name=str(t_id), study=s)
-                analyses.append(a)
-                for _, p in df.iterrows():
-                    point = Point(
-                        x=p["x"],
-                        y=p["y"],
-                        z=p["z"],
-                        space=p["space"],
-                        kind="unknown",
-                        analysis=a,
-                    )
-                    points.append(point)
-            db.session.add_all([s] + analyses + points)
-            db.session.commit()
-=======
-    user = User.query.filter_by(email="admin@neurostore.org").first()
-
     coords_file = (
         Path(__file__).parent.parent / "data" / "data-neurosynth_version-7_coordinates.tsv.gz"
     )
@@ -168,7 +129,6 @@ def ingest_neurosynth(max_rows=None):
             name=metadata_row["title"],
             metadata=md,
             doi=metadata_row["doi"],
-            user=user,
         )
         analyses = []
         points = []
@@ -192,8 +152,6 @@ def ingest_neurosynth(max_rows=None):
 
 def ingest_neuroquery(max_rows=None):
 
-    user = User.query.filter_by(email="admin@neurostore.org").first()
-
     coords_file = (
         Path(__file__).parent.parent / "data" / "data-neuroquery_version-1_coordinates.tsv.gz"
     )
@@ -215,7 +173,6 @@ def ingest_neuroquery(max_rows=None):
             name=metadata_row["title"],
             metadata=dict(),
             doi=None,
-            user=user,
         )
         analyses = []
         points = []
@@ -235,4 +192,3 @@ def ingest_neuroquery(max_rows=None):
 
         db.session.add_all([s] + analyses + points)
         db.session.commit()
->>>>>>> Add files in new format and support NeuroQuery.
