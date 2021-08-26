@@ -68,7 +68,8 @@ def test_clone_studies(auth_client, ingest_neurosynth, ingest_neurovault):
     assert data['name'] == study_entry.name
     assert data['source_id'] == study_entry.id
     assert data['source'] == 'neurostore'
-    assert data['analyses'][0]['name'] == study_entry.analyses[0].name
+    assert set([an['name'] for an in data['analyses']]) ==\
+           set([an.name for an in study_entry.analyses])
 
     # a clone of a clone should reference the original parent
     resp2 = auth_client.post(f"/api/studies/?source_id={data['id']}", data={})
@@ -77,4 +78,5 @@ def test_clone_studies(auth_client, ingest_neurosynth, ingest_neurovault):
     assert data2['name'] == study_entry.name
     assert data2['source_id'] == study_entry.id
     assert data2['source'] == 'neurostore'
-    assert data2['analyses'][0]['name'] == study_entry.analyses[0].name
+    assert set([an['name'] for an in data2['analyses']]) ==\
+           set([an.name for an in study_entry.analyses])
