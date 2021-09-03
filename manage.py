@@ -44,5 +44,10 @@ def ingest_neurovault(verbose=False, limit=20):
     ingest.ingest_neurovault(verbose=verbose, limit=limit)
 
 
+@manager.command
+def ingest_neuroquery(max_rows=1000):
+    ingest.ingest_neuroquery(max_rows=max_rows)
+
+
 if __name__ == "__main__":
     manager.run()
