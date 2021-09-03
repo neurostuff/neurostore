@@ -203,11 +203,15 @@ class ListView(BaseView):
 
         if args.get('unique'):
             if hasattr(m, 'source_id'):
-                q = q.filter_by(source_id=None)
+                q = q.filter((Study.source != 'neurostore') | (Study.source_id == None))  # noqa E711
             elif hasattr(m, 'study'):
-                q = q.join(Study).filter_by(source_id=None)
+                q = q.join(Study).filter(
+                    (Study.source != 'neurostore') | (Study.source_id == None)  # noqa E711
+                )
             elif hasattr(m, 'analysis'):
-                q = q.join(Analysis).join(Study).filter_by(source_id=None)
+                q = q.join(Analysis).join(Study).filter(
+                    (Study.source != 'neurostore') | (Study.source_id == None)  # noqa E711
+                )
             else:
                 # nothing to do here
                 pass
