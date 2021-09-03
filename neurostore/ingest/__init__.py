@@ -28,7 +28,7 @@ def ingest_neurovault(verbose=False, limit=20):
         if data["DOI"] in all_studies:
             print("Skipping {} (already exists)...".format(data["DOI"]))
             return
-        s = Study(name=data["name"], doi=data["DOI"], metadata_=data)
+        s = Study(name=data["name"], doi=data["DOI"], metadata_=data, source="neurovault")
 
         # Process images
         url = "https://neurovault.org/api/collections/{}/images/?format=json"
@@ -119,7 +119,7 @@ def ingest_neurosynth(max_rows=None):
         metadata = metadata.iloc[:max_rows]
 
     for id_, metadata_row in metadata.iterrows():
-        study_coord_data = coord_data.loc[id_]
+        study_coord_data = coord_data.loc[[id_]]
         md = {
             "authors": metadata_row["authors"],
             "year": int(metadata_row["year"]),
@@ -129,9 +129,11 @@ def ingest_neurosynth(max_rows=None):
             name=metadata_row["title"],
             metadata=md,
             doi=metadata_row["doi"],
+            source="neurosynth",
         )
         analyses = []
         points = []
+
         for t_id, df in study_coord_data.groupby("table_id"):
             a = Analysis(name=str(t_id), study=s)
             analyses.append(a)
@@ -140,7 +142,7 @@ def ingest_neurosynth(max_rows=None):
                     x=p["x"],
                     y=p["y"],
                     z=p["z"],
-                    space=p["space"],
+                    space=metadata_row["space"],
                     kind="unknown",
                     analysis=a,
                 )
@@ -168,14 +170,16 @@ def ingest_neuroquery(max_rows=None):
         metadata = metadata.iloc[:max_rows]
 
     for id_, metadata_row in metadata.iterrows():
-        study_coord_data = coord_data.loc[id_]
+        study_coord_data = coord_data.loc[[id_]]
         s = Study(
             name=metadata_row["title"],
             metadata=dict(),
             doi=None,
+            source="neuroquery",
         )
         analyses = []
         points = []
+
         for t_id, df in study_coord_data.groupby("table_id"):
             a = Analysis(name=str(t_id), study=s)
             analyses.append(a)
@@ -184,7 +188,7 @@ def ingest_neuroquery(max_rows=None):
                     x=p["x"],
                     y=p["y"],
                     z=p["z"],
-                    space=p["space"],
+                    space="MNI",
                     kind="unknown",
                     analysis=a,
                 )
