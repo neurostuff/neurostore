@@ -126,8 +126,6 @@ class ObjectView(BaseView):
 
     def put(self, id):
         data = parser.parse(self.__class__._schema, request)
-        if id != data["id"]:
-            return abort(422)
 
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data, id)
