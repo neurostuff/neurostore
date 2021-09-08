@@ -41,7 +41,7 @@ class Dataset(BaseMixin, db.Model):
     pmid = db.Column(db.String)
     public = db.Column(db.Boolean, default=True)
     nimads_data = db.Column(db.JSON)
-    user_id = db.Column(db.Text, db.ForeignKey("users.id"))
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("datasets"))
 
 
@@ -58,7 +58,7 @@ class Study(BaseMixin, db.Model):
     source = db.Column(db.String)
     source_id = db.Column(db.String)
     source_updated_at = db.Column(db.DateTime(timezone=True))
-    user_id = db.Column(db.Text, db.ForeignKey("users.id"))
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("studies"))
 
 
@@ -73,7 +73,7 @@ class Analysis(BaseMixin, db.Model):
         "Condition", secondary="analysis_conditions", backref=backref("analyses")
     )
     weights = association_proxy("analysis_conditions", "weight")
-    user_id = db.Column(db.Text, db.ForeignKey("users.id"))
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("analyses"))
 
 
@@ -82,7 +82,7 @@ class Condition(BaseMixin, db.Model):
 
     name = db.Column(db.String)
     description = db.Column(db.String)
-    user_id = db.Column(db.Text, db.ForeignKey("users.id"))
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("conditions"))
 
     def __init__(self, name=None, description=None):
@@ -154,7 +154,7 @@ class Point(BaseMixin, db.Model):
         "Entity", secondary=PointEntityMap, backref=backref("points")
     )
     analysis = relationship("Analysis", backref=backref("points"))
-    user_id = db.Column(db.Text, db.ForeignKey("users.id"))
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("points"))
 
 
@@ -174,7 +174,7 @@ class Image(BaseMixin, db.Model):
         "Entity", secondary=ImageEntityMap, backref=backref("images")
     )
     analysis = relationship("Analysis", backref=backref("images"))
-    user_id = db.Column(db.Text, db.ForeignKey("users.id"))
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("images"))
 
 
@@ -186,5 +186,5 @@ class PointValue(BaseMixin, db.Model):
     value = db.Column(db.String)
     dtype = db.Column(db.String, default="str")
     point = relationship("Point", backref=backref("values"))
-    user_id = db.Column(db.Text, db.ForeignKey("users.id"))
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("point_values"))
