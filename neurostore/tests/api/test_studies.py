@@ -44,7 +44,7 @@ def test_put_studies(auth_client, ingest_neurosynth, data):
     study_entry = Study.query.first()
     study_clone = auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={}).json
     study_clone_id = study_clone['id']
-    payload = {**data, 'id': study_clone_id}
+    payload = data
     if payload.get('analyses'):
         if payload['analyses'][0].get("conditions"):
             conditions = []
