@@ -28,11 +28,21 @@ def ingest_neurovault(verbose=False, limit=20):
         if data["DOI"] in all_studies:
             print("Skipping {} (already exists)...".format(data["DOI"]))
             return
-        s = Study(name=data["name"], doi=data["DOI"], metadata_=data, source="neurovault")
+        collection_id = data.pop('id')
+        s = Study(
+            name=data.pop("name", None),
+            description=data.pop("description", None),
+            doi=data.pop("DOI", None),
+            authors=data.pop("authors", None),
+            publication=data.pop("journal_name", None),
+            source_id=collection_id,
+            metadata_=data,
+            source="neurovault")
 
+        space = data.get("coordinate_space", None)
         # Process images
         url = "https://neurovault.org/api/collections/{}/images/?format=json"
-        image_url = url.format(data["id"])
+        image_url = url.format(collection_id)
         data = requests.get(image_url).json()
         analyses = {}
         images = []
@@ -63,7 +73,7 @@ def ingest_neurovault(verbose=False, limit=20):
                 analyses[aname] = analysis
             else:
                 analysis = analyses[aname]
-            space = "unknown" if not img.get("not_mni", False) else "MNI"
+            space = space or "Unknown" if img.get("not_mni", False) else "MNI"
             type_ = img.get("map_type", "Unknown")
             if re.match(r"\w\smap.*", type_):
                 type_ = type_[0]
@@ -121,15 +131,17 @@ def ingest_neurosynth(max_rows=None):
     for id_, metadata_row in metadata.iterrows():
         study_coord_data = coord_data.loc[[id_]]
         md = {
-            "authors": metadata_row["authors"],
             "year": int(metadata_row["year"]),
-            "journal": metadata_row["journal"],
         }
         s = Study(
             name=metadata_row["title"],
+            authors=metadata_row["authors"],
+            publication=metadata_row['journal'],
             metadata=md,
+            pmid=id_,
             doi=metadata_row["doi"],
             source="neurosynth",
+            source_id=id_,
         )
         analyses = []
         points = []
@@ -174,8 +186,9 @@ def ingest_neuroquery(max_rows=None):
         s = Study(
             name=metadata_row["title"],
             metadata=dict(),
-            doi=None,
             source="neuroquery",
+            pmid=id_,
+            source_id=id_,
         )
         analyses = []
         points = []
