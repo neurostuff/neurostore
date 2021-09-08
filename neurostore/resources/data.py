@@ -308,7 +308,7 @@ class StudyListView(ListView):
     _nested = {
         "analyses": "AnalysisView",
     }
-    _search_fields = ("name", "description", "source_id")
+    _search_fields = ("name", "description", "source_id", "source", "authors", "publication")
 
     @classmethod
     def _load_from_source(cls, source, source_id):
