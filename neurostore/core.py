@@ -33,7 +33,7 @@ connexion_app.add_api(
 )
 
 # Enable CORS
-cors = CORS(app, expose_headers="X-Total-Count")
+cors = CORS(app)
 
 auth0 = oauth.register(
     'auth0',
