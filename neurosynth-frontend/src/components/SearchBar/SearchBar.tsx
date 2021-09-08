@@ -4,11 +4,11 @@ import React from 'react';
 import { useState } from 'react';
 import SearchBarStyles from './SearchBarStyles';
 
-interface SearchbarModel {
+export interface SearchBarModel {
     onSearch: (arg: string) => void;
 }
 
-const SearchBar: React.FC<SearchbarModel> = (props) => {
+const SearchBar: React.FC<SearchBarModel> = (props) => {
     const [enteredText, setEnteredText] = useState('');
 
     const handleOnSubmit = (event: React.FormEvent) => {
@@ -24,15 +24,16 @@ const SearchBar: React.FC<SearchbarModel> = (props) => {
 
     const classes = SearchBarStyles();
     return (
-        <form onSubmit={handleOnSubmit}>
+        <form data-cy="search-form" onSubmit={handleOnSubmit}>
             <Paper className={classes.paper}>
                 <InputBase
+                    data-cy="search-input"
                     onChange={handleEnteredText}
                     placeholder="Search for a study"
                     className={classes.textfield}
                 />
                 <Divider className={classes.divider} orientation="vertical" />
-                <IconButton className={classes.icon} onClick={handleOnSubmit}>
+                <IconButton data-cy="search-icon" className={classes.icon} onClick={handleOnSubmit}>
                     <SearchIcon color="primary" />
                 </IconButton>
             </Paper>

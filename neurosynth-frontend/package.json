@@ -27,12 +27,13 @@
         "update-api": "docker run --rm -v \"%cd%:/local\" openapitools/openapi-generator-cli generate -i https://raw.githubusercontent.com/neurostuff/neurostore-spec/main/neurostore-openapi.yml -g typescript-axios -o /local/src/gen/api",
         "build": "react-scripts build",
         "test": "react-scripts test",
+        "cy:components-headless": "cypress run-ct",
+        "cy:components-browser": "cypress open-ct",
         "eject": "react-scripts eject"
     },
     "eslintConfig": {
         "extends": [
-            "react-app",
-            "react-app/jest"
+            "react-app"
         ]
     },
     "browserslist": {
@@ -47,5 +48,15 @@
             "last 1 safari version"
         ]
     },
-    "devDependencies": {}
+    "devDependencies": {
+        "@cypress/react": "^5.9.4",
+        "@cypress/webpack-dev-server": "^1.5.0",
+        "@types/chai": "^4.2.21",
+        "@types/sinon": "^10.0.2",
+        "@types/sinon-chai": "^3.2.5",
+        "chai": "^4.3.4",
+        "chai-jquery": "^2.1.0",
+        "cypress": "^8.3.1",
+        "sinon-chai": "^3.7.0"
+    }
 }

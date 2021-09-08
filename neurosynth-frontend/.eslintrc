@@ -1,0 +1,12 @@
+{
+    "overrides": [
+        {
+            "files": [
+                "*.spec.tsx"
+            ],
+            "rules": {
+                "no-unused-expressions": "off"
+            }
+        }
+    ]
+}
