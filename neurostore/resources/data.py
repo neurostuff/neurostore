@@ -83,7 +83,7 @@ class BaseView(MethodView):
             record = cls._model.query.filter_by(id=id).first()
             if record is None:
                 abort(422)
-            elif record.user_id != current_user.id:
+            elif record.user_id != current_user.external_id:
                 abort(403)
 
         # Update all non-nested attributes
