@@ -76,8 +76,6 @@ class BaseView(MethodView):
             db.session.add(current_user)
             db.session.commit()
 
-        id = id or data.get("id")
-
         if id is None:
             record = cls._model()
             record.user = current_user
