@@ -248,7 +248,7 @@ class ListView(BaseView):
         # Parse arguments using webargs
         args = parser.parse(self._user_args, request, location="query")
         source_id = args.get('source_id')
-        source = args['source'] or 'neurostore'
+        source = args.get('source') or 'neurostore'
         if source_id:
             data = self._load_from_source(source, source_id)
         else:
