@@ -51,8 +51,8 @@ const LandingPage = () => {
                 </div>
             </div>
             <div className={classes.descriptor}>
-                neurosynth is a platform for large-scale, automated synthesis of functional magnetic resonance imaging
-                (fMRI) data.
+                neurosynth is a platform for large-scale, automated synthesis of functional magnetic
+                resonance imaging (fMRI) data.
             </div>
             <Divider className={classes.divider} />
             <div className={classes.sponsorContainer}>

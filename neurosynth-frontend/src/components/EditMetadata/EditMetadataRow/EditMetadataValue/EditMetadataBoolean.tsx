@@ -16,7 +16,9 @@ const EditMetadataBoolean: React.FC<IEditMetadataField> = (props) => {
         <FormGroup>
             <FormControlLabel
                 className={state ? classes.checkedTrue : classes.checkedFalse}
-                control={<Switch onChange={handleChange} color="primary" size="medium" checked={state} />}
+                control={
+                    <Switch onChange={handleChange} color="primary" size="medium" checked={state} />
+                }
                 label={state.toString()}
             />
         </FormGroup>

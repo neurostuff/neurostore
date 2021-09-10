@@ -4,7 +4,7 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { createTheme, ThemeProvider } from '@material-ui/core/styles';
-import { AppState, Auth0Provider } from '@auth0/auth0-react';
+import { Auth0Provider } from '@auth0/auth0-react';
 import { grey } from '@material-ui/core/colors';
 
 declare module '@material-ui/core/styles/createPalette' {
@@ -65,7 +65,7 @@ ReactDOM.render(
             </ThemeProvider>
         </Auth0Provider>
     </React.StrictMode>,
-    document.getElementById('root'),
+    document.getElementById('root')
 );
 
 // If you want to start measuring performance in your app, pass a function

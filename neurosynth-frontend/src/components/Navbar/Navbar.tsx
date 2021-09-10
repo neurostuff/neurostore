@@ -1,13 +1,19 @@
-import { NavLink } from 'react-router-dom';
-import { AppBar, Toolbar, Typography, Button, Hidden } from '@material-ui/core';
+import { AppBar, Toolbar, Hidden } from '@material-ui/core';
 import NavbarStyles from './NavbarStyles';
-import { useAuth0 } from '@auth0/auth0-react';
 import NavbarDrawer from './NavbarDrawer/NavbarDrawer';
+import NavbarToolbar from './NavbarToolbar/NavbarToolbar';
+import { useAuth0 } from '@auth0/auth0-react';
 import API from '../../utils/api';
 
 export interface NavOptionsModel {
     label: string;
     path: string;
+}
+
+export interface NavbarArgs {
+    navOptions: NavOptionsModel[];
+    login: () => void;
+    logout: () => void;
 }
 
 const navItems: NavOptionsModel[] = [
@@ -17,9 +23,9 @@ const navItems: NavOptionsModel[] = [
 
 const Navbar = () => {
     const classes = NavbarStyles();
-    const { loginWithPopup, logout, isAuthenticated, getAccessTokenSilently } = useAuth0();
+    const { loginWithPopup, getAccessTokenSilently, logout } = useAuth0();
 
-    const login = async () => {
+    const handleLogin = async () => {
         try {
             await loginWithPopup();
             const accessToken = await getAccessTokenSilently();
@@ -31,42 +37,22 @@ const Navbar = () => {
         }
     };
 
+    const handleLogout = () => logout();
+
     return (
         <AppBar position="static" elevation={0}>
             <Hidden smDown>
                 <Toolbar className={classes.toolbar}>
-                    <div>
-                        <Typography variant="h5">neurosynth</Typography>
-                    </div>
-                    <div className={classes.navLinksContainer}>
-                        {navItems.map((navItem, index) => (
-                            <Button key={index} className={classes.button}>
-                                <NavLink
-                                    className={classes.link}
-                                    activeClassName={classes.active}
-                                    exact
-                                    to={navItem.path}
-                                >
-                                    {navItem.label}
-                                </NavLink>
-                            </Button>
-                        ))}
-                        {!isAuthenticated && (
-                            <Button className={classes.button} onClick={() => login()}>
-                                <span className={classes.link}>Login</span>
-                            </Button>
-                        )}
-                        {isAuthenticated && (
-                            <Button className={classes.button} onClick={() => logout()}>
-                                <span className={classes.link}>Logout</span>
-                            </Button>
-                        )}
-                    </div>
+                    <NavbarToolbar
+                        logout={handleLogout}
+                        login={handleLogin}
+                        navOptions={navItems}
+                    />
                 </Toolbar>
             </Hidden>
             <Hidden mdUp>
                 <Toolbar className={classes.toolbar}>
-                    <NavbarDrawer navOptions={navItems} />
+                    <NavbarDrawer logout={handleLogout} login={handleLogin} navOptions={navItems} />
                 </Toolbar>
             </Hidden>
         </AppBar>

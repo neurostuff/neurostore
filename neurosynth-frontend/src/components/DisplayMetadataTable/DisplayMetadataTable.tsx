@@ -1,16 +1,23 @@
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@material-ui/core';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+} from '@material-ui/core';
 import React from 'react';
 import DisplayMetadataTableRow, {
     DisplayMetadataTableRowModel,
 } from './DisplayMetadataTableRow/DisplayMetadataTableRow';
-import DisplayMetadataTableStyles from './DisplayMetadataTableStyles';
+// import DisplayMetadataTableStyles from './DisplayMetadataTableStyles';
 
 export interface DisplayMetadataTableModel {
     metadata: any;
 }
 
 const DisplayMetadataTable: React.FC<DisplayMetadataTableModel> = (props) => {
-    const classes = DisplayMetadataTableStyles();
+    // const classes = DisplayMetadataTableStyles();
 
     if (!props.metadata) {
         return <span>No Metadata</span>;

@@ -31,12 +31,14 @@ const EditStudyPage = () => {
 
     const handleMetadataEditChange = useCallback((metadata: { [key: string]: any }) => {
         setMetadata(metadata);
+        console.log(metadata);
+
         setSaveEnabled(true);
     }, []);
 
-    useEffect(() => {
-        setMetadata(metadata);
-    }, [metadata]);
+    // useEffect(() => {
+    //     setMetadata(metadata);
+    // }, [metadata]);
 
     const handleOnCancel = (event: React.MouseEvent) => {
         history.push(`/studies/${params.studyId}`);
@@ -49,7 +51,10 @@ const EditStudyPage = () => {
         } catch (exception) {
             console.log(exception);
         }
-        API.Services.StudiesService.studiesIdPut(params.studyId, { metadata: metadata, id: params.studyId })
+        API.Services.StudiesService.studiesIdPut(params.studyId, {
+            metadata: metadata,
+            id: params.studyId,
+        })
             .then((res) => {
                 history.push(`/studies/${params.studyId}`);
             })
@@ -62,7 +67,7 @@ const EditStudyPage = () => {
         if (params.studyId) {
             getStudy(params.studyId);
         }
-    }, [params.studyId]);
+    }, [params.studyId, getStudy]);
 
     const metadataArr: DisplayMetadataTableRowModel[] = study?.metadata
         ? Object.keys(study.metadata).map((row) => ({
@@ -100,7 +105,12 @@ const EditStudyPage = () => {
                 </Typography>
             </div>
 
-            {study && <EditMetadata onMetadataEditChange={handleMetadataEditChange} metadata={metadataArr} />}
+            {study && (
+                <EditMetadata
+                    onMetadataEditChange={handleMetadataEditChange}
+                    metadata={metadataArr}
+                />
+            )}
         </div>
     );
 };

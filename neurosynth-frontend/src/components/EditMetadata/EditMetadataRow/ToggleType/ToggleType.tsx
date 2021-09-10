@@ -29,7 +29,7 @@ const ToggleType: React.FC<ToggleTypeModel> = React.memo((props) => {
             name?: string | undefined;
             value: unknown;
         }>,
-        child: React.ReactNode,
+        child: React.ReactNode
     ) => {
         const selected = event.target.value as PropertyType;
         setType(selected);
@@ -41,7 +41,11 @@ const ToggleType: React.FC<ToggleTypeModel> = React.memo((props) => {
     return (
         <div className={classes.toggleItemContainer}>
             <FormControl variant="outlined">
-                <Select className={`${classes[myClass]} ${classes.toggle_item}`} value={type} onChange={handleSetType}>
+                <Select
+                    className={`${classes[myClass]} ${classes.toggle_item}`}
+                    value={type}
+                    onChange={handleSetType}
+                >
                     <MenuItem className={classes.type_string} value="string">
                         STRING
                     </MenuItem>

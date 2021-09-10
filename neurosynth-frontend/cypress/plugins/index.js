@@ -12,14 +12,16 @@
 // This function is called when a project is opened or re-opened (e.g. due to
 // the project's config changing)
 
-import injectDevServer from "@cypress/react/plugins/react-scripts";
+import injectDevServer from '@cypress/react/plugins/react-scripts';
 
 /**
  * @type {Cypress.PluginConfig}
  */
-export default (on, config) => {
-  injectDevServer(on, config);
-  return config;
-  // `on` is used to hook into various events Cypress emits
-  // `config` is the resolved Cypress config
-}
+const Module = (on, config) => {
+    injectDevServer(on, config);
+    return config;
+    // `on` is used to hook into various events Cypress emits
+    // `config` is the resolved Cypress config
+};
+
+export default Module;

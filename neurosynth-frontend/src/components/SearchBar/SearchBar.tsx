@@ -24,16 +24,15 @@ const SearchBar: React.FC<SearchBarModel> = (props) => {
 
     const classes = SearchBarStyles();
     return (
-        <form data-cy="search-form" onSubmit={handleOnSubmit}>
+        <form onSubmit={handleOnSubmit}>
             <Paper className={classes.paper}>
                 <InputBase
-                    data-cy="search-input"
                     onChange={handleEnteredText}
                     placeholder="Search for a study"
                     className={classes.textfield}
                 />
                 <Divider className={classes.divider} orientation="vertical" />
-                <IconButton data-cy="search-icon" className={classes.icon} onClick={handleOnSubmit}>
+                <IconButton className={classes.icon} onClick={handleOnSubmit}>
                     <SearchIcon color="primary" />
                 </IconButton>
             </Paper>

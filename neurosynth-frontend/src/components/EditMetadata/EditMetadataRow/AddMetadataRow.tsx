@@ -28,7 +28,9 @@ const getStartValFromType = (type: PropertyType): boolean | number | string | nu
 const AddMetadataRow: React.FC<AddMetadataRowModel> = (props) => {
     const classes = EditMetadataRowStyles();
     const [currType, setCurrType] = useState(PropertyType.STRING);
-    const [editValueComponent, setEditValueComponent] = useState(<span className={classes.nullContent}>null</span>);
+    const [editValueComponent, setEditValueComponent] = useState(
+        <span className={classes.nullContent}>null</span>
+    );
     const [isValid, setIsValid] = useState(true);
     const [metadataRow, setMetadataRow] = useState<DisplayMetadataTableRowModel>({
         metadataKey: '',
@@ -60,7 +62,9 @@ const AddMetadataRow: React.FC<AddMetadataRowModel> = (props) => {
         }
     };
 
-    const handleMetadataKeyChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleMetadataKeyChange = (
+        event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ) => {
         setIsValid(true);
         setMetadataRow((prevVal) => {
             return {
@@ -84,21 +88,34 @@ const AddMetadataRow: React.FC<AddMetadataRowModel> = (props) => {
         switch (currType) {
             case PropertyType.BOOLEAN:
                 component = (
-                    <EditMetadataBoolean onEdit={handleMetadataValueChange} value={metadataRow.metadataValue} />
+                    <EditMetadataBoolean
+                        onEdit={handleMetadataValueChange}
+                        value={metadataRow.metadataValue}
+                    />
                 );
                 break;
             case PropertyType.STRING:
-                component = <EditMetadataString onEdit={handleMetadataValueChange} value={metadataRow.metadataValue} />;
+                component = (
+                    <EditMetadataString
+                        onEdit={handleMetadataValueChange}
+                        value={metadataRow.metadataValue}
+                    />
+                );
                 break;
             case PropertyType.NUMBER:
-                component = <EditMetadataNumber onEdit={handleMetadataValueChange} value={metadataRow.metadataValue} />;
+                component = (
+                    <EditMetadataNumber
+                        onEdit={handleMetadataValueChange}
+                        value={metadataRow.metadataValue}
+                    />
+                );
                 break;
             default:
                 component = <span className={classes.nullContent}>null</span>;
                 break;
         }
         setEditValueComponent(component);
-    }, [currType]);
+    }, [classes, currType, metadataRow.metadataValue]);
 
     return (
         // <div style={{ display: 'flex', flexDirection: 'row', width: '100%' }}>

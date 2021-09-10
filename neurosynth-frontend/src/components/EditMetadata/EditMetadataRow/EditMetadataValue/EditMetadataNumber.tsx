@@ -12,7 +12,13 @@ const EditMetadataNumber: React.FC<IEditMetadataField> = (props) => {
         }
     };
     return (
-        <TextField style={{ width: '100%' }} onChange={handleChange} value={value} type="number" variant="outlined" />
+        <TextField
+            style={{ width: '100%' }}
+            onChange={handleChange}
+            value={value}
+            type="number"
+            variant="outlined"
+        />
     );
 };
 

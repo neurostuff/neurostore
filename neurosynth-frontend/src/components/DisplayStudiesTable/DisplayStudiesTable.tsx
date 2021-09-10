@@ -1,4 +1,11 @@
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@material-ui/core';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+} from '@material-ui/core';
 import { useHistory } from 'react-router-dom';
 import { ReadOnly, Study } from '../../gen/api';
 import { StudyApiResponse } from '../../utils/api';
@@ -8,10 +15,10 @@ interface DisplayStudiesTableModel {
     studies: StudyApiResponse[];
 }
 
-enum Owner {
-    badge_neurosynth = 'badge_neuroscience',
-    badge_user = 'badge_iser',
-}
+// enum Owner {
+//     badge_neurosynth = 'badge_neuroscience',
+//     badge_user = 'badge_iser',
+// }
 
 const DisplayStudiesTable: React.FC<DisplayStudiesTableModel> = (props) => {
     const history = useHistory();
@@ -34,7 +41,11 @@ const DisplayStudiesTable: React.FC<DisplayStudiesTableModel> = (props) => {
                 </TableHead>
                 <TableBody>
                     {props.studies.map((row, index) => (
-                        <TableRow key={index} className={classes.tableRow} onClick={() => handleSelectTableRow(row)}>
+                        <TableRow
+                            key={index}
+                            className={classes.tableRow}
+                            onClick={() => handleSelectTableRow(row)}
+                        >
                             <TableCell className={`${classes.name}`}>
                                 <div className={classes.tableCellTextContainer}>{row.name}</div>
                             </TableCell>

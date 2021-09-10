@@ -13,7 +13,7 @@ const StudyPage = () => {
     const [study, setStudy] = useState<StudyApiResponse & { user: string }>();
     const classes = StudyPageStyles();
     const history = useHistory();
-    const { isAuthenticated, getAccessTokenSilently, user } = useAuth0();
+    const { isAuthenticated, getAccessTokenSilently } = useAuth0();
     const params: { studyId: string } = useParams();
 
     const getStudy = useCallback((id: string) => {

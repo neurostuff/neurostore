@@ -1,5 +1,4 @@
-import { useAuth0 } from '@auth0/auth0-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import EditMetadataStyles from './EditMetadataStyles';
 import { DisplayMetadataTableRowModel } from '../DisplayMetadataTable/DisplayMetadataTableRow/DisplayMetadataTableRow';
 import EditMetadataRow from './EditMetadataRow/EditMetadataRow';
@@ -32,24 +31,23 @@ const getType = (value: string): PropertyType => {
 
 const EditMetadata: React.FC<EditMetadataModel> = (props) => {
     const classes = EditMetadataStyles();
-    const { isAuthenticated } = useAuth0();
+    const [metadata, setMetadata] = useState<DisplayMetadataTableRowModel[]>(props.metadata);
 
-    const [metadata, setMetadata] = useState(props.metadata);
+    // useEffect(() => {
+    //     console.log(props.metadata);
 
-    const handleMetadataRowEdit = (index: number, updatedRow: DisplayMetadataTableRowModel): boolean => {
-        setMetadata((prevState) => {
-            const updatedMetadata = [...prevState];
-            updatedMetadata[index] = updatedRow;
-            props.onMetadataEditChange(arrayToMetadata(updatedMetadata));
-            return updatedMetadata;
-        });
-        return true;
+    //     setMetadata(props.metadata);
+    // }, [props.metadata]);
+
+    const handleMetadataRowEdit = (index: number, updatedRow: DisplayMetadataTableRowModel) => {
+        const updatedMetadata = [...metadata];
+        updatedMetadata[index] = updatedRow;
+        props.onMetadataEditChange(arrayToMetadata(updatedMetadata));
     };
 
     const handleMetadataRowDelete = (index: number) => {
         setMetadata((prevState) => {
             const updatedState = prevState.filter((_, elemIndex) => elemIndex !== index);
-            const x = arrayToMetadata(updatedState);
             props.onMetadataEditChange(arrayToMetadata(updatedState));
             return updatedState;
         });
