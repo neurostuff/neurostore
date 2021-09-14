@@ -80,3 +80,18 @@ def test_clone_studies(auth_client, ingest_neurosynth, ingest_neurovault):
     assert data2['source'] == 'neurostore'
     assert set([an['name'] for an in data2['analyses']]) ==\
            set([an.name for an in study_entry.analyses])
+
+
+def test_private_studies(user_studies, auth_clients):
+    from ...resources.auth import decode_token
+    from ...resources.users import User
+    client1, client2 = auth_clients
+    user1 = User.query.filter_by(external_id=decode_token(client1.token)['sub']).first()
+    user2 = User.query.filter_by(external_id=decode_token(client2.token)['sub']).first()
+    resp1 = client1.get("/api/studies/")
+    resp2 = client2.get("/api/studies/")
+    name_set1 = set(s['name'] for s in resp1.json['results'])
+    name_set2 = set(s['name'] for s in resp2.json['results'])
+    assert len(resp1.json['results']) == len(resp2.json['results']) == 3
+    assert f"{user1.id}'s private study" in (name_set1 - name_set2)
+    assert f"{user2.id}'s private study" in (name_set2 - name_set1)
