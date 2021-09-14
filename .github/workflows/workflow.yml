@@ -40,7 +40,7 @@ jobs:
       name: Ingest Data
       run: |
         docker-compose exec -T neurostore \
-        bash -c "python manage.py ingest_neurosynth"
+        bash -c "python manage.py ingest_neurosynth --max_rows=20"
     - 
       name: Create test database
       run: |

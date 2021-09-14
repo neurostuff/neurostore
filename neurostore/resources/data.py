@@ -248,7 +248,7 @@ class ListView(BaseView):
         # Parse arguments using webargs
         args = parser.parse(self._user_args, request, location="query")
         source_id = args.get('source_id')
-        source = args['source'] or 'neurostore'
+        source = args.get('source') or 'neurostore'
         if source_id:
             data = self._load_from_source(source, source_id)
         else:
@@ -308,7 +308,7 @@ class StudyListView(ListView):
     _nested = {
         "analyses": "AnalysisView",
     }
-    _search_fields = ("name", "description", "source_id")
+    _search_fields = ("name", "description", "source_id", "source", "authors", "publication")
 
     @classmethod
     def _load_from_source(cls, source, source_id):

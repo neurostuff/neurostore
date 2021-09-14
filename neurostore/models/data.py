@@ -53,6 +53,7 @@ class Study(BaseMixin, db.Model):
     publication = db.Column(db.String)
     doi = db.Column(db.String)
     pmid = db.Column(db.String)
+    authors = db.Column(db.String)
     public = db.Column(db.Boolean, default=True)
     metadata_ = db.Column(db.JSON)
     source = db.Column(db.String)
