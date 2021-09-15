@@ -76,8 +76,6 @@ class BaseView(MethodView):
             db.session.add(current_user)
             db.session.commit()
 
-        id = id or data.get("id")
-
         if id is None:
             record = cls._model()
             record.user = current_user
@@ -85,7 +83,7 @@ class BaseView(MethodView):
             record = cls._model.query.filter_by(id=id).first()
             if record is None:
                 abort(422)
-            elif record.user_id != current_user.id:
+            elif record.user_id != current_user.external_id:
                 abort(403)
 
         # Update all non-nested attributes
@@ -126,8 +124,6 @@ class ObjectView(BaseView):
 
     def put(self, id):
         data = parser.parse(self.__class__._schema, request)
-        if id != data["id"]:
-            return abort(422)
 
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data, id)
@@ -205,11 +201,15 @@ class ListView(BaseView):
 
         if args.get('unique'):
             if hasattr(m, 'source_id'):
-                q = q.filter_by(source_id=None)
+                q = q.filter((Study.source != 'neurostore') | (Study.source_id == None))  # noqa E711
             elif hasattr(m, 'study'):
-                q = q.join(Study).filter_by(source_id=None)
+                q = q.join(Study).filter(
+                    (Study.source != 'neurostore') | (Study.source_id == None)  # noqa E711
+                )
             elif hasattr(m, 'analysis'):
-                q = q.join(Analysis).join(Study).filter_by(source_id=None)
+                q = q.join(Analysis).join(Study).filter(
+                    (Study.source != 'neurostore') | (Study.source_id == None)  # noqa E711
+                )
             else:
                 # nothing to do here
                 pass
@@ -248,7 +248,7 @@ class ListView(BaseView):
         # Parse arguments using webargs
         args = parser.parse(self._user_args, request, location="query")
         source_id = args.get('source_id')
-        source = args['source'] or 'neurostore'
+        source = args.get('source') or 'neurostore'
         if source_id:
             data = self._load_from_source(source, source_id)
         else:
@@ -308,7 +308,7 @@ class StudyListView(ListView):
     _nested = {
         "analyses": "AnalysisView",
     }
-    _search_fields = ("name", "description", "source_id")
+    _search_fields = ("name", "description", "source_id", "source", "authors", "publication")
 
     @classmethod
     def _load_from_source(cls, source, source_id):

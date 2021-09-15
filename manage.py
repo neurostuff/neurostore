@@ -35,13 +35,24 @@ manager.add_command("shell", Shell(make_context=_make_context))
 
 
 @manager.command
-def ingest_neurosynth(max_rows=1000):
+def ingest_neurosynth(max_rows=None):
+    if max_rows is not None:
+        max_rows = int(max_rows)
     ingest.ingest_neurosynth(max_rows=max_rows)
 
 
 @manager.command
-def ingest_neurovault(verbose=False, limit=20):
+def ingest_neurovault(verbose=False, limit=None):
+    if limit is not None:
+        limit = int(limit)
     ingest.ingest_neurovault(verbose=verbose, limit=limit)
+
+
+@manager.command
+def ingest_neuroquery(max_rows=None):
+    if max_rows is not None:
+        max_rows = int(max_rows)
+    ingest.ingest_neuroquery(max_rows=max_rows)
 
 
 if __name__ == "__main__":

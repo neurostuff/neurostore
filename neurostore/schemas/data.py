@@ -208,8 +208,8 @@ class StudySchema(BaseDataSchema):
     source_updated_at = fields.DateTime(dump_only=True, db_only=True, allow_none=True)
 
     class Meta:
-        additional = ("name", "description", "publication", "doi", "pmid")
-        allow_none = ("name", "description", "publication", "doi", "pmid")
+        additional = ("name", "description", "publication", "doi", "pmid", "authors")
+        allow_none = ("name", "description", "publication", "doi", "pmid", "authors")
 
 
 class DatasetSchema(BaseDataSchema):

@@ -4,7 +4,7 @@ from ..request_utils import decode_json
 from ...models.data import Study
 
 
-def test_get_studies(auth_client, ingest_neurosynth):
+def test_get_studies(auth_client, ingest_neurosynth, ingest_neuroquery):
     # List of studies
     resp = auth_client.get("/api/studies/?nested=true")
     assert resp.status_code == 200
@@ -28,7 +28,7 @@ def test_get_studies(auth_client, ingest_neurosynth):
     for k in ["analyses", "created_at", "doi", "name"]:
         assert k in full_study
 
-    assert full_study["doi"] == "10.1016/S0896-6273(00)80456-0"
+    assert full_study["doi"] == Study.query.filter_by(id=s_id).first().doi
 
     assert full_study["id"] == s_id
 
@@ -44,7 +44,7 @@ def test_put_studies(auth_client, ingest_neurosynth, data):
     study_entry = Study.query.first()
     study_clone = auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={}).json
     study_clone_id = study_clone['id']
-    payload = {**data, 'id': study_clone_id}
+    payload = data
     if payload.get('analyses'):
         if payload['analyses'][0].get("conditions"):
             conditions = []

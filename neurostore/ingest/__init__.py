@@ -1,17 +1,22 @@
 """
 Ingest and sync data from various sources (Neurosynth, NeuroVault, etc.).
 """
-import re
 import os.path as op
+import re
 from pathlib import Path
-from dateutil.parser import parse as parse_date
-import tarfile
 
 import pandas as pd
 import requests
-
-from neurostore.models import Study, Analysis, Image, Point, Condition, AnalysisConditions
+from dateutil.parser import parse as parse_date
 from neurostore.core import db
+from neurostore.models import (
+    Analysis,
+    AnalysisConditions,
+    Condition,
+    Image,
+    Point,
+    Study,
+)
 
 
 def ingest_neurovault(verbose=False, limit=20):
@@ -23,11 +28,21 @@ def ingest_neurovault(verbose=False, limit=20):
         if data["DOI"] in all_studies:
             print("Skipping {} (already exists)...".format(data["DOI"]))
             return
-        s = Study(name=data["name"], doi=data["DOI"], metadata_=data)
+        collection_id = data.pop('id')
+        s = Study(
+            name=data.pop("name", None),
+            description=data.pop("description", None),
+            doi=data.pop("DOI", None),
+            authors=data.pop("authors", None),
+            publication=data.pop("journal_name", None),
+            source_id=collection_id,
+            metadata_=data,
+            source="neurovault")
 
+        space = data.get("coordinate_space", None)
         # Process images
         url = "https://neurovault.org/api/collections/{}/images/?format=json"
-        image_url = url.format(data["id"])
+        image_url = url.format(collection_id)
         data = requests.get(image_url).json()
         analyses = {}
         images = []
@@ -58,7 +73,7 @@ def ingest_neurovault(verbose=False, limit=20):
                 analyses[aname] = analysis
             else:
                 analysis = analyses[aname]
-            space = "unknown" if not img.get("not_mni", False) else "MNI"
+            space = space or "Unknown" if img.get("not_mni", False) else "MNI"
             type_ = img.get("map_type", "Unknown")
             if re.match(r"\w\smap.*", type_):
                 type_ = type_[0]
@@ -98,37 +113,99 @@ def ingest_neurovault(verbose=False, limit=20):
 
 def ingest_neurosynth(max_rows=None):
 
-    path = Path(__file__).parent.parent / "data" / "data_0.7.July_2018.tar.gz"
-    with open(path, "rb") as tf:
-        tar = tarfile.open(fileobj=tf)
-        f = tar.extractfile("database.txt")
-        data = pd.read_csv(f, sep="\t")
+    coords_file = (
+        Path(__file__).parent.parent / "data" / "data-neurosynth_version-7_coordinates.tsv.gz"
+    )
+    metadata_file = (
+        Path(__file__).parent.parent / "data" / "data-neurosynth_version-7_metadata.tsv.gz"
+    )
 
-        if max_rows is not None:
-            data = data.iloc[:max_rows]
+    coord_data = pd.read_table(coords_file, dtype={"id": str})
+    coord_data = coord_data.set_index("id")
+    metadata = pd.read_table(metadata_file, dtype={"id": str})
+    metadata = metadata.set_index("id")
 
-        for doi, study_df in data.groupby("doi"):
-            row = study_df.iloc[0]
-            md = {
-                "authors": row["authors"],
-                "year": int(row["year"]),
-                "journal": row["journal"],
-            }
-            s = Study(name=row["title"], metadata=md, doi=doi)
-            analyses = []
-            points = []
-            for t_id, df in study_df.groupby("table_id"):
-                a = Analysis(name=str(t_id), study=s)
-                analyses.append(a)
-                for _, p in df.iterrows():
-                    point = Point(
-                        x=p["x"],
-                        y=p["y"],
-                        z=p["z"],
-                        space=p["space"],
-                        kind="unknown",
-                        analysis=a,
-                    )
-                    points.append(point)
-            db.session.add_all([s] + analyses + points)
-            db.session.commit()
+    if max_rows is not None:
+        metadata = metadata.iloc[:max_rows]
+
+    for id_, metadata_row in metadata.iterrows():
+        study_coord_data = coord_data.loc[[id_]]
+        md = {
+            "year": int(metadata_row["year"]),
+        }
+        s = Study(
+            name=metadata_row["title"],
+            authors=metadata_row["authors"],
+            publication=metadata_row['journal'],
+            metadata=md,
+            pmid=id_,
+            doi=metadata_row["doi"],
+            source="neurosynth",
+            source_id=id_,
+        )
+        analyses = []
+        points = []
+
+        for t_id, df in study_coord_data.groupby("table_id"):
+            a = Analysis(name=str(t_id), study=s)
+            analyses.append(a)
+            for _, p in df.iterrows():
+                point = Point(
+                    x=p["x"],
+                    y=p["y"],
+                    z=p["z"],
+                    space=metadata_row["space"],
+                    kind="unknown",
+                    analysis=a,
+                )
+                points.append(point)
+
+        db.session.add_all([s] + analyses + points)
+        db.session.commit()
+
+
+def ingest_neuroquery(max_rows=None):
+
+    coords_file = (
+        Path(__file__).parent.parent / "data" / "data-neuroquery_version-1_coordinates.tsv.gz"
+    )
+    metadata_file = (
+        Path(__file__).parent.parent / "data" / "data-neuroquery_version-1_metadata.tsv.gz"
+    )
+
+    coord_data = pd.read_table(coords_file, dtype={"id": str})
+    coord_data = coord_data.set_index("id")
+    metadata = pd.read_table(metadata_file, dtype={"id": str})
+    metadata = metadata.set_index("id")
+
+    if max_rows is not None:
+        metadata = metadata.iloc[:max_rows]
+
+    for id_, metadata_row in metadata.iterrows():
+        study_coord_data = coord_data.loc[[id_]]
+        s = Study(
+            name=metadata_row["title"],
+            metadata=dict(),
+            source="neuroquery",
+            pmid=id_,
+            source_id=id_,
+        )
+        analyses = []
+        points = []
+
+        for t_id, df in study_coord_data.groupby("table_id"):
+            a = Analysis(name=str(t_id), study=s)
+            analyses.append(a)
+            for _, p in df.iterrows():
+                point = Point(
+                    x=p["x"],
+                    y=p["y"],
+                    z=p["z"],
+                    space="MNI",
+                    kind="unknown",
+                    analysis=a,
+                )
+                points.append(point)
+
+        db.session.add_all([s] + analyses + points)
+        db.session.commit()

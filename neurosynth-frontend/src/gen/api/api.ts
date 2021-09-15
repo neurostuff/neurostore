@@ -12,7 +12,6 @@
  * Do not edit the class manually.
  */
 
-
 import { Configuration } from './configuration';
 import globalAxios, { AxiosPromise, AxiosInstance } from 'axios';
 // Some imports not used depending on template conditions
@@ -2898,5 +2897,3 @@ export class UserApi extends BaseAPI {
         return UserApiFp(this.configuration).usersPost(user, options).then((request) => request(this.axios, this.basePath));
     }
 }
-
-

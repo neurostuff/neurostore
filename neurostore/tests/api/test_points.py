@@ -1,4 +1,5 @@
 from ..request_utils import decode_json
+from ...models import Point
 
 
 def test_get_points(auth_client, ingest_neurosynth):
@@ -13,6 +14,7 @@ def test_get_points(auth_client, ingest_neurosynth):
     point = decode_json(resp)
 
     # Test a few fields
+    db_point = Point.query.filter_by(id=point_id).first()
     assert point["id"] == point_id
-    assert point["coordinates"] == [-34.0, -68.0, -15.0]
-    assert point["space"] == "TAL"
+    assert point["coordinates"] == db_point.coordinates
+    assert point["space"] == db_point.space

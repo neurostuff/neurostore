@@ -1,4 +1,5 @@
 from ..request_utils import decode_json
+from ...models import Analysis
 
 
 def test_get_analyses(auth_client, ingest_neurosynth):
@@ -8,7 +9,7 @@ def test_get_analyses(auth_client, ingest_neurosynth):
     analysis_list = decode_json(resp)['results']
     assert type(analysis_list) == list
 
-    assert len(analysis_list) == 1
+    assert len(analysis_list) == Analysis.query.count()
 
     # Check analysis keys
     analysis = analysis_list[0]
