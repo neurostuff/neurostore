@@ -1,3 +1,35 @@
+# Testing
+
+This repository is being tested using cypress and the react testing library.
+Cypress is utilized for integration testing, while the react testing library is used for unit testing of individual components.
+Cypress bundles other tools with it, such as mocha, sinon and chai.
+In this application, we utilize the additional testing-library/user-event module in order to simulate user events such as typing and clicking.
+
+Integration tests can be run using the command: npm run cy:e2e-headless or npm run cy:e2e-browser.
+Unit tests can be run using the command: npm run test.
+
+# Prettier
+
+This project uses prettier and eslint in order to enforce uniform coding styles throughout the repo.
+In order to take advantage of these features, you need to install the relevant node modules as specified
+in the package.json devDependencies.
+
+The rules for code styles are specified in the .eslintrc file.
+
+This project has been setup and developed using vscode. Please note that other vscode settings may need to
+be applied or will be helpful. In the settings.json, you may need to add the following settings:
+
+```
+"editor.formatOnSave": true,
+"[typescriptreact]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+},
+"[typescript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+},
+"editor.defaultFormatter": "dbaeumer.vscode-eslint"
+```
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).

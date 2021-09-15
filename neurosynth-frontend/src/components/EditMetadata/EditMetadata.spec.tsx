@@ -1,0 +1,121 @@
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { EditMetadata } from '..';
+import { DisplayMetadataTableRowModel } from '../DisplayMetadataTable/DisplayMetadataTableRow/DisplayMetadataTableRow';
+import { getType } from './EditMetadata';
+import { PropertyType } from './EditMetadataRow/ToggleType/ToggleType';
+
+describe('EditMetadata Component', () => {
+    const onMetadataEditChangeMock = jest.fn();
+
+    const mockMetadata: DisplayMetadataTableRowModel[] = [
+        {
+            metadataKey: 'key 1',
+            metadataValue: 'value 1',
+        },
+        {
+            metadataKey: 'key 2',
+            metadataValue: false,
+        },
+        {
+            metadataKey: 'key 3',
+            metadataValue: 12345,
+        },
+        {
+            metadataKey: 'key 4',
+            metadataValue: null,
+        },
+    ];
+
+    it('should render', () => {
+        render(
+            <EditMetadata metadata={mockMetadata} onMetadataEditChange={onMetadataEditChangeMock} />
+        );
+
+        const metadataInput = screen.getByPlaceholderText('New metadata key');
+        expect(metadataInput).toBeInTheDocument();
+
+        const separator = screen.getByRole('separator');
+        expect(separator).toBeInTheDocument();
+
+        const metadataRows = screen.getAllByRole('button', { name: 'DELETE' });
+        expect(metadataRows.length).toEqual(mockMetadata.length);
+    });
+
+    it('should get the correct type', () => {
+        expect(getType('test')).toEqual(PropertyType.STRING);
+        expect(getType(12345)).toEqual(PropertyType.NUMBER);
+        expect(getType(true)).toEqual(PropertyType.BOOLEAN);
+        expect(getType(null)).toEqual(PropertyType.NONE);
+    });
+
+    it('should delete the correct row and call the parent prop function', () => {
+        render(
+            <EditMetadata metadata={mockMetadata} onMetadataEditChange={onMetadataEditChangeMock} />
+        );
+
+        const deleteButton = screen.getAllByRole('button', { name: 'DELETE' })[1];
+        userEvent.click(deleteButton);
+        expect(onMetadataEditChangeMock).toBeCalledWith([
+            {
+                metadataKey: 'key 1',
+                metadataValue: 'value 1',
+            },
+            {
+                metadataKey: 'key 3',
+                metadataValue: 12345,
+            },
+            {
+                metadataKey: 'key 4',
+                metadataValue: null,
+            },
+        ]);
+    });
+
+    it('should add the row and call the parent prop function', () => {
+        render(
+            <EditMetadata metadata={mockMetadata} onMetadataEditChange={onMetadataEditChangeMock} />
+        );
+
+        const addRow = screen.getByPlaceholderText('New metadata key');
+        const addRowButton = screen.getByRole('button', { name: 'ADD' });
+        userEvent.type(addRow, 'new metadata key');
+        userEvent.click(addRowButton);
+
+        expect(onMetadataEditChangeMock).toBeCalledWith([
+            {
+                metadataKey: 'new metadata key',
+                metadataValue: '',
+            },
+            ...mockMetadata,
+        ]);
+    });
+
+    it('should edit the row and call the parent prop function', () => {
+        render(
+            <EditMetadata metadata={mockMetadata} onMetadataEditChange={onMetadataEditChangeMock} />
+        );
+
+        const input = screen.getAllByRole('textbox')[2];
+        userEvent.type(input, '2345');
+
+        expect(onMetadataEditChangeMock).toBeCalledWith([
+            {
+                metadataKey: 'key 1',
+                metadataValue: 'value 12345',
+            },
+            {
+                metadataKey: 'key 2',
+                metadataValue: false,
+            },
+            {
+                metadataKey: 'key 3',
+                metadataValue: 12345,
+            },
+            {
+                metadataKey: 'key 4',
+                metadataValue: null,
+            },
+        ]);
+    });
+});

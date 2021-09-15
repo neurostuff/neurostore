@@ -1,6 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Button, Typography } from '@material-ui/core';
-import { AxiosError } from 'axios';
 import React, { useCallback } from 'react';
 import { useEffect } from 'react';
 import { useState } from 'react';
@@ -10,66 +9,80 @@ import { DisplayMetadataTableRowModel } from '../../../components/DisplayMetadat
 import API, { StudyApiResponse } from '../../../utils/api';
 import EditStudyPageStyles from './EditStudyPageStyles';
 
-const EditStudyPage = () => {
-    console.log('edit study page render');
+const arrayToMetadata = (arr: DisplayMetadataTableRowModel[]): { [key: string]: any } => {
+    const tempObj: { [key: string]: any } = {};
+    arr.forEach((element) => (tempObj[element.metadataKey] = element.metadataValue));
+    return tempObj;
+};
 
+const EditStudyPage = () => {
     const classes = EditStudyPageStyles();
     const [study, setStudy] = useState<StudyApiResponse>();
     const [saveEnabled, setSaveEnabled] = useState(false);
-    const [metadata, setMetadata] = useState({});
+
+    // metadata edits are updated and stored in this state
+    const [updatedMetadata, setUpdatedMetadata] = useState<DisplayMetadataTableRowModel[]>([]);
+
+    // initial metadata received from the study is set in this state
+    const [initialMetadataArr, setInitialMetadataArr] = useState<DisplayMetadataTableRowModel[]>(
+        []
+    );
     const history = useHistory();
     const params: { studyId: string } = useParams();
-    const { getAccessTokenSilently } = useAuth0();
 
-    const getStudy = useCallback((id: string) => {
-        API.Services.StudiesService.studiesIdGet(id)
-            .then((res) => {
-                setStudy(res.data);
-            })
-            .catch(() => {});
-    }, []);
-
-    const handleMetadataEditChange = useCallback((metadata: { [key: string]: any }) => {
-        setMetadata(metadata);
+    const handleMetadataEditChange = (metadata: DisplayMetadataTableRowModel[]) => {
+        setUpdatedMetadata(metadata);
         setSaveEnabled(true);
-    }, []);
+    };
 
     useEffect(() => {
-        setMetadata(metadata);
-    }, [metadata]);
+        const metadataArr: DisplayMetadataTableRowModel[] = study?.metadata
+            ? Object.keys(study.metadata).map((row) => ({
+                  metadataKey: row,
+                  metadataValue: (study.metadata as any)[row],
+              }))
+            : [];
+        setInitialMetadataArr(metadataArr);
+    }, [study]);
+
+    useEffect(() => {
+        const getStudy = (id: string) => {
+            API.Services.StudiesService.studiesIdGet(id)
+                .then((res) => {
+                    setStudy(res.data);
+                })
+                .catch(() => {});
+        };
+
+        if (params.studyId) {
+            getStudy(params.studyId);
+        }
+    }, [params.studyId]);
 
     const handleOnCancel = (event: React.MouseEvent) => {
         history.push(`/studies/${params.studyId}`);
     };
 
     const handleOnSave = async (event: React.MouseEvent) => {
-        try {
-            const token = await getAccessTokenSilently();
-            API.UpdateServicesWithToken(token);
-        } catch (exception) {
-            console.log(exception);
-        }
-        API.Services.StudiesService.studiesIdPut(params.studyId, { metadata: metadata, id: params.studyId })
-            .then((res) => {
-                history.push(`/studies/${params.studyId}`);
-            })
-            .catch((err: Error | AxiosError) => {
-                console.log(err.message);
-            });
+        console.log(arrayToMetadata(updatedMetadata));
+
+        // try {
+        //     const token = await getAccessTokenSilently();
+        //     API.UpdateServicesWithToken(token);
+        // } catch (exception) {
+        //     console.log(exception);
+        // }
+        // API.Services.StudiesService.studiesIdPut(params.studyId, {
+        //     metadata: metadata,
+        //     id: params.studyId,
+        // })
+        //     .then((res) => {
+        //         history.push(`/studies/${params.studyId}`);
+        //     })
+        //     .catch((err: Error | AxiosError) => {
+        //         console.log(err.message);
+        //     });
     };
-
-    useEffect(() => {
-        if (params.studyId) {
-            getStudy(params.studyId);
-        }
-    }, [params.studyId]);
-
-    const metadataArr: DisplayMetadataTableRowModel[] = study?.metadata
-        ? Object.keys(study.metadata).map((row) => ({
-              metadataKey: row,
-              metadataValue: (study.metadata as any)[row],
-          }))
-        : [];
 
     return (
         <div style={{ height: '100%' }}>
@@ -100,7 +113,12 @@ const EditStudyPage = () => {
                 </Typography>
             </div>
 
-            {study && <EditMetadata onMetadataEditChange={handleMetadataEditChange} metadata={metadataArr} />}
+            {study && (
+                <EditMetadata
+                    onMetadataEditChange={handleMetadataEditChange}
+                    metadata={initialMetadataArr}
+                />
+            )}
         </div>
     );
 };

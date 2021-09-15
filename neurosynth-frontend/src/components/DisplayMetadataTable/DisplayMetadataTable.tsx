@@ -1,4 +1,11 @@
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@material-ui/core';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+} from '@material-ui/core';
 import React from 'react';
 import DisplayMetadataTableRow, {
     DisplayMetadataTableRowModel,
@@ -13,7 +20,7 @@ const DisplayMetadataTable: React.FC<DisplayMetadataTableModel> = (props) => {
     const classes = DisplayMetadataTableStyles();
 
     if (!props.metadata) {
-        return <span>No Metadata</span>;
+        return <span className={classes.noContent}>No Metadata</span>;
     }
 
     const rowData = Object.keys(props.metadata).map<DisplayMetadataTableRowModel>((key) => ({

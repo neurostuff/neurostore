@@ -11,13 +11,22 @@ const EditMetadataString: React.FC<IEditMetadataField> = (props) => {
         setValue(props.value?.toString() || '');
     }, [props.value]);
 
-    const handleValueChange = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+    const handleValueChange = (
+        event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
+    ) => {
         props.onEdit(event.target.value);
         setValue(event.target.value);
     };
 
     return (
-        <TextField multiline onChange={handleValueChange} value={value} variant="outlined" className={classes.w_100} />
+        <TextField
+            multiline
+            placeholder="New metadata value"
+            onChange={handleValueChange}
+            value={value}
+            variant="outlined"
+            className={classes.w_100}
+        />
     );
 };
 

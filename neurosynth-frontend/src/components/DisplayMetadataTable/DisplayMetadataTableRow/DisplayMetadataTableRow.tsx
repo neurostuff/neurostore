@@ -7,7 +7,7 @@ export interface DisplayMetadataTableRowModel {
     metadataValue: any;
 }
 
-const getMetadataValue = (value: any): string => {
+export const getMetadataValue = (value: any): string => {
     if (value === null) {
         return 'null';
     } else {
@@ -54,7 +54,7 @@ export default DisplayMetadataTableRow;
 /**
  * unique toggle
  * toggle to show your own studies only (public/mine)
- * filter by source (neurosynth, neurovault, neuroquery)
+ * filter by source (neurosynth, neurovault, neuroquery, neurostore --> edited/created/cloned studies)
  *
  * green if you own it, yellow if its an original, red if it belongs to someone else
  *

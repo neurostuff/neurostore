@@ -11,6 +11,9 @@ const EditMetadataStyles = makeStyles((theme) => ({
     hr: {
         margin: '0px 0px 25px 0px',
     },
+    noContent: {
+        color: theme.palette.warning.dark,
+    },
 }));
 
 export default EditMetadataStyles;

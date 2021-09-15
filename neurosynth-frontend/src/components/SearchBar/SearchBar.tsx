@@ -4,11 +4,11 @@ import React from 'react';
 import { useState } from 'react';
 import SearchBarStyles from './SearchBarStyles';
 
-interface SearchbarModel {
+export interface SearchBarModel {
     onSearch: (arg: string) => void;
 }
 
-const SearchBar: React.FC<SearchbarModel> = (props) => {
+const SearchBar: React.FC<SearchBarModel> = (props) => {
     const [enteredText, setEnteredText] = useState('');
 
     const handleOnSubmit = (event: React.FormEvent) => {
