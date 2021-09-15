@@ -4,7 +4,7 @@ from ..core import app as _app
 from ..database import db as _db
 import sqlalchemy as sa
 from .. import ingest
-from ..models import User, Role
+from ..models import User, Role, Study
 from auth0.v3.authentication import GetToken
 
 """
@@ -74,14 +74,21 @@ def session(db):
 
 
 @pytest.fixture(scope="function")
-def auth_client(add_users):
+def auth_client(auth_clients):
+    """ Return authorized client wrapper """
+    return auth_clients[0]
+
+
+@pytest.fixture(scope="function")
+def auth_clients(add_users):
     """ Return authorized client wrapper """
     from .request_utils import Client
 
     tokens = add_users
-    first_user = list(tokens.keys())[0]
-    client = Client(token=tokens[first_user]['token'])
-    return client
+    clients = []
+    for user in tokens:
+        clients.append(Client(token=tokens[user]['token']))
+    return clients
 
 
 """
@@ -152,3 +159,26 @@ def ingest_neurovault(session):
 @pytest.fixture(scope="function")
 def ingest_neuroquery(session):
     return ingest.ingest_neuroquery(5)
+
+
+@pytest.fixture(scope="function")
+def user_studies(session, add_users):
+    to_commit = []
+    for user_info in add_users.values():
+        user = User.query.filter_by(id=user_info['id']).first()
+        for public in [True, False]:
+            if public:
+                name = f"{user.id}'s public study"
+            else:
+                name = f"{user.id}'s private study"
+
+            to_commit.append(
+                Study(
+                    name=name,
+                    user=user,
+                    public=public,
+                )
+            )
+
+    session.add_all(to_commit)
+    session.commit()

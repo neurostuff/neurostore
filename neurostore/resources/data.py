@@ -40,6 +40,13 @@ __all__ = [
 ]
 
 
+def get_current_user():
+    user = connexion.context.get('user')
+    if user:
+        return User.query.filter_by(external_id=connexion.context['user']).first()
+    return None
+
+
 # https://www.geeksforgeeks.org/python-split-camelcase-string-to-individual-strings/
 def camel_case_split(str):
     return re.findall(r'[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))', str)
@@ -68,7 +75,7 @@ class BaseView(MethodView):
         # Store all models so we can atomically update in one commit
         to_commit = []
 
-        current_user = User.query.filter_by(external_id=connexion.context['user']).first()
+        current_user = get_current_user()
         if not current_user:
             # user signed up with auth0, but has not made any queries yet...
             # should have endpoint to "create user" after sign on with auth0
@@ -119,6 +126,12 @@ class BaseView(MethodView):
 class ObjectView(BaseView):
     def get(self, id):
         record = self._model.query.filter_by(id=id).first_or_404()
+        current_user = get_current_user()
+        user_id = None if not current_user else current_user.external_id
+
+        if hasattr(record, 'public') and not record.public and record.user_id != user_id:
+            abort(403)
+
         nested = request.args.get("nested")
         return self.__class__._schema(context={'nested': nested}).dump(record)
 
@@ -141,6 +154,7 @@ LIST_USER_ARGS = {
     "source": fields.String(missing=None),
     "unique": fields.Boolean(missing=True),
     "nested": fields.Boolean(missing=False),
+    "user_id": fields.String(missing=None)
 }
 
 
@@ -168,6 +182,15 @@ class ListView(BaseView):
         # Search
         s = args["search"]
 
+        # query items that are owned by a user_id
+        if args.get("user_id"):
+            q = q.filter(m.user_id == args.get("user_id"))
+
+        # query items that are public and/or you own them
+        # (only pertinant for studies currently)
+        if hasattr(m, 'public'):
+            current_user = get_current_user()
+            q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
         # For multi-column search, default to using search fields
         if s is not None and self._fulltext_fields:
             search_expr = [
