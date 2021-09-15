@@ -154,6 +154,7 @@ LIST_USER_ARGS = {
     "source": fields.String(missing=None),
     "unique": fields.Boolean(missing=True),
     "nested": fields.Boolean(missing=False),
+    "user_id": fields.String(missing=None)
 }
 
 
@@ -180,6 +181,10 @@ class ListView(BaseView):
 
         # Search
         s = args["search"]
+
+        # query items that are owned by a user_id
+        if args.get("user_id"):
+            q = q.filter(m.user_id == args.get("user_id"))
 
         # query items that are public and/or you own them
         # (only pertinant for studies currently)
