@@ -12,27 +12,17 @@
  * Do not edit the class manually.
  */
 
+
 import { Configuration } from './configuration';
 import globalAxios, { AxiosPromise, AxiosInstance } from 'axios';
 // Some imports not used depending on template conditions
 // @ts-ignore
-import {
-    DUMMY_BASE_URL,
-    assertParamExists,
-    setApiKeyToObject,
-    setBasicAuthToObject,
-    setBearerAuthToObject,
-    setOAuthToObject,
-    setSearchParams,
-    serializeDataIfNeeded,
-    toPathString,
-    createRequestFunction,
-} from './common';
+import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction } from './common';
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS, RequestArgs, BaseAPI, RequiredError } from './base';
 
 /**
- *
+ * 
  * @export
  * @interface Analysis
  */
@@ -42,21 +32,21 @@ export interface Analysis {
      * @type {Array<string> | Array<Condition> | Condition & ReadOnly}
      * @memberof Analysis
      */
-    condition?: Array<string> | Array<Condition> | (Condition & ReadOnly);
+    condition?: Array<string> | Array<Condition> | Condition & ReadOnly;
     /**
-     *
+     * 
      * @type {Array<Array<string> | Array<Image>>}
      * @memberof Analysis
      */
     image?: Array<Array<string> | Array<Image>>;
     /**
-     *
+     * 
      * @type {string}
      * @memberof Analysis
      */
     name?: string | null;
     /**
-     *
+     * 
      * @type {Array<Array<string> | Array<Point>>}
      * @memberof Analysis
      */
@@ -68,20 +58,20 @@ export interface Analysis {
      */
     weight?: Array<number>;
     /**
-     *
+     * 
      * @type {string}
      * @memberof Analysis
      */
     description?: string | null;
     /**
-     *
+     * 
      * @type {string}
      * @memberof Analysis
      */
     study?: string;
 }
 /**
- *
+ * 
  * @export
  * @interface Condition
  */
@@ -100,62 +90,62 @@ export interface Condition {
     description?: string | null;
 }
 /**
- *
+ * 
  * @export
  * @interface Dataset
  */
 export interface Dataset {
     /**
-     *
+     * 
      * @type {string}
      * @memberof Dataset
      */
     name: string | null;
     /**
-     *
+     * 
      * @type {string}
      * @memberof Dataset
      */
     description?: string | null;
     /**
-     *
+     * 
      * @type {string}
      * @memberof Dataset
      */
     publication?: string | null;
     /**
-     *
+     * 
      * @type {string}
      * @memberof Dataset
      */
     doi?: string | null;
     /**
-     *
+     * 
      * @type {string}
      * @memberof Dataset
      */
     pmid?: string | null;
     /**
-     *
+     * 
      * @type {DatasetNimadsData}
      * @memberof Dataset
      */
     nimads_data: DatasetNimadsData;
     /**
-     *
+     * 
      * @type {string}
      * @memberof Dataset
      */
     user?: string | null;
 }
 /**
- *
+ * 
  * @export
  * @interface DatasetNimadsData
  */
 export interface DatasetNimadsData {
     /**
-     *
+     * 
      * @type {Array<Study>}
      * @memberof DatasetNimadsData
      */
@@ -217,126 +207,126 @@ export interface Image {
     add_date?: string;
 }
 /**
- *
+ * 
  * @export
  * @interface InlineResponse200
  */
 export interface InlineResponse200 {
     /**
-     *
+     * 
      * @type {Array<Study & ReadOnly>}
      * @memberof InlineResponse200
      */
     results?: Array<Study & ReadOnly>;
     /**
-     *
+     * 
      * @type {Metadata}
      * @memberof InlineResponse200
      */
     metadata?: Metadata;
 }
 /**
- *
+ * 
  * @export
  * @interface InlineResponse2001
  */
 export interface InlineResponse2001 {
     /**
-     *
+     * 
      * @type {Metadata}
      * @memberof InlineResponse2001
      */
     metadata?: Metadata;
     /**
-     *
+     * 
      * @type {Array<Analysis & ReadOnly>}
      * @memberof InlineResponse2001
      */
     results?: Array<Analysis & ReadOnly>;
 }
 /**
- *
+ * 
  * @export
  * @interface InlineResponse2002
  */
 export interface InlineResponse2002 {
     /**
-     *
+     * 
      * @type {Metadata}
      * @memberof InlineResponse2002
      */
     metadata?: Metadata;
     /**
-     *
+     * 
      * @type {Array<Image & ReadOnly>}
      * @memberof InlineResponse2002
      */
     results?: Array<Image & ReadOnly>;
 }
 /**
- *
+ * 
  * @export
  * @interface InlineResponse2003
  */
 export interface InlineResponse2003 {
     /**
-     *
+     * 
      * @type {Metadata}
      * @memberof InlineResponse2003
      */
     metadata?: Metadata;
     /**
-     *
+     * 
      * @type {Array<Condition & ReadOnly>}
      * @memberof InlineResponse2003
      */
     results?: Array<Condition & ReadOnly>;
 }
 /**
- *
+ * 
  * @export
  * @interface InlineResponse2004
  */
 export interface InlineResponse2004 {
     /**
-     *
+     * 
      * @type {Metadata}
      * @memberof InlineResponse2004
      */
     metadata?: Metadata;
     /**
-     *
+     * 
      * @type {Array<User>}
      * @memberof InlineResponse2004
      */
     results?: Array<User>;
 }
 /**
- *
+ * 
  * @export
  * @interface InlineResponse404
  */
 export interface InlineResponse404 {
     /**
-     *
+     * 
      * @type {string}
      * @memberof InlineResponse404
      */
     detail?: string;
     /**
-     *
+     * 
      * @type {number}
      * @memberof InlineResponse404
      */
     status?: InlineResponse404StatusEnum;
     /**
-     *
+     * 
      * @type {string}
      * @memberof InlineResponse404
      */
     title?: string;
     /**
-     *
+     * 
      * @type {string}
      * @memberof InlineResponse404
      */
@@ -344,39 +334,39 @@ export interface InlineResponse404 {
 }
 
 /**
- * @export
- * @enum {string}
- */
+    * @export
+    * @enum {string}
+    */
 export enum InlineResponse404StatusEnum {
-    NUMBER_404 = 404,
+    NUMBER_404 = 404
 }
 
 /**
- *
+ * 
  * @export
  * @interface InlineResponse422
  */
 export interface InlineResponse422 {
     /**
-     *
+     * 
      * @type {string}
      * @memberof InlineResponse422
      */
     detail?: string;
     /**
-     *
+     * 
      * @type {number}
      * @memberof InlineResponse422
      */
     status?: number;
     /**
-     *
+     * 
      * @type {string}
      * @memberof InlineResponse422
      */
     title?: string;
     /**
-     *
+     * 
      * @type {string}
      * @memberof InlineResponse422
      */
@@ -389,7 +379,7 @@ export interface InlineResponse422 {
  */
 export interface JsonLd {
     /**
-     *
+     * 
      * @type {JsonLdContext}
      * @memberof JsonLd
      */
@@ -427,7 +417,7 @@ export interface JsonLdContext {
  */
 export interface Metadata {
     /**
-     * total number of entries
+     * total number of entries 
      * @type {number}
      * @memberof Metadata
      */
@@ -464,44 +454,44 @@ export interface Point {
      */
     kind?: string | null;
     /**
-     *
+     * 
      * @type {number}
      * @memberof Point
      */
     x?: number;
     /**
-     *
+     * 
      * @type {number}
      * @memberof Point
      */
     y?: number;
     /**
-     *
+     * 
      * @type {number}
      * @memberof Point
      */
     z?: number;
     /**
-     *
+     * 
      * @type {string}
      * @memberof Point
      */
     analysis?: string;
 }
 /**
- *
+ * 
  * @export
  * @interface PointValue
  */
 export interface PointValue {
     /**
-     *
+     * 
      * @type {string}
      * @memberof PointValue
      */
     kind?: string | null;
     /**
-     *
+     * 
      * @type {number}
      * @memberof PointValue
      */
@@ -525,6 +515,12 @@ export interface ReadOnly {
      * @memberof ReadOnly
      */
     created_at?: string;
+    /**
+     * who owns the resource
+     * @type {string}
+     * @memberof ReadOnly
+     */
+    user?: string | null;
 }
 /**
  * attributes of a study/published paper
@@ -533,11 +529,11 @@ export interface ReadOnly {
  */
 export interface Study {
     /**
-     *
-     * @type {Array<Array<string> | Array<Analysis> | Array<Analysis & ReadOnly>>}
+     * 
+     * @type {Array<string | Analysis | Analysis & ReadOnly>}
      * @memberof Study
      */
-    analysis?: Array<Array<string> | Array<Analysis> | Array<Analysis & ReadOnly>>;
+    analyses?: Array<string | Analysis | Analysis & ReadOnly>;
     /**
      * digital object identifier of the study
      * @type {string}
@@ -557,19 +553,19 @@ export interface Study {
      */
     metadata?: object | null;
     /**
-     *
+     * 
      * @type {string}
      * @memberof Study
      */
     description?: string | null;
     /**
-     *
+     * 
      * @type {string}
      * @memberof Study
      */
     publication?: string | null;
     /**
-     *
+     * 
      * @type {string}
      * @memberof Study
      */
@@ -580,9 +576,33 @@ export interface Study {
      * @memberof Study
      */
     _public?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof Study
+     */
+    authors?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Study
+     */
+    source?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Study
+     */
+    source_id?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Study
+     */
+    source_updated_at?: string | null;
 }
 /**
- *
+ * 
  * @export
  * @interface User
  */
@@ -594,7 +614,7 @@ export interface User {
      */
     name?: string;
     /**
-     *
+     * 
      * @type {string}
      * @memberof User
      */
@@ -617,19 +637,11 @@ export const AnalysesApiAxiosParamCreator = function (configuration?: Configurat
          * @param {number} [pageSize] number of results to show on a page
          * @param {string} [name] search the name field for a term
          * @param {string} [description] search description field for a term
+         * @param {boolean} [nested] whether to show the URI to a resource (false) or to embed the object in the response (true)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        analysesGet: async (
-            search?: string,
-            sort?: string,
-            page?: number,
-            desc?: boolean,
-            pageSize?: number,
-            name?: string,
-            description?: string,
-            options: any = {},
-        ): Promise<RequestArgs> => {
+        analysesGet: async (search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, name?: string, description?: string, nested?: boolean, options: any = {}): Promise<RequestArgs> => {
             const localVarPath = `/analyses/`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -638,7 +650,7 @@ export const AnalysesApiAxiosParamCreator = function (configuration?: Configurat
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
@@ -670,13 +682,15 @@ export const AnalysesApiAxiosParamCreator = function (configuration?: Configurat
                 localVarQueryParameter['description'] = description;
             }
 
+            if (nested !== undefined) {
+                localVarQueryParameter['nested'] = nested;
+            }
+
+
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -686,15 +700,16 @@ export const AnalysesApiAxiosParamCreator = function (configuration?: Configurat
         /**
          * Information pertaining to a particular analysis within a study.
          * @summary GET an analysis
-         * @param {string} id
+         * @param {string} id 
          * @param {boolean} [nested] whether to show the URI to a resource (false) or to embed the object in the response (true)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         analysesIdGet: async (id: string, nested?: boolean, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
-            assertParamExists('analysesIdGet', 'id', id);
-            const localVarPath = `/analyses/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(id)));
+            assertParamExists('analysesIdGet', 'id', id)
+            const localVarPath = `/analyses/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -702,7 +717,7 @@ export const AnalysesApiAxiosParamCreator = function (configuration?: Configurat
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
@@ -710,13 +725,11 @@ export const AnalysesApiAxiosParamCreator = function (configuration?: Configurat
                 localVarQueryParameter['nested'] = nested;
             }
 
+
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -726,15 +739,16 @@ export const AnalysesApiAxiosParamCreator = function (configuration?: Configurat
         /**
          * Update an existing analysis.
          * @summary PUT/update an analysis
-         * @param {string} id
-         * @param {Analysis} [analysis]
+         * @param {string} id 
+         * @param {Analysis} [analysis] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         analysesIdPut: async (id: string, analysis?: Analysis, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
-            assertParamExists('analysesIdPut', 'id', id);
-            const localVarPath = `/analyses/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(id)));
+            assertParamExists('analysesIdPut', 'id', id)
+            const localVarPath = `/analyses/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -742,24 +756,22 @@ export const AnalysesApiAxiosParamCreator = function (configuration?: Configurat
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
             // authentication JSON-Web-Token required
             // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration);
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+
+    
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
-            localVarRequestOptions.data = serializeDataIfNeeded(analysis, localVarRequestOptions, configuration);
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(analysis, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -769,7 +781,7 @@ export const AnalysesApiAxiosParamCreator = function (configuration?: Configurat
         /**
          * create an analysis
          * @summary POST/create an analysis
-         * @param {Analysis} [analysis]
+         * @param {Analysis} [analysis] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -782,39 +794,37 @@ export const AnalysesApiAxiosParamCreator = function (configuration?: Configurat
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
             // authentication JSON-Web-Token required
             // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration);
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+
+    
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
-            localVarRequestOptions.data = serializeDataIfNeeded(analysis, localVarRequestOptions, configuration);
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(analysis, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
                 options: localVarRequestOptions,
             };
         },
-    };
+    }
 };
 
 /**
  * AnalysesApi - functional programming interface
  * @export
  */
-export const AnalysesApiFp = function (configuration?: Configuration) {
-    const localVarAxiosParamCreator = AnalysesApiAxiosParamCreator(configuration);
+export const AnalysesApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = AnalysesApiAxiosParamCreator(configuration)
     return {
         /**
          * List all analyses performed across studies.
@@ -826,78 +836,50 @@ export const AnalysesApiFp = function (configuration?: Configuration) {
          * @param {number} [pageSize] number of results to show on a page
          * @param {string} [name] search the name field for a term
          * @param {string} [description] search description field for a term
+         * @param {boolean} [nested] whether to show the URI to a resource (false) or to embed the object in the response (true)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async analysesGet(
-            search?: string,
-            sort?: string,
-            page?: number,
-            desc?: boolean,
-            pageSize?: number,
-            name?: string,
-            description?: string,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2001>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.analysesGet(
-                search,
-                sort,
-                page,
-                desc,
-                pageSize,
-                name,
-                description,
-                options,
-            );
+        async analysesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, name?: string, description?: string, nested?: boolean, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2001>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.analysesGet(search, sort, page, desc, pageSize, name, description, nested, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * Information pertaining to a particular analysis within a study.
          * @summary GET an analysis
-         * @param {string} id
+         * @param {string} id 
          * @param {boolean} [nested] whether to show the URI to a resource (false) or to embed the object in the response (true)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async analysesIdGet(
-            id: string,
-            nested?: boolean,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Analysis & ReadOnly>> {
+        async analysesIdGet(id: string, nested?: boolean, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Analysis & ReadOnly>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.analysesIdGet(id, nested, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * Update an existing analysis.
          * @summary PUT/update an analysis
-         * @param {string} id
-         * @param {Analysis} [analysis]
+         * @param {string} id 
+         * @param {Analysis} [analysis] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async analysesIdPut(
-            id: string,
-            analysis?: Analysis,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async analysesIdPut(id: string, analysis?: Analysis, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.analysesIdPut(id, analysis, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * create an analysis
          * @summary POST/create an analysis
-         * @param {Analysis} [analysis]
+         * @param {Analysis} [analysis] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async analysesPost(
-            analysis?: Analysis,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async analysesPost(analysis?: Analysis, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.analysesPost(analysis, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
-    };
+    }
 };
 
 /**
@@ -905,7 +887,7 @@ export const AnalysesApiFp = function (configuration?: Configuration) {
  * @export
  */
 export const AnalysesApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
-    const localVarFp = AnalysesApiFp(configuration);
+    const localVarFp = AnalysesApiFp(configuration)
     return {
         /**
          * List all analyses performed across studies.
@@ -917,27 +899,17 @@ export const AnalysesApiFactory = function (configuration?: Configuration, baseP
          * @param {number} [pageSize] number of results to show on a page
          * @param {string} [name] search the name field for a term
          * @param {string} [description] search description field for a term
+         * @param {boolean} [nested] whether to show the URI to a resource (false) or to embed the object in the response (true)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        analysesGet(
-            search?: string,
-            sort?: string,
-            page?: number,
-            desc?: boolean,
-            pageSize?: number,
-            name?: string,
-            description?: string,
-            options?: any,
-        ): AxiosPromise<InlineResponse2001> {
-            return localVarFp
-                .analysesGet(search, sort, page, desc, pageSize, name, description, options)
-                .then((request) => request(axios, basePath));
+        analysesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, name?: string, description?: string, nested?: boolean, options?: any): AxiosPromise<InlineResponse2001> {
+            return localVarFp.analysesGet(search, sort, page, desc, pageSize, name, description, nested, options).then((request) => request(axios, basePath));
         },
         /**
          * Information pertaining to a particular analysis within a study.
          * @summary GET an analysis
-         * @param {string} id
+         * @param {string} id 
          * @param {boolean} [nested] whether to show the URI to a resource (false) or to embed the object in the response (true)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -948,8 +920,8 @@ export const AnalysesApiFactory = function (configuration?: Configuration, baseP
         /**
          * Update an existing analysis.
          * @summary PUT/update an analysis
-         * @param {string} id
-         * @param {Analysis} [analysis]
+         * @param {string} id 
+         * @param {Analysis} [analysis] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -959,7 +931,7 @@ export const AnalysesApiFactory = function (configuration?: Configuration, baseP
         /**
          * create an analysis
          * @summary POST/create an analysis
-         * @param {Analysis} [analysis]
+         * @param {Analysis} [analysis] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -986,69 +958,54 @@ export class AnalysesApi extends BaseAPI {
      * @param {number} [pageSize] number of results to show on a page
      * @param {string} [name] search the name field for a term
      * @param {string} [description] search description field for a term
+     * @param {boolean} [nested] whether to show the URI to a resource (false) or to embed the object in the response (true)
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AnalysesApi
      */
-    public analysesGet(
-        search?: string,
-        sort?: string,
-        page?: number,
-        desc?: boolean,
-        pageSize?: number,
-        name?: string,
-        description?: string,
-        options?: any,
-    ) {
-        return AnalysesApiFp(this.configuration)
-            .analysesGet(search, sort, page, desc, pageSize, name, description, options)
-            .then((request) => request(this.axios, this.basePath));
+    public analysesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, name?: string, description?: string, nested?: boolean, options?: any) {
+        return AnalysesApiFp(this.configuration).analysesGet(search, sort, page, desc, pageSize, name, description, nested, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * Information pertaining to a particular analysis within a study.
      * @summary GET an analysis
-     * @param {string} id
+     * @param {string} id 
      * @param {boolean} [nested] whether to show the URI to a resource (false) or to embed the object in the response (true)
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AnalysesApi
      */
     public analysesIdGet(id: string, nested?: boolean, options?: any) {
-        return AnalysesApiFp(this.configuration)
-            .analysesIdGet(id, nested, options)
-            .then((request) => request(this.axios, this.basePath));
+        return AnalysesApiFp(this.configuration).analysesIdGet(id, nested, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * Update an existing analysis.
      * @summary PUT/update an analysis
-     * @param {string} id
-     * @param {Analysis} [analysis]
+     * @param {string} id 
+     * @param {Analysis} [analysis] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AnalysesApi
      */
     public analysesIdPut(id: string, analysis?: Analysis, options?: any) {
-        return AnalysesApiFp(this.configuration)
-            .analysesIdPut(id, analysis, options)
-            .then((request) => request(this.axios, this.basePath));
+        return AnalysesApiFp(this.configuration).analysesIdPut(id, analysis, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * create an analysis
      * @summary POST/create an analysis
-     * @param {Analysis} [analysis]
+     * @param {Analysis} [analysis] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AnalysesApi
      */
     public analysesPost(analysis?: Analysis, options?: any) {
-        return AnalysesApiFp(this.configuration)
-            .analysesPost(analysis, options)
-            .then((request) => request(this.axios, this.basePath));
+        return AnalysesApiFp(this.configuration).analysesPost(analysis, options).then((request) => request(this.axios, this.basePath));
     }
 }
+
 
 /**
  * ConditionsApi - axios parameter creator
@@ -1069,16 +1026,7 @@ export const ConditionsApiAxiosParamCreator = function (configuration?: Configur
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        conditionsGet: async (
-            search?: string,
-            sort?: string,
-            page?: number,
-            desc?: boolean,
-            pageSize?: number,
-            name?: string,
-            description?: string,
-            options: any = {},
-        ): Promise<RequestArgs> => {
+        conditionsGet: async (search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, name?: string, description?: string, options: any = {}): Promise<RequestArgs> => {
             const localVarPath = `/conditions/`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1087,7 +1035,7 @@ export const ConditionsApiAxiosParamCreator = function (configuration?: Configur
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
@@ -1119,13 +1067,11 @@ export const ConditionsApiAxiosParamCreator = function (configuration?: Configur
                 localVarQueryParameter['description'] = description;
             }
 
+
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1135,14 +1081,15 @@ export const ConditionsApiAxiosParamCreator = function (configuration?: Configur
         /**
          * Retrieve a condition (e.g., 2-back) that can be used in contrasts (e.g., 2-back - 1-back)
          * @summary GET a condition
-         * @param {string} id
+         * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         conditionsIdGet: async (id: string, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
-            assertParamExists('conditionsIdGet', 'id', id);
-            const localVarPath = `/conditions/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(id)));
+            assertParamExists('conditionsIdGet', 'id', id)
+            const localVarPath = `/conditions/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -1150,17 +1097,15 @@ export const ConditionsApiAxiosParamCreator = function (configuration?: Configur
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1170,15 +1115,16 @@ export const ConditionsApiAxiosParamCreator = function (configuration?: Configur
         /**
          * update a condition
          * @summary PUT/update a condition
-         * @param {string} id
-         * @param {Condition} [condition]
+         * @param {string} id 
+         * @param {Condition} [condition] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         conditionsIdPut: async (id: string, condition?: Condition, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
-            assertParamExists('conditionsIdPut', 'id', id);
-            const localVarPath = `/conditions/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(id)));
+            assertParamExists('conditionsIdPut', 'id', id)
+            const localVarPath = `/conditions/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -1186,24 +1132,22 @@ export const ConditionsApiAxiosParamCreator = function (configuration?: Configur
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
             // authentication JSON-Web-Token required
             // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration);
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+
+    
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
-            localVarRequestOptions.data = serializeDataIfNeeded(condition, localVarRequestOptions, configuration);
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(condition, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1213,7 +1157,7 @@ export const ConditionsApiAxiosParamCreator = function (configuration?: Configur
         /**
          * Create a condition
          * @summary POST/Create a condition
-         * @param {Condition} [condition]
+         * @param {Condition} [condition] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -1226,39 +1170,37 @@ export const ConditionsApiAxiosParamCreator = function (configuration?: Configur
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
             // authentication JSON-Web-Token required
             // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration);
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+
+    
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
-            localVarRequestOptions.data = serializeDataIfNeeded(condition, localVarRequestOptions, configuration);
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(condition, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
                 options: localVarRequestOptions,
             };
         },
-    };
+    }
 };
 
 /**
  * ConditionsApi - functional programming interface
  * @export
  */
-export const ConditionsApiFp = function (configuration?: Configuration) {
-    const localVarAxiosParamCreator = ConditionsApiAxiosParamCreator(configuration);
+export const ConditionsApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = ConditionsApiAxiosParamCreator(configuration)
     return {
         /**
          * Get all conditions
@@ -1273,73 +1215,45 @@ export const ConditionsApiFp = function (configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async conditionsGet(
-            search?: string,
-            sort?: string,
-            page?: number,
-            desc?: boolean,
-            pageSize?: number,
-            name?: string,
-            description?: string,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2003>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.conditionsGet(
-                search,
-                sort,
-                page,
-                desc,
-                pageSize,
-                name,
-                description,
-                options,
-            );
+        async conditionsGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, name?: string, description?: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2003>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.conditionsGet(search, sort, page, desc, pageSize, name, description, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * Retrieve a condition (e.g., 2-back) that can be used in contrasts (e.g., 2-back - 1-back)
          * @summary GET a condition
-         * @param {string} id
+         * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async conditionsIdGet(
-            id: string,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Condition & ReadOnly>> {
+        async conditionsIdGet(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Condition & ReadOnly>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.conditionsIdGet(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * update a condition
          * @summary PUT/update a condition
-         * @param {string} id
-         * @param {Condition} [condition]
+         * @param {string} id 
+         * @param {Condition} [condition] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async conditionsIdPut(
-            id: string,
-            condition?: Condition,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async conditionsIdPut(id: string, condition?: Condition, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.conditionsIdPut(id, condition, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * Create a condition
          * @summary POST/Create a condition
-         * @param {Condition} [condition]
+         * @param {Condition} [condition] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async conditionsPost(
-            condition?: Condition,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Condition>> {
+        async conditionsPost(condition?: Condition, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Condition>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.conditionsPost(condition, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
-    };
+    }
 };
 
 /**
@@ -1347,7 +1261,7 @@ export const ConditionsApiFp = function (configuration?: Configuration) {
  * @export
  */
 export const ConditionsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
-    const localVarFp = ConditionsApiFp(configuration);
+    const localVarFp = ConditionsApiFp(configuration)
     return {
         /**
          * Get all conditions
@@ -1362,24 +1276,13 @@ export const ConditionsApiFactory = function (configuration?: Configuration, bas
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        conditionsGet(
-            search?: string,
-            sort?: string,
-            page?: number,
-            desc?: boolean,
-            pageSize?: number,
-            name?: string,
-            description?: string,
-            options?: any,
-        ): AxiosPromise<InlineResponse2003> {
-            return localVarFp
-                .conditionsGet(search, sort, page, desc, pageSize, name, description, options)
-                .then((request) => request(axios, basePath));
+        conditionsGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, name?: string, description?: string, options?: any): AxiosPromise<InlineResponse2003> {
+            return localVarFp.conditionsGet(search, sort, page, desc, pageSize, name, description, options).then((request) => request(axios, basePath));
         },
         /**
          * Retrieve a condition (e.g., 2-back) that can be used in contrasts (e.g., 2-back - 1-back)
          * @summary GET a condition
-         * @param {string} id
+         * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -1389,8 +1292,8 @@ export const ConditionsApiFactory = function (configuration?: Configuration, bas
         /**
          * update a condition
          * @summary PUT/update a condition
-         * @param {string} id
-         * @param {Condition} [condition]
+         * @param {string} id 
+         * @param {Condition} [condition] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -1400,7 +1303,7 @@ export const ConditionsApiFactory = function (configuration?: Configuration, bas
         /**
          * Create a condition
          * @summary POST/Create a condition
-         * @param {Condition} [condition]
+         * @param {Condition} [condition] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -1431,64 +1334,48 @@ export class ConditionsApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof ConditionsApi
      */
-    public conditionsGet(
-        search?: string,
-        sort?: string,
-        page?: number,
-        desc?: boolean,
-        pageSize?: number,
-        name?: string,
-        description?: string,
-        options?: any,
-    ) {
-        return ConditionsApiFp(this.configuration)
-            .conditionsGet(search, sort, page, desc, pageSize, name, description, options)
-            .then((request) => request(this.axios, this.basePath));
+    public conditionsGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, name?: string, description?: string, options?: any) {
+        return ConditionsApiFp(this.configuration).conditionsGet(search, sort, page, desc, pageSize, name, description, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * Retrieve a condition (e.g., 2-back) that can be used in contrasts (e.g., 2-back - 1-back)
      * @summary GET a condition
-     * @param {string} id
+     * @param {string} id 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ConditionsApi
      */
     public conditionsIdGet(id: string, options?: any) {
-        return ConditionsApiFp(this.configuration)
-            .conditionsIdGet(id, options)
-            .then((request) => request(this.axios, this.basePath));
+        return ConditionsApiFp(this.configuration).conditionsIdGet(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * update a condition
      * @summary PUT/update a condition
-     * @param {string} id
-     * @param {Condition} [condition]
+     * @param {string} id 
+     * @param {Condition} [condition] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ConditionsApi
      */
     public conditionsIdPut(id: string, condition?: Condition, options?: any) {
-        return ConditionsApiFp(this.configuration)
-            .conditionsIdPut(id, condition, options)
-            .then((request) => request(this.axios, this.basePath));
+        return ConditionsApiFp(this.configuration).conditionsIdPut(id, condition, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * Create a condition
      * @summary POST/Create a condition
-     * @param {Condition} [condition]
+     * @param {Condition} [condition] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ConditionsApi
      */
     public conditionsPost(condition?: Condition, options?: any) {
-        return ConditionsApiFp(this.configuration)
-            .conditionsPost(condition, options)
-            .then((request) => request(this.axios, this.basePath));
+        return ConditionsApiFp(this.configuration).conditionsPost(condition, options).then((request) => request(this.axios, this.basePath));
     }
 }
+
 
 /**
  * DatasetsApi - axios parameter creator
@@ -1507,14 +1394,7 @@ export const DatasetsApiAxiosParamCreator = function (configuration?: Configurat
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        datasetsGet: async (
-            search?: string,
-            sort?: string,
-            page?: number,
-            desc?: boolean,
-            pageSize?: number,
-            options: any = {},
-        ): Promise<RequestArgs> => {
+        datasetsGet: async (search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, options: any = {}): Promise<RequestArgs> => {
             const localVarPath = `/datasets/`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1523,7 +1403,7 @@ export const DatasetsApiAxiosParamCreator = function (configuration?: Configurat
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
@@ -1547,13 +1427,11 @@ export const DatasetsApiAxiosParamCreator = function (configuration?: Configurat
                 localVarQueryParameter['page_size'] = pageSize;
             }
 
+
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1563,14 +1441,15 @@ export const DatasetsApiAxiosParamCreator = function (configuration?: Configurat
         /**
          * Retrieve the information of a dataset with the matching dataset ID.
          * @summary GET a dataset
-         * @param {string} id
+         * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         datasetsIdGet: async (id: string, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
-            assertParamExists('datasetsIdGet', 'id', id);
-            const localVarPath = `/datasets/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(id)));
+            assertParamExists('datasetsIdGet', 'id', id)
+            const localVarPath = `/datasets/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -1578,17 +1457,15 @@ export const DatasetsApiAxiosParamCreator = function (configuration?: Configurat
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1598,15 +1475,16 @@ export const DatasetsApiAxiosParamCreator = function (configuration?: Configurat
         /**
          * Update a dataset.
          * @summary PUT/update a dataset
-         * @param {string} id
-         * @param {Dataset} [dataset]
+         * @param {string} id 
+         * @param {Dataset} [dataset] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         datasetsIdPut: async (id: string, dataset?: Dataset, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
-            assertParamExists('datasetsIdPut', 'id', id);
-            const localVarPath = `/datasets/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(id)));
+            assertParamExists('datasetsIdPut', 'id', id)
+            const localVarPath = `/datasets/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -1614,24 +1492,22 @@ export const DatasetsApiAxiosParamCreator = function (configuration?: Configurat
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
             // authentication JSON-Web-Token required
             // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration);
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+
+    
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
-            localVarRequestOptions.data = serializeDataIfNeeded(dataset, localVarRequestOptions, configuration);
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(dataset, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1653,36 +1529,34 @@ export const DatasetsApiAxiosParamCreator = function (configuration?: Configurat
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
             // authentication JSON-Web-Token required
             // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration);
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
                 options: localVarRequestOptions,
             };
         },
-    };
+    }
 };
 
 /**
  * DatasetsApi - functional programming interface
  * @export
  */
-export const DatasetsApiFp = function (configuration?: Configuration) {
-    const localVarAxiosParamCreator = DatasetsApiAxiosParamCreator(configuration);
+export const DatasetsApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = DatasetsApiAxiosParamCreator(configuration)
     return {
         /**
          * Get a list of datasets.
@@ -1695,51 +1569,30 @@ export const DatasetsApiFp = function (configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async datasetsGet(
-            search?: string,
-            sort?: string,
-            page?: number,
-            desc?: boolean,
-            pageSize?: number,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<Dataset & ReadOnly>>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.datasetsGet(
-                search,
-                sort,
-                page,
-                desc,
-                pageSize,
-                options,
-            );
+        async datasetsGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<Dataset & ReadOnly>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.datasetsGet(search, sort, page, desc, pageSize, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * Retrieve the information of a dataset with the matching dataset ID.
          * @summary GET a dataset
-         * @param {string} id
+         * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async datasetsIdGet(
-            id: string,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Dataset & ReadOnly>> {
+        async datasetsIdGet(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Dataset & ReadOnly>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.datasetsIdGet(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * Update a dataset.
          * @summary PUT/update a dataset
-         * @param {string} id
-         * @param {Dataset} [dataset]
+         * @param {string} id 
+         * @param {Dataset} [dataset] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async datasetsIdPut(
-            id: string,
-            dataset?: Dataset,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async datasetsIdPut(id: string, dataset?: Dataset, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.datasetsIdPut(id, dataset, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -1749,13 +1602,11 @@ export const DatasetsApiFp = function (configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async datasetsPost(
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Dataset>> {
+        async datasetsPost(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Dataset>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.datasetsPost(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
-    };
+    }
 };
 
 /**
@@ -1763,7 +1614,7 @@ export const DatasetsApiFp = function (configuration?: Configuration) {
  * @export
  */
 export const DatasetsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
-    const localVarFp = DatasetsApiFp(configuration);
+    const localVarFp = DatasetsApiFp(configuration)
     return {
         /**
          * Get a list of datasets.
@@ -1776,22 +1627,13 @@ export const DatasetsApiFactory = function (configuration?: Configuration, baseP
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        datasetsGet(
-            search?: string,
-            sort?: string,
-            page?: number,
-            desc?: boolean,
-            pageSize?: number,
-            options?: any,
-        ): AxiosPromise<Array<Dataset & ReadOnly>> {
-            return localVarFp
-                .datasetsGet(search, sort, page, desc, pageSize, options)
-                .then((request) => request(axios, basePath));
+        datasetsGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, options?: any): AxiosPromise<Array<Dataset & ReadOnly>> {
+            return localVarFp.datasetsGet(search, sort, page, desc, pageSize, options).then((request) => request(axios, basePath));
         },
         /**
          * Retrieve the information of a dataset with the matching dataset ID.
          * @summary GET a dataset
-         * @param {string} id
+         * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -1801,8 +1643,8 @@ export const DatasetsApiFactory = function (configuration?: Configuration, baseP
         /**
          * Update a dataset.
          * @summary PUT/update a dataset
-         * @param {string} id
-         * @param {Dataset} [dataset]
+         * @param {string} id 
+         * @param {Dataset} [dataset] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -1840,46 +1682,33 @@ export class DatasetsApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof DatasetsApi
      */
-    public datasetsGet(
-        search?: string,
-        sort?: string,
-        page?: number,
-        desc?: boolean,
-        pageSize?: number,
-        options?: any,
-    ) {
-        return DatasetsApiFp(this.configuration)
-            .datasetsGet(search, sort, page, desc, pageSize, options)
-            .then((request) => request(this.axios, this.basePath));
+    public datasetsGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, options?: any) {
+        return DatasetsApiFp(this.configuration).datasetsGet(search, sort, page, desc, pageSize, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * Retrieve the information of a dataset with the matching dataset ID.
      * @summary GET a dataset
-     * @param {string} id
+     * @param {string} id 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DatasetsApi
      */
     public datasetsIdGet(id: string, options?: any) {
-        return DatasetsApiFp(this.configuration)
-            .datasetsIdGet(id, options)
-            .then((request) => request(this.axios, this.basePath));
+        return DatasetsApiFp(this.configuration).datasetsIdGet(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * Update a dataset.
      * @summary PUT/update a dataset
-     * @param {string} id
-     * @param {Dataset} [dataset]
+     * @param {string} id 
+     * @param {Dataset} [dataset] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DatasetsApi
      */
     public datasetsIdPut(id: string, dataset?: Dataset, options?: any) {
-        return DatasetsApiFp(this.configuration)
-            .datasetsIdPut(id, dataset, options)
-            .then((request) => request(this.axios, this.basePath));
+        return DatasetsApiFp(this.configuration).datasetsIdPut(id, dataset, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -1890,11 +1719,10 @@ export class DatasetsApi extends BaseAPI {
      * @memberof DatasetsApi
      */
     public datasetsPost(options?: any) {
-        return DatasetsApiFp(this.configuration)
-            .datasetsPost(options)
-            .then((request) => request(this.axios, this.basePath));
+        return DatasetsApiFp(this.configuration).datasetsPost(options).then((request) => request(this.axios, this.basePath));
     }
 }
+
 
 /**
  * ImagesApi - axios parameter creator
@@ -1917,18 +1745,7 @@ export const ImagesApiAxiosParamCreator = function (configuration?: Configuratio
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        imagesGet: async (
-            search?: string,
-            sort?: string,
-            page?: number,
-            desc?: boolean,
-            pageSize?: number,
-            filename?: string,
-            analysisName?: string,
-            valueType?: string,
-            space?: string,
-            options: any = {},
-        ): Promise<RequestArgs> => {
+        imagesGet: async (search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, filename?: string, analysisName?: string, valueType?: string, space?: string, options: any = {}): Promise<RequestArgs> => {
             const localVarPath = `/images/`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1937,7 +1754,7 @@ export const ImagesApiAxiosParamCreator = function (configuration?: Configuratio
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
@@ -1977,13 +1794,11 @@ export const ImagesApiAxiosParamCreator = function (configuration?: Configuratio
                 localVarQueryParameter['space'] = space;
             }
 
+
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1993,14 +1808,15 @@ export const ImagesApiAxiosParamCreator = function (configuration?: Configuratio
         /**
          * Retrieve information about a particular image from an analysis.
          * @summary GET an image
-         * @param {string} id
+         * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         imagesIdGet: async (id: string, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
-            assertParamExists('imagesIdGet', 'id', id);
-            const localVarPath = `/images/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(id)));
+            assertParamExists('imagesIdGet', 'id', id)
+            const localVarPath = `/images/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2008,17 +1824,15 @@ export const ImagesApiAxiosParamCreator = function (configuration?: Configuratio
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2028,15 +1842,16 @@ export const ImagesApiAxiosParamCreator = function (configuration?: Configuratio
         /**
          * Update a specific image.
          * @summary PUT/update an image
-         * @param {string} id
-         * @param {Image} [image]
+         * @param {string} id 
+         * @param {Image} [image] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         imagesIdPut: async (id: string, image?: Image, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
-            assertParamExists('imagesIdPut', 'id', id);
-            const localVarPath = `/images/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(id)));
+            assertParamExists('imagesIdPut', 'id', id)
+            const localVarPath = `/images/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2044,24 +1859,22 @@ export const ImagesApiAxiosParamCreator = function (configuration?: Configuratio
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
             // authentication JSON-Web-Token required
             // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration);
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+
+    
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
-            localVarRequestOptions.data = serializeDataIfNeeded(image, localVarRequestOptions, configuration);
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(image, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2071,7 +1884,7 @@ export const ImagesApiAxiosParamCreator = function (configuration?: Configuratio
         /**
          * Create an image
          * @summary POST/create an image
-         * @param {Image} [image]
+         * @param {Image} [image] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2084,39 +1897,37 @@ export const ImagesApiAxiosParamCreator = function (configuration?: Configuratio
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
             // authentication JSON-Web-Token required
             // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration);
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+
+    
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
-            localVarRequestOptions.data = serializeDataIfNeeded(image, localVarRequestOptions, configuration);
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(image, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
                 options: localVarRequestOptions,
             };
         },
-    };
+    }
 };
 
 /**
  * ImagesApi - functional programming interface
  * @export
  */
-export const ImagesApiFp = function (configuration?: Configuration) {
-    const localVarAxiosParamCreator = ImagesApiAxiosParamCreator(configuration);
+export const ImagesApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = ImagesApiAxiosParamCreator(configuration)
     return {
         /**
          * Retrieve and list images.
@@ -2133,77 +1944,45 @@ export const ImagesApiFp = function (configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async imagesGet(
-            search?: string,
-            sort?: string,
-            page?: number,
-            desc?: boolean,
-            pageSize?: number,
-            filename?: string,
-            analysisName?: string,
-            valueType?: string,
-            space?: string,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2002>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.imagesGet(
-                search,
-                sort,
-                page,
-                desc,
-                pageSize,
-                filename,
-                analysisName,
-                valueType,
-                space,
-                options,
-            );
+        async imagesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, filename?: string, analysisName?: string, valueType?: string, space?: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2002>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.imagesGet(search, sort, page, desc, pageSize, filename, analysisName, valueType, space, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * Retrieve information about a particular image from an analysis.
          * @summary GET an image
-         * @param {string} id
+         * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async imagesIdGet(
-            id: string,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image & ReadOnly>> {
+        async imagesIdGet(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image & ReadOnly>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.imagesIdGet(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * Update a specific image.
          * @summary PUT/update an image
-         * @param {string} id
-         * @param {Image} [image]
+         * @param {string} id 
+         * @param {Image} [image] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async imagesIdPut(
-            id: string,
-            image?: Image,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async imagesIdPut(id: string, image?: Image, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.imagesIdPut(id, image, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * Create an image
          * @summary POST/create an image
-         * @param {Image} [image]
+         * @param {Image} [image] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async imagesPost(
-            image?: Image,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
+        async imagesPost(image?: Image, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Image>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.imagesPost(image, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
-    };
+    }
 };
 
 /**
@@ -2211,7 +1990,7 @@ export const ImagesApiFp = function (configuration?: Configuration) {
  * @export
  */
 export const ImagesApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
-    const localVarFp = ImagesApiFp(configuration);
+    const localVarFp = ImagesApiFp(configuration)
     return {
         /**
          * Retrieve and list images.
@@ -2228,26 +2007,13 @@ export const ImagesApiFactory = function (configuration?: Configuration, basePat
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        imagesGet(
-            search?: string,
-            sort?: string,
-            page?: number,
-            desc?: boolean,
-            pageSize?: number,
-            filename?: string,
-            analysisName?: string,
-            valueType?: string,
-            space?: string,
-            options?: any,
-        ): AxiosPromise<InlineResponse2002> {
-            return localVarFp
-                .imagesGet(search, sort, page, desc, pageSize, filename, analysisName, valueType, space, options)
-                .then((request) => request(axios, basePath));
+        imagesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, filename?: string, analysisName?: string, valueType?: string, space?: string, options?: any): AxiosPromise<InlineResponse2002> {
+            return localVarFp.imagesGet(search, sort, page, desc, pageSize, filename, analysisName, valueType, space, options).then((request) => request(axios, basePath));
         },
         /**
          * Retrieve information about a particular image from an analysis.
          * @summary GET an image
-         * @param {string} id
+         * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2257,8 +2023,8 @@ export const ImagesApiFactory = function (configuration?: Configuration, basePat
         /**
          * Update a specific image.
          * @summary PUT/update an image
-         * @param {string} id
-         * @param {Image} [image]
+         * @param {string} id 
+         * @param {Image} [image] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2268,7 +2034,7 @@ export const ImagesApiFactory = function (configuration?: Configuration, basePat
         /**
          * Create an image
          * @summary POST/create an image
-         * @param {Image} [image]
+         * @param {Image} [image] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2301,66 +2067,48 @@ export class ImagesApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof ImagesApi
      */
-    public imagesGet(
-        search?: string,
-        sort?: string,
-        page?: number,
-        desc?: boolean,
-        pageSize?: number,
-        filename?: string,
-        analysisName?: string,
-        valueType?: string,
-        space?: string,
-        options?: any,
-    ) {
-        return ImagesApiFp(this.configuration)
-            .imagesGet(search, sort, page, desc, pageSize, filename, analysisName, valueType, space, options)
-            .then((request) => request(this.axios, this.basePath));
+    public imagesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, filename?: string, analysisName?: string, valueType?: string, space?: string, options?: any) {
+        return ImagesApiFp(this.configuration).imagesGet(search, sort, page, desc, pageSize, filename, analysisName, valueType, space, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * Retrieve information about a particular image from an analysis.
      * @summary GET an image
-     * @param {string} id
+     * @param {string} id 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ImagesApi
      */
     public imagesIdGet(id: string, options?: any) {
-        return ImagesApiFp(this.configuration)
-            .imagesIdGet(id, options)
-            .then((request) => request(this.axios, this.basePath));
+        return ImagesApiFp(this.configuration).imagesIdGet(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * Update a specific image.
      * @summary PUT/update an image
-     * @param {string} id
-     * @param {Image} [image]
+     * @param {string} id 
+     * @param {Image} [image] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ImagesApi
      */
     public imagesIdPut(id: string, image?: Image, options?: any) {
-        return ImagesApiFp(this.configuration)
-            .imagesIdPut(id, image, options)
-            .then((request) => request(this.axios, this.basePath));
+        return ImagesApiFp(this.configuration).imagesIdPut(id, image, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * Create an image
      * @summary POST/create an image
-     * @param {Image} [image]
+     * @param {Image} [image] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof ImagesApi
      */
     public imagesPost(image?: Image, options?: any) {
-        return ImagesApiFp(this.configuration)
-            .imagesPost(image, options)
-            .then((request) => request(this.axios, this.basePath));
+        return ImagesApiFp(this.configuration).imagesPost(image, options).then((request) => request(this.axios, this.basePath));
     }
 }
+
 
 /**
  * PointsApi - axios parameter creator
@@ -2371,14 +2119,15 @@ export const PointsApiAxiosParamCreator = function (configuration?: Configuratio
         /**
          * Information about a particular MRI coordinate
          * @summary GET a point
-         * @param {string} id
+         * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         pointsIdGet: async (id: string, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
-            assertParamExists('pointsIdGet', 'id', id);
-            const localVarPath = `/points/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(id)));
+            assertParamExists('pointsIdGet', 'id', id)
+            const localVarPath = `/points/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2386,17 +2135,15 @@ export const PointsApiAxiosParamCreator = function (configuration?: Configuratio
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
+
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2406,15 +2153,16 @@ export const PointsApiAxiosParamCreator = function (configuration?: Configuratio
         /**
          * Update a particular MRI coordinate.
          * @summary PUT/update a point
-         * @param {string} id
-         * @param {Point} [point]
+         * @param {string} id 
+         * @param {Point} [point] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         pointsIdPut: async (id: string, point?: Point, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
-            assertParamExists('pointsIdPut', 'id', id);
-            const localVarPath = `/points/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(id)));
+            assertParamExists('pointsIdPut', 'id', id)
+            const localVarPath = `/points/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2422,71 +2170,62 @@ export const PointsApiAxiosParamCreator = function (configuration?: Configuratio
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
             // authentication JSON-Web-Token required
             // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration);
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+
+    
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
-            localVarRequestOptions.data = serializeDataIfNeeded(point, localVarRequestOptions, configuration);
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(point, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
                 options: localVarRequestOptions,
             };
         },
-    };
+    }
 };
 
 /**
  * PointsApi - functional programming interface
  * @export
  */
-export const PointsApiFp = function (configuration?: Configuration) {
-    const localVarAxiosParamCreator = PointsApiAxiosParamCreator(configuration);
+export const PointsApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = PointsApiAxiosParamCreator(configuration)
     return {
         /**
          * Information about a particular MRI coordinate
          * @summary GET a point
-         * @param {string} id
+         * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async pointsIdGet(
-            id: string,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Point & ReadOnly>> {
+        async pointsIdGet(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Point & ReadOnly>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.pointsIdGet(id, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * Update a particular MRI coordinate.
          * @summary PUT/update a point
-         * @param {string} id
-         * @param {Point} [point]
+         * @param {string} id 
+         * @param {Point} [point] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async pointsIdPut(
-            id: string,
-            point?: Point,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async pointsIdPut(id: string, point?: Point, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.pointsIdPut(id, point, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
-    };
+    }
 };
 
 /**
@@ -2494,12 +2233,12 @@ export const PointsApiFp = function (configuration?: Configuration) {
  * @export
  */
 export const PointsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
-    const localVarFp = PointsApiFp(configuration);
+    const localVarFp = PointsApiFp(configuration)
     return {
         /**
          * Information about a particular MRI coordinate
          * @summary GET a point
-         * @param {string} id
+         * @param {string} id 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2509,8 +2248,8 @@ export const PointsApiFactory = function (configuration?: Configuration, basePat
         /**
          * Update a particular MRI coordinate.
          * @summary PUT/update a point
-         * @param {string} id
-         * @param {Point} [point]
+         * @param {string} id 
+         * @param {Point} [point] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -2530,32 +2269,29 @@ export class PointsApi extends BaseAPI {
     /**
      * Information about a particular MRI coordinate
      * @summary GET a point
-     * @param {string} id
+     * @param {string} id 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof PointsApi
      */
     public pointsIdGet(id: string, options?: any) {
-        return PointsApiFp(this.configuration)
-            .pointsIdGet(id, options)
-            .then((request) => request(this.axios, this.basePath));
+        return PointsApiFp(this.configuration).pointsIdGet(id, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * Update a particular MRI coordinate.
      * @summary PUT/update a point
-     * @param {string} id
-     * @param {Point} [point]
+     * @param {string} id 
+     * @param {Point} [point] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof PointsApi
      */
     public pointsIdPut(id: string, point?: Point, options?: any) {
-        return PointsApiFp(this.configuration)
-            .pointsIdPut(id, point, options)
-            .then((request) => request(this.axios, this.basePath));
+        return PointsApiFp(this.configuration).pointsIdPut(id, point, options).then((request) => request(this.axios, this.basePath));
     }
 }
+
 
 /**
  * StudiesApi - axios parameter creator
@@ -2574,24 +2310,14 @@ export const StudiesApiAxiosParamCreator = function (configuration?: Configurati
          * @param {boolean} [nested] whether to show the URI to a resource (false) or to embed the object in the response (true)
          * @param {string} [name] search the name field for a term
          * @param {string} [description] search description field for a term
-         * @param {string} [sourceId] id of the study you would like to copy from
+         * @param {string} [sourceId] id of the study you are either filtering/copying on
          * @param {boolean} [unique] whether to list clones with originals
+         * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the study you would like to filter/copy from
+         * @param {string} [authors] search authors
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        studiesGet: async (
-            search?: string,
-            sort?: string,
-            page?: number,
-            desc?: boolean,
-            pageSize?: number,
-            nested?: boolean,
-            name?: string,
-            description?: string,
-            sourceId?: string,
-            unique?: boolean,
-            options: any = {},
-        ): Promise<RequestArgs> => {
+        studiesGet: async (search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, options: any = {}): Promise<RequestArgs> => {
             const localVarPath = `/studies/`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2600,13 +2326,13 @@ export const StudiesApiAxiosParamCreator = function (configuration?: Configurati
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
             // authentication JSON-Web-Token required
             // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration);
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             if (search !== undefined) {
                 localVarQueryParameter['search'] = search;
@@ -2648,13 +2374,19 @@ export const StudiesApiAxiosParamCreator = function (configuration?: Configurati
                 localVarQueryParameter['unique'] = unique;
             }
 
+            if (source !== undefined) {
+                localVarQueryParameter['source'] = source;
+            }
+
+            if (authors !== undefined) {
+                localVarQueryParameter['authors'] = authors;
+            }
+
+
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2664,15 +2396,16 @@ export const StudiesApiAxiosParamCreator = function (configuration?: Configurati
         /**
          * Get a study.
          * @summary GET a study
-         * @param {string} id
+         * @param {string} id 
          * @param {boolean} [nested] whether to show the URI to a resource (false) or to embed the object in the response (true)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         studiesIdGet: async (id: string, nested?: boolean, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
-            assertParamExists('studiesIdGet', 'id', id);
-            const localVarPath = `/studies/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(id)));
+            assertParamExists('studiesIdGet', 'id', id)
+            const localVarPath = `/studies/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2680,7 +2413,7 @@ export const StudiesApiAxiosParamCreator = function (configuration?: Configurati
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
@@ -2688,13 +2421,11 @@ export const StudiesApiAxiosParamCreator = function (configuration?: Configurati
                 localVarQueryParameter['nested'] = nested;
             }
 
+
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2704,15 +2435,16 @@ export const StudiesApiAxiosParamCreator = function (configuration?: Configurati
         /**
          * Update a study.
          * @summary PUT/update a study
-         * @param {string} id
-         * @param {Study} [study]
+         * @param {string} id 
+         * @param {Study} [study] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
         studiesIdPut: async (id: string, study?: Study, options: any = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
-            assertParamExists('studiesIdPut', 'id', id);
-            const localVarPath = `/studies/{id}`.replace(`{${'id'}}`, encodeURIComponent(String(id)));
+            assertParamExists('studiesIdPut', 'id', id)
+            const localVarPath = `/studies/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -2720,24 +2452,22 @@ export const StudiesApiAxiosParamCreator = function (configuration?: Configurati
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
             // authentication JSON-Web-Token required
             // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration);
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+
+    
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
-            localVarRequestOptions.data = serializeDataIfNeeded(study, localVarRequestOptions, configuration);
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(study, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2747,18 +2477,13 @@ export const StudiesApiAxiosParamCreator = function (configuration?: Configurati
         /**
          * Create a study
          * @summary POST/create a study
-         * @param {'neurostore' | 'neurovault' | 'pubmed'} [source] the source of the study you would like to copy from, use in conjunction with source_id
-         * @param {string} [sourceId] id of the study you would like to copy from
-         * @param {Study} [study]
+         * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the study you would like to filter/copy from
+         * @param {string} [sourceId] id of the study you are either filtering/copying on
+         * @param {Study} [study] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        studiesPost: async (
-            source?: 'neurostore' | 'neurovault' | 'pubmed',
-            sourceId?: string,
-            study?: Study,
-            options: any = {},
-        ): Promise<RequestArgs> => {
+        studiesPost: async (source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, study?: Study, options: any = {}): Promise<RequestArgs> => {
             const localVarPath = `/studies/`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2767,13 +2492,13 @@ export const StudiesApiAxiosParamCreator = function (configuration?: Configurati
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
             // authentication JSON-Web-Token required
             // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration);
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
             if (source !== undefined) {
                 localVarQueryParameter['source'] = source;
@@ -2783,31 +2508,29 @@ export const StudiesApiAxiosParamCreator = function (configuration?: Configurati
                 localVarQueryParameter['source_id'] = sourceId;
             }
 
+
+    
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
-            localVarRequestOptions.data = serializeDataIfNeeded(study, localVarRequestOptions, configuration);
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(study, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
                 options: localVarRequestOptions,
             };
         },
-    };
+    }
 };
 
 /**
  * StudiesApi - functional programming interface
  * @export
  */
-export const StudiesApiFp = function (configuration?: Configuration) {
-    const localVarAxiosParamCreator = StudiesApiAxiosParamCreator(configuration);
+export const StudiesApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = StudiesApiAxiosParamCreator(configuration)
     return {
         /**
          * List studies
@@ -2820,90 +2543,55 @@ export const StudiesApiFp = function (configuration?: Configuration) {
          * @param {boolean} [nested] whether to show the URI to a resource (false) or to embed the object in the response (true)
          * @param {string} [name] search the name field for a term
          * @param {string} [description] search description field for a term
-         * @param {string} [sourceId] id of the study you would like to copy from
+         * @param {string} [sourceId] id of the study you are either filtering/copying on
          * @param {boolean} [unique] whether to list clones with originals
+         * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the study you would like to filter/copy from
+         * @param {string} [authors] search authors
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async studiesGet(
-            search?: string,
-            sort?: string,
-            page?: number,
-            desc?: boolean,
-            pageSize?: number,
-            nested?: boolean,
-            name?: string,
-            description?: string,
-            sourceId?: string,
-            unique?: boolean,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse200>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.studiesGet(
-                search,
-                sort,
-                page,
-                desc,
-                pageSize,
-                nested,
-                name,
-                description,
-                sourceId,
-                unique,
-                options,
-            );
+        async studiesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse200>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.studiesGet(search, sort, page, desc, pageSize, nested, name, description, sourceId, unique, source, authors, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * Get a study.
          * @summary GET a study
-         * @param {string} id
+         * @param {string} id 
          * @param {boolean} [nested] whether to show the URI to a resource (false) or to embed the object in the response (true)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async studiesIdGet(
-            id: string,
-            nested?: boolean,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Study & ReadOnly>> {
+        async studiesIdGet(id: string, nested?: boolean, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Study & ReadOnly>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.studiesIdGet(id, nested, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * Update a study.
          * @summary PUT/update a study
-         * @param {string} id
-         * @param {Study} [study]
+         * @param {string} id 
+         * @param {Study} [study] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async studiesIdPut(
-            id: string,
-            study?: Study,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async studiesIdPut(id: string, study?: Study, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.studiesIdPut(id, study, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * Create a study
          * @summary POST/create a study
-         * @param {'neurostore' | 'neurovault' | 'pubmed'} [source] the source of the study you would like to copy from, use in conjunction with source_id
-         * @param {string} [sourceId] id of the study you would like to copy from
-         * @param {Study} [study]
+         * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the study you would like to filter/copy from
+         * @param {string} [sourceId] id of the study you are either filtering/copying on
+         * @param {Study} [study] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async studiesPost(
-            source?: 'neurostore' | 'neurovault' | 'pubmed',
-            sourceId?: string,
-            study?: Study,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+        async studiesPost(source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, study?: Study, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.studiesPost(source, sourceId, study, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
-    };
+    }
 };
 
 /**
@@ -2911,7 +2599,7 @@ export const StudiesApiFp = function (configuration?: Configuration) {
  * @export
  */
 export const StudiesApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
-    const localVarFp = StudiesApiFp(configuration);
+    const localVarFp = StudiesApiFp(configuration)
     return {
         /**
          * List studies
@@ -2924,32 +2612,20 @@ export const StudiesApiFactory = function (configuration?: Configuration, basePa
          * @param {boolean} [nested] whether to show the URI to a resource (false) or to embed the object in the response (true)
          * @param {string} [name] search the name field for a term
          * @param {string} [description] search description field for a term
-         * @param {string} [sourceId] id of the study you would like to copy from
+         * @param {string} [sourceId] id of the study you are either filtering/copying on
          * @param {boolean} [unique] whether to list clones with originals
+         * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the study you would like to filter/copy from
+         * @param {string} [authors] search authors
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        studiesGet(
-            search?: string,
-            sort?: string,
-            page?: number,
-            desc?: boolean,
-            pageSize?: number,
-            nested?: boolean,
-            name?: string,
-            description?: string,
-            sourceId?: string,
-            unique?: boolean,
-            options?: any,
-        ): AxiosPromise<InlineResponse200> {
-            return localVarFp
-                .studiesGet(search, sort, page, desc, pageSize, nested, name, description, sourceId, unique, options)
-                .then((request) => request(axios, basePath));
+        studiesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, options?: any): AxiosPromise<InlineResponse200> {
+            return localVarFp.studiesGet(search, sort, page, desc, pageSize, nested, name, description, sourceId, unique, source, authors, options).then((request) => request(axios, basePath));
         },
         /**
          * Get a study.
          * @summary GET a study
-         * @param {string} id
+         * @param {string} id 
          * @param {boolean} [nested] whether to show the URI to a resource (false) or to embed the object in the response (true)
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -2960,29 +2636,24 @@ export const StudiesApiFactory = function (configuration?: Configuration, basePa
         /**
          * Update a study.
          * @summary PUT/update a study
-         * @param {string} id
-         * @param {Study} [study]
+         * @param {string} id 
+         * @param {Study} [study] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        studiesIdPut(id: string, study?: Study & ReadOnly, options?: any): AxiosPromise<void> {
+        studiesIdPut(id: string, study?: Study, options?: any): AxiosPromise<void> {
             return localVarFp.studiesIdPut(id, study, options).then((request) => request(axios, basePath));
         },
         /**
          * Create a study
          * @summary POST/create a study
-         * @param {'neurostore' | 'neurovault' | 'pubmed'} [source] the source of the study you would like to copy from, use in conjunction with source_id
-         * @param {string} [sourceId] id of the study you would like to copy from
-         * @param {Study} [study]
+         * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the study you would like to filter/copy from
+         * @param {string} [sourceId] id of the study you are either filtering/copying on
+         * @param {Study} [study] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        studiesPost(
-            source?: 'neurostore' | 'neurovault' | 'pubmed',
-            sourceId?: string,
-            study?: Study,
-            options?: any,
-        ): AxiosPromise<void> {
+        studiesPost(source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, study?: Study, options?: any): AxiosPromise<void> {
             return localVarFp.studiesPost(source, sourceId, study, options).then((request) => request(axios, basePath));
         },
     };
@@ -3006,81 +2677,59 @@ export class StudiesApi extends BaseAPI {
      * @param {boolean} [nested] whether to show the URI to a resource (false) or to embed the object in the response (true)
      * @param {string} [name] search the name field for a term
      * @param {string} [description] search description field for a term
-     * @param {string} [sourceId] id of the study you would like to copy from
+     * @param {string} [sourceId] id of the study you are either filtering/copying on
      * @param {boolean} [unique] whether to list clones with originals
+     * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the study you would like to filter/copy from
+     * @param {string} [authors] search authors
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof StudiesApi
      */
-    public studiesGet(
-        search?: string,
-        sort?: string,
-        page?: number,
-        desc?: boolean,
-        pageSize?: number,
-        nested?: boolean,
-        name?: string,
-        description?: string,
-        sourceId?: string,
-        unique?: boolean,
-        options?: any,
-    ) {
-        return StudiesApiFp(this.configuration)
-            .studiesGet(search, sort, page, desc, pageSize, nested, name, description, sourceId, unique, options)
-            .then((request) => request(this.axios, this.basePath));
+    public studiesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, options?: any) {
+        return StudiesApiFp(this.configuration).studiesGet(search, sort, page, desc, pageSize, nested, name, description, sourceId, unique, source, authors, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * Get a study.
      * @summary GET a study
-     * @param {string} id
+     * @param {string} id 
      * @param {boolean} [nested] whether to show the URI to a resource (false) or to embed the object in the response (true)
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof StudiesApi
      */
     public studiesIdGet(id: string, nested?: boolean, options?: any) {
-        return StudiesApiFp(this.configuration)
-            .studiesIdGet(id, nested, options)
-            .then((request) => request(this.axios, this.basePath));
+        return StudiesApiFp(this.configuration).studiesIdGet(id, nested, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * Update a study.
      * @summary PUT/update a study
-     * @param {string} id
-     * @param {Study} [study]
+     * @param {string} id 
+     * @param {Study} [study] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof StudiesApi
      */
     public studiesIdPut(id: string, study?: Study, options?: any) {
-        return StudiesApiFp(this.configuration)
-            .studiesIdPut(id, study, options)
-            .then((request) => request(this.axios, this.basePath));
+        return StudiesApiFp(this.configuration).studiesIdPut(id, study, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * Create a study
      * @summary POST/create a study
-     * @param {'neurostore' | 'neurovault' | 'pubmed'} [source] the source of the study you would like to copy from, use in conjunction with source_id
-     * @param {string} [sourceId] id of the study you would like to copy from
-     * @param {Study} [study]
+     * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the study you would like to filter/copy from
+     * @param {string} [sourceId] id of the study you are either filtering/copying on
+     * @param {Study} [study] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof StudiesApi
      */
-    public studiesPost(
-        source?: 'neurostore' | 'neurovault' | 'pubmed',
-        sourceId?: string,
-        study?: Study,
-        options?: any,
-    ) {
-        return StudiesApiFp(this.configuration)
-            .studiesPost(source, sourceId, study, options)
-            .then((request) => request(this.axios, this.basePath));
+    public studiesPost(source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, study?: Study, options?: any) {
+        return StudiesApiFp(this.configuration).studiesPost(source, sourceId, study, options).then((request) => request(this.axios, this.basePath));
     }
 }
+
 
 /**
  * UserApi - axios parameter creator
@@ -3103,21 +2752,19 @@ export const UserApiAxiosParamCreator = function (configuration?: Configuration)
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
             // authentication JSON-Web-Token required
             // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration);
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -3126,7 +2773,7 @@ export const UserApiAxiosParamCreator = function (configuration?: Configuration)
         },
         /**
          * create a user
-         * @param {User} [user]
+         * @param {User} [user] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -3139,39 +2786,37 @@ export const UserApiAxiosParamCreator = function (configuration?: Configuration)
                 baseOptions = configuration.baseOptions;
             }
 
-            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options };
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
 
             // authentication JSON-Web-Token required
             // http bearer authentication required
-            await setBearerAuthToObject(localVarHeaderParameter, configuration);
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+
+    
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
-            localVarRequestOptions.headers = {
-                ...localVarHeaderParameter,
-                ...headersFromBaseOptions,
-                ...options.headers,
-            };
-            localVarRequestOptions.data = serializeDataIfNeeded(user, localVarRequestOptions, configuration);
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(user, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
                 options: localVarRequestOptions,
             };
         },
-    };
+    }
 };
 
 /**
  * UserApi - functional programming interface
  * @export
  */
-export const UserApiFp = function (configuration?: Configuration) {
-    const localVarAxiosParamCreator = UserApiAxiosParamCreator(configuration);
+export const UserApiFp = function(configuration?: Configuration) {
+    const localVarAxiosParamCreator = UserApiAxiosParamCreator(configuration)
     return {
         /**
          * get list of users
@@ -3179,26 +2824,21 @@ export const UserApiFp = function (configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async usersGet(
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2004>> {
+        async usersGet(options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2004>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.usersGet(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * create a user
-         * @param {User} [user]
+         * @param {User} [user] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async usersPost(
-            user?: User,
-            options?: any,
-        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<User>> {
+        async usersPost(user?: User, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<User>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.usersPost(user, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
-    };
+    }
 };
 
 /**
@@ -3206,7 +2846,7 @@ export const UserApiFp = function (configuration?: Configuration) {
  * @export
  */
 export const UserApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
-    const localVarFp = UserApiFp(configuration);
+    const localVarFp = UserApiFp(configuration)
     return {
         /**
          * get list of users
@@ -3219,7 +2859,7 @@ export const UserApiFactory = function (configuration?: Configuration, basePath?
         },
         /**
          * create a user
-         * @param {User} [user]
+         * @param {User} [user] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
@@ -3244,21 +2884,19 @@ export class UserApi extends BaseAPI {
      * @memberof UserApi
      */
     public usersGet(options?: any) {
-        return UserApiFp(this.configuration)
-            .usersGet(options)
-            .then((request) => request(this.axios, this.basePath));
+        return UserApiFp(this.configuration).usersGet(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * create a user
-     * @param {User} [user]
+     * @param {User} [user] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof UserApi
      */
     public usersPost(user?: User, options?: any) {
-        return UserApiFp(this.configuration)
-            .usersPost(user, options)
-            .then((request) => request(this.axios, this.basePath));
+        return UserApiFp(this.configuration).usersPost(user, options).then((request) => request(this.axios, this.basePath));
     }
 }
+
+

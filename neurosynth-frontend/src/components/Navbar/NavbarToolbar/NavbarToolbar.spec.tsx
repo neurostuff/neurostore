@@ -1,6 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { NavOptionsModel } from '../Navbar';
 import NavbarToolbar from './NavbarToolbar';

@@ -8,13 +8,13 @@ import EditMetadataString from './EditMetadataValue/EditMetadataString';
 import { useState } from 'react';
 import { Button } from '@material-ui/core';
 import { useCallback } from 'react';
+import { getStartValFromType } from './AddMetadataRow';
 
 export interface EditMetadataRowModel {
     metadataValueType: PropertyType;
     metadataRow: DisplayMetadataTableRowModel;
-    index: number;
-    onMetadataRowEdit: (index: number, metadataRow: DisplayMetadataTableRowModel) => void;
-    onMetadataRowDelete: (index: number) => void;
+    onMetadataRowEdit: (metadataRow: DisplayMetadataTableRowModel) => void;
+    onMetadataRowDelete: (metadataRow: DisplayMetadataTableRowModel) => void;
 }
 
 export interface IEditMetadataField {
@@ -24,7 +24,6 @@ export interface IEditMetadataField {
 
 const propsAreEqual = (prevProp: EditMetadataRowModel, nextProp: EditMetadataRowModel): boolean => {
     return (
-        prevProp.index === nextProp.index &&
         prevProp.metadataRow.metadataKey === nextProp.metadataRow.metadataKey &&
         prevProp.metadataRow.metadataValue === nextProp.metadataRow.metadataValue &&
         prevProp.metadataValueType === nextProp.metadataValueType
@@ -32,8 +31,6 @@ const propsAreEqual = (prevProp: EditMetadataRowModel, nextProp: EditMetadataRow
 };
 
 const EditMetadataRow: React.FC<EditMetadataRowModel> = React.memo((props) => {
-    console.log('editmetadatarow render');
-
     const classes = EditMetadataRowStyles();
     const [metadataRow, setMetadataRow] = useState(props.metadataRow);
 
@@ -42,22 +39,9 @@ const EditMetadataRow: React.FC<EditMetadataRowModel> = React.memo((props) => {
             setMetadataRow((prevState) => {
                 const updatedItem = { ...prevState };
 
-                switch (newType) {
-                    case PropertyType.BOOLEAN:
-                        updatedItem.metadataValue = false;
-                        break;
-                    case PropertyType.NUMBER:
-                        updatedItem.metadataValue = 0;
-                        break;
-                    case PropertyType.STRING:
-                        updatedItem.metadataValue = '';
-                        break;
-                    default:
-                        updatedItem.metadataValue = null;
-                        break;
-                }
+                updatedItem.metadataValue = getStartValFromType(newType);
 
-                props.onMetadataRowEdit(props.index, updatedItem);
+                props.onMetadataRowEdit(updatedItem);
                 return updatedItem;
             });
         },
@@ -68,13 +52,13 @@ const EditMetadataRow: React.FC<EditMetadataRowModel> = React.memo((props) => {
         (event: string | boolean | number) => {
             const updatedState = { ...metadataRow };
             updatedState.metadataValue = event;
-            props.onMetadataRowEdit(props.index, updatedState);
+            props.onMetadataRowEdit(updatedState);
         },
         [props, metadataRow]
     );
 
     const handleDelete = (event: React.MouseEvent) => {
-        props.onMetadataRowDelete(props.index);
+        props.onMetadataRowDelete(metadataRow);
     };
 
     let component: JSX.Element;
@@ -125,7 +109,7 @@ const EditMetadataRow: React.FC<EditMetadataRowModel> = React.memo((props) => {
                         className={`${classes.updateButton} ${classes.error}`}
                         onClick={handleDelete}
                     >
-                        Delete
+                        DELETE
                     </Button>
                 </div>
             </div>

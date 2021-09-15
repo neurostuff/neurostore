@@ -21,6 +21,7 @@ const EditMetadataString: React.FC<IEditMetadataField> = (props) => {
     return (
         <TextField
             multiline
+            placeholder="New metadata value"
             onChange={handleValueChange}
             value={value}
             variant="outlined"

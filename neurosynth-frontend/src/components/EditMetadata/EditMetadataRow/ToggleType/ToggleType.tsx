@@ -4,13 +4,13 @@ import { useEffect } from 'react';
 import { useState } from 'react';
 import ToggleTypeStyles from './ToggleTypeStyles';
 
-interface ToggleTypeModel {
+export interface ToggleTypeModel {
     onToggle: (type: PropertyType) => void;
     type: PropertyType;
 }
 
 export enum PropertyType {
-    OTHER = 'other',
+    NONE = 'none',
     STRING = 'string',
     NUMBER = 'number',
     BOOLEAN = 'boolean',
@@ -36,7 +36,7 @@ const ToggleType: React.FC<ToggleTypeModel> = React.memo((props) => {
         props.onToggle(selected);
     };
 
-    const myClass: 'type_number' | 'type_boolean' | 'type_string' | 'type_other' = `type_${type}`;
+    const myClass: 'type_number' | 'type_boolean' | 'type_string' | 'type_none' = `type_${type}`;
 
     return (
         <div className={classes.toggleItemContainer}>
@@ -55,7 +55,7 @@ const ToggleType: React.FC<ToggleTypeModel> = React.memo((props) => {
                     <MenuItem className={classes.type_boolean} value="boolean">
                         BOOLEAN
                     </MenuItem>
-                    <MenuItem className={classes.type_other} value="other">
+                    <MenuItem className={classes.type_none} value="none">
                         NONE
                     </MenuItem>
                 </Select>

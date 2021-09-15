@@ -7,16 +7,10 @@ import AddMetadataRow from './EditMetadataRow/AddMetadataRow';
 
 interface EditMetadataModel {
     metadata: DisplayMetadataTableRowModel[];
-    onMetadataEditChange: (metadata: { [key: string]: any }) => void;
+    onMetadataEditChange: (metadata: DisplayMetadataTableRowModel[]) => void;
 }
 
-const arrayToMetadata = (arr: DisplayMetadataTableRowModel[]): { [key: string]: any } => {
-    const tempObj: { [key: string]: any } = {};
-    arr.forEach((element) => (tempObj[element.metadataKey] = element.metadataValue));
-    return tempObj;
-};
-
-const getType = (value: string): PropertyType => {
+export const getType = (value: any): PropertyType => {
     switch (typeof value) {
         case PropertyType.BOOLEAN:
             return PropertyType.BOOLEAN;
@@ -25,31 +19,42 @@ const getType = (value: string): PropertyType => {
         case PropertyType.NUMBER:
             return PropertyType.NUMBER;
         default:
-            return PropertyType.OTHER;
+            return PropertyType.NONE;
     }
 };
 
 const EditMetadata: React.FC<EditMetadataModel> = (props) => {
     const classes = EditMetadataStyles();
+
+    // this props.metadata value is only used on the first render so useState is required below for subsequent props changes
     const [metadata, setMetadata] = useState<DisplayMetadataTableRowModel[]>(props.metadata);
 
-    // useEffect(() => {
-    //     console.log(props.metadata);
+    useEffect(() => {
+        setMetadata(props.metadata);
+    }, [props.metadata]);
 
-    //     setMetadata(props.metadata);
-    // }, [props.metadata]);
+    const handleMetadataRowEdit = (updatedRow: DisplayMetadataTableRowModel) => {
+        setMetadata((prevState) => {
+            const updatedMetadata = [...prevState];
+            const valueToEditFound = updatedMetadata.find(
+                (x) => x.metadataKey === updatedRow.metadataKey
+            );
+            if (valueToEditFound) {
+                valueToEditFound.metadataValue = updatedRow.metadataValue;
+            }
+            props.onMetadataEditChange(updatedMetadata);
 
-    const handleMetadataRowEdit = (index: number, updatedRow: DisplayMetadataTableRowModel) => {
-        const updatedMetadata = [...metadata];
-        updatedMetadata[index] = updatedRow;
-        props.onMetadataEditChange(arrayToMetadata(updatedMetadata));
+            return prevState;
+        });
     };
 
-    const handleMetadataRowDelete = (index: number) => {
+    const handleMetadataRowDelete = (updatedRow: DisplayMetadataTableRowModel) => {
         setMetadata((prevState) => {
-            const updatedState = prevState.filter((_, elemIndex) => elemIndex !== index);
-            props.onMetadataEditChange(arrayToMetadata(updatedState));
-            return updatedState;
+            const updatedMetadata = prevState.filter(
+                (element) => element.metadataKey !== updatedRow.metadataKey
+            );
+            props.onMetadataEditChange(updatedMetadata);
+            return updatedMetadata;
         });
     };
 
@@ -59,10 +64,10 @@ const EditMetadata: React.FC<EditMetadataModel> = (props) => {
             return false;
         } else {
             setMetadata((prevState) => {
-                const updatedMetadata = [...prevState];
-                updatedMetadata.unshift(row);
-                props.onMetadataEditChange(arrayToMetadata(updatedMetadata));
-                return updatedMetadata;
+                const updatedState = [...prevState];
+                updatedState.unshift({ ...row });
+                props.onMetadataEditChange(updatedState);
+                return updatedState;
             });
             return true;
         }
@@ -74,10 +79,10 @@ const EditMetadata: React.FC<EditMetadataModel> = (props) => {
                 <AddMetadataRow onAddMetadataRow={handleAddMetadataRow} />
             </div>
             <hr className={classes.hr} />
+            {metadata.length === 0 && <span className={classes.noContent}>No Metadata</span>}
             <div className={classes.table}>
-                {metadata.map((metadataRow, index) => (
+                {metadata.map((metadataRow) => (
                     <EditMetadataRow
-                        index={index}
                         key={metadataRow.metadataKey}
                         metadataValueType={getType(metadataRow.metadataValue)}
                         onMetadataRowEdit={handleMetadataRowEdit}

@@ -15,11 +15,6 @@ interface DisplayStudiesTableModel {
     studies: StudyApiResponse[];
 }
 
-// enum Owner {
-//     badge_neurosynth = 'badge_neuroscience',
-//     badge_user = 'badge_iser',
-// }
-
 const DisplayStudiesTable: React.FC<DisplayStudiesTableModel> = (props) => {
     const history = useHistory();
     const classes = DisplayStudiesTableStyles();
@@ -50,22 +45,22 @@ const DisplayStudiesTable: React.FC<DisplayStudiesTableModel> = (props) => {
                                 <div className={classes.tableCellTextContainer}>{row.name}</div>
                             </TableCell>
                             <TableCell>
+                                {row.authors || (
+                                    <span className={classes.noContent}>No Authors Available</span>
+                                )}
+                            </TableCell>
+                            <TableCell>
                                 <div className={classes.tableCellTextContainer}>
-                                    {(row.metadata as any)?.authors || (
-                                        <span className={classes.noContent}>No Author(s)</span>
+                                    {row.publication || (
+                                        <span className={classes.noContent}>
+                                            No Publication Available
+                                        </span>
                                     )}
                                 </div>
                             </TableCell>
                             <TableCell>
                                 <div className={classes.tableCellTextContainer}>
-                                    {(row.metadata as any)?.journal_name || (
-                                        <span className={classes.noContent}>No Journal</span>
-                                    )}
-                                </div>
-                            </TableCell>
-                            <TableCell>
-                                <div className={classes.tableCellTextContainer}>
-                                    {(row as any).user || 'Neurosynth'}
+                                    {row.user || <span>Neurosynth</span>}
                                 </div>
                             </TableCell>
                         </TableRow>

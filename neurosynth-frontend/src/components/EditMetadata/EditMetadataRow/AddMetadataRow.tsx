@@ -12,7 +12,7 @@ export interface AddMetadataRowModel {
     onAddMetadataRow: (row: DisplayMetadataTableRowModel) => boolean;
 }
 
-const getStartValFromType = (type: PropertyType): boolean | number | string | null => {
+export const getStartValFromType = (type: PropertyType): boolean | number | string | null => {
     switch (type) {
         case PropertyType.BOOLEAN:
             return false;
@@ -118,34 +118,6 @@ const AddMetadataRow: React.FC<AddMetadataRowModel> = (props) => {
     }, [classes, currType, metadataRow.metadataValue]);
 
     return (
-        // <div style={{ display: 'flex', flexDirection: 'row', width: '100%' }}>
-        //     <ToggleType type={currType} onToggle={handleToggle} />
-        //     <div style={{ minWidth: '300px', margin: '0 15px' }}>
-        //         <TextField
-        //             onChange={handleMetadataKeyChange}
-        //             variant="outlined"
-        //             placeholder="New metadata key"
-        //             fullWidth
-        //             helperText={!isValid ? 'All metadata keys must be unique' : ''}
-        //             error={!isValid}
-        //             value={metadataRow.metadataKey}
-        //         />
-        //     </div>
-        //     <div style={{ display: 'flex', width: '100%', alignItems: 'center', marginBottom: '25px' }}>
-        //         <div style={{ width: '100%' }}>{editValueComponent}</div>
-        //     </div>
-        //     <div style={{ marginBottom: '27px' }}>
-        //         <Button
-        //             className={classes.updateButton}
-        //             disabled={!(metadataRow.metadataKey.length > 0)}
-        //             onClick={handleAdd}
-        //             color="primary"
-        //             style={{ margin: '15px 0 0 15px' }}
-        //         >
-        //             Add
-        //         </Button>
-        //     </div>
-        // </div>
         <div className={classes.tableRow}>
             <div style={{ display: 'flex' }}>
                 <ToggleType type={currType} onToggle={handleToggle} />
@@ -173,7 +145,7 @@ const AddMetadataRow: React.FC<AddMetadataRowModel> = (props) => {
                     onClick={handleAdd}
                     color="primary"
                 >
-                    Add
+                    ADD
                 </Button>
                 <div style={{ height: '22px' }}></div>
             </div>

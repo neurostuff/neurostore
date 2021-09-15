@@ -28,7 +28,7 @@ const ToggleTypeStyles = makeStyles({
             borderColor: 'green !important',
         },
     },
-    type_other: {
+    type_none: {
         color: '#b5b5b5',
         '& fieldset': {
             borderColor: '#b5b5b5',
