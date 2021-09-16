@@ -36,5 +36,5 @@ __all__ = [
     "AnalysisConditionResource",
     "UserView",
     "UserListView",
-    "PointsListView",
+    "PointListView",
 ]
