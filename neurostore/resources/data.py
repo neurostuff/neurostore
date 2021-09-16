@@ -31,6 +31,7 @@ __all__ = [
     "ConditionView",
     "ImageView",
     "PointView",
+    "PointListView",
     "PointValueView",
     "StudyListView",
     "AnalysisListView",
@@ -389,6 +390,13 @@ class DatasetListView(ListView):
 @view_maker
 class ConditionListView(ListView):
     _search_fields = ("name", "description")
+
+
+@view_maker
+class PointListView(ListView):
+    _nested = {
+        "values": "PointValueView"
+    }
 
 
 class AnalysisConditionResource(BaseView):
