@@ -11,6 +11,7 @@ from .data import (
     AnalysisListView,
     ImageListView,
     ConditionListView,
+    PointListView,
     AnalysisConditionResource,
 )
 
@@ -35,4 +36,5 @@ __all__ = [
     "AnalysisConditionResource",
     "UserView",
     "UserListView",
+    "PointsListView",
 ]
