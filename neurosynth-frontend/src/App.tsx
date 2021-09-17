@@ -1,14 +1,17 @@
 import Navbar from './components/Navbar/Navbar';
 import BaseNavigation from './pages/BaseNavigation/BaseNavigation';
 import { BrowserRouter } from 'react-router-dom';
+import { GlobalContextProvider } from './contexts/GlobalContext';
 
 function App() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <BrowserRouter>
-                <Navbar />
-                <BaseNavigation />
-            </BrowserRouter>
+            <GlobalContextProvider>
+                <BrowserRouter>
+                    <Navbar />
+                    <BaseNavigation />
+                </BrowserRouter>
+            </GlobalContextProvider>
         </div>
     );
 }

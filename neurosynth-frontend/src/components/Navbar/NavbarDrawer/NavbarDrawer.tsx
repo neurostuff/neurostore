@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { Typography, IconButton, Drawer, List, ListItem, ListItemText } from '@material-ui/core';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import MenuIcon from '@material-ui/icons/Menu';
 import { NavbarArgs } from '../Navbar';
 import NavbarDrawerStyles from './NavbarDrawerStyles';

@@ -4,6 +4,7 @@ import {
     TableCell,
     TableContainer,
     TableHead,
+    TablePagination,
     TableRow,
 } from '@material-ui/core';
 import { useHistory } from 'react-router-dom';
@@ -23,57 +24,74 @@ const DisplayStudiesTable: React.FC<DisplayStudiesTableModel> = (props) => {
         history.push(`/studies/${row.id}`);
     };
 
+    const h = (arg: any) => {};
+
+    const p = (arg: any) => {};
+
     return (
-        <TableContainer>
-            <Table size="small">
-                <TableHead>
-                    <TableRow>
-                        <TableCell>Title</TableCell>
-                        <TableCell>Authors</TableCell>
-                        <TableCell>Journal</TableCell>
-                        <TableCell>Owner</TableCell>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {props.studies.map((row, index) => (
-                        <TableRow
-                            key={index}
-                            className={classes.tableRow}
-                            onClick={() => handleSelectTableRow(row)}
-                        >
-                            <TableCell className={`${classes.name}`}>
-                                <div className={classes.tableCellTextContainer}>{row.name}</div>
-                            </TableCell>
-                            <TableCell>
-                                {row.authors || (
-                                    <span className={classes.noContent}>No Authors Available</span>
-                                )}
-                            </TableCell>
-                            <TableCell>
-                                <div className={classes.tableCellTextContainer}>
-                                    {row.publication || (
+        <>
+            <TablePagination
+                style={{ marginBottom: '1%' }}
+                rowsPerPage={100}
+                onRowsPerPageChange={h}
+                onPageChange={p}
+                component="div"
+                page={0}
+                count={20}
+            ></TablePagination>
+            <TableContainer>
+                <Table size="small">
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>Title</TableCell>
+                            <TableCell>Authors</TableCell>
+                            <TableCell>Journal</TableCell>
+                            <TableCell>Owner</TableCell>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {props.studies.map((row, index) => (
+                            <TableRow
+                                key={index}
+                                className={classes.tableRow}
+                                onClick={() => handleSelectTableRow(row)}
+                            >
+                                <TableCell className={`${classes.name}`}>
+                                    <div className={classes.tableCellTextContainer}>{row.name}</div>
+                                </TableCell>
+                                <TableCell>
+                                    {row.authors || (
                                         <span className={classes.noContent}>
-                                            No Publication Available
+                                            No Authors Available
                                         </span>
                                     )}
-                                </div>
-                            </TableCell>
-                            <TableCell>
-                                <div className={classes.tableCellTextContainer}>
-                                    {row.user || <span>Neurosynth</span>}
-                                </div>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-            {props.studies.length === 0 && (
-                <div className={classes.noContent}>
-                    <br />
-                    No results
-                </div>
-            )}
-        </TableContainer>
+                                </TableCell>
+                                <TableCell>
+                                    <div className={classes.tableCellTextContainer}>
+                                        {row.publication || (
+                                            <span className={classes.noContent}>
+                                                No Publication Available
+                                            </span>
+                                        )}
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <div className={classes.tableCellTextContainer}>
+                                        {row.user || <span>Neurosynth</span>}
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+                {props.studies.length === 0 && (
+                    <div className={classes.noContent}>
+                        <br />
+                        No results
+                    </div>
+                )}
+            </TableContainer>
+        </>
     );
 };
 

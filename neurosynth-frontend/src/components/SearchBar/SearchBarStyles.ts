@@ -7,7 +7,7 @@ const SearchBarStyles = makeStyles({
     },
     paper: {
         display: 'flex',
-        margin: '3% 0 4% 0',
+        margin: '1% 0',
     },
     divider: {
         height: '35px',

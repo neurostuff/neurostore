@@ -49,19 +49,3 @@ const DisplayMetadataTableRow: React.FC<DisplayMetadataTableRowModel> = (props) 
 };
 
 export default DisplayMetadataTableRow;
-
-// filters:
-/**
- * unique toggle
- * toggle to show your own studies only (public/mine)
- * filter by source (neurosynth, neurovault, neuroquery, neurostore --> edited/created/cloned studies)
- *
- * green if you own it, yellow if its an original, red if it belongs to someone else
- *
- * add ability to search, move up these fields: name, description, journal name, authors
- *
- * add ownership column to table (if neurosynth owns it, then just say neurosynth original)
- *
- * name, description, journal name, authors
- *
- */

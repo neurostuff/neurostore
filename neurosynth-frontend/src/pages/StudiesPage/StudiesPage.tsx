@@ -20,7 +20,9 @@ const StudiesPage = () => {
             undefined,
             undefined,
             undefined,
-            false
+            false,
+            undefined,
+            undefined
         )
             .then((res) => {
                 if (res?.data?.results) {
