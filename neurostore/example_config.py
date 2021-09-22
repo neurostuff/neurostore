@@ -32,14 +32,14 @@ class ProductionConfig(Config):
 
     AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")
     AUTH0_CLIENT_SECRET = os.environ.get("AUTH0_CLIENT_SECRET")
-    AUTH0_BASE_URL = "https://neurosynth-staging.us.auth0.com"
-    AUTH0_ACCESS_TOKEN_URL = "https://neurosynth-staging.us.auth0.com/oauth/token"
-    AUTH0_AUTH_URL = "https://neurosynth-staging.us.auth0.com/authorize"
+    AUTH0_BASE_URL = "https://neurosynth.us.auth0.com"
+    AUTH0_ACCESS_TOKEN_URL = "https://neurosynth.us.auth0.com/oauth/token"
+    AUTH0_AUTH_URL = "https://neurosynth.us.auth0.com/authorize"
     AUTH0_API_AUDIENCE = "https://neurostore.org/api/"
 
 
 class StagingConfig(Config):
-    ENV = 'production'
+    ENV = 'staging'
 
     AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")
     AUTH0_CLIENT_SECRET = os.environ.get("AUTH0_CLIENT_SECRET")
