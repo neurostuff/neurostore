@@ -13,7 +13,7 @@ import {
 
 export type StudyApiResponse = Study & ReadOnly;
 
-const APIDomain = process.env.REACT_APP_DOMAIN as string;
+const APIDomain = process.env.REACT_APP_API_DOMAIN as string;
 const config: Configuration = new Configuration({
     basePath: APIDomain,
 });
