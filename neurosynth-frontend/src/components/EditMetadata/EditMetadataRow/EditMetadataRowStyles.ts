@@ -25,9 +25,6 @@ const EditMetadataRowStyles = makeStyles((themes) => ({
     key: {
         minWidth: '300px',
     },
-    error: {
-        color: themes.palette.error.main,
-    },
     updateButton: {
         width: '60px',
     },

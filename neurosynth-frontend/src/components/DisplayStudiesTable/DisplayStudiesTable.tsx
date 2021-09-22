@@ -17,7 +17,7 @@ const DisplayStudiesTable: React.FC<DisplayStudiesTableModel> = (props) => {
     };
 
     return (
-        <TableContainer>
+        <TableContainer className={classes.root}>
             <Table size="small">
                 <TableHead>
                     <TableRow>
@@ -34,7 +34,7 @@ const DisplayStudiesTable: React.FC<DisplayStudiesTableModel> = (props) => {
                             className={classes.tableRow}
                             onClick={() => handleSelectTableRow(row)}
                         >
-                            <TableCell className={`${classes.name}`}>
+                            <TableCell>
                                 <div className={classes.tableCellTextContainer}>{row.name}</div>
                             </TableCell>
                             <TableCell>

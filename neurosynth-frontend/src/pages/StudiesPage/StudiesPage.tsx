@@ -1,9 +1,10 @@
 import { ChangeEvent, useEffect, useState } from 'react';
-import { TablePagination, Typography } from '@mui/material';
+import { TablePagination, Typography, Pagination } from '@mui/material';
 import DisplayTable from '../../components/DisplayStudiesTable/DisplayStudiesTable';
 import SearchBar from '../../components/SearchBar/SearchBar';
 import API, { StudyApiResponse } from '../../utils/api';
 import { Metadata } from '../../gen/api';
+import StudiesPageStyles from './StudiesPageStyles';
 
 export enum Source {
     NEUROSTORE = 'neurostore',
@@ -35,6 +36,7 @@ interface SearchCriteria {
 }
 
 const StudiesPage = () => {
+    const classes = StudiesPageStyles();
     const [studies, setStudies] = useState<StudyApiResponse[]>([]);
     const [searchMetadata, setSearchMetadata] = useState<Metadata>();
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({
@@ -47,9 +49,18 @@ const StudiesPage = () => {
         nameSearch: undefined,
         descriptionSearch: undefined,
         authorSearch: undefined,
-        showUnique: true,
+        showUnique: false,
         source: undefined,
     });
+
+    const getNumTotalPages = (totalCount: number | undefined, pageSize: number | undefined) => {
+        if (!totalCount || !pageSize) {
+            return 0;
+        }
+        const dividedValue = Math.trunc(totalCount / pageSize);
+        const remainder = totalCount % pageSize;
+        return remainder > 0 ? dividedValue + 1 : dividedValue;
+    };
 
     const handleOnSearch = (newSearchTerm: string) => {
         setSearchCriteria((prevState) => {
@@ -60,7 +71,19 @@ const StudiesPage = () => {
         });
     };
 
-    const p = () => {};
+    const handlePageChange = (
+        event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null,
+        page: number
+    ) => {
+        setSearchCriteria((prevState) => {
+            return {
+                ...prevState,
+                // we have to do this because MUI's pagination component starts at 0,
+                // whereas 0 and 1 are the same in the backend
+                pageOfResults: page + 1,
+            };
+        });
+    };
 
     const handleRowsPerPageChange = (
         event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -71,6 +94,15 @@ const StudiesPage = () => {
             return {
                 ...prevState,
                 pageSize: newRowsPerPage,
+            };
+        });
+    };
+
+    const handlePaginationChange = (event: ChangeEvent<unknown>, page: number) => {
+        setSearchCriteria((prevState) => {
+            return {
+                ...prevState,
+                pageOfResults: page,
             };
         });
     };
@@ -113,16 +145,27 @@ const StudiesPage = () => {
             <SearchBar onSearch={handleOnSearch} />
 
             <TablePagination
-                style={{ marginBottom: '1%' }}
                 rowsPerPage={searchCriteria.pageSize}
                 onRowsPerPageChange={handleRowsPerPageChange}
-                onPageChange={p}
+                onPageChange={handlePageChange}
                 component="div"
-                page={0}
+                rowsPerPageOptions={[10, 25, 50, 99]}
+                // we have to do this because MUI's pagination component starts at 0,
+                // whereas 0 and 1 are the same in the backend
+                page={searchCriteria.pageOfResults - 1}
                 count={searchMetadata?.total_count || 0}
             ></TablePagination>
 
             <DisplayTable studies={studies} />
+
+            <Pagination
+                color="primary"
+                className={classes.paginator}
+                onChange={handlePaginationChange}
+                showFirstButton
+                showLastButton
+                count={getNumTotalPages(searchMetadata?.total_count, searchCriteria.pageSize)}
+            />
         </div>
     );
 };

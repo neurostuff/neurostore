@@ -6,8 +6,7 @@ import MuiAlert from '@mui/material/Alert';
 import API from '../utils/api';
 
 export interface IGlobalContext {
-    token: string;
-    updateToken: (token: string) => void;
+    handleToken: (token: string) => void;
     onLogout: () => void;
     showSnackbar: (message: string, snackbarType: SnackbarType) => void;
 }
@@ -26,8 +25,7 @@ interface ISnackbar {
 }
 
 const GlobalContext = React.createContext<IGlobalContext>({
-    token: '',
-    updateToken: (token: string) => {},
+    handleToken: (token: string) => {},
     onLogout: () => {},
     showSnackbar: (message: string) => {},
 });
@@ -40,7 +38,7 @@ const GlobalContextProvider = (props: any) => {
         snackbarType: SnackbarType.INFO,
     });
 
-    const handleUpdateToken = (givenToken: string) => {
+    const handleTokenFunc = (givenToken: string) => {
         if (givenToken !== token) {
             API.UpdateServicesWithToken(givenToken);
             setToken(givenToken);
@@ -78,18 +76,17 @@ const GlobalContextProvider = (props: any) => {
     return (
         <GlobalContext.Provider
             value={{
-                token: token,
                 showSnackbar: handleShowSnackbar,
-                updateToken: handleUpdateToken,
+                handleToken: handleTokenFunc,
                 onLogout: handleLogout,
             }}
         >
             {props.children}
             <Snackbar
                 open={snackbarState.openSnackbar}
-                autoHideDuration={100000}
+                autoHideDuration={6000}
                 onClose={handleSnackbarClose}
-                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             >
                 <MuiAlert
                     action={action}

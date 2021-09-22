@@ -31,7 +31,7 @@ const Navbar = () => {
         try {
             await loginWithPopup();
             const accessToken = await getAccessTokenSilently();
-            context?.updateToken(accessToken);
+            context?.handleToken(accessToken);
         } catch (exception) {
             console.log(exception);
         }

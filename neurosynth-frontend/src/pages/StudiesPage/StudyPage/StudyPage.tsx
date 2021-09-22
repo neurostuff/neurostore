@@ -31,7 +31,7 @@ const StudyPage = () => {
     const handleCloneStudy = async () => {
         try {
             const token = await getAccessTokenSilently();
-            context?.updateToken(token);
+            context?.handleToken(token);
         } catch (exception) {
             console.error(exception);
         }

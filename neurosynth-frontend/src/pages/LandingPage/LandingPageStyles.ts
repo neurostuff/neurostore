@@ -74,7 +74,7 @@ const LandingPageStyles = makeStyles((theme) => ({
         },
     },
     divider: {
-        margin: '4% 0 4% 0',
+        margin: '4% 0 4% 0 !important',
         width: '100%',
     },
 }));

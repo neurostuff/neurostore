@@ -1,14 +1,8 @@
-import makeStyles from '@mui/styles/makeStyles';
+import { makeStyles } from '@mui/styles';
 
 const EditStudyPageStyles = makeStyles((theme) => ({
     saveButton: {
-        borderColor: theme.palette.primary.main,
-        color: theme.palette.primary.main,
-        marginRight: '15px',
-    },
-    cancelButton: {
-        borderColor: theme.palette.error.main,
-        color: theme.palette.error.main,
+        marginRight: '15px !important',
     },
     button: {
         width: '160px',
