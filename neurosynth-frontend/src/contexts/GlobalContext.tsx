@@ -78,8 +78,6 @@ const GlobalContextProvider = (props: any) => {
 
     const handleUpdateToken = (givenToken: string) => {
         if (givenToken !== token) {
-            console.log('UPDATING TOKEN');
-
             API.UpdateServicesWithToken(givenToken);
             setToken(givenToken);
         }
@@ -108,11 +106,9 @@ const GlobalContextProvider = (props: any) => {
     const handleLogout = () => {};
 
     const action = (
-        <>
-            <IconButton size="small" color="inherit" onClick={handleSnackbarClose}>
-                <Close fontSize="small" />
-            </IconButton>
-        </>
+        <IconButton size="small" color="inherit" onClick={handleSnackbarClose}>
+            <Close fontSize="small" />
+        </IconButton>
     );
 
     return (
