@@ -1,5 +1,5 @@
-import { FormControl, MenuItem, Select } from '@material-ui/core';
-import React from 'react';
+import { FormControl, MenuItem, Select, SelectChangeEvent } from '@mui/material';
+import React, { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { useState } from 'react';
 import ToggleTypeStyles from './ToggleTypeStyles';
@@ -24,13 +24,7 @@ const ToggleType: React.FC<ToggleTypeModel> = React.memo((props) => {
         setType(props.type);
     }, [props.type]);
 
-    const handleSetType = (
-        event: React.ChangeEvent<{
-            name?: string | undefined;
-            value: unknown;
-        }>,
-        child: React.ReactNode
-    ) => {
+    const handleSetType = (event: SelectChangeEvent<PropertyType>, child: ReactNode) => {
         const selected = event.target.value as PropertyType;
         setType(selected);
         props.onToggle(selected);

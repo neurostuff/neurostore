@@ -1,11 +1,4 @@
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-} from '@material-ui/core';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import { useHistory } from 'react-router-dom';
 import { ReadOnly, Study } from '../../gen/api';
 import { StudyApiResponse } from '../../utils/api';

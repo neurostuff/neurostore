@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Typography } from '@material-ui/core';
+import { Typography } from '@mui/material';
 import DisplayTable from '../../components/DisplayStudiesTable/DisplayStudiesTable';
 import SearchBar from '../../components/SearchBar/SearchBar';
 import { useCallback } from 'react';

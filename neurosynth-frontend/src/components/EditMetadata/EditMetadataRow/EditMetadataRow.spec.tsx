@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MockThemeProvider } from '../../../testing/helpers';
 import { DisplayMetadataTableRowModel } from '../../DisplayMetadataTable/DisplayMetadataTableRow/DisplayMetadataTableRow';
 import EditMetadataRow from './EditMetadataRow';
 import { PropertyType } from './ToggleType/ToggleType';
@@ -19,23 +20,27 @@ describe('EditMetadataRow Component', () => {
 
     it('should render', () => {
         render(
-            <EditMetadataRow
-                metadataValueType={PropertyType.STRING}
-                metadataRow={mockMetadataRow}
-                onMetadataRowDelete={onMetadataRowDeleteMock}
-                onMetadataRowEdit={onMetadataRowEditMock}
-            />
+            <MockThemeProvider>
+                <EditMetadataRow
+                    metadataValueType={PropertyType.STRING}
+                    metadataRow={mockMetadataRow}
+                    onMetadataRowDelete={onMetadataRowDeleteMock}
+                    onMetadataRowEdit={onMetadataRowEditMock}
+                />
+            </MockThemeProvider>
         );
     });
 
     it('should delete when the delete button is clicked', () => {
         render(
-            <EditMetadataRow
-                metadataValueType={PropertyType.STRING}
-                metadataRow={mockMetadataRow}
-                onMetadataRowDelete={onMetadataRowDeleteMock}
-                onMetadataRowEdit={onMetadataRowEditMock}
-            />
+            <MockThemeProvider>
+                <EditMetadataRow
+                    metadataValueType={PropertyType.STRING}
+                    metadataRow={mockMetadataRow}
+                    onMetadataRowDelete={onMetadataRowDeleteMock}
+                    onMetadataRowEdit={onMetadataRowEditMock}
+                />
+            </MockThemeProvider>
         );
 
         const deleteButton = screen.getByText('DELETE');
@@ -45,12 +50,14 @@ describe('EditMetadataRow Component', () => {
 
     it('should edit the metadata when toggled', () => {
         render(
-            <EditMetadataRow
-                metadataValueType={PropertyType.STRING}
-                metadataRow={mockMetadataRow}
-                onMetadataRowDelete={onMetadataRowDeleteMock}
-                onMetadataRowEdit={onMetadataRowEditMock}
-            />
+            <MockThemeProvider>
+                <EditMetadataRow
+                    metadataValueType={PropertyType.STRING}
+                    metadataRow={mockMetadataRow}
+                    onMetadataRowDelete={onMetadataRowDeleteMock}
+                    onMetadataRowEdit={onMetadataRowEditMock}
+                />
+            </MockThemeProvider>
         );
 
         const toggleButton = screen.getByText('STRING');
@@ -65,12 +72,14 @@ describe('EditMetadataRow Component', () => {
     describe('EditMetadataRow String Case', () => {
         it('should render the string editor', () => {
             render(
-                <EditMetadataRow
-                    metadataValueType={PropertyType.STRING}
-                    metadataRow={mockMetadataRow}
-                    onMetadataRowDelete={onMetadataRowDeleteMock}
-                    onMetadataRowEdit={onMetadataRowEditMock}
-                />
+                <MockThemeProvider>
+                    <EditMetadataRow
+                        metadataValueType={PropertyType.STRING}
+                        metadataRow={mockMetadataRow}
+                        onMetadataRowDelete={onMetadataRowDeleteMock}
+                        onMetadataRowEdit={onMetadataRowEditMock}
+                    />
+                </MockThemeProvider>
             );
 
             const stringEditor = screen.getByPlaceholderText('New metadata value');
@@ -80,12 +89,14 @@ describe('EditMetadataRow Component', () => {
         it('should be edited with the correct arguments', () => {
             mockMetadataRow.metadataValue = '';
             render(
-                <EditMetadataRow
-                    metadataValueType={PropertyType.STRING}
-                    metadataRow={mockMetadataRow}
-                    onMetadataRowDelete={onMetadataRowDeleteMock}
-                    onMetadataRowEdit={onMetadataRowEditMock}
-                />
+                <MockThemeProvider>
+                    <EditMetadataRow
+                        metadataValueType={PropertyType.STRING}
+                        metadataRow={mockMetadataRow}
+                        onMetadataRowDelete={onMetadataRowDeleteMock}
+                        onMetadataRowEdit={onMetadataRowEditMock}
+                    />
+                </MockThemeProvider>
             );
 
             const stringEditor = screen.getByRole('textbox');
@@ -101,12 +112,14 @@ describe('EditMetadataRow Component', () => {
         it('should render the number editor', () => {
             mockMetadataRow.metadataValue = 123;
             render(
-                <EditMetadataRow
-                    metadataValueType={PropertyType.NUMBER}
-                    metadataRow={mockMetadataRow}
-                    onMetadataRowDelete={onMetadataRowDeleteMock}
-                    onMetadataRowEdit={onMetadataRowEditMock}
-                />
+                <MockThemeProvider>
+                    <EditMetadataRow
+                        metadataValueType={PropertyType.NUMBER}
+                        metadataRow={mockMetadataRow}
+                        onMetadataRowDelete={onMetadataRowDeleteMock}
+                        onMetadataRowEdit={onMetadataRowEditMock}
+                    />
+                </MockThemeProvider>
             );
 
             const numberEditor = screen.getByRole('spinbutton');
@@ -116,12 +129,14 @@ describe('EditMetadataRow Component', () => {
         it('should be edited with the correct arguments', () => {
             mockMetadataRow.metadataValue = 0;
             render(
-                <EditMetadataRow
-                    metadataValueType={PropertyType.NUMBER}
-                    metadataRow={mockMetadataRow}
-                    onMetadataRowDelete={onMetadataRowDeleteMock}
-                    onMetadataRowEdit={onMetadataRowEditMock}
-                />
+                <MockThemeProvider>
+                    <EditMetadataRow
+                        metadataValueType={PropertyType.NUMBER}
+                        metadataRow={mockMetadataRow}
+                        onMetadataRowDelete={onMetadataRowDeleteMock}
+                        onMetadataRowEdit={onMetadataRowEditMock}
+                    />
+                </MockThemeProvider>
             );
             mockMetadataRow.metadataValue = 12345;
 
@@ -136,12 +151,14 @@ describe('EditMetadataRow Component', () => {
         it('should render', () => {
             mockMetadataRow.metadataValue = false;
             render(
-                <EditMetadataRow
-                    metadataValueType={PropertyType.BOOLEAN}
-                    metadataRow={mockMetadataRow}
-                    onMetadataRowDelete={onMetadataRowDeleteMock}
-                    onMetadataRowEdit={onMetadataRowEditMock}
-                />
+                <MockThemeProvider>
+                    <EditMetadataRow
+                        metadataValueType={PropertyType.BOOLEAN}
+                        metadataRow={mockMetadataRow}
+                        onMetadataRowDelete={onMetadataRowDeleteMock}
+                        onMetadataRowEdit={onMetadataRowEditMock}
+                    />
+                </MockThemeProvider>
             );
             const booleanEditor = screen.getByRole('checkbox');
             expect(booleanEditor).toBeInTheDocument();
@@ -150,12 +167,14 @@ describe('EditMetadataRow Component', () => {
         it('should be edited with the correct arguments', () => {
             mockMetadataRow.metadataValue = false;
             render(
-                <EditMetadataRow
-                    metadataValueType={PropertyType.BOOLEAN}
-                    metadataRow={mockMetadataRow}
-                    onMetadataRowDelete={onMetadataRowDeleteMock}
-                    onMetadataRowEdit={onMetadataRowEditMock}
-                />
+                <MockThemeProvider>
+                    <EditMetadataRow
+                        metadataValueType={PropertyType.BOOLEAN}
+                        metadataRow={mockMetadataRow}
+                        onMetadataRowDelete={onMetadataRowDeleteMock}
+                        onMetadataRowEdit={onMetadataRowEditMock}
+                    />
+                </MockThemeProvider>
             );
 
             const booleanEditor = screen.getByRole('checkbox');
@@ -170,12 +189,14 @@ describe('EditMetadataRow Component', () => {
         it('should render', () => {
             mockMetadataRow.metadataValue = null;
             render(
-                <EditMetadataRow
-                    metadataValueType={PropertyType.NONE}
-                    metadataRow={mockMetadataRow}
-                    onMetadataRowDelete={onMetadataRowDeleteMock}
-                    onMetadataRowEdit={onMetadataRowEditMock}
-                />
+                <MockThemeProvider>
+                    <EditMetadataRow
+                        metadataValueType={PropertyType.NONE}
+                        metadataRow={mockMetadataRow}
+                        onMetadataRowDelete={onMetadataRowDeleteMock}
+                        onMetadataRowEdit={onMetadataRowEditMock}
+                    />
+                </MockThemeProvider>
             );
             const noneEditor = screen.getByText('null');
             expect(noneEditor).toBeInTheDocument();

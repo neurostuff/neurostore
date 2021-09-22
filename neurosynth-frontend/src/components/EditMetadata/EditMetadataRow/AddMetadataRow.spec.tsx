@@ -1,13 +1,26 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MockThemeProvider } from '../../../testing/helpers';
 import { DisplayMetadataTableRowModel } from '../../DisplayMetadataTable/DisplayMetadataTableRow/DisplayMetadataTableRow';
 import AddMetadataRow, { getStartValFromType } from './AddMetadataRow';
 import { PropertyType } from './ToggleType/ToggleType';
 
 describe('AddMetadataRow Component', () => {
     const onAddMetadataRowMock = jest.fn();
+
+    beforeEach(() => {
+        render(
+            <MockThemeProvider>
+                <AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />
+            </MockThemeProvider>
+        );
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
     it('should render', () => {
-        render(<AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />);
         const addButton = screen.getByText('ADD');
         expect(addButton).toBeInTheDocument();
     });
@@ -20,8 +33,6 @@ describe('AddMetadataRow Component', () => {
     });
 
     it('should be disabled when metadata key input is empty', () => {
-        render(<AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />);
-
         const metadataKeyInput = screen.getByPlaceholderText('New metadata key');
         userEvent.type(metadataKeyInput, '');
 
@@ -37,8 +48,6 @@ describe('AddMetadataRow Component', () => {
             metadataKey: 'test key',
             metadataValue: 'test val',
         };
-
-        render(<AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />);
 
         const addButton = screen.getByText('ADD').closest('button') as HTMLElement;
 
@@ -57,8 +66,6 @@ describe('AddMetadataRow Component', () => {
             metadataKey: 'test key',
             metadataValue: true,
         };
-
-        render(<AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />);
 
         const stringType = screen.getByText('STRING');
         userEvent.click(stringType);
@@ -83,8 +90,6 @@ describe('AddMetadataRow Component', () => {
             metadataValue: 12345,
         };
 
-        render(<AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />);
-
         const stringType = screen.getByText('STRING');
         userEvent.click(stringType);
 
@@ -107,8 +112,6 @@ describe('AddMetadataRow Component', () => {
             metadataKey: 'test key',
             metadataValue: null,
         };
-
-        render(<AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />);
 
         const stringType = screen.getByText('STRING');
         userEvent.click(stringType);

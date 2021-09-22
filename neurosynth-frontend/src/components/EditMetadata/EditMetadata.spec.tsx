@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EditMetadata } from '..';
+import { MockThemeProvider } from '../../testing/helpers';
 import { DisplayMetadataTableRowModel } from '../DisplayMetadataTable/DisplayMetadataTableRow/DisplayMetadataTableRow';
 import { getType } from './EditMetadata';
 import { PropertyType } from './EditMetadataRow/ToggleType/ToggleType';
@@ -29,7 +30,12 @@ describe('EditMetadata Component', () => {
 
     it('should render', () => {
         render(
-            <EditMetadata metadata={mockMetadata} onMetadataEditChange={onMetadataEditChangeMock} />
+            <MockThemeProvider>
+                <EditMetadata
+                    metadata={mockMetadata}
+                    onMetadataEditChange={onMetadataEditChangeMock}
+                />
+            </MockThemeProvider>
         );
 
         const metadataInput = screen.getByPlaceholderText('New metadata key');
@@ -51,7 +57,12 @@ describe('EditMetadata Component', () => {
 
     it('should delete the correct row and call the parent prop function', () => {
         render(
-            <EditMetadata metadata={mockMetadata} onMetadataEditChange={onMetadataEditChangeMock} />
+            <MockThemeProvider>
+                <EditMetadata
+                    metadata={mockMetadata}
+                    onMetadataEditChange={onMetadataEditChangeMock}
+                />
+            </MockThemeProvider>
         );
 
         const deleteButton = screen.getAllByRole('button', { name: 'DELETE' })[1];
@@ -74,7 +85,12 @@ describe('EditMetadata Component', () => {
 
     it('should add the row and call the parent prop function', () => {
         render(
-            <EditMetadata metadata={mockMetadata} onMetadataEditChange={onMetadataEditChangeMock} />
+            <MockThemeProvider>
+                <EditMetadata
+                    metadata={mockMetadata}
+                    onMetadataEditChange={onMetadataEditChangeMock}
+                />
+            </MockThemeProvider>
         );
 
         const addRow = screen.getByPlaceholderText('New metadata key');
@@ -93,7 +109,12 @@ describe('EditMetadata Component', () => {
 
     it('should edit the row and call the parent prop function', () => {
         render(
-            <EditMetadata metadata={mockMetadata} onMetadataEditChange={onMetadataEditChangeMock} />
+            <MockThemeProvider>
+                <EditMetadata
+                    metadata={mockMetadata}
+                    onMetadataEditChange={onMetadataEditChangeMock}
+                />
+            </MockThemeProvider>
         );
 
         const input = screen.getAllByRole('textbox')[2];

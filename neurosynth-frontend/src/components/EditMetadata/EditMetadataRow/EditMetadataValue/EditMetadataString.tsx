@@ -1,4 +1,4 @@
-import { TextField } from '@material-ui/core';
+import { TextField } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { IEditMetadataField } from '../EditMetadataRow';
 import EditMetadataFieldsStyles from './EditMetadataFieldsStyles';
