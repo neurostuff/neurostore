@@ -38,6 +38,17 @@ class ProductionConfig(Config):
     AUTH0_API_AUDIENCE = "https://neurostore.org/api/"
 
 
+class StagingConfig(Config):
+    ENV = 'production'
+
+    AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")
+    AUTH0_CLIENT_SECRET = os.environ.get("AUTH0_CLIENT_SECRET")
+    AUTH0_BASE_URL = "https://neurosynth-staging.us.auth0.com"
+    AUTH0_ACCESS_TOKEN_URL = "https://neurosynth-staging.us.auth0.com/oauth/token"
+    AUTH0_AUTH_URL = "https://neurosynth-staging.us.auth0.com/authorize"
+    AUTH0_API_AUDIENCE = "https://deepdream.psy.utexas.edu/neurostore/api/"
+
+
 class DevelopmentConfig(Config):
     ENV = 'development'
     DEBUG = True
