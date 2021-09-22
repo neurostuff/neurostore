@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { DisplayMetadataTable } from '..';
+import { MockThemeProvider } from '../../testing/helpers';
 
 describe('DisplayMetadataTable Component', () => {
     const mockMetadata = {
@@ -10,7 +11,11 @@ describe('DisplayMetadataTable Component', () => {
     };
 
     it('should render', () => {
-        render(<DisplayMetadataTable metadata={mockMetadata} />);
+        render(
+            <MockThemeProvider>
+                <DisplayMetadataTable metadata={mockMetadata} />
+            </MockThemeProvider>
+        );
         const numItems = screen.getAllByRole('row');
         expect(numItems.length - 1).toEqual(Object.keys(mockMetadata).length);
     });

@@ -3,11 +3,16 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { createTheme, ThemeProvider } from '@material-ui/core/styles';
+import { createTheme, ThemeProvider, Theme } from '@mui/material/styles';
 import { Auth0Provider } from '@auth0/auth0-react';
-import { grey } from '@material-ui/core/colors';
+import { grey } from '@mui/material/colors';
 
-declare module '@material-ui/core/styles/createPalette' {
+declare module '@mui/styles/defaultTheme' {
+    // eslint-disable-next-line @typescript-eslint/no-empty-interface
+    interface DefaultTheme extends Theme {}
+}
+
+declare module '@mui/material/styles/createPalette' {
     interface Palette {
         muted: Palette['primary'];
     }

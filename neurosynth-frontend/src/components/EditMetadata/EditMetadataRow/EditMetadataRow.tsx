@@ -6,7 +6,7 @@ import EditMetadataBoolean from './EditMetadataValue/EditMetadataBoolean';
 import EditMetadataNumber from './EditMetadataValue/EditMetadataNumber';
 import EditMetadataString from './EditMetadataValue/EditMetadataString';
 import { useState } from 'react';
-import { Button } from '@material-ui/core';
+import { Button } from '@mui/material';
 import { useCallback } from 'react';
 import { getStartValFromType } from './AddMetadataRow';
 

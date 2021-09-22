@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Button, Tooltip, Typography } from '@material-ui/core';
+import { Button, Tooltip, Typography } from '@mui/material';
 import { AxiosError, AxiosResponse } from 'axios';
 import React, { useEffect } from 'react';
 import { useCallback } from 'react';

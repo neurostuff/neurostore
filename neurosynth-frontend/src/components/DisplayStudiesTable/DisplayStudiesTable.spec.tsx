@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { Router } from 'react-router-dom';
 import { DisplayStudiesTable } from '..';
+import { MockThemeProvider } from '../../testing/helpers';
 import { StudyApiResponse } from '../../utils/api';
 
 describe('DisplayStudiesTable Component', () => {
@@ -251,9 +252,11 @@ describe('DisplayStudiesTable Component', () => {
 
     it('should render', () => {
         render(
-            <Router history={historyMock as any}>
-                <DisplayStudiesTable studies={mockStudies} />
-            </Router>
+            <MockThemeProvider>
+                <Router history={historyMock as any}>
+                    <DisplayStudiesTable studies={mockStudies} />
+                </Router>
+            </MockThemeProvider>
         );
 
         const rows = screen.getAllByRole('row');
@@ -264,9 +267,11 @@ describe('DisplayStudiesTable Component', () => {
 
     it('should show no results', () => {
         render(
-            <Router history={historyMock as any}>
-                <DisplayStudiesTable studies={[]} />
-            </Router>
+            <MockThemeProvider>
+                <Router history={historyMock as any}>
+                    <DisplayStudiesTable studies={[]} />
+                </Router>
+            </MockThemeProvider>
         );
         const noResults = screen.getByText('No results');
         expect(noResults).toBeInTheDocument();
