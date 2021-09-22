@@ -1,4 +1,4 @@
-import { AppBar, Toolbar, Hidden } from '@material-ui/core';
+import { AppBar, Toolbar, Hidden } from '@mui/material';
 import NavbarStyles from './NavbarStyles';
 import NavbarDrawer from './NavbarDrawer/NavbarDrawer';
 import NavbarToolbar from './NavbarToolbar/NavbarToolbar';
@@ -41,7 +41,7 @@ const Navbar = () => {
 
     return (
         <AppBar position="static" elevation={0}>
-            <Hidden smDown>
+            <Hidden mdDown>
                 <Toolbar className={classes.toolbar}>
                     <NavbarToolbar
                         logout={handleLogout}

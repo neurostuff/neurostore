@@ -1,8 +1,10 @@
 import { useAuth0 } from '@auth0/auth0-react';
+import { ThemeProvider } from '@mui/styles';
+import { createTheme } from '@mui/system';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
+import { MockThemeProvider } from '../../../testing/helpers';
 import { NavOptionsModel } from '../Navbar';
 import NavbarToolbar from './NavbarToolbar';
 
@@ -41,9 +43,15 @@ describe('NavbarToolbar Component', () => {
 
     it('should render', () => {
         render(
-            <BrowserRouter>
-                <NavbarToolbar login={loginMock} logout={logoutMock} navOptions={mockNavOptions} />
-            </BrowserRouter>
+            <MockThemeProvider>
+                <BrowserRouter>
+                    <NavbarToolbar
+                        login={loginMock}
+                        logout={logoutMock}
+                        navOptions={mockNavOptions}
+                    />
+                </BrowserRouter>
+            </MockThemeProvider>
         );
 
         mockNavOptions.forEach((element) => {
@@ -54,9 +62,15 @@ describe('NavbarToolbar Component', () => {
 
     it('should login with login is clicked', () => {
         render(
-            <BrowserRouter>
-                <NavbarToolbar login={loginMock} logout={logoutMock} navOptions={mockNavOptions} />
-            </BrowserRouter>
+            <MockThemeProvider>
+                <BrowserRouter>
+                    <NavbarToolbar
+                        login={loginMock}
+                        logout={logoutMock}
+                        navOptions={mockNavOptions}
+                    />
+                </BrowserRouter>
+            </MockThemeProvider>
         );
         const loginButton = screen.getByText('Login');
         expect(loginButton).toBeInTheDocument();
@@ -72,9 +86,15 @@ describe('NavbarToolbar Component', () => {
         (useAuth0 as any).mockReturnValue(mockedUseAuth0);
 
         render(
-            <BrowserRouter>
-                <NavbarToolbar login={loginMock} logout={logoutMock} navOptions={mockNavOptions} />
-            </BrowserRouter>
+            <MockThemeProvider>
+                <BrowserRouter>
+                    <NavbarToolbar
+                        login={loginMock}
+                        logout={logoutMock}
+                        navOptions={mockNavOptions}
+                    />
+                </BrowserRouter>
+            </MockThemeProvider>
         );
         const loginButton = screen.getByText('Logout');
         expect(loginButton).toBeInTheDocument();

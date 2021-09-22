@@ -1,5 +1,5 @@
 import { ChangeEvent, useEffect, useState } from 'react';
-import { TablePagination, Typography } from '@material-ui/core';
+import { TablePagination, Typography } from '@mui/material';
 import DisplayTable from '../../components/DisplayStudiesTable/DisplayStudiesTable';
 import SearchBar from '../../components/SearchBar/SearchBar';
 import API, { StudyApiResponse } from '../../utils/api';

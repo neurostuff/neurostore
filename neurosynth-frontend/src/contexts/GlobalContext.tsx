@@ -1,31 +1,9 @@
-import { IconButton, Snackbar } from '@material-ui/core';
-import { Close } from '@material-ui/icons';
-import React, { useEffect, useState } from 'react';
+import IconButton from '@mui/material/IconButton';
+import Snackbar from '@mui/material/Snackbar';
+import { Close } from '@mui/icons-material';
+import React, { useState } from 'react';
+import MuiAlert from '@mui/material/Alert';
 import API from '../utils/api';
-
-import { makeStyles } from '@material-ui/core';
-
-const SnackbarStyles = makeStyles((theme) => ({
-    error: {
-        '& .MuiSnackbarContent-root': {
-            backgroundColor: theme.palette.error.main,
-            color: 'white',
-        },
-    },
-    warning: {
-        '& .MuiSnackbarContent-root': {
-            backgroundColor: theme.palette.warning.main,
-            color: 'black',
-        },
-    },
-    success: {
-        '& .MuiSnackbarContent-root': {
-            backgroundColor: theme.palette.success.main,
-            color: 'white',
-        },
-    },
-    default: {},
-}));
 
 export interface IGlobalContext {
     token: string;
@@ -38,7 +16,7 @@ export enum SnackbarType {
     ERROR = 'error',
     WARNING = 'warning',
     SUCCESS = 'success',
-    DEFAULT = 'default',
+    INFO = 'info',
 }
 
 interface ISnackbar {
@@ -55,26 +33,12 @@ const GlobalContext = React.createContext<IGlobalContext>({
 });
 
 const GlobalContextProvider = (props: any) => {
-    const classes = SnackbarStyles();
     const [token, setToken] = useState('');
     const [snackbarState, setSnackbarState] = useState<ISnackbar>({
         openSnackbar: false,
         message: '',
-        snackbarType: SnackbarType.DEFAULT,
+        snackbarType: SnackbarType.INFO,
     });
-
-    const getClass = (type: SnackbarType) => {
-        switch (type) {
-            case SnackbarType.SUCCESS:
-                return classes.success;
-            case SnackbarType.DEFAULT:
-                return classes.default;
-            case SnackbarType.ERROR:
-                return classes.error;
-            case SnackbarType.WARNING:
-                return classes.warning;
-        }
-    };
 
     const handleUpdateToken = (givenToken: string) => {
         if (givenToken !== token) {
@@ -82,10 +46,6 @@ const GlobalContextProvider = (props: any) => {
             setToken(givenToken);
         }
     };
-
-    useEffect(() => {
-        console.log(snackbarState.snackbarType);
-    }, [snackbarState.snackbarType]);
 
     const handleShowSnackbar = (message: string, snackbarType: SnackbarType) => {
         setSnackbarState({
@@ -95,7 +55,11 @@ const GlobalContextProvider = (props: any) => {
         });
     };
 
-    const handleSnackbarClose = () => {
+    const handleSnackbarClose = (event?: React.SyntheticEvent, reason?: string) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+
         setSnackbarState((prevState) => ({
             openSnackbar: false,
             message: '',
@@ -122,13 +86,19 @@ const GlobalContextProvider = (props: any) => {
         >
             {props.children}
             <Snackbar
-                className={getClass(snackbarState.snackbarType)}
                 open={snackbarState.openSnackbar}
-                message={snackbarState.message}
-                autoHideDuration={5000}
+                autoHideDuration={100000}
                 onClose={handleSnackbarClose}
-                action={action}
-            />
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <MuiAlert
+                    action={action}
+                    onClose={handleSnackbarClose}
+                    severity={snackbarState.snackbarType}
+                >
+                    {snackbarState.message}
+                </MuiAlert>
+            </Snackbar>
         </GlobalContext.Provider>
     );
 };
