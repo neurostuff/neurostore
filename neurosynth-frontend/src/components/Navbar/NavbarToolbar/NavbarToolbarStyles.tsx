@@ -20,6 +20,9 @@ const NavbarToolbarStyles = makeStyles((theme) => {
             '& span': {
                 height: '100%',
             },
+            '&:hover': {
+                backgroundColor: '#00689e !important',
+            },
         },
         active: {
             color: theme.palette.secondary.main,

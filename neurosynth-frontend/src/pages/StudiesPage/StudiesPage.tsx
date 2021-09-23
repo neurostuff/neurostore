@@ -99,6 +99,8 @@ const StudiesPage = () => {
     };
 
     const handlePaginationChange = (event: ChangeEvent<unknown>, page: number) => {
+        if (page === null) return;
+
         setSearchCriteria((prevState) => {
             return {
                 ...prevState,
