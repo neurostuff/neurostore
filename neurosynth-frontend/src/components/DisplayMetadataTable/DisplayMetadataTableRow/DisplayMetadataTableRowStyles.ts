@@ -1,17 +1,17 @@
-import { makeStyles } from '@material-ui/core';
+import makeStyles from '@mui/styles/makeStyles';
 
 const DisplayMetadataTableRowStyles = makeStyles((theme) => ({
     type_string: {
-        color: 'orange',
+        color: 'orange !important',
     },
     type_number: {
-        color: 'blue',
+        color: 'blue !important',
     },
     type_boolean: {
-        color: 'green',
+        color: 'green !important',
     },
     type_other: {
-        color: 'gray',
+        color: 'gray !important',
     },
 }));
 

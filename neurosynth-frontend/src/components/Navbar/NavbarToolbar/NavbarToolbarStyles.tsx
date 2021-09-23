@@ -1,4 +1,4 @@
-import { makeStyles } from '@material-ui/core';
+import makeStyles from '@mui/styles/makeStyles';
 
 const NavbarToolbarStyles = makeStyles((theme) => {
     return {
@@ -19,6 +19,9 @@ const NavbarToolbarStyles = makeStyles((theme) => {
             padding: '0',
             '& span': {
                 height: '100%',
+            },
+            '&:hover': {
+                backgroundColor: '#00689e !important',
             },
         },
         active: {

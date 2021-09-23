@@ -6,7 +6,7 @@ import EditMetadataBoolean from './EditMetadataValue/EditMetadataBoolean';
 import EditMetadataNumber from './EditMetadataValue/EditMetadataNumber';
 import EditMetadataString from './EditMetadataValue/EditMetadataString';
 import { useState } from 'react';
-import { Button } from '@material-ui/core';
+import { Button } from '@mui/material';
 import { useCallback } from 'react';
 import { getStartValFromType } from './AddMetadataRow';
 
@@ -106,7 +106,8 @@ const EditMetadataRow: React.FC<EditMetadataRowModel> = React.memo((props) => {
                 </div>
                 <div className={classes.tableCell}>
                     <Button
-                        className={`${classes.updateButton} ${classes.error}`}
+                        className={`${classes.updateButton}`}
+                        color="error"
                         onClick={handleDelete}
                     >
                         DELETE

@@ -1,11 +1,4 @@
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-} from '@material-ui/core';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import { useHistory } from 'react-router-dom';
 import { ReadOnly, Study } from '../../gen/api';
 import { StudyApiResponse } from '../../utils/api';
@@ -24,7 +17,7 @@ const DisplayStudiesTable: React.FC<DisplayStudiesTableModel> = (props) => {
     };
 
     return (
-        <TableContainer>
+        <TableContainer className={classes.root}>
             <Table size="small">
                 <TableHead>
                     <TableRow>
@@ -41,7 +34,7 @@ const DisplayStudiesTable: React.FC<DisplayStudiesTableModel> = (props) => {
                             className={classes.tableRow}
                             onClick={() => handleSelectTableRow(row)}
                         >
-                            <TableCell className={`${classes.name}`}>
+                            <TableCell>
                                 <div className={classes.tableCellTextContainer}>{row.name}</div>
                             </TableCell>
                             <TableCell>

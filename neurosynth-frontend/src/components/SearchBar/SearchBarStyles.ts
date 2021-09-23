@@ -1,4 +1,4 @@
-import { makeStyles } from '@material-ui/core';
+import makeStyles from '@mui/styles/makeStyles';
 
 const SearchBarStyles = makeStyles({
     textfield: {
@@ -7,7 +7,7 @@ const SearchBarStyles = makeStyles({
     },
     paper: {
         display: 'flex',
-        margin: '3% 0 4% 0',
+        margin: '1% 0',
     },
     divider: {
         height: '35px',

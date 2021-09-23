@@ -1,11 +1,13 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Button, Typography } from '@material-ui/core';
-import React, { useCallback } from 'react';
+import { Button, Typography } from '@mui/material';
+import { AxiosError } from 'axios';
+import React, { useContext } from 'react';
 import { useEffect } from 'react';
 import { useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { EditMetadata } from '../../../components';
 import { DisplayMetadataTableRowModel } from '../../../components/DisplayMetadataTable/DisplayMetadataTableRow/DisplayMetadataTableRow';
+import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import API, { StudyApiResponse } from '../../../utils/api';
 import EditStudyPageStyles from './EditStudyPageStyles';
 
@@ -16,6 +18,8 @@ const arrayToMetadata = (arr: DisplayMetadataTableRowModel[]): { [key: string]: 
 };
 
 const EditStudyPage = () => {
+    const globalContext = useContext(GlobalContext);
+    const { getAccessTokenSilently } = useAuth0();
     const classes = EditStudyPageStyles();
     const [study, setStudy] = useState<StudyApiResponse>();
     const [saveEnabled, setSaveEnabled] = useState(false);
@@ -64,24 +68,23 @@ const EditStudyPage = () => {
     };
 
     const handleOnSave = async (event: React.MouseEvent) => {
-        console.log(arrayToMetadata(updatedMetadata));
-
-        // try {
-        //     const token = await getAccessTokenSilently();
-        //     API.UpdateServicesWithToken(token);
-        // } catch (exception) {
-        //     console.log(exception);
-        // }
-        // API.Services.StudiesService.studiesIdPut(params.studyId, {
-        //     metadata: metadata,
-        //     id: params.studyId,
-        // })
-        //     .then((res) => {
-        //         history.push(`/studies/${params.studyId}`);
-        //     })
-        //     .catch((err: Error | AxiosError) => {
-        //         console.log(err.message);
-        //     });
+        const metadata = arrayToMetadata(updatedMetadata);
+        try {
+            const token = await getAccessTokenSilently();
+            globalContext.handleToken(token);
+        } catch (exception) {
+            console.log(exception);
+        }
+        API.Services.StudiesService.studiesIdPut(params.studyId, {
+            metadata: metadata,
+        })
+            .then((res) => {
+                globalContext.showSnackbar('study successfully updated', SnackbarType.SUCCESS);
+                history.push(`/studies/${params.studyId}`);
+            })
+            .catch((err: Error | AxiosError) => {
+                console.log(err.message);
+            });
     };
 
     return (
@@ -96,8 +99,9 @@ const EditStudyPage = () => {
                     Save Changes
                 </Button>
                 <Button
+                    color="error"
                     onClick={handleOnCancel}
-                    className={`${classes.cancelButton} ${classes.button}`}
+                    className={`${classes.button}`}
                     variant="outlined"
                 >
                     Cancel

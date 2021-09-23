@@ -1,4 +1,4 @@
-import { makeStyles } from '@material-ui/core';
+import makeStyles from '@mui/styles/makeStyles';
 
 const LandingPageStyles = makeStyles((theme) => ({
     contentContainer: {
@@ -14,7 +14,7 @@ const LandingPageStyles = makeStyles((theme) => ({
         justifyContent: 'space-between',
         fontFamily: 'Inter',
         width: '650px',
-        [theme.breakpoints.down('sm')]: {
+        [theme.breakpoints.down('md')]: {
             flexDirection: 'column',
             width: '100%',
         },
@@ -22,14 +22,14 @@ const LandingPageStyles = makeStyles((theme) => ({
     title: {
         fontSize: '2.5rem',
         textAlign: 'center',
-        [theme.breakpoints.down('sm')]: {
+        [theme.breakpoints.down('md')]: {
             marginRight: '0',
             fontSize: '1.5rem',
         },
     },
     logo: {
         width: '120px',
-        [theme.breakpoints.down('sm')]: {
+        [theme.breakpoints.down('md')]: {
             width: '100px',
         },
     },
@@ -41,19 +41,19 @@ const LandingPageStyles = makeStyles((theme) => ({
         justifyContent: 'space-around',
         width: '100%',
         flexWrap: 'wrap',
-        [theme.breakpoints.down('sm')]: {
+        [theme.breakpoints.down('md')]: {
             alignItems: 'center',
         },
     },
     sponsorLogoContainer: {
         margin: 'auto 5%',
-        [theme.breakpoints.down('sm')]: {
+        [theme.breakpoints.down('md')]: {
             margin: '10% 5%',
         },
     },
     sponsorLogo: {
         width: '200px',
-        [theme.breakpoints.down('sm')]: {
+        [theme.breakpoints.down('md')]: {
             width: '100px',
         },
     },
@@ -67,14 +67,14 @@ const LandingPageStyles = makeStyles((theme) => ({
         color: theme.palette.muted.main,
         margin: '2% 0 0 0',
         lineHeight: '2',
-        [theme.breakpoints.down('sm')]: {
+        [theme.breakpoints.down('md')]: {
             fontSize: '1rem',
             margin: '8% 0',
             textAlign: 'center',
         },
     },
     divider: {
-        margin: '4% 0 4% 0',
+        margin: '4% 0 4% 0 !important',
         width: '100%',
     },
 }));

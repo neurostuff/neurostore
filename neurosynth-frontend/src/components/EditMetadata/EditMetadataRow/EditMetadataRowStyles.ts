@@ -1,4 +1,4 @@
-import { makeStyles } from '@material-ui/core';
+import makeStyles from '@mui/styles/makeStyles';
 
 const EditMetadataRowStyles = makeStyles((themes) => ({
     tableRow: {
@@ -24,9 +24,6 @@ const EditMetadataRowStyles = makeStyles((themes) => ({
     },
     key: {
         minWidth: '300px',
-    },
-    error: {
-        color: themes.palette.error.main,
     },
     updateButton: {
         width: '60px',

@@ -1,14 +1,8 @@
-import { makeStyles } from '@material-ui/core';
+import { makeStyles } from '@mui/styles';
 
 const EditStudyPageStyles = makeStyles((theme) => ({
     saveButton: {
-        borderColor: theme.palette.primary.main,
-        color: theme.palette.primary.main,
-        marginRight: '15px',
-    },
-    cancelButton: {
-        borderColor: theme.palette.error.main,
-        color: theme.palette.error.main,
+        marginRight: '15px !important',
     },
     button: {
         width: '160px',
@@ -18,7 +12,7 @@ const EditStudyPageStyles = makeStyles((theme) => ({
         zIndex: 2,
         width: '100%',
         position: 'sticky',
-        padding: '20px 0px',
+        paddingBottom: '20px',
         top: '0',
     },
 }));

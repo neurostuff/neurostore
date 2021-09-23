@@ -1,8 +1,8 @@
-import { makeStyles } from '@material-ui/core';
+import makeStyles from '@mui/styles/makeStyles';
 
 const DisplayStudiesTableStyles = makeStyles((theme) => ({
-    name: {
-        width: '30%',
+    root: {
+        margin: '2% 0',
     },
     tableCellTextContainer: {
         maxHeight: '100px !important',

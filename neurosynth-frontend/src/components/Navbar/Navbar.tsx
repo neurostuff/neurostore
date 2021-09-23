@@ -1,9 +1,10 @@
-import { AppBar, Toolbar, Hidden } from '@material-ui/core';
+import { AppBar, Toolbar, Hidden } from '@mui/material';
 import NavbarStyles from './NavbarStyles';
 import NavbarDrawer from './NavbarDrawer/NavbarDrawer';
 import NavbarToolbar from './NavbarToolbar/NavbarToolbar';
 import { useAuth0 } from '@auth0/auth0-react';
-import API from '../../utils/api';
+import { useContext } from 'react';
+import { GlobalContext } from '../../contexts/GlobalContext';
 
 export interface NavOptionsModel {
     label: string;
@@ -23,15 +24,14 @@ const navItems: NavOptionsModel[] = [
 
 const Navbar = () => {
     const classes = NavbarStyles();
+    const context = useContext(GlobalContext);
     const { loginWithPopup, getAccessTokenSilently, logout } = useAuth0();
 
     const handleLogin = async () => {
         try {
             await loginWithPopup();
             const accessToken = await getAccessTokenSilently();
-            console.log(accessToken);
-
-            API.UpdateServicesWithToken(accessToken);
+            context?.handleToken(accessToken);
         } catch (exception) {
             console.log(exception);
         }
@@ -41,7 +41,7 @@ const Navbar = () => {
 
     return (
         <AppBar position="static" elevation={0}>
-            <Hidden smDown>
+            <Hidden mdDown>
                 <Toolbar className={classes.toolbar}>
                     <NavbarToolbar
                         logout={handleLogout}

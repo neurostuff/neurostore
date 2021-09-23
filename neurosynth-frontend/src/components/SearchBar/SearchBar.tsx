@@ -1,5 +1,5 @@
-import { Paper, InputBase, Divider, IconButton } from '@material-ui/core';
-import SearchIcon from '@material-ui/icons/Search';
+import { Paper, InputBase, Divider, IconButton } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 import React from 'react';
 import { useState } from 'react';
 import SearchBarStyles from './SearchBarStyles';
@@ -32,7 +32,7 @@ const SearchBar: React.FC<SearchBarModel> = (props) => {
                     className={classes.textfield}
                 />
                 <Divider className={classes.divider} orientation="vertical" />
-                <IconButton className={classes.icon} onClick={handleOnSubmit}>
+                <IconButton className={classes.icon} onClick={handleOnSubmit} size="large">
                     <SearchIcon color="primary" />
                 </IconButton>
             </Paper>

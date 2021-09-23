@@ -7,7 +7,7 @@ import oxfordLogo from '../../assets/images/oxfordlogo.png';
 import stanfordLogo from '../../assets/images/stanfordlogo.png';
 import origamiLogo from '../../assets/images/origamilogo.png';
 
-import { Divider } from '@material-ui/core';
+import { Divider } from '@mui/material';
 import LandingPageStyles from './LandingPageStyles';
 
 const LandingPage = () => {

@@ -1,19 +1,22 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Button, Tooltip, Typography } from '@material-ui/core';
+import { Button, Tooltip, Typography } from '@mui/material';
 import { AxiosError, AxiosResponse } from 'axios';
-import React, { useEffect } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { useCallback } from 'react';
 import { useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import DisplayMetadataTable from '../../../components/DisplayMetadataTable/DisplayMetadataTable';
+import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import API, { StudyApiResponse } from '../../../utils/api';
 import StudyPageStyles from './StudyPageStyles';
 
 const StudyPage = () => {
     const [study, setStudy] = useState<StudyApiResponse & { user: string }>();
+    const [editDisabled, setEditDisabled] = useState(true);
+    const context = useContext(GlobalContext);
     const classes = StudyPageStyles();
     const history = useHistory();
-    const { isAuthenticated, getAccessTokenSilently } = useAuth0();
+    const { isAuthenticated, getAccessTokenSilently, user } = useAuth0();
     const params: { studyId: string } = useParams();
 
     const getStudy = useCallback((id: string) => {
@@ -28,13 +31,14 @@ const StudyPage = () => {
     const handleCloneStudy = async () => {
         try {
             const token = await getAccessTokenSilently();
-            API.UpdateServicesWithToken(token);
+            context?.handleToken(token);
         } catch (exception) {
-            console.log(exception);
+            console.error(exception);
         }
         API.Services.StudiesService.studiesPost(undefined, params.studyId, {})
             .then((res) => {
-                console.log(res);
+                context.showSnackbar('Study successfully cloned', SnackbarType.SUCCESS);
+                history.push(`/studies`);
             })
             .catch((err: Error | AxiosError) => {
                 console.log(err.message);
@@ -51,6 +55,13 @@ const StudyPage = () => {
         }
     }, [params.studyId, getStudy]);
 
+    useEffect(() => {
+        const userIDAndStudyIDExist = !!user?.sub && !!study?.user;
+        const shouldDisableEdit =
+            !isAuthenticated || !userIDAndStudyIDExist || user?.sub !== study?.user;
+        setEditDisabled(shouldDisableEdit);
+    }, [isAuthenticated, user?.sub, study?.user]);
+
     return (
         <div>
             <div className={classes.buttonContainer}>
@@ -66,14 +77,25 @@ const StudyPage = () => {
                         </Button>
                     </div>
                 </Tooltip>
-                <Button onClick={handleEditStudy} variant="outlined" color="secondary">
-                    Edit Study
-                </Button>
+                <Tooltip
+                    placement="top"
+                    title={editDisabled ? 'you can only edit studies you have cloned' : ''}
+                >
+                    <div style={{ display: 'inline' }}>
+                        <Button
+                            disabled={editDisabled}
+                            onClick={handleEditStudy}
+                            variant="outlined"
+                            color="secondary"
+                        >
+                            Edit Study
+                        </Button>
+                    </div>
+                </Tooltip>
             </div>
             <div>
                 <Typography variant="h4">{study?.name}</Typography>
             </div>
-
             <div>
                 <div style={{ margin: '15px 0' }}>
                     <Typography variant="h6">
