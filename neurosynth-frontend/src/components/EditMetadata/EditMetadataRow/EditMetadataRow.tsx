@@ -106,7 +106,8 @@ const EditMetadataRow: React.FC<EditMetadataRowModel> = React.memo((props) => {
                 </div>
                 <div className={classes.tableCell}>
                     <Button
-                        className={`${classes.updateButton} ${classes.error}`}
+                        className={`${classes.updateButton}`}
+                        color="error"
                         onClick={handleDelete}
                     >
                         DELETE
