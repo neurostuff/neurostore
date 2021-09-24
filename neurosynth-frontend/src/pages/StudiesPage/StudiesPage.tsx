@@ -21,37 +21,27 @@ enum SortBy {
     CREATEDAT = 'created_at',
 }
 
-interface SearchCriteria {
-    genericSearchStr: string | undefined; // search for entries across authors, name, description, etc
-    sortBy: SortBy;
-    pageOfResults: number; // goes from 1 onwards (0 and 1 yield identical results)
-    descOrder: boolean;
-    pageSize: number;
-    isNested: boolean;
-    nameSearch: string | undefined;
-    descriptionSearch: string | undefined;
-    authorSearch: string | undefined;
-    showUnique: boolean;
-    source: Source | undefined;
+export class SearchCriteria {
+    constructor(
+        public genericSearchStr: string | undefined = undefined,
+        public sortBy: SortBy = SortBy.NAME,
+        public pageOfResults: number = 1,
+        public descOrder: boolean = true,
+        public pageSize: number = 10,
+        public isNested: boolean = false,
+        public nameSearch: string | undefined = undefined,
+        public descriptionSearch: string | undefined = undefined,
+        public authorSearch: string | undefined = undefined,
+        public showUnique: boolean = false,
+        public source: Source | undefined = undefined
+    ) {}
 }
 
 const StudiesPage = () => {
     const classes = StudiesPageStyles();
     const [studies, setStudies] = useState<StudyApiResponse[]>([]);
     const [searchMetadata, setSearchMetadata] = useState<Metadata>();
-    const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({
-        genericSearchStr: undefined,
-        sortBy: SortBy.NAME,
-        pageOfResults: 1,
-        descOrder: true,
-        pageSize: 10,
-        isNested: false,
-        nameSearch: undefined,
-        descriptionSearch: undefined,
-        authorSearch: undefined,
-        showUnique: false,
-        source: undefined,
-    });
+    const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>(new SearchCriteria());
 
     const getNumTotalPages = (totalCount: number | undefined, pageSize: number | undefined) => {
         if (!totalCount || !pageSize) {
@@ -62,11 +52,11 @@ const StudiesPage = () => {
         return remainder > 0 ? dividedValue + 1 : dividedValue;
     };
 
-    const handleOnSearch = (newSearchTerm: string) => {
+    const handleOnSearch = (newSearchTerm: SearchCriteria) => {
         setSearchCriteria((prevState) => {
             return {
                 ...prevState,
-                genericSearchStr: newSearchTerm,
+                ...newSearchTerm, // same name properties override the ones in prevState
             };
         });
     };
@@ -93,6 +83,9 @@ const StudiesPage = () => {
         setSearchCriteria((prevState) => {
             return {
                 ...prevState,
+                // set page to 1 so that we don't have issue where the paginator goes out of bounds
+                // when at the last page and rowsperpage is decreased
+                pageOfResults: 1,
                 pageSize: newRowsPerPage,
             };
         });
@@ -111,34 +104,40 @@ const StudiesPage = () => {
 
     // runs for any change in study query
     useEffect(() => {
-        const getStudies = (searchCriteria: SearchCriteria) => {
-            API.Services.StudiesService.studiesGet(
-                searchCriteria.genericSearchStr,
-                searchCriteria.sortBy,
-                searchCriteria.pageOfResults,
-                searchCriteria.descOrder,
-                searchCriteria.pageSize,
-                searchCriteria.isNested,
-                searchCriteria.nameSearch,
-                searchCriteria.descriptionSearch,
-                undefined,
-                searchCriteria.showUnique,
-                searchCriteria.source,
-                searchCriteria.authorSearch
-            )
-                .then((res) => {
-                    if (res?.data?.results) {
-                        setSearchMetadata(res.data.metadata);
-                        setStudies(res.data.results);
-                    }
-                })
-                .catch((err) => {
-                    console.log(err);
-                });
-        };
+        const debounce = setTimeout(() => {
+            const getStudies = (searchCriteria: SearchCriteria) => {
+                API.Services.StudiesService.studiesGet(
+                    searchCriteria.genericSearchStr,
+                    searchCriteria.sortBy,
+                    searchCriteria.pageOfResults,
+                    searchCriteria.descOrder,
+                    searchCriteria.pageSize,
+                    searchCriteria.isNested,
+                    searchCriteria.nameSearch,
+                    searchCriteria.descriptionSearch,
+                    undefined,
+                    searchCriteria.showUnique,
+                    searchCriteria.source,
+                    searchCriteria.authorSearch
+                )
+                    .then((res) => {
+                        if (res?.data?.results) {
+                            setSearchMetadata(res.data.metadata);
+                            setStudies(res.data.results);
+                        }
+                    })
+                    .catch((err) => {
+                        console.log(err);
+                    });
+            };
+            getStudies(searchCriteria);
+        }, 300);
 
-        getStudies(searchCriteria);
-    }, [searchCriteria, searchCriteria.genericSearchStr]);
+        // cancel call if another search request is made
+        return () => {
+            clearTimeout(debounce);
+        };
+    }, [searchCriteria]);
 
     return (
         <div>
@@ -166,6 +165,7 @@ const StudiesPage = () => {
                 onChange={handlePaginationChange}
                 showFirstButton
                 showLastButton
+                page={searchCriteria.pageOfResults}
                 count={getNumTotalPages(searchMetadata?.total_count, searchCriteria.pageSize)}
             />
         </div>

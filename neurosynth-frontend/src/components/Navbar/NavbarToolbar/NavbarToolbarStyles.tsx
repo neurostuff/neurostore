@@ -7,7 +7,7 @@ const NavbarToolbarStyles = makeStyles((theme) => {
             height: '100%',
             display: 'flex',
             alignItems: 'center',
-            padding: '0 18px',
+            padding: '0 8px',
             color: theme.palette.primary.contrastText,
         },
         navLinksContainer: {
