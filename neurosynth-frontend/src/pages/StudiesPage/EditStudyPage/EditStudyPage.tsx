@@ -1,5 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Button, Typography } from '@mui/material';
+import { ExpandMoreOutlined } from '@mui/icons-material';
+import { Accordion, AccordionDetails, AccordionSummary, Button, Typography } from '@mui/material';
 import { AxiosError } from 'axios';
 import React, { useContext } from 'react';
 import { useEffect } from 'react';
@@ -107,22 +108,32 @@ const EditStudyPage = () => {
                     Cancel
                 </Button>
             </div>
-            <div>
-                <Typography variant="h5">{study?.name}</Typography>
-            </div>
 
-            <div style={{ margin: '15px 0' }}>
-                <Typography variant="h6">
-                    <b>Metadata</b>
+            <div>
+                <Typography style={{ margin: '15px 0' }} variant="h5">
+                    {study?.name}
                 </Typography>
             </div>
 
-            {study && (
-                <EditMetadata
-                    onMetadataEditChange={handleMetadataEditChange}
-                    metadata={initialMetadataArr}
-                />
-            )}
+            <div>
+                <Accordion>
+                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                        <div>
+                            <Typography variant="h6">
+                                <b>Metadata</b>
+                            </Typography>
+                        </div>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        {study && (
+                            <EditMetadata
+                                onMetadataEditChange={handleMetadataEditChange}
+                                metadata={initialMetadataArr}
+                            />
+                        )}
+                    </AccordionDetails>
+                </Accordion>
+            </div>
         </div>
     );
 };

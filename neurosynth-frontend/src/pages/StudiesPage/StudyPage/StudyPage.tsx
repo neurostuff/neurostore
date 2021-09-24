@@ -1,5 +1,13 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Button, Tooltip, Typography } from '@mui/material';
+import { ExpandMoreOutlined } from '@mui/icons-material';
+import {
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
+    Button,
+    Tooltip,
+    Typography,
+} from '@mui/material';
 import { AxiosError, AxiosResponse } from 'axios';
 import React, { useContext, useEffect } from 'react';
 import { useCallback } from 'react';
@@ -94,17 +102,26 @@ const StudyPage = () => {
                 </Tooltip>
             </div>
             <div>
-                <Typography variant="h4">{study?.name}</Typography>
+                <Typography style={{ margin: '15px 0' }} variant="h4">
+                    {study?.name}
+                </Typography>
             </div>
+
             <div>
-                <div style={{ margin: '15px 0' }}>
-                    <Typography variant="h6">
-                        <b>Metadata</b>
-                    </Typography>
-                </div>
-                <div className={classes.metadataContainer}>
-                    {study && <DisplayMetadataTable metadata={study.metadata} />}
-                </div>
+                <Accordion>
+                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                        <div>
+                            <Typography variant="h6">
+                                <b>Metadata</b>
+                            </Typography>
+                        </div>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <div className={classes.metadataContainer}>
+                            {study && <DisplayMetadataTable metadata={study.metadata} />}
+                        </div>
+                    </AccordionDetails>
+                </Accordion>
             </div>
         </div>
     );
