@@ -18,7 +18,7 @@
         {
             "files": ["*.spec.tsx"],
             "rules": {
-                "@typescript-eslint/no-unused-expressions": "off",
+                "@typescript-eslint/no-unused-expressions": "off"
             }
         }
     ]
