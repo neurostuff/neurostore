@@ -13,8 +13,9 @@ import {
 
 export type StudyApiResponse = Study & ReadOnly;
 
+const APIDomain = process.env.REACT_APP_API_DOMAIN as string;
 const config: Configuration = new Configuration({
-    basePath: 'https://neurostore.org/api',
+    basePath: APIDomain,
 });
 
 const Services = {
@@ -29,7 +30,7 @@ const Services = {
 
 const UpdateServicesWithToken = (token: string) => {
     const config: Configuration = new Configuration({
-        basePath: 'https://neurostore.org/api',
+        basePath: APIDomain,
         baseOptions: {
             headers: {
                 Authorization: `Bearer ${token}`,
