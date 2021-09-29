@@ -28,7 +28,7 @@ const LandingPageStyles = makeStyles((theme) => ({
         },
     },
     logo: {
-        width: '120px',
+        width: '100px',
         [theme.breakpoints.down('md')]: {
             width: '100px',
         },
@@ -52,7 +52,7 @@ const LandingPageStyles = makeStyles((theme) => ({
         },
     },
     sponsorLogo: {
-        width: '200px',
+        width: '150px',
         [theme.breakpoints.down('md')]: {
             width: '100px',
         },
@@ -74,7 +74,7 @@ const LandingPageStyles = makeStyles((theme) => ({
         },
     },
     divider: {
-        margin: '4% 0 4% 0 !important',
+        margin: '2% 0 !important',
         width: '100%',
     },
 }));
