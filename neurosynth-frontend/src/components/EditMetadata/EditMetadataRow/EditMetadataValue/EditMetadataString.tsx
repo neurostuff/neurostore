@@ -25,7 +25,7 @@ const EditMetadataString: React.FC<IEditMetadataField> = (props) => {
             onChange={handleValueChange}
             value={value}
             variant="outlined"
-            className={classes.w_100}
+            className={classes.textfield}
         />
     );
 };

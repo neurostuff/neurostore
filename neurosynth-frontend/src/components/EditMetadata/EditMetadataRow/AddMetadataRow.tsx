@@ -124,6 +124,7 @@ const AddMetadataRow: React.FC<AddMetadataRowModel> = (props) => {
             </div>
             <div className={`${classes.tableCell} ${classes.key}`}>
                 <TextField
+                    className={classes.addMetadataTextfield}
                     onChange={handleMetadataKeyChange}
                     variant="outlined"
                     placeholder="New metadata key"

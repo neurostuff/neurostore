@@ -7,8 +7,19 @@ const EditMetadataFieldsStyles = makeStyles((themes) => ({
     checkedFalse: {
         color: themes.palette.secondary.main,
     },
-    w_100: {
+    textfield: {
         width: '100%',
+        '& .MuiOutlinedInput-root': {
+            padding: '10px 14px !important',
+            fontSize: '12px !important',
+        },
+    },
+    numberfield: {
+        width: '100%',
+        '& .MuiOutlinedInput-input': {
+            padding: '10px 14px !important',
+            fontSize: '12px !important',
+        },
     },
 }));
 
