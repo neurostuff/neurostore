@@ -41,6 +41,7 @@ const StudyPage = () => {
             const token = await getAccessTokenSilently();
             context?.handleToken(token);
         } catch (exception) {
+            context.showSnackbar('There was an error', SnackbarType.ERROR);
             console.error(exception);
         }
         API.Services.StudiesService.studiesPost(undefined, params.studyId, {})
@@ -49,6 +50,7 @@ const StudyPage = () => {
                 history.push(`/studies`);
             })
             .catch((err: Error | AxiosError) => {
+                context.showSnackbar('There was an error', SnackbarType.ERROR);
                 console.log(err.message);
             });
     };
@@ -72,7 +74,7 @@ const StudyPage = () => {
 
     return (
         <div>
-            <div className={classes.buttonContainer}>
+            <div className={`${classes.buttonContainer} ${classes.spaceBelow}`}>
                 <Tooltip placement="top" title={!isAuthenticated ? 'login to clone study' : ''}>
                     <div style={{ display: 'inline' }}>
                         <Button
@@ -102,13 +104,23 @@ const StudyPage = () => {
                 </Tooltip>
             </div>
             <div>
-                <Typography style={{ margin: '15px 0' }} variant="h4">
-                    {study?.name}
+                <Typography className={classes.spaceBelow} variant="h5">
+                    <b>{study?.name}</b>
+                </Typography>
+                <Typography className={classes.spaceBelow} variant="h6">
+                    {study?.authors}
+                </Typography>
+                <div className={classes.spaceBelow}>
+                    <Typography variant="h6">{study?.publication}</Typography>
+                    {study?.doi && <Typography variant="h6">DOI: {study?.doi}</Typography>}
+                </div>
+                <Typography className={classes.spaceBelow} variant="subtitle1">
+                    {study?.description}
                 </Typography>
             </div>
 
             <div>
-                <Accordion>
+                <Accordion elevation={4}>
                     <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
                         <div>
                             <Typography variant="h6">

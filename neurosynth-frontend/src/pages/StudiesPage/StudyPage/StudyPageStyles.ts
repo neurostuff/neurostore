@@ -5,7 +5,6 @@ const StudyPageStyles = makeStyles((theme) => ({
         '& button': {
             marginRight: '15px',
         },
-        marginBottom: '15px',
     },
     muted: {
         color: theme.palette.muted.main,
@@ -13,6 +12,9 @@ const StudyPageStyles = makeStyles((theme) => ({
     metadataContainer: {},
     noContent: {
         color: theme.palette.warning.dark,
+    },
+    spaceBelow: {
+        marginBottom: '15px !important',
     },
 }));
 

@@ -12,8 +12,12 @@ const EditStudyPageStyles = makeStyles((theme) => ({
         zIndex: 2,
         width: '100%',
         position: 'sticky',
-        paddingBottom: '20px',
+        padding: '20px 10px',
         top: '0',
+    },
+    textfield: {
+        marginBottom: '15px !important',
+        width: '100%',
     },
 }));
 
