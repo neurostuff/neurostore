@@ -1,15 +1,38 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Button, Typography } from '@mui/material';
+import { ExpandMoreOutlined } from '@mui/icons-material';
+import {
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
+    Button,
+    TextField,
+    Typography,
+} from '@mui/material';
 import { AxiosError } from 'axios';
-import React, { useContext } from 'react';
+import React, { ChangeEvent, useContext } from 'react';
 import { useEffect } from 'react';
 import { useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { EditMetadata } from '../../../components';
 import { DisplayMetadataTableRowModel } from '../../../components/DisplayMetadataTable/DisplayMetadataTableRow/DisplayMetadataTableRow';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
-import API, { StudyApiResponse } from '../../../utils/api';
+import API from '../../../utils/api';
 import EditStudyPageStyles from './EditStudyPageStyles';
+
+interface IStudyEdit {
+    name: string;
+    authors: string;
+    publication: string;
+    doi: string;
+    description: string;
+    metadata: DisplayMetadataTableRowModel[];
+}
+
+const textFieldInputProps = {
+    style: {
+        fontSize: 15,
+    },
+};
 
 const arrayToMetadata = (arr: DisplayMetadataTableRowModel[]): { [key: string]: any } => {
     const tempObj: { [key: string]: any } = {};
@@ -21,13 +44,19 @@ const EditStudyPage = () => {
     const globalContext = useContext(GlobalContext);
     const { getAccessTokenSilently } = useAuth0();
     const classes = EditStudyPageStyles();
-    const [study, setStudy] = useState<StudyApiResponse>();
     const [saveEnabled, setSaveEnabled] = useState(false);
 
-    // metadata edits are updated and stored in this state
-    const [updatedMetadata, setUpdatedMetadata] = useState<DisplayMetadataTableRowModel[]>([]);
+    // study and metadata edits are updated and stored in this state
+    const [updatedStudy, setUpdatedStudy] = useState<IStudyEdit>({
+        name: '',
+        authors: '',
+        publication: '',
+        doi: '',
+        description: '',
+        metadata: [],
+    });
 
-    // initial metadata received from the study is set in this state
+    // initial metadata received from the study is set in this state. Separate in order to avoid constant re renders
     const [initialMetadataArr, setInitialMetadataArr] = useState<DisplayMetadataTableRowModel[]>(
         []
     );
@@ -35,25 +64,35 @@ const EditStudyPage = () => {
     const params: { studyId: string } = useParams();
 
     const handleMetadataEditChange = (metadata: DisplayMetadataTableRowModel[]) => {
-        setUpdatedMetadata(metadata);
+        setUpdatedStudy((prevState) => {
+            return {
+                ...prevState,
+                metadata: metadata,
+            };
+        });
         setSaveEnabled(true);
     };
-
-    useEffect(() => {
-        const metadataArr: DisplayMetadataTableRowModel[] = study?.metadata
-            ? Object.keys(study.metadata).map((row) => ({
-                  metadataKey: row,
-                  metadataValue: (study.metadata as any)[row],
-              }))
-            : [];
-        setInitialMetadataArr(metadataArr);
-    }, [study]);
 
     useEffect(() => {
         const getStudy = (id: string) => {
             API.Services.StudiesService.studiesIdGet(id)
                 .then((res) => {
-                    setStudy(res.data);
+                    const study = res.data;
+                    const metadataArr: DisplayMetadataTableRowModel[] = study.metadata
+                        ? Object.keys(study.metadata).map((row) => ({
+                              metadataKey: row,
+                              metadataValue: (study.metadata as any)[row],
+                          }))
+                        : [];
+                    setInitialMetadataArr(metadataArr);
+                    setUpdatedStudy({
+                        name: study.name || '',
+                        authors: study.authors || '',
+                        publication: study.publication || '',
+                        doi: study.doi || '',
+                        description: study.description || '',
+                        metadata: metadataArr,
+                    });
                 })
                 .catch(() => {});
         };
@@ -68,14 +107,20 @@ const EditStudyPage = () => {
     };
 
     const handleOnSave = async (event: React.MouseEvent) => {
-        const metadata = arrayToMetadata(updatedMetadata);
+        const metadata = arrayToMetadata(updatedStudy?.metadata);
         try {
             const token = await getAccessTokenSilently();
             globalContext.handleToken(token);
         } catch (exception) {
+            globalContext.showSnackbar('there was an error', SnackbarType.ERROR);
             console.log(exception);
         }
         API.Services.StudiesService.studiesIdPut(params.studyId, {
+            name: updatedStudy.name,
+            description: updatedStudy.description,
+            authors: updatedStudy.authors,
+            publication: updatedStudy.publication,
+            doi: updatedStudy.doi,
             metadata: metadata,
         })
             .then((res) => {
@@ -83,8 +128,19 @@ const EditStudyPage = () => {
                 history.push(`/studies/${params.studyId}`);
             })
             .catch((err: Error | AxiosError) => {
+                globalContext.showSnackbar('there was an error', SnackbarType.ERROR);
                 console.log(err.message);
             });
+    };
+
+    const handleOnEdit = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+        setUpdatedStudy((prevState) => {
+            return {
+                ...prevState,
+                [event.target.name]: event.target.value,
+            };
+        });
+        setSaveEnabled(true);
     };
 
     return (
@@ -107,22 +163,93 @@ const EditStudyPage = () => {
                     Cancel
                 </Button>
             </div>
-            <div>
-                <Typography variant="h5">{study?.name}</Typography>
+
+            <div style={{ marginBottom: '15px', padding: '0 10px' }}>
+                {updatedStudy && (
+                    <Accordion elevation={4}>
+                        <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                            <div>
+                                <Typography variant="h6">
+                                    <b>Study Details</b>
+                                </Typography>
+                            </div>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                            <TextField
+                                style={{ width: '100%' }}
+                                label="Edit Title"
+                                variant="outlined"
+                                className={classes.textfield}
+                                value={updatedStudy.name}
+                                InputProps={textFieldInputProps}
+                                name="name"
+                                onChange={handleOnEdit}
+                            />
+                            <TextField
+                                style={{ width: '100%' }}
+                                className={classes.textfield}
+                                variant="outlined"
+                                label="Edit Authors"
+                                value={updatedStudy.authors}
+                                InputProps={textFieldInputProps}
+                                name="authors"
+                                onChange={handleOnEdit}
+                            />
+                            <TextField
+                                style={{ width: '100%' }}
+                                variant="outlined"
+                                className={classes.textfield}
+                                label="Edit Journal"
+                                value={updatedStudy.publication}
+                                InputProps={textFieldInputProps}
+                                name="publication"
+                                onChange={handleOnEdit}
+                            />
+                            <TextField
+                                style={{ width: '100%' }}
+                                variant="outlined"
+                                className={classes.textfield}
+                                label="Edit DOI"
+                                value={updatedStudy.doi}
+                                InputProps={textFieldInputProps}
+                                name="doi"
+                                onChange={handleOnEdit}
+                            />
+                            <TextField
+                                style={{ width: '100%' }}
+                                variant="outlined"
+                                className={classes.textfield}
+                                label="Edit Description"
+                                multiline
+                                value={updatedStudy.description}
+                                InputProps={textFieldInputProps}
+                                name="description"
+                                onChange={handleOnEdit}
+                            />
+                        </AccordionDetails>
+                    </Accordion>
+                )}
             </div>
 
-            <div style={{ margin: '15px 0' }}>
-                <Typography variant="h6">
-                    <b>Metadata</b>
-                </Typography>
+            <div style={{ marginBottom: '15px', padding: '0 10px' }}>
+                <Accordion elevation={4}>
+                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                        <div>
+                            <Typography variant="h6">
+                                <b>Metadata</b>
+                            </Typography>
+                        </div>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        {updatedStudy && (
+                            <EditMetadata
+                                onMetadataEditChange={handleMetadataEditChange}
+                                metadata={initialMetadataArr}
+                            />
+                        )}
+                    </AccordionDetails>
+                </Accordion>
             </div>
-
-            {study && (
-                <EditMetadata
-                    onMetadataEditChange={handleMetadataEditChange}
-                    metadata={initialMetadataArr}
-                />
-            )}
         </div>
     );
 };

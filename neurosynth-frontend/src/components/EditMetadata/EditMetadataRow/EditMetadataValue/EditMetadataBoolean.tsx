@@ -1,4 +1,4 @@
-import { FormControlLabel, FormGroup, Switch } from '@mui/material';
+import { FormControlLabel, FormGroup, Switch, Typography } from '@mui/material';
 import { useState } from 'react';
 import { IEditMetadataField } from '../EditMetadataRow';
 import EditMetadataFieldsStyles from './EditMetadataFieldsStyles';
@@ -19,7 +19,7 @@ const EditMetadataBoolean: React.FC<IEditMetadataField> = (props) => {
                 control={
                     <Switch onChange={handleChange} color="primary" size="medium" checked={state} />
                 }
-                label={state.toString()}
+                label={<Typography variant="caption">{state.toString()}</Typography>}
             />
         </FormGroup>
     );

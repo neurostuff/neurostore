@@ -1,5 +1,13 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Button, Tooltip, Typography } from '@mui/material';
+import { ExpandMoreOutlined } from '@mui/icons-material';
+import {
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
+    Button,
+    Tooltip,
+    Typography,
+} from '@mui/material';
 import { AxiosError, AxiosResponse } from 'axios';
 import React, { useContext, useEffect } from 'react';
 import { useCallback } from 'react';
@@ -33,6 +41,7 @@ const StudyPage = () => {
             const token = await getAccessTokenSilently();
             context?.handleToken(token);
         } catch (exception) {
+            context.showSnackbar('There was an error', SnackbarType.ERROR);
             console.error(exception);
         }
         API.Services.StudiesService.studiesPost(undefined, params.studyId, {})
@@ -41,6 +50,7 @@ const StudyPage = () => {
                 history.push(`/studies`);
             })
             .catch((err: Error | AxiosError) => {
+                context.showSnackbar('There was an error', SnackbarType.ERROR);
                 console.log(err.message);
             });
     };
@@ -64,7 +74,7 @@ const StudyPage = () => {
 
     return (
         <div>
-            <div className={classes.buttonContainer}>
+            <div className={`${classes.buttonContainer} ${classes.spaceBelow}`}>
                 <Tooltip placement="top" title={!isAuthenticated ? 'login to clone study' : ''}>
                     <div style={{ display: 'inline' }}>
                         <Button
@@ -94,17 +104,36 @@ const StudyPage = () => {
                 </Tooltip>
             </div>
             <div>
-                <Typography variant="h4">{study?.name}</Typography>
+                <Typography className={classes.spaceBelow} variant="h5">
+                    <b>{study?.name}</b>
+                </Typography>
+                <Typography className={classes.spaceBelow} variant="h6">
+                    {study?.authors}
+                </Typography>
+                <div className={classes.spaceBelow}>
+                    <Typography variant="h6">{study?.publication}</Typography>
+                    {study?.doi && <Typography variant="h6">DOI: {study?.doi}</Typography>}
+                </div>
+                <Typography className={classes.spaceBelow} variant="subtitle1">
+                    {study?.description}
+                </Typography>
             </div>
+
             <div>
-                <div style={{ margin: '15px 0' }}>
-                    <Typography variant="h6">
-                        <b>Metadata</b>
-                    </Typography>
-                </div>
-                <div className={classes.metadataContainer}>
-                    {study && <DisplayMetadataTable metadata={study.metadata} />}
-                </div>
+                <Accordion elevation={4}>
+                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                        <div>
+                            <Typography variant="h6">
+                                <b>Metadata</b>
+                            </Typography>
+                        </div>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <div className={classes.metadataContainer}>
+                            {study && <DisplayMetadataTable metadata={study.metadata} />}
+                        </div>
+                    </AccordionDetails>
+                </Accordion>
             </div>
         </div>
     );
