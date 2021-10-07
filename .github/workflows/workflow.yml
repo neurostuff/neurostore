@@ -27,6 +27,12 @@ jobs:
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
           up -d
+    - 
+      name: Create Test Database
+      run: |
+        docker-compose exec -T \
+        pgsql \
+        psql -U postgres -c "create database test_db"
     -
       name: Backend Tests
       env:
