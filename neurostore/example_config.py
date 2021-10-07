@@ -5,7 +5,7 @@ import os
 
 
 class Config(object):
-    SERVER_NAME = 'localhost'  # Set to external server name in production
+    # SERVER_NAME = 'localhost'  # Set to external server name in production
 
     MIGRATIONS_DIR = '/migrations/migrations'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -40,13 +40,14 @@ class ProductionConfig(Config):
 
 class StagingConfig(Config):
     ENV = 'staging'
+    DEBUG = True
 
     AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")
     AUTH0_CLIENT_SECRET = os.environ.get("AUTH0_CLIENT_SECRET")
     AUTH0_BASE_URL = "https://neurosynth-staging.us.auth0.com"
     AUTH0_ACCESS_TOKEN_URL = "https://neurosynth-staging.us.auth0.com/oauth/token"
     AUTH0_AUTH_URL = "https://neurosynth-staging.us.auth0.com/authorize"
-    AUTH0_API_AUDIENCE = "https://deepdream.psy.utexas.edu/neurostore/api/"
+    AUTH0_API_AUDIENCE = "https://neurostore.xyz/api/"
 
 
 class DevelopmentConfig(Config):

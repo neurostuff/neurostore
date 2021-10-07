@@ -35,3 +35,13 @@ def test_user_id(auth_client, user_studies):
     resp = auth_client.get(f"/api/studies/?user_id={user.external_id}")
     for study in resp.json['results']:
         assert study['user'] == user.external_id
+
+
+def test_source_id(auth_client, ingest_neurosynth):
+    from ...resources.data import Study
+
+    study = Study.query.first()
+    post = auth_client.post(f"/api/studies/?source_id={study.id}", data={})
+    get = auth_client.get(f"/api/studies/?source_id={study.id}&nested=true")
+
+    assert post.json == get.json['results'][0]
