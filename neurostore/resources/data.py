@@ -153,7 +153,7 @@ LIST_USER_ARGS = {
     "page_size": fields.Int(missing=20, validate=lambda val: val < 100),
     "source_id": fields.String(missing=None),
     "source": fields.String(missing=None),
-    "unique": fields.Boolean(missing=True),
+    "unique": fields.Boolean(missing=False),
     "nested": fields.Boolean(missing=False),
     "user_id": fields.String(missing=None)
 }
