@@ -77,7 +77,7 @@ jobs:
           -e "CI=true" \
           --rm -w /neurostore/neurosynth-frontend \
           neurostore \
-          npm install && npm run test
+          npm install && npm run test /neurostore/neurosynth-frontend/
 
   style_check:
     runs-on: ubuntu-latest
