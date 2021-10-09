@@ -5,6 +5,13 @@ import {
     AccordionDetails,
     AccordionSummary,
     Button,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
     Tooltip,
     Typography,
 } from '@mui/material';
@@ -14,7 +21,9 @@ import { useCallback } from 'react';
 import { useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import DisplayMetadataTable from '../../../components/DisplayMetadataTable/DisplayMetadataTable';
+import Visualizer from '../../../components/Visualizer/Visualizer';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
+import { Analysis, ReadOnly } from '../../../gen/api';
 import API, { StudyApiResponse } from '../../../utils/api';
 import StudyPageStyles from './StudyPageStyles';
 
@@ -28,7 +37,7 @@ const StudyPage = () => {
     const params: { studyId: string } = useParams();
 
     const getStudy = useCallback((id: string) => {
-        API.Services.StudiesService.studiesIdGet(id)
+        API.Services.StudiesService.studiesIdGet(id, true)
             .then((res) => {
                 const resUpdated = res as AxiosResponse<StudyApiResponse & { user: string }>;
                 setStudy(resUpdated.data);
@@ -111,29 +120,107 @@ const StudyPage = () => {
                     {study?.authors}
                 </Typography>
                 <div className={classes.spaceBelow}>
-                    <Typography variant="h6">{study?.publication}</Typography>
-                    {study?.doi && <Typography variant="h6">DOI: {study?.doi}</Typography>}
+                    {study?.publication && (
+                        <Typography variant="subtitle1">Journal: {study?.publication}</Typography>
+                    )}
+                    {study?.doi && <Typography variant="subtitle1">DOI: {study?.doi}</Typography>}
                 </div>
                 <Typography className={classes.spaceBelow} variant="subtitle1">
                     {study?.description}
                 </Typography>
             </div>
 
+            <div className={classes.spaceBelow}>
+                <Typography variant="h6">
+                    <b>Study Metadata</b>
+                </Typography>
+                <div>
+                    <Accordion elevation={4}>
+                        <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                            Click to expand study metadata
+                        </AccordionSummary>
+                        <AccordionDetails>
+                            <div className={classes.metadataContainer}>
+                                {study && <DisplayMetadataTable metadata={study.metadata} />}
+                            </div>
+                        </AccordionDetails>
+                    </Accordion>
+                </div>
+            </div>
+
             <div>
-                <Accordion elevation={4}>
-                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                        <div>
-                            <Typography variant="h6">
-                                <b>Metadata</b>
+                <Typography
+                    style={{
+                        position: 'sticky',
+                        top: 20,
+                    }}
+                    variant="h6"
+                >
+                    <b>Analyses</b>
+                </Typography>
+                <div>
+                    {study?.analyses?.map((element, index) => (
+                        <Paper
+                            elevation={4}
+                            className={classes.spaceBelow}
+                            style={{ padding: '16px' }}
+                        >
+                            <Typography className={classes.spaceBelow} variant="h6">
+                                Name: <b>{(element as any).name}</b>
                             </Typography>
-                        </div>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        <div className={classes.metadataContainer}>
-                            {study && <DisplayMetadataTable metadata={study.metadata} />}
-                        </div>
-                    </AccordionDetails>
-                </Accordion>
+
+                            <Typography variant="h6">Conditions:</Typography>
+
+                            <div className={classes.spaceBelow}>
+                                {(element as any).conditions.map((condition: any) => (
+                                    <span>{condition.name}</span>
+                                ))}
+                            </div>
+
+                            <Typography variant="h6">Images:</Typography>
+                            {(element as any)?.images.length > 0 && (
+                                <div>
+                                    <Visualizer
+                                        index={index}
+                                        overlayURL="https://neurovault.org/static/images/GenericMNI.nii.gz"
+                                        fileName={(element as any)?.images[0]?.filename}
+                                        imageURL={(element as any)?.images[0]?.url}
+                                    />
+                                </div>
+                            )}
+
+                            <Typography variant="h6">Coordinates:</Typography>
+                            {(element as any).points.length > 0 && (
+                                <TableContainer>
+                                    <Table size="small">
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell>X</TableCell>
+                                                <TableCell>Y</TableCell>
+                                                <TableCell>Z</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {(element as any).points.map((row: any) => (
+                                                <TableRow>
+                                                    <TableCell>
+                                                        <span>{row.coordinates[0]}</span>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <span>{row.coordinates[1]}</span>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <span>{row.coordinates[2]}</span>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            )}
+                        </Paper>
+                    ))}
+                </div>
             </div>
         </div>
     );
