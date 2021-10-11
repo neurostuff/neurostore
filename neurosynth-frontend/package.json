@@ -23,7 +23,8 @@
         "web-vitals": "^1.1.2"
     },
     "scripts": {
-        "start": "react-scripts start",
+        "start:dev": "env-cmd -f .env.dev react-scripts start",
+        "start:staging": "env-cmd -f .env.staging react-scripts start",
         "update-api": "docker run --rm -v \"%cd%:/local\" openapitools/openapi-generator-cli generate -i https://raw.githubusercontent.com/neurostuff/neurostore-spec/main/neurostore-openapi.yml -g typescript-axios -o /local/src/gen/api",
         "build": "react-scripts build",
         "test": "react-scripts test",
@@ -46,13 +47,14 @@
     "devDependencies": {
         "@cypress/react": "^5.9.4",
         "@cypress/webpack-dev-server": "^1.5.0",
-        "cypress": "^8.3.1",
-        "eslint-config-prettier": "^8.3.0",
-        "eslint-plugin-prettier": "^4.0.0",
-        "prettier": "^2.4.0",
         "@testing-library/dom": "^8.3.0",
         "@testing-library/jest-dom": "^5.14.1",
         "@testing-library/react": "^11.2.7",
-        "@testing-library/user-event": "^12.8.3"
+        "@testing-library/user-event": "^12.8.3",
+        "cypress": "^8.3.1",
+        "env-cmd": "^10.1.0",
+        "eslint-config-prettier": "^8.3.0",
+        "eslint-plugin-prettier": "^4.0.0",
+        "prettier": "^2.4.0"
     }
 }

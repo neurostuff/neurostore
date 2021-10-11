@@ -64,6 +64,9 @@ local_settings.py
 instance/
 .webassets-cache
 
+# Postgres Python migrations:
+postgres/migrations/migrations/versions/*
+
 # Scrapy stuff:
 .scrapy
 
@@ -84,6 +87,9 @@ celerybeat-schedule
 
 # dotenv
 .env
+.env.dev
+.env.staging
+.env.prod
 
 # virtualenv
 venv/
