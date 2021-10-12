@@ -1,3 +1,7 @@
+# Introduction
+
+Welcome to the neurosynth frontend.
+
 # Testing
 
 This repository is being tested using cypress and the react testing library.
@@ -5,7 +9,12 @@ Cypress is utilized for integration testing, while the react testing library is 
 Cypress bundles other tools with it, such as mocha, sinon and chai.
 In this application, we utilize the additional testing-library/user-event module in order to simulate user events such as typing and clicking.
 
+### `npm run cy:e2e-headless` or `npm run cy:e2e-browser`
+
 Integration tests can be run using the command: npm run cy:e2e-headless or npm run cy:e2e-browser.
+
+### `npm test`
+
 Unit tests can be run using the command: npm run test.
 
 # Prettier
@@ -27,20 +36,45 @@ be applied or will be helpful. In the settings.json, you may need to add the fol
 "[typescript]": {
     "editor.defaultFormatter": "dbaeumer.vscode-eslint"
 },
-"editor.defaultFormatter": "dbaeumer.vscode-eslint"
+"editor.defaultFormatter": "dbaeumer.vscode-eslint",
+"editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+}
 ```
 
-# Getting Started with Create React App
+# Getting Started
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+
+In order to get started locally, this project expects the following env config files:
+`.env.dev`
+`.env.staging`
 
 ## Available Scripts
 
 In the project directory, you can run:
 
-### `npm start`
+### `npm run start:dev`
 
-Runs the app in the development mode.\
+This expects a `.env.dev` file at the root of the project.
+See .env.example for an example .env file.
+
+This should point to the development server.
+
+Runs the app in the development mode with the local development configs.\
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+
+The page will reload if you make edits.\
+You will also see any lint errors in the console.
+
+### `npm run start:staging`
+
+This expects a `.env.staging` file at the root of the project.
+See .env.example for an example .env file.
+
+This should point to the neurosynth staging server to access the backend data.
+
+Runs the app in the development mode with the local development configs.\
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
 The page will reload if you make edits.\
