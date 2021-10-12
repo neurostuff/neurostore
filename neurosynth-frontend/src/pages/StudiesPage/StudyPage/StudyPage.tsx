@@ -129,12 +129,9 @@ const StudyPage = () => {
                     <b>Metadata</b>
                 </Typography>
                 <div>
-                    <Accordion disabled={metadataKeyLength === 0} elevation={4}>
+                    <Accordion elevation={4}>
                         <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                            {metadataKeyLength === 0 && (
-                                <span className={classes.error}>No study metadata</span>
-                            )}
-                            {metadataKeyLength > 0 && <span>Click to see see study metadata</span>}
+                            <span>Click to see study metadata</span>
                         </AccordionSummary>
                         <AccordionDetails>
                             <div className={classes.metadataContainer}>
