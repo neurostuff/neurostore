@@ -14,7 +14,7 @@ const StudyPageStyles = makeStyles((theme) => ({
         color: theme.palette.warning.dark,
     },
     spaceBelow: {
-        marginBottom: '15px !important',
+        marginBottom: '8px !important',
     },
     error: {
         color: theme.palette.error.main,
