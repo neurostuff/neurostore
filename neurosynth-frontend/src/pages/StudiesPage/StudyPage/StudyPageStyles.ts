@@ -16,6 +16,10 @@ const StudyPageStyles = makeStyles((theme) => ({
     spaceBelow: {
         marginBottom: '15px !important',
     },
+    error: {
+        color: theme.palette.error.main,
+        fontWeight: 'bold',
+    },
 }));
 
 export default StudyPageStyles;
