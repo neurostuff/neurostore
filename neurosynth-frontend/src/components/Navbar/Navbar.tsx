@@ -13,7 +13,6 @@ const navItems: NavOptionsModel[] = [
 ];
 
 const Navbar = () => {
-    const classes = NavbarStyles();
     const context = useContext(GlobalContext);
     const { loginWithPopup, getAccessTokenSilently, logout } = useAuth0();
 
@@ -32,7 +31,7 @@ const Navbar = () => {
     return (
         <AppBar position="static" elevation={0}>
             <Hidden mdDown>
-                <Toolbar className={classes.toolbar}>
+                <Toolbar sx={NavbarStyles.toolbar}>
                     <NavbarToolbar
                         logout={handleLogout}
                         login={handleLogin}
@@ -41,7 +40,7 @@ const Navbar = () => {
                 </Toolbar>
             </Hidden>
             <Hidden mdUp>
-                <Toolbar className={classes.toolbar}>
+                <Toolbar sx={NavbarStyles.toolbar}>
                     <NavbarDrawer logout={handleLogout} login={handleLogin} navOptions={navItems} />
                 </Toolbar>
             </Hidden>

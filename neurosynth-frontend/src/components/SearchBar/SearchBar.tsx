@@ -6,6 +6,7 @@ import {
     Select,
     MenuItem,
     SelectChangeEvent,
+    Box,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import React from 'react';
@@ -37,9 +38,7 @@ const SearchBar: React.FC<SearchBarModel> = (props) => {
         event.preventDefault();
 
         const newSearch = new SearchCriteria();
-
         newSearch[searchParams.searchBy] = searchParams.searchedString;
-
         props.onSearch(newSearch);
     };
 
@@ -61,14 +60,13 @@ const SearchBar: React.FC<SearchBarModel> = (props) => {
         });
     };
 
-    const classes = SearchBarStyles();
     return (
-        <div style={{ display: 'flex' }}>
-            <form className={classes.w_100} onSubmit={handleOnSubmit}>
-                <div className={classes.searchContainer}>
+        <Box sx={{ display: 'flex' }}>
+            <Box component="form" sx={{ width: '100%' }} onSubmit={handleOnSubmit}>
+                <Box sx={SearchBarStyles.searchContainer}>
                     <FormControl variant="outlined">
                         <Select
-                            className={classes.select}
+                            sx={SearchBarStyles.select}
                             autoWidth
                             value={searchParams.searchBy}
                             onChange={handleSelectChange}
@@ -79,26 +77,26 @@ const SearchBar: React.FC<SearchBarModel> = (props) => {
                             <MenuItem value={SearchBy.DESCRIPTION}>Description</MenuItem>
                         </Select>
                     </FormControl>
-                    <Paper className={classes.paper} variant="outlined">
+                    <Paper sx={SearchBarStyles.paper} variant="outlined">
                         <InputBase
                             onChange={handleEnteredText}
                             placeholder="Search for a study"
-                            className={classes.textfield}
+                            sx={SearchBarStyles.textfield}
                         />
                     </Paper>
                     <Button
+                        sx={SearchBarStyles.iconContainer}
                         color="primary"
                         variant="contained"
-                        className={classes.iconContainer}
                         onClick={handleOnSubmit}
                         size="large"
                         type="submit"
                     >
-                        <SearchIcon className={classes.icon} />
+                        <SearchIcon sx={{ color: 'white' }} />
                     </Button>
-                </div>
-            </form>
-        </div>
+                </Box>
+            </Box>
+        </Box>
     );
 };
 

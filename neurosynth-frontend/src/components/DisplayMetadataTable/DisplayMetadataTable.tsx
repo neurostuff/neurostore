@@ -1,14 +1,16 @@
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import React from 'react';
-import DisplayMetadataTableStyles from './DisplayMetadataTableStyles';
 import { DisplayMetadataTableModel, DisplayMetadataTableRowModel } from '.';
 import DisplayMetadataTableRow from './DisplayMetadataTableRow/DisplayMetadataTableRow';
+import { Box } from '@mui/system';
 
 const DisplayMetadataTable: React.FC<DisplayMetadataTableModel> = (props) => {
-    const classes = DisplayMetadataTableStyles();
-
     if (!props.metadata) {
-        return <span className={classes.noContent}>No Metadata</span>;
+        return (
+            <Box component="span" sx={{ color: 'warning.dark' }}>
+                No Metadata
+            </Box>
+        );
     }
 
     const rowData = Object.keys(props.metadata).map<DisplayMetadataTableRowModel>((key) => ({

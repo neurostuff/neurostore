@@ -1,14 +1,22 @@
 import { NavLink } from 'react-router-dom';
-import { Typography, IconButton, Drawer, List, ListItem, ListItemText } from '@mui/material';
+import {
+    Typography,
+    IconButton,
+    Drawer,
+    List,
+    ListItem,
+    ListItemText,
+    Button,
+    Box,
+} from '@mui/material';
 import { useState } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
-import NavbarDrawerStyles from './NavbarDrawerStyles';
 import { useAuth0 } from '@auth0/auth0-react';
 import { NavbarArgs } from '..';
+import NavbarStyles from '../NavbarStyles';
 
 const NavbarDrawer: React.FC<NavbarArgs> = (props) => {
     const [drawerIsOpen, setDrawerIsOpen] = useState(false);
-    const classes = NavbarDrawerStyles();
     const { isAuthenticated } = useAuth0();
     const toggleDrawer = () => {
         setDrawerIsOpen((prevState) => !prevState);
@@ -16,9 +24,13 @@ const NavbarDrawer: React.FC<NavbarArgs> = (props) => {
 
     return (
         <>
-            <Typography variant="h5">neurosynth</Typography>
+            <Button>
+                <Box to="/" exact sx={NavbarStyles.neurosynthLink} component={NavLink}>
+                    <Typography variant="h5">neurosynth</Typography>
+                </Box>
+            </Button>
             <Drawer anchor="left" open={drawerIsOpen} onClose={toggleDrawer}>
-                <List className={classes.list}>
+                <List sx={{ width: '240px' }}>
                     {props.navOptions.map((navItem, index) => (
                         <ListItem
                             button
