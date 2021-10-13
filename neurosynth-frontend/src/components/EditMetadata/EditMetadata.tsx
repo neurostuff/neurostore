@@ -4,6 +4,7 @@ import EditMetadataRow from './EditMetadataRow/EditMetadataRow';
 import AddMetadataRow from './EditMetadataRow/AddMetadataRow';
 import { DisplayMetadataTableRowModel } from '..';
 import { EPropertyType, IEditMetadataModel } from '.';
+import { Box } from '@mui/system';
 
 export const getType = (value: any): EPropertyType => {
     switch (typeof value) {
@@ -19,8 +20,6 @@ export const getType = (value: any): EPropertyType => {
 };
 
 const EditMetadata: React.FC<IEditMetadataModel> = (props) => {
-    const classes = EditMetadataStyles();
-
     // this props.metadata value is only used on the first render so useState is required below for subsequent props changes
     const [metadata, setMetadata] = useState<DisplayMetadataTableRowModel[]>(props.metadata);
 
@@ -70,12 +69,16 @@ const EditMetadata: React.FC<IEditMetadataModel> = (props) => {
 
     return (
         <>
-            <div className={classes.table}>
+            <Box sx={EditMetadataStyles.table}>
                 <AddMetadataRow onAddMetadataRow={handleMetadataRowAdd} />
-            </div>
-            <hr className={classes.hr} />
-            {metadata.length === 0 && <span className={classes.noContent}>No Metadata</span>}
-            <div className={classes.table}>
+            </Box>
+            <Box component="hr" sx={EditMetadataStyles.hr} />
+            {metadata.length === 0 && (
+                <Box component="span" sx={{ color: 'warning.dark' }}>
+                    No Metadata
+                </Box>
+            )}
+            <Box sx={EditMetadataStyles.table}>
                 {metadata.map((metadataRow) => (
                     <EditMetadataRow
                         key={metadataRow.metadataKey}
@@ -85,7 +88,7 @@ const EditMetadata: React.FC<IEditMetadataModel> = (props) => {
                         metadataRow={metadataRow}
                     />
                 ))}
-            </div>
+            </Box>
         </>
     );
 };

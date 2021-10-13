@@ -1,4 +1,5 @@
 import { TableCell, TableRow } from '@mui/material';
+import { Box } from '@mui/system';
 import React from 'react';
 import { DisplayMetadataTableRowModel } from '..';
 import DisplayMetadataTableRowStyles from './DisplayMetadataTableRowStyles';
@@ -34,9 +35,9 @@ const DisplayMetadataTableRow: React.FC<DisplayMetadataTableRowModel> = (props) 
     return (
         <TableRow>
             <TableCell>
-                <span>
-                    <b>{props.metadataKey}</b>
-                </span>
+                <Box component="span" sx={{ fontWeight: 'bold' }}>
+                    {props.metadataKey}
+                </Box>
             </TableCell>
             <TableCell sx={DisplayMetadataTableRowStyles[typeStyle]}>{value}</TableCell>
         </TableRow>

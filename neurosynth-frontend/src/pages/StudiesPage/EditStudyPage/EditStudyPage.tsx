@@ -4,6 +4,7 @@ import {
     Accordion,
     AccordionDetails,
     AccordionSummary,
+    Box,
     Button,
     TextField,
     Typography,
@@ -40,7 +41,6 @@ const arrayToMetadata = (arr: DisplayMetadataTableRowModel[]): { [key: string]: 
 const EditStudyPage = () => {
     const globalContext = useContext(GlobalContext);
     const { getAccessTokenSilently } = useAuth0();
-    const classes = EditStudyPageStyles();
     const [saveEnabled, setSaveEnabled] = useState(false);
 
     // study and metadata edits are updated and stored in this state
@@ -141,12 +141,12 @@ const EditStudyPage = () => {
     };
 
     return (
-        <div style={{ height: '100%' }}>
-            <div className={classes.stickyButtonContainer}>
+        <>
+            <Box sx={EditStudyPageStyles.stickyButtonContainer}>
                 <Button
                     onClick={handleOnSave}
                     disabled={!saveEnabled}
-                    className={`${classes.saveButton} ${classes.button}`}
+                    sx={{ ...EditStudyPageStyles.saveButton, ...EditStudyPageStyles.button }}
                     variant="outlined"
                 >
                     Save Changes
@@ -154,29 +154,27 @@ const EditStudyPage = () => {
                 <Button
                     color="error"
                     onClick={handleOnCancel}
-                    className={`${classes.button}`}
+                    sx={EditStudyPageStyles.button}
                     variant="outlined"
                 >
                     Cancel
                 </Button>
-            </div>
+            </Box>
 
-            <div style={{ marginBottom: '15px', padding: '0 10px' }}>
+            <Box sx={{ marginBottom: '15px', padding: '0 10px' }}>
                 {updatedStudy && (
                     <Accordion elevation={4}>
                         <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                            <div>
-                                <Typography variant="h6">
-                                    <b>Study Details</b>
-                                </Typography>
-                            </div>
+                            <Typography variant="h6">
+                                <b>Study Details</b>
+                            </Typography>
                         </AccordionSummary>
                         <AccordionDetails>
                             <TextField
                                 style={{ width: '100%' }}
                                 label="Edit Title"
                                 variant="outlined"
-                                className={classes.textfield}
+                                sx={EditStudyPageStyles.textfield}
                                 value={updatedStudy.name}
                                 InputProps={textFieldInputProps}
                                 name="name"
@@ -184,7 +182,7 @@ const EditStudyPage = () => {
                             />
                             <TextField
                                 style={{ width: '100%' }}
-                                className={classes.textfield}
+                                sx={EditStudyPageStyles.textfield}
                                 variant="outlined"
                                 label="Edit Authors"
                                 value={updatedStudy.authors}
@@ -195,7 +193,7 @@ const EditStudyPage = () => {
                             <TextField
                                 style={{ width: '100%' }}
                                 variant="outlined"
-                                className={classes.textfield}
+                                sx={EditStudyPageStyles.textfield}
                                 label="Edit Journal"
                                 value={updatedStudy.publication}
                                 InputProps={textFieldInputProps}
@@ -205,7 +203,7 @@ const EditStudyPage = () => {
                             <TextField
                                 style={{ width: '100%' }}
                                 variant="outlined"
-                                className={classes.textfield}
+                                sx={EditStudyPageStyles.textfield}
                                 label="Edit DOI"
                                 value={updatedStudy.doi}
                                 InputProps={textFieldInputProps}
@@ -215,7 +213,7 @@ const EditStudyPage = () => {
                             <TextField
                                 style={{ width: '100%' }}
                                 variant="outlined"
-                                className={classes.textfield}
+                                sx={EditStudyPageStyles.textfield}
                                 label="Edit Description"
                                 multiline
                                 value={updatedStudy.description}
@@ -226,16 +224,14 @@ const EditStudyPage = () => {
                         </AccordionDetails>
                     </Accordion>
                 )}
-            </div>
+            </Box>
 
-            <div style={{ marginBottom: '15px', padding: '0 10px' }}>
+            <Box sx={{ marginBottom: '15px', padding: '0 10px' }}>
                 <Accordion elevation={4}>
                     <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                        <div>
-                            <Typography variant="h6">
-                                <b>Metadata</b>
-                            </Typography>
-                        </div>
+                        <Typography variant="h6">
+                            <b>Metadata</b>
+                        </Typography>
                     </AccordionSummary>
                     <AccordionDetails>
                         {updatedStudy && (
@@ -246,8 +242,8 @@ const EditStudyPage = () => {
                         )}
                     </AccordionDetails>
                 </Accordion>
-            </div>
-        </div>
+            </Box>
+        </>
     );
 };
 

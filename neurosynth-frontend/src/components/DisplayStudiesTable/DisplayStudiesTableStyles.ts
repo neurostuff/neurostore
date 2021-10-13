@@ -5,9 +5,6 @@ const DisplayStudiesTableStyles: Style = {
     root: {
         margin: '2% 0',
     },
-    tableCellTextContainer: {
-        maxHeight: '100px !important',
-    },
     tableRow: {
         '&:hover': {
             backgroundColor: grey[200],

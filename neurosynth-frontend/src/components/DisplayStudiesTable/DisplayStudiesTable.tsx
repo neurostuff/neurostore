@@ -35,33 +35,26 @@ const DisplayStudiesTable: React.FC<DisplayStudiesTableModel> = (props) => {
                             onClick={() => handleSelectTableRow(row)}
                         >
                             <TableCell>
-                                <Box sx={DisplayStudiesTableStyles.tableCellTextContainer}>
-                                    {row.name}
-                                </Box>
+                                <Box>{row.name}</Box>
                             </TableCell>
                             <TableCell>
                                 {row.authors || (
-                                    <Box component="span" sx={DisplayStudiesTableStyles.noContent}>
+                                    <Box component="span" sx={{ color: 'warning.dark' }}>
                                         No Authors Available
                                     </Box>
                                 )}
                             </TableCell>
                             <TableCell>
-                                <Box sx={DisplayStudiesTableStyles.tableCellTextContainer}>
+                                <Box>
                                     {row.publication || (
-                                        <Box
-                                            component="span"
-                                            sx={DisplayStudiesTableStyles.noContent}
-                                        >
+                                        <Box component="span" sx={{ color: 'warning.dark' }}>
                                             No Publication Available
                                         </Box>
                                     )}
                                 </Box>
                             </TableCell>
                             <TableCell>
-                                <Box sx={DisplayStudiesTableStyles.tableCellTextContainer}>
-                                    {row.user || <span>Neurosynth</span>}
-                                </Box>
+                                <Box>{row.user || <span>Neurosynth</span>}</Box>
                             </TableCell>
                         </TableRow>
                     ))}

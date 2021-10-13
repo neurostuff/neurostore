@@ -1,6 +1,6 @@
-import makeStyles from '@mui/styles/makeStyles';
+import { Style } from '../../..';
 
-const EditMetadataRowStyles = makeStyles((themes) => ({
+const EditMetadataRowStyles: Style = {
     tableRow: {
         display: 'table-row',
         height: '100%',
@@ -15,9 +15,6 @@ const EditMetadataRowStyles = makeStyles((themes) => ({
     },
     spacer: {
         height: '8px',
-    },
-    noContent: {
-        color: themes.palette.warning.dark,
     },
     nullContent: {
         color: 'blue',
@@ -36,6 +33,6 @@ const EditMetadataRowStyles = makeStyles((themes) => ({
             fontSize: '12px !important',
         },
     },
-}));
+};
 
 export default EditMetadataRowStyles;

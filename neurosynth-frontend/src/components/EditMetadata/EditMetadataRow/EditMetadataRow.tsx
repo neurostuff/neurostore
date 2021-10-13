@@ -9,6 +9,7 @@ import { useCallback } from 'react';
 import { getStartValFromType } from './AddMetadataRow';
 import { IEditMetadataRowModel, EPropertyType } from '..';
 import { ToggleType } from '../..';
+import { Box } from '@mui/system';
 
 const propsAreEqual = (
     prevProp: IEditMetadataRowModel,
@@ -22,7 +23,6 @@ const propsAreEqual = (
 };
 
 const EditMetadataRow: React.FC<IEditMetadataRowModel> = React.memo((props) => {
-    const classes = EditMetadataRowStyles();
     const [metadataRow, setMetadataRow] = useState(props.metadataRow);
 
     const handleToggle = useCallback(
@@ -79,35 +79,44 @@ const EditMetadataRow: React.FC<IEditMetadataRowModel> = React.memo((props) => {
             );
             break;
         default:
-            component = <span className={classes.nullContent}>null</span>;
+            component = (
+                <Box component="span" sx={{ color: 'warning.dark' }}>
+                    null
+                </Box>
+            );
             break;
     }
 
     return (
         <>
-            <div className={classes.tableRow}>
+            <Box sx={EditMetadataRowStyles.tableRow}>
                 <ToggleType type={props.metadataValueType} onToggle={handleToggle} />
-                <div className={`${classes.tableCell} ${classes.key}`}>
-                    <span>
+                <Box
+                    sx={{
+                        ...EditMetadataRowStyles.tableCell,
+                        ...EditMetadataRowStyles.key,
+                    }}
+                >
+                    <Box component="span">
                         <b>{metadataRow.metadataKey}</b>
-                    </span>
-                </div>
-                <div className={classes.tableCell} style={{ width: '100%' }}>
-                    <div>{component}</div>
-                </div>
-                <div className={classes.tableCell}>
+                    </Box>
+                </Box>
+                <Box sx={{ ...EditMetadataRowStyles.tableCell, width: '100%' }}>{component}</Box>
+                <Box sx={EditMetadataRowStyles.tableCell}>
                     <Button
-                        className={`${classes.updateButton}`}
+                        sx={EditMetadataRowStyles.updateButton}
                         color="error"
                         onClick={handleDelete}
                     >
                         DELETE
                     </Button>
-                </div>
-            </div>
-            <div className={classes.tableRow}>
-                <div className={`${classes.tableCell} ${classes.spacer}`}></div>
-            </div>
+                </Box>
+            </Box>
+            <Box sx={EditMetadataRowStyles.tableRow}>
+                <Box
+                    sx={{ ...EditMetadataRowStyles.tableCell, ...EditMetadataRowStyles.spacer }}
+                ></Box>
+            </Box>
         </>
     );
 }, propsAreEqual);

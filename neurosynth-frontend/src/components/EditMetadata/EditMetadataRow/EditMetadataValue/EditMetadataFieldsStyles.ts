@@ -1,11 +1,11 @@
-import makeStyles from '@mui/styles/makeStyles';
+import { Style } from '../../../..';
 
-const EditMetadataFieldsStyles = makeStyles((themes) => ({
+const EditMetadataFieldsStyles: Style = {
     checkedTrue: {
-        color: themes.palette.primary.main,
+        color: 'primary.main',
     },
     checkedFalse: {
-        color: themes.palette.secondary.main,
+        color: 'secondary.main',
     },
     textfield: {
         width: '100%',
@@ -21,6 +21,6 @@ const EditMetadataFieldsStyles = makeStyles((themes) => ({
             fontSize: '12px !important',
         },
     },
-}));
+};
 
 export default EditMetadataFieldsStyles;

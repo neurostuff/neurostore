@@ -1,4 +1,4 @@
-import { Button, TextField } from '@mui/material';
+import { Box, Button, TextField } from '@mui/material';
 import React, { useCallback, useState } from 'react';
 import { useEffect } from 'react';
 import { IAddMetadataRowModel, EPropertyType } from '..';
@@ -22,10 +22,11 @@ export const getStartValFromType = (type: EPropertyType): boolean | number | str
 };
 
 const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
-    const classes = EditMetadataRowStyles();
     const [currType, setCurrType] = useState(EPropertyType.STRING);
     const [editValueComponent, setEditValueComponent] = useState(
-        <span className={classes.nullContent}>null</span>
+        <Box component="span" sx={EditMetadataRowStyles.nullContent}>
+            null
+        </Box>
     );
     const [isValid, setIsValid] = useState(true);
     const [metadataRow, setMetadataRow] = useState<DisplayMetadataTableRowModel>({
@@ -107,20 +108,20 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                 );
                 break;
             default:
-                component = <span className={classes.nullContent}>null</span>;
+                component = <Box sx={EditMetadataRowStyles.nullContent}>null</Box>;
                 break;
         }
         setEditValueComponent(component);
-    }, [classes, currType, metadataRow.metadataValue]);
+    }, [currType, metadataRow.metadataValue]);
 
     return (
-        <div className={classes.tableRow}>
-            <div style={{ display: 'flex' }}>
+        <Box sx={EditMetadataRowStyles.tableRow}>
+            <Box sx={{ display: 'flex' }}>
                 <ToggleType type={currType} onToggle={handleToggle} />
-            </div>
-            <div className={`${classes.tableCell} ${classes.key}`}>
+            </Box>
+            <Box sx={{ ...EditMetadataRowStyles.tableCell, ...EditMetadataRowStyles.key }}>
                 <TextField
-                    className={classes.addMetadataTextfield}
+                    sx={EditMetadataRowStyles.addMetadataTextfield}
                     onChange={handleMetadataKeyChange}
                     variant="outlined"
                     placeholder="New metadata key"
@@ -129,24 +130,27 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                     error={!isValid}
                     value={metadataRow.metadataKey}
                 />
-                {isValid && <div style={{ height: '22px' }}></div>}
-            </div>
-            <div className={classes.tableCell} style={{ width: ' 100%' }}>
-                <div>{editValueComponent}</div>
-                <div style={{ height: '22px' }}></div>
-            </div>
-            <div className={classes.tableCell}>
+                {/* This component is added so that the error message doesn't mess up the row alignment */}
+                {isValid && <Box sx={{ height: '22px' }}></Box>}
+            </Box>
+            <Box sx={{ ...EditMetadataRowStyles.tableCell, width: '100%' }}>
+                {editValueComponent}
+                {/* This component is added so that the error message doesn't mess up the row alignment */}
+                <Box sx={{ height: '22px' }}></Box>
+            </Box>
+            <Box sx={EditMetadataRowStyles.tableCell}>
                 <Button
-                    className={classes.updateButton}
+                    sx={EditMetadataRowStyles.updateButton}
                     disabled={!(metadataRow.metadataKey.length > 0)}
                     onClick={handleAdd}
                     color="primary"
                 >
                     ADD
                 </Button>
-                <div style={{ height: '22px' }}></div>
-            </div>
-        </div>
+                {/* This component is added so that the error message doesn't mess up the row alignment */}
+                <Box sx={{ height: '22px' }}></Box>
+            </Box>
+        </Box>
     );
 };
 

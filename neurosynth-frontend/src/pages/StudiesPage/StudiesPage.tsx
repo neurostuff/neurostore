@@ -37,7 +37,6 @@ export class SearchCriteria {
 }
 
 const StudiesPage = () => {
-    const classes = StudiesPageStyles();
     const [studies, setStudies] = useState<StudyApiResponse[]>([]);
     const [searchMetadata, setSearchMetadata] = useState<Metadata>();
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>(new SearchCriteria());
@@ -139,7 +138,7 @@ const StudiesPage = () => {
     }, [searchCriteria]);
 
     return (
-        <div>
+        <>
             <Typography variant="h4">Studies Page</Typography>
 
             <SearchBar onSearch={handleOnSearch} />
@@ -160,14 +159,14 @@ const StudiesPage = () => {
 
             <Pagination
                 color="primary"
-                className={classes.paginator}
+                sx={StudiesPageStyles.paginator}
                 onChange={handlePaginationChange}
                 showFirstButton
                 showLastButton
                 page={searchCriteria.pageOfResults}
                 count={getNumTotalPages(searchMetadata?.total_count, searchCriteria.pageSize)}
             />
-        </div>
+        </>
     );
 };
 export default StudiesPage;
