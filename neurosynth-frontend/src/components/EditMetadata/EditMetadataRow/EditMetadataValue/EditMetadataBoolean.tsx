@@ -1,6 +1,6 @@
 import { FormControlLabel, FormGroup, Switch, Typography } from '@mui/material';
 import { useState } from 'react';
-import { IEditMetadataField } from '../EditMetadataRow';
+import { IEditMetadataField } from '../..';
 import EditMetadataFieldsStyles from './EditMetadataFieldsStyles';
 
 const EditMetadataBoolean: React.FC<IEditMetadataField> = (props) => {

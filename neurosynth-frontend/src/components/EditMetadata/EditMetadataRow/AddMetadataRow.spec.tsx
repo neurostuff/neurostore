@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { EPropertyType } from '..';
+import { DisplayMetadataTableRowModel } from '../..';
 import { MockThemeProvider } from '../../../testing/helpers';
-import { DisplayMetadataTableRowModel } from '../../DisplayMetadataTable/DisplayMetadataTableRow/DisplayMetadataTableRow';
 import AddMetadataRow, { getStartValFromType } from './AddMetadataRow';
-import { PropertyType } from './ToggleType/ToggleType';
 
 describe('AddMetadataRow Component', () => {
     const onAddMetadataRowMock = jest.fn();
@@ -26,10 +26,10 @@ describe('AddMetadataRow Component', () => {
     });
 
     it('should get the correct starting value from the getStartValFromType function', () => {
-        expect(getStartValFromType(PropertyType.BOOLEAN)).toEqual(false);
-        expect(getStartValFromType(PropertyType.NUMBER)).toEqual(0);
-        expect(getStartValFromType(PropertyType.STRING)).toEqual('');
-        expect(getStartValFromType(PropertyType.NONE)).toEqual(null);
+        expect(getStartValFromType(EPropertyType.BOOLEAN)).toEqual(false);
+        expect(getStartValFromType(EPropertyType.NUMBER)).toEqual(0);
+        expect(getStartValFromType(EPropertyType.STRING)).toEqual('');
+        expect(getStartValFromType(EPropertyType.NONE)).toEqual(null);
     });
 
     it('should be disabled when metadata key input is empty', () => {

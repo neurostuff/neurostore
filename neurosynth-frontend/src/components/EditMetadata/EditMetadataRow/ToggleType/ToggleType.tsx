@@ -2,30 +2,19 @@ import { FormControl, MenuItem, Select, SelectChangeEvent } from '@mui/material'
 import React, { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { useState } from 'react';
+import { EPropertyType, IToggleTypeModel } from '../..';
 import ToggleTypeStyles from './ToggleTypeStyles';
 
-export interface ToggleTypeModel {
-    onToggle: (type: PropertyType) => void;
-    type: PropertyType;
-}
-
-export enum PropertyType {
-    NONE = 'none',
-    STRING = 'string',
-    NUMBER = 'number',
-    BOOLEAN = 'boolean',
-}
-
-const ToggleType: React.FC<ToggleTypeModel> = React.memo((props) => {
+const ToggleType: React.FC<IToggleTypeModel> = React.memo((props) => {
     const classes = ToggleTypeStyles();
-    const [type, setType] = useState<PropertyType>(props.type);
+    const [type, setType] = useState<EPropertyType>(props.type);
 
     useEffect(() => {
         setType(props.type);
     }, [props.type]);
 
-    const handleSetType = (event: SelectChangeEvent<PropertyType>, child: ReactNode) => {
-        const selected = event.target.value as PropertyType;
+    const handleSetType = (event: SelectChangeEvent<EPropertyType>, child: ReactNode) => {
+        const selected = event.target.value as EPropertyType;
         setType(selected);
         props.onToggle(selected);
     };

@@ -1,6 +1,4 @@
 import React from 'react';
-import { DisplayMetadataTableRowModel } from '../../DisplayMetadataTable/DisplayMetadataTableRow/DisplayMetadataTableRow';
-import ToggleType, { PropertyType } from './ToggleType/ToggleType';
 import EditMetadataRowStyles from './EditMetadataRowStyles';
 import EditMetadataBoolean from './EditMetadataValue/EditMetadataBoolean';
 import EditMetadataNumber from './EditMetadataValue/EditMetadataNumber';
@@ -9,20 +7,13 @@ import { useState } from 'react';
 import { Button } from '@mui/material';
 import { useCallback } from 'react';
 import { getStartValFromType } from './AddMetadataRow';
+import { IEditMetadataRowModel, EPropertyType } from '..';
+import { ToggleType } from '../..';
 
-export interface EditMetadataRowModel {
-    metadataValueType: PropertyType;
-    metadataRow: DisplayMetadataTableRowModel;
-    onMetadataRowEdit: (metadataRow: DisplayMetadataTableRowModel) => void;
-    onMetadataRowDelete: (metadataRow: DisplayMetadataTableRowModel) => void;
-}
-
-export interface IEditMetadataField {
-    onEdit: (newValue: string | number | boolean) => void;
-    value: string | number | boolean;
-}
-
-const propsAreEqual = (prevProp: EditMetadataRowModel, nextProp: EditMetadataRowModel): boolean => {
+const propsAreEqual = (
+    prevProp: IEditMetadataRowModel,
+    nextProp: IEditMetadataRowModel
+): boolean => {
     return (
         prevProp.metadataRow.metadataKey === nextProp.metadataRow.metadataKey &&
         prevProp.metadataRow.metadataValue === nextProp.metadataRow.metadataValue &&
@@ -30,12 +21,12 @@ const propsAreEqual = (prevProp: EditMetadataRowModel, nextProp: EditMetadataRow
     );
 };
 
-const EditMetadataRow: React.FC<EditMetadataRowModel> = React.memo((props) => {
+const EditMetadataRow: React.FC<IEditMetadataRowModel> = React.memo((props) => {
     const classes = EditMetadataRowStyles();
     const [metadataRow, setMetadataRow] = useState(props.metadataRow);
 
     const handleToggle = useCallback(
-        (newType: PropertyType) => {
+        (newType: EPropertyType) => {
             setMetadataRow((prevState) => {
                 const updatedItem = { ...prevState };
 
@@ -63,7 +54,7 @@ const EditMetadataRow: React.FC<EditMetadataRowModel> = React.memo((props) => {
 
     let component: JSX.Element;
     switch (props.metadataValueType) {
-        case PropertyType.BOOLEAN:
+        case EPropertyType.BOOLEAN:
             component = (
                 <EditMetadataBoolean
                     onEdit={handleEditMetadataValue}
@@ -71,7 +62,7 @@ const EditMetadataRow: React.FC<EditMetadataRowModel> = React.memo((props) => {
                 />
             );
             break;
-        case PropertyType.STRING:
+        case EPropertyType.STRING:
             component = (
                 <EditMetadataString
                     onEdit={handleEditMetadataValue}
@@ -79,7 +70,7 @@ const EditMetadataRow: React.FC<EditMetadataRowModel> = React.memo((props) => {
                 />
             );
             break;
-        case PropertyType.NUMBER:
+        case EPropertyType.NUMBER:
             component = (
                 <EditMetadataNumber
                     onEdit={handleEditMetadataValue}

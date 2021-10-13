@@ -1,33 +1,29 @@
 import { Button, TextField } from '@mui/material';
 import React, { useCallback, useState } from 'react';
 import { useEffect } from 'react';
-import { DisplayMetadataTableRowModel } from '../../DisplayMetadataTable/DisplayMetadataTableRow/DisplayMetadataTableRow';
+import { IAddMetadataRowModel, EPropertyType } from '..';
+import { DisplayMetadataTableRowModel, ToggleType } from '../..';
 import EditMetadataRowStyles from './EditMetadataRowStyles';
 import EditMetadataBoolean from './EditMetadataValue/EditMetadataBoolean';
 import EditMetadataNumber from './EditMetadataValue/EditMetadataNumber';
 import EditMetadataString from './EditMetadataValue/EditMetadataString';
-import ToggleType, { PropertyType } from './ToggleType/ToggleType';
 
-export interface AddMetadataRowModel {
-    onAddMetadataRow: (row: DisplayMetadataTableRowModel) => boolean;
-}
-
-export const getStartValFromType = (type: PropertyType): boolean | number | string | null => {
+export const getStartValFromType = (type: EPropertyType): boolean | number | string | null => {
     switch (type) {
-        case PropertyType.BOOLEAN:
+        case EPropertyType.BOOLEAN:
             return false;
-        case PropertyType.NUMBER:
+        case EPropertyType.NUMBER:
             return 0;
-        case PropertyType.STRING:
+        case EPropertyType.STRING:
             return '';
         default:
             return null;
     }
 };
 
-const AddMetadataRow: React.FC<AddMetadataRowModel> = (props) => {
+const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
     const classes = EditMetadataRowStyles();
-    const [currType, setCurrType] = useState(PropertyType.STRING);
+    const [currType, setCurrType] = useState(EPropertyType.STRING);
     const [editValueComponent, setEditValueComponent] = useState(
         <span className={classes.nullContent}>null</span>
     );
@@ -37,7 +33,7 @@ const AddMetadataRow: React.FC<AddMetadataRowModel> = (props) => {
         metadataValue: '',
     });
 
-    const handleToggle = useCallback((newType: PropertyType) => {
+    const handleToggle = useCallback((newType: EPropertyType) => {
         setMetadataRow((prevRow) => {
             return {
                 metadataKey: prevRow.metadataKey,
@@ -86,7 +82,7 @@ const AddMetadataRow: React.FC<AddMetadataRowModel> = (props) => {
     useEffect(() => {
         let component: JSX.Element;
         switch (currType) {
-            case PropertyType.BOOLEAN:
+            case EPropertyType.BOOLEAN:
                 component = (
                     <EditMetadataBoolean
                         onEdit={handleMetadataValueChange}
@@ -94,7 +90,7 @@ const AddMetadataRow: React.FC<AddMetadataRowModel> = (props) => {
                     />
                 );
                 break;
-            case PropertyType.STRING:
+            case EPropertyType.STRING:
                 component = (
                     <EditMetadataString
                         onEdit={handleMetadataValueChange}
@@ -102,7 +98,7 @@ const AddMetadataRow: React.FC<AddMetadataRowModel> = (props) => {
                     />
                 );
                 break;
-            case PropertyType.NUMBER:
+            case EPropertyType.NUMBER:
                 component = (
                     <EditMetadataNumber
                         onEdit={handleMetadataValueChange}

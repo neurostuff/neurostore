@@ -2,7 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
-import { NavOptionsModel } from '../Navbar';
+import { NavOptionsModel } from '..';
 import NavbarDrawer from './NavbarDrawer';
 
 jest.mock('@auth0/auth0-react');

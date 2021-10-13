@@ -1,7 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Button, Typography } from '@mui/material';
 import { NavLink } from 'react-router-dom';
-import { NavbarArgs } from '../Navbar';
+import { NavbarArgs } from '..';
 import NavbarToolbarStyles from './NavbarToolbarStyles';
 
 const NavbarToolbar: React.FC<NavbarArgs> = (props) => {

@@ -9,12 +9,9 @@ import {
     Typography,
 } from '@mui/material';
 import { AxiosError } from 'axios';
-import React, { ChangeEvent, useContext } from 'react';
-import { useEffect } from 'react';
-import { useState } from 'react';
+import { useState, useEffect, ChangeEvent, useContext } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import { EditMetadata } from '../../../components';
-import { DisplayMetadataTableRowModel } from '../../../components/DisplayMetadataTable/DisplayMetadataTableRow/DisplayMetadataTableRow';
+import { EditMetadata, DisplayMetadataTableRowModel } from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import API from '../../../utils/api';
 import EditStudyPageStyles from './EditStudyPageStyles';

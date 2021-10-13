@@ -5,21 +5,20 @@ import {
     AccordionDetails,
     AccordionSummary,
     Button,
+    Paper,
     Tooltip,
     Typography,
 } from '@mui/material';
 import { AxiosError, AxiosResponse } from 'axios';
-import React, { useContext, useEffect } from 'react';
-import { useCallback } from 'react';
-import { useState } from 'react';
+import { useCallback, useState, useEffect, useContext } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import DisplayMetadataTable from '../../../components/DisplayMetadataTable/DisplayMetadataTable';
+import { DisplayMetadataTable } from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import API, { StudyApiResponse } from '../../../utils/api';
 import StudyPageStyles from './StudyPageStyles';
 
 const StudyPage = () => {
-    const [study, setStudy] = useState<StudyApiResponse & { user: string }>();
+    const [study, setStudy] = useState<StudyApiResponse>();
     const [editDisabled, setEditDisabled] = useState(true);
     const context = useContext(GlobalContext);
     const classes = StudyPageStyles();
@@ -33,7 +32,9 @@ const StudyPage = () => {
                 const resUpdated = res as AxiosResponse<StudyApiResponse & { user: string }>;
                 setStudy(resUpdated.data);
             })
-            .catch(() => {});
+            .catch((err) => {
+                console.log(err);
+            });
     }, []);
 
     const handleCloneStudy = async () => {
@@ -119,21 +120,194 @@ const StudyPage = () => {
                 </Typography>
             </div>
 
-            <div>
-                <Accordion elevation={4}>
-                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                        <div>
-                            <Typography variant="h6">
-                                <b>Metadata</b>
-                            </Typography>
+            <div className={classes.spaceBelow}>
+                <Typography variant="h6">
+                    <b>Metadata</b>
+                </Typography>
+                <div>
+                    <Accordion elevation={4}>
+                        <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                            <span>Click to see study metadata</span>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                            <div className={classes.metadataContainer}>
+                                {study && <DisplayMetadataTable metadata={study.metadata} />}
+                            </div>
+                        </AccordionDetails>
+                    </Accordion>
+                </div>
+            </div>
+
+            <div className={classes.spaceBelow}>
+                <Typography variant="h6">
+                    <b>Analyses</b>
+                </Typography>
+                <div style={{ width: '100%', display: 'flex' }}>
+                    <div style={{ width: '45%' }}>
+                        <Paper
+                            className={classes.spaceBelow}
+                            style={{ padding: '30px', backgroundColor: '#0077b6' }}
+                        >
+                            <Typography style={{ color: 'white' }}>Hello</Typography>
+                            <div className={classes.spaceBelow}>
+                                <Accordion elevation={1}>
+                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                                        Coordinates
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <div className={classes.metadataContainer}>
+                                            {study && (
+                                                <DisplayMetadataTable metadata={study.metadata} />
+                                            )}
+                                        </div>
+                                    </AccordionDetails>
+                                </Accordion>
+                            </div>
+
+                            <div>
+                                <Accordion elevation={1}>
+                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                                        Analysis Metadata
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <div className={classes.metadataContainer}>
+                                            {study && (
+                                                <DisplayMetadataTable metadata={study.metadata} />
+                                            )}
+                                        </div>
+                                    </AccordionDetails>
+                                </Accordion>
+                            </div>
+                        </Paper>
+
+                        <Paper
+                            className={classes.spaceBelow}
+                            style={{ padding: '30px', backgroundColor: '#0077b6' }}
+                        >
+                            <Typography style={{ color: 'white' }}>Hello</Typography>
+                            <div className={classes.spaceBelow}>
+                                <Accordion elevation={1}>
+                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                                        Coordinates
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <div className={classes.metadataContainer}>
+                                            {study && (
+                                                <DisplayMetadataTable metadata={study.metadata} />
+                                            )}
+                                        </div>
+                                    </AccordionDetails>
+                                </Accordion>
+                            </div>
+
+                            <div>
+                                <Accordion elevation={1}>
+                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                                        Analysis Metadata
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <div className={classes.metadataContainer}>
+                                            {study && (
+                                                <DisplayMetadataTable metadata={study.metadata} />
+                                            )}
+                                        </div>
+                                    </AccordionDetails>
+                                </Accordion>
+                            </div>
+                        </Paper>
+
+                        <Paper
+                            className={classes.spaceBelow}
+                            style={{ padding: '30px', backgroundColor: '#0077b6' }}
+                        >
+                            <Typography style={{ color: 'white' }}>Hello</Typography>
+                            <div className={classes.spaceBelow}>
+                                <Accordion elevation={1}>
+                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                                        Coordinates
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <div className={classes.metadataContainer}>
+                                            {study && (
+                                                <DisplayMetadataTable metadata={study.metadata} />
+                                            )}
+                                        </div>
+                                    </AccordionDetails>
+                                </Accordion>
+                            </div>
+
+                            <div>
+                                <Accordion elevation={1}>
+                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                                        Analysis Metadata
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <div className={classes.metadataContainer}>
+                                            {study && (
+                                                <DisplayMetadataTable metadata={study.metadata} />
+                                            )}
+                                        </div>
+                                    </AccordionDetails>
+                                </Accordion>
+                            </div>
+                        </Paper>
+
+                        <Paper
+                            className={classes.spaceBelow}
+                            style={{ padding: '30px', backgroundColor: '#0077b6' }}
+                        >
+                            <Typography style={{ color: 'white' }}>Hello</Typography>
+                            <div className={classes.spaceBelow}>
+                                <Accordion elevation={1}>
+                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                                        Coordinates
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <div className={classes.metadataContainer}>
+                                            {study && (
+                                                <DisplayMetadataTable metadata={study.metadata} />
+                                            )}
+                                        </div>
+                                    </AccordionDetails>
+                                </Accordion>
+                            </div>
+
+                            <div>
+                                <Accordion elevation={1}>
+                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                                        Analysis Metadata
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <div className={classes.metadataContainer}>
+                                            {study && (
+                                                <DisplayMetadataTable metadata={study.metadata} />
+                                            )}
+                                        </div>
+                                    </AccordionDetails>
+                                </Accordion>
+                            </div>
+                        </Paper>
+                    </div>
+                    <div
+                        style={{
+                            width: '55%',
+                        }}
+                    >
+                        <div
+                            style={{
+                                marginLeft: 'auto',
+                                position: 'sticky',
+                                top: '47px',
+                                width: '550px',
+                                height: '450px',
+                                backgroundColor: 'black',
+                                color: 'white',
+                            }}
+                        >
+                            Papaya Visualizer placeholder
                         </div>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        <div className={classes.metadataContainer}>
-                            {study && <DisplayMetadataTable metadata={study.metadata} />}
-                        </div>
-                    </AccordionDetails>
-                </Accordion>
+                    </div>
+                </div>
             </div>
         </div>
     );

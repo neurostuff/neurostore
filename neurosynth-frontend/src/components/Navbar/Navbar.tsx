@@ -5,17 +5,7 @@ import NavbarToolbar from './NavbarToolbar/NavbarToolbar';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useContext } from 'react';
 import { GlobalContext } from '../../contexts/GlobalContext';
-
-export interface NavOptionsModel {
-    label: string;
-    path: string;
-}
-
-export interface NavbarArgs {
-    navOptions: NavOptionsModel[];
-    login: () => void;
-    logout: () => void;
-}
+import { NavOptionsModel } from '.';
 
 const navItems: NavOptionsModel[] = [
     { label: 'Home', path: '/' },

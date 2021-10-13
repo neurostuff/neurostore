@@ -1,13 +1,8 @@
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import React from 'react';
-import DisplayMetadataTableRow, {
-    DisplayMetadataTableRowModel,
-} from './DisplayMetadataTableRow/DisplayMetadataTableRow';
 import DisplayMetadataTableStyles from './DisplayMetadataTableStyles';
-
-export interface DisplayMetadataTableModel {
-    metadata: any;
-}
+import { DisplayMetadataTableModel, DisplayMetadataTableRowModel } from '.';
+import DisplayMetadataTableRow from './DisplayMetadataTableRow/DisplayMetadataTableRow';
 
 const DisplayMetadataTable: React.FC<DisplayMetadataTableModel> = (props) => {
     const classes = DisplayMetadataTableStyles();

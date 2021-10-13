@@ -1,11 +1,7 @@
 import { TableCell, TableRow } from '@mui/material';
 import React from 'react';
+import { DisplayMetadataTableRowModel } from '..';
 import DisplayMetadataTableRowStyles from './DisplayMetadataTableRowStyles';
-
-export interface DisplayMetadataTableRowModel {
-    metadataKey: string;
-    metadataValue: any;
-}
 
 export const getMetadataValue = (value: any): string => {
     if (value === null) {

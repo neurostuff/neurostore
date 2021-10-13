@@ -1,6 +1,6 @@
 import { TextField } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import { IEditMetadataField } from '../EditMetadataRow';
+import { IEditMetadataField } from '../..';
 import EditMetadataFieldsStyles from './EditMetadataFieldsStyles';
 
 const EditMetadataString: React.FC<IEditMetadataField> = (props) => {

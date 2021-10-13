@@ -6,10 +6,8 @@ import {
     Select,
     MenuItem,
     SelectChangeEvent,
-    IconButton,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import SettingsIcon from '@mui/icons-material/Settings';
 import React from 'react';
 import { useState } from 'react';
 import SearchBarStyles from './SearchBarStyles';
@@ -100,9 +98,6 @@ const SearchBar: React.FC<SearchBarModel> = (props) => {
                     </Button>
                 </div>
             </form>
-            {/* <IconButton style={{ width: '80px' }}>
-                <SettingsIcon style={{ fontSize: '2.5rem' }} />
-            </IconButton> */}
         </div>
     );
 };
