@@ -1,6 +1,6 @@
-import makeStyles from '@mui/styles/makeStyles';
+import { Style } from '../..';
 
-const EditMetadataStyles = makeStyles((theme) => ({
+const EditMetadataStyles: Style = {
     table: {
         display: 'table',
         height: '100%',
@@ -11,9 +11,6 @@ const EditMetadataStyles = makeStyles((theme) => ({
     hr: {
         margin: '0px 0px 25px 0px',
     },
-    noContent: {
-        color: theme.palette.warning.dark,
-    },
-}));
+};
 
 export default EditMetadataStyles;

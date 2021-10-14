@@ -1,10 +1,10 @@
-import makeStyles from '@mui/styles/makeStyles';
+import { Style } from '../..';
 
-const BaseNavigationStyles = makeStyles({
+const BaseNavigationStyles: Style = {
     pagesContainer: {
         width: '80%',
         margin: '2% auto',
     },
-});
+};
 
 export default BaseNavigationStyles;

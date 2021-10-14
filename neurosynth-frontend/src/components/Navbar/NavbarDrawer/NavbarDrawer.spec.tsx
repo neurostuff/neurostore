@@ -2,7 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
-import { NavOptionsModel } from '../Navbar';
+import { NavOptionsModel } from '..';
 import NavbarDrawer from './NavbarDrawer';
 
 jest.mock('@auth0/auth0-react');
@@ -45,7 +45,8 @@ describe('NavbarDrawer Component', () => {
     });
 
     it('should render', () => {
-        const button = screen.getByRole('button');
+        // ignore the neuroscience button and grab the drawer button to open the drawer
+        const button = screen.getAllByRole('button')[1];
         expect(button).toBeTruthy();
 
         const titleElement = screen.getByText(/neurosynth/i);
@@ -53,7 +54,8 @@ describe('NavbarDrawer Component', () => {
     });
 
     it('should open the drawer when clicked', () => {
-        const button = screen.getByRole('button');
+        // ignore the neuroscience button and grab the drawer button to open the drawer
+        const button = screen.getAllByRole('button')[1];
         userEvent.click(button);
 
         mockNavOptions.forEach((element) => {
@@ -69,7 +71,8 @@ describe('NavbarDrawer Component', () => {
 
         (useAuth0 as any).mockReturnValue(mockedAuth0);
 
-        const button = screen.getByRole('button');
+        // ignore the neuroscience button and grab the drawer button to open the drawer
+        const button = screen.getAllByRole('button')[1];
         userEvent.click(button);
 
         const loginButton = screen.getByText('Login');
@@ -80,7 +83,8 @@ describe('NavbarDrawer Component', () => {
     });
 
     it('should show logout if authenticated and logout on click', () => {
-        const button = screen.getByRole('button');
+        // ignore the neuroscience button and grab the drawer button to open the drawer
+        const button = screen.getAllByRole('button')[1];
         userEvent.click(button);
 
         const logoutButton = screen.getByText('Logout');

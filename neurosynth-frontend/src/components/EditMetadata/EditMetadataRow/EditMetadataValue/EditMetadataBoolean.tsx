@@ -1,10 +1,9 @@
 import { FormControlLabel, FormGroup, Switch, Typography } from '@mui/material';
 import { useState } from 'react';
-import { IEditMetadataField } from '../EditMetadataRow';
+import { IEditMetadataField } from '../..';
 import EditMetadataFieldsStyles from './EditMetadataFieldsStyles';
 
 const EditMetadataBoolean: React.FC<IEditMetadataField> = (props) => {
-    const classes = EditMetadataFieldsStyles();
     const [state, setState] = useState(props.value as boolean);
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
@@ -15,7 +14,11 @@ const EditMetadataBoolean: React.FC<IEditMetadataField> = (props) => {
     return (
         <FormGroup>
             <FormControlLabel
-                className={state ? classes.checkedTrue : classes.checkedFalse}
+                sx={
+                    state
+                        ? EditMetadataFieldsStyles.checkedTrue
+                        : EditMetadataFieldsStyles.checkedFalse
+                }
                 control={
                     <Switch onChange={handleChange} color="primary" size="medium" checked={state} />
                 }

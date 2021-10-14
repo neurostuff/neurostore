@@ -1,6 +1,6 @@
-import { makeStyles } from '@mui/styles';
+import { Style } from '../../..';
 
-const EditStudyPageStyles = makeStyles((theme) => ({
+const EditStudyPageStyles: Style = {
     saveButton: {
         marginRight: '15px !important',
     },
@@ -19,6 +19,6 @@ const EditStudyPageStyles = makeStyles((theme) => ({
         marginBottom: '15px !important',
         width: '100%',
     },
-}));
+};
 
 export default EditStudyPageStyles;

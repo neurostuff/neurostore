@@ -1,11 +1,8 @@
 import { TableCell, TableRow } from '@mui/material';
+import { Box } from '@mui/system';
 import React from 'react';
+import { DisplayMetadataTableRowModel } from '..';
 import DisplayMetadataTableRowStyles from './DisplayMetadataTableRowStyles';
-
-export interface DisplayMetadataTableRowModel {
-    metadataKey: string;
-    metadataValue: any;
-}
 
 export const getMetadataValue = (value: any): string => {
     if (value === null) {
@@ -16,21 +13,20 @@ export const getMetadataValue = (value: any): string => {
 };
 
 const DisplayMetadataTableRow: React.FC<DisplayMetadataTableRowModel> = (props) => {
-    const classes = DisplayMetadataTableRowStyles();
     const type = typeof props.metadataValue;
-    let className: 'type_other' | 'type_string' | 'type_number' | 'type_boolean' = 'type_other';
+    let typeStyle: 'type_other' | 'type_string' | 'type_number' | 'type_boolean' = 'type_other';
     switch (type) {
         case 'boolean':
-            className = 'type_boolean';
+            typeStyle = 'type_boolean';
             break;
         case 'string':
-            className = 'type_string';
+            typeStyle = 'type_string';
             break;
         case 'number':
-            className = 'type_number';
+            typeStyle = 'type_number';
             break;
         default:
-            className = 'type_other';
+            typeStyle = 'type_other';
             break;
     }
 
@@ -39,11 +35,11 @@ const DisplayMetadataTableRow: React.FC<DisplayMetadataTableRowModel> = (props) 
     return (
         <TableRow>
             <TableCell>
-                <span>
-                    <b>{props.metadataKey}</b>
-                </span>
+                <Box component="span" sx={{ fontWeight: 'bold' }}>
+                    {props.metadataKey}
+                </Box>
             </TableCell>
-            <TableCell className={classes[className]}>{value}</TableCell>
+            <TableCell sx={DisplayMetadataTableRowStyles[typeStyle]}>{value}</TableCell>
         </TableRow>
     );
 };

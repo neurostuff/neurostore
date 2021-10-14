@@ -1,9 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { DisplayMetadataTableRowModel, EPropertyType } from '../..';
 import { MockThemeProvider } from '../../../testing/helpers';
-import { DisplayMetadataTableRowModel } from '../../DisplayMetadataTable/DisplayMetadataTableRow/DisplayMetadataTableRow';
 import EditMetadataRow from './EditMetadataRow';
-import { PropertyType } from './ToggleType/ToggleType';
 
 describe('EditMetadataRow Component', () => {
     const onMetadataRowDeleteMock = jest.fn();
@@ -22,7 +21,7 @@ describe('EditMetadataRow Component', () => {
         render(
             <MockThemeProvider>
                 <EditMetadataRow
-                    metadataValueType={PropertyType.STRING}
+                    metadataValueType={EPropertyType.STRING}
                     metadataRow={mockMetadataRow}
                     onMetadataRowDelete={onMetadataRowDeleteMock}
                     onMetadataRowEdit={onMetadataRowEditMock}
@@ -35,7 +34,7 @@ describe('EditMetadataRow Component', () => {
         render(
             <MockThemeProvider>
                 <EditMetadataRow
-                    metadataValueType={PropertyType.STRING}
+                    metadataValueType={EPropertyType.STRING}
                     metadataRow={mockMetadataRow}
                     onMetadataRowDelete={onMetadataRowDeleteMock}
                     onMetadataRowEdit={onMetadataRowEditMock}
@@ -52,7 +51,7 @@ describe('EditMetadataRow Component', () => {
         render(
             <MockThemeProvider>
                 <EditMetadataRow
-                    metadataValueType={PropertyType.STRING}
+                    metadataValueType={EPropertyType.STRING}
                     metadataRow={mockMetadataRow}
                     onMetadataRowDelete={onMetadataRowDeleteMock}
                     onMetadataRowEdit={onMetadataRowEditMock}
@@ -74,7 +73,7 @@ describe('EditMetadataRow Component', () => {
             render(
                 <MockThemeProvider>
                     <EditMetadataRow
-                        metadataValueType={PropertyType.STRING}
+                        metadataValueType={EPropertyType.STRING}
                         metadataRow={mockMetadataRow}
                         onMetadataRowDelete={onMetadataRowDeleteMock}
                         onMetadataRowEdit={onMetadataRowEditMock}
@@ -91,7 +90,7 @@ describe('EditMetadataRow Component', () => {
             render(
                 <MockThemeProvider>
                     <EditMetadataRow
-                        metadataValueType={PropertyType.STRING}
+                        metadataValueType={EPropertyType.STRING}
                         metadataRow={mockMetadataRow}
                         onMetadataRowDelete={onMetadataRowDeleteMock}
                         onMetadataRowEdit={onMetadataRowEditMock}
@@ -114,7 +113,7 @@ describe('EditMetadataRow Component', () => {
             render(
                 <MockThemeProvider>
                     <EditMetadataRow
-                        metadataValueType={PropertyType.NUMBER}
+                        metadataValueType={EPropertyType.NUMBER}
                         metadataRow={mockMetadataRow}
                         onMetadataRowDelete={onMetadataRowDeleteMock}
                         onMetadataRowEdit={onMetadataRowEditMock}
@@ -131,7 +130,7 @@ describe('EditMetadataRow Component', () => {
             render(
                 <MockThemeProvider>
                     <EditMetadataRow
-                        metadataValueType={PropertyType.NUMBER}
+                        metadataValueType={EPropertyType.NUMBER}
                         metadataRow={mockMetadataRow}
                         onMetadataRowDelete={onMetadataRowDeleteMock}
                         onMetadataRowEdit={onMetadataRowEditMock}
@@ -153,7 +152,7 @@ describe('EditMetadataRow Component', () => {
             render(
                 <MockThemeProvider>
                     <EditMetadataRow
-                        metadataValueType={PropertyType.BOOLEAN}
+                        metadataValueType={EPropertyType.BOOLEAN}
                         metadataRow={mockMetadataRow}
                         onMetadataRowDelete={onMetadataRowDeleteMock}
                         onMetadataRowEdit={onMetadataRowEditMock}
@@ -169,7 +168,7 @@ describe('EditMetadataRow Component', () => {
             render(
                 <MockThemeProvider>
                     <EditMetadataRow
-                        metadataValueType={PropertyType.BOOLEAN}
+                        metadataValueType={EPropertyType.BOOLEAN}
                         metadataRow={mockMetadataRow}
                         onMetadataRowDelete={onMetadataRowDeleteMock}
                         onMetadataRowEdit={onMetadataRowEditMock}
@@ -191,7 +190,7 @@ describe('EditMetadataRow Component', () => {
             render(
                 <MockThemeProvider>
                     <EditMetadataRow
-                        metadataValueType={PropertyType.NONE}
+                        metadataValueType={EPropertyType.NONE}
                         metadataRow={mockMetadataRow}
                         onMetadataRowDelete={onMetadataRowDeleteMock}
                         onMetadataRowEdit={onMetadataRowEditMock}

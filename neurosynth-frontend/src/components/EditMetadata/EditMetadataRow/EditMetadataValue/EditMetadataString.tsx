@@ -1,10 +1,9 @@
 import { TextField } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import { IEditMetadataField } from '../EditMetadataRow';
+import { IEditMetadataField } from '../..';
 import EditMetadataFieldsStyles from './EditMetadataFieldsStyles';
 
 const EditMetadataString: React.FC<IEditMetadataField> = (props) => {
-    const classes = EditMetadataFieldsStyles();
     const [value, setValue] = useState(props.value?.toString() || '');
 
     useEffect(() => {
@@ -25,7 +24,7 @@ const EditMetadataString: React.FC<IEditMetadataField> = (props) => {
             onChange={handleValueChange}
             value={value}
             variant="outlined"
-            className={classes.textfield}
+            sx={EditMetadataFieldsStyles.textfield}
         />
     );
 };

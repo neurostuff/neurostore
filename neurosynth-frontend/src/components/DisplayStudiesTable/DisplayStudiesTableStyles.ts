@@ -1,18 +1,13 @@
-import makeStyles from '@mui/styles/makeStyles';
+import { grey } from '@mui/material/colors';
+import { Style } from '../..';
 
-const DisplayStudiesTableStyles = makeStyles((theme) => ({
+const DisplayStudiesTableStyles: Style = {
     root: {
         margin: '2% 0',
     },
-    tableCellTextContainer: {
-        maxHeight: '100px !important',
-    },
-    noContent: {
-        color: theme.palette.warning.dark,
-    },
     tableRow: {
         '&:hover': {
-            backgroundColor: theme.palette.grey[200],
+            backgroundColor: grey[200],
             cursor: 'pointer',
             transition: '0.25s',
         },
@@ -25,6 +20,6 @@ const DisplayStudiesTableStyles = makeStyles((theme) => ({
         padding: '5px',
         borderRadius: '8px',
     },
-}));
+};
 
 export default DisplayStudiesTableStyles;
