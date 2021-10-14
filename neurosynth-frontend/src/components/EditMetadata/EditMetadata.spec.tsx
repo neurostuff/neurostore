@@ -1,10 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { EditMetadata } from '..';
+import { EPropertyType } from '.';
+import { DisplayMetadataTableRowModel, EditMetadata } from '..';
 import { MockThemeProvider } from '../../testing/helpers';
-import { DisplayMetadataTableRowModel } from '../DisplayMetadataTable/DisplayMetadataTableRow/DisplayMetadataTableRow';
 import { getType } from './EditMetadata';
-import { PropertyType } from './EditMetadataRow/ToggleType/ToggleType';
 
 describe('EditMetadata Component', () => {
     const onMetadataEditChangeMock = jest.fn();
@@ -49,10 +48,10 @@ describe('EditMetadata Component', () => {
     });
 
     it('should get the correct type', () => {
-        expect(getType('test')).toEqual(PropertyType.STRING);
-        expect(getType(12345)).toEqual(PropertyType.NUMBER);
-        expect(getType(true)).toEqual(PropertyType.BOOLEAN);
-        expect(getType(null)).toEqual(PropertyType.NONE);
+        expect(getType('test')).toEqual(EPropertyType.STRING);
+        expect(getType(12345)).toEqual(EPropertyType.NUMBER);
+        expect(getType(true)).toEqual(EPropertyType.BOOLEAN);
+        expect(getType(null)).toEqual(EPropertyType.NONE);
     });
 
     it('should delete the correct row and call the parent prop function', () => {

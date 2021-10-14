@@ -3,13 +3,13 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { createTheme, ThemeProvider, Theme } from '@mui/material/styles';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Auth0Provider } from '@auth0/auth0-react';
 import { grey } from '@mui/material/colors';
+import { SxProps, Theme } from '@mui/system';
 
-declare module '@mui/styles/defaultTheme' {
-    // eslint-disable-next-line @typescript-eslint/no-empty-interface
-    interface DefaultTheme extends Theme {}
+export interface Style {
+    [key: string]: SxProps<Theme>;
 }
 
 declare module '@mui/material/styles/createPalette' {

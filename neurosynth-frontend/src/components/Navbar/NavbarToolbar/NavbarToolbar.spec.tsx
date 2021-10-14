@@ -1,11 +1,9 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { ThemeProvider } from '@mui/styles';
-import { createTheme } from '@mui/system';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
+import { NavOptionsModel } from '..';
 import { MockThemeProvider } from '../../../testing/helpers';
-import { NavOptionsModel } from '../Navbar';
 import NavbarToolbar from './NavbarToolbar';
 
 jest.mock('@auth0/auth0-react');

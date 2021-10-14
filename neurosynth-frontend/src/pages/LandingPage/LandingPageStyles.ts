@@ -1,6 +1,6 @@
-import makeStyles from '@mui/styles/makeStyles';
+import { Style } from '../..';
 
-const LandingPageStyles = makeStyles((theme) => ({
+const LandingPageStyles: Style = {
     contentContainer: {
         display: 'flex',
         flexDirection: 'column',
@@ -9,29 +9,30 @@ const LandingPageStyles = makeStyles((theme) => ({
     },
     titleContainer: {
         display: 'flex',
-        flexDirection: 'row',
+        flexDirection: {
+            xs: 'column',
+            md: 'row',
+        },
         alignItems: 'center',
         justifyContent: 'space-between',
         fontFamily: 'Inter',
-        width: '650px',
-        [theme.breakpoints.down('md')]: {
-            flexDirection: 'column',
-            width: '100%',
+        width: {
+            xs: '100%',
+            md: '650px',
         },
     },
     title: {
-        fontSize: '2.5rem',
-        textAlign: 'center',
-        [theme.breakpoints.down('md')]: {
-            marginRight: '0',
-            fontSize: '1.5rem',
+        fontSize: {
+            xs: '2rem',
+            md: '3rem',
+        },
+        marginTop: {
+            xs: '6%',
+            md: 0,
         },
     },
     logo: {
         width: '100px',
-        [theme.breakpoints.down('md')]: {
-            width: '100px',
-        },
     },
     sponsorContainer: {
         width: '100%',
@@ -41,20 +42,21 @@ const LandingPageStyles = makeStyles((theme) => ({
         justifyContent: 'space-around',
         width: '100%',
         flexWrap: 'wrap',
-        [theme.breakpoints.down('md')]: {
-            alignItems: 'center',
+        alignItems: {
+            xs: 'center',
+            md: 'normal',
         },
     },
     sponsorLogoContainer: {
-        margin: 'auto 5%',
-        [theme.breakpoints.down('md')]: {
-            margin: '10% 5%',
+        margin: {
+            xs: '20px 10px',
+            md: 'auto 5%',
         },
     },
     sponsorLogo: {
-        width: '150px',
-        [theme.breakpoints.down('md')]: {
-            width: '100px',
+        width: {
+            xs: '100px',
+            md: '125px',
         },
     },
     nihAwardText: {
@@ -62,21 +64,27 @@ const LandingPageStyles = makeStyles((theme) => ({
         margin: '2% 0',
     },
     descriptor: {
-        fontSize: '1.5rem',
-        fontFamily: 'Roboto',
-        color: theme.palette.muted.main,
-        margin: '2% 0 0 0',
-        lineHeight: '2',
-        [theme.breakpoints.down('md')]: {
-            fontSize: '1rem',
-            margin: '8% 0',
-            textAlign: 'center',
+        fontSize: {
+            xs: '1rem',
+            md: '1.5rem',
         },
+        margin: {
+            xs: '6% 0',
+            md: '2% 0 0 0',
+        },
+        width: {
+            xs: '100%',
+            md: '650px',
+        },
+        fontFamily: 'Roboto',
+        color: 'muted.main',
+        lineHeight: '2',
+        textAlign: 'center',
     },
     divider: {
         margin: '2% 0 !important',
         width: '100%',
     },
-}));
+};
 
 export default LandingPageStyles;

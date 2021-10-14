@@ -9,6 +9,7 @@
         "@mui/icons-material": "^5.0.1",
         "@mui/material": "^5.0.1",
         "@mui/styles": "^5.0.1",
+        "@mui/system": "^5.0.3",
         "@types/jest": "^26.0.24",
         "@types/node": "^12.20.15",
         "@types/react": "^17.0.13",
@@ -25,8 +26,9 @@
     "scripts": {
         "start:dev": "env-cmd -f .env.dev react-scripts start",
         "start:staging": "env-cmd -f .env.staging react-scripts start",
+        "build:dev": "env-cmd -f .env.dev react-scripts build",
+        "build:staging": "env-cmd -f .env.staging react-scripts build",
         "update-api": "docker run --rm -v \"%cd%:/local\" openapitools/openapi-generator-cli generate -i https://raw.githubusercontent.com/neurostuff/neurostore-spec/main/neurostore-openapi.yml -g typescript-axios -o /local/src/gen/api",
-        "build": "react-scripts build",
         "test": "react-scripts test",
         "cy:e2e-headless": "cypress run",
         "cy:e2e-browser": "cypress open",

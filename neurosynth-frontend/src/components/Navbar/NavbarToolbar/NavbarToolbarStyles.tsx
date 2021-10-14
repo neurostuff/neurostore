@@ -1,33 +1,28 @@
-import makeStyles from '@mui/styles/makeStyles';
+import { Style } from '../../..';
 
-const NavbarToolbarStyles = makeStyles((theme) => {
-    return {
-        link: {
-            textDecoration: 'none',
+const NavbarToolbarStyles: Style = {
+    link: {
+        textDecoration: 'none',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 8px',
+        color: 'primary.contrastText',
+    },
+    navLinksContainer: {
+        height: '100%',
+        display: 'flex',
+    },
+    button: {
+        margin: '0',
+        padding: '0',
+        '& span': {
             height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            padding: '0 8px',
-            color: theme.palette.primary.contrastText,
         },
-        navLinksContainer: {
-            height: '100%',
-            display: 'flex',
+        '&:hover': {
+            backgroundColor: '#00689e !important',
         },
-        button: {
-            margin: '0',
-            padding: '0',
-            '& span': {
-                height: '100%',
-            },
-            '&:hover': {
-                backgroundColor: '#00689e !important',
-            },
-        },
-        active: {
-            color: theme.palette.secondary.main,
-        },
-    };
-});
+    },
+};
 
 export default NavbarToolbarStyles;

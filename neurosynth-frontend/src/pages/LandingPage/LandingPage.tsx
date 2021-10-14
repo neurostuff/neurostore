@@ -7,11 +7,11 @@ import oxfordLogo from '../../assets/images/oxfordlogo.png';
 import stanfordLogo from '../../assets/images/stanfordlogo.png';
 import origamiLogo from '../../assets/images/origamilogo.png';
 
-import { Divider } from '@mui/material';
+import { Divider, Typography } from '@mui/material';
 import LandingPageStyles from './LandingPageStyles';
+import { Box } from '@mui/system';
 
 const LandingPage = () => {
-    const classes = LandingPageStyles();
     const logos: { logo: string; alt: string }[] = [
         {
             logo: utLogo,
@@ -43,30 +43,35 @@ const LandingPage = () => {
         },
     ];
     return (
-        <div className={classes.contentContainer}>
-            <div className={classes.titleContainer}>
-                <h1 className={classes.title}>welcome to neurosynth</h1>
-                <div>
-                    <img className={classes.logo} src={logo} alt="Logo" />
-                </div>
-            </div>
-            <div className={classes.descriptor}>
+        <Box sx={LandingPageStyles.contentContainer}>
+            <Box sx={LandingPageStyles.titleContainer}>
+                <Box component="img" sx={LandingPageStyles.logo} src={logo} alt="Logo" />
+                <Typography sx={LandingPageStyles.title}>welcome to neurosynth</Typography>
+            </Box>
+            <Box sx={LandingPageStyles.descriptor}>
                 neurosynth is a platform for large-scale, automated synthesis of functional magnetic
                 resonance imaging (fMRI) data.
-            </div>
-            <Divider className={classes.divider} />
-            <div className={classes.sponsorContainer}>
-                <div className={classes.sponsorsImgContainer}>
+            </Box>
+            <Divider sx={LandingPageStyles.divider} />
+            <Box sx={LandingPageStyles.sponsorContainer}>
+                <Box sx={LandingPageStyles.sponsorsImgContainer}>
                     {logos.map((logo) => (
-                        <div key={logo.logo} className={classes.sponsorLogoContainer}>
-                            <img className={classes.sponsorLogo} src={logo.logo} alt={logo.alt} />
-                        </div>
+                        <Box key={logo.logo} sx={LandingPageStyles.sponsorLogoContainer}>
+                            <Box
+                                component="img"
+                                sx={LandingPageStyles.sponsorLogo}
+                                src={logo.logo}
+                                alt={logo.alt}
+                            />
+                        </Box>
                     ))}
-                </div>
-                <Divider className={classes.divider} />
-                <div className={classes.nihAwardText}>Supported by NIH award 5R01MH096906-06</div>
-            </div>
-        </div>
+                </Box>
+                <Divider sx={LandingPageStyles.divider} />
+                <Box sx={LandingPageStyles.nihAwardText}>
+                    Supported by NIH award 5R01MH096906-06
+                </Box>
+            </Box>
+        </Box>
     );
 };
 

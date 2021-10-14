@@ -1,6 +1,6 @@
-import makeStyles from '@mui/styles/makeStyles';
+import { Style } from '../../..';
 
-const DisplayMetadataTableRowStyles = makeStyles((theme) => ({
+const DisplayMetadataTableRowStyles: Style = {
     type_string: {
         color: 'orange !important',
     },
@@ -13,6 +13,6 @@ const DisplayMetadataTableRowStyles = makeStyles((theme) => ({
     type_other: {
         color: 'gray !important',
     },
-}));
+};
 
 export default DisplayMetadataTableRowStyles;
