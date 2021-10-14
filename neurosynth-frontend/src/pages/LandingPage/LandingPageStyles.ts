@@ -49,7 +49,7 @@ const LandingPageStyles: Style = {
     },
     sponsorLogoContainer: {
         margin: {
-            xs: '10% 5%',
+            xs: '20px 10px',
             md: 'auto 5%',
         },
     },

@@ -1,12 +1,12 @@
-import makeStyles from '@mui/styles/makeStyles';
+import { Style } from '../../../..';
 
-const ToggleTypeStyles = makeStyles({
+const ToggleTypeStyles: Style = {
     type_string: {
         color: 'orange !important',
         '& fieldset': {
             borderColor: 'orange !important',
         },
-        '&.Mui-focused > fieldset': {
+        '&.Mui-focused fieldset': {
             borderColor: 'orange !important',
         },
     },
@@ -15,7 +15,7 @@ const ToggleTypeStyles = makeStyles({
         '& fieldset': {
             borderColor: 'blue !important',
         },
-        '&.Mui-focused > fieldset': {
+        '&.Mui-focused fieldset': {
             borderColor: 'blue !important',
         },
     },
@@ -24,7 +24,7 @@ const ToggleTypeStyles = makeStyles({
         '& fieldset': {
             borderColor: 'green !important',
         },
-        '&.Mui-focused > fieldset': {
+        '&.Mui-focused fieldset': {
             borderColor: 'green !important',
         },
     },
@@ -33,7 +33,7 @@ const ToggleTypeStyles = makeStyles({
         '& fieldset': {
             borderColor: '#b5b5b5 !important',
         },
-        '&.Mui-focused > fieldset': {
+        '&.Mui-focused fieldset': {
             borderColor: '#b5b5b5 !important',
         },
     },
@@ -48,6 +48,6 @@ const ToggleTypeStyles = makeStyles({
         display: 'table-cell',
         verticalAlign: 'middle',
     },
-});
+};
 
 export default ToggleTypeStyles;
