@@ -40,9 +40,23 @@ class Dataset(BaseMixin, db.Model):
     doi = db.Column(db.String)
     pmid = db.Column(db.String)
     public = db.Column(db.Boolean, default=True)
-    nimads_data = db.Column(db.JSON)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("datasets"))
+    studies = relationship(
+        "Study",
+        secondary="dataset_studies",
+        backref="datasets",
+    )
+    annotations = relationship("Annotation", cascade="all, delete", backref="datasets")
+
+
+class Annotation(BaseMixin, db.Model):
+    __tablename__ = "annotations"
+
+    annotations = db.Column(db.Text)
+    user_id = db.Column(db.Text, db.ForeignKey('users.external_id'))
+    user = relationship('User', backref=backref('annotations'))
+    dataset_id = db.Column(db.Text, db.ForeignKey('datasets.id'))
 
 
 class Study(BaseMixin, db.Model):
@@ -61,6 +75,12 @@ class Study(BaseMixin, db.Model):
     source_updated_at = db.Column(db.DateTime(timezone=True))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("studies"))
+
+
+class DatasetStudy(BaseMixin, db.Model):
+    __tablename__ = "dataset_studies"
+    study_id = db.Column(db.ForeignKey('studies.id', ondelete='CASCADE'), primary_key=True)
+    dataset_id = db.Column(db.ForeignKey('datasets.id', ondelete='CASCADE'), primary_key=True)
 
 
 class Analysis(BaseMixin, db.Model):
