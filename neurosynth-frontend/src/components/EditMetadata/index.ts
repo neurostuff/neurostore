@@ -2,22 +2,20 @@
  * file that handles edit metadata models and enums
  */
 
-import { DisplayMetadataTableRowModel } from '..';
-
 export interface IEditMetadataModel {
-    metadata: DisplayMetadataTableRowModel[];
-    onMetadataEditChange: (metadata: DisplayMetadataTableRowModel[]) => void;
+    metadata: IMetadataRowModel[];
+    onMetadataEditChange: (metadata: IMetadataRowModel[]) => void;
 }
 
 export interface IAddMetadataRowModel {
-    onAddMetadataRow: (row: DisplayMetadataTableRowModel) => boolean;
+    onAddMetadataRow: (row: IMetadataRowModel) => boolean;
 }
 
 export interface IEditMetadataRowModel {
     metadataValueType: EPropertyType;
-    metadataRow: DisplayMetadataTableRowModel;
-    onMetadataRowEdit: (metadataRow: DisplayMetadataTableRowModel) => void;
-    onMetadataRowDelete: (metadataRow: DisplayMetadataTableRowModel) => void;
+    metadataRow: IMetadataRowModel;
+    onMetadataRowEdit: (metadataRow: IMetadataRowModel) => void;
+    onMetadataRowDelete: (metadataRow: IMetadataRowModel) => void;
 }
 
 export interface IEditMetadataField {
@@ -28,6 +26,11 @@ export interface IEditMetadataField {
 export interface IToggleTypeModel {
     onToggle: (type: EPropertyType) => void;
     type: EPropertyType;
+}
+
+export interface IMetadataRowModel {
+    metadataKey: string;
+    metadataValue: any;
 }
 
 export enum EPropertyType {

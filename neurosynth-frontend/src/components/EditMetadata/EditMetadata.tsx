@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import EditMetadataStyles from './EditMetadataStyles';
 import EditMetadataRow from './EditMetadataRow/EditMetadataRow';
 import AddMetadataRow from './EditMetadataRow/AddMetadataRow';
-import { DisplayMetadataTableRowModel } from '..';
-import { EPropertyType, IEditMetadataModel } from '.';
+import { IMetadataRowModel, EPropertyType, IEditMetadataModel } from '.';
 import { Box } from '@mui/system';
 
 export const getType = (value: any): EPropertyType => {
@@ -21,13 +20,13 @@ export const getType = (value: any): EPropertyType => {
 
 const EditMetadata: React.FC<IEditMetadataModel> = (props) => {
     // this props.metadata value is only used on the first render so useState is required below for subsequent props changes
-    const [metadata, setMetadata] = useState<DisplayMetadataTableRowModel[]>(props.metadata);
+    const [metadata, setMetadata] = useState<IMetadataRowModel[]>(props.metadata);
 
     useEffect(() => {
         setMetadata(props.metadata);
     }, [props.metadata]);
 
-    const handleMetadataRowEdit = (updatedRow: DisplayMetadataTableRowModel) => {
+    const handleMetadataRowEdit = (updatedRow: IMetadataRowModel) => {
         setMetadata((prevState) => {
             const updatedMetadata = [...prevState];
             const valueToEditFound = updatedMetadata.find(
@@ -42,7 +41,7 @@ const EditMetadata: React.FC<IEditMetadataModel> = (props) => {
         });
     };
 
-    const handleMetadataRowDelete = (updatedRow: DisplayMetadataTableRowModel) => {
+    const handleMetadataRowDelete = (updatedRow: IMetadataRowModel) => {
         setMetadata((prevState) => {
             const updatedMetadata = prevState.filter(
                 (element) => element.metadataKey !== updatedRow.metadataKey
@@ -52,7 +51,7 @@ const EditMetadata: React.FC<IEditMetadataModel> = (props) => {
         });
     };
 
-    const handleMetadataRowAdd = (row: DisplayMetadataTableRowModel): boolean => {
+    const handleMetadataRowAdd = (row: IMetadataRowModel): boolean => {
         const keyExists = !!metadata.find((item) => item.metadataKey === row.metadataKey);
         if (keyExists) {
             return false;

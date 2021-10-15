@@ -1,16 +1,16 @@
 import { Style } from '../../..';
 
 const DisplayMetadataTableRowStyles: Style = {
-    type_string: {
+    string: {
         color: 'orange !important',
     },
-    type_number: {
+    number: {
         color: 'blue !important',
     },
-    type_boolean: {
+    boolean: {
         color: 'green !important',
     },
-    type_other: {
+    none: {
         color: 'gray !important',
     },
 };

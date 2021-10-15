@@ -5,15 +5,24 @@
 // components
 import Navbar from './Navbar/Navbar';
 import SearchBar from './SearchBar/SearchBar';
-import ToggleType from './EditMetadata/EditMetadataRow/ToggleType/ToggleType';
-import DisplayMetadataTable from './DisplayMetadataTable/DisplayMetadataTable';
 import DisplayStudiesTable from './DisplayStudiesTable/DisplayStudiesTable';
 import EditMetadata from './EditMetadata/EditMetadata';
+import DisplayAnalysis from './DisplayAnalysis/DisplayAnalysis';
+import DisplayValuesTable from './DisplayValuesTable/DisplayValuesTable';
+import TextExpansion from './TextExpansion/TextExpansion';
 
 // models
-export * from './DisplayMetadataTable';
 export * from './EditMetadata';
 export * from './Navbar';
+export * from './DisplayValuesTable';
 
 // export components
-export { Navbar, SearchBar, ToggleType, DisplayMetadataTable, DisplayStudiesTable, EditMetadata };
+export {
+    Navbar,
+    SearchBar,
+    DisplayStudiesTable,
+    EditMetadata,
+    DisplayAnalysis,
+    DisplayValuesTable,
+    TextExpansion,
+};

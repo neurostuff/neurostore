@@ -4,8 +4,8 @@ import { Box } from '@mui/system';
 import { AxiosError, AxiosResponse } from 'axios';
 import React, { useCallback, useState, useEffect, useContext, SyntheticEvent } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import { DisplayMetadataTable } from '../../../components';
-import DisplayAnalysis from '../../../components/Analysis/DisplayAnalysis';
+import { DisplayValuesTable, DisplayValuesTableModel, TextExpansion } from '../../../components';
+import DisplayAnalysis from '../../../components/DisplayAnalysis/DisplayAnalysis';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import { Analysis, ReadOnly } from '../../../gen/api';
 import API, { StudyApiResponse } from '../../../utils/api';
@@ -89,6 +89,25 @@ const StudyPage = () => {
         setEditDisabled(shouldDisableEdit);
     }, [isAuthenticated, user?.sub, study?.user]);
 
+    const metadataForTable: DisplayValuesTableModel = {
+        columnHeaders: ['Name', 'Value'],
+        rowData: Object.entries(study?.metadata || {}).map(([key, value]) => ({
+            uniqueKey: key,
+            columnValues: [
+                {
+                    value: key,
+                    colorByType: false,
+                    bold: true,
+                },
+                {
+                    value: value,
+                    colorByType: true,
+                    bold: true,
+                },
+            ],
+        })),
+    };
+
     return (
         <>
             <Box sx={{ ...StudyPageStyles.buttonContainer, ...StudyPageStyles.spaceBelow }}>
@@ -131,9 +150,10 @@ const StudyPage = () => {
                     <Typography variant="h6">{study?.publication}</Typography>
                     {study?.doi && <Typography variant="h6">DOI: {study?.doi}</Typography>}
                 </Box>
-                <Typography sx={StudyPageStyles.spaceBelow} variant="subtitle1">
-                    {study?.description}
-                </Typography>
+                <TextExpansion
+                    text={study?.description || ''}
+                    sx={StudyPageStyles.spaceBelow}
+                ></TextExpansion>
             </Box>
 
             <Box
@@ -156,7 +176,7 @@ const StudyPage = () => {
 
             {tabIndex === 1 && (
                 <Box sx={StudyPageStyles.metadataContainer}>
-                    {study && <DisplayMetadataTable metadata={study.metadata} />}
+                    {study && <DisplayValuesTable {...metadataForTable} />}
                 </Box>
             )}
 
@@ -173,7 +193,7 @@ const StudyPage = () => {
                                 color: 'lightgray',
                                 maxWidth: {
                                     xs: 100,
-                                    md: 250,
+                                    md: 200,
                                 },
                             }}
                             scrollButtons

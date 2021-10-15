@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { DisplayMetadataTableRowModel, EPropertyType } from '../..';
+import { EPropertyType, IMetadataRowModel } from '../..';
 import { MockThemeProvider } from '../../../testing/helpers';
 import EditMetadataRow from './EditMetadataRow';
 
@@ -8,7 +8,7 @@ describe('EditMetadataRow Component', () => {
     const onMetadataRowDeleteMock = jest.fn();
     const onMetadataRowEditMock = jest.fn();
 
-    let mockMetadataRow: DisplayMetadataTableRowModel;
+    let mockMetadataRow: IMetadataRowModel;
 
     beforeEach(() => {
         mockMetadataRow = {
