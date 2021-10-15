@@ -286,7 +286,9 @@ class ListView(BaseView):
 
 @view_maker
 class DatasetView(ObjectView):
-    pass
+    _nested = {
+        "studies": "StudyView"
+    }
 
 
 @view_maker
@@ -384,6 +386,9 @@ class ImageListView(ListView):
 
 @view_maker
 class DatasetListView(ListView):
+    _nested = {
+        "studies": "StudyView"
+    }
     _search_fields = ("name", "description", "publication", "doi", "pmid")
 
 
