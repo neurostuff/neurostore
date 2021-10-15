@@ -16,6 +16,7 @@ from neurostore.models import (
     Image,
     Point,
     Study,
+    Dataset,
 )
 
 
@@ -110,7 +111,6 @@ def ingest_neurovault(verbose=False, limit=20):
         if (limit is not None and count >= int(limit)) or not url:
             break
 
-
 def ingest_neurosynth(max_rows=None):
 
     coords_file = (
@@ -163,6 +163,18 @@ def ingest_neurosynth(max_rows=None):
         db.session.add_all([s] + analyses + points)
         db.session.commit()
 
+    # make a neurosynth dataset
+    d = Dataset(
+        name="neurosynth",
+        description="TODO",
+        publication="Nature Methods",
+        pmid="21706013",
+        public=True,
+        studies=Study.query.filter_by(source="neurosynth").all(),
+    )
+    db.session.add(d)
+    db.session.commit()
+
 
 def ingest_neuroquery(max_rows=None):
 
@@ -209,3 +221,15 @@ def ingest_neuroquery(max_rows=None):
 
         db.session.add_all([s] + analyses + points)
         db.session.commit()
+
+    # make a neuroquery dataset
+    d = Dataset(
+        name="neuroquery",
+        description="TODO",
+        publication="eLife",
+        pmid="32129761",
+        public=True,
+        studies=Study.query.filter_by(source="neuroquery").all(),
+    )
+    db.session.add(d)
+    db.session.commit()
