@@ -112,7 +112,6 @@ const DisplayAnalysis: React.FC<Analysis> = (props) => {
                 </Accordion>
             </Box>
             <Box>
-                <Typography variant="h5">Images</Typography>
                 <DisplayImagesTable />
             </Box>
         </Box>

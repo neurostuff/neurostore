@@ -193,7 +193,7 @@ const StudyPage = () => {
                                 color: 'lightgray',
                                 maxWidth: {
                                     xs: 100,
-                                    md: 200,
+                                    md: 150,
                                 },
                             }}
                             scrollButtons
@@ -219,7 +219,7 @@ const StudyPage = () => {
                             </Box>
                             <Box
                                 sx={{
-                                    width: '55%',
+                                    width: '50%',
                                     display: 'flex',
                                     justifyContent: 'end',
                                     alignItems: 'start',
