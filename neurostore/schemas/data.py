@@ -215,7 +215,7 @@ class StudySchema(BaseDataSchema):
 class DatasetSchema(BaseDataSchema):
     # serialize
     user = fields.Function(lambda user: user.user_id, dump_only=True, db_only=True)
-    nimads_data = fields.Dict()
+    studies = StringOrNested(StudySchema, many=True)
 
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")
