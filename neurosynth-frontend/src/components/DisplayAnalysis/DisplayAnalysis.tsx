@@ -69,7 +69,7 @@ const DisplayAnalysis: React.FC<Analysis> = (props) => {
     };
 
     return (
-        <Box sx={{ padding: '0 16px', overflowY: 'auto', maxHeight: '100%' }}>
+        <Box sx={{ padding: '0 16px', height: '100%' }}>
             <Typography sx={DisplayAnalysisStyles.spaceBelow} variant="h5">
                 {props.name}
             </Typography>
@@ -111,8 +111,13 @@ const DisplayAnalysis: React.FC<Analysis> = (props) => {
                     </AccordionDetails>
                 </Accordion>
             </Box>
-            <Box>
-                <DisplayImagesTable />
+            <Box sx={{ ...DisplayAnalysisStyles.spaceBelow }}>
+                <Accordion elevation={4}>
+                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>Images</AccordionSummary>
+                    <AccordionDetails>
+                        <DisplayImagesTable />
+                    </AccordionDetails>
+                </Accordion>
             </Box>
         </Box>
     );

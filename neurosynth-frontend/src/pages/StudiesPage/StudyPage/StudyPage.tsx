@@ -186,7 +186,7 @@ const StudyPage = () => {
                         No analyses
                     </Box>
                 ) : (
-                    <Box sx={{ display: 'flex', height: '50vh', flexGrow: 1, marginTop: 2 }}>
+                    <Box sx={{ display: 'flex', flexGrow: 1, marginTop: 2 }}>
                         <Tabs
                             sx={{
                                 borderRight: 1,
