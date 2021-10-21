@@ -1,11 +1,14 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Button, Tab, Tabs, Tooltip, Typography } from '@mui/material';
-import { Box } from '@mui/system';
+import { Button, Tooltip, Typography, Tab, Tabs, Box } from '@mui/material';
 import { AxiosError, AxiosResponse } from 'axios';
 import React, { useCallback, useState, useEffect, useContext, SyntheticEvent } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import { DisplayValuesTable, DisplayValuesTableModel, TextExpansion } from '../../../components';
-import DisplayAnalysis from '../../../components/DisplayAnalysis/DisplayAnalysis';
+import {
+    DisplayValuesTable,
+    DisplayValuesTableModel,
+    TextExpansion,
+    DisplayAnalysis,
+} from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import { Analysis, ReadOnly } from '../../../gen/api';
 import API, { StudyApiResponse } from '../../../utils/api';
@@ -21,6 +24,7 @@ const StudyPage = () => {
         analysisIndex: 0,
         analysis: undefined,
     });
+
     const [editDisabled, setEditDisabled] = useState(true);
     const context = useContext(GlobalContext);
     const history = useHistory();
@@ -169,16 +173,10 @@ const StudyPage = () => {
                         setTabIndex(newValue);
                     }}
                 >
-                    <Tab sx={{ fontSize: '1.25rem' }} label="Analyses" />
-                    <Tab sx={{ fontSize: '1.25rem' }} label="Metadata" />
+                    <Tab sx={StudyPageStyles.tab} label="Study Analyses" />
+                    <Tab sx={StudyPageStyles.tab} label="Study Metadata" />
                 </Tabs>
             </Box>
-
-            {tabIndex === 1 && (
-                <Box sx={StudyPageStyles.metadataContainer}>
-                    {study && <DisplayValuesTable {...metadataForTable} />}
-                </Box>
-            )}
 
             {tabIndex === 0 &&
                 (study?.analyses?.length === 0 ? (
@@ -186,59 +184,47 @@ const StudyPage = () => {
                         No analyses
                     </Box>
                 ) : (
-                    <Box sx={{ display: 'flex', flexGrow: 1, marginTop: 2 }}>
-                        <Tabs
-                            sx={{
-                                borderRight: 1,
-                                color: 'lightgray',
-                                maxWidth: {
-                                    xs: 100,
-                                    md: 150,
-                                },
-                            }}
-                            scrollButtons
-                            TabScrollButtonProps={{
-                                sx: {
-                                    color: 'primary.main',
-                                },
-                            }}
-                            value={selectedAnalysis.analysisIndex}
-                            onChange={handleSelectAnalysis}
-                            orientation="vertical"
-                            variant="scrollable"
-                        >
-                            {/* manually override analysis type as we know study will be nested
-                            and analysis will not be a string */}
-                            {(study?.analyses as (Analysis & ReadOnly)[])?.map((analysis) => (
-                                <Tab key={analysis.id} label={analysis.name} />
-                            ))}
-                        </Tabs>
-                        <Box sx={{ height: '100%', width: '100%', display: 'flex' }}>
-                            <Box sx={{ flexGrow: 1 }}>
-                                <DisplayAnalysis {...selectedAnalysis.analysis} />
-                            </Box>
-                            <Box
-                                sx={{
-                                    width: '50%',
-                                    display: 'flex',
-                                    justifyContent: 'end',
-                                    alignItems: 'start',
+                    /**
+                     * The following CSS is applied to make sure that the tab height grows based on the height
+                     * of the analysis.
+                     * The tab height should expand and match the height if the analysis accordions are expanded
+                     */
+                    <Box sx={{ display: 'flex' }}>
+                        <Box sx={StudyPageStyles.matchingSibling}>
+                            <Tabs
+                                sx={StudyPageStyles.analysesTabs}
+                                scrollButtons
+                                TabScrollButtonProps={{
+                                    sx: {
+                                        color: 'primary.main',
+                                    },
                                 }}
+                                value={selectedAnalysis.analysisIndex}
+                                onChange={handleSelectAnalysis}
+                                orientation="vertical"
+                                variant="scrollable"
                             >
-                                <div
-                                    style={{
-                                        width: '98%',
-                                        height: '96%',
-                                        backgroundColor: 'black',
-                                        color: 'white',
-                                    }}
-                                >
-                                    Papaya Visualizer placeholder
-                                </div>
-                            </Box>
+                                {/* manually override analysis type as we know study will be nested and analysis will not be a string */}
+                                {(study?.analyses as (Analysis & ReadOnly)[])?.map((analysis) => (
+                                    <Tab
+                                        sx={StudyPageStyles.analysisTab}
+                                        key={analysis.id}
+                                        label={analysis.name}
+                                    />
+                                ))}
+                            </Tabs>
+                        </Box>
+                        <Box sx={StudyPageStyles.heightDefiningSibling}>
+                            <DisplayAnalysis {...selectedAnalysis.analysis} />
                         </Box>
                     </Box>
                 ))}
+
+            {tabIndex === 1 && (
+                <Box sx={StudyPageStyles.metadataContainer}>
+                    {study && <DisplayValuesTable {...metadataForTable} />}
+                </Box>
+            )}
         </>
     );
 };

@@ -10,6 +10,7 @@ import EditMetadata from './EditMetadata/EditMetadata';
 import DisplayAnalysis from './DisplayAnalysis/DisplayAnalysis';
 import DisplayValuesTable from './DisplayValuesTable/DisplayValuesTable';
 import TextExpansion from './TextExpansion/TextExpansion';
+import Visualizer from './Visualizer/Visualizer';
 
 // models
 export * from './EditMetadata';
@@ -25,4 +26,5 @@ export {
     DisplayAnalysis,
     DisplayValuesTable,
     TextExpansion,
+    Visualizer,
 };

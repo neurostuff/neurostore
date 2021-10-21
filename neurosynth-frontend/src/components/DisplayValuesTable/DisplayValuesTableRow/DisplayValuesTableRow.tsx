@@ -43,6 +43,7 @@ const DisplayMetadataTableRow: React.FC<DisplayValuesTableRowModel> = (props) =>
                             component="span"
                             sx={{
                                 fontWeight: col.bold ? 'bold' : 'normal',
+                                ...DisplayValuesTableRowStyles.root,
                                 ...typedStyles,
                             }}
                         >

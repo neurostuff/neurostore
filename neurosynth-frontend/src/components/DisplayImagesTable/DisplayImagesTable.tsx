@@ -15,7 +15,7 @@ const DisplayImagesTable = () => {
             <Table>
                 <TableHead>
                     <TableRow>
-                        <TableCell />
+                        <TableCell></TableCell>
                         <TableCell>Type</TableCell>
                         <TableCell>Space</TableCell>
                     </TableRow>
