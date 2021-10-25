@@ -14,10 +14,7 @@ const DisplayMetadataTableRowStyles: Style = {
         color: 'gray !important',
     },
     root: {
-        wordBreak: {
-            xs: 'break-all',
-            md: 'keep-all',
-        },
+        wordBreak: 'break-all',
         fontSize: {
             xs: '0.8rem',
             md: 'initial',

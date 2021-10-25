@@ -45,6 +45,7 @@ const DisplayAnalysisStyles: Style = {
             xs: '0px',
             md: '10px',
         },
+        flexBasis: 0,
         flexGrow: 1,
     },
     rightSection: {

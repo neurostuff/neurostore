@@ -10,7 +10,7 @@ import {
     DisplayAnalysis,
 } from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
-import { Analysis, ReadOnly } from '../../../gen/api';
+import { Analysis, Image, ReadOnly } from '../../../gen/api';
 import API, { StudyApiResponse } from '../../../utils/api';
 import StudyPageStyles from './StudyPageStyles';
 
@@ -39,6 +39,23 @@ const StudyPage = () => {
 
                 // check if the analyses array exists and is non zero in the response
                 if (!!resUpdated?.data?.analyses && resUpdated.data.analyses.length > 0) {
+                    (
+                        (resUpdated.data.analyses[0] as Analysis & ReadOnly).images as (Image &
+                            ReadOnly)[]
+                    ).push({
+                        id: 'abcd',
+                        value_type: 'F',
+                        metadata: {
+                            a: false,
+                            b: 3,
+                            c: 'xyz',
+                            d: null,
+                        },
+                        filename: 'spmT_0002.nii.gz',
+                        url: 'https://neurovault.org/media/images/1354/spmT_0002.nii.gz',
+                        space: 'MNI',
+                    });
+
                     setSelectedAnalysis({
                         analysisIndex: 0,
                         analysis: resUpdated.data.analyses[0] as Analysis & ReadOnly,
@@ -189,8 +206,9 @@ const StudyPage = () => {
                      * of the analysis.
                      * The tab height should expand and match the height if the analysis accordions are expanded
                      */
-                    <Box sx={{ display: 'flex' }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'row' }}>
                         <Box sx={StudyPageStyles.matchingSibling}>
+                            {/* apply flex basis 0 to analyses tabs to make sure it matches sibling */}
                             <Tabs
                                 sx={StudyPageStyles.analysesTabs}
                                 scrollButtons
@@ -214,7 +232,13 @@ const StudyPage = () => {
                                 ))}
                             </Tabs>
                         </Box>
-                        <Box sx={StudyPageStyles.heightDefiningSibling}>
+                        <Box
+                            sx={{
+                                ...StudyPageStyles.heightDefiningSibling,
+                                flexBasis: 0,
+                                flexGrow: 1,
+                            }}
+                        >
                             <DisplayAnalysis {...selectedAnalysis.analysis} />
                         </Box>
                     </Box>
