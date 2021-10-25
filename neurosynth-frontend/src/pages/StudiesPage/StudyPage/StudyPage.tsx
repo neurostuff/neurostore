@@ -39,23 +39,6 @@ const StudyPage = () => {
 
                 // check if the analyses array exists and is non zero in the response
                 if (!!resUpdated?.data?.analyses && resUpdated.data.analyses.length > 0) {
-                    (
-                        (resUpdated.data.analyses[0] as Analysis & ReadOnly).images as (Image &
-                            ReadOnly)[]
-                    ).push({
-                        id: 'abcd',
-                        value_type: 'F',
-                        metadata: {
-                            a: false,
-                            b: 3,
-                            c: 'xyz',
-                            d: null,
-                        },
-                        filename: 'spmT_0002.nii.gz',
-                        url: 'https://neurovault.org/media/images/1354/spmT_0002.nii.gz',
-                        space: 'MNI',
-                    });
-
                     setSelectedAnalysis({
                         analysisIndex: 0,
                         analysis: resUpdated.data.analyses[0] as Analysis & ReadOnly,
