@@ -10,7 +10,7 @@ import {
     DisplayAnalysis,
 } from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
-import { Analysis, Image, ReadOnly } from '../../../gen/api';
+import { Analysis, ReadOnly } from '../../../gen/api';
 import API, { StudyApiResponse } from '../../../utils/api';
 import StudyPageStyles from './StudyPageStyles';
 
