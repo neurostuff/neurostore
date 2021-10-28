@@ -111,6 +111,7 @@ def ingest_neurovault(verbose=False, limit=20):
         if (limit is not None and count >= int(limit)) or not url:
             break
 
+
 def ingest_neurosynth(max_rows=None):
 
     coords_file = (
@@ -169,6 +170,8 @@ def ingest_neurosynth(max_rows=None):
         description="TODO",
         publication="Nature Methods",
         pmid="21706013",
+        doi="10.1038/nmeth.1635",
+        authors="Yarkoni T, Poldrack RA, Nichols TE, Van Essen DC, Wager TD",
         public=True,
         studies=Study.query.filter_by(source="neurosynth").all(),
     )
@@ -228,6 +231,7 @@ def ingest_neuroquery(max_rows=None):
         description="TODO",
         publication="eLife",
         pmid="32129761",
+        doi="10.7554/eLife.53385",
         public=True,
         studies=Study.query.filter_by(source="neuroquery").all(),
     )
