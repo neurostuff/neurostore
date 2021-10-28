@@ -106,4 +106,4 @@ def test_post_studies(auth_client, ingest_neurosynth):
         "analyses": analyses,
     }
 
-    auth_client.post(f"/api/studies/", data=my_study)
+    auth_client.post("/api/studies/", data=my_study)
