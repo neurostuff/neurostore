@@ -11,7 +11,7 @@ from webargs.flaskparser import parser
 from webargs import fields
 
 from ..core import db
-from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions, User  # noqa E401
+from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions, User, AnnotationAnalysis, Annotation  # noqa E401
 
 from ..schemas import (  # noqa E401
     StudySchema,
@@ -21,11 +21,14 @@ from ..schemas import (  # noqa E401
     PointSchema,
     PointValueSchema,
     DatasetSchema,
-    AnalysisConditionSchema
+    AnalysisConditionSchema,
+    AnnotationSchema,
+    AnnotationAnalysisSchema,
 )
 
 __all__ = [
     "DatasetView",
+    "AnnotationView",
     "StudyView",
     "AnalysisView",
     "ConditionView",
@@ -34,6 +37,7 @@ __all__ = [
     "PointListView",
     "PointValueView",
     "StudyListView",
+    "AnnotationListView"
     "AnalysisListView",
     "ImageListView",
     "DatasetListView",
@@ -84,6 +88,9 @@ class BaseView(MethodView):
             db.session.add(current_user)
             db.session.commit()
 
+        id = id or data.get("id", None) # want to handle case of {"id": "asdfasf"}
+
+        only_ids = set(data.keys()) - set(['id']) == set()
         if id is None:
             record = cls._model()
             record.user = current_user
@@ -91,8 +98,17 @@ class BaseView(MethodView):
             record = cls._model.query.filter_by(id=id).first()
             if record is None:
                 abort(422)
-            elif record.user_id != current_user.external_id:
+            elif record.user_id != current_user.external_id and not only_ids:
                 abort(403)
+            elif only_ids:
+                to_commit.append(record)
+
+                if commit:
+                    db.session.add_all(to_commit)
+                    db.session.commit()
+
+                return record
+
 
         # Update all non-nested attributes
         for k, v in data.items():
@@ -287,7 +303,15 @@ class ListView(BaseView):
 @view_maker
 class DatasetView(ObjectView):
     _nested = {
-        "studies": "StudyView"
+        "studies": "StudyView",
+        "annotations": "AnnotationView",
+    }
+
+
+@view_maker
+class AnnotationView(ObjectView):
+    _nested = {
+        "annotation_analyses": "AnnotationAnalysisResource"
     }
 
 
@@ -393,6 +417,15 @@ class DatasetListView(ListView):
 
 
 @view_maker
+class AnnotationListView(ListView):
+    _nested = {
+        "annotation_analyses": "AnnotationAnalysisResource",
+        "dataset": "DatasetView",
+    }
+    _search_fields = ("name", "description")
+
+
+@view_maker
 class ConditionListView(ListView):
     _search_fields = ("name", "description")
 
@@ -408,3 +441,12 @@ class AnalysisConditionResource(BaseView):
     _nested = {'condition': 'ConditionView'}
     _model = AnalysisConditions
     _schema = AnalysisConditionSchema
+
+
+class AnnotationAnalysisResource(BaseView):
+    _nested = {
+        'analysis': "AnalysisView",
+        'study': 'StudyView',
+    }
+    _model = AnnotationAnalysis
+    _schema = AnnotationAnalysisSchema
