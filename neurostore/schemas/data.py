@@ -26,10 +26,14 @@ class StringOrNested(fields.Nested):
             return [v.id for v in value] if self.many else value.id
 
     def _deserialize(self, value, attr, data, **ser_kwargs):
-
-        return self.schema.load(
-            [{"id": v} if isinstance(v, str) else v for v in value], many=True
-        )
+        if isinstance(value, list):
+            return self.schema.load(
+                [{"id": v} if isinstance(v, str) else v for v in value], many=True
+            )
+        elif isinstance(value, str):
+            return self.schema.load({"id": value})
+        else:
+            return self.schema.load(value)
 
 
 # https://github.com/marshmallow-code/marshmallow/issues/466#issuecomment-285342071
@@ -220,6 +224,46 @@ class DatasetSchema(BaseDataSchema):
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")
         allow_none = ("name", "description", "publication", "doi", "pmid")
+
+
+class AnnotationAnalysisSchema(BaseDataSchema):
+    note = fields.Dict()
+    annotation = fields.Function(lambda annot_anal: annot_anal.annotation.id, dump_only=True, db_only=True)
+    analysis = fields.Function(lambda annot_anal: annot_anal.analysis.id, dump_only=True, db_only=True)
+    study = fields.Function(lambda annot_anal: annot_anal.study.id, dump_only=True, db_only=True)
+
+    _analysis = StringOrNested(AnalysisSchema, load_only=True, attribute='analysis', data_key="analysis")
+    _annotation = fields.String(load_only=True, attribute='annotation', data_key='annotation')
+    _study = StringOrNested(StudySchema, load_only=True, attribute='study', data_key='study')
+
+
+class AnnotationSchema(BaseDataSchema):
+    # serialization
+    dataset = fields.Function(
+        lambda dataset: dataset.id, dump_only=True, db_only=True
+        )
+    annotation_analyses = fields.Nested(AnnotationAnalysisSchema, many=True)
+
+    # deserialization
+    # annotation_analyses = fields.Nested(AnnotationAnalysisSchema, many=True, load_only=True)
+
+    _dataset = StringOrNested(DatasetSchema, data_key='dataset', attribute='dataset', load_only=True)
+
+    class Meta:
+        additional = ("name", "description")
+        allow_none = ("name", "description")
+
+    @pre_load
+    def process_values(self, data, **kwargs):
+        if data.get("notes") is not None:
+            data['annotation_analyses'] = data.pop('notes')
+        return data
+
+    @post_dump
+    def post_values(self, data, **kwargs):
+        if data.get("annotation_analyses") is not None:
+            data['notes'] = data.pop('annotation_analyses')
+        return data
 
 
 class JSONLDPointSchema(PointSchema):
