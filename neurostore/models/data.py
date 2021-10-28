@@ -1,4 +1,5 @@
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 import shortuuid
@@ -37,6 +38,11 @@ class Dataset(BaseMixin, db.Model):
     name = db.Column(db.String)
     description = db.Column(db.String)
     publication = db.Column(db.String)
+    authors = db.Column(db.String)
+    metadata_ = db.Column(db.JSON)
+    source = db.Column(db.String)
+    source_id = db.Column(db.String)
+    source_updated_at = db.Column(db.DateTime(timezone=True))
     doi = db.Column(db.String)
     pmid = db.Column(db.String)
     public = db.Column(db.Boolean, default=True)
@@ -47,16 +53,32 @@ class Dataset(BaseMixin, db.Model):
         secondary="dataset_studies",
         backref="datasets",
     )
-    annotations = relationship("Annotation", cascade="all, delete", backref="datasets")
+    annotations = relationship("Annotation", cascade="all, delete", backref="dataset")
 
 
 class Annotation(BaseMixin, db.Model):
     __tablename__ = "annotations"
-
-    annotations = db.Column(db.Text)
+    name = db.Column(db.Text)
+    description = db.Column(db.Text)
     user_id = db.Column(db.Text, db.ForeignKey('users.external_id'))
     user = relationship('User', backref=backref('annotations'))
     dataset_id = db.Column(db.Text, db.ForeignKey('datasets.id'))
+
+
+class AnnotationAnalysis(BaseMixin, db.Model):
+    __tablename__ = "annotation_analyses"
+
+    annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"))
+    analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id"))
+    study_id = db.Column(db.Text, db.ForeignKey("studies.id"))
+    note = db.Column(MutableDict.as_mutable(db.JSON))
+
+    study = relationship("Study", backref=backref("annotation_analyses"))
+    analysis = relationship("Analysis", backref=backref("annotation_analyses"))
+    annotation = relationship("Annotation", backref=backref("annotation_analyses"))
+
+    user_id = db.Column(db.Text, db.ForeignKey('users.external_id'))
+    user = relationship('User', backref=backref('annotation_analyses'))
 
 
 class Study(BaseMixin, db.Model):
