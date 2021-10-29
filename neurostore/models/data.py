@@ -60,6 +60,9 @@ class Annotation(BaseMixin, db.Model):
     __tablename__ = "annotations"
     name = db.Column(db.Text)
     description = db.Column(db.Text)
+    source = db.Column(db.String)
+    source_id = db.Column(db.String)
+    source_updated_at = db.Column(db.DateTime(timezone=True))
     user_id = db.Column(db.Text, db.ForeignKey('users.external_id'))
     user = relationship('User', backref=backref('annotations'))
     dataset_id = db.Column(db.Text, db.ForeignKey('datasets.id'))

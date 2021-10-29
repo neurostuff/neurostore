@@ -171,7 +171,8 @@ LIST_USER_ARGS = {
     "source": fields.String(missing=None),
     "unique": fields.Boolean(missing=False),
     "nested": fields.Boolean(missing=False),
-    "user_id": fields.String(missing=None)
+    "user_id": fields.String(missing=None),
+    "dataset_id": fields.String(missing=None),
 }
 
 
@@ -208,6 +209,11 @@ class ListView(BaseView):
         if hasattr(m, 'public'):
             current_user = get_current_user()
             q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
+
+        # query annotations for a specific dataset
+        if args.get('dataset_id'):
+            q = q.filter(m.dataset_id == args.get('dataset_id'))
+
         # For multi-column search, default to using search fields
         if s is not None and self._fulltext_fields:
             search_expr = [
@@ -424,6 +430,31 @@ class AnnotationListView(ListView):
     }
     _search_fields = ("name", "description")
 
+    @classmethod
+    def _load_from_source(cls, source, source_id):
+        if source == "neurostore":
+            return cls.load_from_neurostore(source_id)
+
+
+    @classmethod
+    def load_from_neurostore(cls, source_id):
+        annotation = cls._model.query.filter_by(id=source_id).first_or_404()
+        parent_source_id = annotation.source_id
+        parent_source = annotation.source
+        while parent_source_id is not None and parent_source == 'neurostore':
+            source_id = parent_source_id
+            parent = cls._model.query.filter_by(
+                id=source_id
+            ).first_or_404()
+            parent_source = parent.source
+            parent_source_id = parent.source_id
+
+        schema = cls._schema(copy=True)
+        data = schema.load(schema.dump(annotation))
+        data['source'] = "neurostore"
+        data['source_id'] = source_id
+        data['source_updated_at'] = annotation.updated_at or annotation.created_at
+        return data
 
 @view_maker
 class ConditionListView(ListView):

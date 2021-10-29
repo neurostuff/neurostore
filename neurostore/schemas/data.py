@@ -229,8 +229,8 @@ class DatasetSchema(BaseDataSchema):
 class AnnotationAnalysisSchema(BaseDataSchema):
     note = fields.Dict()
     annotation = fields.Function(lambda annot_anal: annot_anal.annotation.id, dump_only=True, db_only=True)
-    analysis = fields.Function(lambda annot_anal: annot_anal.analysis.id, dump_only=True, db_only=True)
-    study = fields.Function(lambda annot_anal: annot_anal.study.id, dump_only=True, db_only=True)
+    analysis = fields.Function(lambda annot_anal: annot_anal.analysis.id, dump_only=True)
+    study = fields.Function(lambda annot_anal: annot_anal.study.id, dump_only=True)
 
     _analysis = StringOrNested(AnalysisSchema, load_only=True, attribute='analysis', data_key="analysis")
     _annotation = fields.String(load_only=True, attribute='annotation', data_key='annotation')
@@ -243,6 +243,10 @@ class AnnotationSchema(BaseDataSchema):
         lambda dataset: dataset.id, dump_only=True, db_only=True
         )
     annotation_analyses = fields.Nested(AnnotationAnalysisSchema, many=True)
+
+    source = fields.String(dump_only=True, db_only=True, allow_none=True)
+    source_id = fields.String(dump_only=True, db_only=True, allow_none=True)
+    source_updated_at = fields.DateTime(dump_only=True, db_only=True, allow_none=True)
 
     # deserialization
     # annotation_analyses = fields.Nested(AnnotationAnalysisSchema, many=True, load_only=True)
