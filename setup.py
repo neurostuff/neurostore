@@ -16,6 +16,7 @@ requirements = [
     "webargs",
     "shortuuid",
     "pandas",
+    "scipy",
 ]
 
 print("PACKAGES:", find_packages(exclude=["tests", "test_*"]))
