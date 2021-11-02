@@ -228,11 +228,15 @@ class DatasetSchema(BaseDataSchema):
 
 class AnnotationAnalysisSchema(BaseDataSchema):
     note = fields.Dict()
-    annotation = fields.Function(lambda annot_anal: annot_anal.annotation.id, dump_only=True, db_only=True)
+    annotation = fields.Function(
+        lambda annot_anal: annot_anal.annotation.id, dump_only=True, db_only=True
+    )
     analysis = fields.Function(lambda annot_anal: annot_anal.analysis.id, dump_only=True)
     study = fields.Function(lambda annot_anal: annot_anal.study.id, dump_only=True)
 
-    _analysis = StringOrNested(AnalysisSchema, load_only=True, attribute='analysis', data_key="analysis")
+    _analysis = StringOrNested(
+        AnalysisSchema, load_only=True, attribute='analysis', data_key="analysis"
+    )
     _annotation = fields.String(load_only=True, attribute='annotation', data_key='annotation')
     _study = StringOrNested(StudySchema, load_only=True, attribute='study', data_key='study')
 
@@ -251,7 +255,9 @@ class AnnotationSchema(BaseDataSchema):
     # deserialization
     # annotation_analyses = fields.Nested(AnnotationAnalysisSchema, many=True, load_only=True)
 
-    _dataset = StringOrNested(DatasetSchema, data_key='dataset', attribute='dataset', load_only=True)
+    _dataset = StringOrNested(
+        DatasetSchema, data_key='dataset', attribute='dataset', load_only=True
+    )
 
     class Meta:
         additional = ("name", "description")

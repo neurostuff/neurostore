@@ -37,7 +37,7 @@ __all__ = [
     "PointListView",
     "PointValueView",
     "StudyListView",
-    "AnnotationListView"
+    "AnnotationListView",
     "AnalysisListView",
     "ImageListView",
     "DatasetListView",
@@ -88,7 +88,7 @@ class BaseView(MethodView):
             db.session.add(current_user)
             db.session.commit()
 
-        id = id or data.get("id", None) # want to handle case of {"id": "asdfasf"}
+        id = id or data.get("id", None)  # want to handle case of {"id": "asdfasf"}
 
         only_ids = set(data.keys()) - set(['id']) == set()
         if id is None:
@@ -108,7 +108,6 @@ class BaseView(MethodView):
                     db.session.commit()
 
                 return record
-
 
         # Update all non-nested attributes
         for k, v in data.items():
@@ -435,7 +434,6 @@ class AnnotationListView(ListView):
         if source == "neurostore":
             return cls.load_from_neurostore(source_id)
 
-
     @classmethod
     def load_from_neurostore(cls, source_id):
         annotation = cls._model.query.filter_by(id=source_id).first_or_404()
@@ -455,6 +453,7 @@ class AnnotationListView(ListView):
         data['source_id'] = source_id
         data['source_updated_at'] = annotation.updated_at or annotation.created_at
         return data
+
 
 @view_maker
 class ConditionListView(ListView):
