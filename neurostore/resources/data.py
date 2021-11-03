@@ -11,7 +11,7 @@ from webargs.flaskparser import parser
 from webargs import fields
 
 from ..core import db
-from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions, User  # noqa E401
+from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions, User, AnnotationAnalysis, Annotation  # noqa E401
 
 from ..schemas import (  # noqa E401
     StudySchema,
@@ -21,11 +21,14 @@ from ..schemas import (  # noqa E401
     PointSchema,
     PointValueSchema,
     DatasetSchema,
-    AnalysisConditionSchema
+    AnalysisConditionSchema,
+    AnnotationSchema,
+    AnnotationAnalysisSchema,
 )
 
 __all__ = [
     "DatasetView",
+    "AnnotationView",
     "StudyView",
     "AnalysisView",
     "ConditionView",
@@ -34,6 +37,7 @@ __all__ = [
     "PointListView",
     "PointValueView",
     "StudyListView",
+    "AnnotationListView",
     "AnalysisListView",
     "ImageListView",
     "DatasetListView",
@@ -84,6 +88,9 @@ class BaseView(MethodView):
             db.session.add(current_user)
             db.session.commit()
 
+        id = id or data.get("id", None)  # want to handle case of {"id": "asdfasf"}
+
+        only_ids = set(data.keys()) - set(['id']) == set()
         if id is None:
             record = cls._model()
             record.user = current_user
@@ -91,8 +98,16 @@ class BaseView(MethodView):
             record = cls._model.query.filter_by(id=id).first()
             if record is None:
                 abort(422)
-            elif record.user_id != current_user.external_id:
+            elif record.user_id != current_user.external_id and not only_ids:
                 abort(403)
+            elif only_ids:
+                to_commit.append(record)
+
+                if commit:
+                    db.session.add_all(to_commit)
+                    db.session.commit()
+
+                return record
 
         # Update all non-nested attributes
         for k, v in data.items():
@@ -155,7 +170,8 @@ LIST_USER_ARGS = {
     "source": fields.String(missing=None),
     "unique": fields.Boolean(missing=False),
     "nested": fields.Boolean(missing=False),
-    "user_id": fields.String(missing=None)
+    "user_id": fields.String(missing=None),
+    "dataset_id": fields.String(missing=None),
 }
 
 
@@ -192,6 +208,11 @@ class ListView(BaseView):
         if hasattr(m, 'public'):
             current_user = get_current_user()
             q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
+
+        # query annotations for a specific dataset
+        if args.get('dataset_id'):
+            q = q.filter(m.dataset_id == args.get('dataset_id'))
+
         # For multi-column search, default to using search fields
         if s is not None and self._fulltext_fields:
             search_expr = [
@@ -286,7 +307,17 @@ class ListView(BaseView):
 
 @view_maker
 class DatasetView(ObjectView):
-    pass
+    _nested = {
+        "studies": "StudyView",
+        "annotations": "AnnotationView",
+    }
+
+
+@view_maker
+class AnnotationView(ObjectView):
+    _nested = {
+        "annotation_analyses": "AnnotationAnalysisResource"
+    }
 
 
 @view_maker
@@ -384,7 +415,44 @@ class ImageListView(ListView):
 
 @view_maker
 class DatasetListView(ListView):
+    _nested = {
+        "studies": "StudyView"
+    }
     _search_fields = ("name", "description", "publication", "doi", "pmid")
+
+
+@view_maker
+class AnnotationListView(ListView):
+    _nested = {
+        "annotation_analyses": "AnnotationAnalysisResource",
+        "dataset": "DatasetView",
+    }
+    _search_fields = ("name", "description")
+
+    @classmethod
+    def _load_from_source(cls, source, source_id):
+        if source == "neurostore":
+            return cls.load_from_neurostore(source_id)
+
+    @classmethod
+    def load_from_neurostore(cls, source_id):
+        annotation = cls._model.query.filter_by(id=source_id).first_or_404()
+        parent_source_id = annotation.source_id
+        parent_source = annotation.source
+        while parent_source_id is not None and parent_source == 'neurostore':
+            source_id = parent_source_id
+            parent = cls._model.query.filter_by(
+                id=source_id
+            ).first_or_404()
+            parent_source = parent.source
+            parent_source_id = parent.source_id
+
+        schema = cls._schema(copy=True)
+        data = schema.load(schema.dump(annotation))
+        data['source'] = "neurostore"
+        data['source_id'] = source_id
+        data['source_updated_at'] = annotation.updated_at or annotation.created_at
+        return data
 
 
 @view_maker
@@ -403,3 +471,12 @@ class AnalysisConditionResource(BaseView):
     _nested = {'condition': 'ConditionView'}
     _model = AnalysisConditions
     _schema = AnalysisConditionSchema
+
+
+class AnnotationAnalysisResource(BaseView):
+    _nested = {
+        'analysis': "AnalysisView",
+        'study': 'StudyView',
+    }
+    _model = AnnotationAnalysis
+    _schema = AnnotationAnalysisSchema

@@ -7,6 +7,8 @@ from .data import (
     DatasetSchema,
     PointValueSchema,
     AnalysisConditionSchema,
+    AnnotationSchema,
+    AnnotationAnalysisSchema,
 )
 
 from .auth import UserSchema
@@ -21,4 +23,6 @@ __all__ = [
     "UserSchema",
     "PointValueSchema",
     "AnalysisConditionSchema",
+    "AnnotationSchema",
+    "AnnotationAnalysisSchema",
 ]
