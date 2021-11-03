@@ -179,6 +179,7 @@ const DisplayAnalysis: React.FC<Analysis> = (props) => {
                             overlayURL="https://neurovault.org/static/images/GenericMNI.nii.gz"
                             imageURL={selectedImage.url || ''}
                             fileName={selectedImage.filename || ''}
+                            template={(selectedImage?.metadata as any)?.target_template_image || ''}
                             index={0}
                         />
                     </Box>

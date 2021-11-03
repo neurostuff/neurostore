@@ -7,6 +7,7 @@ export interface VisualizerModel {
     imageURL: string;
     fileName: string;
     index: number; // the ith papaya container (set this to 0 if you have 1 papaya viewer)
+    template: string; // template image that we use to display the given image
     sx?: SxProps<Theme>;
 }
 
@@ -14,7 +15,9 @@ const Visualizer: React.FC<VisualizerModel> = (props) => {
     useEffect(() => {
         const anyWindow = window as any;
         const params: any = {};
-        params.images = ['https://neurovault.org/static/images/GenericMNI.nii.gz', props.imageURL];
+
+        const template = props.template === '' ? 'GenericMNI' : props.template;
+        params.images = [`https://neurovault.org/static/images/${template}.nii.gz`, props.imageURL];
 
         if (!props.fileName || !props.imageURL || !props.overlayURL) return;
         params.luts = [
@@ -71,7 +74,7 @@ const Visualizer: React.FC<VisualizerModel> = (props) => {
         }
 
         anyWindow.papaya.Container.resetViewer(props.index, params);
-    }, [props.fileName, props.imageURL, props.overlayURL, props.index, props]);
+    }, [props.fileName, props.imageURL, props.overlayURL, props.index, props.template, props]);
 
     useEffect(() => {
         return () => {
@@ -82,7 +85,6 @@ const Visualizer: React.FC<VisualizerModel> = (props) => {
     return (
         <Box sx={{ ...VisualizerStyles.container, ...props.sx }}>
             <div className="papaya"></div>
-            {/* <Box className="papaya"></Box> */}
         </Box>
     );
 };
