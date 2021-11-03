@@ -1,6 +1,7 @@
 from .data import (
     Study, Analysis, Condition, Entity, Point,
-    Image, Dataset, PointValue, AnalysisConditions
+    Image, Dataset, PointValue, AnalysisConditions, Annotation,
+    AnnotationAnalysis
 )
 from .auth import User, Role
 
@@ -16,4 +17,6 @@ __all__ = [
     "AnalysisConditions",
     "User",
     "Role",
+    "Annotation",
+    "AnnotationAnalysis",
 ]
