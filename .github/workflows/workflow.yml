@@ -27,6 +27,7 @@ jobs:
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
           up -d
+        docker network create nginx-proxy
     - 
       name: Create Test Database
       run: |
