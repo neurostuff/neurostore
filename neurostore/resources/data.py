@@ -13,18 +13,20 @@ from webargs import fields
 from ..core import db
 from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions, User, AnnotationAnalysis, Annotation  # noqa E401
 
+
 from ..schemas import (  # noqa E401
+    DatasetSchema,
+    AnnotationSchema,
     StudySchema,
     AnalysisSchema,
     ConditionSchema,
     ImageSchema,
     PointSchema,
     PointValueSchema,
-    DatasetSchema,
     AnalysisConditionSchema,
-    AnnotationSchema,
     AnnotationAnalysisSchema,
 )
+
 
 __all__ = [
     "DatasetView",
@@ -45,16 +47,16 @@ __all__ = [
 ]
 
 
+# https://www.geeksforgeeks.org/python-split-camelcase-string-to-individual-strings/
+def camel_case_split(str):
+    return re.findall(r'[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))', str)
+
+
 def get_current_user():
     user = connexion.context.get('user')
     if user:
         return User.query.filter_by(external_id=connexion.context['user']).first()
     return None
-
-
-# https://www.geeksforgeeks.org/python-split-camelcase-string-to-individual-strings/
-def camel_case_split(str):
-    return re.findall(r'[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))', str)
 
 
 def view_maker(cls):
@@ -304,6 +306,8 @@ class ListView(BaseView):
             record = self.__class__.update_or_create(data)
         return self.__class__._schema(context={'nested': nested}).dump(record)
 
+# Individual resource views
+
 
 @view_maker
 class DatasetView(ObjectView):
@@ -358,6 +362,50 @@ class PointValueView(ObjectView):
     pass
 
 
+# List resource views
+
+@view_maker
+class DatasetListView(ListView):
+    _nested = {
+        "studies": "StudyView"
+    }
+    _search_fields = ("name", "description", "publication", "doi", "pmid")
+
+
+@view_maker
+class AnnotationListView(ListView):
+    _nested = {
+        "annotation_analyses": "AnnotationAnalysisResource",
+        "dataset": "DatasetView",
+    }
+    _search_fields = ("name", "description")
+
+    @classmethod
+    def _load_from_source(cls, source, source_id):
+        if source == "neurostore":
+            return cls.load_from_neurostore(source_id)
+
+    @classmethod
+    def load_from_neurostore(cls, source_id):
+        annotation = cls._model.query.filter_by(id=source_id).first_or_404()
+        parent_source_id = annotation.source_id
+        parent_source = annotation.source
+        while parent_source_id is not None and parent_source == 'neurostore':
+            source_id = parent_source_id
+            parent = cls._model.query.filter_by(
+                id=source_id
+            ).first_or_404()
+            parent_source = parent.source
+            parent_source_id = parent.source_id
+
+        schema = cls._schema(copy=True)
+        data = schema.load(schema.dump(annotation))
+        data['source'] = "neurostore"
+        data['source_id'] = source_id
+        data['source_updated_at'] = annotation.updated_at or annotation.created_at
+        return data
+
+
 @view_maker
 class StudyListView(ListView):
     _nested = {
@@ -409,55 +457,13 @@ class AnalysisListView(ListView):
 
 
 @view_maker
-class ImageListView(ListView):
-    _search_fields = ("filename", "space", "value_type", "analysis_name")
-
-
-@view_maker
-class DatasetListView(ListView):
-    _nested = {
-        "studies": "StudyView"
-    }
-    _search_fields = ("name", "description", "publication", "doi", "pmid")
-
-
-@view_maker
-class AnnotationListView(ListView):
-    _nested = {
-        "annotation_analyses": "AnnotationAnalysisResource",
-        "dataset": "DatasetView",
-    }
-    _search_fields = ("name", "description")
-
-    @classmethod
-    def _load_from_source(cls, source, source_id):
-        if source == "neurostore":
-            return cls.load_from_neurostore(source_id)
-
-    @classmethod
-    def load_from_neurostore(cls, source_id):
-        annotation = cls._model.query.filter_by(id=source_id).first_or_404()
-        parent_source_id = annotation.source_id
-        parent_source = annotation.source
-        while parent_source_id is not None and parent_source == 'neurostore':
-            source_id = parent_source_id
-            parent = cls._model.query.filter_by(
-                id=source_id
-            ).first_or_404()
-            parent_source = parent.source
-            parent_source_id = parent.source_id
-
-        schema = cls._schema(copy=True)
-        data = schema.load(schema.dump(annotation))
-        data['source'] = "neurostore"
-        data['source_id'] = source_id
-        data['source_updated_at'] = annotation.updated_at or annotation.created_at
-        return data
-
-
-@view_maker
 class ConditionListView(ListView):
     _search_fields = ("name", "description")
+
+
+@view_maker
+class ImageListView(ListView):
+    _search_fields = ("filename", "space", "value_type", "analysis_name")
 
 
 @view_maker
@@ -467,6 +473,7 @@ class PointListView(ListView):
     }
 
 
+# Utility resources for updating data
 class AnalysisConditionResource(BaseView):
     _nested = {'condition': 'ConditionView'}
     _model = AnalysisConditions

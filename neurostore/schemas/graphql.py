@@ -1,3 +1,4 @@
+"""TODO: not used in current code, should be removed"""
 import graphene
 from graphene import relay
 from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
