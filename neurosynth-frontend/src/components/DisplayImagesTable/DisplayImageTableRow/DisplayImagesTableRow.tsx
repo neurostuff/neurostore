@@ -41,7 +41,7 @@ const DisplayImagesTableRow: React.FC<DisplayImagesTableRowModel> = (props) => {
                 <TableCell>
                     <IconButton
                         onClick={(event) => {
-                            // prevent click from bubbling up and triggering a select event
+                            // prevent event from bubbling up and triggering a click event in the parent
                             event.stopPropagation();
                             setExpanded(!expanded);
                         }}

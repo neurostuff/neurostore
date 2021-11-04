@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import Visualizer from './Visualizer';
 
 describe('Visualizer Component', () => {
@@ -16,7 +16,6 @@ describe('Visualizer Component', () => {
     it('should render', () => {
         render(
             <Visualizer
-                overlayURL="testOverlayURL"
                 imageURL="testImageURL"
                 fileName="testFileName"
                 template="testTemplate"

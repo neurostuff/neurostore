@@ -24,7 +24,7 @@ const TextExpansion: React.FC<{ text: string; sx?: SxProps<Theme> }> = (props) =
             {/* only show button if the element is overflowing */}
             {isOverflowing && (
                 <Button
-                    sx={{ paddingLeft: 0, paddingTop: 0 }}
+                    sx={{ paddingLeft: 0, paddingRight: 0 }}
                     color="secondary"
                     onClick={() => {
                         setExpanded(!expanded);

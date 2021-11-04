@@ -3,12 +3,7 @@ import { useEffect, useState } from 'react';
 import { Image, ReadOnly } from '../../gen/api';
 import { Box } from '@mui/system';
 import DisplayImagesTableRow from './DisplayImageTableRow/DisplayImagesTableRow';
-
-export interface DisplayImagesTableModel {
-    images: (Image & ReadOnly)[] | undefined;
-    initialSelectedImage: (Image & ReadOnly) | undefined;
-    onSelectImage: (selectedImage: (Image & ReadOnly) | undefined) => void;
-}
+import { DisplayImagesTableModel } from '.';
 
 const DisplayImagesTable: React.FC<DisplayImagesTableModel> = (props) => {
     const [currentSelectedImage, setCurrentSelectedImage] = useState<
@@ -24,7 +19,7 @@ const DisplayImagesTable: React.FC<DisplayImagesTableModel> = (props) => {
         props.onSelectImage(selectedImage);
     };
 
-    if (!props || !props.images || props.images?.length === 0) {
+    if (!props || !props.images || props.images.length === 0) {
         return (
             <Box component="span" sx={{ color: 'warning.dark' }}>
                 No images

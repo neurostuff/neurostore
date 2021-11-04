@@ -43,12 +43,19 @@ const StudyPageStyles: Style = {
         flex: '1 0 0',
     },
     analysisTab: {
+        fontWeight: 'bold',
         fontSize: {
             xs: '0.8rem',
             md: 'initial',
         },
+        '&:hover': {
+            color: 'secondary.main',
+        },
     },
     tab: {
+        '&:hover': {
+            color: 'secondary.main',
+        },
         fontSize: {
             xs: '0.8rem',
             md: '1.25rem',

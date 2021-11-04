@@ -49,7 +49,7 @@ const DisplayAnalysis: React.FC<Analysis> = (props) => {
             columnValues: [
                 {
                     value: point.coordinates ? point?.coordinates[0] : undefined,
-                    colorByType: true,
+                    colorByType: false,
                     bold: false,
                 },
                 {
@@ -176,7 +176,6 @@ const DisplayAnalysis: React.FC<Analysis> = (props) => {
                     <Box sx={DisplayAnalysisStyles.visualizerContainer}>
                         <Visualizer
                             sx={DisplayAnalysisStyles.visualizer}
-                            overlayURL="https://neurovault.org/static/images/GenericMNI.nii.gz"
                             imageURL={selectedImage.url || ''}
                             fileName={selectedImage.filename || ''}
                             template={(selectedImage?.metadata as any)?.target_template_image || ''}

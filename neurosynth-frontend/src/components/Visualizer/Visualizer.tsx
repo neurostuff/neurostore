@@ -3,7 +3,6 @@ import { useEffect } from 'react';
 import VisualizerStyles from './VisualizerStyles';
 
 export interface VisualizerModel {
-    overlayURL: string;
     imageURL: string;
     fileName: string;
     index: number; // the ith papaya container (set this to 0 if you have 1 papaya viewer)
@@ -19,7 +18,6 @@ const Visualizer: React.FC<VisualizerModel> = (props) => {
         const template = props.template === '' ? 'GenericMNI' : props.template;
         params.images = [`https://neurovault.org/static/images/${template}.nii.gz`, props.imageURL];
 
-        if (!props.fileName || !props.imageURL || !props.overlayURL) return;
         params.luts = [
             {
                 name: 'PuBu',
@@ -74,7 +72,7 @@ const Visualizer: React.FC<VisualizerModel> = (props) => {
         }
 
         anyWindow.papaya.Container.resetViewer(props.index, params);
-    }, [props.fileName, props.imageURL, props.overlayURL, props.index, props.template, props]);
+    }, [props.fileName, props.imageURL, props.index, props.template, props]);
 
     useEffect(() => {
         return () => {
