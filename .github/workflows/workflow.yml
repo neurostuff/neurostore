@@ -23,11 +23,11 @@ jobs:
       name: Build backend
       run: |
         docker-compose build
+        docker network create nginx-proxy
         docker-compose \
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
           up -d
-        docker network create nginx-proxy
     - 
       name: Create Test Database
       run: |
