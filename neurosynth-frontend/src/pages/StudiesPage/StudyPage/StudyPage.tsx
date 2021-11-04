@@ -5,24 +5,23 @@ import {
     AccordionDetails,
     AccordionSummary,
     Button,
+    Paper,
     Tooltip,
     Typography,
 } from '@mui/material';
+import { Box } from '@mui/system';
 import { AxiosError, AxiosResponse } from 'axios';
-import React, { useContext, useEffect } from 'react';
-import { useCallback } from 'react';
-import { useState } from 'react';
+import { useCallback, useState, useEffect, useContext } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import DisplayMetadataTable from '../../../components/DisplayMetadataTable/DisplayMetadataTable';
+import { DisplayMetadataTable } from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import API, { StudyApiResponse } from '../../../utils/api';
 import StudyPageStyles from './StudyPageStyles';
 
 const StudyPage = () => {
-    const [study, setStudy] = useState<StudyApiResponse & { user: string }>();
+    const [study, setStudy] = useState<StudyApiResponse>();
     const [editDisabled, setEditDisabled] = useState(true);
     const context = useContext(GlobalContext);
-    const classes = StudyPageStyles();
     const history = useHistory();
     const { isAuthenticated, getAccessTokenSilently, user } = useAuth0();
     const params: { studyId: string } = useParams();
@@ -33,7 +32,9 @@ const StudyPage = () => {
                 const resUpdated = res as AxiosResponse<StudyApiResponse & { user: string }>;
                 setStudy(resUpdated.data);
             })
-            .catch(() => {});
+            .catch((err) => {
+                console.log(err);
+            });
     }, []);
 
     const handleCloneStudy = async () => {
@@ -73,10 +74,10 @@ const StudyPage = () => {
     }, [isAuthenticated, user?.sub, study?.user]);
 
     return (
-        <div>
-            <div className={`${classes.buttonContainer} ${classes.spaceBelow}`}>
+        <>
+            <Box sx={{ ...StudyPageStyles.buttonContainer, ...StudyPageStyles.spaceBelow }}>
                 <Tooltip placement="top" title={!isAuthenticated ? 'login to clone study' : ''}>
-                    <div style={{ display: 'inline' }}>
+                    <Box sx={{ display: 'inline' }}>
                         <Button
                             onClick={handleCloneStudy}
                             disabled={!isAuthenticated}
@@ -85,13 +86,13 @@ const StudyPage = () => {
                         >
                             Clone Study
                         </Button>
-                    </div>
+                    </Box>
                 </Tooltip>
                 <Tooltip
                     placement="top"
                     title={editDisabled ? 'you can only edit studies you have cloned' : ''}
                 >
-                    <div style={{ display: 'inline' }}>
+                    <Box sx={{ display: 'inline' }}>
                         <Button
                             disabled={editDisabled}
                             onClick={handleEditStudy}
@@ -100,42 +101,251 @@ const StudyPage = () => {
                         >
                             Edit Study
                         </Button>
-                    </div>
+                    </Box>
                 </Tooltip>
-            </div>
-            <div>
-                <Typography className={classes.spaceBelow} variant="h5">
+            </Box>
+            <Box>
+                <Typography sx={StudyPageStyles.spaceBelow} variant="h5">
                     <b>{study?.name}</b>
                 </Typography>
-                <Typography className={classes.spaceBelow} variant="h6">
+                <Typography sx={StudyPageStyles.spaceBelow} variant="h6">
                     {study?.authors}
                 </Typography>
-                <div className={classes.spaceBelow}>
+                <Box sx={StudyPageStyles.spaceBelow}>
                     <Typography variant="h6">{study?.publication}</Typography>
                     {study?.doi && <Typography variant="h6">DOI: {study?.doi}</Typography>}
-                </div>
-                <Typography className={classes.spaceBelow} variant="subtitle1">
+                </Box>
+                <Typography sx={StudyPageStyles.spaceBelow} variant="subtitle1">
                     {study?.description}
                 </Typography>
-            </div>
+            </Box>
 
-            <div>
-                <Accordion elevation={4}>
-                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                        <div>
-                            <Typography variant="h6">
-                                <b>Metadata</b>
-                            </Typography>
+            <Box sx={StudyPageStyles.spaceBelow}>
+                <Typography variant="h6">
+                    <b>Metadata</b>
+                </Typography>
+                <Box>
+                    <Accordion elevation={4}>
+                        <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                            <Box component="span">Click to see study metadata</Box>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                            <Box sx={StudyPageStyles.metadataContainer}>
+                                {study && <DisplayMetadataTable metadata={study.metadata} />}
+                            </Box>
+                        </AccordionDetails>
+                    </Accordion>
+                </Box>
+            </Box>
+
+            <Box sx={StudyPageStyles.spaceBelow}>
+                <Typography variant="h6">
+                    <b>Analyses</b>
+                </Typography>
+                <Box sx={{ width: '100%', display: 'flex' }}>
+                    <div style={{ width: '45%' }}>
+                        <Paper
+                            sx={StudyPageStyles.spaceBelow}
+                            style={{ padding: '30px', backgroundColor: '#0077b6' }}
+                        >
+                            <Typography style={{ color: 'white' }}>Hello</Typography>
+                            <Box sx={StudyPageStyles.spaceBelow}>
+                                <Accordion elevation={1}>
+                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                                        Coordinates
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <Box sx={StudyPageStyles.metadataContainer}>
+                                            {study && (
+                                                <DisplayMetadataTable metadata={study.metadata} />
+                                            )}
+                                        </Box>
+                                    </AccordionDetails>
+                                </Accordion>
+                            </Box>
+
+                            <div>
+                                <Accordion elevation={1}>
+                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                                        Analysis Metadata
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <Box sx={StudyPageStyles.metadataContainer}>
+                                            {study && (
+                                                <DisplayMetadataTable metadata={study.metadata} />
+                                            )}
+                                        </Box>
+                                    </AccordionDetails>
+                                </Accordion>
+                            </div>
+                        </Paper>
+
+                        <Paper
+                            sx={StudyPageStyles.spaceBelow}
+                            style={{ padding: '30px', backgroundColor: '#0077b6' }}
+                        >
+                            <Typography style={{ color: 'white' }}>Hello</Typography>
+                            <Box sx={StudyPageStyles.spaceBelow}>
+                                <Accordion elevation={1}>
+                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                                        Coordinates
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <Box sx={StudyPageStyles.metadataContainer}>
+                                            {study && (
+                                                <DisplayMetadataTable metadata={study.metadata} />
+                                            )}
+                                        </Box>
+                                    </AccordionDetails>
+                                </Accordion>
+                            </Box>
+
+                            <div>
+                                <Accordion elevation={1}>
+                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                                        Analysis Metadata
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <Box sx={StudyPageStyles.metadataContainer}>
+                                            {study && (
+                                                <DisplayMetadataTable metadata={study.metadata} />
+                                            )}
+                                        </Box>
+                                    </AccordionDetails>
+                                </Accordion>
+                            </div>
+                        </Paper>
+
+                        <Paper
+                            sx={StudyPageStyles.spaceBelow}
+                            style={{ padding: '30px', backgroundColor: '#0077b6' }}
+                        >
+                            <Typography style={{ color: 'white' }}>Hello</Typography>
+                            <Box sx={StudyPageStyles.spaceBelow}>
+                                <Accordion elevation={1}>
+                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                                        Coordinates
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <Box sx={StudyPageStyles.metadataContainer}>
+                                            {study && (
+                                                <DisplayMetadataTable metadata={study.metadata} />
+                                            )}
+                                        </Box>
+                                    </AccordionDetails>
+                                </Accordion>
+                            </Box>
+
+                            <div>
+                                <Accordion elevation={1}>
+                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                                        Analysis Metadata
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <Box sx={StudyPageStyles.metadataContainer}>
+                                            {study && (
+                                                <DisplayMetadataTable metadata={study.metadata} />
+                                            )}
+                                        </Box>
+                                    </AccordionDetails>
+                                </Accordion>
+                            </div>
+                        </Paper>
+
+                        <Paper
+                            sx={StudyPageStyles.spaceBelow}
+                            style={{ padding: '30px', backgroundColor: '#0077b6' }}
+                        >
+                            <Typography style={{ color: 'white' }}>Hello</Typography>
+                            <Box sx={StudyPageStyles.spaceBelow}>
+                                <Accordion elevation={1}>
+                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                                        Coordinates
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <Box sx={StudyPageStyles.metadataContainer}>
+                                            {study && (
+                                                <DisplayMetadataTable metadata={study.metadata} />
+                                            )}
+                                        </Box>
+                                    </AccordionDetails>
+                                </Accordion>
+                            </Box>
+
+                            <div>
+                                <Accordion elevation={1}>
+                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                                        Analysis Metadata
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <Box sx={StudyPageStyles.metadataContainer}>
+                                            {study && (
+                                                <DisplayMetadataTable metadata={study.metadata} />
+                                            )}
+                                        </Box>
+                                    </AccordionDetails>
+                                </Accordion>
+                            </div>
+                        </Paper>
+
+                        <Paper
+                            sx={StudyPageStyles.spaceBelow}
+                            style={{ padding: '30px', backgroundColor: '#0077b6' }}
+                        >
+                            <Typography style={{ color: 'white' }}>Hello</Typography>
+                            <Box sx={StudyPageStyles.spaceBelow}>
+                                <Accordion elevation={1}>
+                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                                        Coordinates
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <Box sx={StudyPageStyles.metadataContainer}>
+                                            {study && (
+                                                <DisplayMetadataTable metadata={study.metadata} />
+                                            )}
+                                        </Box>
+                                    </AccordionDetails>
+                                </Accordion>
+                            </Box>
+
+                            <div>
+                                <Accordion elevation={1}>
+                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
+                                        Analysis Metadata
+                                    </AccordionSummary>
+                                    <AccordionDetails>
+                                        <Box sx={StudyPageStyles.metadataContainer}>
+                                            {study && (
+                                                <DisplayMetadataTable metadata={study.metadata} />
+                                            )}
+                                        </Box>
+                                    </AccordionDetails>
+                                </Accordion>
+                            </div>
+                        </Paper>
+                    </div>
+                    <div
+                        style={{
+                            width: '55%',
+                        }}
+                    >
+                        <div
+                            style={{
+                                marginLeft: 'auto',
+                                position: 'sticky',
+                                top: '47px',
+                                width: '550px',
+                                height: '450px',
+                                backgroundColor: 'black',
+                                color: 'white',
+                            }}
+                        >
+                            Papaya Visualizer placeholder
                         </div>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        <div className={classes.metadataContainer}>
-                            {study && <DisplayMetadataTable metadata={study.metadata} />}
-                        </div>
-                    </AccordionDetails>
-                </Accordion>
-            </div>
-        </div>
+                    </div>
+                </Box>
+            </Box>
+        </>
     );
 };
 

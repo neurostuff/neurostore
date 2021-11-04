@@ -1,16 +1,9 @@
-import makeStyles from '@mui/styles/makeStyles';
+import { Style } from '../..';
 
-const SearchBarStyles = makeStyles({
+const SearchBarStyles: Style = {
     textfield: {
         flexGrow: 1,
         padding: '5px 15px',
-    },
-    w_100: {
-        width: '100%',
-    },
-    divider: {
-        height: '35px',
-        margin: 'auto auto',
     },
     iconContainer: {
         width: '50px',
@@ -21,9 +14,6 @@ const SearchBarStyles = makeStyles({
             backgroundColor: '#00689e !important',
             transition: '0.5s',
         },
-    },
-    icon: {
-        color: 'white',
     },
     searchContainer: {
         display: 'flex',
@@ -43,6 +33,6 @@ const SearchBarStyles = makeStyles({
         borderBottomRightRadius: '0 !important',
         borderTopRightRadius: '0 !important',
     },
-});
+};
 
 export default SearchBarStyles;

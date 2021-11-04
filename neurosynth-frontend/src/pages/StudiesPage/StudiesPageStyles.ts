@@ -1,10 +1,10 @@
-import makeStyles from '@mui/styles/makeStyles';
+import { Style } from '../..';
 
-const StudiesPageStyles = makeStyles({
+const StudiesPageStyles: Style = {
     paginator: {
         display: 'flex',
         justifyContent: 'end',
     },
-});
+};
 
 export default StudiesPageStyles;

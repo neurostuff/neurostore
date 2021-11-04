@@ -1,21 +1,17 @@
-import makeStyles from '@mui/styles/makeStyles';
+import { Style } from '../../..';
 
-const StudyPageStyles = makeStyles((theme) => ({
+const StudyPageStyles: Style = {
     buttonContainer: {
         '& button': {
             marginRight: '15px',
         },
     },
     muted: {
-        color: theme.palette.muted.main,
-    },
-    metadataContainer: {},
-    noContent: {
-        color: theme.palette.warning.dark,
+        color: 'muted.main',
     },
     spaceBelow: {
         marginBottom: '15px !important',
     },
-}));
+};
 
 export default StudyPageStyles;

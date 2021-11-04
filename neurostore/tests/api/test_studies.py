@@ -95,3 +95,15 @@ def test_private_studies(user_studies, auth_clients):
     assert len(resp1.json['results']) == len(resp2.json['results']) == 3
     assert f"{user1.id}'s private study" in (name_set1 - name_set2)
     assert f"{user2.id}'s private study" in (name_set2 - name_set1)
+
+
+def test_post_studies(auth_client, ingest_neurosynth):
+    payload = auth_client.get("/api/analyses/").json['results']
+    analyses = [analysis['id'] for analysis in payload]
+    my_study = {
+        "name": "bomb",
+        "description": "diggity",
+        "analyses": analyses,
+    }
+
+    auth_client.post("/api/studies/", data=my_study)

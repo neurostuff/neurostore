@@ -1,10 +1,9 @@
 import { ChangeEvent, useEffect, useState } from 'react';
 import { TablePagination, Typography, Pagination } from '@mui/material';
-import DisplayTable from '../../components/DisplayStudiesTable/DisplayStudiesTable';
-import SearchBar from '../../components/SearchBar/SearchBar';
 import API, { StudyApiResponse } from '../../utils/api';
 import { Metadata } from '../../gen/api';
 import StudiesPageStyles from './StudiesPageStyles';
+import { DisplayStudiesTable, SearchBar } from '../../components';
 
 export enum Source {
     NEUROSTORE = 'neurostore',
@@ -38,7 +37,6 @@ export class SearchCriteria {
 }
 
 const StudiesPage = () => {
-    const classes = StudiesPageStyles();
     const [studies, setStudies] = useState<StudyApiResponse[]>([]);
     const [searchMetadata, setSearchMetadata] = useState<Metadata>();
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>(new SearchCriteria());
@@ -140,7 +138,7 @@ const StudiesPage = () => {
     }, [searchCriteria]);
 
     return (
-        <div>
+        <>
             <Typography variant="h4">Studies Page</Typography>
 
             <SearchBar onSearch={handleOnSearch} />
@@ -157,18 +155,18 @@ const StudiesPage = () => {
                 count={searchMetadata?.total_count || 0}
             ></TablePagination>
 
-            <DisplayTable studies={studies} />
+            <DisplayStudiesTable studies={studies} />
 
             <Pagination
                 color="primary"
-                className={classes.paginator}
+                sx={StudiesPageStyles.paginator}
                 onChange={handlePaginationChange}
                 showFirstButton
                 showLastButton
                 page={searchCriteria.pageOfResults}
                 count={getNumTotalPages(searchMetadata?.total_count, searchCriteria.pageSize)}
             />
-        </div>
+        </>
     );
 };
 export default StudiesPage;

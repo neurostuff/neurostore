@@ -1,31 +1,25 @@
 import { useEffect, useState } from 'react';
 import EditMetadataStyles from './EditMetadataStyles';
-import { DisplayMetadataTableRowModel } from '../DisplayMetadataTable/DisplayMetadataTableRow/DisplayMetadataTableRow';
 import EditMetadataRow from './EditMetadataRow/EditMetadataRow';
-import { PropertyType } from './EditMetadataRow/ToggleType/ToggleType';
 import AddMetadataRow from './EditMetadataRow/AddMetadataRow';
+import { DisplayMetadataTableRowModel } from '..';
+import { EPropertyType, IEditMetadataModel } from '.';
+import { Box } from '@mui/system';
 
-interface EditMetadataModel {
-    metadata: DisplayMetadataTableRowModel[];
-    onMetadataEditChange: (metadata: DisplayMetadataTableRowModel[]) => void;
-}
-
-export const getType = (value: any): PropertyType => {
+export const getType = (value: any): EPropertyType => {
     switch (typeof value) {
-        case PropertyType.BOOLEAN:
-            return PropertyType.BOOLEAN;
-        case PropertyType.STRING:
-            return PropertyType.STRING;
-        case PropertyType.NUMBER:
-            return PropertyType.NUMBER;
+        case EPropertyType.BOOLEAN:
+            return EPropertyType.BOOLEAN;
+        case EPropertyType.STRING:
+            return EPropertyType.STRING;
+        case EPropertyType.NUMBER:
+            return EPropertyType.NUMBER;
         default:
-            return PropertyType.NONE;
+            return EPropertyType.NONE;
     }
 };
 
-const EditMetadata: React.FC<EditMetadataModel> = (props) => {
-    const classes = EditMetadataStyles();
-
+const EditMetadata: React.FC<IEditMetadataModel> = (props) => {
     // this props.metadata value is only used on the first render so useState is required below for subsequent props changes
     const [metadata, setMetadata] = useState<DisplayMetadataTableRowModel[]>(props.metadata);
 
@@ -58,7 +52,7 @@ const EditMetadata: React.FC<EditMetadataModel> = (props) => {
         });
     };
 
-    const handleAddMetadataRow = (row: DisplayMetadataTableRowModel): boolean => {
+    const handleMetadataRowAdd = (row: DisplayMetadataTableRowModel): boolean => {
         const keyExists = !!metadata.find((item) => item.metadataKey === row.metadataKey);
         if (keyExists) {
             return false;
@@ -75,12 +69,16 @@ const EditMetadata: React.FC<EditMetadataModel> = (props) => {
 
     return (
         <>
-            <div className={classes.table}>
-                <AddMetadataRow onAddMetadataRow={handleAddMetadataRow} />
-            </div>
-            <hr className={classes.hr} />
-            {metadata.length === 0 && <span className={classes.noContent}>No Metadata</span>}
-            <div className={classes.table}>
+            <Box sx={EditMetadataStyles.table}>
+                <AddMetadataRow onAddMetadataRow={handleMetadataRowAdd} />
+            </Box>
+            <Box component="hr" sx={EditMetadataStyles.hr} />
+            {metadata.length === 0 && (
+                <Box component="span" sx={{ color: 'warning.dark' }}>
+                    No Metadata
+                </Box>
+            )}
+            <Box sx={EditMetadataStyles.table}>
                 {metadata.map((metadataRow) => (
                     <EditMetadataRow
                         key={metadataRow.metadataKey}
@@ -90,7 +88,7 @@ const EditMetadata: React.FC<EditMetadataModel> = (props) => {
                         metadataRow={metadataRow}
                     />
                 ))}
-            </div>
+            </Box>
         </>
     );
 };

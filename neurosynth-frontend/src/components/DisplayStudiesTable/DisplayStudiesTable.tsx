@@ -1,4 +1,5 @@
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import { Box } from '@mui/system';
 import { useHistory } from 'react-router-dom';
 import { ReadOnly, Study } from '../../gen/api';
 import { StudyApiResponse } from '../../utils/api';
@@ -10,14 +11,13 @@ interface DisplayStudiesTableModel {
 
 const DisplayStudiesTable: React.FC<DisplayStudiesTableModel> = (props) => {
     const history = useHistory();
-    const classes = DisplayStudiesTableStyles();
 
     const handleSelectTableRow = (row: Study & ReadOnly) => {
         history.push(`/studies/${row.id}`);
     };
 
     return (
-        <TableContainer className={classes.root}>
+        <TableContainer sx={DisplayStudiesTableStyles.root}>
             <Table size="small">
                 <TableHead>
                     <TableRow>
@@ -31,40 +31,40 @@ const DisplayStudiesTable: React.FC<DisplayStudiesTableModel> = (props) => {
                     {props.studies.map((row, index) => (
                         <TableRow
                             key={index}
-                            className={classes.tableRow}
+                            sx={DisplayStudiesTableStyles.tableRow}
                             onClick={() => handleSelectTableRow(row)}
                         >
                             <TableCell>
-                                <div className={classes.tableCellTextContainer}>{row.name}</div>
+                                <Box>{row.name}</Box>
                             </TableCell>
                             <TableCell>
                                 {row.authors || (
-                                    <span className={classes.noContent}>No Authors Available</span>
+                                    <Box component="span" sx={{ color: 'warning.dark' }}>
+                                        No Authors Available
+                                    </Box>
                                 )}
                             </TableCell>
                             <TableCell>
-                                <div className={classes.tableCellTextContainer}>
+                                <Box>
                                     {row.publication || (
-                                        <span className={classes.noContent}>
+                                        <Box component="span" sx={{ color: 'warning.dark' }}>
                                             No Publication Available
-                                        </span>
+                                        </Box>
                                     )}
-                                </div>
+                                </Box>
                             </TableCell>
                             <TableCell>
-                                <div className={classes.tableCellTextContainer}>
-                                    {row.user || <span>Neurosynth</span>}
-                                </div>
+                                <Box>{row.user || <span>Neurosynth</span>}</Box>
                             </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
             </Table>
             {props.studies.length === 0 && (
-                <div className={classes.noContent}>
+                <Box sx={{ color: 'warning.dark' }}>
                     <br />
                     No results
-                </div>
+                </Box>
             )}
         </TableContainer>
     );

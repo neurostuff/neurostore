@@ -5,17 +5,22 @@ import os.path as op
 import re
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import requests
+from scipy import sparse
 from dateutil.parser import parse as parse_date
 from neurostore.core import db
 from neurostore.models import (
     Analysis,
     AnalysisConditions,
+    AnnotationAnalysis,
+    Annotation,
     Condition,
     Image,
     Point,
     Study,
+    Dataset,
 )
 
 
@@ -120,26 +125,43 @@ def ingest_neurosynth(max_rows=None):
         Path(__file__).parent.parent / "data" / "data-neurosynth_version-7_metadata.tsv.gz"
     )
 
+    feature_file = Path(__file__).parent.parent /\
+        "data" /\
+        "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz"
+
+    vocab_file = Path(__file__).parent.parent /\
+        "data" /\
+        "data-neurosynth_version-7_vocab-terms_vocabulary.txt"
+
     coord_data = pd.read_table(coords_file, dtype={"id": str})
     coord_data = coord_data.set_index("id")
     metadata = pd.read_table(metadata_file, dtype={"id": str})
     metadata = metadata.set_index("id")
+    # load annotations
+    features = sparse.load_npz(feature_file).todense()
+    vocabulary = np.loadtxt(vocab_file, dtype=str, delimiter="\t")
+    annotations = pd.DataFrame(features, columns=vocabulary)
 
     if max_rows is not None:
         metadata = metadata.iloc[:max_rows]
-
-    for id_, metadata_row in metadata.iterrows():
+        annotations = annotations.iloc[:max_rows]
+    # collect notes (single annotations) for each analysis
+    notes = []
+    for (metadata_row, annotation_row) in zip(
+        metadata.itertuples(), annotations.itertuples(index=False)
+    ):
+        id_ = metadata_row.Index
         study_coord_data = coord_data.loc[[id_]]
         md = {
-            "year": int(metadata_row["year"]),
+            "year": int(metadata_row.year),
         }
         s = Study(
-            name=metadata_row["title"],
-            authors=metadata_row["authors"],
-            publication=metadata_row['journal'],
+            name=metadata_row.title,
+            authors=metadata_row.authors,
+            publication=metadata_row.journal,
             metadata=md,
             pmid=id_,
-            doi=metadata_row["doi"],
+            doi=metadata_row.doi,
             source="neurosynth",
             source_id=id_,
         )
@@ -154,14 +176,47 @@ def ingest_neurosynth(max_rows=None):
                     x=p["x"],
                     y=p["y"],
                     z=p["z"],
-                    space=metadata_row["space"],
+                    space=metadata_row.space,
                     kind="unknown",
                     analysis=a,
                 )
                 points.append(point)
+                # add annotation
+                notes.append(
+                    AnnotationAnalysis(
+                        note=annotation_row._asdict(),
+                        study=s,
+                        analysis=a,
+                    )
+                )
 
         db.session.add_all([s] + analyses + points)
         db.session.commit()
+
+    # make a neurosynth dataset
+    d = Dataset(
+        name="neurosynth",
+        description="TODO",
+        publication="Nature Methods",
+        pmid="21706013",
+        doi="10.1038/nmeth.1635",
+        authors="Yarkoni T, Poldrack RA, Nichols TE, Van Essen DC, Wager TD",
+        public=True,
+        studies=Study.query.filter_by(source="neurosynth").all(),
+    )
+
+    # create annotation
+    annot = Annotation(
+        name="neurosynth",
+        source="neurostore",
+        source_id=None,
+        description="TODO",
+        dataset=d,
+        annotation_analyses=notes,
+    )
+
+    db.session.add_all([d, annot])
+    db.session.commit()
 
 
 def ingest_neuroquery(max_rows=None):
@@ -209,3 +264,16 @@ def ingest_neuroquery(max_rows=None):
 
         db.session.add_all([s] + analyses + points)
         db.session.commit()
+
+    # make a neuroquery dataset
+    d = Dataset(
+        name="neuroquery",
+        description="TODO",
+        publication="eLife",
+        pmid="32129761",
+        doi="10.7554/eLife.53385",
+        public=True,
+        studies=Study.query.filter_by(source="neuroquery").all(),
+    )
+    db.session.add(d)
+    db.session.commit()

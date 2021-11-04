@@ -17,8 +17,9 @@ Next, set up the Flask server's environment variables:
 Edit both of these template files to set the correct variables
 
 ## Initalizing backend
-Build the containers and start services using the development configuration:
+Create the network, build the containers, and start services using the development configuration:
 
+    docker network create nginx-proxy
     docker-compose build
     docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
@@ -39,7 +40,7 @@ unless you have multiple schema versions that are not from the same history
 However, `python manage.py db merge heads` makes the migration more robust
 when there are multiple versions from different histories.
 
-Finally, add an admin user, and ingest data
+Finally ingest data
 
     docker-compose exec neurostore \
         bash -c "python manage.py ingest_neurosynth"
