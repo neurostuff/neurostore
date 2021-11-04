@@ -14,7 +14,7 @@ class StringOrNested(fields.Nested):
     or a full object, depending on "nested" or "source" request argument"""
 
     def __init__(self, nested, **kwargs):
-        super().__init__(globals()[nested], **kwargs)
+        super().__init__(nested, **kwargs)
 
     def _serialize(self, value, attr, obj, **ser_kwargs):
         if value is None:
