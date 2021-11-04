@@ -80,36 +80,6 @@ class BaseDataSchema(BaseSchema):
     user = fields.Function(lambda user: user.user_id, dump_only=True, db_only=True)
 
 
-class JSONLDBaseSchema(BaseSchema):
-    id_key = "@id"
-    # Serialization fields
-    context = fields.Constant(
-        {"@vocab": "http://neurostore.org/nimads/"}, data_key="@context", dump_only=True
-    )
-    _type = fields.Function(
-        lambda model: model.__class__.__name__, data_key="@type", dump_only=True
-    )
-
-    # De-serialization fields
-    id = fields.Method(None, "_extract_id", data_key=id_key, load_only=True)
-
-    def _extract_id(self, iri):
-        return iri.strip("/").split("/")[-1]
-
-    @post_dump(pass_original=True)
-    def process_jsonld(self, data, original, **kwargs):
-        if isinstance(original, (list, tuple)):
-            return data
-        method = request.args.get("process", "compact")
-        context = {"@context": {"@vocab": "http://neurostore.org/nimads/"}}
-        if method == "flatten":
-            return jsonld.flatten(data, context)
-        elif method == "expand":
-            return jsonld.expand(data)
-        else:
-            return jsonld.compact(data, context)
-
-
 class ConditionSchema(BaseDataSchema):
     class Meta:
         additional = ("name", "description")
@@ -276,18 +246,46 @@ class AnnotationSchema(BaseDataSchema):
         return data
 
 
+class JSONLDBaseSchema(BaseSchema):
+    id_key = "@id"
+    # Serialization fields
+    context = fields.Constant(
+        {"@vocab": "http://neurostore.org/nimads/"}, data_key="@context", dump_only=True
+    )
+    _type = fields.Function(
+        lambda model: model.__class__.__name__, data_key="@type", dump_only=True
+    )
+
+    # De-serialization fields
+    id = fields.Method(None, "_extract_id", data_key=id_key, load_only=True)
+
+    def _extract_id(self, iri):
+        return iri.strip("/").split("/")[-1]
+
+    @post_dump(pass_original=True)
+    def process_jsonld(self, data, original, **kwargs):
+        if isinstance(original, (list, tuple)):
+            return data
+        method = request.args.get("process", "compact")
+        context = {"@context": {"@vocab": "http://neurostore.org/nimads/"}}
+        if method == "flatten":
+            return jsonld.flatten(data, context)
+        elif method == "expand":
+            return jsonld.expand(data)
+        else:
+            return jsonld.compact(data, context)
+
+
 class JSONLDPointSchema(PointSchema):
     # serialization
     analysis = fields.Function(lambda image: image.analysis.IRI, dump_only=True)
 
 
 class JSONLDImageSchema(ImageSchema):
-
     # serialization
     analysis = fields.Function(lambda image: image.analysis.IRI, dump_only=True)
 
 
 class JSONLSAnalysisSchema(AnalysisSchema):
-
     # serialization
     study = fields.Function(lambda analysis: analysis.study.IRI, dump_only=True)

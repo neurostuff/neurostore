@@ -1,3 +1,4 @@
+"""TODO: PLACE INTO THE NEUROSYNTH APP"""
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import relationship, backref
 
