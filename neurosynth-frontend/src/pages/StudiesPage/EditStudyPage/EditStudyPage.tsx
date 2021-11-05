@@ -12,7 +12,7 @@ import {
 import { AxiosError } from 'axios';
 import { useState, useEffect, ChangeEvent, useContext } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import { EditMetadata, DisplayMetadataTableRowModel } from '../../../components';
+import { EditMetadata, IMetadataRowModel } from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import API from '../../../utils/api';
 import EditStudyPageStyles from './EditStudyPageStyles';
@@ -23,7 +23,7 @@ interface IStudyEdit {
     publication: string;
     doi: string;
     description: string;
-    metadata: DisplayMetadataTableRowModel[];
+    metadata: IMetadataRowModel[];
 }
 
 const textFieldInputProps = {
@@ -32,7 +32,7 @@ const textFieldInputProps = {
     },
 };
 
-const arrayToMetadata = (arr: DisplayMetadataTableRowModel[]): { [key: string]: any } => {
+const arrayToMetadata = (arr: IMetadataRowModel[]): { [key: string]: any } => {
     const tempObj: { [key: string]: any } = {};
     arr.forEach((element) => (tempObj[element.metadataKey] = element.metadataValue));
     return tempObj;
@@ -54,13 +54,11 @@ const EditStudyPage = () => {
     });
 
     // initial metadata received from the study is set in this state. Separate in order to avoid constant re renders
-    const [initialMetadataArr, setInitialMetadataArr] = useState<DisplayMetadataTableRowModel[]>(
-        []
-    );
+    const [initialMetadataArr, setInitialMetadataArr] = useState<IMetadataRowModel[]>([]);
     const history = useHistory();
     const params: { studyId: string } = useParams();
 
-    const handleMetadataEditChange = (metadata: DisplayMetadataTableRowModel[]) => {
+    const handleMetadataEditChange = (metadata: IMetadataRowModel[]) => {
         setUpdatedStudy((prevState) => {
             return {
                 ...prevState,
@@ -75,7 +73,7 @@ const EditStudyPage = () => {
             API.Services.StudiesService.studiesIdGet(id)
                 .then((res) => {
                     const study = res.data;
-                    const metadataArr: DisplayMetadataTableRowModel[] = study.metadata
+                    const metadataArr: IMetadataRowModel[] = study.metadata
                         ? Object.keys(study.metadata).map((row) => ({
                               metadataKey: row,
                               metadataValue: (study.metadata as any)[row],

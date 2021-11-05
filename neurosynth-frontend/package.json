@@ -28,7 +28,8 @@
         "start:staging": "env-cmd -f .env.staging react-scripts start",
         "build:dev": "env-cmd -f .env.dev react-scripts build",
         "build:staging": "env-cmd -f .env.staging react-scripts build",
-        "update-api": "docker run --rm -v \"%cd%:/local\" openapitools/openapi-generator-cli generate -i https://raw.githubusercontent.com/neurostuff/neurostore-spec/main/neurostore-openapi.yml -g typescript-axios -o /local/src/gen/api",
+        "update-api-windows": "docker run --rm -v \"%cd%:/local\" openapitools/openapi-generator-cli generate -i https://raw.githubusercontent.com/neurostuff/neurostore-spec/main/neurostore-openapi.yml -g typescript-axios -o /local/src/gen/api",
+        "update-api-mac": "docker run --rm -v \"${PWD}:/local\" openapitools/openapi-generator-cli generate -i https://raw.githubusercontent.com/neurostuff/neurostore-spec/main/neurostore-openapi.yml -g typescript-axios -o /local/src/gen/api",
         "test": "react-scripts test",
         "cy:e2e-headless": "cypress run",
         "cy:e2e-browser": "cypress open",
@@ -46,14 +47,15 @@
             "last 1 safari version"
         ]
     },
+    "jest": {
+        "resetMocks": false
+    },
     "devDependencies": {
-        "@cypress/react": "^5.9.4",
-        "@cypress/webpack-dev-server": "^1.5.0",
         "@testing-library/dom": "^8.3.0",
         "@testing-library/jest-dom": "^5.14.1",
         "@testing-library/react": "^11.2.7",
         "@testing-library/user-event": "^12.8.3",
-        "cypress": "^8.3.1",
+        "cypress": "^8.6.0",
         "env-cmd": "^10.1.0",
         "eslint-config-prettier": "^8.3.0",
         "eslint-plugin-prettier": "^4.0.0",
