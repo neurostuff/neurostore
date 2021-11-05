@@ -26,7 +26,7 @@ const Navbar = () => {
         }
     };
 
-    const handleLogout = () => logout();
+    const handleLogout = () => logout({ returnTo: window.location.origin });
 
     return (
         <AppBar position="static" elevation={0}>
