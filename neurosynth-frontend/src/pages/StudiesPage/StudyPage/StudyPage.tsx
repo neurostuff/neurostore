@@ -61,7 +61,7 @@ const StudyPage = () => {
         API.Services.StudiesService.studiesPost(undefined, params.studyId, {})
             .then((res) => {
                 context.showSnackbar('Study successfully cloned', SnackbarType.SUCCESS);
-                history.push(`/studies`);
+                history.push(`/studies/${(res.data as any).id}`);
             })
             .catch((err: Error | AxiosError) => {
                 context.showSnackbar('There was an error', SnackbarType.ERROR);
