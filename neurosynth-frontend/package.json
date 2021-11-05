@@ -47,6 +47,9 @@
             "last 1 safari version"
         ]
     },
+    "jest": {
+        "resetMocks": false
+    },
     "devDependencies": {
         "@testing-library/dom": "^8.3.0",
         "@testing-library/jest-dom": "^5.14.1",
