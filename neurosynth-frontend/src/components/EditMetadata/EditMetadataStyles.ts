@@ -2,7 +2,12 @@ import { Style } from '../..';
 
 const EditMetadataStyles: Style = {
     table: {
-        display: 'table',
+        display: 'block',
+        maxHeight: {
+            xs: '200px',
+            md: '350px',
+        },
+        overflow: 'auto',
         height: '100%',
         width: '100%',
         borderCollapse: 'separate',

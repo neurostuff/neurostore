@@ -6,17 +6,14 @@ import {
     AccordionSummary,
     Box,
     Button,
-    Tabs,
     TextField,
     Typography,
-    Tab,
 } from '@mui/material';
 import { AxiosError } from 'axios';
-import { useState, useEffect, ChangeEvent, useContext, SyntheticEvent } from 'react';
+import { useState, useEffect, ChangeEvent, useContext } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import { EditMetadata, IMetadataRowModel } from '../../../components';
+import { EditMetadata, IMetadataRowModel, EditAnalyses } from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
-import { Analysis, ReadOnly } from '../../../gen/api';
 import API, { AnalysisApiResponse } from '../../../utils/api';
 import EditStudyPageStyles from './EditStudyPageStyles';
 
@@ -58,14 +55,6 @@ const EditStudyPage = () => {
         analyses: undefined,
     });
 
-    const [selectedAnalysis, setSelectedAnalysis] = useState<{
-        analysisIndex: number;
-        analysis: AnalysisApiResponse | undefined;
-    }>({
-        analysisIndex: 0,
-        analysis: undefined,
-    });
-
     const [reload, setReload] = useState({});
 
     // initial metadata received from the study is set in this state. Separate in order to avoid constant re renders
@@ -96,18 +85,6 @@ const EditStudyPage = () => {
                         : [];
                     setInitialMetadataArr(metadataArr);
 
-                    const analyses = (study.analyses as AnalysisApiResponse[]).sort((a, b) => {
-                        const aId = a.id as string;
-                        const bId = b.id as string;
-                        if (aId < bId) {
-                            return -1;
-                        }
-                        if (aId > bId) {
-                            return 1;
-                        }
-                        return 0;
-                    });
-
                     setUpdatedStudy({
                         name: study.name || '',
                         authors: study.authors || '',
@@ -115,16 +92,8 @@ const EditStudyPage = () => {
                         doi: study.doi || '',
                         description: study.description || '',
                         metadata: metadataArr,
-                        analyses: analyses,
+                        analyses: study.analyses as AnalysisApiResponse[] | undefined,
                     });
-                    if (study.analyses && study.analyses.length > 0) {
-                        setSelectedAnalysis((prevState) => ({
-                            analysis: (study.analyses as AnalysisApiResponse[])[
-                                prevState.analysisIndex
-                            ],
-                            analysisIndex: prevState.analysisIndex,
-                        }));
-                    }
                 })
                 .catch(() => {});
         };
@@ -183,25 +152,26 @@ const EditStudyPage = () => {
         setSaveEnabled(true);
     };
 
-    const handleEditAnalysis = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-        setSelectedAnalysis((prevState) => {
-            const analysis = prevState.analysis;
-            switch (event.target.name) {
-                case 'name':
-                    (analysis as AnalysisApiResponse).name = event.target.value;
-                    break;
-                case 'description':
-                    (analysis as AnalysisApiResponse).description = event.target.value;
-                    break;
-                default:
-                    break;
-            }
-            return {
-                ...prevState,
-                analysis: analysis,
-            };
-        });
+    const handleEditAnalyses = (editedAnalyses: AnalysisApiResponse[]) => {
         setSaveEnabled(true);
+        // setSelectedAnalysis((prevState) => {
+        //     const analysis = prevState.analysis;
+        //     switch (event.target.name) {
+        //         case 'name':
+        //             (analysis as AnalysisApiResponse).name = event.target.value;
+        //             break;
+        //         case 'description':
+        //             (analysis as AnalysisApiResponse).description = event.target.value;
+        //             break;
+        //         default:
+        //             break;
+        //     }
+        //     return {
+        //         ...prevState,
+        //         analysis: analysis,
+        //     };
+        // });
+        // setSaveEnabled(true);
     };
 
     return (
@@ -304,100 +274,10 @@ const EditStudyPage = () => {
             </Box>
 
             <Box sx={{ marginBottom: '15px', padding: '0 10px', marginLeft: '15px' }}>
-                <Typography variant="h6">
-                    <b>Edit Analyses</b>
-                </Typography>
-                {updatedStudy.analyses && (
-                    <Box sx={{ display: 'flex', flexDirection: 'row', width: '100%' }}>
-                        <Box>
-                            <Tabs
-                                scrollButtons
-                                sx={{
-                                    borderRight: 1,
-                                    color: 'lightgray',
-                                    maxWidth: {
-                                        xs: 90,
-                                        md: 150,
-                                    },
-                                }}
-                                TabScrollButtonProps={{
-                                    sx: {
-                                        color: 'primary.main',
-                                    },
-                                }}
-                                value={selectedAnalysis.analysisIndex}
-                                onChange={(event: SyntheticEvent, newVal: number) => {
-                                    setSelectedAnalysis({
-                                        analysis: (updatedStudy.analyses as AnalysisApiResponse[])[
-                                            newVal
-                                        ],
-                                        analysisIndex: newVal,
-                                    });
-                                }}
-                                orientation="vertical"
-                                variant="scrollable"
-                            >
-                                {updatedStudy.analyses.map((analysis, index) => (
-                                    <Tab value={index} label={analysis.name}></Tab>
-                                ))}
-                            </Tabs>
-                        </Box>
-                        <Box
-                            sx={{
-                                paddingLeft: {
-                                    xs: '10px',
-                                    md: '20px',
-                                },
-                                paddingTop: {
-                                    xs: '6px',
-                                    md: '12px',
-                                },
-                                flexGrow: 1,
-                            }}
-                        >
-                            <TextField
-                                sx={EditStudyPageStyles.textfield}
-                                variant="outlined"
-                                label="Edit Analysis Name"
-                                value={selectedAnalysis.analysis?.name || ''}
-                                InputProps={textFieldInputProps}
-                                name="name"
-                                onChange={handleEditAnalysis}
-                            />
-
-                            <TextField
-                                sx={EditStudyPageStyles.textfield}
-                                variant="outlined"
-                                label="Edit Analysis Description"
-                                value={selectedAnalysis.analysis?.description || ''}
-                                InputProps={textFieldInputProps}
-                                name="description"
-                                onChange={handleEditAnalysis}
-                            />
-
-                            <Box>
-                                <Tabs
-                                    scrollButtons
-                                    sx={{
-                                        borderBottom: 1,
-                                        color: 'lightgray',
-                                    }}
-                                    TabScrollButtonProps={{
-                                        sx: {
-                                            color: 'primary.main',
-                                        },
-                                    }}
-                                    value={0}
-                                    variant="scrollable"
-                                >
-                                    <Tab value={0} label="Edit Coordinates"></Tab>
-                                    <Tab value={1} label="Edit Conditions"></Tab>
-                                    <Tab value={2} label="Edit Images"></Tab>
-                                </Tabs>
-                            </Box>
-                        </Box>
-                    </Box>
-                )}
+                <EditAnalyses
+                    onEditAnalyses={handleEditAnalyses}
+                    analyses={updatedStudy.analyses}
+                />
             </Box>
         </>
     );

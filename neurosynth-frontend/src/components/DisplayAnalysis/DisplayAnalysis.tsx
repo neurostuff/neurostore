@@ -4,11 +4,12 @@ import { Box } from '@mui/system';
 import { useEffect, useState } from 'react';
 import { DisplayValuesTable, DisplayValuesTableModel, TextExpansion } from '..';
 import { Analysis, Condition, Point, ReadOnly, Image } from '../../gen/api';
+import { AnalysisApiResponse } from '../../utils/api';
 import DisplayImagesTable from '../DisplayImagesTable/DisplayImagesTable';
 import Visualizer from '../Visualizer/Visualizer';
 import DisplayAnalysisStyles from './DisplayAnalysisStyles';
 
-const DisplayAnalysis: React.FC<Analysis> = (props) => {
+const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
     const [selectedImage, setSelectedImage] = useState<(Image & ReadOnly) | undefined>(undefined);
 
     useEffect(() => {
