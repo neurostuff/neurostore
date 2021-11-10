@@ -12,6 +12,7 @@ import {
 } from '../gen/api';
 
 export type StudyApiResponse = Study & ReadOnly;
+export type AnalysisApiResponse = Study & ReadOnly;
 
 const APIDomain = process.env.REACT_APP_API_DOMAIN as string;
 const config: Configuration = new Configuration({

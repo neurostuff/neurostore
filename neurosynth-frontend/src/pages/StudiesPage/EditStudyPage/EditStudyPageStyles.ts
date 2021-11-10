@@ -12,7 +12,8 @@ const EditStudyPageStyles: Style = {
         zIndex: 2,
         width: '100%',
         position: 'sticky',
-        padding: '20px 10px',
+        padding: '10px 10px',
+        marginBottom: '5px',
         top: '0',
     },
     textfield: {
