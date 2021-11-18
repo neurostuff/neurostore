@@ -2,12 +2,12 @@ import { ExpandMoreOutlined } from '@mui/icons-material';
 import { Accordion, AccordionDetails, AccordionSummary, Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import { useEffect, useState } from 'react';
-import { DisplayValuesTable, DisplayValuesTableModel, TextExpansion } from '..';
-import { Analysis, Condition, Point, ReadOnly, Image } from '../../gen/api';
+import { DisplayValuesTable, IDisplayValuesTableModel, TextExpansion } from '..';
+import { Condition, Point, ReadOnly, Image } from '../../gen/api';
 import { AnalysisApiResponse } from '../../utils/api';
 import DisplayImagesTable from '../DisplayImagesTable/DisplayImagesTable';
 import Visualizer from '../Visualizer/Visualizer';
-import DisplayAnalysisStyles from './DisplayAnalysisStyles';
+import DisplayAnalysisStyles from './DisplayAnalysis.styles';
 
 const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
     const [selectedImage, setSelectedImage] = useState<(Image & ReadOnly) | undefined>(undefined);
@@ -43,34 +43,65 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
         );
     }
 
-    const coordinateDataForTable: DisplayValuesTableModel = {
-        columnHeaders: ['X', 'Y', 'Z', 'Kind', 'Space'],
+    const coordinateDataForTable: IDisplayValuesTableModel = {
+        columnHeaders: [
+            {
+                value: 'X',
+                center: false,
+                bold: false,
+            },
+            {
+                value: 'Y',
+                center: false,
+                bold: false,
+            },
+            {
+                value: 'Z',
+                center: false,
+                bold: false,
+            },
+            {
+                value: 'Kind',
+                center: false,
+                bold: false,
+            },
+            {
+                value: 'Space',
+                center: false,
+                bold: false,
+            },
+        ],
         rowData: (props?.points as (Point & ReadOnly)[]).map((point) => ({
             uniqueKey: point.id as string,
             columnValues: [
                 {
                     value: point.coordinates ? point?.coordinates[0] : undefined,
                     colorByType: false,
+                    center: false,
                     bold: false,
                 },
                 {
                     value: point.coordinates ? point?.coordinates[1] : undefined,
                     colorByType: true,
+                    center: false,
                     bold: false,
                 },
                 {
                     value: point.coordinates ? point?.coordinates[2] : undefined,
                     colorByType: true,
+                    center: false,
                     bold: false,
                 },
                 {
                     value: point.kind as string,
                     colorByType: true,
+                    center: false,
                     bold: false,
                 },
                 {
                     value: point.space as string,
                     colorByType: true,
+                    center: false,
                     bold: false,
                 },
             ],
@@ -81,19 +112,32 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
         setSelectedImage(selectedImage);
     };
 
-    const conditionsForTable: DisplayValuesTableModel = {
-        columnHeaders: ['Condition', 'Weight'],
+    const conditionsForTable: IDisplayValuesTableModel = {
+        columnHeaders: [
+            {
+                value: 'Condition',
+                bold: false,
+                center: false,
+            },
+            {
+                value: 'Weight',
+                bold: false,
+                center: false,
+            },
+        ],
         rowData: (props?.conditions as (Condition & ReadOnly)[]).map((condition, index) => ({
             uniqueKey: condition.id || index.toString(),
             columnValues: [
                 {
                     value: condition.name,
                     colorByType: false,
+                    center: false,
                     bold: false,
                 },
                 {
                     value: (props?.weights || [])[index],
                     colorByType: false,
+                    center: false,
                     bold: false,
                 },
             ],
@@ -114,7 +158,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                 <TextExpansion
                     sx={DisplayAnalysisStyles.spaceBelow}
                     text={props.description || ''}
-                ></TextExpansion>
+                />
                 <Box sx={{ ...DisplayAnalysisStyles.spaceBelow, width: '100%' }}>
                     <Accordion defaultExpanded={true} elevation={4}>
                         <AccordionSummary expandIcon={<ExpandMoreOutlined />}>

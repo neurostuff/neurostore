@@ -1,5 +1,5 @@
 import React from 'react';
-import EditMetadataRowStyles from './EditMetadataRowStyles';
+import EditMetadataRowStyles from './EditMetadataRow.styles';
 import EditMetadataBoolean from './EditMetadataValue/EditMetadataBoolean';
 import EditMetadataNumber from './EditMetadataValue/EditMetadataNumber';
 import EditMetadataString from './EditMetadataValue/EditMetadataString';

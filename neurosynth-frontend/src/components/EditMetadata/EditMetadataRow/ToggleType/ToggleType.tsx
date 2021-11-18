@@ -4,7 +4,7 @@ import React, { ReactNode } from 'react';
 import { useEffect } from 'react';
 import { useState } from 'react';
 import { EPropertyType, IToggleTypeModel } from '../..';
-import ToggleTypeStyles from './ToggleTypeStyles';
+import ToggleTypeStyles from './ToggleType.styles';
 
 const ToggleType: React.FC<IToggleTypeModel> = React.memo((props) => {
     const [type, setType] = useState<EPropertyType>(props.type);

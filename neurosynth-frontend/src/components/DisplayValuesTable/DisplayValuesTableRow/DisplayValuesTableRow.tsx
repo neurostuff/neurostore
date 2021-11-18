@@ -1,9 +1,9 @@
 import { TableCell, TableRow } from '@mui/material';
 import { Box } from '@mui/system';
 import React from 'react';
-import { DisplayValuesTableRowModel } from '..';
+import { IDisplayValuesTableRowModel } from '..';
 import { EPropertyType } from '../..';
-import DisplayValuesTableRowStyles from './DisplayValuesTableRowStyles';
+import DisplayValuesTableRowStyles from './DisplayValuesTableRow.styles';
 
 const getValue = (value: any): string => {
     if (value === null) {
@@ -29,7 +29,7 @@ const getType = (value: any): EPropertyType => {
     }
 };
 
-const DisplayMetadataTableRow: React.FC<DisplayValuesTableRowModel> = (props) => {
+const DisplayMetadataTableRow: React.FC<IDisplayValuesTableRowModel> = (props) => {
     return (
         <TableRow>
             {props.columnValues.map((col, index) => {
@@ -38,7 +38,7 @@ const DisplayMetadataTableRow: React.FC<DisplayValuesTableRowModel> = (props) =>
                     : {};
 
                 return (
-                    <TableCell key={index}>
+                    <TableCell key={index} sx={{ textAlign: col.center ? 'center' : 'left' }}>
                         <Box
                             component="span"
                             sx={{

@@ -2,7 +2,7 @@ import { Box, Button, TextField } from '@mui/material';
 import React, { useCallback, useState } from 'react';
 import { useEffect } from 'react';
 import { IAddMetadataRowModel, EPropertyType, IMetadataRowModel } from '..';
-import EditMetadataRowStyles from './EditMetadataRowStyles';
+import EditMetadataRowStyles from './EditMetadataRow.styles';
 import EditMetadataBoolean from './EditMetadataValue/EditMetadataBoolean';
 import EditMetadataNumber from './EditMetadataValue/EditMetadataNumber';
 import EditMetadataString from './EditMetadataValue/EditMetadataString';

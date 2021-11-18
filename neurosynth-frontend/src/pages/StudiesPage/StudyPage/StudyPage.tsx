@@ -5,14 +5,14 @@ import React, { useCallback, useState, useEffect, useContext, SyntheticEvent } f
 import { useHistory, useParams } from 'react-router-dom';
 import {
     DisplayValuesTable,
-    DisplayValuesTableModel,
+    IDisplayValuesTableModel,
     TextExpansion,
     DisplayAnalysis,
 } from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import { Analysis, ReadOnly } from '../../../gen/api';
-import API, { StudyApiResponse } from '../../../utils/api';
-import StudyPageStyles from './StudyPageStyles';
+import API, { StudyApiResponse, AnalysisApiResponse } from '../../../utils/api';
+import StudyPageStyles from './StudyPage.styles';
 
 const StudyPage = () => {
     const [study, setStudy] = useState<StudyApiResponse>();
@@ -35,13 +35,29 @@ const StudyPage = () => {
         API.Services.StudiesService.studiesIdGet(id, true)
             .then((res) => {
                 const resUpdated = res as AxiosResponse<StudyApiResponse>;
+
+                let sortedAnalyses = resUpdated.data.analyses as AnalysisApiResponse[] | undefined;
+                if (sortedAnalyses && sortedAnalyses.length > 0) {
+                    sortedAnalyses.sort((a, b) => {
+                        const aId = a.id as string;
+                        const bId = b.id as string;
+                        if (aId < bId) {
+                            return -1;
+                        }
+                        if (aId > bId) {
+                            return 1;
+                        }
+                        return 0;
+                    });
+                }
+
                 setStudy(resUpdated.data);
 
                 // check if the analyses array exists and is non zero in the response
-                if (!!resUpdated?.data?.analyses && resUpdated.data.analyses.length > 0) {
+                if (sortedAnalyses && sortedAnalyses.length > 0) {
                     setSelectedAnalysis({
                         analysisIndex: 0,
-                        analysis: resUpdated.data.analyses[0] as Analysis & ReadOnly,
+                        analysis: sortedAnalyses[0],
                     });
                 }
             })
@@ -93,19 +109,32 @@ const StudyPage = () => {
         setEditDisabled(shouldDisableEdit);
     }, [isAuthenticated, user?.sub, study?.user]);
 
-    const metadataForTable: DisplayValuesTableModel = {
-        columnHeaders: ['Name', 'Value'],
+    const metadataForTable: IDisplayValuesTableModel = {
+        columnHeaders: [
+            {
+                value: 'Name',
+                center: false,
+                bold: false,
+            },
+            {
+                value: 'Value',
+                center: false,
+                bold: false,
+            },
+        ],
         rowData: Object.entries(study?.metadata || {}).map(([key, value]) => ({
             uniqueKey: key,
             columnValues: [
                 {
                     value: key,
                     colorByType: false,
+                    center: false,
                     bold: true,
                 },
                 {
                     value: value,
                     colorByType: true,
+                    center: false,
                     bold: true,
                 },
             ],
@@ -115,7 +144,7 @@ const StudyPage = () => {
     return (
         <>
             <Box sx={{ ...StudyPageStyles.buttonContainer, ...StudyPageStyles.spaceBelow }}>
-                <Tooltip placement="top" title={!isAuthenticated ? 'login to clone study' : ''}>
+                <Tooltip placement="top" title={!isAuthenticated ? 'log in to clone study' : ''}>
                     <Box sx={{ display: 'inline' }}>
                         <Button
                             onClick={handleCloneStudy}
@@ -154,10 +183,7 @@ const StudyPage = () => {
                     <Typography variant="h6">{study?.publication}</Typography>
                     {study?.doi && <Typography variant="h6">DOI: {study?.doi}</Typography>}
                 </Box>
-                <TextExpansion
-                    text={study?.description || ''}
-                    sx={StudyPageStyles.spaceBelow}
-                ></TextExpansion>
+                <TextExpansion text={study?.description || ''} sx={StudyPageStyles.spaceBelow} />
             </Box>
 
             <Box
@@ -173,8 +199,8 @@ const StudyPage = () => {
                         setTabIndex(newValue);
                     }}
                 >
-                    <Tab sx={StudyPageStyles.tab} label="Study Analyses" />
-                    <Tab sx={StudyPageStyles.tab} label="Study Metadata" />
+                    <Tab value={0} sx={StudyPageStyles.tab} label="Study Analyses" />
+                    <Tab value={1} sx={StudyPageStyles.tab} label="Study Metadata" />
                 </Tabs>
             </Box>
 
@@ -195,18 +221,18 @@ const StudyPage = () => {
                             <Tabs
                                 sx={StudyPageStyles.analysesTabs}
                                 scrollButtons
+                                value={selectedAnalysis.analysisIndex}
                                 TabScrollButtonProps={{
                                     sx: {
                                         color: 'primary.main',
                                     },
                                 }}
-                                value={selectedAnalysis.analysisIndex}
                                 onChange={handleSelectAnalysis}
                                 orientation="vertical"
                                 variant="scrollable"
                             >
                                 {/* manually override analysis type as we know study will be nested and analysis will not be a string */}
-                                {(study?.analyses as (Analysis & ReadOnly)[])?.map((analysis) => (
+                                {(study?.analyses as AnalysisApiResponse[])?.map((analysis) => (
                                     <Tab
                                         sx={StudyPageStyles.analysisTab}
                                         key={analysis.id}
@@ -215,13 +241,7 @@ const StudyPage = () => {
                                 ))}
                             </Tabs>
                         </Box>
-                        <Box
-                            sx={{
-                                ...StudyPageStyles.heightDefiningSibling,
-                                flexBasis: 0,
-                                flexGrow: 1,
-                            }}
-                        >
+                        <Box sx={StudyPageStyles.heightDefiningSibling}>
                             <DisplayAnalysis {...selectedAnalysis.analysis} />
                         </Box>
                     </Box>

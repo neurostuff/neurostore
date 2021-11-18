@@ -1,9 +1,15 @@
 import { TextField } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { IEditMetadataField } from '../..';
-import EditMetadataFieldsStyles from './EditMetadataFieldsStyles';
+import EditMetadataFieldsStyles from './EditMetadataFields.styles';
 
 const EditMetadataNumber: React.FC<IEditMetadataField> = (props) => {
+    console.log(props);
+
+    useEffect(() => {
+        setValue(parseInt(props.value as string));
+    }, [props.value]);
+
     const [value, setValue] = useState<number>(parseInt(props.value as string));
     const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const num = parseInt(event.target.value);

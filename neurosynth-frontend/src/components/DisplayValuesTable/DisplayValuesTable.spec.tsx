@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { DisplayValuesTable, DisplayValuesTableModel } from '..';
+import { DisplayValuesTable, IDisplayValuesTableModel } from '..';
 
 describe('DisplayValuesTable Component', () => {
     it('should render', () => {
@@ -9,7 +9,7 @@ describe('DisplayValuesTable Component', () => {
     });
 
     it('should render data with rows', () => {
-        const mockTableData: DisplayValuesTableModel = {
+        const mockTableData: IDisplayValuesTableModel = {
             columnHeaders: ['testCol1', 'testCol2'],
             rowData: [
                 {

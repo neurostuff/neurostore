@@ -1,7 +1,7 @@
 import { TextField } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { IEditMetadataField } from '../..';
-import EditMetadataFieldsStyles from './EditMetadataFieldsStyles';
+import EditMetadataFieldsStyles from './EditMetadataFields.styles';
 
 const EditMetadataString: React.FC<IEditMetadataField> = (props) => {
     const [value, setValue] = useState(props.value?.toString() || '');

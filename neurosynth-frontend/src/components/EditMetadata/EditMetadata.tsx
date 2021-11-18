@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import EditMetadataStyles from './EditMetadataStyles';
+import React, { useEffect, useState } from 'react';
+import EditMetadataStyles from './EditMetadata.styles';
 import EditMetadataRow from './EditMetadataRow/EditMetadataRow';
 import AddMetadataRow from './EditMetadataRow/AddMetadataRow';
 import { IMetadataRowModel, EPropertyType, IEditMetadataModel } from '.';
-import { Box } from '@mui/system';
+import { Box, Divider } from '@mui/material';
 
 export const getType = (value: any): EPropertyType => {
     switch (typeof value) {
@@ -18,7 +18,7 @@ export const getType = (value: any): EPropertyType => {
     }
 };
 
-const EditMetadata: React.FC<IEditMetadataModel> = (props) => {
+const EditMetadata: React.FC<IEditMetadataModel> = React.memo((props) => {
     // this props.metadata value is only used on the first render so useState is required below for subsequent props changes
     const [metadata, setMetadata] = useState<IMetadataRowModel[]>(props.metadata);
 
@@ -71,7 +71,7 @@ const EditMetadata: React.FC<IEditMetadataModel> = (props) => {
             <Box sx={EditMetadataStyles.table}>
                 <AddMetadataRow onAddMetadataRow={handleMetadataRowAdd} />
             </Box>
-            <Box component="hr" sx={EditMetadataStyles.hr} />
+            <Divider sx={EditMetadataStyles.hr} />
             {metadata.length === 0 && (
                 <Box component="span" sx={{ color: 'warning.dark' }}>
                     No Metadata
@@ -90,6 +90,6 @@ const EditMetadata: React.FC<IEditMetadataModel> = (props) => {
             </Box>
         </>
     );
-};
+});
 
 export default EditMetadata;

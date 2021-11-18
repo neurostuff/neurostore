@@ -45,7 +45,7 @@ const theme = createTheme({
         },
         success: {
             main: '#4caf50',
-            contrastText: '#000000',
+            contrastText: '#ffffff',
         },
         muted: {
             main: grey[500],

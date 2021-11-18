@@ -2,10 +2,11 @@ import { Style } from '../../..';
 
 const EditStudyPageStyles: Style = {
     saveButton: {
-        marginRight: '15px !important',
+        marginRight: '30px !important',
+        color: 'success.contrastText',
     },
     button: {
-        width: '160px',
+        width: '250px',
     },
     stickyButtonContainer: {
         backgroundColor: 'white',
@@ -13,12 +14,8 @@ const EditStudyPageStyles: Style = {
         width: '100%',
         position: 'sticky',
         padding: '10px 10px',
-        marginBottom: '5px',
+        marginBottom: '15px',
         top: '0',
-    },
-    textfield: {
-        marginBottom: '15px !important',
-        width: '100%',
     },
 };
 

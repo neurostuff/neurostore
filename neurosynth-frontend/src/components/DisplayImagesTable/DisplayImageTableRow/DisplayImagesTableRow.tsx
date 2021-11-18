@@ -1,26 +1,39 @@
 import { Box, Collapse, IconButton, TableCell, TableRow, Typography } from '@mui/material';
 import { KeyboardArrowDownRounded, KeyboardArrowUpRounded } from '@mui/icons-material';
 import React, { useState } from 'react';
-import { DisplayValuesTable, DisplayValuesTableModel } from '../..';
-import DisplayImageTableRowStyles from './DisplayImageTableRowStyles';
+import { DisplayValuesTable, IDisplayValuesTableModel } from '../..';
+import DisplayImageTableRowStyles from './DisplayImageTableRow.styles';
 import { DisplayImagesTableRowModel } from '..';
 
 const DisplayImagesTableRow: React.FC<DisplayImagesTableRowModel> = (props) => {
     const [expanded, setExpanded] = useState(false);
 
-    const metadataForTable: DisplayValuesTableModel = {
-        columnHeaders: ['Name', 'Value'],
+    const metadataForTable: IDisplayValuesTableModel = {
+        columnHeaders: [
+            {
+                value: 'Name',
+                center: false,
+                bold: false,
+            },
+            {
+                value: 'Value',
+                center: false,
+                bold: false,
+            },
+        ],
         rowData: Object.entries(props.image?.metadata || {}).map(([key, value]) => ({
             uniqueKey: key,
             columnValues: [
                 {
                     value: key,
                     colorByType: false,
+                    center: false,
                     bold: true,
                 },
                 {
                     value: value,
                     colorByType: true,
+                    center: false,
                     bold: true,
                 },
             ],

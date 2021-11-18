@@ -1,5 +1,5 @@
 import { AppBar, Toolbar, Hidden } from '@mui/material';
-import NavbarStyles from './NavbarStyles';
+import NavbarStyles from './Navbar.styles';
 import NavbarDrawer from './NavbarDrawer/NavbarDrawer';
 import NavbarToolbar from './NavbarToolbar/NavbarToolbar';
 import { useAuth0 } from '@auth0/auth0-react';

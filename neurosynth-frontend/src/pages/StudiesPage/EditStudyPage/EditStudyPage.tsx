@@ -6,16 +6,20 @@ import {
     AccordionSummary,
     Box,
     Button,
-    TextField,
     Typography,
 } from '@mui/material';
 import { AxiosError } from 'axios';
-import { useState, useEffect, ChangeEvent, useContext } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import { EditMetadata, IMetadataRowModel, EditAnalyses } from '../../../components';
+import {
+    EditMetadata,
+    IMetadataRowModel,
+    EditAnalyses,
+    EditStudyDetails,
+} from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import API, { AnalysisApiResponse } from '../../../utils/api';
-import EditStudyPageStyles from './EditStudyPageStyles';
+import EditStudyPageStyles from './EditStudyPage.styles';
 
 interface IStudyEdit {
     name: string;
@@ -26,12 +30,6 @@ interface IStudyEdit {
     metadata: IMetadataRowModel[];
     analyses: AnalysisApiResponse[] | undefined;
 }
-
-const textFieldInputProps = {
-    style: {
-        fontSize: 15,
-    },
-};
 
 const arrayToMetadata = (arr: IMetadataRowModel[]): { [key: string]: any } => {
     const tempObj: { [key: string]: any } = {};
@@ -62,7 +60,7 @@ const EditStudyPage = () => {
     const history = useHistory();
     const params: { studyId: string } = useParams();
 
-    const handleMetadataEditChange = (metadata: IMetadataRowModel[]) => {
+    const handleMetadataEditChange = useCallback((metadata: IMetadataRowModel[]) => {
         setUpdatedStudy((prevState) => {
             return {
                 ...prevState,
@@ -70,7 +68,7 @@ const EditStudyPage = () => {
             };
         });
         setSaveEnabled(true);
-    };
+    }, []);
 
     useEffect(() => {
         const getStudy = (id: string) => {
@@ -142,46 +140,57 @@ const EditStudyPage = () => {
             });
     };
 
-    const handleOnEdit = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+    const handleOnEdit = useCallback((arg: { key: string; value: string }) => {
         setUpdatedStudy((prevState) => {
             return {
                 ...prevState,
-                [event.target.name]: event.target.value,
+                [arg.key]: arg.value,
             };
         });
         setSaveEnabled(true);
-    };
+    }, []);
 
-    const handleEditAnalyses = (editedAnalyses: AnalysisApiResponse[]) => {
-        setSaveEnabled(true);
-        // setSelectedAnalysis((prevState) => {
-        //     const analysis = prevState.analysis;
-        //     switch (event.target.name) {
-        //         case 'name':
-        //             (analysis as AnalysisApiResponse).name = event.target.value;
-        //             break;
-        //         case 'description':
-        //             (analysis as AnalysisApiResponse).description = event.target.value;
-        //             break;
-        //         default:
-        //             break;
-        //     }
-        //     return {
-        //         ...prevState,
-        //         analysis: analysis,
-        //     };
-        // });
-        // setSaveEnabled(true);
-    };
+    // idToUpdate: string, update: { key: string, value: string }
+    const handleEditAnalysisDetails = useCallback(
+        (idToUpdate: string | undefined, update: { key: string; value: string }) => {
+            setSaveEnabled(true);
+            setUpdatedStudy((prevState) => {
+                if (prevState.analyses === undefined) return { ...prevState };
+
+                // set new ref to array and object for react to detect
+                const newAnalyses = [...prevState.analyses];
+                const analysisIndexToUpdate = newAnalyses.findIndex(
+                    (analysis) => analysis.id === idToUpdate
+                );
+                if (analysisIndexToUpdate < 0) return { ...prevState };
+                newAnalyses[analysisIndexToUpdate] = {
+                    ...newAnalyses[analysisIndexToUpdate],
+                    [update.key]: update.value,
+                };
+
+                return {
+                    ...prevState,
+                    analyses: newAnalyses,
+                };
+            });
+        },
+        []
+    );
+
+    const handleEditAnalysisImages = useCallback(() => {}, []);
+
+    // idToUpdate: string
+    const handleEditAnalysisPoints = useCallback(() => {}, []);
 
     return (
         <>
             <Box sx={EditStudyPageStyles.stickyButtonContainer}>
                 <Button
                     onClick={handleOnSave}
+                    color="success"
                     disabled={!saveEnabled}
                     sx={{ ...EditStudyPageStyles.saveButton, ...EditStudyPageStyles.button }}
-                    variant="outlined"
+                    variant="contained"
                 >
                     Save Changes
                 </Button>
@@ -204,58 +213,20 @@ const EditStudyPage = () => {
                             </Typography>
                         </AccordionSummary>
                         <AccordionDetails>
-                            <TextField
-                                label="Edit Title"
-                                variant="outlined"
-                                sx={EditStudyPageStyles.textfield}
-                                value={updatedStudy.name}
-                                InputProps={textFieldInputProps}
-                                name="name"
-                                onChange={handleOnEdit}
-                            />
-                            <TextField
-                                sx={EditStudyPageStyles.textfield}
-                                variant="outlined"
-                                label="Edit Authors"
-                                value={updatedStudy.authors}
-                                InputProps={textFieldInputProps}
-                                name="authors"
-                                onChange={handleOnEdit}
-                            />
-                            <TextField
-                                variant="outlined"
-                                sx={EditStudyPageStyles.textfield}
-                                label="Edit Journal"
-                                value={updatedStudy.publication}
-                                InputProps={textFieldInputProps}
-                                name="publication"
-                                onChange={handleOnEdit}
-                            />
-                            <TextField
-                                variant="outlined"
-                                sx={EditStudyPageStyles.textfield}
-                                label="Edit DOI"
-                                value={updatedStudy.doi}
-                                InputProps={textFieldInputProps}
-                                name="doi"
-                                onChange={handleOnEdit}
-                            />
-                            <TextField
-                                variant="outlined"
-                                sx={EditStudyPageStyles.textfield}
-                                label="Edit Description"
-                                multiline
-                                value={updatedStudy.description}
-                                InputProps={textFieldInputProps}
-                                name="description"
-                                onChange={handleOnEdit}
+                            <EditStudyDetails
+                                onEdit={handleOnEdit}
+                                name={updatedStudy.name}
+                                description={updatedStudy.description}
+                                authors={updatedStudy.authors}
+                                doi={updatedStudy.doi}
+                                publication={updatedStudy.publication}
                             />
                         </AccordionDetails>
                     </Accordion>
                 )}
             </Box>
 
-            <Box sx={{ marginBottom: '15px', padding: '0 10px' }}>
+            <Box sx={{ marginBottom: '30px', padding: '0 10px' }}>
                 <Accordion elevation={4}>
                     <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
                         <Typography variant="h6">
@@ -275,7 +246,9 @@ const EditStudyPage = () => {
 
             <Box sx={{ marginBottom: '15px', padding: '0 10px', marginLeft: '15px' }}>
                 <EditAnalyses
-                    onEditAnalyses={handleEditAnalyses}
+                    onEditAnalysisDetails={handleEditAnalysisDetails}
+                    onEditAnalysisImages={handleEditAnalysisImages}
+                    onEditAnalysisPoints={handleEditAnalysisPoints}
                     analyses={updatedStudy.analyses}
                 />
             </Box>

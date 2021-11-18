@@ -1,9 +1,9 @@
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import { Box } from '@mui/system';
-import { DisplayValuesTableModel } from '.';
+import { IDisplayValuesTableModel } from '.';
 import DisplayValuesTableRow from './DisplayValuesTableRow/DisplayValuesTableRow';
 
-const DisplayValuesTable: React.FC<DisplayValuesTableModel> = (props) => {
+const DisplayValuesTable: React.FC<IDisplayValuesTableModel> = (props) => {
     if (
         !props.rowData ||
         props.rowData.length === 0 ||
@@ -22,8 +22,16 @@ const DisplayValuesTable: React.FC<DisplayValuesTableModel> = (props) => {
             <Table size="small">
                 <TableHead>
                     <TableRow>
-                        {props.columnHeaders.map((header, index) => (
-                            <TableCell key={index}>{header}</TableCell>
+                        {props.columnHeaders.map((colHeader, index) => (
+                            <TableCell
+                                sx={{
+                                    fontWeight: colHeader.bold ? 'bold' : 'normal',
+                                    textAlign: colHeader.center ? 'center' : 'left',
+                                }}
+                                key={index}
+                            >
+                                {colHeader.value}
+                            </TableCell>
                         ))}
                     </TableRow>
                 </TableHead>

@@ -27,6 +27,7 @@ const StudyPageStyles: Style = {
     matchingSibling: {
         display: 'flex',
         flexDirection: 'column',
+        minHeight: '200px',
     },
     heightDefiningSibling: {
         width: '100%',

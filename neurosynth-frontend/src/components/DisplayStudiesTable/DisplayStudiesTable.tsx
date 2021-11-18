@@ -3,7 +3,7 @@ import { Box } from '@mui/system';
 import { useHistory } from 'react-router-dom';
 import { ReadOnly, Study } from '../../gen/api';
 import { StudyApiResponse } from '../../utils/api';
-import DisplayStudiesTableStyles from './DisplayStudiesTableStyles';
+import DisplayStudiesTableStyles from './DisplayStudiesTable.styles';
 
 interface DisplayStudiesTableModel {
     studies: StudyApiResponse[];
