@@ -4,8 +4,6 @@ import { IEditMetadataField } from '../..';
 import EditMetadataFieldsStyles from './EditMetadataFields.styles';
 
 const EditMetadataNumber: React.FC<IEditMetadataField> = (props) => {
-    console.log(props);
-
     useEffect(() => {
         setValue(parseInt(props.value as string));
     }, [props.value]);

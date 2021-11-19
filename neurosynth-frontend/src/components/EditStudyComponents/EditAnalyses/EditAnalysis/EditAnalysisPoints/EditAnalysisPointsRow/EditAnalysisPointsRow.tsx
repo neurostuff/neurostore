@@ -10,7 +10,7 @@ const EditAnalysisPointsRow: React.FC<PointsApiResponse> = (props) => {
     return (
         <Box
             component="div"
-            sx={{ display: 'flex', justifyContent: 'space-evenly', marginBottom: '5px' }}
+            sx={{ display: 'flex', justifyContent: 'space-evenly', marginBottom: '7px' }}
         >
             {props.coordinates ? (
                 <>

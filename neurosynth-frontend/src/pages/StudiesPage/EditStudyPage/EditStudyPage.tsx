@@ -1,23 +1,8 @@
-import { useAuth0 } from '@auth0/auth0-react';
-import { ExpandMoreOutlined } from '@mui/icons-material';
-import {
-    Accordion,
-    AccordionDetails,
-    AccordionSummary,
-    Box,
-    Button,
-    Typography,
-} from '@mui/material';
-import { AxiosError } from 'axios';
-import { useState, useEffect, useContext, useCallback } from 'react';
+import { Box, Button } from '@mui/material';
+import { useState, useEffect, useCallback } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import {
-    EditMetadata,
-    IMetadataRowModel,
-    EditAnalyses,
-    EditStudyDetails,
-} from '../../../components';
-import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
+import { IMetadataRowModel, EditAnalyses, EditStudyDetails } from '../../../components';
+import EditStudyMetadata from '../../../components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import API, { AnalysisApiResponse } from '../../../utils/api';
 import EditStudyPageStyles from './EditStudyPage.styles';
 
@@ -27,47 +12,33 @@ interface IStudyEdit {
     publication: string;
     doi: string;
     description: string;
-    metadata: IMetadataRowModel[];
+    metadata: any | undefined;
     analyses: AnalysisApiResponse[] | undefined;
 }
 
-const arrayToMetadata = (arr: IMetadataRowModel[]): { [key: string]: any } => {
-    const tempObj: { [key: string]: any } = {};
-    arr.forEach((element) => (tempObj[element.metadataKey] = element.metadataValue));
-    return tempObj;
-};
-
 const EditStudyPage = () => {
-    const globalContext = useContext(GlobalContext);
-    const { getAccessTokenSilently } = useAuth0();
-    const [saveEnabled, setSaveEnabled] = useState(false);
-
     // study and metadata edits are updated and stored in this state
-    const [updatedStudy, setUpdatedStudy] = useState<IStudyEdit>({
+    const [study, setStudy] = useState<IStudyEdit>({
         name: '',
         authors: '',
         publication: '',
         doi: '',
         description: '',
-        metadata: [],
+        metadata: undefined,
         analyses: undefined,
     });
 
-    const [reload, setReload] = useState({});
-
     // initial metadata received from the study is set in this state. Separate in order to avoid constant re renders
-    const [initialMetadataArr, setInitialMetadataArr] = useState<IMetadataRowModel[]>([]);
     const history = useHistory();
     const params: { studyId: string } = useParams();
 
     const handleMetadataEditChange = useCallback((metadata: IMetadataRowModel[]) => {
-        setUpdatedStudy((prevState) => {
+        setStudy((prevState) => {
             return {
                 ...prevState,
                 metadata: metadata,
             };
         });
-        setSaveEnabled(true);
     }, []);
 
     useEffect(() => {
@@ -75,21 +46,14 @@ const EditStudyPage = () => {
             API.Services.StudiesService.studiesIdGet(id, true)
                 .then((res) => {
                     const study = res.data;
-                    const metadataArr: IMetadataRowModel[] = study.metadata
-                        ? Object.keys(study.metadata).map((row) => ({
-                              metadataKey: row,
-                              metadataValue: (study.metadata as any)[row],
-                          }))
-                        : [];
-                    setInitialMetadataArr(metadataArr);
 
-                    setUpdatedStudy({
+                    setStudy({
                         name: study.name || '',
                         authors: study.authors || '',
                         publication: study.publication || '',
                         doi: study.doi || '',
                         description: study.description || '',
-                        metadata: metadataArr,
+                        metadata: study.metadata ? study.metadata : [],
                         analyses: study.analyses as AnalysisApiResponse[] | undefined,
                     });
                 })
@@ -98,63 +62,24 @@ const EditStudyPage = () => {
 
         if (params.studyId) {
             getStudy(params.studyId);
-            setSaveEnabled(false);
         }
-    }, [params.studyId, reload]);
+    }, [params.studyId]);
 
     const handleOnCancel = (event: React.MouseEvent) => {
         history.push(`/studies/${params.studyId}`);
     };
 
-    const handleOnSave = async (event: React.MouseEvent) => {
-        const metadata = arrayToMetadata(updatedStudy?.metadata);
-        try {
-            const token = await getAccessTokenSilently();
-            globalContext.handleToken(token);
-        } catch (exception) {
-            globalContext.showSnackbar('there was an error', SnackbarType.ERROR);
-            console.log(exception);
-        }
-
-        API.Services.StudiesService.studiesIdPut(params.studyId, {
-            name: updatedStudy.name,
-            description: updatedStudy.description,
-            authors: updatedStudy.authors,
-            publication: updatedStudy.publication,
-            doi: updatedStudy.doi,
-            metadata: metadata,
-            analyses: updatedStudy.analyses?.map((x) => ({
-                id: x.id,
-                name: x.name,
-                description: x.description,
-            })),
-        })
-            .then((res) => {
-                globalContext.showSnackbar('study successfully updated', SnackbarType.SUCCESS);
-                // trigger a reload by passing in a reference to an empty object
-                setReload({});
-            })
-            .catch((err: Error | AxiosError) => {
-                globalContext.showSnackbar('there was an error', SnackbarType.ERROR);
-                console.log(err.message);
-            });
-    };
-
-    const handleOnEdit = useCallback((arg: { key: string; value: string }) => {
-        setUpdatedStudy((prevState) => {
-            return {
-                ...prevState,
-                [arg.key]: arg.value,
-            };
-        });
-        setSaveEnabled(true);
+    const handleEditStudyDetails = useCallback((update: { key: string; value: string }) => {
+        setStudy((prevState) => ({
+            ...prevState,
+            [update.key]: update.value,
+        }));
     }, []);
 
     // idToUpdate: string, update: { key: string, value: string }
     const handleEditAnalysisDetails = useCallback(
         (idToUpdate: string | undefined, update: { key: string; value: string }) => {
-            setSaveEnabled(true);
-            setUpdatedStudy((prevState) => {
+            setStudy((prevState) => {
                 if (prevState.analyses === undefined) return { ...prevState };
 
                 // set new ref to array and object for react to detect
@@ -177,6 +102,13 @@ const EditStudyPage = () => {
         []
     );
 
+    const handleUpdateStudyMetadata = useCallback((updatedMetadata: any) => {
+        setStudy((prevState) => ({
+            ...prevState,
+            metadata: updatedMetadata,
+        }));
+    }, []);
+
     const handleEditAnalysisImages = useCallback(() => {}, []);
 
     // idToUpdate: string
@@ -186,72 +118,49 @@ const EditStudyPage = () => {
         <>
             <Box sx={EditStudyPageStyles.stickyButtonContainer}>
                 <Button
-                    onClick={handleOnSave}
-                    color="success"
-                    disabled={!saveEnabled}
-                    sx={{ ...EditStudyPageStyles.saveButton, ...EditStudyPageStyles.button }}
-                    variant="contained"
-                >
-                    Save Changes
-                </Button>
-                <Button
                     color="error"
                     onClick={handleOnCancel}
                     sx={EditStudyPageStyles.button}
                     variant="outlined"
                 >
-                    Cancel
+                    Return to Study View
                 </Button>
             </Box>
 
-            <Box sx={{ marginBottom: '15px', padding: '0 10px' }}>
-                {updatedStudy && (
-                    <Accordion elevation={4}>
-                        <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                            <Typography variant="h6">
-                                <b>Edit Study Details</b>
-                            </Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
+            {study && (
+                <>
+                    <Box sx={{ marginBottom: '15px', padding: '0 10px' }}>
+                        {study && (
                             <EditStudyDetails
-                                onEdit={handleOnEdit}
-                                name={updatedStudy.name}
-                                description={updatedStudy.description}
-                                authors={updatedStudy.authors}
-                                doi={updatedStudy.doi}
-                                publication={updatedStudy.publication}
-                            />
-                        </AccordionDetails>
-                    </Accordion>
-                )}
-            </Box>
-
-            <Box sx={{ marginBottom: '30px', padding: '0 10px' }}>
-                <Accordion elevation={4}>
-                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                        <Typography variant="h6">
-                            <b>Edit Study Metadata</b>
-                        </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        {updatedStudy && (
-                            <EditMetadata
-                                onMetadataEditChange={handleMetadataEditChange}
-                                metadata={initialMetadataArr}
+                                onEditStudyDetails={handleEditStudyDetails}
+                                studyId={params.studyId}
+                                name={study.name}
+                                description={study.description}
+                                authors={study.authors}
+                                doi={study.doi}
+                                publication={study.publication}
                             />
                         )}
-                    </AccordionDetails>
-                </Accordion>
-            </Box>
+                    </Box>
 
-            <Box sx={{ marginBottom: '15px', padding: '0 10px', marginLeft: '15px' }}>
-                <EditAnalyses
-                    onEditAnalysisDetails={handleEditAnalysisDetails}
-                    onEditAnalysisImages={handleEditAnalysisImages}
-                    onEditAnalysisPoints={handleEditAnalysisPoints}
-                    analyses={updatedStudy.analyses}
-                />
-            </Box>
+                    <Box sx={{ marginBottom: '15px', padding: '0 10px' }}>
+                        <EditStudyMetadata
+                            onUpdateStudyMetadata={handleUpdateStudyMetadata}
+                            metadata={study.metadata}
+                            studyId={params.studyId}
+                        />
+                    </Box>
+
+                    <Box sx={{ marginBottom: '15px', padding: '0 10px', marginLeft: '15px' }}>
+                        <EditAnalyses
+                            onEditAnalysisDetails={handleEditAnalysisDetails}
+                            onEditAnalysisImages={handleEditAnalysisImages}
+                            onEditAnalysisPoints={handleEditAnalysisPoints}
+                            analyses={study.analyses}
+                        />
+                    </Box>
+                </>
+            )}
         </>
     );
 };

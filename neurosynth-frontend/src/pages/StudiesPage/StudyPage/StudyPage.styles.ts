@@ -62,6 +62,17 @@ const StudyPageStyles: Style = {
             md: '1.25rem',
         },
     },
+    metadataContainer: {
+        maxHeight: {
+            xs: '200px',
+            md: '400px',
+        },
+        overflow: 'auto',
+        overflowX: 'hidden',
+    },
+    accordionSummary: {
+        '.MuiAccordionSummary-content': { margin: '0px' },
+    },
 };
 
 export default StudyPageStyles;

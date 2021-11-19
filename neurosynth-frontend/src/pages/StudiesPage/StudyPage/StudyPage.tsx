@@ -1,5 +1,17 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Button, Tooltip, Typography, Tab, Tabs, Box } from '@mui/material';
+import { ExpandMoreOutlined } from '@mui/icons-material';
+import {
+    Button,
+    Tooltip,
+    Typography,
+    Tab,
+    Tabs,
+    Box,
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
+    Divider,
+} from '@mui/material';
 import { AxiosError, AxiosResponse } from 'axios';
 import React, { useCallback, useState, useEffect, useContext, SyntheticEvent } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
@@ -16,7 +28,6 @@ import StudyPageStyles from './StudyPage.styles';
 
 const StudyPage = () => {
     const [study, setStudy] = useState<StudyApiResponse>();
-    const [tabIndex, setTabIndex] = useState(0);
     const [selectedAnalysis, setSelectedAnalysis] = useState<{
         analysisIndex: number;
         analysis: (Analysis & ReadOnly) | undefined;
@@ -62,7 +73,7 @@ const StudyPage = () => {
                 }
             })
             .catch((err) => {
-                console.log(err);
+                console.error(err);
             });
     }, []);
 
@@ -81,7 +92,7 @@ const StudyPage = () => {
             })
             .catch((err: Error | AxiosError) => {
                 context.showSnackbar('There was an error', SnackbarType.ERROR);
-                console.log(err.message);
+                console.error(err.message);
             });
     };
 
@@ -173,7 +184,7 @@ const StudyPage = () => {
                 </Tooltip>
             </Box>
             <Box>
-                <Typography sx={StudyPageStyles.spaceBelow} variant="h5">
+                <Typography sx={StudyPageStyles.spaceBelow} variant="h6">
                     <b>{study?.name}</b>
                 </Typography>
                 <Typography sx={StudyPageStyles.spaceBelow} variant="h6">
@@ -185,36 +196,40 @@ const StudyPage = () => {
                 </Box>
                 <TextExpansion text={study?.description || ''} sx={StudyPageStyles.spaceBelow} />
             </Box>
-
-            <Box
-                sx={{
-                    ...StudyPageStyles.spaceBelow,
-                    borderBottom: 1,
-                    color: 'lightgray',
-                }}
-            >
-                <Tabs
-                    value={tabIndex}
-                    onChange={(event: SyntheticEvent, newValue: number) => {
-                        setTabIndex(newValue);
-                    }}
-                >
-                    <Tab value={0} sx={StudyPageStyles.tab} label="Study Analyses" />
-                    <Tab value={1} sx={StudyPageStyles.tab} label="Study Metadata" />
-                </Tabs>
+            <Box sx={{ margin: '15px 0' }}>
+                <Accordion elevation={2}>
+                    <AccordionSummary
+                        sx={StudyPageStyles.accordionSummary}
+                        expandIcon={<ExpandMoreOutlined />}
+                    >
+                        <Typography variant="h6">
+                            <b>Metadata</b>
+                        </Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <Box sx={StudyPageStyles.metadataContainer}>
+                            {study && <DisplayValuesTable {...metadataForTable} />}
+                        </Box>
+                    </AccordionDetails>
+                </Accordion>
             </Box>
 
-            {tabIndex === 0 &&
-                (study?.analyses?.length === 0 ? (
+            <Box>
+                <Typography
+                    variant="h6"
+                    sx={{ marginLeft: '15px', fontWeight: 'bold', ...StudyPageStyles.spaceBelow }}
+                >
+                    Analyses
+                </Typography>
+                <Divider />
+                {study?.analyses?.length === 0 ? (
                     <Box component="span" sx={{ color: 'warning.dark' }}>
                         No analyses
                     </Box>
                 ) : (
-                    /**
-                     * The following CSS is applied to make sure that the tab height grows based on the height
-                     * of the analysis.
-                     * The tab height should expand and match the height if the analysis accordions are expanded
-                     */
+                    /** * The following CSS is applied to make sure that the tab height grows based on
+            the height * of the analysis. * The tab height should expand and match the height if the
+            analysis accordions are expanded */
                     <Box sx={{ display: 'flex', flexDirection: 'row' }}>
                         <Box sx={StudyPageStyles.matchingSibling}>
                             {/* apply flex basis 0 to analyses tabs to make sure it matches sibling */}
@@ -245,13 +260,8 @@ const StudyPage = () => {
                             <DisplayAnalysis {...selectedAnalysis.analysis} />
                         </Box>
                     </Box>
-                ))}
-
-            {tabIndex === 1 && (
-                <Box sx={StudyPageStyles.metadataContainer}>
-                    {study && <DisplayValuesTable {...metadataForTable} />}
-                </Box>
-            )}
+                )}
+            </Box>
         </>
     );
 };

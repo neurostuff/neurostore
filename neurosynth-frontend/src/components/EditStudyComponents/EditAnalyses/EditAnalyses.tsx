@@ -79,7 +79,7 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
                 <Typography variant="h6">
                     <b>Edit Analyses</b>
                 </Typography>
-                <Button onClick={handleCreateAnalysis} variant="outlined">
+                <Button sx={{ width: '200px' }} onClick={handleCreateAnalysis} variant="outlined">
                     Create new analysis
                 </Button>
             </Box>

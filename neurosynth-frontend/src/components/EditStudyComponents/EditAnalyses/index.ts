@@ -4,6 +4,10 @@ export interface IEditAnalysisDetailsFn {
     (idToUpdate: string, update: { key: string; value: string }): void;
 }
 
+export interface IDeleteAnalysisFn {
+    (idToDelete: string): void;
+}
+
 export interface IEditAnalyses {
     analyses: AnalysisApiResponse[] | undefined;
     onEditAnalysisPoints: (points: PointsApiResponse[]) => void;
@@ -13,15 +17,17 @@ export interface IEditAnalyses {
 
 export interface IEditAnalysis {
     analysis: AnalysisApiResponse | undefined;
-    onDeleteAnalysis: (idToDelete: string | undefined) => void;
+    onDeleteAnalysis: IDeleteAnalysisFn;
     onEditAnalysisDetails: IEditAnalysisDetailsFn;
     onEditAnalysisPoints: (points: PointsApiResponse[]) => void;
 }
 
 export interface IEditAnalysisDetails {
+    analysisId: string;
     name: string | undefined | null;
     description: string | undefined | null;
     onEditAnalysisDetails: (key: string, value: string) => void;
+    onDeleteAnalysis: IDeleteAnalysisFn;
 }
 
 export interface IEditAnalysisPoints {

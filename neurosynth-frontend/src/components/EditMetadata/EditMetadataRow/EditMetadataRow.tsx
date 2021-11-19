@@ -11,19 +11,44 @@ import { EPropertyType, IEditMetadataRowModel } from '..';
 import { Box } from '@mui/system';
 import ToggleType from './ToggleType/ToggleType';
 
-const propsAreEqual = (
-    prevProp: IEditMetadataRowModel,
-    nextProp: IEditMetadataRowModel
-): boolean => {
-    return (
-        prevProp.metadataRow.metadataKey === nextProp.metadataRow.metadataKey &&
-        prevProp.metadataRow.metadataValue === nextProp.metadataRow.metadataValue &&
-        prevProp.metadataValueType === nextProp.metadataValueType
-    );
-};
-
 const EditMetadataRow: React.FC<IEditMetadataRowModel> = React.memo((props) => {
+    const { onMetadataRowEdit, onMetadataRowDelete } = props;
     const [metadataRow, setMetadataRow] = useState(props.metadataRow);
+
+    const handleEditMetadataValue = useCallback(
+        (event: string | boolean | number) => {
+            const updatedState = { ...metadataRow };
+            updatedState.metadataValue = event;
+            onMetadataRowEdit(updatedState);
+        },
+        [onMetadataRowEdit, metadataRow]
+    );
+
+    const map = {
+        [EPropertyType.NUMBER]: (
+            <EditMetadataNumber
+                onEdit={handleEditMetadataValue}
+                value={metadataRow.metadataValue}
+            />
+        ),
+        [EPropertyType.BOOLEAN]: (
+            <EditMetadataBoolean
+                onEdit={handleEditMetadataValue}
+                value={metadataRow.metadataValue}
+            />
+        ),
+        [EPropertyType.STRING]: (
+            <EditMetadataString
+                onEdit={handleEditMetadataValue}
+                value={metadataRow.metadataValue}
+            />
+        ),
+        [EPropertyType.NONE]: (
+            <Box component="span" sx={{ color: 'warning.dark' }}>
+                null
+            </Box>
+        ),
+    };
 
     const handleToggle = useCallback(
         (newType: EPropertyType) => {
@@ -32,60 +57,18 @@ const EditMetadataRow: React.FC<IEditMetadataRowModel> = React.memo((props) => {
 
                 updatedItem.metadataValue = getStartValFromType(newType);
 
-                props.onMetadataRowEdit(updatedItem);
+                onMetadataRowEdit(updatedItem);
                 return updatedItem;
             });
         },
-        [props]
-    );
-
-    const handleEditMetadataValue = useCallback(
-        (event: string | boolean | number) => {
-            const updatedState = { ...metadataRow };
-            updatedState.metadataValue = event;
-            props.onMetadataRowEdit(updatedState);
-        },
-        [props, metadataRow]
+        [onMetadataRowEdit]
     );
 
     const handleDelete = (event: React.MouseEvent) => {
-        props.onMetadataRowDelete(metadataRow);
+        onMetadataRowDelete(metadataRow);
     };
 
-    let component: JSX.Element;
-    switch (props.metadataValueType) {
-        case EPropertyType.BOOLEAN:
-            component = (
-                <EditMetadataBoolean
-                    onEdit={handleEditMetadataValue}
-                    value={metadataRow.metadataValue}
-                />
-            );
-            break;
-        case EPropertyType.STRING:
-            component = (
-                <EditMetadataString
-                    onEdit={handleEditMetadataValue}
-                    value={metadataRow.metadataValue}
-                />
-            );
-            break;
-        case EPropertyType.NUMBER:
-            component = (
-                <EditMetadataNumber
-                    onEdit={handleEditMetadataValue}
-                    value={metadataRow.metadataValue}
-                />
-            );
-            break;
-        default:
-            component = (
-                <Box component="span" sx={{ color: 'warning.dark' }}>
-                    null
-                </Box>
-            );
-            break;
-    }
+    const component: JSX.Element = map[props.metadataValueType];
 
     return (
         <>
@@ -119,6 +102,6 @@ const EditMetadataRow: React.FC<IEditMetadataRowModel> = React.memo((props) => {
             </Box>
         </>
     );
-}, propsAreEqual);
+});
 
 export default EditMetadataRow;

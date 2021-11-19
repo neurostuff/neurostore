@@ -1,4 +1,4 @@
-import { Tabs, Tab, Box, Button } from '@mui/material';
+import { Tabs, Tab, Box } from '@mui/material';
 import { SyntheticEvent, useState } from 'react';
 import { IEditAnalysis } from '..';
 import EditAnalysisDetails from './EditAnalysisDetails/EditAnalysisDetails';
@@ -54,20 +54,12 @@ const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
                         {editTab === 0 && (
                             <>
                                 <EditAnalysisDetails
+                                    analysisId={props.analysis.id || ''}
                                     name={props.analysis.name}
                                     description={props.analysis.description}
                                     onEditAnalysisDetails={handleEditAnalysisDetails}
+                                    onDeleteAnalysis={props.onDeleteAnalysis}
                                 />
-                                <Box sx={{ display: 'flex', justifyContent: 'end' }}>
-                                    <Button
-                                        sx={{ marginBottom: '15px' }}
-                                        color="error"
-                                        variant="outlined"
-                                        onClick={() => props.onDeleteAnalysis(props.analysis?.id)}
-                                    >
-                                        Delete this analysis
-                                    </Button>
-                                </Box>
                             </>
                         )}
                         {editTab === 1 && (

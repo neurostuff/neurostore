@@ -22,7 +22,7 @@ const Navbar = () => {
             const accessToken = await getAccessTokenSilently();
             context?.handleToken(accessToken);
         } catch (exception) {
-            console.log(exception);
+            console.error(exception);
         }
     };
 
