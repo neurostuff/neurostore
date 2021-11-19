@@ -1,12 +1,12 @@
 import { Box, Button, TextField } from '@mui/material';
 import React, { useCallback, useState } from 'react';
 import { useEffect } from 'react';
-import { IAddMetadataRowModel, EPropertyType } from '..';
-import { DisplayMetadataTableRowModel, ToggleType } from '../..';
+import { IAddMetadataRowModel, EPropertyType, IMetadataRowModel } from '..';
 import EditMetadataRowStyles from './EditMetadataRowStyles';
 import EditMetadataBoolean from './EditMetadataValue/EditMetadataBoolean';
 import EditMetadataNumber from './EditMetadataValue/EditMetadataNumber';
 import EditMetadataString from './EditMetadataValue/EditMetadataString';
+import ToggleType from './ToggleType/ToggleType';
 
 export const getStartValFromType = (type: EPropertyType): boolean | number | string | null => {
     switch (type) {
@@ -29,7 +29,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
         </Box>
     );
     const [isValid, setIsValid] = useState(true);
-    const [metadataRow, setMetadataRow] = useState<DisplayMetadataTableRowModel>({
+    const [metadataRow, setMetadataRow] = useState<IMetadataRowModel>({
         metadataKey: '',
         metadataValue: '',
     });

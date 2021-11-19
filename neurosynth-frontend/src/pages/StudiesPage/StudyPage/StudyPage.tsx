@@ -1,25 +1,30 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { ExpandMoreOutlined } from '@mui/icons-material';
-import {
-    Accordion,
-    AccordionDetails,
-    AccordionSummary,
-    Button,
-    Paper,
-    Tooltip,
-    Typography,
-} from '@mui/material';
-import { Box } from '@mui/system';
+import { Button, Tooltip, Typography, Tab, Tabs, Box } from '@mui/material';
 import { AxiosError, AxiosResponse } from 'axios';
-import { useCallback, useState, useEffect, useContext } from 'react';
+import React, { useCallback, useState, useEffect, useContext, SyntheticEvent } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import { DisplayMetadataTable } from '../../../components';
+import {
+    DisplayValuesTable,
+    DisplayValuesTableModel,
+    TextExpansion,
+    DisplayAnalysis,
+} from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
+import { Analysis, ReadOnly } from '../../../gen/api';
 import API, { StudyApiResponse } from '../../../utils/api';
 import StudyPageStyles from './StudyPageStyles';
 
 const StudyPage = () => {
     const [study, setStudy] = useState<StudyApiResponse>();
+    const [tabIndex, setTabIndex] = useState(0);
+    const [selectedAnalysis, setSelectedAnalysis] = useState<{
+        analysisIndex: number;
+        analysis: (Analysis & ReadOnly) | undefined;
+    }>({
+        analysisIndex: 0,
+        analysis: undefined,
+    });
+
     const [editDisabled, setEditDisabled] = useState(true);
     const context = useContext(GlobalContext);
     const history = useHistory();
@@ -27,10 +32,18 @@ const StudyPage = () => {
     const params: { studyId: string } = useParams();
 
     const getStudy = useCallback((id: string) => {
-        API.Services.StudiesService.studiesIdGet(id)
+        API.Services.StudiesService.studiesIdGet(id, true)
             .then((res) => {
-                const resUpdated = res as AxiosResponse<StudyApiResponse & { user: string }>;
+                const resUpdated = res as AxiosResponse<StudyApiResponse>;
                 setStudy(resUpdated.data);
+
+                // check if the analyses array exists and is non zero in the response
+                if (!!resUpdated?.data?.analyses && resUpdated.data.analyses.length > 0) {
+                    setSelectedAnalysis({
+                        analysisIndex: 0,
+                        analysis: resUpdated.data.analyses[0] as Analysis & ReadOnly,
+                    });
+                }
             })
             .catch((err) => {
                 console.log(err);
@@ -48,7 +61,7 @@ const StudyPage = () => {
         API.Services.StudiesService.studiesPost(undefined, params.studyId, {})
             .then((res) => {
                 context.showSnackbar('Study successfully cloned', SnackbarType.SUCCESS);
-                history.push(`/studies`);
+                history.push(`/studies/${(res.data as any).id}`);
             })
             .catch((err: Error | AxiosError) => {
                 context.showSnackbar('There was an error', SnackbarType.ERROR);
@@ -58,6 +71,13 @@ const StudyPage = () => {
 
     const handleEditStudy = (event: React.MouseEvent) => {
         history.push(`/studies/edit/${params.studyId}`);
+    };
+
+    const handleSelectAnalysis = (event: SyntheticEvent, newVal: number) => {
+        setSelectedAnalysis({
+            analysisIndex: newVal,
+            analysis: (study?.analyses as (Analysis & ReadOnly)[])[newVal],
+        });
     };
 
     useEffect(() => {
@@ -72,6 +92,25 @@ const StudyPage = () => {
             !isAuthenticated || !userIDAndStudyIDExist || user?.sub !== study?.user;
         setEditDisabled(shouldDisableEdit);
     }, [isAuthenticated, user?.sub, study?.user]);
+
+    const metadataForTable: DisplayValuesTableModel = {
+        columnHeaders: ['Name', 'Value'],
+        rowData: Object.entries(study?.metadata || {}).map(([key, value]) => ({
+            uniqueKey: key,
+            columnValues: [
+                {
+                    value: key,
+                    colorByType: false,
+                    bold: true,
+                },
+                {
+                    value: value,
+                    colorByType: true,
+                    bold: true,
+                },
+            ],
+        })),
+    };
 
     return (
         <>
@@ -115,236 +154,84 @@ const StudyPage = () => {
                     <Typography variant="h6">{study?.publication}</Typography>
                     {study?.doi && <Typography variant="h6">DOI: {study?.doi}</Typography>}
                 </Box>
-                <Typography sx={StudyPageStyles.spaceBelow} variant="subtitle1">
-                    {study?.description}
-                </Typography>
+                <TextExpansion
+                    text={study?.description || ''}
+                    sx={StudyPageStyles.spaceBelow}
+                ></TextExpansion>
             </Box>
 
-            <Box sx={StudyPageStyles.spaceBelow}>
-                <Typography variant="h6">
-                    <b>Metadata</b>
-                </Typography>
-                <Box>
-                    <Accordion elevation={4}>
-                        <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                            <Box component="span">Click to see study metadata</Box>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                            <Box sx={StudyPageStyles.metadataContainer}>
-                                {study && <DisplayMetadataTable metadata={study.metadata} />}
-                            </Box>
-                        </AccordionDetails>
-                    </Accordion>
-                </Box>
+            <Box
+                sx={{
+                    ...StudyPageStyles.spaceBelow,
+                    borderBottom: 1,
+                    color: 'lightgray',
+                }}
+            >
+                <Tabs
+                    value={tabIndex}
+                    onChange={(event: SyntheticEvent, newValue: number) => {
+                        setTabIndex(newValue);
+                    }}
+                >
+                    <Tab sx={StudyPageStyles.tab} label="Study Analyses" />
+                    <Tab sx={StudyPageStyles.tab} label="Study Metadata" />
+                </Tabs>
             </Box>
 
-            <Box sx={StudyPageStyles.spaceBelow}>
-                <Typography variant="h6">
-                    <b>Analyses</b>
-                </Typography>
-                <Box sx={{ width: '100%', display: 'flex' }}>
-                    <div style={{ width: '45%' }}>
-                        <Paper
-                            sx={StudyPageStyles.spaceBelow}
-                            style={{ padding: '30px', backgroundColor: '#0077b6' }}
-                        >
-                            <Typography style={{ color: 'white' }}>Hello</Typography>
-                            <Box sx={StudyPageStyles.spaceBelow}>
-                                <Accordion elevation={1}>
-                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                                        Coordinates
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <Box sx={StudyPageStyles.metadataContainer}>
-                                            {study && (
-                                                <DisplayMetadataTable metadata={study.metadata} />
-                                            )}
-                                        </Box>
-                                    </AccordionDetails>
-                                </Accordion>
-                            </Box>
-
-                            <div>
-                                <Accordion elevation={1}>
-                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                                        Analysis Metadata
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <Box sx={StudyPageStyles.metadataContainer}>
-                                            {study && (
-                                                <DisplayMetadataTable metadata={study.metadata} />
-                                            )}
-                                        </Box>
-                                    </AccordionDetails>
-                                </Accordion>
-                            </div>
-                        </Paper>
-
-                        <Paper
-                            sx={StudyPageStyles.spaceBelow}
-                            style={{ padding: '30px', backgroundColor: '#0077b6' }}
-                        >
-                            <Typography style={{ color: 'white' }}>Hello</Typography>
-                            <Box sx={StudyPageStyles.spaceBelow}>
-                                <Accordion elevation={1}>
-                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                                        Coordinates
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <Box sx={StudyPageStyles.metadataContainer}>
-                                            {study && (
-                                                <DisplayMetadataTable metadata={study.metadata} />
-                                            )}
-                                        </Box>
-                                    </AccordionDetails>
-                                </Accordion>
-                            </Box>
-
-                            <div>
-                                <Accordion elevation={1}>
-                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                                        Analysis Metadata
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <Box sx={StudyPageStyles.metadataContainer}>
-                                            {study && (
-                                                <DisplayMetadataTable metadata={study.metadata} />
-                                            )}
-                                        </Box>
-                                    </AccordionDetails>
-                                </Accordion>
-                            </div>
-                        </Paper>
-
-                        <Paper
-                            sx={StudyPageStyles.spaceBelow}
-                            style={{ padding: '30px', backgroundColor: '#0077b6' }}
-                        >
-                            <Typography style={{ color: 'white' }}>Hello</Typography>
-                            <Box sx={StudyPageStyles.spaceBelow}>
-                                <Accordion elevation={1}>
-                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                                        Coordinates
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <Box sx={StudyPageStyles.metadataContainer}>
-                                            {study && (
-                                                <DisplayMetadataTable metadata={study.metadata} />
-                                            )}
-                                        </Box>
-                                    </AccordionDetails>
-                                </Accordion>
-                            </Box>
-
-                            <div>
-                                <Accordion elevation={1}>
-                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                                        Analysis Metadata
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <Box sx={StudyPageStyles.metadataContainer}>
-                                            {study && (
-                                                <DisplayMetadataTable metadata={study.metadata} />
-                                            )}
-                                        </Box>
-                                    </AccordionDetails>
-                                </Accordion>
-                            </div>
-                        </Paper>
-
-                        <Paper
-                            sx={StudyPageStyles.spaceBelow}
-                            style={{ padding: '30px', backgroundColor: '#0077b6' }}
-                        >
-                            <Typography style={{ color: 'white' }}>Hello</Typography>
-                            <Box sx={StudyPageStyles.spaceBelow}>
-                                <Accordion elevation={1}>
-                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                                        Coordinates
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <Box sx={StudyPageStyles.metadataContainer}>
-                                            {study && (
-                                                <DisplayMetadataTable metadata={study.metadata} />
-                                            )}
-                                        </Box>
-                                    </AccordionDetails>
-                                </Accordion>
-                            </Box>
-
-                            <div>
-                                <Accordion elevation={1}>
-                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                                        Analysis Metadata
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <Box sx={StudyPageStyles.metadataContainer}>
-                                            {study && (
-                                                <DisplayMetadataTable metadata={study.metadata} />
-                                            )}
-                                        </Box>
-                                    </AccordionDetails>
-                                </Accordion>
-                            </div>
-                        </Paper>
-
-                        <Paper
-                            sx={StudyPageStyles.spaceBelow}
-                            style={{ padding: '30px', backgroundColor: '#0077b6' }}
-                        >
-                            <Typography style={{ color: 'white' }}>Hello</Typography>
-                            <Box sx={StudyPageStyles.spaceBelow}>
-                                <Accordion elevation={1}>
-                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                                        Coordinates
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <Box sx={StudyPageStyles.metadataContainer}>
-                                            {study && (
-                                                <DisplayMetadataTable metadata={study.metadata} />
-                                            )}
-                                        </Box>
-                                    </AccordionDetails>
-                                </Accordion>
-                            </Box>
-
-                            <div>
-                                <Accordion elevation={1}>
-                                    <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                                        Analysis Metadata
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <Box sx={StudyPageStyles.metadataContainer}>
-                                            {study && (
-                                                <DisplayMetadataTable metadata={study.metadata} />
-                                            )}
-                                        </Box>
-                                    </AccordionDetails>
-                                </Accordion>
-                            </div>
-                        </Paper>
-                    </div>
-                    <div
-                        style={{
-                            width: '55%',
-                        }}
-                    >
-                        <div
-                            style={{
-                                marginLeft: 'auto',
-                                position: 'sticky',
-                                top: '47px',
-                                width: '550px',
-                                height: '450px',
-                                backgroundColor: 'black',
-                                color: 'white',
+            {tabIndex === 0 &&
+                (study?.analyses?.length === 0 ? (
+                    <Box component="span" sx={{ color: 'warning.dark' }}>
+                        No analyses
+                    </Box>
+                ) : (
+                    /**
+                     * The following CSS is applied to make sure that the tab height grows based on the height
+                     * of the analysis.
+                     * The tab height should expand and match the height if the analysis accordions are expanded
+                     */
+                    <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                        <Box sx={StudyPageStyles.matchingSibling}>
+                            {/* apply flex basis 0 to analyses tabs to make sure it matches sibling */}
+                            <Tabs
+                                sx={StudyPageStyles.analysesTabs}
+                                scrollButtons
+                                TabScrollButtonProps={{
+                                    sx: {
+                                        color: 'primary.main',
+                                    },
+                                }}
+                                value={selectedAnalysis.analysisIndex}
+                                onChange={handleSelectAnalysis}
+                                orientation="vertical"
+                                variant="scrollable"
+                            >
+                                {/* manually override analysis type as we know study will be nested and analysis will not be a string */}
+                                {(study?.analyses as (Analysis & ReadOnly)[])?.map((analysis) => (
+                                    <Tab
+                                        sx={StudyPageStyles.analysisTab}
+                                        key={analysis.id}
+                                        label={analysis.name}
+                                    />
+                                ))}
+                            </Tabs>
+                        </Box>
+                        <Box
+                            sx={{
+                                ...StudyPageStyles.heightDefiningSibling,
+                                flexBasis: 0,
+                                flexGrow: 1,
                             }}
                         >
-                            Papaya Visualizer placeholder
-                        </div>
-                    </div>
+                            <DisplayAnalysis {...selectedAnalysis.analysis} />
+                        </Box>
+                    </Box>
+                ))}
+
+            {tabIndex === 1 && (
+                <Box sx={StudyPageStyles.metadataContainer}>
+                    {study && <DisplayValuesTable {...metadataForTable} />}
                 </Box>
-            </Box>
+            )}
         </>
     );
 };

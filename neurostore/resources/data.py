@@ -53,6 +53,11 @@ def camel_case_split(str):
     return re.findall(r'[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))', str)
 
 
+# https://www.geeksforgeeks.org/python-split-camelcase-string-to-individual-strings/
+def camel_case_split(str):
+    return re.findall(r'[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))', str)
+
+
 def get_current_user():
     user = connexion.context.get('user')
     if user:
@@ -469,6 +474,11 @@ class AnalysisListView(ListView):
 @view_maker
 class ConditionListView(ListView):
     _search_fields = ("name", "description")
+
+
+@view_maker
+class ImageListView(ListView):
+    _search_fields = ("filename", "space", "value_type", "analysis_name")
 
 
 @view_maker

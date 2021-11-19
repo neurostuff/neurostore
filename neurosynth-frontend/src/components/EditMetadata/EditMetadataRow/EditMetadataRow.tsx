@@ -7,9 +7,9 @@ import { useState } from 'react';
 import { Button } from '@mui/material';
 import { useCallback } from 'react';
 import { getStartValFromType } from './AddMetadataRow';
-import { IEditMetadataRowModel, EPropertyType } from '..';
-import { ToggleType } from '../..';
+import { EPropertyType, IEditMetadataRowModel } from '..';
 import { Box } from '@mui/system';
+import ToggleType from './ToggleType/ToggleType';
 
 const propsAreEqual = (
     prevProp: IEditMetadataRowModel,

@@ -1,7 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { EPropertyType } from '..';
-import { DisplayMetadataTableRowModel } from '../..';
+import { EPropertyType, IMetadataRowModel } from '..';
 import { MockThemeProvider } from '../../../testing/helpers';
 import AddMetadataRow, { getStartValFromType } from './AddMetadataRow';
 
@@ -44,7 +43,7 @@ describe('AddMetadataRow Component', () => {
     });
 
     it('should add the correct string type', () => {
-        const mockArg: DisplayMetadataTableRowModel = {
+        const mockArg: IMetadataRowModel = {
             metadataKey: 'test key',
             metadataValue: 'test val',
         };
@@ -62,7 +61,7 @@ describe('AddMetadataRow Component', () => {
     });
 
     it('should add the correct boolean type', () => {
-        const mockArg: DisplayMetadataTableRowModel = {
+        const mockArg: IMetadataRowModel = {
             metadataKey: 'test key',
             metadataValue: true,
         };
@@ -85,7 +84,7 @@ describe('AddMetadataRow Component', () => {
     });
 
     it('should add the correct number type', () => {
-        const mockArg: DisplayMetadataTableRowModel = {
+        const mockArg: IMetadataRowModel = {
             metadataKey: 'test key',
             metadataValue: 12345,
         };
@@ -108,7 +107,7 @@ describe('AddMetadataRow Component', () => {
     });
 
     it('should add the correct none type', () => {
-        const mockArg: DisplayMetadataTableRowModel = {
+        const mockArg: IMetadataRowModel = {
             metadataKey: 'test key',
             metadataValue: null,
         };

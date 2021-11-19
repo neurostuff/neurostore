@@ -86,7 +86,7 @@ const GlobalContextProvider = (props: any) => {
                 open={snackbarState.openSnackbar}
                 autoHideDuration={6000}
                 onClose={handleSnackbarClose}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
                 <MuiAlert
                     action={action}
