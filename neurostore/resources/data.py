@@ -46,6 +46,7 @@ __all__ = [
     "ConditionListView",
 ]
 
+PARENT_RESOURCES = {'study': Study, 'analysis': Analysis, 'dataset': Dataset}
 
 # https://www.geeksforgeeks.org/python-split-camelcase-string-to-individual-strings/
 def camel_case_split(str):
@@ -113,6 +114,9 @@ class BaseView(MethodView):
 
         # Update all non-nested attributes
         for k, v in data.items():
+            if k in PARENT_RESOURCES:
+                # DO NOT WANT PEOPLE TO BE ABLE TO ADD ANALYSES TO STUDIES UNLESS THEY OWN THE STUDY
+                v = PARENT_RESOURCES[k].query.filter_by(id=v).first()
             if k not in cls._nested and k not in ["id", "user"]:
                 setattr(record, k, v)
 
@@ -453,6 +457,12 @@ class StudyListView(ListView):
 
 @view_maker
 class AnalysisListView(ListView):
+    _nested = {
+        "images": "ImageView",
+        "points": "PointView",
+        "analysis_conditions": "AnalysisConditionResource"
+    }
+
     _search_fields = ("name", "description")
 
 

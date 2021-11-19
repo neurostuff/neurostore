@@ -1,6 +1,6 @@
 from ..request_utils import decode_json
 from ...models import Analysis
-
+from ...schemas import AnalysisSchema
 
 def test_get_analyses(auth_client, ingest_neurosynth):
     # List of analyses
@@ -34,3 +34,13 @@ def test_get_analyses(auth_client, ingest_neurosynth):
     assert decode_json(resp) == analysis
 
     assert decode_json(resp)["id"] == a_id
+
+
+def test_post_analyses(auth_client, ingest_neurosynth):
+    analysis = Analysis.query.first()
+    payload = AnalysisSchema().dump(analysis)
+    for k in ["user", "id", "created_at"]:
+        payload.pop(k)
+    resp = auth_client.post("/api/analyses/", data=payload)
+
+    assert resp.status_code == 200

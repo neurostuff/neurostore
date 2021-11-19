@@ -145,6 +145,7 @@ class AnalysisSchema(BaseDataSchema):
     conditions = StringOrNested(ConditionSchema, many=True, dump_only=True)
     weights = fields.List(fields.Float(), dump_only=True)
 
+    study_ = fields.String(load_only=True, attribute="study", data_key="study")
     analysis_conditions = fields.Nested(AnalysisConditionSchema, many=True, load_only=True)
     images = StringOrNested(ImageSchema, many=True)
     points = StringOrNested(PointSchema, many=True)
