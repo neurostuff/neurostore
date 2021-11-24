@@ -1,10 +1,3 @@
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { MockThemeProvider } from '../../../../testing/helpers';
-import EditMetadataBoolean from './EditMetadataBoolean';
-import EditMetadataNumber from './EditMetadataNumber';
-import EditMetadataString from './EditMetadataString';
-
 describe('EditMetadataValue Component', () => {
     const onEditMock = jest.fn();
     afterEach(() => {

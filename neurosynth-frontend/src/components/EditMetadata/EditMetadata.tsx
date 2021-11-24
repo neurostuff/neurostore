@@ -1,8 +1,8 @@
-import React, { useCallback, useState } from 'react';
+import React from 'react';
 import EditMetadataStyles from './EditMetadata.styles';
 import EditMetadataRow from './EditMetadataRow/EditMetadataRow';
 import AddMetadataRow from './EditMetadataRow/AddMetadataRow';
-import { IMetadataRowModel, EPropertyType, IEditMetadataModel } from '.';
+import { EPropertyType, IEditMetadataModel } from '.';
 import { Box, Divider } from '@mui/material';
 
 export const getType = (value: any): EPropertyType => {
@@ -19,92 +19,26 @@ export const getType = (value: any): EPropertyType => {
 };
 
 const EditMetadata: React.FC<IEditMetadataModel> = React.memo((props) => {
-    const { metadata, onMetadataEditChange } = props;
-    const [metadataArr, setMetadataArr] = useState<IMetadataRowModel[]>(metadata);
-
-    /**
-     * This function will update the local metadataArr state and also send an
-     * update to the parent. The parent update will not cause an additional rerender
-     * as we do not watch for prop changes
-     */
-    const handleMetadataRowEdit = useCallback(
-        (updatedRow: IMetadataRowModel) => {
-            setMetadataArr((prevState) => {
-                const updatedMetadata = [...prevState];
-                const valueToEditFound = updatedMetadata.find(
-                    (x) => x.metadataKey === updatedRow.metadataKey
-                );
-                if (valueToEditFound) {
-                    valueToEditFound.metadataValue = updatedRow.metadataValue;
-                }
-                onMetadataEditChange(updatedMetadata);
-
-                return prevState;
-            });
-        },
-        [onMetadataEditChange]
-    );
-
-    /**
-     * This function will update the local metadataArr state and also send an
-     * update to the parent. The parent update will not cause an additional rerender
-     * as we do not watch for prop changes
-     */
-    const handleMetadataRowDelete = useCallback(
-        (updatedRow: IMetadataRowModel) => {
-            setMetadataArr((prevState) => {
-                const updatedMetadata = prevState.filter(
-                    (element) => element.metadataKey !== updatedRow.metadataKey
-                );
-                onMetadataEditChange(updatedMetadata);
-                return updatedMetadata;
-            });
-        },
-        [onMetadataEditChange]
-    );
-
-    /**
-     * This function will update the local metadataArr state and also send an
-     * update to the parent. The parent update will not cause an additional rerender
-     * as we do not watch for prop changes
-     */
-    // return true if the metadata row was added successfully, and false otherwise
-    const handleMetadataRowAdd = useCallback(
-        (row: IMetadataRowModel): boolean => {
-            const keyExists = !!metadataArr.find((item) => item.metadataKey === row.metadataKey);
-            if (keyExists) {
-                return false;
-            } else {
-                setMetadataArr((prevState) => {
-                    const updatedState = [...prevState];
-                    updatedState.unshift({ ...row });
-                    onMetadataEditChange(updatedState);
-                    return updatedState;
-                });
-                return true;
-            }
-        },
-        [onMetadataEditChange, metadataArr]
-    );
+    const { metadata, onMetadataRowEdit, onMetadataRowDelete, onMetadataRowAdd } = props;
 
     return (
         <>
             <Box sx={{ ...EditMetadataStyles.table, marginTop: '7px' }}>
-                <AddMetadataRow onAddMetadataRow={handleMetadataRowAdd} />
+                <AddMetadataRow onAddMetadataRow={onMetadataRowAdd} />
             </Box>
             <Divider sx={EditMetadataStyles.hr} />
-            {metadataArr.length === 0 && (
+            {metadata.length === 0 && (
                 <Box component="div" sx={EditMetadataStyles.noMetadataMessage}>
                     No Metadata
                 </Box>
             )}
             <Box sx={EditMetadataStyles.table}>
-                {metadataArr.map((metadataRow) => (
+                {metadata.map((metadataRow) => (
                     <EditMetadataRow
                         key={metadataRow.metadataKey}
                         metadataValueType={getType(metadataRow.metadataValue)}
-                        onMetadataRowEdit={handleMetadataRowEdit}
-                        onMetadataRowDelete={handleMetadataRowDelete}
+                        onMetadataRowEdit={onMetadataRowEdit}
+                        onMetadataRowDelete={onMetadataRowDelete}
                         metadataRow={metadataRow}
                     />
                 ))}

@@ -1,4 +1,4 @@
-import { Typography, Box, Tabs, Tab, Button, TabProps } from '@mui/material';
+import { Typography, Box, Tabs, Tab, Button, TabProps, Divider } from '@mui/material';
 import React, { useEffect, useState, SyntheticEvent } from 'react';
 import { IEditAnalyses } from '.';
 import API, { AnalysisApiResponse } from '../../../utils/api';
@@ -56,30 +56,39 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
     }, [props]);
 
     const handleCreateAnalysis = (event: React.MouseEvent) => {
-        API.Services.AnalysesService.analysesPost().then(
-            (res) => {
-                console.log(res);
-            },
-            (err) => {
-                console.error(err);
-            }
-        );
-        alert('creating analysis WIP');
+        alert('This has not been implemented yet. Please check back later');
+        // API.Services.AnalysesService.analysesPost({
+        //     name: 'some new name',
+        // }).then(
+        //     (res) => {
+        //         console.log(res);
+        //     },
+        //     (err) => {
+        //         console.error(err);
+        //     }
+        // );
     };
 
     const handleDeleteAnalysis = (idToDelete: string | undefined) => {
-        alert('delete this analysis: ' + idToDelete);
+        alert('This has not been implemented yet. Please check back later.');
     };
 
     const hasAnalyses = !!props.analyses && props.analyses.length > 0;
 
     return (
         <>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-end',
+                    marginBottom: '15px',
+                }}
+            >
                 <Typography variant="h6">
                     <b>Edit Analyses</b>
                 </Typography>
-                <Button sx={{ width: '200px' }} onClick={handleCreateAnalysis} variant="outlined">
+                <Button sx={{ width: '200px' }} onClick={handleCreateAnalysis} variant="contained">
                     Create new analysis
                 </Button>
             </Box>
@@ -91,51 +100,56 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
             )}
 
             {hasAnalyses && (
-                <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-                    <Box sx={EditAnalysesStyles.matchingSibling}>
-                        <Tabs
-                            scrollButtons
-                            sx={EditAnalysesStyles.analysesTabs}
-                            value={selectedAnalysis.analysisIndex}
-                            TabScrollButtonProps={{
-                                sx: {
-                                    color: 'primary.main',
-                                },
+                <>
+                    <Divider />
+                    <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                        <Box sx={EditAnalysesStyles.matchingSibling}>
+                            <Tabs
+                                scrollButtons
+                                sx={EditAnalysesStyles.analysesTabs}
+                                value={selectedAnalysis.analysisIndex}
+                                TabScrollButtonProps={{
+                                    sx: {
+                                        color: 'primary.main',
+                                    },
+                                }}
+                                onChange={(event: SyntheticEvent, newVal: number) => {
+                                    setSelectedAnalysis({
+                                        analysis: (props.analyses as AnalysisApiResponse[])[newVal],
+                                        analysisIndex: newVal,
+                                    });
+                                }}
+                                orientation="vertical"
+                                variant="scrollable"
+                            >
+                                {(props.analyses as AnalysisApiResponse[]).map(
+                                    (analysis, index) => {
+                                        return (
+                                            <MemoizedTab
+                                                key={analysis.id}
+                                                value={index}
+                                                label={analysis.name}
+                                            />
+                                        );
+                                    }
+                                )}
+                            </Tabs>
+                        </Box>
+                        <Box
+                            sx={{
+                                ...EditAnalysesStyles.analysisContainer,
+                                ...EditAnalysesStyles.heightDefiningSibling,
                             }}
-                            onChange={(event: SyntheticEvent, newVal: number) => {
-                                setSelectedAnalysis({
-                                    analysis: (props.analyses as AnalysisApiResponse[])[newVal],
-                                    analysisIndex: newVal,
-                                });
-                            }}
-                            orientation="vertical"
-                            variant="scrollable"
                         >
-                            {(props.analyses as AnalysisApiResponse[]).map((analysis, index) => {
-                                return (
-                                    <MemoizedTab
-                                        key={analysis.id}
-                                        value={index}
-                                        label={analysis.name}
-                                    />
-                                );
-                            })}
-                        </Tabs>
+                            <EditAnalysis
+                                analysis={selectedAnalysis.analysis}
+                                onEditAnalysisPoints={props.onEditAnalysisPoints}
+                                onEditAnalysisDetails={props.onEditAnalysisDetails}
+                                onDeleteAnalysis={handleDeleteAnalysis}
+                            />
+                        </Box>
                     </Box>
-                    <Box
-                        sx={{
-                            ...EditAnalysesStyles.analysisContainer,
-                            ...EditAnalysesStyles.heightDefiningSibling,
-                        }}
-                    >
-                        <EditAnalysis
-                            analysis={selectedAnalysis.analysis}
-                            onEditAnalysisPoints={props.onEditAnalysisPoints}
-                            onEditAnalysisDetails={props.onEditAnalysisDetails}
-                            onDeleteAnalysis={handleDeleteAnalysis}
-                        />
-                    </Box>
-                </Box>
+                </>
             )}
         </>
     );

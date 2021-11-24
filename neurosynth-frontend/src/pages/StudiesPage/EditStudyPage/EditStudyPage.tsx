@@ -18,15 +18,7 @@ interface IStudyEdit {
 
 const EditStudyPage = () => {
     // study and metadata edits are updated and stored in this state
-    const [study, setStudy] = useState<IStudyEdit>({
-        name: '',
-        authors: '',
-        publication: '',
-        doi: '',
-        description: '',
-        metadata: undefined,
-        analyses: undefined,
-    });
+    const [study, setStudy] = useState<IStudyEdit | undefined>(undefined);
 
     // initial metadata received from the study is set in this state. Separate in order to avoid constant re renders
     const history = useHistory();
@@ -34,6 +26,8 @@ const EditStudyPage = () => {
 
     const handleMetadataEditChange = useCallback((metadata: IMetadataRowModel[]) => {
         setStudy((prevState) => {
+            if (!prevState) return undefined;
+
             return {
                 ...prevState,
                 metadata: metadata,
@@ -45,16 +39,16 @@ const EditStudyPage = () => {
         const getStudy = (id: string) => {
             API.Services.StudiesService.studiesIdGet(id, true)
                 .then((res) => {
-                    const study = res.data;
+                    const studyRes = res.data;
 
                     setStudy({
-                        name: study.name || '',
-                        authors: study.authors || '',
-                        publication: study.publication || '',
-                        doi: study.doi || '',
-                        description: study.description || '',
-                        metadata: study.metadata ? study.metadata : [],
-                        analyses: study.analyses as AnalysisApiResponse[] | undefined,
+                        name: studyRes.name || '',
+                        authors: studyRes.authors || '',
+                        publication: studyRes.publication || '',
+                        doi: studyRes.doi || '',
+                        description: studyRes.description || '',
+                        metadata: studyRes.metadata ? studyRes.metadata : [],
+                        analyses: studyRes.analyses as AnalysisApiResponse[] | undefined,
                     });
                 })
                 .catch(() => {});
@@ -69,18 +63,23 @@ const EditStudyPage = () => {
         history.push(`/studies/${params.studyId}`);
     };
 
-    const handleEditStudyDetails = useCallback((update: { key: string; value: string }) => {
-        setStudy((prevState) => ({
-            ...prevState,
-            [update.key]: update.value,
-        }));
+    const handleEditStudyDetails = useCallback((update: { [key: string]: string }) => {
+        setStudy((prevState) => {
+            if (!prevState) return undefined;
+
+            return {
+                ...prevState,
+                ...update,
+            };
+        });
     }, []);
 
     // idToUpdate: string, update: { key: string, value: string }
     const handleEditAnalysisDetails = useCallback(
-        (idToUpdate: string | undefined, update: { key: string; value: string }) => {
+        (idToUpdate: string | undefined, update: { [key: string]: any }) => {
             setStudy((prevState) => {
-                if (prevState.analyses === undefined) return { ...prevState };
+                if (!prevState) return undefined;
+                else if (prevState.analyses === undefined) return { ...prevState };
 
                 // set new ref to array and object for react to detect
                 const newAnalyses = [...prevState.analyses];
@@ -90,7 +89,7 @@ const EditStudyPage = () => {
                 if (analysisIndexToUpdate < 0) return { ...prevState };
                 newAnalyses[analysisIndexToUpdate] = {
                     ...newAnalyses[analysisIndexToUpdate],
-                    [update.key]: update.value,
+                    ...update,
                 };
 
                 return {
@@ -103,10 +102,13 @@ const EditStudyPage = () => {
     );
 
     const handleUpdateStudyMetadata = useCallback((updatedMetadata: any) => {
-        setStudy((prevState) => ({
-            ...prevState,
-            metadata: updatedMetadata,
-        }));
+        setStudy((prevState) => {
+            if (!prevState) return undefined;
+            return {
+                ...prevState,
+                metadata: updatedMetadata,
+            };
+        });
     }, []);
 
     const handleEditAnalysisImages = useCallback(() => {}, []);
@@ -144,11 +146,13 @@ const EditStudyPage = () => {
                     </Box>
 
                     <Box sx={{ marginBottom: '15px', padding: '0 10px' }}>
-                        <EditStudyMetadata
-                            onUpdateStudyMetadata={handleUpdateStudyMetadata}
-                            metadata={study.metadata}
-                            studyId={params.studyId}
-                        />
+                        {study && (
+                            <EditStudyMetadata
+                                onUpdateStudyMetadata={handleUpdateStudyMetadata}
+                                metadata={study.metadata}
+                                studyId={params.studyId}
+                            />
+                        )}
                     </Box>
 
                     <Box sx={{ marginBottom: '15px', padding: '0 10px', marginLeft: '15px' }}>

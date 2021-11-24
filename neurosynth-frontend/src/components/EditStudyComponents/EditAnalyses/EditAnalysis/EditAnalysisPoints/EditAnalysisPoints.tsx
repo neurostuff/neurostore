@@ -29,70 +29,71 @@ const EditAnalysisPoints: React.FC<IEditAnalysisPoints> = (props) => {
     const hasPoints = props.points && props.points.length > 0;
 
     return (
-        <Box
-            component="div"
-            sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                width: '100%',
-                maxHeight: {
-                    xs: '200px',
-                    md: '350px',
-                },
-                overflow: 'auto',
-                marginBottom: '15px',
-            }}
-        >
-            <Box sx={{ width: '60%' }}>
-                <Box
-                    sx={{
-                        width: '100%',
-                        display: 'flex',
-                        marginTop: '5px',
-                        justifyContent: 'space-evenly',
-                    }}
-                >
-                    <TextField
-                        type="number"
-                        value={editCoordinates.x}
-                        onChange={handleOnChange}
-                        sx={EditAnalysisPointsStyles.textfield}
-                        name="x"
-                        label="X Coordinate"
-                    />
-                    <TextField
-                        type="number"
-                        value={editCoordinates.y}
-                        onChange={handleOnChange}
-                        sx={EditAnalysisPointsStyles.textfield}
-                        name="y"
-                        label="Y Coordinate"
-                    />
-                    <TextField
-                        type="number"
-                        value={editCoordinates.z}
-                        onChange={handleOnChange}
-                        sx={EditAnalysisPointsStyles.textfield}
-                        name="z"
-                        label="Z Coordinate"
-                    />
-                    <Button onClick={handleOnAdd} color="primary">
-                        Add
-                    </Button>
-                </Box>
-                <Divider sx={{ margin: '20px 0' }} />
-                <Box>
-                    {!hasPoints && (
-                        <Box component="span" sx={{ color: 'warning.dark' }}>
-                            No coordinates
-                        </Box>
-                    )}
-                    {hasPoints &&
-                        props.points?.map((point) => <EditAnalysisPointsRow {...point} />)}
-                </Box>
-            </Box>
-        </Box>
+        <Box>This has not yet been implemented yet. Please check back later</Box>
+        // <Box
+        //     component="div"
+        //     sx={{
+        //         display: 'flex',
+        //         flexDirection: 'column',
+        //         alignItems: 'center',
+        //         width: '100%',
+        //         maxHeight: {
+        //             xs: '200px',
+        //             md: '350px',
+        //         },
+        //         overflow: 'auto',
+        //         marginBottom: '15px',
+        //     }}
+        // >
+        //     <Box sx={{ width: '60%' }}>
+        //         <Box
+        //             sx={{
+        //                 width: '100%',
+        //                 display: 'flex',
+        //                 marginTop: '5px',
+        //                 justifyContent: 'space-evenly',
+        //             }}
+        //         >
+        //             <TextField
+        //                 type="number"
+        //                 value={editCoordinates.x}
+        //                 onChange={handleOnChange}
+        //                 sx={EditAnalysisPointsStyles.textfield}
+        //                 name="x"
+        //                 label="X Coordinate"
+        //             />
+        //             <TextField
+        //                 type="number"
+        //                 value={editCoordinates.y}
+        //                 onChange={handleOnChange}
+        //                 sx={EditAnalysisPointsStyles.textfield}
+        //                 name="y"
+        //                 label="Y Coordinate"
+        //             />
+        //             <TextField
+        //                 type="number"
+        //                 value={editCoordinates.z}
+        //                 onChange={handleOnChange}
+        //                 sx={EditAnalysisPointsStyles.textfield}
+        //                 name="z"
+        //                 label="Z Coordinate"
+        //             />
+        //             <Button onClick={handleOnAdd} color="primary">
+        //                 Add
+        //             </Button>
+        //         </Box>
+        //         <Divider sx={{ margin: '20px 0' }} />
+        //         <Box>
+        //             {!hasPoints && (
+        //                 <Box component="span" sx={{ color: 'warning.dark' }}>
+        //                     No coordinates
+        //                 </Box>
+        //             )}
+        //             {hasPoints &&
+        //                 props.points?.map((point) => <EditAnalysisPointsRow {...point} />)}
+        //         </Box>
+        //     </Box>
+        // </Box>
     );
 };
 

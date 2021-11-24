@@ -1,74 +1,42 @@
 import React from 'react';
 import EditMetadataRowStyles from './EditMetadataRow.styles';
-import EditMetadataBoolean from './EditMetadataValue/EditMetadataBoolean';
-import EditMetadataNumber from './EditMetadataValue/EditMetadataNumber';
-import EditMetadataString from './EditMetadataValue/EditMetadataString';
-import { useState } from 'react';
 import { Button } from '@mui/material';
 import { useCallback } from 'react';
 import { getStartValFromType } from './AddMetadataRow';
-import { EPropertyType, IEditMetadataRowModel } from '..';
+import { EPropertyType, IEditMetadataRowModel, IMetadataRowModel } from '..';
 import { Box } from '@mui/system';
 import ToggleType from './ToggleType/ToggleType';
+import EditMetadataValue from '../EditMetadataValue/EditMetadataValue';
 
 const EditMetadataRow: React.FC<IEditMetadataRowModel> = React.memo((props) => {
-    const { onMetadataRowEdit, onMetadataRowDelete } = props;
-    const [metadataRow, setMetadataRow] = useState(props.metadataRow);
+    const { onMetadataRowEdit, onMetadataRowDelete, metadataRow } = props;
 
     const handleEditMetadataValue = useCallback(
         (event: string | boolean | number) => {
-            const updatedState = { ...metadataRow };
-            updatedState.metadataValue = event;
+            const updatedState: IMetadataRowModel = {
+                ...metadataRow,
+                metadataValue: event,
+            };
             onMetadataRowEdit(updatedState);
         },
         [onMetadataRowEdit, metadataRow]
     );
 
-    const map = {
-        [EPropertyType.NUMBER]: (
-            <EditMetadataNumber
-                onEdit={handleEditMetadataValue}
-                value={metadataRow.metadataValue}
-            />
-        ),
-        [EPropertyType.BOOLEAN]: (
-            <EditMetadataBoolean
-                onEdit={handleEditMetadataValue}
-                value={metadataRow.metadataValue}
-            />
-        ),
-        [EPropertyType.STRING]: (
-            <EditMetadataString
-                onEdit={handleEditMetadataValue}
-                value={metadataRow.metadataValue}
-            />
-        ),
-        [EPropertyType.NONE]: (
-            <Box component="span" sx={{ color: 'warning.dark' }}>
-                null
-            </Box>
-        ),
-    };
-
     const handleToggle = useCallback(
         (newType: EPropertyType) => {
-            setMetadataRow((prevState) => {
-                const updatedItem = { ...prevState };
-
-                updatedItem.metadataValue = getStartValFromType(newType);
-
-                onMetadataRowEdit(updatedItem);
-                return updatedItem;
-            });
+            const newVal = getStartValFromType(newType);
+            const updatedState: IMetadataRowModel = {
+                ...metadataRow,
+                metadataValue: newVal,
+            };
+            onMetadataRowEdit(updatedState);
         },
-        [onMetadataRowEdit]
+        [onMetadataRowEdit, metadataRow]
     );
 
     const handleDelete = (event: React.MouseEvent) => {
         onMetadataRowDelete(metadataRow);
     };
-
-    const component: JSX.Element = map[props.metadataValueType];
 
     return (
         <>
@@ -84,7 +52,13 @@ const EditMetadataRow: React.FC<IEditMetadataRowModel> = React.memo((props) => {
                         <b>{metadataRow.metadataKey}</b>
                     </Box>
                 </Box>
-                <Box sx={{ ...EditMetadataRowStyles.tableCell, width: '100%' }}>{component}</Box>
+                <Box sx={{ ...EditMetadataRowStyles.tableCell, width: '100%' }}>
+                    <EditMetadataValue
+                        onEditMetadataValue={handleEditMetadataValue}
+                        value={props.metadataRow.metadataValue}
+                        type={props.metadataValueType}
+                    />
+                </Box>
                 <Box sx={EditMetadataRowStyles.tableCell}>
                     <Button
                         sx={EditMetadataRowStyles.updateButton}

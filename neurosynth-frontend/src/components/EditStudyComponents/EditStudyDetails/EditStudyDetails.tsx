@@ -7,9 +7,10 @@ import {
     AccordionDetails,
     AccordionSummary,
     Typography,
+    Box,
 } from '@mui/material';
 import { AxiosError } from 'axios';
-import React, { ChangeEvent, useContext, useState } from 'react';
+import React, { ChangeEvent, useContext, useEffect, useState } from 'react';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import API from '../../../utils/api';
 import EditStudyDetailsStyles from './EditStudyDetails.styles';
@@ -24,13 +25,21 @@ export interface IStudyEditDetailsProperties {
 }
 
 export interface IStudyEditDetails extends IStudyEditDetailsProperties {
-    onEditStudyDetails: (update: { key: string; value: string }) => void;
+    onEditStudyDetails: (update: { [key: string]: string }) => void;
 }
 
 const EditStudyDetails: React.FC<IStudyEditDetails> = React.memo((props) => {
     const { getAccessTokenSilently } = useAuth0();
     const context = useContext(GlobalContext);
     const [updatedEnabled, setUpdateEnabled] = useState(false);
+    const [originalDetails, setOriginalDetails] = useState<IStudyEditDetailsProperties>({
+        studyId: '',
+        name: '',
+        authors: '',
+        publication: '',
+        doi: '',
+        description: '',
+    });
 
     const textFieldInputProps = {
         style: {
@@ -38,10 +47,20 @@ const EditStudyDetails: React.FC<IStudyEditDetails> = React.memo((props) => {
         },
     };
 
+    useEffect(() => {
+        setOriginalDetails({
+            studyId: props.studyId,
+            name: props.name,
+            authors: props.authors,
+            publication: props.publication,
+            doi: props.doi,
+            description: props.description,
+        });
+    }, []);
+
     const handleOnEdit = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
         props.onEditStudyDetails({
-            key: event.target.name,
-            value: event.target.value,
+            [event.target.name]: event.target.value,
         });
         setUpdateEnabled(true);
     };
@@ -65,12 +84,24 @@ const EditStudyDetails: React.FC<IStudyEditDetails> = React.memo((props) => {
             .then((res) => {
                 setUpdateEnabled(false);
                 context.showSnackbar('study successfully updated', SnackbarType.SUCCESS);
-                // trigger a reload by passing in a reference to an empty object
+                setOriginalDetails({
+                    studyId: props.studyId,
+                    name: props.name,
+                    description: props.description,
+                    authors: props.authors,
+                    publication: props.publication,
+                    doi: props.doi,
+                });
             })
             .catch((err: Error | AxiosError) => {
                 context.showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(err.message);
             });
+    };
+
+    const handleRevertChanges = (event: React.MouseEvent) => {
+        props.onEditStudyDetails({ ...originalDetails });
+        setUpdateEnabled(false);
     };
 
     return (
@@ -83,9 +114,16 @@ const EditStudyDetails: React.FC<IStudyEditDetails> = React.memo((props) => {
                     sx={EditStudyDetailsStyles.accordionSummary}
                     expandIcon={<ExpandMoreOutlined />}
                 >
-                    <Typography variant="h6">
-                        <b>Edit Study Details</b>
-                    </Typography>
+                    <Box sx={EditStudyDetailsStyles.accordionTitleContainer}>
+                        <Typography variant="h6">
+                            <b>Edit Study Details</b>
+                        </Typography>
+                        {updatedEnabled && (
+                            <Typography color="secondary" variant="body2">
+                                unsaved changes
+                            </Typography>
+                        )}
+                    </Box>
                 </AccordionSummary>
                 <AccordionDetails>
                     <TextField
@@ -137,11 +175,20 @@ const EditStudyDetails: React.FC<IStudyEditDetails> = React.memo((props) => {
                     <Button
                         disabled={!updatedEnabled}
                         onClick={handleOnUpdate}
-                        color="secondary"
+                        color="success"
                         variant="contained"
+                        sx={{ ...EditStudyDetailsStyles.button, marginRight: '15px' }}
+                    >
+                        <b>Update</b>
+                    </Button>
+                    <Button
+                        disabled={!updatedEnabled}
+                        onClick={handleRevertChanges}
+                        color="secondary"
+                        variant="outlined"
                         sx={EditStudyDetailsStyles.button}
                     >
-                        <b>Update Study Details</b>
+                        <b>Revert Changes</b>
                     </Button>
                 </AccordionDetails>
             </Accordion>

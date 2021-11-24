@@ -1,6 +1,6 @@
-import { Style } from '../../../..';
+import { Style } from '../../..';
 
-const EditMetadataFieldsStyles: Style = {
+const EditMetadataValueStyles: Style = {
     checkedTrue: {
         color: 'primary.main',
     },
@@ -23,4 +23,4 @@ const EditMetadataFieldsStyles: Style = {
     },
 };
 
-export default EditMetadataFieldsStyles;
+export default EditMetadataValueStyles;

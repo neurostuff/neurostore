@@ -1,7 +1,7 @@
 import { AnalysisApiResponse, PointsApiResponse } from '../../../utils/api';
 
 export interface IEditAnalysisDetailsFn {
-    (idToUpdate: string, update: { key: string; value: string }): void;
+    (idToUpdate: string, update: { [key: string]: any }): void;
 }
 
 export interface IDeleteAnalysisFn {
@@ -26,7 +26,7 @@ export interface IEditAnalysisDetails {
     analysisId: string;
     name: string | undefined | null;
     description: string | undefined | null;
-    onEditAnalysisDetails: (key: string, value: string) => void;
+    onEditAnalysisDetails: (update: { [key: string]: any }) => void;
     onDeleteAnalysis: IDeleteAnalysisFn;
 }
 

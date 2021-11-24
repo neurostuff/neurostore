@@ -11,17 +11,13 @@ import EditAnalysisImages from './EditAnalysisImages/EditAnalysisImages';
 const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
     const [editTab, setEditTab] = useState(0);
 
-    const handleEditAnalysisDetails = (key: string, value: string) => {
+    const handleEditAnalysisDetails = (update: { [key: string]: any }) => {
         if (props.analysis && props.analysis.id) {
-            props.onEditAnalysisDetails(props.analysis.id as string, {
-                key,
-                value,
-            });
+            props.onEditAnalysisDetails(props.analysis.id as string, update);
         }
     };
 
     const handleAddPoint = (pointToAdd: { x: number; y: number; z: number }) => {};
-
     const handleRemovePoint = (pointId: string) => {};
     const handleUpdatePoint = (pointId: string, update: { x: number; y: number; z: number }) => {};
 

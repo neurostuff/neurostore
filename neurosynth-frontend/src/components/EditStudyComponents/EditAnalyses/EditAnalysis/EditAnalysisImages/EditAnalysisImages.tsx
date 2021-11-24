@@ -1,5 +1,7 @@
+import { Box } from '@mui/system';
+
 const EditAnalysisImages: React.FC = (props) => {
-    return <div>Editing analysis IMAGES WORK IN PROGRESS</div>;
+    return <Box>This has not yet been implemented yet. Please check back later</Box>;
 };
 
 export default EditAnalysisImages;

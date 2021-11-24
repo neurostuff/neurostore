@@ -4,7 +4,9 @@
 
 export interface IEditMetadataModel {
     metadata: IMetadataRowModel[];
-    onMetadataEditChange: (metadata: IMetadataRowModel[]) => void;
+    onMetadataRowEdit: (update: IMetadataRowModel) => void;
+    onMetadataRowDelete: (update: IMetadataRowModel) => void;
+    onMetadataRowAdd: (update: IMetadataRowModel) => boolean;
 }
 
 export interface IAddMetadataRowModel {
@@ -18,8 +20,9 @@ export interface IEditMetadataRowModel {
     onMetadataRowDelete: (metadataRow: IMetadataRowModel) => void;
 }
 
-export interface IEditMetadataField {
-    onEdit: (newValue: string | number | boolean) => void;
+export interface IEditMetadataValue {
+    onEditMetadataValue: (newValue: string | number | boolean) => void;
+    type: EPropertyType;
     value: string | number | boolean;
 }
 

@@ -10,6 +10,13 @@ const EditStudyMetadataStyles: Style = {
     button: {
         padding: '8px',
         marginTop: '15px',
+        width: '200px',
+    },
+    accordionTitleContainer: {
+        display: 'flex',
+        width: '100%',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
 };
 

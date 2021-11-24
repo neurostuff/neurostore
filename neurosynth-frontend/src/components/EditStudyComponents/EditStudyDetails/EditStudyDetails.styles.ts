@@ -11,8 +11,15 @@ const EditStudyDetailsStyles: Style = {
     accordionSummary: {
         '.MuiAccordionSummary-content': { margin: '0px' },
     },
+    accordionTitleContainer: {
+        display: 'flex',
+        width: '100%',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
     button: {
         padding: '8px',
+        width: '200px',
     },
 };
 

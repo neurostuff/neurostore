@@ -9,7 +9,7 @@ import {
 import { ExpandMoreOutlined } from '@mui/icons-material';
 import EditStudyMetadataStyles from './EditStudyMetadata.styles';
 import { EditMetadata, IMetadataRowModel } from '../..';
-import { useState, useContext, useEffect, useCallback } from 'react';
+import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import { AxiosError } from 'axios';
 import API from '../../../utils/api';
@@ -27,31 +27,27 @@ const arrayToMetadata = (arr: IMetadataRowModel[]): { [key: string]: any } => {
     return tempObj;
 };
 
+const metadataToArray = (metadata: { [key: string]: any } | undefined): IMetadataRowModel[] => {
+    const transformedArr = metadata
+        ? Object.keys(metadata).map((row) => ({
+              metadataKey: row,
+              metadataValue: metadata[row],
+          }))
+        : [];
+
+    return transformedArr;
+};
+
 const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
     const context = useContext(GlobalContext);
     const { getAccessTokenSilently } = useAuth0();
     const [updatedEnabled, setUpdateEnabled] = useState(false);
-    const [metadataArr, setMetadataArr] = useState(props.metadata);
 
-    useEffect(() => {
-        // When we make our first GET request to /studies, metadata starts as undefined. Once metadataArr is defined as an array,
-        // we know that we have received our res back, and we can show the metadata editor.
-        if (props.metadata) {
-            const metadataArr: IMetadataRowModel[] = props.metadata
-                ? Object.keys(props.metadata).map((row) => ({
-                      metadataKey: row,
-                      metadataValue: props.metadata[row],
-                  }))
-                : [];
-
-            setMetadataArr(metadataArr);
-        }
-    }, [props.metadata]);
-
-    const handleMetadataEditChange = useCallback((metadata: IMetadataRowModel[]) => {
-        setUpdateEnabled(true);
-        setMetadataArr([...metadata]);
-    }, []);
+    // this array holds the initial metadata and feeds the editMetadata component. This is only updated on REVERT;
+    // otherwise we get a setState error
+    const [metadataArr, setMetadataArr] = useState<IMetadataRowModel[]>(
+        metadataToArray(props.metadata)
+    );
 
     const handleOnUpdate = async (event: React.MouseEvent) => {
         try {
@@ -78,32 +74,101 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
             });
     };
 
+    const handleMetadataRowEdit = useCallback((updatedRow: IMetadataRowModel) => {
+        setMetadataArr((prevState) => {
+            const updatedMetadata = [...prevState];
+            const valueToEditIndexFound = updatedMetadata.findIndex(
+                (x) => x.metadataKey === updatedRow.metadataKey
+            );
+            if (valueToEditIndexFound < 0) return { ...prevState };
+            updatedMetadata[valueToEditIndexFound] = {
+                ...updatedMetadata[valueToEditIndexFound],
+                metadataValue: updatedRow.metadataValue,
+            };
+            setUpdateEnabled(true);
+            return updatedMetadata;
+        });
+    }, []);
+
+    const handleMetadataRowDelete = useCallback((updatedRow: IMetadataRowModel) => {
+        setMetadataArr((prevState) => {
+            // filter returns a new copy of the array
+            const updatedMetadata = prevState.filter(
+                (element) => element.metadataKey !== updatedRow.metadataKey
+            );
+            setUpdateEnabled(true);
+            return updatedMetadata;
+        });
+    }, []);
+
+    const handleMetadataRowAdd = useCallback(
+        (row: IMetadataRowModel): boolean => {
+            const keyExists = !!metadataArr.find((item) => item.metadataKey === row.metadataKey);
+            if (keyExists) {
+                return false;
+            } else {
+                setMetadataArr((prevState) => {
+                    const updatedState = [...prevState];
+                    updatedState.unshift({ ...row });
+                    setUpdateEnabled(true);
+                    return updatedState;
+                });
+                return true;
+            }
+        },
+        [metadataArr]
+    );
+
+    const handleRevertChanges = (event: React.MouseEvent) => {
+        const tempRevertedChanges = metadataToArray(props.metadata);
+        setMetadataArr(tempRevertedChanges);
+        setUpdateEnabled(false);
+    };
+
     return (
         <Accordion elevation={2} sx={updatedEnabled ? EditStudyMetadataStyles.unsavedChanges : {}}>
             <AccordionSummary
                 sx={EditStudyMetadataStyles.accordionSummary}
                 expandIcon={<ExpandMoreOutlined />}
             >
-                <Typography variant="h6">
-                    <b>Edit Study Metadata</b>
-                </Typography>
+                <Box sx={EditStudyMetadataStyles.accordionTitleContainer}>
+                    <Typography variant="h6">
+                        <b>Edit Study Metadata</b>
+                    </Typography>
+                    {updatedEnabled && (
+                        <Typography color="secondary" variant="body2">
+                            unsaved changes
+                        </Typography>
+                    )}
+                </Box>
             </AccordionSummary>
             <AccordionDetails>
                 {/* only show this component when metadataArr is not undefined or null */}
                 {metadataArr && (
                     <EditMetadata
-                        onMetadataEditChange={handleMetadataEditChange}
+                        onMetadataRowAdd={handleMetadataRowAdd}
+                        onMetadataRowEdit={handleMetadataRowEdit}
+                        onMetadataRowDelete={handleMetadataRowDelete}
                         metadata={metadataArr}
                     />
                 )}
                 <Button
                     disabled={!updatedEnabled}
                     onClick={handleOnUpdate}
-                    color="secondary"
+                    color="success"
                     variant="contained"
+                    sx={{ ...EditStudyMetadataStyles.button, marginRight: '15px' }}
+                >
+                    <b>Update</b>
+                </Button>
+                <Button
+                    disabled={!updatedEnabled}
+                    color="secondary"
+                    variant="outlined"
+                    onClick={handleRevertChanges}
                     sx={EditStudyMetadataStyles.button}
                 >
-                    <b>Update Study Metadata</b>
+                    <b>Revert Changes</b>
                 </Button>
             </AccordionDetails>
         </Accordion>
