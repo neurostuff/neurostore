@@ -8,7 +8,6 @@ import API from '../../../../../utils/api';
 import EditAnalysisDetailsStyles from './EditAnalysisDetails.styles';
 
 const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
-    console.log('actual component');
     const [originalDetails, setOriginalDetails] = useState({
         name: '',
         description: '',
