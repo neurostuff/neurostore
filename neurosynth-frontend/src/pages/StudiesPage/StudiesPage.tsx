@@ -2,7 +2,7 @@ import { ChangeEvent, useEffect, useState } from 'react';
 import { TablePagination, Typography, Pagination } from '@mui/material';
 import API, { StudyApiResponse } from '../../utils/api';
 import { Metadata } from '../../gen/api';
-import StudiesPageStyles from './StudiesPageStyles';
+import StudiesPageStyles from './StudiesPage.styles';
 import { DisplayStudiesTable, SearchBar } from '../../components';
 
 export enum Source {
@@ -125,7 +125,7 @@ const StudiesPage = () => {
                         }
                     })
                     .catch((err) => {
-                        console.log(err);
+                        console.error(err);
                     });
             };
             getStudies(searchCriteria);

@@ -8,7 +8,7 @@ import stanfordLogo from '../../assets/images/stanfordlogo.png';
 import origamiLogo from '../../assets/images/origamilogo.png';
 
 import { Divider, Typography } from '@mui/material';
-import LandingPageStyles from './LandingPageStyles';
+import LandingPageStyles from './LandingPage.styles';
 import { Box } from '@mui/system';
 
 const LandingPage = () => {

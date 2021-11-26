@@ -1,9 +1,9 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, Typography, Badge } from '@mui/material';
 import { NavLink } from 'react-router-dom';
 import { NavbarArgs } from '..';
-import NavbarStyles from '../NavbarStyles';
-import NavbarToolbarStyles from './NavbarToolbarStyles';
+import NavbarStyles from '../Navbar.styles';
+import NavbarToolbarStyles from './NavbarToolbar.styles';
 
 const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
     const { isAuthenticated } = useAuth0();
@@ -12,7 +12,11 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
         <>
             <Button>
                 <Box to="/" exact sx={NavbarStyles.neurosynthLink} component={NavLink}>
-                    <Typography variant="h5">neurosynth</Typography>
+                    <Typography variant="h5">
+                        <Badge color="secondary" badgeContent={<span>alpha</span>}>
+                            neurosynth
+                        </Badge>
+                    </Typography>
                 </Box>
             </Button>
             <Box sx={NavbarToolbarStyles.navLinksContainer}>

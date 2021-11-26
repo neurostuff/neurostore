@@ -1,11 +1,8 @@
 import { Box, Button, TextField } from '@mui/material';
 import React, { useCallback, useState } from 'react';
-import { useEffect } from 'react';
 import { IAddMetadataRowModel, EPropertyType, IMetadataRowModel } from '..';
-import EditMetadataRowStyles from './EditMetadataRowStyles';
-import EditMetadataBoolean from './EditMetadataValue/EditMetadataBoolean';
-import EditMetadataNumber from './EditMetadataValue/EditMetadataNumber';
-import EditMetadataString from './EditMetadataValue/EditMetadataString';
+import EditMetadataValue from '../EditMetadataValue/EditMetadataValue';
+import EditMetadataRowStyles from './EditMetadataRow.styles';
 import ToggleType from './ToggleType/ToggleType';
 
 export const getStartValFromType = (type: EPropertyType): boolean | number | string | null => {
@@ -23,11 +20,6 @@ export const getStartValFromType = (type: EPropertyType): boolean | number | str
 
 const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
     const [currType, setCurrType] = useState(EPropertyType.STRING);
-    const [editValueComponent, setEditValueComponent] = useState(
-        <Box component="span" sx={EditMetadataRowStyles.nullContent}>
-            null
-        </Box>
-    );
     const [isValid, setIsValid] = useState(true);
     const [metadataRow, setMetadataRow] = useState<IMetadataRowModel>({
         metadataKey: '',
@@ -80,40 +72,6 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
         });
     };
 
-    useEffect(() => {
-        let component: JSX.Element;
-        switch (currType) {
-            case EPropertyType.BOOLEAN:
-                component = (
-                    <EditMetadataBoolean
-                        onEdit={handleMetadataValueChange}
-                        value={metadataRow.metadataValue}
-                    />
-                );
-                break;
-            case EPropertyType.STRING:
-                component = (
-                    <EditMetadataString
-                        onEdit={handleMetadataValueChange}
-                        value={metadataRow.metadataValue}
-                    />
-                );
-                break;
-            case EPropertyType.NUMBER:
-                component = (
-                    <EditMetadataNumber
-                        onEdit={handleMetadataValueChange}
-                        value={metadataRow.metadataValue}
-                    />
-                );
-                break;
-            default:
-                component = <Box sx={EditMetadataRowStyles.nullContent}>null</Box>;
-                break;
-        }
-        setEditValueComponent(component);
-    }, [currType, metadataRow.metadataValue]);
-
     return (
         <Box sx={EditMetadataRowStyles.tableRow}>
             <Box sx={{ display: 'flex' }}>
@@ -134,7 +92,11 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                 {isValid && <Box sx={{ height: '22px' }}></Box>}
             </Box>
             <Box sx={{ ...EditMetadataRowStyles.tableCell, width: '100%' }}>
-                {editValueComponent}
+                <EditMetadataValue
+                    onEditMetadataValue={handleMetadataValueChange}
+                    value={metadataRow.metadataValue}
+                    type={currType}
+                />
                 {/* This component is added so that the error message doesn't mess up the row alignment */}
                 <Box sx={{ height: '22px' }}></Box>
             </Box>

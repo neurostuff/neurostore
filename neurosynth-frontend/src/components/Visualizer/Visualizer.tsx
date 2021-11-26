@@ -1,6 +1,6 @@
 import { Box, SxProps, Theme } from '@mui/system';
 import { useEffect } from 'react';
-import VisualizerStyles from './VisualizerStyles';
+import VisualizerStyles from './Visualizer.styles';
 
 export interface VisualizerModel {
     imageURL: string;

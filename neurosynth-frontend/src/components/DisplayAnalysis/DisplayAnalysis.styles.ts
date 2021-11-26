@@ -22,6 +22,7 @@ const DisplayAnalysisStyles: Style = {
     visualizer: {
         width: '100%',
         height: 'auto',
+        padding: '0 2px', // papaya gives an 8px border already so we padd it to match
     },
     visualizerContainer: {
         width: '100%',
@@ -45,14 +46,10 @@ const DisplayAnalysisStyles: Style = {
             xs: '0px',
             md: '10px',
         },
-        flexBasis: 0,
+        // when there is no visualizer, the left section will take up the entire page
         flexGrow: 1,
     },
     rightSection: {
-        paddingLeft: {
-            xs: '0px',
-            md: '10px',
-        },
         marginBottom: {
             xs: '10%',
             md: '0',

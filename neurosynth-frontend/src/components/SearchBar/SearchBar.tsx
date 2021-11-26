@@ -11,7 +11,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import React from 'react';
 import { useState } from 'react';
-import SearchBarStyles from './SearchBarStyles';
+import SearchBarStyles from './SearchBar.styles';
 import { SearchCriteria } from '../../pages/StudiesPage/StudiesPage';
 
 enum SearchBy {

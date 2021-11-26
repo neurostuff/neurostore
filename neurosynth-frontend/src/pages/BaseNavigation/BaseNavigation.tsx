@@ -1,7 +1,7 @@
 import { Box } from '@mui/system';
 import { Switch, Route } from 'react-router-dom';
 import { LandingPage, StudiesPage, StudyPage, EditStudyPage } from '../';
-import BaseNavigationStyles from './BaseNavigationStyles';
+import BaseNavigationStyles from './BaseNavigation.styles';
 
 const BaseNavigation = () => {
     return (

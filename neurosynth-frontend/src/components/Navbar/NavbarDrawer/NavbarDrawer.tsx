@@ -8,12 +8,13 @@ import {
     ListItemText,
     Button,
     Box,
+    Badge,
 } from '@mui/material';
 import { useState } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useAuth0 } from '@auth0/auth0-react';
 import { NavbarArgs } from '..';
-import NavbarStyles from '../NavbarStyles';
+import NavbarStyles from '../Navbar.styles';
 
 const NavbarDrawer: React.FC<NavbarArgs> = (props) => {
     const [drawerIsOpen, setDrawerIsOpen] = useState(false);
@@ -26,7 +27,11 @@ const NavbarDrawer: React.FC<NavbarArgs> = (props) => {
         <>
             <Button>
                 <Box to="/" exact sx={NavbarStyles.neurosynthLink} component={NavLink}>
-                    <Typography variant="h5">neurosynth</Typography>
+                    <Typography variant="h5">
+                        <Badge color="secondary" badgeContent={<span>alpha</span>}>
+                            neurosynth
+                        </Badge>
+                    </Typography>
                 </Box>
             </Button>
             <Drawer anchor="left" open={drawerIsOpen} onClose={toggleDrawer}>

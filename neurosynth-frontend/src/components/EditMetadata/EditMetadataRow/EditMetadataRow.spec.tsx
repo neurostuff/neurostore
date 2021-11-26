@@ -99,9 +99,9 @@ describe('EditMetadataRow Component', () => {
             );
 
             const stringEditor = screen.getByRole('textbox');
-            userEvent.type(stringEditor, 'abc');
+            userEvent.type(stringEditor, 'a');
 
-            mockMetadataRow.metadataValue = 'abc';
+            mockMetadataRow.metadataValue = 'a';
 
             expect(onMetadataRowEditMock).toBeCalledWith(mockMetadataRow);
         });
@@ -109,7 +109,7 @@ describe('EditMetadataRow Component', () => {
 
     describe('EditMetadataRow Number Case', () => {
         it('should render the number editor', () => {
-            mockMetadataRow.metadataValue = 123;
+            mockMetadataRow.metadataValue = 1;
             render(
                 <MockThemeProvider>
                     <EditMetadataRow
@@ -137,10 +137,10 @@ describe('EditMetadataRow Component', () => {
                     />
                 </MockThemeProvider>
             );
-            mockMetadataRow.metadataValue = 12345;
+            mockMetadataRow.metadataValue = 1;
 
             const numberEditor = screen.getByRole('spinbutton');
-            userEvent.type(numberEditor, '12345');
+            userEvent.type(numberEditor, '1');
 
             expect(onMetadataRowEditMock).toBeCalledWith(mockMetadataRow);
         });

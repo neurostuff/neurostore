@@ -1,9 +1,11 @@
 import {
     AnalysesApiFactory,
+    Analysis,
     ConditionsApiFactory,
     Configuration,
     DatasetsApiFactory,
     ImagesApiFactory,
+    Point,
     PointsApiFactory,
     ReadOnly,
     StudiesApiFactory,
@@ -12,6 +14,8 @@ import {
 } from '../gen/api';
 
 export type StudyApiResponse = Study & ReadOnly;
+export type AnalysisApiResponse = Analysis & ReadOnly;
+export type PointsApiResponse = Point & ReadOnly;
 
 const APIDomain = process.env.REACT_APP_API_DOMAIN as string;
 const config: Configuration = new Configuration({

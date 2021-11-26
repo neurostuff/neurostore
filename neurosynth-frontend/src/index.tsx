@@ -41,11 +41,12 @@ const theme = createTheme({
         },
         warning: {
             main: '#ffe66d',
+            dark: '#b2a14c',
             contrastText: '#000000',
         },
         success: {
             main: '#4caf50',
-            contrastText: '#000000',
+            contrastText: '#ffffff',
         },
         muted: {
             main: grey[500],

@@ -11,6 +11,8 @@ import DisplayAnalysis from './DisplayAnalysis/DisplayAnalysis';
 import DisplayValuesTable from './DisplayValuesTable/DisplayValuesTable';
 import TextExpansion from './TextExpansion/TextExpansion';
 import Visualizer from './Visualizer/Visualizer';
+import EditAnalyses from './EditStudyComponents/EditAnalyses/EditAnalyses';
+import EditStudyDetails from './EditStudyComponents/EditStudyDetails/EditStudyDetails';
 
 // models
 export * from './EditMetadata';
@@ -27,4 +29,6 @@ export {
     DisplayValuesTable,
     TextExpansion,
     Visualizer,
+    EditAnalyses,
+    EditStudyDetails,
 };

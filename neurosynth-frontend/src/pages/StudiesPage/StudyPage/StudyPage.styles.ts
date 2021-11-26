@@ -27,6 +27,7 @@ const StudyPageStyles: Style = {
     matchingSibling: {
         display: 'flex',
         flexDirection: 'column',
+        minHeight: '200px',
     },
     heightDefiningSibling: {
         width: '100%',
@@ -60,6 +61,17 @@ const StudyPageStyles: Style = {
             xs: '0.8rem',
             md: '1.25rem',
         },
+    },
+    metadataContainer: {
+        maxHeight: {
+            xs: '200px',
+            md: '400px',
+        },
+        overflow: 'auto',
+        overflowX: 'hidden',
+    },
+    accordionSummary: {
+        '.MuiAccordionSummary-content': { margin: '0px' },
     },
 };
 

@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import EditMetadataStyles from './EditMetadataStyles';
+import React from 'react';
+import EditMetadataStyles from './EditMetadata.styles';
 import EditMetadataRow from './EditMetadataRow/EditMetadataRow';
 import AddMetadataRow from './EditMetadataRow/AddMetadataRow';
-import { IMetadataRowModel, EPropertyType, IEditMetadataModel } from '.';
-import { Box } from '@mui/system';
+import { EPropertyType, IEditMetadataModel } from '.';
+import { Box, Divider } from '@mui/material';
 
 export const getType = (value: any): EPropertyType => {
     switch (typeof value) {
@@ -18,62 +18,17 @@ export const getType = (value: any): EPropertyType => {
     }
 };
 
-const EditMetadata: React.FC<IEditMetadataModel> = (props) => {
-    // this props.metadata value is only used on the first render so useState is required below for subsequent props changes
-    const [metadata, setMetadata] = useState<IMetadataRowModel[]>(props.metadata);
-
-    useEffect(() => {
-        setMetadata(props.metadata);
-    }, [props.metadata]);
-
-    const handleMetadataRowEdit = (updatedRow: IMetadataRowModel) => {
-        setMetadata((prevState) => {
-            const updatedMetadata = [...prevState];
-            const valueToEditFound = updatedMetadata.find(
-                (x) => x.metadataKey === updatedRow.metadataKey
-            );
-            if (valueToEditFound) {
-                valueToEditFound.metadataValue = updatedRow.metadataValue;
-            }
-            props.onMetadataEditChange(updatedMetadata);
-
-            return prevState;
-        });
-    };
-
-    const handleMetadataRowDelete = (updatedRow: IMetadataRowModel) => {
-        setMetadata((prevState) => {
-            const updatedMetadata = prevState.filter(
-                (element) => element.metadataKey !== updatedRow.metadataKey
-            );
-            props.onMetadataEditChange(updatedMetadata);
-            return updatedMetadata;
-        });
-    };
-
-    const handleMetadataRowAdd = (row: IMetadataRowModel): boolean => {
-        const keyExists = !!metadata.find((item) => item.metadataKey === row.metadataKey);
-        if (keyExists) {
-            return false;
-        } else {
-            setMetadata((prevState) => {
-                const updatedState = [...prevState];
-                updatedState.unshift({ ...row });
-                props.onMetadataEditChange(updatedState);
-                return updatedState;
-            });
-            return true;
-        }
-    };
+const EditMetadata: React.FC<IEditMetadataModel> = React.memo((props) => {
+    const { metadata, onMetadataRowEdit, onMetadataRowDelete, onMetadataRowAdd } = props;
 
     return (
         <>
-            <Box sx={EditMetadataStyles.table}>
-                <AddMetadataRow onAddMetadataRow={handleMetadataRowAdd} />
+            <Box sx={{ ...EditMetadataStyles.table, marginTop: '7px' }}>
+                <AddMetadataRow onAddMetadataRow={onMetadataRowAdd} />
             </Box>
-            <Box component="hr" sx={EditMetadataStyles.hr} />
+            <Divider sx={EditMetadataStyles.hr} />
             {metadata.length === 0 && (
-                <Box component="span" sx={{ color: 'warning.dark' }}>
+                <Box component="div" sx={EditMetadataStyles.noMetadataMessage}>
                     No Metadata
                 </Box>
             )}
@@ -82,14 +37,14 @@ const EditMetadata: React.FC<IEditMetadataModel> = (props) => {
                     <EditMetadataRow
                         key={metadataRow.metadataKey}
                         metadataValueType={getType(metadataRow.metadataValue)}
-                        onMetadataRowEdit={handleMetadataRowEdit}
-                        onMetadataRowDelete={handleMetadataRowDelete}
+                        onMetadataRowEdit={onMetadataRowEdit}
+                        onMetadataRowDelete={onMetadataRowDelete}
                         metadataRow={metadataRow}
                     />
                 ))}
             </Box>
         </>
     );
-};
+});
 
 export default EditMetadata;

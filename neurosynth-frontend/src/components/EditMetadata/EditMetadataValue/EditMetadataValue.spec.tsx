@@ -1,9 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MockThemeProvider } from '../../../../testing/helpers';
-import EditMetadataBoolean from './EditMetadataBoolean';
-import EditMetadataNumber from './EditMetadataNumber';
-import EditMetadataString from './EditMetadataString';
+import { EPropertyType } from '..';
+import { MockThemeProvider } from '../../../testing/helpers';
+import EditMetadataValue from './EditMetadataValue';
 
 describe('EditMetadataValue Component', () => {
     const onEditMock = jest.fn();
@@ -15,7 +14,11 @@ describe('EditMetadataValue Component', () => {
         beforeEach(() => {
             render(
                 <MockThemeProvider>
-                    <EditMetadataBoolean value={true} onEdit={onEditMock} />
+                    <EditMetadataValue
+                        value={true}
+                        type={EPropertyType.BOOLEAN}
+                        onEditMetadataValue={onEditMock}
+                    />
                 </MockThemeProvider>
             );
         });
@@ -25,7 +28,7 @@ describe('EditMetadataValue Component', () => {
             expect(toggle).toBeInTheDocument();
         });
 
-        it('should toggle the value when its clicked', () => {
+        it('should toggle the value when it is clicked', () => {
             const toggle = screen.getByRole('checkbox');
             userEvent.click(toggle);
             expect(onEditMock).toBeCalledWith(false);
@@ -36,7 +39,11 @@ describe('EditMetadataValue Component', () => {
         beforeEach(() => {
             render(
                 <MockThemeProvider>
-                    <EditMetadataNumber value={0} onEdit={onEditMock} />
+                    <EditMetadataValue
+                        value={0}
+                        type={EPropertyType.NUMBER}
+                        onEditMetadataValue={onEditMock}
+                    />
                 </MockThemeProvider>
             );
         });
@@ -48,13 +55,13 @@ describe('EditMetadataValue Component', () => {
 
         it('should emit the entered numeric value', () => {
             const numberInput = screen.getByRole('spinbutton');
-            userEvent.type(numberInput, '12345');
-            expect(onEditMock).toBeCalledWith(12345);
+            userEvent.type(numberInput, '1');
+            expect(onEditMock).toBeCalledWith(1);
         });
 
         it('should not emit for non numeric inputs', () => {
             const numberInput = screen.getByRole('spinbutton');
-            userEvent.type(numberInput, 'abc');
+            userEvent.type(numberInput, 'a');
             expect(onEditMock).not.toBeCalled();
         });
     });
@@ -63,7 +70,11 @@ describe('EditMetadataValue Component', () => {
         beforeEach(() => {
             render(
                 <MockThemeProvider>
-                    <EditMetadataString value={''} onEdit={onEditMock} />
+                    <EditMetadataValue
+                        value={''}
+                        type={EPropertyType.STRING}
+                        onEditMetadataValue={onEditMock}
+                    />
                 </MockThemeProvider>
             );
         });
@@ -75,8 +86,8 @@ describe('EditMetadataValue Component', () => {
 
         it('should emit the written text', () => {
             const textInput = screen.getByRole('textbox');
-            userEvent.type(textInput, 'abc');
-            expect(onEditMock).toBeCalledWith('abc');
+            userEvent.type(textInput, 'a');
+            expect(onEditMock).toBeCalledWith('a');
         });
     });
 });
