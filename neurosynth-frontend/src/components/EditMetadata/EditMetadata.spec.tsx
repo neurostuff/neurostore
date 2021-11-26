@@ -6,7 +6,9 @@ import { MockThemeProvider } from '../../testing/helpers';
 import { getType } from './EditMetadata';
 
 describe('EditMetadata Component', () => {
-    const onMetadataEditChangeMock = jest.fn();
+    const handleMetadataRowEdit = jest.fn();
+    const handleMetadataRowDelete = jest.fn();
+    const handleMetadataRowAdd = jest.fn();
 
     const mockMetadata: IMetadataRowModel[] = [
         {
@@ -32,7 +34,9 @@ describe('EditMetadata Component', () => {
             <MockThemeProvider>
                 <EditMetadata
                     metadata={mockMetadata}
-                    onMetadataEditChange={onMetadataEditChangeMock}
+                    onMetadataRowDelete={handleMetadataRowDelete}
+                    onMetadataRowAdd={handleMetadataRowAdd}
+                    onMetadataRowEdit={handleMetadataRowEdit}
                 />
             </MockThemeProvider>
         );
@@ -47,6 +51,22 @@ describe('EditMetadata Component', () => {
         expect(metadataRows.length).toEqual(mockMetadata.length);
     });
 
+    it('should show message if no metadata is present', () => {
+        render(
+            <MockThemeProvider>
+                <EditMetadata
+                    metadata={[]}
+                    onMetadataRowDelete={handleMetadataRowDelete}
+                    onMetadataRowAdd={handleMetadataRowAdd}
+                    onMetadataRowEdit={handleMetadataRowEdit}
+                />
+            </MockThemeProvider>
+        );
+
+        const noMetadataMessage = screen.getByText('No Metadata');
+        expect(noMetadataMessage).toBeInTheDocument();
+    });
+
     it('should get the correct type', () => {
         expect(getType('test')).toEqual(EPropertyType.STRING);
         expect(getType(12345)).toEqual(EPropertyType.NUMBER);
@@ -59,27 +79,19 @@ describe('EditMetadata Component', () => {
             <MockThemeProvider>
                 <EditMetadata
                     metadata={mockMetadata}
-                    onMetadataEditChange={onMetadataEditChangeMock}
+                    onMetadataRowDelete={handleMetadataRowDelete}
+                    onMetadataRowAdd={handleMetadataRowAdd}
+                    onMetadataRowEdit={handleMetadataRowEdit}
                 />
             </MockThemeProvider>
         );
 
         const deleteButton = screen.getAllByRole('button', { name: 'DELETE' })[1];
         userEvent.click(deleteButton);
-        expect(onMetadataEditChangeMock).toBeCalledWith([
-            {
-                metadataKey: 'key 1',
-                metadataValue: 'value 1',
-            },
-            {
-                metadataKey: 'key 3',
-                metadataValue: 12345,
-            },
-            {
-                metadataKey: 'key 4',
-                metadataValue: null,
-            },
-        ]);
+        expect(handleMetadataRowDelete).toBeCalledWith({
+            metadataKey: 'key 2',
+            metadataValue: false,
+        });
     });
 
     it('should add the row and call the parent prop function', () => {
@@ -87,23 +99,22 @@ describe('EditMetadata Component', () => {
             <MockThemeProvider>
                 <EditMetadata
                     metadata={mockMetadata}
-                    onMetadataEditChange={onMetadataEditChangeMock}
+                    onMetadataRowDelete={handleMetadataRowDelete}
+                    onMetadataRowAdd={handleMetadataRowAdd}
+                    onMetadataRowEdit={handleMetadataRowEdit}
                 />
             </MockThemeProvider>
         );
 
         const addRow = screen.getByPlaceholderText('New metadata key');
         const addRowButton = screen.getByRole('button', { name: 'ADD' });
-        userEvent.type(addRow, 'new metadata key');
+        userEvent.type(addRow, 'test key');
         userEvent.click(addRowButton);
 
-        expect(onMetadataEditChangeMock).toBeCalledWith([
-            {
-                metadataKey: 'new metadata key',
-                metadataValue: '',
-            },
-            ...mockMetadata,
-        ]);
+        expect(handleMetadataRowAdd).toBeCalledWith({
+            metadataKey: 'test key',
+            metadataValue: '',
+        });
     });
 
     it('should edit the row and call the parent prop function', () => {
@@ -111,31 +122,20 @@ describe('EditMetadata Component', () => {
             <MockThemeProvider>
                 <EditMetadata
                     metadata={mockMetadata}
-                    onMetadataEditChange={onMetadataEditChangeMock}
+                    onMetadataRowDelete={handleMetadataRowDelete}
+                    onMetadataRowAdd={handleMetadataRowAdd}
+                    onMetadataRowEdit={handleMetadataRowEdit}
                 />
             </MockThemeProvider>
         );
 
+        // targeting the first kvp textbox (first two textboxes are for the AddMetadataRow component)
         const input = screen.getAllByRole('textbox')[2];
-        userEvent.type(input, '2345');
+        userEvent.type(input, 'A');
 
-        expect(onMetadataEditChangeMock).toBeCalledWith([
-            {
-                metadataKey: 'key 1',
-                metadataValue: 'value 12345',
-            },
-            {
-                metadataKey: 'key 2',
-                metadataValue: false,
-            },
-            {
-                metadataKey: 'key 3',
-                metadataValue: 12345,
-            },
-            {
-                metadataKey: 'key 4',
-                metadataValue: null,
-            },
-        ]);
+        expect(handleMetadataRowEdit).toBeCalledWith({
+            metadataKey: 'key 1',
+            metadataValue: 'value 1A',
+        });
     });
 });

@@ -8,6 +8,7 @@ import API from '../../../../../utils/api';
 import EditAnalysisDetailsStyles from './EditAnalysisDetails.styles';
 
 const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
+    console.log('actual component');
     const [originalDetails, setOriginalDetails] = useState({
         name: '',
         description: '',
@@ -22,8 +23,8 @@ const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
     // as this saves the original details, we only want it to run once in the beginning to save the data in local memory
     useEffect(() => {
         setOriginalDetails({
-            name: props.name || '',
-            description: props.description || '',
+            name: props.name,
+            description: props.description,
         });
     }, []);
 

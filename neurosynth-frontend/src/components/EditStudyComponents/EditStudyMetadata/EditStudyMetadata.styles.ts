@@ -11,6 +11,7 @@ const EditStudyMetadataStyles: Style = {
         padding: '8px',
         marginTop: '15px',
         width: '200px',
+        fontWeight: 'bold',
     },
     accordionTitleContainer: {
         display: 'flex',

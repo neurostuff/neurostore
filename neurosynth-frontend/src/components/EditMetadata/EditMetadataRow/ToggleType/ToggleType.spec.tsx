@@ -30,34 +30,63 @@ describe('ToggleType Component', () => {
         expect(noneOption).toBeInTheDocument();
     });
 
-    it('should toggle and emit the right value', () => {
+    it('should toggle and emit a boolean value', () => {
+        // initial render
         render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} />);
+
+        // setup
         let option = screen.getByRole('button', { name: 'STRING' });
         userEvent.click(option);
-
         const booleanOption = screen.getByText('BOOLEAN');
+
         userEvent.click(booleanOption);
+
+        // evaluate
         expect(mockOnToggle).toBeCalledWith(EPropertyType.BOOLEAN);
+    });
 
-        option = screen.getByRole('button', { name: 'BOOLEAN' });
+    it('should toggle and emit a string value', () => {
+        // initial render
+        render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.BOOLEAN} />);
+
+        // setup
+        let option = screen.getByRole('button', { name: 'BOOLEAN' });
         userEvent.click(option);
+        const stringOption = screen.getByText('STRING');
 
-        const numberOption = screen.getByText('NUMBER');
-        userEvent.click(numberOption);
-        expect(mockOnToggle).toBeCalledWith(EPropertyType.NUMBER);
-
-        option = screen.getByRole('button', { name: 'NUMBER' });
-        userEvent.click(option);
-
-        const noneOption = screen.getByRole('option', { name: 'NONE' });
-        userEvent.click(noneOption);
-        expect(mockOnToggle).toBeCalledWith(EPropertyType.NONE);
-
-        option = screen.getByRole('button', { name: 'NONE' });
-        userEvent.click(option);
-
-        const stringOption = screen.getByRole('option', { name: 'STRING' });
         userEvent.click(stringOption);
+
+        // evaluate
         expect(mockOnToggle).toBeCalledWith(EPropertyType.STRING);
+    });
+
+    it('should toggle and emit a number value', () => {
+        // initial render
+        render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} />);
+
+        // setup
+        let option = screen.getByRole('button', { name: 'STRING' });
+        userEvent.click(option);
+        const numberOption = screen.getByText('NUMBER');
+
+        userEvent.click(numberOption);
+
+        // evaluate
+        expect(mockOnToggle).toBeCalledWith(EPropertyType.NUMBER);
+    });
+
+    it('should toggle and emit a null value', () => {
+        // initial render
+        render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} />);
+
+        // setup
+        let option = screen.getByRole('button', { name: 'STRING' });
+        userEvent.click(option);
+        const noneOption = screen.getByText('NONE');
+
+        userEvent.click(noneOption);
+
+        // evaluate
+        expect(mockOnToggle).toBeCalledWith(EPropertyType.NONE);
     });
 });

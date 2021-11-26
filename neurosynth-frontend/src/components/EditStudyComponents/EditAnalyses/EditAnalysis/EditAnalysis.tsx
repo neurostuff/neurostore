@@ -37,22 +37,18 @@ const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
                             setEditTab(newValue);
                         }}
                     >
-                        <Tab
-                            sx={EditAnalysisStyles.tab}
-                            value={0}
-                            label="Edit Analysis Details"
-                        ></Tab>
-                        <Tab sx={EditAnalysisStyles.tab} value={1} label="Edit Coordinates"></Tab>
-                        <Tab sx={EditAnalysisStyles.tab} value={2} label="Edit Conditions"></Tab>
-                        <Tab sx={EditAnalysisStyles.tab} value={3} label="Edit Images"></Tab>
+                        <Tab sx={EditAnalysisStyles.tab} value={0} label="Details"></Tab>
+                        <Tab sx={EditAnalysisStyles.tab} value={1} label="Coordinates"></Tab>
+                        <Tab sx={EditAnalysisStyles.tab} value={2} label="Conditions"></Tab>
+                        <Tab sx={EditAnalysisStyles.tab} value={3} label="Images"></Tab>
                     </Tabs>
                     <Box>
                         {editTab === 0 && (
                             <>
                                 <EditAnalysisDetails
                                     analysisId={props.analysis.id || ''}
-                                    name={props.analysis.name}
-                                    description={props.analysis.description}
+                                    name={props.analysis.name || ''}
+                                    description={props.analysis.description || ''}
                                     onEditAnalysisDetails={handleEditAnalysisDetails}
                                     onDeleteAnalysis={props.onDeleteAnalysis}
                                 />

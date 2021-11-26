@@ -30,7 +30,7 @@ jest.mock('../DisplayImagesTable/DisplayImagesTable', () => {
     };
 });
 
-describe('DisplayMetadataTableRow Component', () => {
+describe('DisplayAnalysis Component', () => {
     it('should render', () => {
         render(<DisplayAnalysis />);
         const noDataText = screen.getByText('No analysis');
@@ -101,6 +101,7 @@ describe('DisplayMetadataTableRow Component', () => {
                 index: 0,
                 sx: {
                     height: 'auto',
+                    padding: '0 2px',
                     width: '100%',
                 },
                 template: 'some_test_template',
@@ -180,6 +181,7 @@ describe('DisplayMetadataTableRow Component', () => {
                 index: 0,
                 sx: {
                     height: 'auto',
+                    padding: '0 2px',
                     width: '100%',
                 },
                 template: 'some_test_template',

@@ -99,9 +99,9 @@ describe('EditMetadataRow Component', () => {
             );
 
             const stringEditor = screen.getByRole('textbox');
-            userEvent.type(stringEditor, 'abc');
+            userEvent.type(stringEditor, 'a');
 
-            mockMetadataRow.metadataValue = 'abc';
+            mockMetadataRow.metadataValue = 'a';
 
             expect(onMetadataRowEditMock).toBeCalledWith(mockMetadataRow);
         });
@@ -109,7 +109,7 @@ describe('EditMetadataRow Component', () => {
 
     describe('EditMetadataRow Number Case', () => {
         it('should render the number editor', () => {
-            mockMetadataRow.metadataValue = 123;
+            mockMetadataRow.metadataValue = 1;
             render(
                 <MockThemeProvider>
                     <EditMetadataRow
@@ -137,10 +137,10 @@ describe('EditMetadataRow Component', () => {
                     />
                 </MockThemeProvider>
             );
-            mockMetadataRow.metadataValue = 12345;
+            mockMetadataRow.metadataValue = 1;
 
             const numberEditor = screen.getByRole('spinbutton');
-            userEvent.type(numberEditor, '12345');
+            userEvent.type(numberEditor, '1');
 
             expect(onMetadataRowEditMock).toBeCalledWith(mockMetadataRow);
         });
@@ -202,82 +202,3 @@ describe('EditMetadataRow Component', () => {
         });
     });
 });
-
-/**
- * describe('EditMetadataValue Component', () => {
-    const onEditMock = jest.fn();
-    afterEach(() => {
-        jest.clearAllMocks();
-    });
-
-    describe('EditMetadataBoolean Component', () => {
-        beforeEach(() => {
-            render(
-                <MockThemeProvider>
-                    <EditMetadataBoolean value={true} onEdit={onEditMock} />
-                </MockThemeProvider>
-            );
-        });
-
-        it('should render the editMetadataBoolean component', () => {
-            const toggle = screen.getByRole('checkbox');
-            expect(toggle).toBeInTheDocument();
-        });
-
-        it('should toggle the value when its clicked', () => {
-            const toggle = screen.getByRole('checkbox');
-            userEvent.click(toggle);
-            expect(onEditMock).toBeCalledWith(false);
-        });
-    });
-
-    describe('EditMetadataNumber Component', () => {
-        beforeEach(() => {
-            render(
-                <MockThemeProvider>
-                    <EditMetadataNumber value={0} onEdit={onEditMock} />
-                </MockThemeProvider>
-            );
-        });
-
-        it('should render the editMetadataNumber component', () => {
-            const numberInput = screen.getByRole('spinbutton');
-            expect(numberInput).toBeInTheDocument();
-        });
-
-        it('should emit the entered numeric value', () => {
-            const numberInput = screen.getByRole('spinbutton');
-            userEvent.type(numberInput, '12345');
-            expect(onEditMock).toBeCalledWith(12345);
-        });
-
-        it('should not emit for non numeric inputs', () => {
-            const numberInput = screen.getByRole('spinbutton');
-            userEvent.type(numberInput, 'abc');
-            expect(onEditMock).not.toBeCalled();
-        });
-    });
-
-    describe('EditMetadataString Component', () => {
-        beforeEach(() => {
-            render(
-                <MockThemeProvider>
-                    <EditMetadataString value={''} onEdit={onEditMock} />
-                </MockThemeProvider>
-            );
-        });
-
-        it('should render the editMetadataString component', () => {
-            const textInput = screen.getByRole('textbox');
-            expect(textInput).toBeInTheDocument();
-        });
-
-        it('should emit the written text', () => {
-            const textInput = screen.getByRole('textbox');
-            userEvent.type(textInput, 'abc');
-            expect(onEditMock).toBeCalledWith('abc');
-        });
-    });
-});
-
- */

@@ -20,6 +20,7 @@ const EditStudyDetailsStyles: Style = {
     button: {
         padding: '8px',
         width: '200px',
+        fontWeight: 'bold',
     },
 };
 

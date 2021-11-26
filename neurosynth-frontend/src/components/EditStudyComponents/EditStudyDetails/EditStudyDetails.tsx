@@ -15,7 +15,7 @@ import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import API from '../../../utils/api';
 import EditStudyDetailsStyles from './EditStudyDetails.styles';
 
-export interface IStudyEditDetailsProperties {
+export interface IEditStudyDetailsProperties {
     studyId: string;
     name: string;
     authors: string;
@@ -24,21 +24,21 @@ export interface IStudyEditDetailsProperties {
     description: string;
 }
 
-export interface IStudyEditDetails extends IStudyEditDetailsProperties {
+export interface IEditStudyDetails extends IEditStudyDetailsProperties {
     onEditStudyDetails: (update: { [key: string]: string }) => void;
 }
 
-const EditStudyDetails: React.FC<IStudyEditDetails> = React.memo((props) => {
+const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
     const { getAccessTokenSilently } = useAuth0();
     const context = useContext(GlobalContext);
     const [updatedEnabled, setUpdateEnabled] = useState(false);
-    const [originalDetails, setOriginalDetails] = useState<IStudyEditDetailsProperties>({
-        studyId: '',
-        name: '',
-        authors: '',
-        publication: '',
-        doi: '',
-        description: '',
+    const [originalDetails, setOriginalDetails] = useState<IEditStudyDetailsProperties>({
+        studyId: props.studyId,
+        name: props.name,
+        authors: props.authors,
+        publication: props.publication,
+        doi: props.doi,
+        description: props.description,
     });
 
     const textFieldInputProps = {
@@ -179,7 +179,7 @@ const EditStudyDetails: React.FC<IStudyEditDetails> = React.memo((props) => {
                         variant="contained"
                         sx={{ ...EditStudyDetailsStyles.button, marginRight: '15px' }}
                     >
-                        <b>Update</b>
+                        Update
                     </Button>
                     <Button
                         disabled={!updatedEnabled}
@@ -188,7 +188,7 @@ const EditStudyDetails: React.FC<IStudyEditDetails> = React.memo((props) => {
                         variant="outlined"
                         sx={EditStudyDetailsStyles.button}
                     >
-                        <b>Revert Changes</b>
+                        Revert Changes
                     </Button>
                 </AccordionDetails>
             </Accordion>

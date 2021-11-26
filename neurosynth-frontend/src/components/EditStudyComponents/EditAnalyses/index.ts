@@ -24,8 +24,8 @@ export interface IEditAnalysis {
 
 export interface IEditAnalysisDetails {
     analysisId: string;
-    name: string | undefined | null;
-    description: string | undefined | null;
+    name: string;
+    description: string;
     onEditAnalysisDetails: (update: { [key: string]: any }) => void;
     onDeleteAnalysis: IDeleteAnalysisFn;
 }

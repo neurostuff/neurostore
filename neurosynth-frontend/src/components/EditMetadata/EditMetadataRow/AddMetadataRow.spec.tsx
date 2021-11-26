@@ -7,24 +7,26 @@ import AddMetadataRow, { getStartValFromType } from './AddMetadataRow';
 describe('AddMetadataRow Component', () => {
     const onAddMetadataRowMock = jest.fn();
 
-    beforeEach(() => {
-        render(
-            <MockThemeProvider>
-                <AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />
-            </MockThemeProvider>
-        );
-    });
-
     afterEach(() => {
         jest.clearAllMocks();
     });
 
     it('should render', () => {
+        render(
+            <MockThemeProvider>
+                <AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />
+            </MockThemeProvider>
+        );
         const addButton = screen.getByText('ADD');
         expect(addButton).toBeInTheDocument();
     });
 
     it('should get the correct starting value from the getStartValFromType function', () => {
+        render(
+            <MockThemeProvider>
+                <AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />
+            </MockThemeProvider>
+        );
         expect(getStartValFromType(EPropertyType.BOOLEAN)).toEqual(false);
         expect(getStartValFromType(EPropertyType.NUMBER)).toEqual(0);
         expect(getStartValFromType(EPropertyType.STRING)).toEqual('');
@@ -32,6 +34,11 @@ describe('AddMetadataRow Component', () => {
     });
 
     it('should be disabled when metadata key input is empty', () => {
+        render(
+            <MockThemeProvider>
+                <AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />
+            </MockThemeProvider>
+        );
         const metadataKeyInput = screen.getByPlaceholderText('New metadata key');
         userEvent.type(metadataKeyInput, '');
 
@@ -43,6 +50,11 @@ describe('AddMetadataRow Component', () => {
     });
 
     it('should add the correct string type', () => {
+        render(
+            <MockThemeProvider>
+                <AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />
+            </MockThemeProvider>
+        );
         const mockArg: IMetadataRowModel = {
             metadataKey: 'test key',
             metadataValue: 'test val',
@@ -61,6 +73,11 @@ describe('AddMetadataRow Component', () => {
     });
 
     it('should add the correct boolean type', () => {
+        render(
+            <MockThemeProvider>
+                <AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />
+            </MockThemeProvider>
+        );
         const mockArg: IMetadataRowModel = {
             metadataKey: 'test key',
             metadataValue: true,
@@ -84,6 +101,11 @@ describe('AddMetadataRow Component', () => {
     });
 
     it('should add the correct number type', () => {
+        render(
+            <MockThemeProvider>
+                <AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />
+            </MockThemeProvider>
+        );
         const mockArg: IMetadataRowModel = {
             metadataKey: 'test key',
             metadataValue: 12345,
@@ -107,6 +129,11 @@ describe('AddMetadataRow Component', () => {
     });
 
     it('should add the correct none type', () => {
+        render(
+            <MockThemeProvider>
+                <AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />
+            </MockThemeProvider>
+        );
         const mockArg: IMetadataRowModel = {
             metadataKey: 'test key',
             metadataValue: null,
@@ -125,5 +152,25 @@ describe('AddMetadataRow Component', () => {
         userEvent.click(addButton);
 
         expect(onAddMetadataRowMock).toBeCalledWith(mockArg);
+    });
+
+    it('should not show an error message if the key is invalid', () => {
+        const onAddMetadataRowMock = jest.fn();
+        onAddMetadataRowMock.mockReturnValue(false);
+
+        render(
+            <MockThemeProvider>
+                <AddMetadataRow onAddMetadataRow={onAddMetadataRowMock} />
+            </MockThemeProvider>
+        );
+
+        const metadataKeyInput = screen.getByPlaceholderText('New metadata key');
+
+        userEvent.type(metadataKeyInput, 'some test key');
+        const addButton = screen.getByText('ADD').closest('button') as HTMLElement;
+        userEvent.click(addButton);
+
+        const errorMessage = screen.getByText('All metadata keys must be unique');
+        expect(errorMessage).toBeInTheDocument();
     });
 });

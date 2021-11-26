@@ -9,7 +9,7 @@ import {
 import { ExpandMoreOutlined } from '@mui/icons-material';
 import EditStudyMetadataStyles from './EditStudyMetadata.styles';
 import { EditMetadata, IMetadataRowModel } from '../..';
-import React, { useState, useContext, useEffect, useCallback } from 'react';
+import React, { useState, useContext, useCallback } from 'react';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import { AxiosError } from 'axios';
 import API from '../../../utils/api';
@@ -21,13 +21,15 @@ export interface IEditStudyMetadata {
     onUpdateStudyMetadata: (metadata: any) => void;
 }
 
-const arrayToMetadata = (arr: IMetadataRowModel[]): { [key: string]: any } => {
+export const arrayToMetadata = (arr: IMetadataRowModel[]): { [key: string]: any } => {
     const tempObj: { [key: string]: any } = {};
     arr.forEach((element) => (tempObj[element.metadataKey] = element.metadataValue));
     return tempObj;
 };
 
-const metadataToArray = (metadata: { [key: string]: any } | undefined): IMetadataRowModel[] => {
+export const metadataToArray = (
+    metadata: { [key: string]: any } | undefined
+): IMetadataRowModel[] => {
     const transformedArr = metadata
         ? Object.keys(metadata).map((row) => ({
               metadataKey: row,
@@ -43,8 +45,6 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
     const { getAccessTokenSilently } = useAuth0();
     const [updatedEnabled, setUpdateEnabled] = useState(false);
 
-    // this array holds the initial metadata and feeds the editMetadata component. This is only updated on REVERT;
-    // otherwise we get a setState error
     const [metadataArr, setMetadataArr] = useState<IMetadataRowModel[]>(
         metadataToArray(props.metadata)
     );
@@ -159,7 +159,7 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
                     variant="contained"
                     sx={{ ...EditStudyMetadataStyles.button, marginRight: '15px' }}
                 >
-                    <b>Update</b>
+                    Update
                 </Button>
                 <Button
                     disabled={!updatedEnabled}
@@ -168,7 +168,7 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
                     onClick={handleRevertChanges}
                     sx={EditStudyMetadataStyles.button}
                 >
-                    <b>Revert Changes</b>
+                    Revert Changes
                 </Button>
             </AccordionDetails>
         </Accordion>
