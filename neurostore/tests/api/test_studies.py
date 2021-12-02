@@ -1,7 +1,8 @@
 import pytest
 
 from ..request_utils import decode_json
-from ...models.data import Study
+from ...models import Study, User, Analysis
+from ...resources.auth import decode_token
 
 
 def test_get_studies(auth_client, ingest_neurosynth, ingest_neuroquery):
@@ -107,3 +108,19 @@ def test_post_studies(auth_client, ingest_neurosynth):
     }
 
     auth_client.post("/api/studies/", data=my_study)
+
+
+def test_delete_studies(auth_client, ingest_neurosynth, session):
+    study_db = Study.query.first()
+    id_ = decode_token(auth_client.token)['sub']
+    user = User.query.filter_by(external_id=id_).first()
+    study_db.user = user
+    session.add(study_db)
+    session.commit()
+
+    get = auth_client.get(f"/api/studies/{study_db.id}")
+
+    auth_client.delete(f"/api/studies/{study_db.id}")
+
+    for analysis in get.json['analyses']:
+        assert Analysis.query.filter_by(id=analysis).first() is None

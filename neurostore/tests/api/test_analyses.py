@@ -1,5 +1,5 @@
 from ..request_utils import decode_json
-from ...models import Analysis, User
+from ...models import Analysis, User, Point, Image
 from ...schemas import AnalysisSchema
 from ...resources.auth import decode_token
 
@@ -51,3 +51,33 @@ def test_post_analyses(auth_client, ingest_neurosynth, session):
     resp = auth_client.post("/api/analyses/", data=analysis)
 
     assert resp.status_code == 200
+
+
+def test_delete_coordinate_analyses(auth_client, ingest_neurosynth, session):
+    analysis_db = Analysis.query.first()
+    analysis = AnalysisSchema().dump(analysis_db)
+    id_ = decode_token(auth_client.token)['sub']
+    user = User.query.filter_by(external_id=id_).first()
+    analysis_db.user = user
+    session.add(analysis_db)
+    session.commit()
+
+    auth_client.delete(f"/api/analyses/{analysis_db.id}")
+
+    for point in analysis['points']:
+        assert Point.query.filter_by(id=point).first() is None
+
+
+def test_delete_image_analyses(auth_client, ingest_neurovault, session):
+    analysis_db = Analysis.query.first()
+    analysis = AnalysisSchema().dump(analysis_db)
+    id_ = decode_token(auth_client.token)['sub']
+    user = User.query.filter_by(external_id=id_).first()
+    analysis_db.user = user
+    session.add(analysis_db)
+    session.commit()
+
+    auth_client.delete(f"/api/analyses/{analysis_db.id}")
+
+    for image in analysis['images']:
+        assert Image.query.filter_by(id=image).first() is None
