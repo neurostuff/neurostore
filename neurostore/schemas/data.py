@@ -100,7 +100,7 @@ class ConditionSchema(BaseDataSchema):
 class ImageSchema(BaseDataSchema):
 
     # serialization
-    analysis = fields.Function(lambda image: image.analysis.id, dump_only=True, db_only=True)
+    analysis = StringOrNested("AnalysisSchema", use_nested=False)
     analysis_name = fields.Function(
         lambda image: image.analysis.name, dump_only=True, db_only=True
     )
