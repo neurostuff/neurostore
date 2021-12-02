@@ -181,14 +181,14 @@ def ingest_neurosynth(max_rows=None):
                     analysis=a,
                 )
                 points.append(point)
-                # add annotation
-                notes.append(
-                    AnnotationAnalysis(
-                        note=annotation_row._asdict(),
-                        study=s,
-                        analysis=a,
-                    )
+            # add annotation
+            notes.append(
+                AnnotationAnalysis(
+                    note=annotation_row._asdict(),
+                    study=s,
+                    analysis=a,
                 )
+            )
 
         db.session.add_all([s] + analyses + points)
         db.session.commit()
