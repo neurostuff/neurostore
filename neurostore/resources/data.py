@@ -192,6 +192,19 @@ class ObjectView(BaseView):
 
         return self.__class__._schema().dump(record)
 
+    def delete(self, id):
+        record = self.__class__._model.query.filter_by(id=id).first()
+
+        current_user = get_current_user()
+        if record.user_id != current_user.external_id:
+            abort(403)
+        else:
+            db.session.delete(record)
+
+        db.session.commit()
+
+        return 204
+
 
 LIST_USER_ARGS = {
     "search": fields.String(missing=None),
@@ -336,6 +349,7 @@ class ListView(BaseView):
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
         return self.__class__._schema(context={'nested': nested}).dump(record)
+
 
 # Individual resource views
 
@@ -524,6 +538,9 @@ class ConditionListView(ListView):
 
 @view_maker
 class ImageListView(ListView):
+    _parent = {
+        "analysis": Analysis,
+    }
     _search_fields = ("filename", "space", "value_type", "analysis_name")
 
 
