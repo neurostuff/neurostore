@@ -14,7 +14,10 @@ from ...schemas.data import DatasetSchema, StudySchema, AnalysisSchema, StringOr
 def test_nested(auth_client, ingest_neurosynth, nested, resource_schema):
     resource, schema = resource_schema
     resp = auth_client.get(f"/api/{resource}/?nested={nested}")
-    fields = [f for f in schema.fields if isinstance(schema.fields[f], StringOrNested)]
+    fields = [
+        f for f in schema.fields
+        if isinstance(schema.fields[f], StringOrNested) and schema.fields[f].use_nested
+    ]
     for field in fields:
         if nested == 'true':
             try:

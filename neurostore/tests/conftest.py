@@ -4,7 +4,7 @@ from ..core import app as _app
 from ..database import db as _db
 import sqlalchemy as sa
 from .. import ingest
-from ..models import User, Role, Study
+from ..models import User, Role, Study, Dataset, Annotation, AnnotationAnalysis
 from auth0.v3.authentication import GetToken
 
 """
@@ -182,3 +182,29 @@ def user_studies(session, add_users):
 
     session.add_all(to_commit)
     session.commit()
+
+
+@pytest.fixture(scope="function")
+def simple_neurosynth_annotation(session, ingest_neurosynth):
+    dset = Dataset.query.filter_by(name="neurosynth").first()
+    annot = dset.annotations[0]
+    smol_notes = []
+    for note in annot.annotation_analyses:
+        smol_notes.append(
+            AnnotationAnalysis(
+                study=note.study,
+                analysis=note.analysis,
+                note={'animal': note.note['animal']},
+            )
+        )
+
+    smol_annot = Annotation(
+        name="smol " + annot.name,
+        source="neurostore",
+        dataset=annot.dataset,
+        annotation_analyses=smol_notes,
+    )
+    session.add(smol_annot)
+    session.commit()
+
+    return smol_annot

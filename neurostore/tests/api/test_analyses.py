@@ -1,6 +1,8 @@
 from ..request_utils import decode_json
-from ...models import Analysis
+from ...models import Analysis, User
 from ...schemas import AnalysisSchema
+from ...resources.auth import decode_token
+
 
 def test_get_analyses(auth_client, ingest_neurosynth):
     # List of analyses
@@ -36,11 +38,16 @@ def test_get_analyses(auth_client, ingest_neurosynth):
     assert decode_json(resp)["id"] == a_id
 
 
-def test_post_analyses(auth_client, ingest_neurosynth):
-    analysis = Analysis.query.first()
-    payload = AnalysisSchema().dump(analysis)
+def test_post_analyses(auth_client, ingest_neurosynth, session):
+    analysis_db = Analysis.query.first()
+    analysis = AnalysisSchema().dump(analysis_db)
+    id_ = decode_token(auth_client.token)['sub']
+    user = User.query.filter_by(external_id=id_).first()
+    analysis_db.study.user = user
+    session.add(analysis_db.study)
+    session.commit()
     for k in ["user", "id", "created_at"]:
-        payload.pop(k)
-    resp = auth_client.post("/api/analyses/", data=payload)
+        analysis.pop(k)
+    resp = auth_client.post("/api/analyses/", data=analysis)
 
     assert resp.status_code == 200
