@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DisplayImagesTableRowModel } from '..';
-import DisplayImagesTableRow from './DisplayImagesTableRow';
+import DisplayImagesTableRow from './DisplayImageTableRow';
 
 describe('DisplayImagesTableRow Component', () => {
     const mockTableRow: DisplayImagesTableRowModel = {

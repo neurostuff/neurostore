@@ -3,6 +3,7 @@ import {
     Analysis,
     ConditionsApiFactory,
     Configuration,
+    Dataset,
     DatasetsApiFactory,
     ImagesApiFactory,
     Point,
@@ -16,6 +17,7 @@ import {
 export type StudyApiResponse = Study & ReadOnly;
 export type AnalysisApiResponse = Analysis & ReadOnly;
 export type PointsApiResponse = Point & ReadOnly;
+export type DatasetsApiResponse = Dataset & ReadOnly;
 
 const APIDomain = process.env.REACT_APP_API_DOMAIN as string;
 const config: Configuration = new Configuration({

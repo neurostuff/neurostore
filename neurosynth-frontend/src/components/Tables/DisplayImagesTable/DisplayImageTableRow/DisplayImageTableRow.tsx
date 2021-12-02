@@ -1,9 +1,8 @@
 import { Box, Collapse, IconButton, TableCell, TableRow, Typography } from '@mui/material';
 import { KeyboardArrowDownRounded, KeyboardArrowUpRounded } from '@mui/icons-material';
 import React, { useState } from 'react';
-import { DisplayValuesTable, IDisplayValuesTableModel } from '../..';
+import { DisplayValuesTable, IDisplayValuesTableModel, DisplayImagesTableRowModel } from '../../..';
 import DisplayImageTableRowStyles from './DisplayImageTableRow.styles';
-import { DisplayImagesTableRowModel } from '..';
 
 const DisplayImagesTableRow: React.FC<DisplayImagesTableRowModel> = (props) => {
     const [expanded, setExpanded] = useState(false);

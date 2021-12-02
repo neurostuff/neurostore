@@ -5,25 +5,28 @@
 // components
 import Navbar from './Navbar/Navbar';
 import SearchBar from './SearchBar/SearchBar';
-import DisplayStudiesTable from './DisplayStudiesTable/DisplayStudiesTable';
+import StudiesTable from './Tables/StudiesTable/StudiesTable';
 import EditMetadata from './EditMetadata/EditMetadata';
 import DisplayAnalysis from './DisplayAnalysis/DisplayAnalysis';
-import DisplayValuesTable from './DisplayValuesTable/DisplayValuesTable';
+import DisplayValuesTable from './Tables/DisplayValuesTable/DisplayValuesTable';
+import DisplayImagesTable from './Tables/DisplayImagesTable/DisplayImagesTable';
 import TextExpansion from './TextExpansion/TextExpansion';
 import Visualizer from './Visualizer/Visualizer';
 import EditAnalyses from './EditStudyComponents/EditAnalyses/EditAnalyses';
 import EditStudyDetails from './EditStudyComponents/EditStudyDetails/EditStudyDetails';
+import TextEdit from './TextEdit/TextEdit';
 
 // models
 export * from './EditMetadata';
 export * from './Navbar';
-export * from './DisplayValuesTable';
+export * from './Tables/DisplayValuesTable';
+export * from './Tables/DisplayImagesTable';
 
 // export components
 export {
     Navbar,
     SearchBar,
-    DisplayStudiesTable,
+    StudiesTable,
     EditMetadata,
     DisplayAnalysis,
     DisplayValuesTable,
@@ -31,4 +34,6 @@ export {
     Visualizer,
     EditAnalyses,
     EditStudyDetails,
+    DisplayImagesTable,
+    TextEdit,
 };

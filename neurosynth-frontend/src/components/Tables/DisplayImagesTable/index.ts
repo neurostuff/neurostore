@@ -1,4 +1,4 @@
-import { ReadOnly, Image } from '../../gen/api';
+import { ReadOnly, Image } from '../../../gen/api';
 
 export interface DisplayImagesTableModel {
     images: (Image & ReadOnly)[] | undefined;

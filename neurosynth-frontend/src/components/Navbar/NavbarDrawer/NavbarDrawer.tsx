@@ -36,27 +36,26 @@ const NavbarDrawer: React.FC<NavbarArgs> = (props) => {
             </Button>
             <Drawer anchor="left" open={drawerIsOpen} onClose={toggleDrawer}>
                 <List sx={{ width: '240px' }}>
-                    {props.navOptions.map((navItem, index) => (
-                        <ListItem
-                            button
-                            key={index}
-                            component={NavLink}
-                            to={navItem.path}
-                            onClick={toggleDrawer}
-                        >
-                            <ListItemText primary={navItem.label} />
-                        </ListItem>
-                    ))}
-                    {!isAuthenticated && (
-                        <ListItem button onClick={props.login}>
-                            <ListItemText primary="Login"></ListItemText>
-                        </ListItem>
-                    )}
-                    {isAuthenticated && (
-                        <ListItem button onClick={props.logout}>
-                            <ListItemText primary="Logout"></ListItemText>
-                        </ListItem>
-                    )}
+                    {props.navOptions.map((navItem, index) => {
+                        const canShow = navItem.authenticationRequired ? isAuthenticated : true;
+
+                        return (
+                            canShow && (
+                                <ListItem
+                                    button
+                                    key={index}
+                                    component={NavLink}
+                                    to={navItem.path}
+                                    onClick={toggleDrawer}
+                                >
+                                    <ListItemText primary={navItem.label} />
+                                </ListItem>
+                            )
+                        );
+                    })}
+                    <ListItem button onClick={isAuthenticated ? props.logout : props.login}>
+                        <ListItemText primary={isAuthenticated ? 'Logout' : 'Login'}></ListItemText>
+                    </ListItem>
                 </List>
             </Drawer>
             <IconButton onClick={toggleDrawer} size="medium">

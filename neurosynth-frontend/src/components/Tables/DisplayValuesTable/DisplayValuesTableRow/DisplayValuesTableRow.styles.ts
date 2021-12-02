@@ -1,4 +1,4 @@
-import { Style } from '../../..';
+import { Style } from '../../../..';
 
 const DisplayMetadataTableRowStyles: Style = {
     string: {

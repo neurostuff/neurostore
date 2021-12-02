@@ -12,7 +12,7 @@ jest.mock('../Visualizer/Visualizer', () => {
     };
 });
 
-jest.mock('../DisplayValuesTable', () => {
+jest.mock('../Tables/DisplayValuesTable/DisplayValuesTable', () => {
     return {
         __esModule: true,
         default: (props: any) => {
@@ -21,7 +21,7 @@ jest.mock('../DisplayValuesTable', () => {
     };
 });
 
-jest.mock('../DisplayImagesTable/DisplayImagesTable', () => {
+jest.mock('../Tables/DisplayImagesTable/DisplayImagesTable', () => {
     return {
         __esModule: true,
         default: (props: any) => {

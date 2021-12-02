@@ -1,10 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import { Router } from 'react-router-dom';
-import { DisplayStudiesTable } from '..';
-import { MockThemeProvider } from '../../testing/helpers';
-import { StudyApiResponse } from '../../utils/api';
+import { StudiesTable } from '../..';
+import { MockThemeProvider } from '../../../testing/helpers';
+import { StudyApiResponse } from '../../../utils/api';
 
-describe('DisplayStudiesTable Component', () => {
+describe('StudiesTable Component', () => {
     const historyMock = {
         push: jest.fn(),
         location: {},
@@ -254,7 +254,7 @@ describe('DisplayStudiesTable Component', () => {
         render(
             <MockThemeProvider>
                 <Router history={historyMock as any}>
-                    <DisplayStudiesTable studies={mockStudies} />
+                    <StudiesTable studies={mockStudies} />
                 </Router>
             </MockThemeProvider>
         );
@@ -269,7 +269,7 @@ describe('DisplayStudiesTable Component', () => {
         render(
             <MockThemeProvider>
                 <Router history={historyMock as any}>
-                    <DisplayStudiesTable studies={[]} />
+                    <StudiesTable studies={[]} />
                 </Router>
             </MockThemeProvider>
         );

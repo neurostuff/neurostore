@@ -1,9 +1,10 @@
 import { ChangeEvent, useEffect, useState } from 'react';
-import { TablePagination, Typography, Pagination } from '@mui/material';
-import API, { StudyApiResponse } from '../../utils/api';
+import { TablePagination, Typography, Pagination, Box } from '@mui/material';
+import API, { DatasetsApiResponse, StudyApiResponse } from '../../utils/api';
 import { Metadata } from '../../gen/api';
 import StudiesPageStyles from './StudiesPage.styles';
-import { DisplayStudiesTable, SearchBar } from '../../components';
+import { StudiesTable, SearchBar } from '../../components';
+import { useAuth0 } from '@auth0/auth0-react';
 
 export enum Source {
     NEUROSTORE = 'neurostore',
@@ -45,9 +46,9 @@ const StudiesPage = () => {
         if (!totalCount || !pageSize) {
             return 0;
         }
-        const dividedValue = Math.trunc(totalCount / pageSize);
+        const numTotalPages = Math.trunc(totalCount / pageSize);
         const remainder = totalCount % pageSize;
-        return remainder > 0 ? dividedValue + 1 : dividedValue;
+        return remainder > 0 ? numTotalPages + 1 : numTotalPages;
     };
 
     const handleOnSearch = (newSearchTerm: SearchCriteria) => {
@@ -155,7 +156,9 @@ const StudiesPage = () => {
                 count={searchMetadata?.total_count || 0}
             ></TablePagination>
 
-            <DisplayStudiesTable studies={studies} />
+            <Box sx={{ marginBottom: '1rem' }}>
+                <StudiesTable studies={studies} />
+            </Box>
 
             <Pagination
                 color="primary"

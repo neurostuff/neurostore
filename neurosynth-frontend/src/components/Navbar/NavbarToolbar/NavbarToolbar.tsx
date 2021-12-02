@@ -20,34 +20,34 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
                 </Box>
             </Button>
             <Box sx={NavbarToolbarStyles.navLinksContainer}>
-                {props.navOptions.map((navItem, index) => (
-                    <Button key={index} sx={NavbarToolbarStyles.button}>
-                        <Box
-                            to={navItem.path}
-                            exact
-                            component={NavLink}
-                            sx={NavbarToolbarStyles.link}
-                            // manually add bg color as navlink doesn't have access to mui system
-                            activeStyle={{ color: '#ef8a24' }}
-                        >
-                            {navItem.label}
-                        </Box>
-                    </Button>
-                ))}
-                {!isAuthenticated && (
-                    <Button sx={NavbarToolbarStyles.button} onClick={props.login}>
-                        <Box component="span" sx={NavbarToolbarStyles.link}>
-                            Login
-                        </Box>
-                    </Button>
-                )}
-                {isAuthenticated && (
-                    <Button sx={NavbarToolbarStyles.button} onClick={props.logout}>
-                        <Box component="span" sx={NavbarToolbarStyles.link}>
-                            Logout
-                        </Box>
-                    </Button>
-                )}
+                {props.navOptions.map((navItem, index) => {
+                    const canShow = navItem.authenticationRequired ? isAuthenticated : true;
+
+                    return (
+                        canShow && (
+                            <Button key={index} sx={NavbarToolbarStyles.button}>
+                                <Box
+                                    to={navItem.path}
+                                    exact
+                                    component={NavLink}
+                                    sx={NavbarToolbarStyles.link}
+                                    // manually add bg color as navlink doesn't have access to mui system
+                                    activeStyle={{ color: '#ef8a24' }}
+                                >
+                                    {navItem.label}
+                                </Box>
+                            </Button>
+                        )
+                    );
+                })}
+                <Button
+                    sx={NavbarToolbarStyles.button}
+                    onClick={isAuthenticated ? props.logout : props.login}
+                >
+                    <Box component="span" sx={NavbarToolbarStyles.link}>
+                        {isAuthenticated ? 'Logout' : 'Login'}
+                    </Box>
+                </Button>
             </Box>
         </>
     );

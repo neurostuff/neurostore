@@ -228,8 +228,8 @@ const StudyPage = () => {
                     </Box>
                 ) : (
                     /** * The following CSS is applied to make sure that the tab height grows based on
-            the height * of the analysis. * The tab height should expand and match the height if the
-            analysis accordions are expanded */
+                    the height * of the analysis. * The tab height should expand and match the height if the
+                    analysis accordions are expanded */
                     <Box sx={{ display: 'flex', flexDirection: 'row' }}>
                         <Box sx={StudyPageStyles.matchingSibling}>
                             {/* apply flex basis 0 to analyses tabs to make sure it matches sibling */}

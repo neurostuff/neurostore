@@ -1,8 +1,8 @@
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { Image, ReadOnly } from '../../gen/api';
+import { Image, ReadOnly } from '../../../gen/api';
 import { Box } from '@mui/system';
-import DisplayImagesTableRow from './DisplayImageTableRow/DisplayImagesTableRow';
+import DisplayImagesTableRow from './DisplayImageTableRow/DisplayImageTableRow';
 import { DisplayImagesTableModel } from '.';
 
 const DisplayImagesTable: React.FC<DisplayImagesTableModel> = (props) => {

@@ -1,0 +1,74 @@
+import { Box, Button, Dialog, DialogContent, DialogTitle, TextField } from '@mui/material';
+import { ChangeEvent, useState } from 'react';
+
+export interface ICreateDatasetDialog {
+    isOpen: boolean;
+    onCreateDataset: (dataset: { name: string; description: string }) => void;
+    onCloseDialog: () => void;
+}
+
+const CreateDatasetDialog: React.FC<ICreateDatasetDialog> = (props) => {
+    const [newDatasetDetails, setNewDatasetDetails] = useState({
+        name: '',
+        description: '',
+    });
+
+    const handleOnChange = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+        setNewDatasetDetails((prevState) => ({
+            ...prevState,
+            [event.target.name]: event.target.value,
+        }));
+    };
+
+    const handleOnClose = () => {
+        setNewDatasetDetails({
+            name: '',
+            description: '',
+        });
+        props.onCloseDialog();
+    };
+
+    return (
+        <Dialog open={props.isOpen} onClose={handleOnClose}>
+            <DialogTitle>Create new dataset</DialogTitle>
+            <DialogContent>
+                <TextField
+                    label="Dataset Name"
+                    value={newDatasetDetails.name}
+                    name="name"
+                    onChange={handleOnChange}
+                    sx={{ width: '100%', margin: '5px 0 1rem 0' }}
+                />
+                <TextField
+                    label="Dataset Description"
+                    multiline
+                    onChange={handleOnChange}
+                    name="description"
+                    value={newDatasetDetails.description}
+                    sx={{ width: '100%', margin: '0 0 1.5rem 0' }}
+                />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Button
+                        sx={{ width: '150px' }}
+                        onClick={() => {
+                            props.onCreateDataset(newDatasetDetails);
+                        }}
+                        variant="contained"
+                    >
+                        Create
+                    </Button>
+                    <Button
+                        sx={{ width: '150px' }}
+                        onClick={handleOnClose}
+                        variant="outlined"
+                        color="error"
+                    >
+                        Cancel
+                    </Button>
+                </Box>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+export default CreateDatasetDialog;

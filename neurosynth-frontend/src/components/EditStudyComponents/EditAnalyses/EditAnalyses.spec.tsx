@@ -11,7 +11,9 @@ jest.mock('./EditAnalysis/EditAnalysis', () => {
                 <div>
                     <input
                         onChange={() => {
-                            props.onEditAnalysisDetails({ keyToUpdate: 'valueToUpdate' });
+                            props.onEditAnalysisDetails('some-id', {
+                                keyToUpdate: 'valueToUpdate',
+                            });
                         }}
                         data-testid="edit"
                     />

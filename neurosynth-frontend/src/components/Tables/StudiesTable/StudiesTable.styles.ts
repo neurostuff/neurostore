@@ -1,13 +1,8 @@
-import { grey } from '@mui/material/colors';
-import { Style } from '../..';
+import { Style } from '../../..';
 
-const DisplayStudiesTableStyles: Style = {
-    root: {
-        margin: '2% 0',
-    },
+const StudiesTableStyles: Style = {
     tableRow: {
         '&:hover': {
-            backgroundColor: grey[200],
             cursor: 'pointer',
             transition: '0.25s',
         },
@@ -22,4 +17,4 @@ const DisplayStudiesTableStyles: Style = {
     },
 };
 
-export default DisplayStudiesTableStyles;
+export default StudiesTableStyles;

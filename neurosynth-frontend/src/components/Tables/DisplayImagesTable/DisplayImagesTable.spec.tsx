@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DisplayImagesTableModel } from '.';
-import { Image, ReadOnly } from '../../gen/api';
+import { Image, ReadOnly } from '../../../gen/api';
 import DisplayImagesTable from './DisplayImagesTable';
 
 describe('DisplayImagesTable Component', () => {
