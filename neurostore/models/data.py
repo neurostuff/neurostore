@@ -123,7 +123,7 @@ class Analysis(BaseMixin, db.Model):
         "Condition",
         secondary="analysis_conditions",
         backref=backref("analyses"),
-        cascade="all, delete",
+        # cascade="all, delete",
     )
     points = relationship(
         "Point",
@@ -138,7 +138,9 @@ class Analysis(BaseMixin, db.Model):
     weights = association_proxy("analysis_conditions", "weight")
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("analyses"))
-    analysis_conditions = relationship("AnalysisConditions", backref=backref("analysis"), cascade="all, delete-orphan")
+    analysis_conditions = relationship(
+        "AnalysisConditions", backref=backref("analysis"), cascade="all, delete"
+    )
 
 
 class Condition(BaseMixin, db.Model):
@@ -148,7 +150,10 @@ class Condition(BaseMixin, db.Model):
     description = db.Column(db.String)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("conditions"))
-    analysis_conditions = relationship("AnalysisConditions", backref=backref("condition"), cascade="all, delete-orphan")
+    analysis_conditions = relationship(
+        "AnalysisConditions", backref=backref("condition"), cascade="all, delete"
+    )
+
 
 class AnalysisConditions(db.Model):
     __tablename__ = "analysis_conditions"
