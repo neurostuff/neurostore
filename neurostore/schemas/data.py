@@ -244,7 +244,7 @@ class AnnotationSchema(BaseDataSchema):
 
     @post_load
     def add_id(self, data, **kwargs):
-        if isinstance(data['dataset_id'], str):
+        if isinstance(data.get('dataset_id'), str):
             data['dataset'] = {'id': data.pop('dataset_id')}
         return data
 
