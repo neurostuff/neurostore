@@ -226,7 +226,7 @@ class AnnotationAnalysisSchema(BaseDataSchema):
 class AnnotationSchema(BaseDataSchema):
     # serialization
     dataset_id = fields.String(data_key='dataset')
-    annotation_analyses = fields.Nested(AnnotationAnalysisSchema, many=True)
+    annotation_analyses = fields.Nested(AnnotationAnalysisSchema, data_key="notes", many=True)
 
     source = fields.String(dump_only=True, db_only=True, allow_none=True)
     source_id = fields.String(dump_only=True, db_only=True, allow_none=True)
@@ -236,22 +236,10 @@ class AnnotationSchema(BaseDataSchema):
         additional = ("name", "description")
         allow_none = ("name", "description")
 
-    @pre_load
-    def process_values(self, data, **kwargs):
-        if data.get("notes") is not None:
-            data['annotation_analyses'] = data.pop('notes')
-        return data
-
     @post_load
     def add_id(self, data, **kwargs):
         if isinstance(data.get('dataset_id'), str):
             data['dataset'] = {'id': data.pop('dataset_id')}
-        return data
-
-    @post_dump
-    def post_values(self, data, **kwargs):
-        if data.get("annotation_analyses") is not None:
-            data['notes'] = data.pop('annotation_analyses')
         return data
 
 
