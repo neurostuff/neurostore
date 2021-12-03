@@ -6,7 +6,10 @@ from ..core import app as _app
 from ..database import db as _db
 import sqlalchemy as sa
 from .. import ingest
-from ..models import User, Role, Study, Dataset, Annotation, AnnotationAnalysis, AnalysisConditions, Point, Image
+from ..models import (
+    User, Role, Study, Dataset, Annotation, AnnotationAnalysis,
+    AnalysisConditions, Point, Image
+)
 from auth0.v3.authentication import GetToken
 
 """
