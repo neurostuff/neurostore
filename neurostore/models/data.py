@@ -148,10 +148,6 @@ class Condition(BaseMixin, db.Model):
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("conditions"))
 
-    def __init__(self, name=None, description=None):
-        self.name = name
-        self.description = description
-
 
 class AnalysisConditions(db.Model):
     __tablename__ = "analysis_conditions"
@@ -167,10 +163,6 @@ class AnalysisConditions(db.Model):
     )
     analysis = relationship("Analysis", backref=backref("analysis_conditions"))
     condition = relationship("Condition", backref=backref("analysis_conditions"))
-
-    def __init__(self, condition=None, weight=None):
-        self.condition = condition
-        self.weight = weight
 
 
 PointEntityMap = db.Table(
