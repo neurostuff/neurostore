@@ -357,8 +357,8 @@ class ListView(BaseView):
 @view_maker
 class DatasetView(ObjectView):
     _nested = {
-        "studies": Study,
-        "annotations": Annotation,
+        "studies": "StudyView",
+        "annotations": "AnnotationView",
     }
 
 
