@@ -1,10 +1,12 @@
 import pytest
 from os import environ
+
+from neurostore.models.data import Analysis, Condition
 from ..core import app as _app
 from ..database import db as _db
 import sqlalchemy as sa
 from .. import ingest
-from ..models import User, Role, Study, Dataset, Annotation, AnnotationAnalysis
+from ..models import User, Role, Study, Dataset, Annotation, AnnotationAnalysis, AnalysisConditions, Point, Image
 from auth0.v3.authentication import GetToken
 
 """
@@ -162,23 +164,84 @@ def ingest_neuroquery(session):
 
 
 @pytest.fixture(scope="function")
-def user_studies(session, add_users):
+def user_data(session, add_users):
     to_commit = []
     for user_info in add_users.values():
         user = User.query.filter_by(id=user_info['id']).first()
         for public in [True, False]:
             if public:
-                name = f"{user.id}'s public study"
+                name = f"{user.id}'s public "
             else:
-                name = f"{user.id}'s private study"
+                name = f"{user.id}'s private "
 
-            to_commit.append(
-                Study(
-                    name=name,
+            dataset = Dataset(
+                name=name + "dataset",
+                user=user,
+                public=public,
+            )
+
+            annotation = Annotation(
+                name=name + 'annotation',
+                source='neurostore',
+                dataset=dataset,
+                user=user,
+            )
+
+            study = Study(
+                    name=name + 'study',
                     user=user,
                     public=public,
                 )
+
+            analysis = Analysis(user=user)
+
+            note = AnnotationAnalysis(
+                note={'food': 'bar'},
+                analysis=analysis,
+                study=study,
+                user=user,
             )
+
+            condition = Condition(
+                name=name + "condition",
+                user=user,
+            )
+
+            analysis_condition = AnalysisConditions(
+                condition=condition,
+                weight=1,
+            )
+
+            point = Point(
+                x=0,
+                y=0,
+                z=0,
+                user=user,
+            )
+
+            image = Image(
+                url="made up",
+                filename="also made up",
+                user=user,
+            )
+
+            # put together the analysis
+            analysis.images = [image]
+            analysis.points = [point]
+            analysis.analysis_conditions = [analysis_condition]
+
+            # put together the study
+            study.analyses = [analysis]
+
+            # put together the annotation
+            annotation.annotation_analyses = [note]
+
+            # put together the dataset
+            dataset.studies = [study]
+
+            # add everything to commit
+            to_commit.append(dataset)
+            to_commit.append(annotation)
 
     session.add_all(to_commit)
     session.commit()
