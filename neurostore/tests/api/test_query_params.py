@@ -31,7 +31,7 @@ def test_nested(auth_client, ingest_neurosynth, nested, resource_schema):
                 continue
 
 
-def test_user_id(auth_client, user_studies):
+def test_user_id(auth_client, user_data):
     from ...resources.auth import decode_token
     from ...resources.users import User
 

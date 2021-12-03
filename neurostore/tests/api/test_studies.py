@@ -83,7 +83,7 @@ def test_clone_studies(auth_client, ingest_neurosynth, ingest_neurovault):
            set([an.name for an in study_entry.analyses])
 
 
-def test_private_studies(user_studies, auth_clients):
+def test_private_studies(user_data, auth_clients):
     from ...resources.auth import decode_token
     from ...resources.users import User
     client1, client2 = auth_clients
