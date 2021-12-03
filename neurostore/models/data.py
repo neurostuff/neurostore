@@ -138,6 +138,7 @@ class Analysis(BaseMixin, db.Model):
     weights = association_proxy("analysis_conditions", "weight")
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("analyses"))
+    analysis_conditions = relationship("AnalysisConditions", backref=backref("analysis"), cascade="all, delete-orphan")
 
 
 class Condition(BaseMixin, db.Model):
@@ -147,22 +148,17 @@ class Condition(BaseMixin, db.Model):
     description = db.Column(db.String)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("conditions"))
-
+    analysis_conditions = relationship("AnalysisConditions", backref=backref("condition"), cascade="all, delete-orphan")
 
 class AnalysisConditions(db.Model):
     __tablename__ = "analysis_conditions"
-    __table_args__ = (
-        db.UniqueConstraint("analysis_id", "condition_id"),
-    )
     weight = db.Column(db.Float)
     analysis_id = db.Column(
-        db.Text, db.ForeignKey("analyses.id", ondelete='CASCADE'), primary_key=True
+        db.Text, db.ForeignKey("analyses.id"), primary_key=True
     )
     condition_id = db.Column(
-        db.Text, db.ForeignKey("conditions.id", ondelete='CASCADE'), primary_key=True
+        db.Text, db.ForeignKey("conditions.id"), primary_key=True
     )
-    analysis = relationship("Analysis", backref=backref("analysis_conditions"))
-    condition = relationship("Condition", backref=backref("analysis_conditions"))
 
 
 PointEntityMap = db.Table(
