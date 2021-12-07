@@ -1,5 +1,13 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper,
+} from '@mui/material';
 import { Box } from '@mui/system';
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -10,20 +18,22 @@ import StudiesTableStyles from './StudiesTable.styles';
 
 interface StudiesTableModel {
     studies: StudyApiResponse[];
+    showStudyOptions?: boolean;
 }
 
 const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     const { isAuthenticated, user } = useAuth0();
     const [datasets, setDatasets] = useState<DatasetsApiResponse[]>();
-
     const history = useHistory();
 
     const handleSelectTableRow = (row: Study & ReadOnly) => {
         history.push(`/studies/${row.id}`);
     };
 
+    const shouldShowStudyOptions = isAuthenticated && props.showStudyOptions;
+
     useEffect(() => {
-        if (isAuthenticated) {
+        if (shouldShowStudyOptions) {
             const getDatasets = async () => {
                 API.Services.DataSetsService.datasetsGet(
                     undefined,
@@ -51,8 +61,12 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
             };
 
             getDatasets();
+
+            return () => {
+                setDatasets(undefined);
+            };
         }
-    }, [isAuthenticated, user?.sub]);
+    }, [shouldShowStudyOptions, user?.sub]);
 
     const handleDatasetCreated = (createdDataset: DatasetsApiResponse) => {
         setDatasets((prevState) => {
@@ -64,31 +78,30 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     };
 
     return (
-        <TableContainer sx={StudiesTableStyles.root}>
+        <TableContainer component={Paper} elevation={2} sx={StudiesTableStyles.root}>
             <Table size="small">
                 <TableHead>
-                    <TableRow>
-                        {isAuthenticated && <TableCell></TableCell>}
-                        <TableCell>Title</TableCell>
-                        <TableCell>Authors</TableCell>
-                        <TableCell>Journal</TableCell>
-                        <TableCell>Owner</TableCell>
+                    <TableRow sx={{ backgroundColor: 'primary.main' }}>
+                        {shouldShowStudyOptions && <TableCell></TableCell>}
+                        <TableCell sx={StudiesTableStyles.headerCell}>Title</TableCell>
+                        <TableCell sx={StudiesTableStyles.headerCell}>Authors</TableCell>
+                        <TableCell sx={StudiesTableStyles.headerCell}>Journal</TableCell>
+                        <TableCell sx={StudiesTableStyles.headerCell}>Owner</TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
                     {props.studies.map((row, index) => (
                         <TableRow
                             sx={StudiesTableStyles.tableRow}
-                            hover
                             key={index}
                             onClick={() => handleSelectTableRow(row)}
                         >
-                            {isAuthenticated && (
+                            {shouldShowStudyOptions && (
                                 <TableCell>
                                     <DatasetsPopupMenu
                                         study={row}
                                         onDatasetCreated={handleDatasetCreated}
-                                        datasets={datasets || []}
+                                        datasets={datasets}
                                     />
                                 </TableCell>
                             )}
@@ -112,17 +125,18 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                                 </Box>
                             </TableCell>
                             <TableCell>
-                                <Box>{row.user || <span>Neurosynth</span>}</Box>
+                                <Box>
+                                    {(row.user === user?.sub ? 'Me' : row.user) || (
+                                        <span>Neurosynth</span>
+                                    )}
+                                </Box>
                             </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
             </Table>
             {props.studies.length === 0 && (
-                <Box sx={{ color: 'warning.dark' }}>
-                    <br />
-                    No results
-                </Box>
+                <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No results</Box>
             )}
         </TableContainer>
     );

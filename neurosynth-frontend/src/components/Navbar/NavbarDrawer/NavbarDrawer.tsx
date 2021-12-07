@@ -1,20 +1,12 @@
 import { NavLink } from 'react-router-dom';
-import {
-    Typography,
-    IconButton,
-    Drawer,
-    List,
-    ListItem,
-    ListItemText,
-    Button,
-    Box,
-    Badge,
-} from '@mui/material';
+import { Typography, IconButton, Drawer, List, ListItem, Button, Box, Badge } from '@mui/material';
 import { useState } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
-import { useAuth0 } from '@auth0/auth0-react';
+import NavbarPopupMenu from '../NavbarPopupMenu/NavbarPopupMenu';
 import { NavbarArgs } from '..';
 import NavbarStyles from '../Navbar.styles';
+import NavbarDrawerStyles from './NavbarDrawer.styles';
+import { useAuth0 } from '@auth0/auth0-react';
 
 const NavbarDrawer: React.FC<NavbarArgs> = (props) => {
     const [drawerIsOpen, setDrawerIsOpen] = useState(false);
@@ -35,26 +27,34 @@ const NavbarDrawer: React.FC<NavbarArgs> = (props) => {
                 </Box>
             </Button>
             <Drawer anchor="left" open={drawerIsOpen} onClose={toggleDrawer}>
-                <List sx={{ width: '240px' }}>
-                    {props.navOptions.map((navItem, index) => {
-                        const canShow = navItem.authenticationRequired ? isAuthenticated : true;
-
-                        return (
-                            canShow && (
-                                <ListItem
-                                    button
-                                    key={index}
-                                    component={NavLink}
-                                    to={navItem.path}
-                                    onClick={toggleDrawer}
-                                >
-                                    <ListItemText primary={navItem.label} />
-                                </ListItem>
-                            )
-                        );
-                    })}
-                    <ListItem button onClick={isAuthenticated ? props.logout : props.login}>
-                        <ListItemText primary={isAuthenticated ? 'Logout' : 'Login'}></ListItemText>
+                <List sx={NavbarDrawerStyles.list}>
+                    {props.navOptions.map((navOption) => (
+                        <ListItem sx={NavbarDrawerStyles.listItem} key={navOption.label}>
+                            <NavbarPopupMenu
+                                navOption={navOption}
+                                menuPosition={{
+                                    vertical: 'top',
+                                    horizontal: 'right',
+                                }}
+                                sx={{
+                                    ...NavbarDrawerStyles.buttonOverride,
+                                    ...NavbarDrawerStyles.innerButtonOverride,
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                }}
+                            />
+                        </ListItem>
+                    ))}
+                    <ListItem sx={NavbarDrawerStyles.listItem}>
+                        <Button
+                            sx={{
+                                ...NavbarDrawerStyles.buttonOverride,
+                                ...NavbarDrawerStyles.innerButtonOverride,
+                            }}
+                            onClick={isAuthenticated ? props.logout : props.login}
+                        >
+                            <Box component="span">{isAuthenticated ? 'Logout' : 'Login'}</Box>
+                        </Button>
                     </ListItem>
                 </List>
             </Drawer>

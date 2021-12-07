@@ -20,6 +20,7 @@ import {
     IDisplayValuesTableModel,
     TextExpansion,
     DisplayAnalysis,
+    NeurosynthLoader,
 } from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import { Analysis, ReadOnly } from '../../../gen/api';
@@ -36,7 +37,7 @@ const StudyPage = () => {
         analysis: undefined,
     });
 
-    const [editDisabled, setEditDisabled] = useState(true);
+    const [editDisabled, setEditDisabled] = useState(false);
     const context = useContext(GlobalContext);
     const history = useHistory();
     const { isAuthenticated, getAccessTokenSilently, user } = useAuth0();
@@ -115,9 +116,9 @@ const StudyPage = () => {
 
     useEffect(() => {
         const userIDAndStudyIDExist = !!user?.sub && !!study?.user;
-        const shouldDisableEdit =
-            !isAuthenticated || !userIDAndStudyIDExist || user?.sub !== study?.user;
-        setEditDisabled(shouldDisableEdit);
+        const disable = !isAuthenticated || !userIDAndStudyIDExist || user?.sub !== study?.user;
+
+        setEditDisabled(disable);
     }, [isAuthenticated, user?.sub, study?.user]);
 
     const metadataForTable: IDisplayValuesTableModel = {
@@ -153,14 +154,19 @@ const StudyPage = () => {
     };
 
     return (
-        <>
+        <NeurosynthLoader loaded={!!study}>
             <Box sx={{ ...StudyPageStyles.buttonContainer, ...StudyPageStyles.spaceBelow }}>
-                <Tooltip placement="top" title={!isAuthenticated ? 'log in to clone study' : ''}>
+                <Tooltip
+                    placement="top"
+                    title={
+                        !isAuthenticated ? 'log in to clone study' : 'clone a study to edit details'
+                    }
+                >
                     <Box sx={{ display: 'inline' }}>
                         <Button
                             onClick={handleCloneStudy}
                             disabled={!isAuthenticated}
-                            variant="outlined"
+                            variant={editDisabled ? 'outlined' : 'text'}
                             color="primary"
                         >
                             Clone Study
@@ -217,7 +223,11 @@ const StudyPage = () => {
             <Box>
                 <Typography
                     variant="h6"
-                    sx={{ marginLeft: '15px', fontWeight: 'bold', ...StudyPageStyles.spaceBelow }}
+                    sx={{
+                        marginLeft: '15px',
+                        fontWeight: 'bold',
+                        ...StudyPageStyles.spaceBelow,
+                    }}
                 >
                     Analyses
                 </Typography>
@@ -262,7 +272,7 @@ const StudyPage = () => {
                     </Box>
                 )}
             </Box>
-        </>
+        </NeurosynthLoader>
     );
 };
 

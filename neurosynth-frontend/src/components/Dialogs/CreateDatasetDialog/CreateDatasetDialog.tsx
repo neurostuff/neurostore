@@ -8,12 +8,15 @@ export interface ICreateDatasetDialog {
 }
 
 const CreateDatasetDialog: React.FC<ICreateDatasetDialog> = (props) => {
+    const [hasEnteredText, setHasEnteredText] = useState(false);
+
     const [newDatasetDetails, setNewDatasetDetails] = useState({
         name: '',
         description: '',
     });
 
     const handleOnChange = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+        setHasEnteredText(true);
         setNewDatasetDetails((prevState) => ({
             ...prevState,
             [event.target.name]: event.target.value,
@@ -21,6 +24,7 @@ const CreateDatasetDialog: React.FC<ICreateDatasetDialog> = (props) => {
     };
 
     const handleOnClose = () => {
+        setHasEnteredText(false);
         setNewDatasetDetails({
             name: '',
             description: '',
@@ -36,6 +40,13 @@ const CreateDatasetDialog: React.FC<ICreateDatasetDialog> = (props) => {
                     label="Dataset Name"
                     value={newDatasetDetails.name}
                     name="name"
+                    error={newDatasetDetails.name.length === 0 && hasEnteredText}
+                    helperText={
+                        newDatasetDetails.name.length === 0 && hasEnteredText
+                            ? 'name is required'
+                            : ''
+                    }
+                    required
                     onChange={handleOnChange}
                     sx={{ width: '100%', margin: '5px 0 1rem 0' }}
                 />
@@ -54,6 +65,7 @@ const CreateDatasetDialog: React.FC<ICreateDatasetDialog> = (props) => {
                             props.onCreateDataset(newDatasetDetails);
                         }}
                         variant="contained"
+                        disabled={newDatasetDetails.name.length === 0}
                     >
                         Create
                     </Button>

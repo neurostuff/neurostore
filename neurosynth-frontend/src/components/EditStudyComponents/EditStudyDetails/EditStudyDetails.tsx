@@ -29,16 +29,17 @@ export interface IEditStudyDetails extends IEditStudyDetailsProperties {
 }
 
 const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
+    const { studyId, name, authors, publication, doi, description } = props;
     const { getAccessTokenSilently } = useAuth0();
     const context = useContext(GlobalContext);
     const [updatedEnabled, setUpdateEnabled] = useState(false);
     const [originalDetails, setOriginalDetails] = useState<IEditStudyDetailsProperties>({
-        studyId: props.studyId,
-        name: props.name,
-        authors: props.authors,
-        publication: props.publication,
-        doi: props.doi,
-        description: props.description,
+        studyId: studyId,
+        name: name,
+        authors: authors,
+        publication: publication,
+        doi: doi,
+        description: description,
     });
 
     const textFieldInputProps = {
@@ -47,16 +48,17 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
         },
     };
 
+    // set original details without updating in the future
     useEffect(() => {
         setOriginalDetails({
-            studyId: props.studyId,
-            name: props.name,
-            authors: props.authors,
-            publication: props.publication,
-            doi: props.doi,
-            description: props.description,
+            studyId: studyId,
+            name: name,
+            authors: authors,
+            publication: publication,
+            doi: doi,
+            description: description,
         });
-    }, []);
+    }, [studyId, name, authors, publication, doi, description]);
 
     const handleOnEdit = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
         props.onEditStudyDetails({

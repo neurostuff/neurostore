@@ -1,10 +1,9 @@
 import { ChangeEvent, useEffect, useState } from 'react';
 import { TablePagination, Typography, Pagination, Box } from '@mui/material';
-import API, { DatasetsApiResponse, StudyApiResponse } from '../../utils/api';
-import { Metadata } from '../../gen/api';
-import StudiesPageStyles from './StudiesPage.styles';
-import { StudiesTable, SearchBar } from '../../components';
-import { useAuth0 } from '@auth0/auth0-react';
+import API, { StudyApiResponse } from '../../../utils/api';
+import PublicStudiesPageStyles from './PublicStudiesPage.styles';
+import { StudiesTable, SearchBar, NeurosynthLoader } from '../../../components';
+import { Metadata } from '../../../gen/api';
 
 export enum Source {
     NEUROSTORE = 'neurostore',
@@ -37,8 +36,8 @@ export class SearchCriteria {
     ) {}
 }
 
-const StudiesPage = () => {
-    const [studies, setStudies] = useState<StudyApiResponse[]>([]);
+const PublicStudiesPage = () => {
+    const [studies, setStudies] = useState<StudyApiResponse[]>();
     const [searchMetadata, setSearchMetadata] = useState<Metadata>();
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>(new SearchCriteria());
 
@@ -103,44 +102,39 @@ const StudiesPage = () => {
 
     // runs for any change in study query
     useEffect(() => {
-        const debounce = setTimeout(() => {
-            const getStudies = (searchCriteria: SearchCriteria) => {
-                API.Services.StudiesService.studiesGet(
-                    searchCriteria.genericSearchStr,
-                    searchCriteria.sortBy,
-                    searchCriteria.pageOfResults,
-                    searchCriteria.descOrder,
-                    searchCriteria.pageSize,
-                    searchCriteria.isNested,
-                    searchCriteria.nameSearch,
-                    searchCriteria.descriptionSearch,
-                    undefined,
-                    searchCriteria.showUnique,
-                    searchCriteria.source,
-                    searchCriteria.authorSearch
-                )
-                    .then((res) => {
-                        if (res?.data?.results) {
-                            setSearchMetadata(res.data.metadata);
-                            setStudies(res.data.results);
-                        }
-                    })
-                    .catch((err) => {
-                        console.error(err);
-                    });
-            };
-            getStudies(searchCriteria);
-        }, 300);
-
-        // cancel call if another search request is made
-        return () => {
-            clearTimeout(debounce);
+        setStudies(undefined);
+        const getStudies = (searchCriteria: SearchCriteria) => {
+            API.Services.StudiesService.studiesGet(
+                searchCriteria.genericSearchStr,
+                searchCriteria.sortBy,
+                searchCriteria.pageOfResults,
+                searchCriteria.descOrder,
+                searchCriteria.pageSize,
+                searchCriteria.isNested,
+                searchCriteria.nameSearch,
+                searchCriteria.descriptionSearch,
+                undefined,
+                searchCriteria.showUnique,
+                searchCriteria.source,
+                searchCriteria.authorSearch
+            )
+                .then((res) => {
+                    if (res?.data?.results) {
+                        setSearchMetadata(res.data.metadata);
+                        setStudies(res.data.results);
+                    }
+                })
+                .catch((err) => {
+                    console.error(err);
+                });
         };
+
+        getStudies(searchCriteria);
     }, [searchCriteria]);
 
     return (
         <>
-            <Typography variant="h4">Studies Page</Typography>
+            <Typography variant="h4">Public Studies</Typography>
 
             <SearchBar onSearch={handleOnSearch} />
 
@@ -156,13 +150,15 @@ const StudiesPage = () => {
                 count={searchMetadata?.total_count || 0}
             ></TablePagination>
 
-            <Box sx={{ marginBottom: '1rem' }}>
-                <StudiesTable studies={studies} />
-            </Box>
+            <NeurosynthLoader loaded={!!studies}>
+                <Box sx={{ marginBottom: '1rem' }}>
+                    <StudiesTable showStudyOptions={true} studies={studies as StudyApiResponse[]} />
+                </Box>
+            </NeurosynthLoader>
 
             <Pagination
                 color="primary"
-                sx={StudiesPageStyles.paginator}
+                sx={PublicStudiesPageStyles.paginator}
                 onChange={handlePaginationChange}
                 showFirstButton
                 showLastButton
@@ -172,4 +168,4 @@ const StudiesPage = () => {
         </>
     );
 };
-export default StudiesPage;
+export default PublicStudiesPage;

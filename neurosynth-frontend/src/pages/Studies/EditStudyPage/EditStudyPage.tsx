@@ -1,7 +1,7 @@
 import { Box, Button } from '@mui/material';
 import { useState, useEffect, useCallback } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import { IMetadataRowModel, EditAnalyses, EditStudyDetails } from '../../../components';
+import { EditAnalyses, EditStudyDetails, NeurosynthLoader } from '../../../components';
 import EditStudyMetadata from '../../../components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import API, { AnalysisApiResponse } from '../../../utils/api';
 import EditStudyPageStyles from './EditStudyPage.styles';
@@ -23,17 +23,6 @@ const EditStudyPage = () => {
     // initial metadata received from the study is set in this state. Separate in order to avoid constant re renders
     const history = useHistory();
     const params: { studyId: string } = useParams();
-
-    const handleMetadataEditChange = useCallback((metadata: IMetadataRowModel[]) => {
-        setStudy((prevState) => {
-            if (!prevState) return undefined;
-
-            return {
-                ...prevState,
-                metadata: metadata,
-            };
-        });
-    }, []);
 
     useEffect(() => {
         const getStudy = (id: string) => {
@@ -117,7 +106,7 @@ const EditStudyPage = () => {
     const handleEditAnalysisPoints = useCallback(() => {}, []);
 
     return (
-        <>
+        <NeurosynthLoader loaded={!!study}>
             <Box sx={EditStudyPageStyles.stickyButtonContainer}>
                 <Button
                     color="error"
@@ -132,27 +121,23 @@ const EditStudyPage = () => {
             {study && (
                 <>
                     <Box sx={{ marginBottom: '15px', padding: '0 10px' }}>
-                        {study && (
-                            <EditStudyDetails
-                                onEditStudyDetails={handleEditStudyDetails}
-                                studyId={params.studyId}
-                                name={study.name}
-                                description={study.description}
-                                authors={study.authors}
-                                doi={study.doi}
-                                publication={study.publication}
-                            />
-                        )}
+                        <EditStudyDetails
+                            onEditStudyDetails={handleEditStudyDetails}
+                            studyId={params.studyId}
+                            name={study.name}
+                            description={study.description}
+                            authors={study.authors}
+                            doi={study.doi}
+                            publication={study.publication}
+                        />
                     </Box>
 
                     <Box sx={{ marginBottom: '15px', padding: '0 10px' }}>
-                        {study && (
-                            <EditStudyMetadata
-                                onUpdateStudyMetadata={handleUpdateStudyMetadata}
-                                metadata={study.metadata}
-                                studyId={params.studyId}
-                            />
-                        )}
+                        <EditStudyMetadata
+                            onUpdateStudyMetadata={handleUpdateStudyMetadata}
+                            metadata={study.metadata}
+                            studyId={params.studyId}
+                        />
                     </Box>
 
                     <Box sx={{ marginBottom: '15px', padding: '0 10px', marginLeft: '15px' }}>
@@ -165,7 +150,7 @@ const EditStudyPage = () => {
                     </Box>
                 </>
             )}
-        </>
+        </NeurosynthLoader>
     );
 };
 

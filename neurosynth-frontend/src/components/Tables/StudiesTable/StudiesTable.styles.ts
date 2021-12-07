@@ -1,9 +1,11 @@
+import { grey } from '@mui/material/colors';
 import { Style } from '../../..';
 
 const StudiesTableStyles: Style = {
     tableRow: {
         '&:hover': {
             cursor: 'pointer',
+            backgroundColor: grey[300],
             transition: '0.25s',
         },
     },
@@ -14,6 +16,10 @@ const StudiesTableStyles: Style = {
     badge_user: {
         padding: '5px',
         borderRadius: '8px',
+    },
+    headerCell: {
+        color: 'primary.contrastText',
+        fontWeight: 'bold',
     },
 };
 

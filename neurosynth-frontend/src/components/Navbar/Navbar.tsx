@@ -8,10 +8,33 @@ import { GlobalContext } from '../../contexts/GlobalContext';
 import { NavOptionsModel } from '.';
 
 const navItems: NavOptionsModel[] = [
-    { label: 'Home', path: '/', authenticationRequired: false },
-    { label: 'Studies', path: '/studies', authenticationRequired: false },
-    // { label: 'My Cloned Studies', path: '/clonedStudies', authenticationRequired: true },
-    { label: 'Datasets', path: '/datasets', authenticationRequired: false },
+    { label: 'HOME', path: '/', children: null },
+    {
+        label: 'STUDIES',
+        path: '',
+        children: [
+            { label: 'Public Studies', path: '/studies', children: null },
+            {
+                label: 'My Cloned Studies',
+                path: '/studies/userclonedstudies',
+                children: null,
+                authenticationRequired: true,
+            },
+        ],
+    },
+    {
+        label: 'DATASETS',
+        path: '',
+        children: [
+            { label: 'Public Datasets', path: '/datasets', children: null },
+            {
+                label: 'My Datasets',
+                path: '/datasets/userdatasets',
+                children: null,
+                authenticationRequired: true,
+            },
+        ],
+    },
 ];
 
 const Navbar = () => {

@@ -2,14 +2,14 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { Typography, Box, Button } from '@mui/material';
 import { useContext, useEffect, useState } from 'react';
 import { useParams } from 'react-router';
-import { TextExpansion, StudiesTable } from '../../../components';
+import { TextExpansion, StudiesTable, NeurosynthLoader } from '../../../components';
 import TextEdit from '../../../components/TextEdit/TextEdit';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import API, { DatasetsApiResponse, StudyApiResponse } from '../../../utils/api';
 import DatasetPageStyles from './DatasetPage.styles';
 
 const DatasetPage: React.FC = (props) => {
-    const [dataset, setDataset] = useState<DatasetsApiResponse>();
+    const [dataset, setDataset] = useState<DatasetsApiResponse | undefined>();
     const { getAccessTokenSilently } = useAuth0();
     const context = useContext(GlobalContext);
     const params: { datasetId: string } = useParams();
@@ -27,6 +27,10 @@ const DatasetPage: React.FC = (props) => {
         };
 
         getDataset(params.datasetId);
+
+        return () => {
+            setDataset(undefined);
+        };
     }, [params.datasetId]);
 
     const handleSaveTextEdit = (fieldName: 'name' | 'description' | 'publication' | 'doi') => {
@@ -39,9 +43,11 @@ const DatasetPage: React.FC = (props) => {
                 console.error(exception);
             }
 
+            if (!dataset) return;
+
             API.Services.DataSetsService.datasetsIdPut(params.datasetId, {
-                name: (dataset as DatasetsApiResponse).name,
-                studies: (dataset as DatasetsApiResponse).studies,
+                name: dataset.name,
+                studies: (dataset.studies as StudyApiResponse[]).map((x) => x.id as string),
                 [fieldName]: editedText,
             })
                 .then(() => {
@@ -64,10 +70,8 @@ const DatasetPage: React.FC = (props) => {
         };
     };
 
-    // const values =
-
     return (
-        <>
+        <NeurosynthLoader loaded={!!dataset}>
             {dataset && (
                 <>
                     <Box sx={{ marginBottom: '1rem' }}>
@@ -149,20 +153,17 @@ const DatasetPage: React.FC = (props) => {
                             alignItems: 'center',
                         }}
                     >
-                        <Typography
-                            variant="h6"
-                            sx={{ marginBottom: '1rem', fontWeight: 'bold', margin: 'auto 0' }}
-                        >
+                        <Typography variant="h6" sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
                             Studies in this dataset
                         </Typography>
-                        <Button variant="contained" color="error">
-                            Delete this dataset
-                        </Button>
                     </Box>
                     <StudiesTable studies={dataset.studies as StudyApiResponse[]} />
+                    <Button variant="outlined" color="error" sx={{ marginTop: '1rem' }}>
+                        Delete this dataset
+                    </Button>
                 </>
             )}
-        </>
+        </NeurosynthLoader>
     );
 };
 

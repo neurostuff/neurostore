@@ -15,6 +15,8 @@ import Visualizer from './Visualizer/Visualizer';
 import EditAnalyses from './EditStudyComponents/EditAnalyses/EditAnalyses';
 import EditStudyDetails from './EditStudyComponents/EditStudyDetails/EditStudyDetails';
 import TextEdit from './TextEdit/TextEdit';
+import NeurosynthPopper from './NeurosynthPopper';
+import NeurosynthLoader from './NeurosynthLoader';
 
 // models
 export * from './EditMetadata';
@@ -36,4 +38,6 @@ export {
     EditStudyDetails,
     DisplayImagesTable,
     TextEdit,
+    NeurosynthPopper,
+    NeurosynthLoader,
 };

@@ -12,7 +12,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import React from 'react';
 import { useState } from 'react';
 import SearchBarStyles from './SearchBar.styles';
-import { SearchCriteria } from '../../pages/StudiesPage/StudiesPage';
+import { SearchCriteria } from '../../pages/Studies/PublicStudiesPage/PublicStudiesPage';
 
 enum SearchBy {
     NAME = 'nameSearch',

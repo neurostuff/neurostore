@@ -1,0 +1,76 @@
+import { useAuth0 } from '@auth0/auth0-react';
+import { MenuItem, Button, Theme, MenuList } from '@mui/material';
+import { SxProps } from '@mui/system';
+import { useRef, useState } from 'react';
+import { NavLink } from 'react-router-dom';
+import { NavOptionsModel, NeurosynthPopper } from '../..';
+import NavbarPopupMenuStyles from './NavbarPopupMenu.styles';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+
+export interface INavbarPopupMenu {
+    navOption: NavOptionsModel;
+    sx?: SxProps<Theme>;
+    menuPosition: {
+        vertical: 'top' | 'bottom';
+        horizontal: 'left' | 'right';
+    };
+}
+
+const NavbarPopupMenu: React.FC<INavbarPopupMenu> = (props) => {
+    const [open, setOpen] = useState(false);
+    const { isAuthenticated } = useAuth0();
+    const anchorRef = useRef<HTMLButtonElement>(null);
+
+    const menuItems: JSX.Element[] = [];
+    props.navOption.children?.forEach((navOption) => {
+        const shouldSee = !navOption.authenticationRequired || isAuthenticated;
+        if (shouldSee)
+            menuItems.push(
+                <MenuItem
+                    key={navOption.label}
+                    to={navOption.path}
+                    component={NavLink}
+                    exact
+                    onClick={() => setOpen(false)}
+                    disabled={navOption.disabled}
+                    activeStyle={{ color: '#ef8a24' }}
+                >
+                    {navOption.label}
+                </MenuItem>
+            );
+    });
+
+    return (
+        <>
+            {props.navOption.children ? (
+                <>
+                    <Button ref={anchorRef} onClick={() => setOpen(true)} sx={props.sx}>
+                        {props.navOption.label}
+                        <KeyboardArrowDownIcon sx={{ marginLeft: '0.25rem' }} />
+                    </Button>
+
+                    <NeurosynthPopper
+                        open={open}
+                        anchorElement={anchorRef.current}
+                        onClickAway={(event: any) => setOpen(false)}
+                    >
+                        <MenuList>{menuItems}</MenuList>
+                    </NeurosynthPopper>
+                </>
+            ) : (
+                <Button
+                    to={props.navOption.path}
+                    exact
+                    component={NavLink}
+                    sx={{ ...NavbarPopupMenuStyles.link, ...props.sx }}
+                    // manually add bg color as navlink doesn't have access to mui system
+                    activeStyle={{ color: '#ef8a24' }}
+                >
+                    {props.navOption.label}
+                </Button>
+            )}
+        </>
+    );
+};
+
+export default NavbarPopupMenu;

@@ -5,7 +5,9 @@
 export interface NavOptionsModel {
     label: string;
     path: string;
-    authenticationRequired: boolean;
+    disabled?: boolean;
+    authenticationRequired?: boolean;
+    children: NavOptionsModel[] | null;
 }
 
 export interface NavbarArgs {

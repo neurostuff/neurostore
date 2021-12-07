@@ -25,7 +25,7 @@ const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
             name: props.name,
             description: props.description,
         });
-    }, []);
+    }, [props.name, props.description]);
 
     const textFieldInputProps = {
         style: {
