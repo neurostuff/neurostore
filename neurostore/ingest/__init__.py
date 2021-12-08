@@ -10,7 +10,7 @@ import pandas as pd
 import requests
 from scipy import sparse
 from dateutil.parser import parse as parse_date
-from neurostore.core import db
+from neurostore.database import db
 from neurostore.models import (
     Analysis,
     AnalysisConditions,
