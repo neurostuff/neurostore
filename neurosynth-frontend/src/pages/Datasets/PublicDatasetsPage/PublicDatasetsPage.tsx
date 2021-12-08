@@ -17,7 +17,7 @@ const PublicDatasetsPage: React.FC = (props) => {
                 undefined,
                 undefined,
                 undefined,
-                true,
+                false,
                 undefined,
                 undefined,
                 undefined,
@@ -28,6 +28,7 @@ const PublicDatasetsPage: React.FC = (props) => {
             )
                 .then((res) => {
                     if (res?.data?.results) {
+                        console.log(res.data.results);
                         setDatasets(res.data.results);
                     }
                 })
@@ -37,6 +38,10 @@ const PublicDatasetsPage: React.FC = (props) => {
         };
 
         getDatasets();
+
+        return () => {
+            setDatasets(undefined);
+        };
     }, [user?.sub]);
 
     return (

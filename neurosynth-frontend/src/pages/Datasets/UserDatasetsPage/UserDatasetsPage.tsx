@@ -41,6 +41,10 @@ const UserDatasetsPage: React.FC = (props) => {
         };
 
         getDatasets();
+
+        return () => {
+            setDatasets(undefined);
+        };
     }, [user?.sub]);
 
     const handleCreateDataset = async (newDatasetDetails: {
