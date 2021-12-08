@@ -12,3 +12,7 @@ def test_post_conditions(auth_client, ingest_neurovault):
     get_data = auth_client.get(f"/api/conditions/{post_data['id']}").json
     for attr in my_condition.keys():
         assert post_data[attr] == get_data[attr] == my_condition[attr]
+
+
+def test_put_conditions():
+    pass

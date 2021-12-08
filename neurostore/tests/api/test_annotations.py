@@ -1,4 +1,4 @@
-from ...models.data import Dataset, Annotation
+from ...models.data import Dataset
 
 
 def test_post_annotation(auth_client, ingest_neurosynth):
@@ -19,8 +19,8 @@ def test_get_annotations(auth_client, ingest_neurosynth):
     assert resp.status_code == 200
 
 
-def test_clone_annotation(auth_client, ingest_neurosynth):
-    annotation_entry = Annotation.query.first()
+def test_clone_annotation(auth_client, simple_neurosynth_annotation):
+    annotation_entry = simple_neurosynth_annotation
     resp = auth_client.post(f"/api/annotations/?source_id={annotation_entry.id}", data={})
     assert resp.status_code == 200
     data = resp.json

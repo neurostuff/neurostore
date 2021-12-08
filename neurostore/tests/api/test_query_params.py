@@ -14,7 +14,10 @@ from ...schemas.data import DatasetSchema, StudySchema, AnalysisSchema, StringOr
 def test_nested(auth_client, ingest_neurosynth, nested, resource_schema):
     resource, schema = resource_schema
     resp = auth_client.get(f"/api/{resource}/?nested={nested}")
-    fields = [f for f in schema.fields if isinstance(schema.fields[f], StringOrNested)]
+    fields = [
+        f for f in schema.fields
+        if isinstance(schema.fields[f], StringOrNested) and schema.fields[f].use_nested
+    ]
     for field in fields:
         if nested == 'true':
             try:
@@ -28,11 +31,10 @@ def test_nested(auth_client, ingest_neurosynth, nested, resource_schema):
                 continue
 
 
-def test_user_id(auth_client, user_studies):
-    from ...resources.auth import decode_token
+def test_user_id(auth_client, user_data):
     from ...resources.users import User
-
-    user = User.query.filter_by(external_id=decode_token(auth_client.token)['sub']).first()
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
     resp = auth_client.get(f"/api/studies/?user_id={user.external_id}")
     for study in resp.json['results']:
         assert study['user'] == user.external_id

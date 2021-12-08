@@ -4,7 +4,6 @@ from urllib.request import urlopen
 from flask import jsonify, request
 from jose import jwt
 
-
 from ..core import app
 
 

@@ -6,6 +6,7 @@ from marshmallow import (
     pre_load,
 )
 from flask import request
+from marshmallow.decorators import post_load
 from pyld import jsonld
 
 
@@ -15,11 +16,15 @@ class StringOrNested(fields.Nested):
 
     def __init__(self, nested, **kwargs):
         super().__init__(nested, **kwargs)
+        self.use_nested = kwargs.get('use_nested', True)
 
     def _serialize(self, value, attr, obj, **ser_kwargs):
         if value is None:
             return None
-        if self.context.get('nested') or self.context.get('copy'):
+        if (
+            self.use_nested and
+            (self.context.get('nested') or self.context.get('copy'))
+        ):
             nested_schema = self.nested(context=self.context)
             return nested_schema.dump(value, many=self.many)
         else:
@@ -27,10 +32,16 @@ class StringOrNested(fields.Nested):
 
     def _deserialize(self, value, attr, data, **ser_kwargs):
         if isinstance(value, list):
+            if self.context.get("copy"):
+                return self.schema.load(
+                    [v for v in value if not isinstance(v, str)], many=True
+                )
             return self.schema.load(
                 [{"id": v} if isinstance(v, str) else v for v in value], many=True
             )
         elif isinstance(value, str):
+            if self.context.get("copy"):
+                return None
             return self.schema.load({"id": value})
         else:
             return self.schema.load(value)
@@ -89,15 +100,15 @@ class ConditionSchema(BaseDataSchema):
 class ImageSchema(BaseDataSchema):
 
     # serialization
-    analysis = fields.Function(lambda image: image.analysis.id, dump_only=True, db_only=True)
+    analysis = StringOrNested("AnalysisSchema", use_nested=False)
     analysis_name = fields.Function(
         lambda image: image.analysis.name, dump_only=True, db_only=True
     )
-    metadata = fields.Dict(attribute="data", dump_only=True)
+    metadata = fields.Dict(attribute="metadata_", dump_only=True)
     add_date = fields.DateTime(dump_only=True, db_only=True)
 
     # deserialization
-    data = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
+    metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
 
     class Meta:
         additional = ("url", "filename", "space", "value_type")
@@ -111,7 +122,7 @@ class PointValueSchema(BaseDataSchema):
 
 class PointSchema(BaseDataSchema):
     # serialization
-    analysis = fields.Function(lambda image: image.analysis.id, dump_only=True, db_only=True)
+    analysis = StringOrNested("AnalysisSchema", use_nested=False)
     value = fields.Nested(PointValueSchema, attribute="values", many=True)
 
     # deserialization
@@ -141,7 +152,7 @@ class AnalysisConditionSchema(BaseDataSchema):
 class AnalysisSchema(BaseDataSchema):
 
     # serialization
-    study = fields.Function(lambda analysis: analysis.study.id, dump_only=True, db_only=True)
+    study = StringOrNested("StudySchema", use_nested=False)
     conditions = StringOrNested(ConditionSchema, many=True, dump_only=True)
     weights = fields.List(fields.Float(), dump_only=True)
 
@@ -189,7 +200,7 @@ class StudySchema(BaseDataSchema):
 class DatasetSchema(BaseDataSchema):
     # serialize
     user = fields.Function(lambda user: user.user_id, dump_only=True, db_only=True)
-    studies = StringOrNested(StudySchema, many=True)
+    studies = StringOrNested(StudySchema, many=True)  # This needs to be nested, but not cloned
 
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")
@@ -198,51 +209,37 @@ class DatasetSchema(BaseDataSchema):
 
 class AnnotationAnalysisSchema(BaseDataSchema):
     note = fields.Dict()
-    annotation = fields.Function(
-        lambda annot_anal: annot_anal.annotation.id, dump_only=True, db_only=True
-    )
-    analysis = fields.Function(lambda annot_anal: annot_anal.analysis.id, dump_only=True)
-    study = fields.Function(lambda annot_anal: annot_anal.study.id, dump_only=True)
+    annotation = StringOrNested("AnnotationSchema", use_nested=False)
+    analysis_id = fields.String(data_key="analysis")
+    study_id = fields.String(data_key="study")
 
-    _analysis = StringOrNested(
-        AnalysisSchema, load_only=True, attribute='analysis', data_key="analysis"
-    )
-    _annotation = fields.String(load_only=True, attribute='annotation', data_key='annotation')
-    _study = StringOrNested(StudySchema, load_only=True, attribute='study', data_key='study')
+    @post_load
+    def add_id(self, data, **kwargs):
+        if isinstance(data['analysis_id'], str):
+            data['analysis'] = {'id': data.pop('analysis_id')}
+        if isinstance(data['study_id'], str):
+            data['study'] = {'id': data.pop('study_id')}
+
+        return data
 
 
 class AnnotationSchema(BaseDataSchema):
     # serialization
-    dataset = fields.Function(
-        lambda dataset: dataset.id, dump_only=True, db_only=True
-        )
-    annotation_analyses = fields.Nested(AnnotationAnalysisSchema, many=True)
+    dataset_id = fields.String(data_key='dataset')
+    annotation_analyses = fields.Nested(AnnotationAnalysisSchema, data_key="notes", many=True)
 
     source = fields.String(dump_only=True, db_only=True, allow_none=True)
     source_id = fields.String(dump_only=True, db_only=True, allow_none=True)
     source_updated_at = fields.DateTime(dump_only=True, db_only=True, allow_none=True)
 
-    # deserialization
-    # annotation_analyses = fields.Nested(AnnotationAnalysisSchema, many=True, load_only=True)
-
-    _dataset = StringOrNested(
-        DatasetSchema, data_key='dataset', attribute='dataset', load_only=True
-    )
-
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
 
-    @pre_load
-    def process_values(self, data, **kwargs):
-        if data.get("notes") is not None:
-            data['annotation_analyses'] = data.pop('notes')
-        return data
-
-    @post_dump
-    def post_values(self, data, **kwargs):
-        if data.get("annotation_analyses") is not None:
-            data['notes'] = data.pop('annotation_analyses')
+    @post_load
+    def add_id(self, data, **kwargs):
+        if isinstance(data.get('dataset_id'), str):
+            data['dataset'] = {'id': data.pop('dataset_id')}
         return data
 
 

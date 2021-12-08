@@ -100,6 +100,11 @@ class Study(BaseMixin, db.Model):
     source_updated_at = db.Column(db.DateTime(timezone=True))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("studies"))
+    analyses = relationship(
+        "Analysis",
+        backref=backref("study"),
+        cascade="all, delete, delete-orphan",
+    )
 
 
 class DatasetStudy(BaseMixin, db.Model):
@@ -114,13 +119,28 @@ class Analysis(BaseMixin, db.Model):
     study_id = db.Column(db.Text, db.ForeignKey("studies.id", ondelete='CASCADE'))
     name = db.Column(db.String)
     description = db.Column(db.String)
-    study = relationship("Study", backref=backref("analyses"))
     conditions = relationship(
-        "Condition", secondary="analysis_conditions", backref=backref("analyses")
+        "Condition",
+        secondary="analysis_conditions",
+        backref=backref("analyses"),
+        # cascade="all, delete",
     )
+    points = relationship(
+        "Point",
+        backref=backref("analysis"),
+        cascade="all, delete, delete-orphan",
+    )
+    images = relationship(
+        "Image",
+        backref=backref("analysis"),
+        cascade="all, delete, delete-orphan",
+        )
     weights = association_proxy("analysis_conditions", "weight")
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("analyses"))
+    analysis_conditions = relationship(
+        "AnalysisConditions", backref=backref("analysis"), cascade="all, delete"
+    )
 
 
 class Condition(BaseMixin, db.Model):
@@ -130,30 +150,20 @@ class Condition(BaseMixin, db.Model):
     description = db.Column(db.String)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("conditions"))
-
-    def __init__(self, name=None, description=None):
-        self.name = name
-        self.description = description
+    analysis_conditions = relationship(
+        "AnalysisConditions", backref=backref("condition"), cascade="all, delete"
+    )
 
 
 class AnalysisConditions(db.Model):
     __tablename__ = "analysis_conditions"
-    __table_args__ = (
-        db.UniqueConstraint("analysis_id", "condition_id"),
-    )
     weight = db.Column(db.Float)
     analysis_id = db.Column(
-        db.Text, db.ForeignKey("analyses.id", ondelete='CASCADE'), primary_key=True
+        db.Text, db.ForeignKey("analyses.id"), primary_key=True
     )
     condition_id = db.Column(
-        db.Text, db.ForeignKey("conditions.id", ondelete='CASCADE'), primary_key=True
+        db.Text, db.ForeignKey("conditions.id"), primary_key=True
     )
-    analysis = relationship("Analysis", backref=backref("analysis_conditions"))
-    condition = relationship("Condition", backref=backref("analysis_conditions"))
-
-    def __init__(self, condition=None, weight=None):
-        self.condition = condition
-        self.weight = weight
 
 
 PointEntityMap = db.Table(
@@ -204,7 +214,6 @@ class Point(BaseMixin, db.Model):
     entities = relationship(
         "Entity", secondary=PointEntityMap, backref=backref("points")
     )
-    analysis = relationship("Analysis", backref=backref("points"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("points"))
 
@@ -224,7 +233,6 @@ class Image(BaseMixin, db.Model):
     entities = relationship(
         "Entity", secondary=ImageEntityMap, backref=backref("images")
     )
-    analysis = relationship("Analysis", backref=backref("images"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("images"))
 
