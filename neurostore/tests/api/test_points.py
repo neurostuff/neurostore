@@ -2,7 +2,6 @@ from ..request_utils import decode_json
 from ...models import Point
 from ...schemas import PointSchema
 from ...models import User, Analysis, Study
-from ...resources.auth import decode_token
 
 
 def test_get_points(auth_client, ingest_neurosynth):
@@ -24,7 +23,7 @@ def test_get_points(auth_client, ingest_neurosynth):
 
 
 def test_put_points(auth_client, session):
-    id_ = decode_token(auth_client.token)['sub']
+    id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()
     s = Study(
         name="fake",
@@ -57,7 +56,7 @@ def test_put_points(auth_client, session):
 def test_post_points(auth_client, ingest_neurosynth, session):
     point_db = Point.query.first()
     point = PointSchema().dump(point_db)
-    id_ = decode_token(auth_client.token)['sub']
+    id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()
     point_db.analysis.user = user
     session.add(point_db.analysis)
@@ -72,7 +71,7 @@ def test_post_points(auth_client, ingest_neurosynth, session):
 
 
 def test_delete_points(auth_client, session):
-    id_ = decode_token(auth_client.token)['sub']
+    id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()
     s = Study(
         name="fake",

@@ -105,7 +105,7 @@ def test_update(auth_client, user_data, endpoint, model, schema, update):
         ("points", Point, PointSchema),
     ]
 )
-def test_delete(auth_client, user_data, endpoint, model, schema, session):
+def test_delete(auth_client, mock_auth, user_data, endpoint, model, schema, session):
     user = User.query.filter_by(name="user1").first()
     record = model.query.filter_by(user=user).first()
     r_id = record.id

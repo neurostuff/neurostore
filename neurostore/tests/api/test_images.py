@@ -1,6 +1,5 @@
 from ..request_utils import decode_json
 from ...models import Study, Analysis, User, Image
-from ...resources.auth import decode_token
 
 
 def test_get_images(auth_client, ingest_neurovault):
@@ -13,7 +12,7 @@ def test_get_images(auth_client, ingest_neurovault):
 
 
 def test_post_images(auth_client, session):
-    id_ = decode_token(auth_client.token)['sub']
+    id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()
     s = Study(
         name="fake",
@@ -36,7 +35,7 @@ def test_post_images(auth_client, session):
 
 
 def test_put_images(auth_client, session):
-    id_ = decode_token(auth_client.token)['sub']
+    id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()
     s = Study(
         name="fake",
@@ -66,7 +65,7 @@ def test_put_images(auth_client, session):
 
 
 def test_delete_images(auth_client, session):
-    id_ = decode_token(auth_client.token)['sub']
+    id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()
     s = Study(
         name="fake",

@@ -32,10 +32,9 @@ def test_nested(auth_client, ingest_neurosynth, nested, resource_schema):
 
 
 def test_user_id(auth_client, user_data):
-    from ...resources.auth import decode_token
     from ...resources.users import User
-
-    user = User.query.filter_by(external_id=decode_token(auth_client.token)['sub']).first()
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
     resp = auth_client.get(f"/api/studies/?user_id={user.external_id}")
     for study in resp.json['results']:
         assert study['user'] == user.external_id

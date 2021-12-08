@@ -1,7 +1,6 @@
 from ..request_utils import decode_json
 from ...models import Analysis, User, Point, Image
 from ...schemas import AnalysisSchema
-from ...resources.auth import decode_token
 
 
 def test_get_analyses(auth_client, ingest_neurosynth):
@@ -41,7 +40,7 @@ def test_get_analyses(auth_client, ingest_neurosynth):
 def test_post_analyses(auth_client, ingest_neurosynth, session):
     analysis_db = Analysis.query.first()
     analysis = AnalysisSchema().dump(analysis_db)
-    id_ = decode_token(auth_client.token)['sub']
+    id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()
     analysis_db.study.user = user
     session.add(analysis_db.study)
@@ -56,7 +55,7 @@ def test_post_analyses(auth_client, ingest_neurosynth, session):
 def test_delete_coordinate_analyses(auth_client, ingest_neurosynth, session):
     analysis_db = Analysis.query.first()
     analysis = AnalysisSchema().dump(analysis_db)
-    id_ = decode_token(auth_client.token)['sub']
+    id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()
     analysis_db.user = user
     session.add(analysis_db)
@@ -71,7 +70,7 @@ def test_delete_coordinate_analyses(auth_client, ingest_neurosynth, session):
 def test_delete_image_analyses(auth_client, ingest_neurovault, session):
     analysis_db = Analysis.query.first()
     analysis = AnalysisSchema().dump(analysis_db)
-    id_ = decode_token(auth_client.token)['sub']
+    id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()
     analysis_db.user = user
     session.add(analysis_db)
