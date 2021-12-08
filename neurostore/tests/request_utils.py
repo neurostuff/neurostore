@@ -3,7 +3,7 @@ from functools import partialmethod
 
 
 class Client(object):
-    def __init__(self, token, test_client=None, prepend=""):
+    def __init__(self, token, test_client=None, prepend="", username=None):
         if test_client is None:
             from ..core import app
 
@@ -15,6 +15,7 @@ class Client(object):
         self.client = test_client
         self.prepend = prepend
         self.token = token
+        self.username = username
 
     def _get_headers(self):
         if self.token is not None:
