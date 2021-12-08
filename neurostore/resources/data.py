@@ -10,7 +10,7 @@ from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
 
-from ..core import db
+from ..database import db
 from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions, User, AnnotationAnalysis, Annotation  # noqa E401
 
 
