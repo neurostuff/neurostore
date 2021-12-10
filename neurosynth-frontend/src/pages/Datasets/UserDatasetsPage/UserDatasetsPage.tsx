@@ -5,6 +5,7 @@ import { NeurosynthLoader } from '../../../components';
 import CreateDatasetDialog from '../../../components/Dialogs/CreateDatasetDialog/CreateDatasetDialog';
 import DatasetsTable from '../../../components/Tables/DatasetsTable/DatasetsTable';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
+import useIsMounted from '../../../hooks/useIsMounted';
 import API, { DatasetsApiResponse } from '../../../utils/api';
 
 const UserDatasetsPage: React.FC = (props) => {
@@ -12,6 +13,7 @@ const UserDatasetsPage: React.FC = (props) => {
     const [datasets, setDatasets] = useState<DatasetsApiResponse[]>();
     const context = useContext(GlobalContext);
     const [createDatasetDialogIsOpen, setCreateDatasetDialogIsOpen] = useState(false);
+    const isMountedRef = useIsMounted();
 
     useEffect(() => {
         const getDatasets = async () => {
@@ -31,7 +33,7 @@ const UserDatasetsPage: React.FC = (props) => {
                 user?.sub
             )
                 .then((res) => {
-                    if (res?.data?.results) {
+                    if (isMountedRef.current && res?.data?.results) {
                         setDatasets(res.data.results);
                     }
                 })
@@ -41,11 +43,7 @@ const UserDatasetsPage: React.FC = (props) => {
         };
 
         getDatasets();
-
-        return () => {
-            setDatasets(undefined);
-        };
-    }, [user?.sub]);
+    }, [user?.sub, isMountedRef]);
 
     const handleCreateDataset = async (newDatasetDetails: {
         name: string;
@@ -64,12 +62,14 @@ const UserDatasetsPage: React.FC = (props) => {
                 const newDataset = res.data;
                 setCreateDatasetDialogIsOpen(false);
 
-                setDatasets((prevState) => {
-                    if (!prevState) return prevState;
-                    const newState = [...prevState];
-                    newState.push(newDataset);
-                    return newState;
-                });
+                if (isMountedRef.current) {
+                    setDatasets((prevState) => {
+                        if (!prevState) return prevState;
+                        const newState = [...prevState];
+                        newState.push(newDataset);
+                        return newState;
+                    });
+                }
             })
             .catch((err) => {
                 console.log(err);

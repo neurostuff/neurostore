@@ -12,6 +12,7 @@ import { Box } from '@mui/system';
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { ReadOnly, Study } from '../../../gen/api';
+import useIsMounted from '../../../hooks/useIsMounted';
 import API, { DatasetsApiResponse, StudyApiResponse } from '../../../utils/api';
 import DatasetsPopupMenu from '../../DatasetsPopupMenu/DatasetsPopupMenu';
 import StudiesTableStyles from './StudiesTable.styles';
@@ -25,12 +26,13 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     const { isAuthenticated, user } = useAuth0();
     const [datasets, setDatasets] = useState<DatasetsApiResponse[]>();
     const history = useHistory();
+    const isMountedRef = useIsMounted();
 
     const handleSelectTableRow = (row: Study & ReadOnly) => {
         history.push(`/studies/${row.id}`);
     };
 
-    const shouldShowStudyOptions = isAuthenticated && props.showStudyOptions;
+    const shouldShowStudyOptions = !!isAuthenticated && !!props.showStudyOptions;
 
     useEffect(() => {
         if (shouldShowStudyOptions) {
@@ -51,7 +53,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                     user?.sub || ''
                 )
                     .then((res) => {
-                        if (res?.data?.results) {
+                        if (isMountedRef.current && res?.data?.results) {
                             setDatasets(res.data.results);
                         }
                     })
@@ -61,12 +63,8 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
             };
 
             getDatasets();
-
-            return () => {
-                setDatasets(undefined);
-            };
         }
-    }, [shouldShowStudyOptions, user?.sub]);
+    }, [shouldShowStudyOptions, user?.sub, isMountedRef]);
 
     const handleDatasetCreated = (createdDataset: DatasetsApiResponse) => {
         setDatasets((prevState) => {

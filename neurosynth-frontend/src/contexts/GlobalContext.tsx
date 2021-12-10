@@ -1,7 +1,7 @@
 import IconButton from '@mui/material/IconButton';
 import Snackbar from '@mui/material/Snackbar';
 import { Close } from '@mui/icons-material';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import MuiAlert from '@mui/material/Alert';
 import API from '../utils/api';
 
@@ -38,20 +38,23 @@ const GlobalContextProvider = (props: any) => {
         snackbarType: SnackbarType.INFO,
     });
 
-    const handleTokenFunc = (givenToken: string) => {
-        if (givenToken !== token) {
-            API.UpdateServicesWithToken(givenToken);
-            setToken(givenToken);
-        }
-    };
+    const handleTokenFunc = useCallback(
+        (givenToken: string) => {
+            if (givenToken !== token) {
+                API.UpdateServicesWithToken(givenToken);
+                setToken(givenToken);
+            }
+        },
+        [token]
+    );
 
-    const handleShowSnackbar = (message: string, snackbarType: SnackbarType) => {
+    const handleShowSnackbar = useCallback((message: string, snackbarType: SnackbarType) => {
         setSnackbarState({
             openSnackbar: true,
             message: message,
             snackbarType: snackbarType,
         });
-    };
+    }, []);
 
     const handleSnackbarClose = (event?: React.SyntheticEvent, reason?: string) => {
         if (reason === 'clickaway') {
@@ -65,7 +68,14 @@ const GlobalContextProvider = (props: any) => {
         }));
     };
 
-    const handleLogout = () => {};
+    const handleLogout = useCallback(() => {}, []);
+
+    // store in state in order to prevent rerenders when snackbar is called
+    const [globalContextFuncs, _] = useState({
+        showSnackbar: handleShowSnackbar,
+        handleToken: handleTokenFunc,
+        onLogout: handleLogout,
+    });
 
     const action = (
         <IconButton size="small" color="inherit" onClick={handleSnackbarClose}>
@@ -74,13 +84,7 @@ const GlobalContextProvider = (props: any) => {
     );
 
     return (
-        <GlobalContext.Provider
-            value={{
-                showSnackbar: handleShowSnackbar,
-                handleToken: handleTokenFunc,
-                onLogout: handleLogout,
-            }}
-        >
+        <GlobalContext.Provider value={globalContextFuncs}>
             {props.children}
             <Snackbar
                 open={snackbarState.openSnackbar}

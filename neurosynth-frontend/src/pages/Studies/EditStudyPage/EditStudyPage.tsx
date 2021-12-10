@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { EditAnalyses, EditStudyDetails, NeurosynthLoader } from '../../../components';
 import EditStudyMetadata from '../../../components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
+import useIsMounted from '../../../hooks/useIsMounted';
 import API, { AnalysisApiResponse } from '../../../utils/api';
 import EditStudyPageStyles from './EditStudyPage.styles';
 
@@ -19,7 +20,7 @@ interface IStudyEdit {
 const EditStudyPage = () => {
     // study and metadata edits are updated and stored in this state
     const [study, setStudy] = useState<IStudyEdit | undefined>(undefined);
-
+    const isMountedRef = useIsMounted();
     // initial metadata received from the study is set in this state. Separate in order to avoid constant re renders
     const history = useHistory();
     const params: { studyId: string } = useParams();
@@ -28,17 +29,19 @@ const EditStudyPage = () => {
         const getStudy = (id: string) => {
             API.Services.StudiesService.studiesIdGet(id, true)
                 .then((res) => {
-                    const studyRes = res.data;
+                    if (isMountedRef.current) {
+                        const studyRes = res.data;
 
-                    setStudy({
-                        name: studyRes.name || '',
-                        authors: studyRes.authors || '',
-                        publication: studyRes.publication || '',
-                        doi: studyRes.doi || '',
-                        description: studyRes.description || '',
-                        metadata: studyRes.metadata ? studyRes.metadata : [],
-                        analyses: studyRes.analyses as AnalysisApiResponse[] | undefined,
-                    });
+                        setStudy({
+                            name: studyRes.name || '',
+                            authors: studyRes.authors || '',
+                            publication: studyRes.publication || '',
+                            doi: studyRes.doi || '',
+                            description: studyRes.description || '',
+                            metadata: studyRes.metadata ? studyRes.metadata : [],
+                            analyses: studyRes.analyses as AnalysisApiResponse[] | undefined,
+                        });
+                    }
                 })
                 .catch(() => {});
         };
@@ -46,7 +49,7 @@ const EditStudyPage = () => {
         if (params.studyId) {
             getStudy(params.studyId);
         }
-    }, [params.studyId]);
+    }, [params.studyId, isMountedRef]);
 
     const handleOnCancel = (event: React.MouseEvent) => {
         history.push(`/studies/${params.studyId}`);

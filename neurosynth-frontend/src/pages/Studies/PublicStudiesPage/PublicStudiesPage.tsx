@@ -4,6 +4,7 @@ import API, { StudyApiResponse } from '../../../utils/api';
 import PublicStudiesPageStyles from './PublicStudiesPage.styles';
 import { StudiesTable, SearchBar, NeurosynthLoader } from '../../../components';
 import { Metadata } from '../../../gen/api';
+import useIsMounted from '../../../hooks/useIsMounted';
 
 export enum Source {
     NEUROSTORE = 'neurostore',
@@ -40,6 +41,7 @@ const PublicStudiesPage = () => {
     const [studies, setStudies] = useState<StudyApiResponse[]>();
     const [searchMetadata, setSearchMetadata] = useState<Metadata>();
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>(new SearchCriteria());
+    const isMountedRef = useIsMounted();
 
     const getNumTotalPages = (totalCount: number | undefined, pageSize: number | undefined) => {
         if (!totalCount || !pageSize) {
@@ -102,7 +104,6 @@ const PublicStudiesPage = () => {
 
     // runs for any change in study query
     useEffect(() => {
-        setStudies(undefined);
         const getStudies = (searchCriteria: SearchCriteria) => {
             API.Services.StudiesService.studiesGet(
                 searchCriteria.genericSearchStr,
@@ -119,7 +120,7 @@ const PublicStudiesPage = () => {
                 searchCriteria.authorSearch
             )
                 .then((res) => {
-                    if (res?.data?.results) {
+                    if (isMountedRef.current && res?.data?.results) {
                         setSearchMetadata(res.data.metadata);
                         setStudies(res.data.results);
                     }
@@ -130,7 +131,7 @@ const PublicStudiesPage = () => {
         };
 
         getStudies(searchCriteria);
-    }, [searchCriteria]);
+    }, [searchCriteria, isMountedRef]);
 
     return (
         <>

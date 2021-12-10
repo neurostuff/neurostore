@@ -13,7 +13,7 @@ import {
     Divider,
 } from '@mui/material';
 import { AxiosError, AxiosResponse } from 'axios';
-import React, { useCallback, useState, useEffect, useContext, SyntheticEvent } from 'react';
+import React, { useState, useEffect, useContext, SyntheticEvent } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import {
     DisplayValuesTable,
@@ -24,10 +24,11 @@ import {
 } from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import { Analysis, ReadOnly } from '../../../gen/api';
+import useIsMounted from '../../../hooks/useIsMounted';
 import API, { StudyApiResponse, AnalysisApiResponse } from '../../../utils/api';
 import StudyPageStyles from './StudyPage.styles';
 
-const StudyPage = () => {
+const StudyPage: React.FC = (props) => {
     const [study, setStudy] = useState<StudyApiResponse>();
     const [selectedAnalysis, setSelectedAnalysis] = useState<{
         analysisIndex: number;
@@ -41,42 +42,8 @@ const StudyPage = () => {
     const context = useContext(GlobalContext);
     const history = useHistory();
     const { isAuthenticated, getAccessTokenSilently, user } = useAuth0();
+    const isMountedRef = useIsMounted();
     const params: { studyId: string } = useParams();
-
-    const getStudy = useCallback((id: string) => {
-        API.Services.StudiesService.studiesIdGet(id, true)
-            .then((res) => {
-                const resUpdated = res as AxiosResponse<StudyApiResponse>;
-
-                let sortedAnalyses = resUpdated.data.analyses as AnalysisApiResponse[] | undefined;
-                if (sortedAnalyses && sortedAnalyses.length > 0) {
-                    sortedAnalyses.sort((a, b) => {
-                        const aId = a.id as string;
-                        const bId = b.id as string;
-                        if (aId < bId) {
-                            return -1;
-                        }
-                        if (aId > bId) {
-                            return 1;
-                        }
-                        return 0;
-                    });
-                }
-
-                setStudy(resUpdated.data);
-
-                // check if the analyses array exists and is non zero in the response
-                if (sortedAnalyses && sortedAnalyses.length > 0) {
-                    setSelectedAnalysis({
-                        analysisIndex: 0,
-                        analysis: sortedAnalyses[0],
-                    });
-                }
-            })
-            .catch((err) => {
-                console.error(err);
-            });
-    }, []);
 
     const handleCloneStudy = async () => {
         try {
@@ -109,10 +76,49 @@ const StudyPage = () => {
     };
 
     useEffect(() => {
+        const getStudy = (id: string) => {
+            API.Services.StudiesService.studiesIdGet(id, true)
+                .then((res) => {
+                    if (isMountedRef.current) {
+                        const resUpdated = res as AxiosResponse<StudyApiResponse>;
+
+                        let sortedAnalyses = resUpdated.data.analyses as
+                            | AnalysisApiResponse[]
+                            | undefined;
+                        if (sortedAnalyses && sortedAnalyses.length > 0) {
+                            sortedAnalyses.sort((a, b) => {
+                                const aId = a.id as string;
+                                const bId = b.id as string;
+                                if (aId < bId) {
+                                    return -1;
+                                }
+                                if (aId > bId) {
+                                    return 1;
+                                }
+                                return 0;
+                            });
+                        }
+
+                        setStudy(resUpdated.data);
+
+                        // check if the analyses array exists and is non zero in the response
+                        if (sortedAnalyses && sortedAnalyses.length > 0) {
+                            setSelectedAnalysis({
+                                analysisIndex: 0,
+                                analysis: sortedAnalyses[0],
+                            });
+                        }
+                    }
+                })
+                .catch((err) => {
+                    console.error(err);
+                });
+        };
+
         if (params.studyId) {
             getStudy(params.studyId);
         }
-    }, [params.studyId, getStudy]);
+    }, [params.studyId, isMountedRef]);
 
     useEffect(() => {
         const userIDAndStudyIDExist = !!user?.sub && !!study?.user;

@@ -14,6 +14,7 @@ import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import { AxiosError } from 'axios';
 import API from '../../../utils/api';
 import { useAuth0 } from '@auth0/auth0-react';
+import useIsMounted from '../../../hooks/useIsMounted';
 
 export interface IEditStudyMetadata {
     studyId: string;
@@ -44,6 +45,7 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
     const context = useContext(GlobalContext);
     const { getAccessTokenSilently } = useAuth0();
     const [updatedEnabled, setUpdateEnabled] = useState(false);
+    const isMountedRef = useIsMounted();
 
     const [metadataArr, setMetadataArr] = useState<IMetadataRowModel[]>(
         metadataToArray(props.metadata)
@@ -64,9 +66,11 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
             metadata: transformedMetadata,
         })
             .then((res) => {
-                setUpdateEnabled(false);
                 context.showSnackbar('study successfully updated', SnackbarType.SUCCESS);
                 props.onUpdateStudyMetadata(transformedMetadata);
+                if (isMountedRef.current) {
+                    setUpdateEnabled(false);
+                }
             })
             .catch((err: Error | AxiosError) => {
                 context.showSnackbar('there was an error', SnackbarType.ERROR);

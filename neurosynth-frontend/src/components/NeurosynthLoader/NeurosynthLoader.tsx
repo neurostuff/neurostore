@@ -12,7 +12,14 @@ const NeurosynthLoader: React.FC<INeurosynthLoader> = (props) => {
             {props.loaded ? (
                 <>{props.children}</>
             ) : (
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        margin: '0.5rem',
+                    }}
+                >
                     <CircularProgress />
                     {props.loadingText && <Box sx={{ margin: '0.5rem' }}>Fetching datasets</Box>}
                 </Box>

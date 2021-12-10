@@ -5,19 +5,21 @@ import { useContext, useEffect, useState } from 'react';
 import { NeurosynthLoader, StudiesTable } from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import API, { StudyApiResponse } from '../../../utils/api';
+import useIsMounted from '../../../hooks/useIsMounted';
 
 const UserStudiesPage: React.FC = (props) => {
     const { getAccessTokenSilently, user } = useAuth0();
-    const context = useContext(GlobalContext);
+    const { handleToken, showSnackbar } = useContext(GlobalContext);
     const [studies, setStudies] = useState<StudyApiResponse[]>();
+    const isMountedRef = useIsMounted();
 
     useEffect(() => {
         const getUserStudies = async () => {
             try {
                 const token = await getAccessTokenSilently();
-                context.handleToken(token);
+                handleToken(token);
             } catch (exception) {
-                context.showSnackbar('there was an error', SnackbarType.ERROR);
+                showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(exception);
             }
 
@@ -37,12 +39,12 @@ const UserStudiesPage: React.FC = (props) => {
                 user?.sub
             )
                 .then((res) => {
-                    if (res?.data?.results) {
+                    if (isMountedRef.current && res?.data?.results) {
                         setStudies(res.data.results);
                     }
                 })
                 .catch((err) => {
-                    context.showSnackbar('there was an error', SnackbarType.ERROR);
+                    showSnackbar('there was an error', SnackbarType.ERROR);
                     console.error(err);
                 });
         };
@@ -50,11 +52,7 @@ const UserStudiesPage: React.FC = (props) => {
         if (user?.sub) {
             getUserStudies();
         }
-
-        return () => {
-            setStudies(undefined);
-        };
-    }, [user?.sub, context, getAccessTokenSilently]);
+    }, [user?.sub, getAccessTokenSilently, handleToken, showSnackbar, isMountedRef]);
 
     return (
         <>

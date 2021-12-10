@@ -3,11 +3,13 @@ import { Box, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { NeurosynthLoader } from '../../../components';
 import DatasetsTable from '../../../components/Tables/DatasetsTable/DatasetsTable';
+import useIsMounted from '../../../hooks/useIsMounted';
 import API, { DatasetsApiResponse } from '../../../utils/api';
 
 const PublicDatasetsPage: React.FC = (props) => {
     const { user } = useAuth0();
     const [datasets, setDatasets] = useState<DatasetsApiResponse[]>();
+    const isMountedRef = useIsMounted();
 
     useEffect(() => {
         const getDatasets = async () => {
@@ -27,8 +29,7 @@ const PublicDatasetsPage: React.FC = (props) => {
                 undefined
             )
                 .then((res) => {
-                    if (res?.data?.results) {
-                        console.log(res.data.results);
+                    if (isMountedRef.current && res?.data?.results) {
                         setDatasets(res.data.results);
                     }
                 })
@@ -42,7 +43,7 @@ const PublicDatasetsPage: React.FC = (props) => {
         return () => {
             setDatasets(undefined);
         };
-    }, [user?.sub]);
+    }, [user?.sub, isMountedRef]);
 
     return (
         <NeurosynthLoader loaded={!!datasets}>

@@ -5,6 +5,7 @@ import { useParams } from 'react-router';
 import { TextExpansion, StudiesTable, NeurosynthLoader } from '../../../components';
 import TextEdit from '../../../components/TextEdit/TextEdit';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
+import useIsMounted from '../../../hooks/useIsMounted';
 import API, { DatasetsApiResponse, StudyApiResponse } from '../../../utils/api';
 import DatasetPageStyles from './DatasetPage.styles';
 
@@ -13,13 +14,16 @@ const DatasetPage: React.FC = (props) => {
     const { getAccessTokenSilently } = useAuth0();
     const context = useContext(GlobalContext);
     const params: { datasetId: string } = useParams();
+    const isMountedRef = useIsMounted();
 
     useEffect(() => {
         const getDataset = async (id: string) => {
             API.Services.DataSetsService.datasetsIdGet(id, true)
                 .then((res) => {
-                    const receivedDataset = res.data;
-                    setDataset(receivedDataset);
+                    if (isMountedRef.current) {
+                        const receivedDataset = res.data;
+                        setDataset(receivedDataset);
+                    }
                 })
                 .catch((err) => {
                     console.error(err);
@@ -27,11 +31,7 @@ const DatasetPage: React.FC = (props) => {
         };
 
         getDataset(params.datasetId);
-
-        return () => {
-            setDataset(undefined);
-        };
-    }, [params.datasetId]);
+    }, [params.datasetId, isMountedRef]);
 
     const handleSaveTextEdit = (fieldName: 'name' | 'description' | 'publication' | 'doi') => {
         return async (editedText: string) => {
@@ -52,13 +52,15 @@ const DatasetPage: React.FC = (props) => {
             })
                 .then(() => {
                     context.showSnackbar('analysis successfully updated', SnackbarType.SUCCESS);
-                    setDataset((prevState) => {
-                        if (!prevState) return prevState;
-                        return {
-                            ...prevState,
-                            [fieldName]: editedText,
-                        };
-                    });
+                    if (isMountedRef.current) {
+                        setDataset((prevState) => {
+                            if (!prevState) return prevState;
+                            return {
+                                ...prevState,
+                                [fieldName]: editedText,
+                            };
+                        });
+                    }
                 })
                 .catch((err) => {
                     context.showSnackbar(
@@ -68,6 +70,10 @@ const DatasetPage: React.FC = (props) => {
                     console.error(err);
                 });
         };
+    };
+
+    const handleDeleteDataset = (event: React.MouseEvent<HTMLButtonElement>) => {
+        // API.Services.DataSetsService.
     };
 
     return (
@@ -158,7 +164,12 @@ const DatasetPage: React.FC = (props) => {
                         </Typography>
                     </Box>
                     <StudiesTable studies={dataset.studies as StudyApiResponse[]} />
-                    <Button variant="outlined" color="error" sx={{ marginTop: '1rem' }}>
+                    <Button
+                        onClick={handleDeleteDataset}
+                        variant="outlined"
+                        color="error"
+                        sx={{ marginTop: '1rem' }}
+                    >
                         Delete this dataset
                     </Button>
                 </>

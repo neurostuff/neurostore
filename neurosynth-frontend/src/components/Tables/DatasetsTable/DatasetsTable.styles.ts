@@ -10,7 +10,7 @@ const DatasetsTableStyles: Style = {
         },
     },
     headerCell: {
-        color: 'primary.contrastText',
+        color: 'white',
         fontWeight: 'bold',
         whiteSpace: 'nowrap',
     },

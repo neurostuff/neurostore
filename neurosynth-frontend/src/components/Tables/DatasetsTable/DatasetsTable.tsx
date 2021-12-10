@@ -31,7 +31,7 @@ const DatasetsTable: React.FC<IDatasetsTable> = (props) => {
         <TableContainer component={Paper} elevation={3}>
             <Table size={props.tableSize || 'small'}>
                 <TableHead>
-                    <TableRow sx={{ backgroundColor: 'primary.main' }}>
+                    <TableRow sx={{ backgroundColor: '#42ab55' }}>
                         <TableCell sx={DatasetsTableStyles.headerCell}>Name</TableCell>
                         <TableCell sx={DatasetsTableStyles.headerCell}># of Studies</TableCell>
                         <TableCell sx={DatasetsTableStyles.headerCell}>Description</TableCell>

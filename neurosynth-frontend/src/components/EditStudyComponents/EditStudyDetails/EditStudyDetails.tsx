@@ -12,6 +12,7 @@ import {
 import { AxiosError } from 'axios';
 import React, { ChangeEvent, useContext, useEffect, useState } from 'react';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
+import useIsMounted from '../../../hooks/useIsMounted';
 import API from '../../../utils/api';
 import EditStudyDetailsStyles from './EditStudyDetails.styles';
 
@@ -33,6 +34,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
     const { getAccessTokenSilently } = useAuth0();
     const context = useContext(GlobalContext);
     const [updatedEnabled, setUpdateEnabled] = useState(false);
+    const isMountedRef = useIsMounted();
     const [originalDetails, setOriginalDetails] = useState<IEditStudyDetailsProperties>({
         studyId: studyId,
         name: name,
@@ -84,16 +86,18 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
             doi: props.doi,
         })
             .then((res) => {
-                setUpdateEnabled(false);
                 context.showSnackbar('study successfully updated', SnackbarType.SUCCESS);
-                setOriginalDetails({
-                    studyId: props.studyId,
-                    name: props.name,
-                    description: props.description,
-                    authors: props.authors,
-                    publication: props.publication,
-                    doi: props.doi,
-                });
+                if (isMountedRef.current) {
+                    setUpdateEnabled(false);
+                    setOriginalDetails({
+                        studyId: props.studyId,
+                        name: props.name,
+                        description: props.description,
+                        authors: props.authors,
+                        publication: props.publication,
+                        doi: props.doi,
+                    });
+                }
             })
             .catch((err: Error | AxiosError) => {
                 context.showSnackbar('there was an error', SnackbarType.ERROR);

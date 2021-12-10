@@ -4,6 +4,7 @@ import { AxiosError } from 'axios';
 import React, { ChangeEvent, useContext, useEffect, useState } from 'react';
 import { IEditAnalysisDetails } from '../..';
 import { GlobalContext, SnackbarType } from '../../../../../contexts/GlobalContext';
+import useIsMounted from '../../../../../hooks/useIsMounted';
 import API from '../../../../../utils/api';
 import EditAnalysisDetailsStyles from './EditAnalysisDetails.styles';
 
@@ -17,6 +18,7 @@ const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
         description: false,
     });
     const context = useContext(GlobalContext);
+    const isMountedRef = useIsMounted();
     const { getAccessTokenSilently } = useAuth0();
 
     // as this saves the original details, we only want it to run once in the beginning to save the data in local memory
@@ -57,14 +59,16 @@ const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
             description: props.description,
         })
             .then((res) => {
-                setUpdateEnabled({
-                    name: false,
-                    description: false,
-                });
-                setOriginalDetails({
-                    name: props.name || '',
-                    description: props.description || '',
-                });
+                if (isMountedRef.current) {
+                    setUpdateEnabled({
+                        name: false,
+                        description: false,
+                    });
+                    setOriginalDetails({
+                        name: props.name || '',
+                        description: props.description || '',
+                    });
+                }
                 context.showSnackbar('analysis successfully updated', SnackbarType.SUCCESS);
                 // trigger a reload by passing in a reference to an empty object
             })
