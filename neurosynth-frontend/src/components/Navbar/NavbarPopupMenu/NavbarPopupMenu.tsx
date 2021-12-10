@@ -21,6 +21,8 @@ const NavbarPopupMenu: React.FC<INavbarPopupMenu> = (props) => {
     const { isAuthenticated } = useAuth0();
     const anchorRef = useRef<HTMLButtonElement>(null);
 
+    console.log(anchorRef);
+
     const menuItems: JSX.Element[] = [];
     props.navOption.children?.forEach((navOption) => {
         const shouldSee = !navOption.authenticationRequired || isAuthenticated;
