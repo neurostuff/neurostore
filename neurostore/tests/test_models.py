@@ -15,11 +15,11 @@ def test_ns_ingestion(session, ingest_neurosynth):
     assert 1
 
 
-def test_Study():
+def test_Study(app):
     Study()
 
 
-def test_Analysis():
+def test_Analysis(app):
     Analysis()
 
 

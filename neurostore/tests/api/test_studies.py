@@ -1,7 +1,7 @@
 import pytest
 
 from ..request_utils import decode_json
-from ...models.data import Study
+from ...models import Study, User, Analysis
 
 
 def test_get_studies(auth_client, ingest_neurosynth, ingest_neuroquery):
@@ -82,12 +82,13 @@ def test_clone_studies(auth_client, ingest_neurosynth, ingest_neurovault):
            set([an.name for an in study_entry.analyses])
 
 
-def test_private_studies(user_studies, auth_clients):
-    from ...resources.auth import decode_token
+def test_private_studies(user_data, auth_clients):
     from ...resources.users import User
     client1, client2 = auth_clients
-    user1 = User.query.filter_by(external_id=decode_token(client1.token)['sub']).first()
-    user2 = User.query.filter_by(external_id=decode_token(client2.token)['sub']).first()
+    id1 = client1.username
+    id2 = client2.username
+    user1 = User.query.filter_by(external_id=id1).first()
+    user2 = User.query.filter_by(external_id=id2).first()
     resp1 = client1.get("/api/studies/")
     resp2 = client2.get("/api/studies/")
     name_set1 = set(s['name'] for s in resp1.json['results'])
@@ -107,3 +108,19 @@ def test_post_studies(auth_client, ingest_neurosynth):
     }
 
     auth_client.post("/api/studies/", data=my_study)
+
+
+def test_delete_studies(auth_client, ingest_neurosynth, session):
+    study_db = Study.query.first()
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    study_db.user = user
+    session.add(study_db)
+    session.commit()
+
+    get = auth_client.get(f"/api/studies/{study_db.id}")
+
+    auth_client.delete(f"/api/studies/{study_db.id}")
+
+    for analysis in get.json['analyses']:
+        assert Analysis.query.filter_by(id=analysis).first() is None

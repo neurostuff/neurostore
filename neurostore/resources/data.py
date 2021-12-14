@@ -10,7 +10,7 @@ from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
 
-from ..core import db
+from ..database import db
 from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions, User, AnnotationAnalysis, Annotation  # noqa E401
 
 
@@ -46,6 +46,8 @@ __all__ = [
     "ConditionListView",
 ]
 
+PARENT_RESOURCES = {'study': Study, 'analysis': Analysis, 'dataset': Dataset}
+
 
 # https://www.geeksforgeeks.org/python-split-camelcase-string-to-individual-strings/
 def camel_case_split(str):
@@ -75,9 +77,24 @@ class BaseView(MethodView):
 
     _model = None
     _nested = {}
+    _parent = {}
+    _linked = {}
 
     @classmethod
     def update_or_create(cls, data, id=None, commit=True):
+        """
+        scenerios:
+        1. cloning a study
+          a. clone everything, a study is an object
+        2. cloning a dataset
+          a. studies are linked to a dataset, so create a new dataset with same links
+        3. cloning an annotation
+          a. annotations are linked to datasets, update when dataset updates
+        2. creating an analysis
+          a. I should have to own all (relevant) parent objects
+        3. creating an annotation
+            a. I should not have to own the dataset to create an annotation
+        """
 
         # Store all models so we can atomically update in one commit
         to_commit = []
@@ -113,8 +130,22 @@ class BaseView(MethodView):
 
         # Update all non-nested attributes
         for k, v in data.items():
+            if k in cls._parent and v is not None:
+                # DO NOT WANT PEOPLE TO BE ABLE TO ADD ANALYSES
+                # TO STUDIES UNLESS THEY OWN THE STUDY
+                v = cls._parent[k].query.filter_by(id=v['id']).first()
+                if current_user != v.user:
+                    abort(403)
+            if k in cls._linked and v is not None:
+                # this can be owned by someone else
+                v = cls._linked[k].query.filter_by(id=v['id']).first()
+
             if k not in cls._nested and k not in ["id", "user"]:
-                setattr(record, k, v)
+                try:
+                    setattr(record, k, v)
+                except AttributeError:
+                    print(k)
+                    raise AttributeError
 
         to_commit.append(record)
 
@@ -160,6 +191,19 @@ class ObjectView(BaseView):
             record = self.__class__.update_or_create(data, id)
 
         return self.__class__._schema().dump(record)
+
+    def delete(self, id):
+        record = self.__class__._model.query.filter_by(id=id).first()
+
+        current_user = get_current_user()
+        if record.user_id != current_user.external_id:
+            abort(403)
+        else:
+            db.session.delete(record)
+
+        db.session.commit()
+
+        return 204
 
 
 LIST_USER_ARGS = {
@@ -306,6 +350,7 @@ class ListView(BaseView):
             record = self.__class__.update_or_create(data)
         return self.__class__._schema(context={'nested': nested}).dump(record)
 
+
 # Individual resource views
 
 
@@ -322,12 +367,18 @@ class AnnotationView(ObjectView):
     _nested = {
         "annotation_analyses": "AnnotationAnalysisResource"
     }
+    _linked = {
+        "dataset": Dataset,
+    }
 
 
 @view_maker
 class StudyView(ObjectView):
     _nested = {
         "analyses": "AnalysisView",
+    }
+    _linked = {
+        "dataset": Dataset,
     }
 
 
@@ -338,6 +389,9 @@ class AnalysisView(ObjectView):
         "points": "PointView",
         "analysis_conditions": "AnalysisConditionResource"
     }
+    _parent = {
+        "study": Study,
+    }
 
 
 @view_maker
@@ -347,13 +401,18 @@ class ConditionView(ObjectView):
 
 @view_maker
 class ImageView(ObjectView):
-    pass
+    _parent = {
+        "analysis": Analysis,
+    }
 
 
 @view_maker
 class PointView(ObjectView):
     _nested = {
         "values": "PointValueView",
+    }
+    _parent = {
+        "analysis": Analysis,
     }
 
 
@@ -367,7 +426,8 @@ class PointValueView(ObjectView):
 @view_maker
 class DatasetListView(ListView):
     _nested = {
-        "studies": "StudyView"
+        "studies": "StudyView",
+        "annotations": "AnnotationView",
     }
     _search_fields = ("name", "description", "publication", "doi", "pmid")
 
@@ -376,7 +436,9 @@ class DatasetListView(ListView):
 class AnnotationListView(ListView):
     _nested = {
         "annotation_analyses": "AnnotationAnalysisResource",
-        "dataset": "DatasetView",
+    }
+    _linked = {
+        "dataset": Dataset,
     }
     _search_fields = ("name", "description")
 
@@ -410,6 +472,9 @@ class AnnotationListView(ListView):
 class StudyListView(ListView):
     _nested = {
         "analyses": "AnalysisView",
+    }
+    _linked = {
+        "dataset": Dataset,
     }
     _search_fields = ("name", "description", "source_id", "source", "authors", "publication")
 
@@ -453,6 +518,16 @@ class StudyListView(ListView):
 
 @view_maker
 class AnalysisListView(ListView):
+    _nested = {
+        "images": "ImageView",
+        "points": "PointView",
+        "analysis_conditions": "AnalysisConditionResource"
+    }
+
+    _parent = {
+        "study": Study,
+    }
+
     _search_fields = ("name", "description")
 
 
@@ -463,27 +538,37 @@ class ConditionListView(ListView):
 
 @view_maker
 class ImageListView(ListView):
+    _parent = {
+        "analysis": Analysis,
+    }
     _search_fields = ("filename", "space", "value_type", "analysis_name")
 
 
 @view_maker
 class PointListView(ListView):
     _nested = {
-        "values": "PointValueView"
+        "values": "PointValueView",
+    }
+    _parent = {
+        "analysis": Analysis,
     }
 
 
 # Utility resources for updating data
 class AnalysisConditionResource(BaseView):
     _nested = {'condition': 'ConditionView'}
+    _parent = {'analysis': Analysis}
     _model = AnalysisConditions
     _schema = AnalysisConditionSchema
 
 
 class AnnotationAnalysisResource(BaseView):
-    _nested = {
-        'analysis': "AnalysisView",
-        'study': 'StudyView',
+    _parent = {
+        'annotation': Annotation,
+    }
+    _linked = {
+        'analysis': Analysis,
+        'study': Study,
     }
     _model = AnnotationAnalysis
     _schema = AnnotationAnalysisSchema
