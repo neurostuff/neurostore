@@ -66,6 +66,7 @@ class Annotation(BaseMixin, db.Model):
     user_id = db.Column(db.Text, db.ForeignKey('users.external_id'))
     user = relationship('User', backref=backref('annotations'))
     dataset_id = db.Column(db.Text, db.ForeignKey('datasets.id'))
+    metadata_ = db.Column(db.JSON)
 
 
 class AnnotationAnalysis(BaseMixin, db.Model):
