@@ -7,31 +7,37 @@ describe('DisplayMetadataTableRow Component', () => {
             value: 1234,
             colorByType: false,
             bold: false,
+            center: false,
         },
         {
             value: 6789,
             colorByType: true,
             bold: true,
+            center: false,
         },
         {
             value: 'test',
             colorByType: true,
             bold: true,
+            center: false,
         },
         {
             value: true,
             colorByType: true,
             bold: true,
+            center: false,
         },
         {
             value: undefined,
             colorByType: true,
             bold: true,
+            center: false,
         },
         {
             value: null,
             colorByType: true,
             bold: true,
+            center: false,
         },
     ];
 

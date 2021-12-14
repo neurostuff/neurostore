@@ -21,7 +21,9 @@ const NeurosynthLoader: React.FC<INeurosynthLoader> = (props) => {
                     }}
                 >
                     <CircularProgress />
-                    {props.loadingText && <Box sx={{ margin: '0.5rem' }}>Fetching datasets</Box>}
+                    {props.loadingText && (
+                        <Box sx={{ margin: '0.5rem' }}> {props.loadingText} </Box>
+                    )}
                 </Box>
             )}
         </>

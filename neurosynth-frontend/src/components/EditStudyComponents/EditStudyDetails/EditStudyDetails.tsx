@@ -60,7 +60,9 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
             doi: doi,
             description: description,
         });
-    }, [studyId, name, authors, publication, doi, description]);
+        // we want to set the original details so this can only run once
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleOnEdit = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
         props.onEditStudyDetails({

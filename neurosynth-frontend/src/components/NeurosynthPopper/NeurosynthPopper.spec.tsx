@@ -1,7 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useRef } from 'react';
-import { act } from 'react-dom/test-utils';
 import { NeurosynthPopper } from '..';
 
 describe('NeurosynthPopper', () => {
