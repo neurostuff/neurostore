@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Button, Typography, Badge } from '@mui/material';
+import { Box, Button, Typography, Badge, Toolbar } from '@mui/material';
 import { NavLink } from 'react-router-dom';
 import { NavbarArgs } from '..';
 import NavbarStyles from '../Navbar.styles';
@@ -10,7 +10,7 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
     const { isAuthenticated } = useAuth0();
 
     return (
-        <>
+        <Toolbar sx={{ ...NavbarStyles.toolbar, ...NavbarStyles.mdUp }}>
             <Button>
                 <Box to="/" exact sx={NavbarStyles.neurosynthLink} component={NavLink}>
                     <Typography variant="h5">
@@ -42,7 +42,7 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
                     </Box>
                 </Button>
             </Box>
-        </>
+        </Toolbar>
     );
 };
 

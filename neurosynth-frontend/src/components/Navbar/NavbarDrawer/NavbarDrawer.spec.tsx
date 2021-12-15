@@ -7,6 +7,16 @@ import NavbarDrawer from './NavbarDrawer';
 
 jest.mock('@auth0/auth0-react');
 
+// already tested child component
+jest.mock('../NavbarPopupMenu/NavbarPopupMenu', () => {
+    return {
+        __esModule: true,
+        default: (props: any) => {
+            return <button>child-menuitem</button>;
+        },
+    };
+});
+
 describe('NavbarDrawer Component', () => {
     const mockedUseAuth0 = {
         isAuthenticated: true,
@@ -16,14 +26,23 @@ describe('NavbarDrawer Component', () => {
         {
             label: 'testLabel1',
             path: 'testPath1',
+            disabled: false,
+            authenticationRequired: false,
+            children: null,
         },
         {
             label: 'testLabel2',
             path: 'testPath2',
+            disabled: false,
+            authenticationRequired: false,
+            children: null,
         },
         {
             label: 'testLabel3',
             path: 'testPath3',
+            disabled: false,
+            authenticationRequired: false,
+            children: null,
         },
     ];
 
@@ -58,10 +77,8 @@ describe('NavbarDrawer Component', () => {
         const button = screen.getAllByRole('button')[1];
         userEvent.click(button);
 
-        mockNavOptions.forEach((element) => {
-            const buttonElement = screen.getByText(element.label);
-            expect(buttonElement).toBeInTheDocument();
-        });
+        const mockedOptions = screen.getAllByText('child-menuitem');
+        expect(mockNavOptions.length).toEqual(mockedOptions.length);
     });
 
     it('should show login if not authenticated and login on click', () => {

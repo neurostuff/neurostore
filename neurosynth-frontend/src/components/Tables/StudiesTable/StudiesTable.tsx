@@ -26,13 +26,13 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     const { isAuthenticated, user } = useAuth0();
     const [datasets, setDatasets] = useState<DatasetsApiResponse[]>();
     const history = useHistory();
-    const isMountedRef = useIsMounted();
+    const { current } = useIsMounted();
 
     const handleSelectTableRow = (row: Study & ReadOnly) => {
         history.push(`/studies/${row.id}`);
     };
 
-    const shouldShowStudyOptions = !!isAuthenticated && !!props.showStudyOptions;
+    const shouldShowStudyOptions = isAuthenticated && !!props.showStudyOptions;
 
     useEffect(() => {
         if (shouldShowStudyOptions) {
@@ -43,7 +43,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                     undefined,
                     undefined,
                     undefined,
-                    true,
+                    false,
                     undefined,
                     undefined,
                     undefined,
@@ -53,7 +53,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                     user?.sub || ''
                 )
                     .then((res) => {
-                        if (isMountedRef.current && res?.data?.results) {
+                        if (current && res?.data?.results) {
                             setDatasets(res.data.results);
                         }
                     })
@@ -64,7 +64,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
 
             getDatasets();
         }
-    }, [shouldShowStudyOptions, user?.sub, isMountedRef]);
+    }, [shouldShowStudyOptions, user?.sub, current]);
 
     const handleDatasetCreated = (createdDataset: DatasetsApiResponse) => {
         setDatasets((prevState) => {

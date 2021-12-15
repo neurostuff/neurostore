@@ -1,8 +1,87 @@
-import { render, screen } from '@testing-library/react';
+import { useAuth0 } from '@auth0/auth0-react';
+import { act, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Router } from 'react-router-dom';
 import { StudiesTable } from '../..';
 import { MockThemeProvider } from '../../../testing/helpers';
-import { StudyApiResponse } from '../../../utils/api';
+import API, { DatasetsApiResponse, StudyApiResponse } from '../../../utils/api';
+import { IDatasetsPopupMenu } from '../../DatasetsPopupMenu/DatasetsPopupMenu';
+
+jest.mock('../../../hooks/useIsMounted', () => {
+    return {
+        __esModule: true,
+        default: () => ({ current: true }),
+    };
+});
+
+jest.mock('@auth0/auth0-react');
+
+jest.mock('../../../utils/api', () => {
+    return {
+        __esModule: true,
+        default: {
+            Services: {
+                DataSetsService: {
+                    datasetsGet: jest.fn(() => {
+                        const mockDatasets: DatasetsApiResponse[] = [
+                            {
+                                created_at: '2021-12-14T05:05:45.722157+00:00',
+                                description: null,
+                                doi: null,
+                                id: '123',
+                                name: '',
+                                pmid: null,
+                                publication: '',
+                                studies: [],
+                                user: 'some-user',
+                            },
+                        ];
+                        return Promise.resolve({
+                            data: {
+                                results: mockDatasets,
+                            },
+                        });
+                    }),
+                },
+            },
+        },
+    };
+});
+
+jest.mock('../../DatasetsPopupMenu/DatasetsPopupMenu', () => {
+    return {
+        __esModule: true,
+        default: (props: IDatasetsPopupMenu) => {
+            return (
+                <>
+                    <button
+                        onClick={() =>
+                            props.onDatasetCreated({
+                                created_at: '2021-12-14T05:05:45.722157+00:00',
+                                description: '',
+                                doi: '',
+                                id: 'new-dataset',
+                                name: 'created-dataset',
+                                pmid: null,
+                                publication: '',
+                                studies: [],
+                                user: 'some-user',
+                            })
+                        }
+                        data-testid="add-dataset-button"
+                    >
+                        mock add dataset
+                    </button>
+                    {props.datasets?.map((dataset, index) => (
+                        <span data-testid="child-dataset" key={dataset.id || index}>
+                            child-mock-dataset
+                        </span>
+                    ))}
+                </>
+            );
+        },
+    };
+});
 
 describe('StudiesTable Component', () => {
     const historyMock = {
@@ -21,107 +100,7 @@ describe('StudiesTable Component', () => {
                 "fMRI study: selective working memory in aging\r\n\r\nMok et al (2019), Neural markers of category-based selective working memory in aging. NeuroImage.\r\nAuthors: Robert M Mok, M. Clare O'Donoghue, Nicholas E Myers, Erin H.S. Drazich, Anna Christina Nobre \r\n\r\nPublished manuscript: https://www.sciencedirect.com/science/article/pii/S1053811919302228\r\n\r\nPreprint: https://www.biorxiv.org/content/early/2018/10/05/435388\r\ndoi: https://doi.org/10.1101/435388\r\n\r\n",
             doi: '10.1016/j.neuroimage.2019.03.033',
             id: '5LMdXPD3ocgD',
-            metadata: {
-                acquisition_orientation: '',
-                add_date: '2019-01-16T18:02:09.525616Z',
-                autocorrelation_model: '',
-                b0_unwarping_software: '',
-                communities: [],
-                contributors: '',
-                coordinate_space: null,
-                doi_add_date: '2019-03-28T13:36:44.306669Z',
-                download_url: 'https://neurovault.org/collections/4742/download',
-                echo_time: null,
-                field_of_view: null,
-                field_strength: null,
-                flip_angle: null,
-                full_dataset_url: '',
-                functional_coregistered_to_structural: null,
-                functional_coregistration_method: '',
-                group_comparison: null,
-                group_description: '',
-                group_estimation_type: '',
-                group_inference_type: null,
-                group_model_multilevel: '',
-                group_model_type: '',
-                group_modeling_software: '',
-                group_repeated_measures: null,
-                group_repeated_measures_method: '',
-                handedness: null,
-                hemodynamic_response_function: '',
-                high_pass_filter_method: '',
-                inclusion_exclusion_criteria: '',
-                interpolation_method: '',
-                intersubject_registration_software: '',
-                intersubject_transformation_type: null,
-                intrasubject_estimation_type: '',
-                intrasubject_model_type: '',
-                intrasubject_modeling_software: '',
-                length_of_blocks: null,
-                length_of_runs: null,
-                length_of_trials: '',
-                matrix_size: null,
-                modify_date: '2019-04-23T18:18:07.556578Z',
-                motion_correction_interpolation: '',
-                motion_correction_metric: '',
-                motion_correction_reference: '',
-                motion_correction_software: '',
-                nonlinear_transform_type: '',
-                number_of_experimental_units: null,
-                number_of_images: 8,
-                number_of_imaging_runs: null,
-                number_of_rejected_subjects: null,
-                nutbrain_food_choice_type: '',
-                nutbrain_food_viewing_conditions: '',
-                nutbrain_hunger_state: null,
-                nutbrain_odor_conditions: '',
-                nutbrain_taste_conditions: '',
-                object_image_type: '',
-                optimization: null,
-                optimization_method: '',
-                order_of_acquisition: null,
-                order_of_preprocessing_operations: '',
-                orthogonalization_description: '',
-                owner: 5059,
-                owner_name: 'robmok',
-                paper_url: 'https://linkinghub.elsevier.com/retrieve/pii/S1053811919302228',
-                parallel_imaging: '',
-                private: false,
-                proportion_male_subjects: null,
-                pulse_sequence: '',
-                quality_control: '',
-                repetition_time: null,
-                resampled_voxel_size: null,
-                scanner_make: '',
-                scanner_model: '',
-                skip_distance: null,
-                slice_thickness: null,
-                slice_timing_correction_software: '',
-                smoothing_fwhm: null,
-                smoothing_type: '',
-                software_package: '',
-                software_version: '',
-                subject_age_max: null,
-                subject_age_mean: null,
-                subject_age_min: null,
-                target_resolution: null,
-                target_template_image: '',
-                transform_similarity_metric: '',
-                type_of_design: null,
-                url: 'https://neurovault.org/collections/4742/',
-                used_b0_unwarping: null,
-                used_dispersion_derivatives: null,
-                used_high_pass_filter: null,
-                used_intersubject_registration: null,
-                used_motion_correction: null,
-                used_motion_regressors: null,
-                used_motion_susceptibiity_correction: null,
-                used_orthogonalization: null,
-                used_reaction_time_regressor: null,
-                used_slice_timing_correction: null,
-                used_smoothing: null,
-                used_temporal_derivatives: null,
-            },
+            metadata: {},
             name: 'Neural markers of category-based selective working memory in aging',
             pmid: null,
             publication: 'NeuroImage',
@@ -139,107 +118,7 @@ describe('StudiesTable Component', () => {
                 "OBJECTIVE:\r\nThe authors conducted a comprehensive meta-analysis of MRI region-of-interest and voxel-based morphometry (VBM) studies in posttraumatic stress disorder (PTSD). Because patients have high rates of comorbid depression, an additional objective was to compare the findings to a meta-analysis of MRI studies in depression.\r\n\r\nMETHOD:\r\nThe MEDLINE database was searched for studies from 1985 through 2016. A total of 113 studies met inclusion criteria and were included in an online database. Of these, 66 were selected for the region-of-interest meta-analysis and 13 for the VBM meta-analysis. The region-of-interest meta-analysis was conducted and compared with a meta-analysis of major depressive disorder. Within the region-of-interest meta-analysis, three subanalyses were conducted that included control groups with and without trauma.\r\n\r\nRESULTS:\r\nIn the region-of-interest meta-analysis, patients with PTSD compared with all control subjects were found to have reduced brain volume, intracranial volume, and volumes of the hippocampus, insula, and anterior cingulate. PTSD patients compared with nontraumatized or traumatized control subjects showed similar changes. Traumatized compared with nontraumatized control subjects showed smaller volumes of the hippocampus bilaterally. For all regions, pooled effect sizes (Hedges' g) varied from -0.84 to 0.43, and number of studies from three to 41. The VBM meta-analysis revealed prominent volumetric reductions in the medial prefrontal cortex, including the anterior cingulate. Compared with region-of-interest data from patients with major depressive disorder, those with PTSD had reduced total brain volume, and both disorders were associated with reduced hippocampal volume.\r\n\r\nCONCLUSIONS:\r\nThe meta-analyses revealed structural brain abnormalities associated with PTSD and trauma and suggest that global brain volume reductions distinguish PTSD from major depression.",
             doi: '10.1176/appi.ajp.2018.17111199',
             id: '454RhLixbGXR',
-            metadata: {
-                acquisition_orientation: '',
-                add_date: '2018-07-20T09:32:10.646419Z',
-                autocorrelation_model: '',
-                b0_unwarping_software: '',
-                communities: [],
-                contributors: '',
-                coordinate_space: null,
-                doi_add_date: '2018-07-20T09:32:10.645959Z',
-                download_url: 'https://neurovault.org/collections/4045/download',
-                echo_time: null,
-                field_of_view: null,
-                field_strength: null,
-                flip_angle: null,
-                full_dataset_url: 'http://www.ptsdmri.uk',
-                functional_coregistered_to_structural: null,
-                functional_coregistration_method: '',
-                group_comparison: null,
-                group_description: '',
-                group_estimation_type: '',
-                group_inference_type: null,
-                group_model_multilevel: '',
-                group_model_type: '',
-                group_modeling_software: '',
-                group_repeated_measures: null,
-                group_repeated_measures_method: '',
-                handedness: null,
-                hemodynamic_response_function: '',
-                high_pass_filter_method: '',
-                inclusion_exclusion_criteria: '',
-                interpolation_method: '',
-                intersubject_registration_software: '',
-                intersubject_transformation_type: null,
-                intrasubject_estimation_type: '',
-                intrasubject_model_type: '',
-                intrasubject_modeling_software: '',
-                length_of_blocks: null,
-                length_of_runs: null,
-                length_of_trials: '',
-                matrix_size: null,
-                modify_date: '2018-07-20T10:12:48.064211Z',
-                motion_correction_interpolation: '',
-                motion_correction_metric: '',
-                motion_correction_reference: '',
-                motion_correction_software: '',
-                nonlinear_transform_type: '',
-                number_of_experimental_units: null,
-                number_of_images: 3,
-                number_of_imaging_runs: null,
-                number_of_rejected_subjects: null,
-                nutbrain_food_choice_type: null,
-                nutbrain_food_viewing_conditions: null,
-                nutbrain_hunger_state: null,
-                nutbrain_odor_conditions: null,
-                nutbrain_taste_conditions: null,
-                object_image_type: '',
-                optimization: null,
-                optimization_method: '',
-                order_of_acquisition: null,
-                order_of_preprocessing_operations: '',
-                orthogonalization_description: '',
-                owner: 2277,
-                owner_name: 'matthew.kempton',
-                paper_url: 'http://ajp.psychiatryonline.org/doi/10.1176/appi.ajp.2018.17111199',
-                parallel_imaging: '',
-                private: false,
-                proportion_male_subjects: null,
-                pulse_sequence: '',
-                quality_control: '',
-                repetition_time: null,
-                resampled_voxel_size: null,
-                scanner_make: '',
-                scanner_model: '',
-                skip_distance: null,
-                slice_thickness: null,
-                slice_timing_correction_software: '',
-                smoothing_fwhm: null,
-                smoothing_type: '',
-                software_package: '',
-                software_version: '',
-                subject_age_max: null,
-                subject_age_mean: null,
-                subject_age_min: null,
-                target_resolution: null,
-                target_template_image: '',
-                transform_similarity_metric: '',
-                type_of_design: null,
-                url: 'https://neurovault.org/collections/4045/',
-                used_b0_unwarping: null,
-                used_dispersion_derivatives: null,
-                used_high_pass_filter: null,
-                used_intersubject_registration: null,
-                used_motion_correction: null,
-                used_motion_regressors: null,
-                used_motion_susceptibiity_correction: null,
-                used_orthogonalization: null,
-                used_reaction_time_regressor: null,
-                used_slice_timing_correction: null,
-                used_smoothing: null,
-                used_temporal_derivatives: null,
-            },
+            metadata: {},
             name: 'Meta-Analysis of 89 Structural MRI Studies in Posttraumatic Stress Disorder and Comparison With Major Depressive Disorder',
             pmid: null,
             publication: 'American Journal of Psychiatry',
@@ -250,30 +129,193 @@ describe('StudiesTable Component', () => {
         },
     ];
 
-    it('should render', () => {
-        render(
-            <MockThemeProvider>
-                <Router history={historyMock as any}>
-                    <StudiesTable studies={mockStudies} />
-                </Router>
-            </MockThemeProvider>
-        );
+    const mockStudiesNoInfo: StudyApiResponse[] = [
+        {
+            analyses: [],
+            authors: '',
+            created_at: '2021-09-14T16:01:55.799028+00:00',
+            description: '',
+            id: '5LMdXPD3ocgD',
+            name: 'some-test-name',
+            pmid: null,
+            publication: '',
+            source: 'neurovault',
+            source_id: '4742',
+            source_updated_at: null,
+            user: null,
+        },
+    ];
+
+    beforeEach(() => {
+        (useAuth0 as any).mockReturnValue({
+            isAuthenticated: false,
+            user: {
+                sub: 'test-user-id',
+            },
+        });
+    });
+
+    it('should render', async () => {
+        (useAuth0 as any).mockReturnValue({
+            isAuthenticated: true,
+            user: {
+                sub: 'test-user-id',
+            },
+        });
+
+        await act(async () => {
+            render(
+                <MockThemeProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable showStudyOptions={true} studies={mockStudies} />
+                    </Router>
+                </MockThemeProvider>
+            );
+        });
 
         const rows = screen.getAllByRole('row');
 
         // subtract 1 to account for the table header
         expect(rows.length - 1).toEqual(mockStudies.length);
+        expect(API.Services.DataSetsService.datasetsGet).toHaveBeenCalled();
     });
 
-    it('should show no results', () => {
-        render(
-            <MockThemeProvider>
-                <Router history={historyMock as any}>
-                    <StudiesTable studies={[]} />
-                </Router>
-            </MockThemeProvider>
-        );
+    it('should show no results', async () => {
+        await act(async () => {
+            render(
+                <MockThemeProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable studies={[]} />
+                    </Router>
+                </MockThemeProvider>
+            );
+        });
         const noResults = screen.getByText('No results');
         expect(noResults).toBeInTheDocument();
+    });
+
+    it('should show no authors available if no authors', async () => {
+        await act(async () => {
+            render(
+                <MockThemeProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable studies={mockStudiesNoInfo} />
+                    </Router>
+                </MockThemeProvider>
+            );
+        });
+
+        const noAuthorsText = screen.getByText('No Authors Available');
+        expect(noAuthorsText).toBeInTheDocument();
+    });
+
+    it('should show no publication available if no publication', async () => {
+        await act(async () => {
+            render(
+                <MockThemeProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable studies={mockStudiesNoInfo} />
+                    </Router>
+                </MockThemeProvider>
+            );
+        });
+
+        const noPublicationText = screen.getByText('No Publication Available');
+        expect(noPublicationText).toBeInTheDocument();
+    });
+
+    it('should add the dataset when a new dataset has been created', async () => {
+        (useAuth0 as any).mockReturnValue({
+            isAuthenticated: true,
+            user: {
+                sub: 'test-user-id',
+            },
+        });
+
+        await act(async () => {
+            render(
+                <MockThemeProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
+                    </Router>
+                </MockThemeProvider>
+            );
+        });
+
+        const datasetCreatedButton = screen.getByTestId('add-dataset-button');
+
+        await act(async () => {
+            userEvent.click(datasetCreatedButton);
+        });
+
+        const children = screen.getAllByTestId('child-dataset');
+        expect(children.length).toEqual(2);
+    });
+
+    it('should handle the selection when the row is clicked', async () => {
+        (useAuth0 as any).mockReturnValue({
+            isAuthenticated: true,
+            user: {
+                sub: 'test-user-id',
+            },
+        });
+
+        await act(async () => {
+            render(
+                <MockThemeProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
+                    </Router>
+                </MockThemeProvider>
+            );
+        });
+
+        const row = screen.getByText('some-test-name');
+        userEvent.click(row);
+
+        expect(historyMock.push).toBeCalledWith('/studies/5LMdXPD3ocgD');
+    });
+
+    it('should show the add icon when showStudyOptions flag is enabled', async () => {
+        (useAuth0 as any).mockReturnValue({
+            isAuthenticated: true,
+            user: {
+                sub: 'test-user-id',
+            },
+        });
+
+        await act(async () => {
+            render(
+                <MockThemeProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
+                    </Router>
+                </MockThemeProvider>
+            );
+        });
+
+        const icon = screen.getByTestId('add-dataset-button');
+        expect(icon).toBeInTheDocument();
+    });
+
+    it('should hide the add icon when showStudyOptions flag is false', async () => {
+        (useAuth0 as any).mockReturnValue({
+            isAuthenticated: true,
+            user: {
+                sub: 'test-user-id',
+            },
+        });
+        await act(async () => {
+            render(
+                <MockThemeProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable showStudyOptions={false} studies={mockStudiesNoInfo} />
+                    </Router>
+                </MockThemeProvider>
+            );
+        });
+
+        const icon = screen.queryByTestId('add-dataset-button');
+        expect(icon).not.toBeInTheDocument();
     });
 });

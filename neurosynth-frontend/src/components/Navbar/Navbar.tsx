@@ -1,5 +1,4 @@
-import { AppBar, Toolbar, Hidden } from '@mui/material';
-import NavbarStyles from './Navbar.styles';
+import { AppBar } from '@mui/material';
 import NavbarDrawer from './NavbarDrawer/NavbarDrawer';
 import NavbarToolbar from './NavbarToolbar/NavbarToolbar';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -12,6 +11,8 @@ const navItems: NavOptionsModel[] = [
     {
         label: 'STUDIES',
         path: '',
+        disabled: false,
+        authenticationRequired: false,
         children: [
             { label: 'Public Studies', path: '/studies', children: null },
             {
@@ -25,6 +26,8 @@ const navItems: NavOptionsModel[] = [
     {
         label: 'DATASETS',
         path: '',
+        disabled: false,
+        authenticationRequired: false,
         children: [
             { label: 'Public Datasets', path: '/datasets', children: null },
             {
@@ -55,20 +58,8 @@ const Navbar = () => {
 
     return (
         <AppBar position="static" elevation={0}>
-            <Hidden mdDown>
-                <Toolbar sx={NavbarStyles.toolbar}>
-                    <NavbarToolbar
-                        logout={handleLogout}
-                        login={handleLogin}
-                        navOptions={navItems}
-                    />
-                </Toolbar>
-            </Hidden>
-            <Hidden mdUp>
-                <Toolbar sx={NavbarStyles.toolbar}>
-                    <NavbarDrawer logout={handleLogout} login={handleLogin} navOptions={navItems} />
-                </Toolbar>
-            </Hidden>
+            <NavbarToolbar logout={handleLogout} login={handleLogin} navOptions={navItems} />
+            <NavbarDrawer logout={handleLogout} login={handleLogin} navOptions={navItems} />
         </AppBar>
     );
 };

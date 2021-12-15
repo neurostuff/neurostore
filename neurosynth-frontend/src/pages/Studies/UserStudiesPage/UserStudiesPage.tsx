@@ -57,7 +57,7 @@ const UserStudiesPage: React.FC = (props) => {
     return (
         <>
             <Typography sx={{ marginBottom: '1rem' }} variant="h4">
-                My Studies
+                My Cloned Studies
             </Typography>
             <NeurosynthLoader loaded={!!studies}>
                 <Box sx={{ marginBottom: '1rem' }}>

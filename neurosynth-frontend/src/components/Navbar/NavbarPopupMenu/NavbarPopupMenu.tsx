@@ -21,8 +21,6 @@ const NavbarPopupMenu: React.FC<INavbarPopupMenu> = (props) => {
     const { isAuthenticated } = useAuth0();
     const anchorRef = useRef<HTMLButtonElement>(null);
 
-    console.log(anchorRef);
-
     const menuItems: JSX.Element[] = [];
     props.navOption.children?.forEach((navOption) => {
         const shouldSee = !navOption.authenticationRequired || isAuthenticated;
@@ -42,34 +40,49 @@ const NavbarPopupMenu: React.FC<INavbarPopupMenu> = (props) => {
             );
     });
 
+    const shouldSee = !props.navOption.authenticationRequired || isAuthenticated;
+
     return (
         <>
             {props.navOption.children ? (
                 <>
-                    <Button ref={anchorRef} onClick={() => setOpen(true)} sx={props.sx}>
-                        {props.navOption.label}
-                        <KeyboardArrowDownIcon sx={{ marginLeft: '0.25rem' }} />
-                    </Button>
-
-                    <NeurosynthPopper
-                        open={open}
-                        anchorElement={anchorRef.current}
-                        onClickAway={(event: any) => setOpen(false)}
-                    >
-                        <MenuList>{menuItems}</MenuList>
-                    </NeurosynthPopper>
+                    {shouldSee && (
+                        <>
+                            <Button
+                                ref={anchorRef}
+                                onClick={() => setOpen(true)}
+                                sx={props.sx}
+                                disabled={props.navOption.disabled}
+                            >
+                                {props.navOption.label}
+                                <KeyboardArrowDownIcon sx={{ marginLeft: '0.25rem' }} />
+                            </Button>
+                            <NeurosynthPopper
+                                open={open}
+                                anchorElement={anchorRef.current}
+                                onClickAway={(event: any) => setOpen(false)}
+                            >
+                                <MenuList>{menuItems}</MenuList>
+                            </NeurosynthPopper>
+                        </>
+                    )}
                 </>
             ) : (
-                <Button
-                    to={props.navOption.path}
-                    exact
-                    component={NavLink}
-                    sx={{ ...NavbarPopupMenuStyles.link, ...props.sx }}
-                    // manually add bg color as navlink doesn't have access to mui system
-                    activeStyle={{ color: '#ef8a24' }}
-                >
-                    {props.navOption.label}
-                </Button>
+                <>
+                    {shouldSee && (
+                        <Button
+                            disabled={props.navOption.disabled}
+                            to={props.navOption.path}
+                            exact
+                            component={NavLink}
+                            sx={{ ...NavbarPopupMenuStyles.link, ...props.sx }}
+                            // manually add bg color as navlink doesn't have access to mui system
+                            activeStyle={{ color: '#ef8a24' }}
+                        >
+                            {props.navOption.label}
+                        </Button>
+                    )}
+                </>
             )}
         </>
     );

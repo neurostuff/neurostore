@@ -7,7 +7,6 @@ import API from '../utils/api';
 
 export interface IGlobalContext {
     handleToken: (token: string) => void;
-    onLogout: () => void;
     showSnackbar: (message: string, snackbarType: SnackbarType) => void;
 }
 
@@ -26,7 +25,6 @@ interface ISnackbar {
 
 const GlobalContext = React.createContext<IGlobalContext>({
     handleToken: (token: string) => {},
-    onLogout: () => {},
     showSnackbar: (message: string) => {},
 });
 
@@ -68,13 +66,10 @@ const GlobalContextProvider = (props: any) => {
         }));
     };
 
-    const handleLogout = useCallback(() => {}, []);
-
     // store in state in order to prevent rerenders when snackbar is called
     const [globalContextFuncs, _] = useState({
         showSnackbar: handleShowSnackbar,
         handleToken: handleTokenFunc,
-        onLogout: handleLogout,
     });
 
     const action = (

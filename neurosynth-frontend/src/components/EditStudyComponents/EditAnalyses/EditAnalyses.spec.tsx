@@ -52,7 +52,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -64,7 +64,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -76,7 +76,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -88,7 +88,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -100,7 +100,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -112,7 +112,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -124,7 +124,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -136,7 +136,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -148,7 +148,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -160,7 +160,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -172,7 +172,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -184,7 +184,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -196,7 +196,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -208,7 +208,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -220,7 +220,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -232,7 +232,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -244,7 +244,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -256,7 +256,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -268,12 +268,12 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                     ],
                     study: '4nz6aH7M59k2',
-                    user: 'github|26612023',
+                    user: 'some-user',
                     weights: [],
                 },
                 {
@@ -293,7 +293,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -305,7 +305,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -317,7 +317,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -329,7 +329,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -341,7 +341,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -353,7 +353,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -365,7 +365,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -377,12 +377,12 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                     ],
                     study: '4nz6aH7M59k2',
-                    user: 'github|26612023',
+                    user: 'some-user',
                     weights: [],
                 },
                 {
@@ -402,7 +402,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -414,7 +414,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -426,7 +426,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -438,7 +438,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -450,7 +450,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -462,7 +462,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -474,7 +474,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -486,7 +486,7 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                         {
@@ -498,12 +498,12 @@ describe('DisplayMetadataTableRow Component', () => {
                             kind: 'unknown',
                             label_id: null,
                             space: 'MNI',
-                            user: 'github|26612023',
+                            user: 'some-user',
                             value: [],
                         },
                     ],
                     study: '4nz6aH7M59k2',
-                    user: 'github|26612023',
+                    user: 'some-user',
                     weights: [],
                 },
             ],

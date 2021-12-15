@@ -40,6 +40,7 @@ const CreateDatasetDialog: React.FC<ICreateDatasetDialog> = (props) => {
                     label="Dataset Name"
                     value={newDatasetDetails.name}
                     name="name"
+                    id="dialog-dataset-name"
                     error={newDatasetDetails.name.length === 0 && hasEnteredText}
                     helperText={
                         newDatasetDetails.name.length === 0 && hasEnteredText
@@ -53,6 +54,7 @@ const CreateDatasetDialog: React.FC<ICreateDatasetDialog> = (props) => {
                 <TextField
                     label="Dataset Description"
                     multiline
+                    id="dialog-dataset-description"
                     onChange={handleOnChange}
                     name="description"
                     value={newDatasetDetails.description}

@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { DisplayValuesTable, IDisplayValuesTableModel } from '..';
+import { IDisplayValuesTableModel } from '../..';
+import DisplayValuesTable from './DisplayValuesTable';
 
 describe('DisplayValuesTable Component', () => {
     it('should render', () => {
@@ -10,7 +11,18 @@ describe('DisplayValuesTable Component', () => {
 
     it('should render data with rows', () => {
         const mockTableData: IDisplayValuesTableModel = {
-            columnHeaders: ['testCol1', 'testCol2'],
+            columnHeaders: [
+                {
+                    value: 'testCol1',
+                    center: false,
+                    bold: false,
+                },
+                {
+                    value: 'testCol2',
+                    center: false,
+                    bold: false,
+                },
+            ],
             rowData: [
                 {
                     uniqueKey: 'testUniqueKey1',
@@ -19,11 +31,13 @@ describe('DisplayValuesTable Component', () => {
                             value: 'some test value',
                             colorByType: false,
                             bold: false,
+                            center: false,
                         },
                         {
                             value: false,
                             colorByType: true,
                             bold: true,
+                            center: false,
                         },
                     ],
                 },
@@ -34,11 +48,13 @@ describe('DisplayValuesTable Component', () => {
                             value: 1234,
                             colorByType: false,
                             bold: false,
+                            center: false,
                         },
                         {
                             value: 'another test value',
                             colorByType: true,
                             bold: true,
+                            center: false,
                         },
                     ],
                 },

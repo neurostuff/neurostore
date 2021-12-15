@@ -87,12 +87,7 @@ const UserDatasetsPage: React.FC = (props) => {
             >
                 <Typography variant="h4">My Datasets</Typography>
 
-                <Button
-                    variant="contained"
-                    onClick={() => {
-                        setCreateDatasetDialogIsOpen(true);
-                    }}
-                >
+                <Button variant="contained" onClick={() => setCreateDatasetDialogIsOpen(true)}>
                     Create new dataset
                 </Button>
             </Box>

@@ -1,5 +1,15 @@
 import { NavLink } from 'react-router-dom';
-import { Typography, IconButton, Drawer, List, ListItem, Button, Box, Badge } from '@mui/material';
+import {
+    Typography,
+    IconButton,
+    Drawer,
+    List,
+    ListItem,
+    Button,
+    Box,
+    Badge,
+    Toolbar,
+} from '@mui/material';
 import { useState } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
 import NavbarPopupMenu from '../NavbarPopupMenu/NavbarPopupMenu';
@@ -16,7 +26,7 @@ const NavbarDrawer: React.FC<NavbarArgs> = (props) => {
     };
 
     return (
-        <>
+        <Toolbar sx={{ ...NavbarStyles.toolbar, ...NavbarStyles.mdDown }}>
             <Button>
                 <Box to="/" exact sx={NavbarStyles.neurosynthLink} component={NavLink}>
                     <Typography variant="h5">
@@ -61,7 +71,7 @@ const NavbarDrawer: React.FC<NavbarArgs> = (props) => {
             <IconButton onClick={toggleDrawer} size="medium">
                 <MenuIcon />
             </IconButton>
-        </>
+        </Toolbar>
     );
 };
 

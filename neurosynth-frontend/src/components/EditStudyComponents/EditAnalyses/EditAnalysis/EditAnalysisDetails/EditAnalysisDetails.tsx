@@ -27,7 +27,8 @@ const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
             name: props.name,
             description: props.description,
         });
-    }, [props.name, props.description]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const textFieldInputProps = {
         style: {

@@ -54,14 +54,14 @@ const DatasetsTable: React.FC<IDatasetsTable> = (props) => {
                             <TableCell>
                                 <Box
                                     sx={
-                                        dataset.studies.length === 0
+                                        (dataset.studies || []).length === 0
                                             ? { color: 'warning.dark' }
                                             : {}
                                     }
                                 >
                                     <Box component="span" sx={{ whiteSpace: 'nowrap' }}>
-                                        {dataset.studies.length}{' '}
-                                        {dataset.studies.length === 1 ? 'study' : 'studies'}
+                                        {(dataset.studies || []).length}{' '}
+                                        {(dataset.studies || []).length === 1 ? 'study' : 'studies'}
                                     </Box>
                                 </Box>
                             </TableCell>

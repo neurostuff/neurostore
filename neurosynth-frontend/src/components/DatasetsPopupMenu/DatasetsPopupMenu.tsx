@@ -18,7 +18,7 @@ const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
     const [open, setOpen] = useState(false);
     const { getAccessTokenSilently } = useAuth0();
     const [inCreateMode, setInCreateMode] = useState(false);
-    const context = useContext(GlobalContext);
+    const { showSnackbar, handleToken } = useContext(GlobalContext);
     const isMountedRef = useIsMounted();
     const [datasetDetails, setDetasetDetails] = useState({
         name: '',
@@ -54,22 +54,22 @@ const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
         event.stopPropagation();
         try {
             const token = await getAccessTokenSilently();
-            context.handleToken(token);
+            handleToken(token);
         } catch (exception) {
-            context.showSnackbar('there was an error', SnackbarType.ERROR);
+            showSnackbar('there was an error', SnackbarType.ERROR);
             console.error(exception);
         }
         API.Services.DataSetsService.datasetsPost()
             .then((res) => {
                 props.onDatasetCreated(res.data);
 
-                context.showSnackbar('dataset created', SnackbarType.SUCCESS);
+                showSnackbar('dataset created', SnackbarType.SUCCESS);
 
                 if (isMountedRef.current) setOpen(false);
             })
             .catch((err) => {
                 console.error(err);
-                context.showSnackbar('there was an error', SnackbarType.ERROR);
+                showSnackbar('there was an error', SnackbarType.ERROR);
                 if (isMountedRef.current) setOpen(false);
             });
     };
@@ -82,25 +82,22 @@ const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
         if (!selectedDataset.id) return;
         try {
             const token = await getAccessTokenSilently();
-            context.handleToken(token);
+            handleToken(token);
         } catch (exception) {
-            context.showSnackbar('there was an error', SnackbarType.ERROR);
+            showSnackbar('there was an error', SnackbarType.ERROR);
             console.error(exception);
         }
 
-        const selectedDatasetStudies = [...selectedDataset.studies] as StudyApiResponse[];
+        const selectedDatasetStudies = [...(selectedDataset.studies || [])] as string[];
 
-        selectedDatasetStudies.push(props.study);
-
-        const selectedDatasetStudyIds = selectedDatasetStudies.map((study) => study.id);
-        selectedDatasetStudyIds.push(props.study.id);
+        selectedDatasetStudies.push(props.study.id as string);
 
         API.Services.DataSetsService.datasetsIdPut(selectedDataset.id, {
             name: selectedDataset.name,
-            studies: selectedDatasetStudyIds as string[],
+            studies: selectedDatasetStudies as string[],
         })
             .then((res) => {
-                context.showSnackbar(
+                showSnackbar(
                     `study added to ${selectedDataset.name || selectedDataset.id}`,
                     SnackbarType.SUCCESS
                 );
@@ -108,7 +105,7 @@ const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
             })
             .catch((err) => {
                 console.error(err);
-                context.showSnackbar('there was an error', SnackbarType.ERROR);
+                showSnackbar('there was an error', SnackbarType.ERROR);
                 if (isMountedRef.current) setOpen(false);
             });
     };
@@ -166,6 +163,7 @@ const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
                                             sx={{ marginBottom: '0.5rem', width: '100%' }}
                                             label="Dataset name"
                                             variant="standard"
+                                            id="dataset-name"
                                         />
                                         <TextField
                                             name="description"
@@ -174,9 +172,11 @@ const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
                                             label="Dataset description"
                                             variant="standard"
                                             sx={{ width: '100%' }}
+                                            id="dataset-description"
                                         />
                                         <Button
                                             onClick={handleCreateDataset}
+                                            disabled={datasetDetails.name.length === 0}
                                             sx={{ marginTop: '1rem', width: '100%' }}
                                         >
                                             Create
