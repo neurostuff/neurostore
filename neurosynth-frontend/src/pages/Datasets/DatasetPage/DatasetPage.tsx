@@ -39,8 +39,6 @@ const DatasetPage: React.FC = (props) => {
         return async (editedText: string) => {
             try {
                 const token = await getAccessTokenSilently();
-                console.log(token);
-
                 context.handleToken(token);
             } catch (exception) {
                 context.showSnackbar('there was an error', SnackbarType.ERROR);
@@ -85,12 +83,8 @@ const DatasetPage: React.FC = (props) => {
                 context.showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(exception);
             }
-
-            console.log(idToDelete);
-
             API.Services.DataSetsService.datasetsIdDelete(idToDelete)
                 .then((res) => {
-                    console.log(res);
                     history.push('/datasets/userdatasets');
                     context.showSnackbar('deleted dataset', SnackbarType.SUCCESS);
                 })
