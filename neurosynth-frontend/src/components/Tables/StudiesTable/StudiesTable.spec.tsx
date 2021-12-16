@@ -29,7 +29,7 @@ jest.mock('../../../utils/api', () => {
                                 description: null,
                                 doi: null,
                                 id: '123',
-                                name: '',
+                                name: 'test-name',
                                 pmid: null,
                                 publication: '',
                                 studies: [],
@@ -40,6 +40,38 @@ jest.mock('../../../utils/api', () => {
                             data: {
                                 results: mockDatasets,
                             },
+                        });
+                    }),
+                    datasetsPost: jest.fn(() => {
+                        const mockDataset: DatasetsApiResponse = {
+                            created_at: '2021-12-14T05:05:34.722631+00:00',
+                            description: null,
+                            doi: null,
+                            id: 'test-id',
+                            name: null,
+                            pmid: null,
+                            publication: null,
+                            studies: [],
+                            user: 'test-user',
+                        };
+                        return Promise.resolve({
+                            data: mockDataset,
+                        });
+                    }),
+                    datasetsIdPut: jest.fn(() => {
+                        const mockDataset: DatasetsApiResponse = {
+                            created_at: '2021-12-14T05:05:34.722631+00:00',
+                            description: null,
+                            doi: null,
+                            id: 'test-id',
+                            name: null,
+                            pmid: null,
+                            publication: null,
+                            studies: ['5LMdXPD3ocgD'],
+                            user: 'test-user',
+                        };
+                        return Promise.resolve({
+                            data: mockDataset,
                         });
                     }),
                 },
@@ -55,22 +87,21 @@ jest.mock('../../DatasetsPopupMenu/DatasetsPopupMenu', () => {
             return (
                 <>
                     <button
-                        onClick={() =>
-                            props.onDatasetCreated({
-                                created_at: '2021-12-14T05:05:45.722157+00:00',
-                                description: '',
-                                doi: '',
-                                id: 'new-dataset',
-                                name: 'created-dataset',
-                                pmid: null,
-                                publication: '',
-                                studies: [],
-                                user: 'some-user',
-                            })
-                        }
+                        onClick={() => props.onCreateDataset('test-name', 'test-description')}
                         data-testid="add-dataset-button"
                     >
                         mock add dataset
+                    </button>
+                    <button
+                        onClick={() =>
+                            props.onStudyAddedToDataset(
+                                props.study,
+                                (props.datasets as DatasetsApiResponse[])[0]
+                            )
+                        }
+                        data-testid="edit-dataset-button"
+                    >
+                        mock edit dataset
                     </button>
                     {props.datasets?.map((dataset, index) => (
                         <span data-testid="child-dataset" key={dataset.id || index}>
@@ -149,6 +180,7 @@ describe('StudiesTable Component', () => {
     beforeEach(() => {
         (useAuth0 as any).mockReturnValue({
             isAuthenticated: false,
+            getAccessTokenSilently: () => jest.fn(),
             user: {
                 sub: 'test-user-id',
             },
@@ -224,9 +256,10 @@ describe('StudiesTable Component', () => {
         expect(noPublicationText).toBeInTheDocument();
     });
 
-    it('should add the dataset when a new dataset has been created', async () => {
+    it('should create the dataset', async () => {
         (useAuth0 as any).mockReturnValue({
             isAuthenticated: true,
+            getAccessTokenSilently: jest.fn(),
             user: {
                 sub: 'test-user-id',
             },
@@ -248,8 +281,38 @@ describe('StudiesTable Component', () => {
             userEvent.click(datasetCreatedButton);
         });
 
-        const children = screen.getAllByTestId('child-dataset');
-        expect(children.length).toEqual(2);
+        expect(API.Services.DataSetsService.datasetsPost).toBeCalled();
+    });
+
+    it('should edit the dataset', async () => {
+        (useAuth0 as any).mockReturnValue({
+            isAuthenticated: true,
+            getAccessTokenSilently: jest.fn(),
+            user: {
+                sub: 'test-user-id',
+            },
+        });
+
+        await act(async () => {
+            render(
+                <MockThemeProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
+                    </Router>
+                </MockThemeProvider>
+            );
+        });
+
+        const datasetEditButton = screen.getByTestId('edit-dataset-button');
+
+        await act(async () => {
+            userEvent.click(datasetEditButton);
+        });
+
+        expect(API.Services.DataSetsService.datasetsIdPut).toBeCalledWith('123', {
+            name: 'test-name',
+            studies: ['5LMdXPD3ocgD'],
+        });
     });
 
     it('should handle the selection when the row is clicked', async () => {

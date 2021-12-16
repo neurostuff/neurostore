@@ -16,7 +16,7 @@ const navItems: NavOptionsModel[] = [
         children: [
             { label: 'Public Studies', path: '/studies', children: null },
             {
-                label: 'My Cloned Studies',
+                label: 'My Studies',
                 path: '/studies/userclonedstudies',
                 children: null,
                 authenticationRequired: true,

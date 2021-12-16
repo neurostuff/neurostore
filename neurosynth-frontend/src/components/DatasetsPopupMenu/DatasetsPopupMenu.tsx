@@ -1,25 +1,20 @@
-import { useAuth0 } from '@auth0/auth0-react';
 import { AddCircle, Add } from '@mui/icons-material';
 import { IconButton, MenuItem, Divider, Box, TextField, Button, MenuList } from '@mui/material';
-import React, { ChangeEvent, useContext, useState, useRef } from 'react';
+import React, { ChangeEvent, useState, useRef } from 'react';
 import { NeurosynthLoader, NeurosynthPopper } from '..';
-import { GlobalContext, SnackbarType } from '../../contexts/GlobalContext';
-import useIsMounted from '../../hooks/useIsMounted';
-import API, { DatasetsApiResponse, StudyApiResponse } from '../../utils/api';
+import { DatasetsApiResponse, StudyApiResponse } from '../../utils/api';
 
 export interface IDatasetsPopupMenu {
     datasets: DatasetsApiResponse[] | undefined;
     study: StudyApiResponse;
-    onDatasetCreated: (createdDataset: DatasetsApiResponse) => void;
+    onCreateDataset: (datasetName: string, datasetDescription: string) => void;
+    onStudyAddedToDataset: (study: StudyApiResponse, updatedDataset: DatasetsApiResponse) => void;
 }
 
 const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
     const anchorRef = useRef<HTMLButtonElement>(null);
     const [open, setOpen] = useState(false);
-    const { getAccessTokenSilently } = useAuth0();
     const [inCreateMode, setInCreateMode] = useState(false);
-    const { showSnackbar, handleToken } = useContext(GlobalContext);
-    const isMountedRef = useIsMounted();
     const [datasetDetails, setDetasetDetails] = useState({
         name: '',
         description: '',
@@ -50,66 +45,6 @@ const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
         }));
     };
 
-    const handleCreateDataset = async (event: React.MouseEvent<HTMLElement>) => {
-        event.stopPropagation();
-        try {
-            const token = await getAccessTokenSilently();
-            handleToken(token);
-        } catch (exception) {
-            showSnackbar('there was an error', SnackbarType.ERROR);
-            console.error(exception);
-        }
-        API.Services.DataSetsService.datasetsPost()
-            .then((res) => {
-                props.onDatasetCreated(res.data);
-
-                showSnackbar('dataset created', SnackbarType.SUCCESS);
-
-                if (isMountedRef.current) setOpen(false);
-            })
-            .catch((err) => {
-                console.error(err);
-                showSnackbar('there was an error', SnackbarType.ERROR);
-                if (isMountedRef.current) setOpen(false);
-            });
-    };
-
-    const handleClickDataset = async (
-        event: React.MouseEvent,
-        selectedDataset: DatasetsApiResponse
-    ) => {
-        event.stopPropagation();
-        if (!selectedDataset.id) return;
-        try {
-            const token = await getAccessTokenSilently();
-            handleToken(token);
-        } catch (exception) {
-            showSnackbar('there was an error', SnackbarType.ERROR);
-            console.error(exception);
-        }
-
-        const selectedDatasetStudies = [...(selectedDataset.studies || [])] as string[];
-
-        selectedDatasetStudies.push(props.study.id as string);
-
-        API.Services.DataSetsService.datasetsIdPut(selectedDataset.id, {
-            name: selectedDataset.name,
-            studies: selectedDatasetStudies as string[],
-        })
-            .then((res) => {
-                showSnackbar(
-                    `study added to ${selectedDataset.name || selectedDataset.id}`,
-                    SnackbarType.SUCCESS
-                );
-                if (isMountedRef.current) setOpen(false);
-            })
-            .catch((err) => {
-                console.error(err);
-                showSnackbar('there was an error', SnackbarType.ERROR);
-                if (isMountedRef.current) setOpen(false);
-            });
-    };
-
     return (
         <>
             <IconButton onClick={handleOpenMenu} ref={anchorRef}>
@@ -137,7 +72,11 @@ const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
                                 <Box sx={{ maxHeight: '300px', overflowY: 'scroll' }}>
                                     {props.datasets.map((dataset) => (
                                         <MenuItem
-                                            onClick={(event) => handleClickDataset(event, dataset)}
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                props.onStudyAddedToDataset(props.study, dataset);
+                                                setOpen(false);
+                                            }}
                                             key={dataset.id}
                                         >
                                             {dataset.name || dataset.id}
@@ -175,7 +114,14 @@ const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
                                             id="dataset-description"
                                         />
                                         <Button
-                                            onClick={handleCreateDataset}
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                props.onCreateDataset(
+                                                    datasetDetails.name,
+                                                    datasetDetails.description
+                                                );
+                                                setOpen(false);
+                                            }}
                                             disabled={datasetDetails.name.length === 0}
                                             sx={{ marginTop: '1rem', width: '100%' }}
                                         >

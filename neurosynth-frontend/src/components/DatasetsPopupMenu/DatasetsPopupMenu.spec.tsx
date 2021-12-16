@@ -5,8 +5,6 @@ import { useAuth0 } from '@auth0/auth0-react';
 import userEvent from '@testing-library/user-event';
 import { INeurosynthPopper } from '../NeurosynthPopper/NeurosynthPopper';
 
-jest.mock('@auth0/auth0-react');
-
 // already tested child component
 jest.mock('../NeurosynthPopper/NeurosynthPopper', () => {
     return {
@@ -32,37 +30,6 @@ jest.mock('../NeurosynthLoader/NeurosynthLoader', () => {
         __esModule: true,
         default: (props: any) => {
             return <div>{props.children}</div>;
-        },
-    };
-});
-
-jest.mock('../../utils/api', () => {
-    return {
-        __esModule: true,
-        default: {
-            Services: {
-                DataSetsService: {
-                    datasetsPost: jest.fn(() => {
-                        const mockDataset: DatasetsApiResponse = {
-                            created_at: '2021-12-14T05:05:34.722631+00:00',
-                            description: null,
-                            doi: null,
-                            id: 'test-id',
-                            name: null,
-                            pmid: null,
-                            publication: null,
-                            studies: [],
-                            user: 'test-user',
-                        };
-                        return Promise.resolve({
-                            data: mockDataset,
-                        });
-                    }),
-                    datasetsIdPut: jest.fn(() => {
-                        return Promise.resolve();
-                    }),
-                },
-            },
         },
     };
 });
@@ -234,19 +201,14 @@ const mockDatasets: DatasetsApiResponse[] = [
 ];
 
 describe('DatasetsPopupMenu', () => {
-    const mockOnDatasetCreated = jest.fn();
-    const mockgetAccessTokenSilently = jest.fn();
-
-    beforeEach(() => {
-        (useAuth0 as any).mockReturnValue({
-            getAccessTokenSilently: mockgetAccessTokenSilently,
-        });
-    });
+    const mockHandleDatasetCreated = jest.fn();
+    const mockHandleStudyAddedToDataset = jest.fn();
 
     it('should render', () => {
         render(
             <DatasetsPopupMenu
-                onDatasetCreated={mockOnDatasetCreated}
+                onCreateDataset={mockHandleDatasetCreated}
+                onStudyAddedToDataset={mockHandleStudyAddedToDataset}
                 datasets={[]}
                 study={mockStudy}
             />
@@ -259,7 +221,8 @@ describe('DatasetsPopupMenu', () => {
     it('should have the correct number of datasets', () => {
         render(
             <DatasetsPopupMenu
-                onDatasetCreated={mockOnDatasetCreated}
+                onCreateDataset={mockHandleDatasetCreated}
+                onStudyAddedToDataset={mockHandleStudyAddedToDataset}
                 datasets={mockDatasets}
                 study={mockStudy}
             />
@@ -273,7 +236,8 @@ describe('DatasetsPopupMenu', () => {
     it('should switch to create dataset mode when the button is clicked', () => {
         render(
             <DatasetsPopupMenu
-                onDatasetCreated={mockOnDatasetCreated}
+                onCreateDataset={mockHandleDatasetCreated}
+                onStudyAddedToDataset={mockHandleStudyAddedToDataset}
                 datasets={mockDatasets}
                 study={mockStudy}
             />
@@ -296,7 +260,8 @@ describe('DatasetsPopupMenu', () => {
     it('should enable the create button when the name is not null', () => {
         render(
             <DatasetsPopupMenu
-                onDatasetCreated={mockOnDatasetCreated}
+                onCreateDataset={mockHandleDatasetCreated}
+                onStudyAddedToDataset={mockHandleStudyAddedToDataset}
                 datasets={mockDatasets}
                 study={mockStudy}
             />
@@ -319,7 +284,8 @@ describe('DatasetsPopupMenu', () => {
     it('should update the values in edit mode respectively', async () => {
         render(
             <DatasetsPopupMenu
-                onDatasetCreated={mockOnDatasetCreated}
+                onCreateDataset={mockHandleDatasetCreated}
+                onStudyAddedToDataset={mockHandleStudyAddedToDataset}
                 datasets={mockDatasets}
                 study={mockStudy}
             />
@@ -348,7 +314,8 @@ describe('DatasetsPopupMenu', () => {
     it('should create a dataset when create is clicked', async () => {
         render(
             <DatasetsPopupMenu
-                onDatasetCreated={mockOnDatasetCreated}
+                onCreateDataset={mockHandleDatasetCreated}
+                onStudyAddedToDataset={mockHandleStudyAddedToDataset}
                 datasets={mockDatasets}
                 study={mockStudy}
             />
@@ -367,24 +334,14 @@ describe('DatasetsPopupMenu', () => {
             userEvent.click(createButton);
         });
 
-        expect(API.Services.DataSetsService.datasetsPost).toBeCalled();
-        expect(mockOnDatasetCreated).toBeCalledWith({
-            created_at: '2021-12-14T05:05:34.722631+00:00',
-            description: null,
-            doi: null,
-            id: 'test-id',
-            name: null,
-            pmid: null,
-            publication: null,
-            studies: [],
-            user: 'test-user',
-        });
+        expect(mockHandleDatasetCreated).toBeCalledWith('ABC', '');
     });
 
     it('should add the study to the clicked dataset', async () => {
         render(
             <DatasetsPopupMenu
-                onDatasetCreated={mockOnDatasetCreated}
+                onCreateDataset={mockHandleDatasetCreated}
+                onStudyAddedToDataset={mockHandleStudyAddedToDataset}
                 datasets={mockDatasets}
                 study={mockStudy}
             />
@@ -400,23 +357,14 @@ describe('DatasetsPopupMenu', () => {
             userEvent.click(menuItem);
         });
 
-        expect(API.Services.DataSetsService.datasetsIdPut).toBeCalledWith('8DdVt559vNBy', {
-            name: 'test set',
-            studies: [
-                '3bCzzqrAPn7o',
-                '6K4pEQsdXdBp',
-                '7zSkgFFh7czY',
-                '3gGkPPasNn9v',
-                '5h4Hf6sC82Be',
-                '5LMdXPD3ocgD',
-            ],
-        });
+        expect(mockHandleStudyAddedToDataset).toBeCalledWith(mockStudy, mockDatasets[1]);
     });
 
     it('should handle closing the popper when clickaway is triggered', () => {
         render(
             <DatasetsPopupMenu
-                onDatasetCreated={mockOnDatasetCreated}
+                onCreateDataset={mockHandleDatasetCreated}
+                onStudyAddedToDataset={mockHandleStudyAddedToDataset}
                 datasets={mockDatasets}
                 study={mockStudy}
             />

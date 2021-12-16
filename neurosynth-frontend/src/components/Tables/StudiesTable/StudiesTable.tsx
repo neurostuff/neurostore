@@ -9,8 +9,9 @@ import {
     Paper,
 } from '@mui/material';
 import { Box } from '@mui/system';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useHistory } from 'react-router-dom';
+import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import { ReadOnly, Study } from '../../../gen/api';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API, { DatasetsApiResponse, StudyApiResponse } from '../../../utils/api';
@@ -23,9 +24,10 @@ interface StudiesTableModel {
 }
 
 const StudiesTable: React.FC<StudiesTableModel> = (props) => {
-    const { isAuthenticated, user } = useAuth0();
+    const { isAuthenticated, user, getAccessTokenSilently } = useAuth0();
     const [datasets, setDatasets] = useState<DatasetsApiResponse[]>();
     const history = useHistory();
+    const { handleToken, showSnackbar } = useContext(GlobalContext);
     const { current } = useIsMounted();
 
     const handleSelectTableRow = (row: Study & ReadOnly) => {
@@ -66,13 +68,75 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
         }
     }, [shouldShowStudyOptions, user?.sub, current]);
 
-    const handleDatasetCreated = (createdDataset: DatasetsApiResponse) => {
-        setDatasets((prevState) => {
-            if (!prevState) return prevState;
-            const newDatasets = [...prevState];
-            newDatasets.push(createdDataset);
-            return newDatasets;
-        });
+    const handleDatasetCreated = async (name: string, description: string) => {
+        try {
+            const token = await getAccessTokenSilently();
+            handleToken(token);
+        } catch (exception) {
+            showSnackbar('there was an error', SnackbarType.ERROR);
+            console.error(exception);
+        }
+        API.Services.DataSetsService.datasetsPost()
+            .then((res) => {
+                showSnackbar('dataset created', SnackbarType.SUCCESS);
+                if (current) {
+                    const createdDataset = res.data;
+                    setDatasets((prevState) => {
+                        if (!prevState) return prevState;
+                        const newDatasets = [...prevState];
+                        newDatasets.push(createdDataset);
+                        return newDatasets;
+                    });
+                }
+            })
+            .catch((err) => {
+                console.error(err);
+                showSnackbar('there was an error', SnackbarType.ERROR);
+            });
+    };
+
+    const handleAddStudyToDataset = async (
+        study: StudyApiResponse,
+        dataset: DatasetsApiResponse
+    ) => {
+        try {
+            const token = await getAccessTokenSilently();
+            handleToken(token);
+        } catch (exception) {
+            showSnackbar('there was an error', SnackbarType.ERROR);
+            console.error(exception);
+        }
+
+        const selectedDatasetStudies = [...(dataset.studies || [])] as string[];
+        selectedDatasetStudies.push(study.id as string);
+
+        API.Services.DataSetsService.datasetsIdPut(dataset.id as string, {
+            name: dataset.name,
+            studies: selectedDatasetStudies as string[],
+        })
+            .then((res) => {
+                // temporary fix. TODO: fix open-api spec
+                const updatedDataset = res.data as unknown as DatasetsApiResponse;
+
+                showSnackbar(`study added to ${dataset.name || dataset.id}`, SnackbarType.SUCCESS);
+                if (current) {
+                    setDatasets((prevState) => {
+                        if (!prevState) return prevState;
+                        const newArr = [...prevState];
+                        const modifiedDatasetIndex = newArr.findIndex(
+                            (x) => x.id === updatedDataset.id
+                        );
+                        newArr[modifiedDatasetIndex] = { ...updatedDataset };
+                        return newArr;
+                    });
+                }
+            })
+            .catch((err) => {
+                console.error(err);
+                showSnackbar('there was an error', SnackbarType.ERROR);
+                if (current) {
+                }
+            });
     };
 
     return (
@@ -98,7 +162,8 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                                 <TableCell>
                                     <DatasetsPopupMenu
                                         study={row}
-                                        onDatasetCreated={handleDatasetCreated}
+                                        onStudyAddedToDataset={handleAddStudyToDataset}
+                                        onCreateDataset={handleDatasetCreated}
                                         datasets={datasets}
                                     />
                                 </TableCell>

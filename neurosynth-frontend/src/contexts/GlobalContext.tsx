@@ -47,6 +47,12 @@ const GlobalContextProvider = (props: any) => {
     );
 
     const handleShowSnackbar = useCallback((message: string, snackbarType: SnackbarType) => {
+        // reset snackbar
+        setSnackbarState((prevState) => ({
+            openSnackbar: false,
+            message: '',
+            snackbarType: prevState.snackbarType,
+        }));
         setSnackbarState({
             openSnackbar: true,
             message: message,

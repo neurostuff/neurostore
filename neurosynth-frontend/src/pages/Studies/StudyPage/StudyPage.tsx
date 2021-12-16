@@ -56,7 +56,7 @@ const StudyPage: React.FC = (props) => {
         API.Services.StudiesService.studiesPost(undefined, params.studyId, {})
             .then((res) => {
                 context.showSnackbar('Study successfully cloned', SnackbarType.SUCCESS);
-                history.push(`/studies/${(res.data as any).id}`);
+                history.push(`/studies/${(res.data as StudyApiResponse).id}`);
             })
             .catch((err: Error | AxiosError) => {
                 context.showSnackbar('There was an error', SnackbarType.ERROR);

@@ -25,8 +25,6 @@ const DatasetsTable: React.FC<IDatasetsTable> = (props) => {
         history.push(`/datasets/${id}`);
     };
 
-    if (!props || !props.datasets || props.datasets.length === 0) return <Box>No datasets</Box>;
-
     return (
         <TableContainer component={Paper} elevation={3}>
             <Table size={props.tableSize || 'small'}>
@@ -74,6 +72,9 @@ const DatasetsTable: React.FC<IDatasetsTable> = (props) => {
                     ))}
                 </TableBody>
             </Table>
+            {props.datasets.length === 0 && (
+                <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No results</Box>
+            )}
         </TableContainer>
     );
 };
