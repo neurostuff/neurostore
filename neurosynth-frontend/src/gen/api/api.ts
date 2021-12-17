@@ -2283,10 +2283,11 @@ export const DatasetsApiAxiosParamCreator = function (configuration?: Configurat
         /**
          * Create a dataset.
          * @summary POST/create a dataset
+         * @param {Dataset} [dataset] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        datasetsPost: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        datasetsPost: async (dataset?: Dataset, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/datasets/`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2305,9 +2306,12 @@ export const DatasetsApiAxiosParamCreator = function (configuration?: Configurat
 
 
     
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(dataset, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2385,11 +2389,12 @@ export const DatasetsApiFp = function(configuration?: Configuration) {
         /**
          * Create a dataset.
          * @summary POST/create a dataset
+         * @param {Dataset} [dataset] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async datasetsPost(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Dataset>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.datasetsPost(options);
+        async datasetsPost(dataset?: Dataset, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Dataset>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.datasetsPost(dataset, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
     }
@@ -2459,11 +2464,12 @@ export const DatasetsApiFactory = function (configuration?: Configuration, baseP
         /**
          * Create a dataset.
          * @summary POST/create a dataset
+         * @param {Dataset} [dataset] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        datasetsPost(options?: any): AxiosPromise<Dataset> {
-            return localVarFp.datasetsPost(options).then((request) => request(axios, basePath));
+        datasetsPost(dataset?: Dataset, options?: any): AxiosPromise<Dataset> {
+            return localVarFp.datasetsPost(dataset, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -2540,12 +2546,13 @@ export class DatasetsApi extends BaseAPI {
     /**
      * Create a dataset.
      * @summary POST/create a dataset
+     * @param {Dataset} [dataset] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DatasetsApi
      */
-    public datasetsPost(options?: AxiosRequestConfig) {
-        return DatasetsApiFp(this.configuration).datasetsPost(options).then((request) => request(this.axios, this.basePath));
+    public datasetsPost(dataset?: Dataset, options?: AxiosRequestConfig) {
+        return DatasetsApiFp(this.configuration).datasetsPost(dataset, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

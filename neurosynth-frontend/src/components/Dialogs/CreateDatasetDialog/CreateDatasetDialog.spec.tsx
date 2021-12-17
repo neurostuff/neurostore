@@ -95,9 +95,6 @@ describe('CreateDatasetDialog', () => {
         const createButton = screen.getByRole('button', { name: 'Create' });
         userEvent.click(createButton);
 
-        expect(mockOnCreateDataset).toBeCalledWith({
-            name: 'ABC',
-            description: '',
-        });
+        expect(mockOnCreateDataset).toBeCalledWith('ABC', '');
     });
 });

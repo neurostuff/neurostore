@@ -1,7 +1,6 @@
 import { act, render, screen } from '@testing-library/react';
-import API, { DatasetsApiResponse, StudyApiResponse } from '../../utils/api';
+import { DatasetsApiResponse, StudyApiResponse } from '../../utils/api';
 import DatasetsPopupMenu from './DatasetsPopupMenu';
-import { useAuth0 } from '@auth0/auth0-react';
 import userEvent from '@testing-library/user-event';
 import { INeurosynthPopper } from '../NeurosynthPopper/NeurosynthPopper';
 

@@ -76,7 +76,10 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
             showSnackbar('there was an error', SnackbarType.ERROR);
             console.error(exception);
         }
-        API.Services.DataSetsService.datasetsPost()
+        API.Services.DataSetsService.datasetsPost({
+            name,
+            description,
+        })
             .then((res) => {
                 showSnackbar('dataset created', SnackbarType.SUCCESS);
                 if (current) {
@@ -134,8 +137,6 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
             .catch((err) => {
                 console.error(err);
                 showSnackbar('there was an error', SnackbarType.ERROR);
-                if (current) {
-                }
             });
     };
 

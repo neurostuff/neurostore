@@ -22,7 +22,10 @@ const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
 
     const handleClickClose = (event: MouseEvent | TouchEvent) => {
         event.stopPropagation();
+        handleClose();
+    };
 
+    const handleClose = () => {
         setInCreateMode(false);
         setDetasetDetails({
             name: '',
@@ -120,7 +123,7 @@ const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
                                                     datasetDetails.name,
                                                     datasetDetails.description
                                                 );
-                                                setOpen(false);
+                                                handleClose();
                                             }}
                                             disabled={datasetDetails.name.length === 0}
                                             sx={{ marginTop: '1rem', width: '100%' }}

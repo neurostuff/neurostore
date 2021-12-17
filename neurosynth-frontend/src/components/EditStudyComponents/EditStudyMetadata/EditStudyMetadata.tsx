@@ -68,9 +68,7 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
             .then((res) => {
                 context.showSnackbar('study successfully updated', SnackbarType.SUCCESS);
                 props.onUpdateStudyMetadata(transformedMetadata);
-                if (isMountedRef.current) {
-                    setUpdateEnabled(false);
-                }
+                if (isMountedRef.current) setUpdateEnabled(false);
             })
             .catch((err: Error | AxiosError) => {
                 context.showSnackbar('there was an error', SnackbarType.ERROR);

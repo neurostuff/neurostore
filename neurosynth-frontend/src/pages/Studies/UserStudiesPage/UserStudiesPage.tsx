@@ -39,9 +39,7 @@ const UserStudiesPage: React.FC = (props) => {
                 user?.sub
             )
                 .then((res) => {
-                    if (isMountedRef.current && res?.data?.results) {
-                        setStudies(res.data.results);
-                    }
+                    if (isMountedRef.current && res?.data?.results) setStudies(res.data.results);
                 })
                 .catch((err) => {
                     showSnackbar('there was an error', SnackbarType.ERROR);

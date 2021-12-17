@@ -33,9 +33,7 @@ const UserDatasetsPage: React.FC = (props) => {
                 user?.sub
             )
                 .then((res) => {
-                    if (isMountedRef.current && res?.data?.results) {
-                        setDatasets(res.data.results);
-                    }
+                    if (isMountedRef.current && res?.data?.results) setDatasets(res.data.results);
                 })
                 .catch((err) => {
                     console.error(err);
@@ -45,10 +43,7 @@ const UserDatasetsPage: React.FC = (props) => {
         getDatasets();
     }, [user?.sub, isMountedRef]);
 
-    const handleCreateDataset = async (newDatasetDetails: {
-        name: string;
-        description: string;
-    }) => {
+    const handleCreateDataset = async (name: string, description: string) => {
         try {
             const token = await getAccessTokenSilently();
             context.handleToken(token);
@@ -57,7 +52,10 @@ const UserDatasetsPage: React.FC = (props) => {
             console.error(exception);
         }
 
-        API.Services.DataSetsService.datasetsPost()
+        API.Services.DataSetsService.datasetsPost({
+            name,
+            description,
+        })
             .then((res) => {
                 const newDataset = res.data;
                 setCreateDatasetDialogIsOpen(false);

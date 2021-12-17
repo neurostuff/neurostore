@@ -3,7 +3,7 @@ import { ChangeEvent, useState } from 'react';
 
 export interface ICreateDatasetDialog {
     isOpen: boolean;
-    onCreateDataset: (dataset: { name: string; description: string }) => void;
+    onCreateDataset: (name: string, description: string) => void;
     onCloseDialog: () => void;
 }
 
@@ -64,7 +64,11 @@ const CreateDatasetDialog: React.FC<ICreateDatasetDialog> = (props) => {
                     <Button
                         sx={{ width: '150px' }}
                         onClick={() => {
-                            props.onCreateDataset(newDatasetDetails);
+                            props.onCreateDataset(
+                                newDatasetDetails.name,
+                                newDatasetDetails.description
+                            );
+                            handleOnClose();
                         }}
                         variant="contained"
                         disabled={newDatasetDetails.name.length === 0}
