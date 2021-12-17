@@ -2,11 +2,15 @@ import { ExpandMoreOutlined } from '@mui/icons-material';
 import { Accordion, AccordionDetails, AccordionSummary, Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import { useEffect, useState } from 'react';
-import { DisplayValuesTable, IDisplayValuesTableModel, TextExpansion } from '..';
+import {
+    DisplayValuesTable,
+    IDisplayValuesTableModel,
+    TextExpansion,
+    DisplayImagesTable,
+    Visualizer,
+} from '..';
 import { Condition, Point, ReadOnly, Image } from '../../gen/api';
 import { AnalysisApiResponse } from '../../utils/api';
-import DisplayImagesTable from '../DisplayImagesTable/DisplayImagesTable';
-import Visualizer from '../Visualizer/Visualizer';
 import DisplayAnalysisStyles from './DisplayAnalysis.styles';
 
 const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {

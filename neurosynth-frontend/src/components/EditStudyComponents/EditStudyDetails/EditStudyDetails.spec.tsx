@@ -196,9 +196,6 @@ describe('EditStudyDetails Component', () => {
         userEvent.type(descriptionTextbox, 'E');
 
         // pretend we are the parent handler function and manually set the new value and trigger a rerender.
-        // change multiple fields because why not
-        mockStudyDetails.name = mockStudyDetails.name + 'E';
-        mockStudyDetails.doi = mockStudyDetails.doi + 'E';
         mockStudyDetails.description = mockStudyDetails.description + 'E';
         renderResult.rerender(<EditStudyDetails {...mockStudyDetails} />);
 
@@ -214,8 +211,8 @@ describe('EditStudyDetails Component', () => {
 
         expect(mockStudyDetails.onEditStudyDetails).toHaveBeenLastCalledWith({
             studyId: mockStudyDetails.studyId,
-            name: mockStudyDetails.name.slice(0, mockStudyDetails.name.length - 1),
-            doi: mockStudyDetails.doi.slice(0, mockStudyDetails.doi.length - 1),
+            name: mockStudyDetails.name,
+            doi: mockStudyDetails.doi,
             description: mockStudyDetails.description.slice(
                 0,
                 mockStudyDetails.description.length - 1

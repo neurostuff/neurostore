@@ -1,13 +1,12 @@
 import IconButton from '@mui/material/IconButton';
 import Snackbar from '@mui/material/Snackbar';
 import { Close } from '@mui/icons-material';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import MuiAlert from '@mui/material/Alert';
 import API from '../utils/api';
 
 export interface IGlobalContext {
     handleToken: (token: string) => void;
-    onLogout: () => void;
     showSnackbar: (message: string, snackbarType: SnackbarType) => void;
 }
 
@@ -26,7 +25,6 @@ interface ISnackbar {
 
 const GlobalContext = React.createContext<IGlobalContext>({
     handleToken: (token: string) => {},
-    onLogout: () => {},
     showSnackbar: (message: string) => {},
 });
 
@@ -38,20 +36,29 @@ const GlobalContextProvider = (props: any) => {
         snackbarType: SnackbarType.INFO,
     });
 
-    const handleTokenFunc = (givenToken: string) => {
-        if (givenToken !== token) {
-            API.UpdateServicesWithToken(givenToken);
-            setToken(givenToken);
-        }
-    };
+    const handleTokenFunc = useCallback(
+        (givenToken: string) => {
+            if (givenToken !== token) {
+                API.UpdateServicesWithToken(givenToken);
+                setToken(givenToken);
+            }
+        },
+        [token]
+    );
 
-    const handleShowSnackbar = (message: string, snackbarType: SnackbarType) => {
+    const handleShowSnackbar = useCallback((message: string, snackbarType: SnackbarType) => {
+        // reset snackbar
+        setSnackbarState((prevState) => ({
+            openSnackbar: false,
+            message: '',
+            snackbarType: prevState.snackbarType,
+        }));
         setSnackbarState({
             openSnackbar: true,
             message: message,
             snackbarType: snackbarType,
         });
-    };
+    }, []);
 
     const handleSnackbarClose = (event?: React.SyntheticEvent, reason?: string) => {
         if (reason === 'clickaway') {
@@ -65,7 +72,11 @@ const GlobalContextProvider = (props: any) => {
         }));
     };
 
-    const handleLogout = () => {};
+    // store in state in order to prevent rerenders when snackbar is called
+    const [globalContextFuncs, _] = useState({
+        showSnackbar: handleShowSnackbar,
+        handleToken: handleTokenFunc,
+    });
 
     const action = (
         <IconButton size="small" color="inherit" onClick={handleSnackbarClose}>
@@ -74,13 +85,7 @@ const GlobalContextProvider = (props: any) => {
     );
 
     return (
-        <GlobalContext.Provider
-            value={{
-                showSnackbar: handleShowSnackbar,
-                handleToken: handleTokenFunc,
-                onLogout: handleLogout,
-            }}
-        >
+        <GlobalContext.Provider value={globalContextFuncs}>
             {props.children}
             <Snackbar
                 open={snackbarState.openSnackbar}

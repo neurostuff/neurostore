@@ -1,7 +1,7 @@
 import { Typography, Box, Tabs, Tab, Button, TabProps, Divider } from '@mui/material';
 import React, { useEffect, useState, SyntheticEvent } from 'react';
 import { IEditAnalyses } from '.';
-import API, { AnalysisApiResponse } from '../../../utils/api';
+import { AnalysisApiResponse } from '../../../utils/api';
 import EditAnalysesStyles from './EditAnalyses.styles';
 import EditAnalysis from './EditAnalysis/EditAnalysis';
 

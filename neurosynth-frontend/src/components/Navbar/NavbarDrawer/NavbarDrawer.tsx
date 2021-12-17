@@ -5,16 +5,18 @@ import {
     Drawer,
     List,
     ListItem,
-    ListItemText,
     Button,
     Box,
     Badge,
+    Toolbar,
 } from '@mui/material';
 import { useState } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
-import { useAuth0 } from '@auth0/auth0-react';
+import NavbarPopupMenu from '../NavbarPopupMenu/NavbarPopupMenu';
 import { NavbarArgs } from '..';
 import NavbarStyles from '../Navbar.styles';
+import NavbarDrawerStyles from './NavbarDrawer.styles';
+import { useAuth0 } from '@auth0/auth0-react';
 
 const NavbarDrawer: React.FC<NavbarArgs> = (props) => {
     const [drawerIsOpen, setDrawerIsOpen] = useState(false);
@@ -24,7 +26,7 @@ const NavbarDrawer: React.FC<NavbarArgs> = (props) => {
     };
 
     return (
-        <>
+        <Toolbar sx={{ ...NavbarStyles.toolbar, ...NavbarStyles.mdDown }}>
             <Button>
                 <Box to="/" exact sx={NavbarStyles.neurosynthLink} component={NavLink}>
                     <Typography variant="h5">
@@ -35,34 +37,41 @@ const NavbarDrawer: React.FC<NavbarArgs> = (props) => {
                 </Box>
             </Button>
             <Drawer anchor="left" open={drawerIsOpen} onClose={toggleDrawer}>
-                <List sx={{ width: '240px' }}>
-                    {props.navOptions.map((navItem, index) => (
-                        <ListItem
-                            button
-                            key={index}
-                            component={NavLink}
-                            to={navItem.path}
-                            onClick={toggleDrawer}
-                        >
-                            <ListItemText primary={navItem.label} />
+                <List sx={NavbarDrawerStyles.list}>
+                    {props.navOptions.map((navOption) => (
+                        <ListItem sx={NavbarDrawerStyles.listItem} key={navOption.label}>
+                            <NavbarPopupMenu
+                                navOption={navOption}
+                                menuPosition={{
+                                    vertical: 'top',
+                                    horizontal: 'right',
+                                }}
+                                sx={{
+                                    ...NavbarDrawerStyles.buttonOverride,
+                                    ...NavbarDrawerStyles.innerButtonOverride,
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                }}
+                            />
                         </ListItem>
                     ))}
-                    {!isAuthenticated && (
-                        <ListItem button onClick={props.login}>
-                            <ListItemText primary="Login"></ListItemText>
-                        </ListItem>
-                    )}
-                    {isAuthenticated && (
-                        <ListItem button onClick={props.logout}>
-                            <ListItemText primary="Logout"></ListItemText>
-                        </ListItem>
-                    )}
+                    <ListItem sx={NavbarDrawerStyles.listItem}>
+                        <Button
+                            sx={{
+                                ...NavbarDrawerStyles.buttonOverride,
+                                ...NavbarDrawerStyles.innerButtonOverride,
+                            }}
+                            onClick={isAuthenticated ? props.logout : props.login}
+                        >
+                            <Box component="span">{isAuthenticated ? 'Logout' : 'Login'}</Box>
+                        </Button>
+                    </ListItem>
                 </List>
             </Drawer>
             <IconButton onClick={toggleDrawer} size="medium">
                 <MenuIcon />
             </IconButton>
-        </>
+        </Toolbar>
     );
 };
 

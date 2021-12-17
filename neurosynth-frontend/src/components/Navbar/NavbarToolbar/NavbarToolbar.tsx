@@ -1,15 +1,16 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Button, Typography, Badge } from '@mui/material';
+import { Box, Button, Typography, Badge, Toolbar } from '@mui/material';
 import { NavLink } from 'react-router-dom';
 import { NavbarArgs } from '..';
 import NavbarStyles from '../Navbar.styles';
 import NavbarToolbarStyles from './NavbarToolbar.styles';
+import NavbarPopupMenu from '../NavbarPopupMenu/NavbarPopupMenu';
 
 const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
     const { isAuthenticated } = useAuth0();
 
     return (
-        <>
+        <Toolbar sx={{ ...NavbarStyles.toolbar, ...NavbarStyles.mdUp }}>
             <Button>
                 <Box to="/" exact sx={NavbarStyles.neurosynthLink} component={NavLink}>
                     <Typography variant="h5">
@@ -20,36 +21,28 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
                 </Box>
             </Button>
             <Box sx={NavbarToolbarStyles.navLinksContainer}>
-                {props.navOptions.map((navItem, index) => (
-                    <Button key={index} sx={NavbarToolbarStyles.button}>
-                        <Box
-                            to={navItem.path}
-                            exact
-                            component={NavLink}
-                            sx={NavbarToolbarStyles.link}
-                            // manually add bg color as navlink doesn't have access to mui system
-                            activeStyle={{ color: '#ef8a24' }}
-                        >
-                            {navItem.label}
-                        </Box>
-                    </Button>
+                {props.navOptions.map((navOption) => (
+                    <NavbarPopupMenu
+                        key={navOption.label}
+                        navOption={navOption}
+                        menuPosition={{ vertical: 'bottom', horizontal: 'left' }}
+                        sx={{
+                            ...NavbarToolbarStyles.button,
+                            padding: '0px 8px',
+                            color: 'primary.contrastText',
+                        }}
+                    />
                 ))}
-                {!isAuthenticated && (
-                    <Button sx={NavbarToolbarStyles.button} onClick={props.login}>
-                        <Box component="span" sx={NavbarToolbarStyles.link}>
-                            Login
-                        </Box>
-                    </Button>
-                )}
-                {isAuthenticated && (
-                    <Button sx={NavbarToolbarStyles.button} onClick={props.logout}>
-                        <Box component="span" sx={NavbarToolbarStyles.link}>
-                            Logout
-                        </Box>
-                    </Button>
-                )}
+                <Button
+                    sx={NavbarToolbarStyles.button}
+                    onClick={isAuthenticated ? props.logout : props.login}
+                >
+                    <Box component="span" sx={NavbarToolbarStyles.link}>
+                        {isAuthenticated ? 'Logout' : 'Login'}
+                    </Box>
+                </Button>
             </Box>
-        </>
+        </Toolbar>
     );
 };
 
