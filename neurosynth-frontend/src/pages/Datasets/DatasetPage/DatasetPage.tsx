@@ -3,45 +3,83 @@ import { Typography, Box, Button } from '@mui/material';
 import { useContext, useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { useHistory } from 'react-router';
-import { TextExpansion, StudiesTable, NeurosynthLoader } from '../../../components';
+import {
+    TextExpansion,
+    StudiesTable,
+    NeurosynthLoader,
+    ConfirmationDialog,
+    CreateDetailsDialog,
+} from '../../../components';
+import AnnotationsTable from '../../../components/Tables/AnnotationsTable/AnnotationsTable';
 import TextEdit from '../../../components/TextEdit/TextEdit';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import useIsMounted from '../../../hooks/useIsMounted';
-import API, { DatasetsApiResponse, StudyApiResponse } from '../../../utils/api';
+import API, {
+    AnnotationsApiResponse,
+    DatasetsApiResponse,
+    StudyApiResponse,
+} from '../../../utils/api';
 import DatasetPageStyles from './DatasetPage.styles';
 
 const DatasetPage: React.FC = (props) => {
     const [dataset, setDataset] = useState<DatasetsApiResponse | undefined>();
+    const [annotations, setAnnotations] = useState<AnnotationsApiResponse[] | undefined>();
     const { getAccessTokenSilently } = useAuth0();
     const history = useHistory();
-    const context = useContext(GlobalContext);
+    const { showSnackbar, handleToken } = useContext(GlobalContext);
+
+    const [confirmationIsOpen, setConfirmationIsOpen] = useState(false);
+    const [createDetailsIsOpen, setCreateDetailsIsOpen] = useState(false);
+
     const params: { datasetId: string } = useParams();
-    const isMountedRef = useIsMounted();
+    const { current } = useIsMounted();
 
     useEffect(() => {
         const getDataset = async (id: string) => {
             API.Services.DataSetsService.datasetsIdGet(id, true)
                 .then((res) => {
-                    if (isMountedRef.current) {
+                    if (current) {
                         const receivedDataset = res.data;
                         setDataset(receivedDataset);
                     }
                 })
                 .catch((err) => {
                     console.error(err);
+                    showSnackbar('there was an error', SnackbarType.ERROR);
                 });
         };
 
         getDataset(params.datasetId);
-    }, [params.datasetId, isMountedRef]);
+    }, [params.datasetId, current, showSnackbar]);
+
+    useEffect(() => {
+        const getAnnotations = async (id: string) => {
+            API.Services.AnnotationsService.annotationsGet(id).then(
+                (res) => {
+                    if (current && res?.data?.results) {
+                        setAnnotations(res.data.results);
+                    }
+                },
+                (err) => {
+                    console.error(err);
+                    showSnackbar(
+                        'there was an error getting annotations for this dataset',
+                        SnackbarType.ERROR
+                    );
+                }
+            );
+        };
+
+        getAnnotations(params.datasetId);
+    }, [params.datasetId, showSnackbar, current]);
 
     const handleSaveTextEdit = (fieldName: 'name' | 'description' | 'publication' | 'doi') => {
         return async (editedText: string) => {
             try {
                 const token = await getAccessTokenSilently();
-                context.handleToken(token);
+                handleToken(token);
             } catch (exception) {
-                context.showSnackbar('there was an error', SnackbarType.ERROR);
+                showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(exception);
             }
 
@@ -53,8 +91,8 @@ const DatasetPage: React.FC = (props) => {
                 [fieldName]: editedText,
             })
                 .then(() => {
-                    context.showSnackbar('analysis successfully updated', SnackbarType.SUCCESS);
-                    if (isMountedRef.current) {
+                    showSnackbar('analysis successfully updated', SnackbarType.SUCCESS);
+                    if (current) {
                         setDataset((prevState) => {
                             if (!prevState) return prevState;
                             return {
@@ -65,34 +103,52 @@ const DatasetPage: React.FC = (props) => {
                     }
                 })
                 .catch((err) => {
-                    context.showSnackbar(
-                        'there was an error updating the dataset',
-                        SnackbarType.ERROR
-                    );
+                    showSnackbar('there was an error updating the dataset', SnackbarType.ERROR);
                     console.error(err);
                 });
         };
     };
 
-    const handleDeleteDataset = async (idToDelete: string | undefined) => {
-        if (idToDelete) {
+    const handleCloseDialog = async (confirm: boolean | undefined) => {
+        setConfirmationIsOpen(false);
+
+        if (dataset?.id && confirm) {
             try {
                 const token = await getAccessTokenSilently();
-                context.handleToken(token);
+                handleToken(token);
             } catch (exception) {
-                context.showSnackbar('there was an error', SnackbarType.ERROR);
+                showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(exception);
             }
-            API.Services.DataSetsService.datasetsIdDelete(idToDelete)
+            API.Services.DataSetsService.datasetsIdDelete(dataset.id)
                 .then((res) => {
                     history.push('/datasets/userdatasets');
-                    context.showSnackbar('deleted dataset', SnackbarType.SUCCESS);
+                    showSnackbar('deleted dataset', SnackbarType.SUCCESS);
                 })
                 .catch((err) => {
-                    context.showSnackbar(
-                        'there was a problem deleting the dataset',
-                        SnackbarType.ERROR
-                    );
+                    showSnackbar('there was a problem deleting the dataset', SnackbarType.ERROR);
+                    console.error(err);
+                });
+        }
+    };
+
+    const handleCreateAnnotation = async (name: string, description: string) => {
+        try {
+            const token = await getAccessTokenSilently();
+            handleToken(token);
+            console.log(token);
+        } catch (exception) {
+            showSnackbar('there was an error', SnackbarType.ERROR);
+            console.error(exception);
+        }
+
+        if (dataset?.id) {
+            API.Services.AnnotationsService.annotationsPost('neurosynth', dataset?.id)
+                .then((res) => {
+                    console.log(res);
+                })
+                .catch((err) => {
+                    showSnackbar('there was a problem getting annotations', SnackbarType.ERROR);
                     console.error(err);
                 });
         }
@@ -174,26 +230,58 @@ const DatasetPage: React.FC = (props) => {
                         </TextEdit>
                     </Box>
 
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                        }}
-                    >
+                    <Box sx={{ marginBottom: '1rem' }}>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                marginBottom: '1rem',
+                            }}
+                        >
+                            <Typography
+                                variant="h6"
+                                sx={{ marginBottom: '1rem', fontWeight: 'bold', margin: 'auto 0' }}
+                            >
+                                Annotations for this dataset
+                            </Typography>
+                            <Button
+                                onClick={() => setCreateDetailsIsOpen(true)}
+                                color="primary"
+                                variant="contained"
+                            >
+                                Create new Annotation
+                            </Button>
+                            <CreateDetailsDialog
+                                titleText="Create new Annotation"
+                                isOpen={createDetailsIsOpen}
+                                onCreate={handleCreateAnnotation}
+                                onCloseDialog={() => setCreateDetailsIsOpen(false)}
+                            />
+                        </Box>
+                        <AnnotationsTable annotations={annotations || []} />
+                    </Box>
+
+                    <Box>
                         <Typography variant="h6" sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
                             Studies in this dataset
                         </Typography>
                     </Box>
                     <StudiesTable studies={dataset.studies as StudyApiResponse[]} />
                     <Button
-                        onClick={() => handleDeleteDataset(dataset.id)}
+                        onClick={() => setConfirmationIsOpen(true)}
                         variant="contained"
                         color="error"
                         sx={{ marginTop: '1rem' }}
                     >
                         Delete this dataset
                     </Button>
+                    <ConfirmationDialog
+                        message="Are you sure you want to delete the dataset?"
+                        confirmText="Yes"
+                        rejectText="No"
+                        isOpen={confirmationIsOpen}
+                        onCloseDialog={handleCloseDialog}
+                    />
                 </>
             )}
         </NeurosynthLoader>

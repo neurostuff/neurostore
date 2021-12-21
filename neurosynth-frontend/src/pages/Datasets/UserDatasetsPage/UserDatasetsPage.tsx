@@ -2,7 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Typography, Button } from '@mui/material';
 import { useContext, useEffect, useState } from 'react';
 import { NeurosynthLoader } from '../../../components';
-import CreateDatasetDialog from '../../../components/Dialogs/CreateDatasetDialog/CreateDatasetDialog';
+import CreateDetailsDialog from '../../../components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import DatasetsTable from '../../../components/Tables/DatasetsTable/DatasetsTable';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import useIsMounted from '../../../hooks/useIsMounted';
@@ -90,15 +90,16 @@ const UserDatasetsPage: React.FC = (props) => {
                 </Button>
             </Box>
 
-            <CreateDatasetDialog
+            <CreateDetailsDialog
+                titleText="Create new Dataset"
                 onCloseDialog={() => {
                     setCreateDatasetDialogIsOpen(false);
                 }}
-                onCreateDataset={handleCreateDataset}
+                onCreate={handleCreateDataset}
                 isOpen={createDatasetDialogIsOpen}
             />
 
-            <DatasetsTable tableSize="medium" datasets={datasets || []} />
+            <DatasetsTable datasets={datasets || []} />
         </NeurosynthLoader>
     );
 };

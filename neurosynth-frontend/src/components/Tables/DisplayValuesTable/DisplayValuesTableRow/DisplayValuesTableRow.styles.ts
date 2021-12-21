@@ -1,3 +1,4 @@
+import { grey } from '@mui/material/colors';
 import { Style } from '../../../..';
 
 const DisplayMetadataTableRowStyles: Style = {
@@ -18,6 +19,13 @@ const DisplayMetadataTableRowStyles: Style = {
         fontSize: {
             xs: '0.8rem',
             md: 'initial',
+        },
+    },
+    selectableRow: {
+        '&:hover': {
+            backgroundColor: grey[300],
+            cursor: 'pointer',
+            transition: '0.25s',
         },
     },
 };

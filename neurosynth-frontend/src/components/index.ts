@@ -17,6 +17,8 @@ import EditStudyDetails from './EditStudyComponents/EditStudyDetails/EditStudyDe
 import TextEdit from './TextEdit/TextEdit';
 import NeurosynthPopper from './NeurosynthPopper/NeurosynthPopper';
 import NeurosynthLoader from './NeurosynthLoader/NeurosynthLoader';
+import ConfirmationDialog from './Dialogs/ConfirmationDialog/ConfirmationDialog';
+import CreateDetailsDialog from './Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 
 // models
 export * from './EditMetadata';
@@ -40,4 +42,6 @@ export {
     TextEdit,
     NeurosynthPopper,
     NeurosynthLoader,
+    ConfirmationDialog,
+    CreateDetailsDialog,
 };

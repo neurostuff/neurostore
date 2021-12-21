@@ -200,7 +200,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                 </TableBody>
             </Table>
             {props.studies.length === 0 && (
-                <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No results</Box>
+                <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No data</Box>
             )}
         </TableContainer>
     );

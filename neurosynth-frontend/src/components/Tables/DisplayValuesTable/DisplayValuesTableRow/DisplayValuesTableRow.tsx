@@ -30,12 +30,24 @@ const getType = (value: any): EPropertyType => {
 };
 
 const DisplayMetadataTableRow: React.FC<IDisplayValuesTableRowModel> = (props) => {
+    const handleRowSelect = (event: React.MouseEvent) => {
+        if (props.canSelectRow) props.onSelectRow(props.uniqueKey);
+    };
+
     return (
-        <TableRow>
+        <TableRow
+            onClick={handleRowSelect}
+            sx={props.canSelectRow ? DisplayValuesTableRowStyles.selectableRow : {}}
+        >
             {props.columnValues.map((col, index) => {
-                const typedStyles = col.colorByType
-                    ? DisplayValuesTableRowStyles[getType(col.value)]
-                    : {};
+                let typedStyles: any;
+                if (col.shouldHighlightNoData) {
+                    typedStyles = { color: 'warning.dark' };
+                } else if (col.colorByType) {
+                    typedStyles = DisplayValuesTableRowStyles[getType(col.value)];
+                } else {
+                    typedStyles = {};
+                }
 
                 return (
                     <TableCell key={index} sx={{ textAlign: col.center ? 'center' : 'left' }}>

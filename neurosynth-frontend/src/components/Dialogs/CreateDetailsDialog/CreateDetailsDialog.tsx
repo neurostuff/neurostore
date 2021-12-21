@@ -1,23 +1,24 @@
 import { Box, Button, Dialog, DialogContent, DialogTitle, TextField } from '@mui/material';
 import { ChangeEvent, useState } from 'react';
 
-export interface ICreateDatasetDialog {
+export interface ICreateDetailsDialog {
     isOpen: boolean;
-    onCreateDataset: (name: string, description: string) => void;
+    onCreate: (name: string, description: string) => void;
     onCloseDialog: () => void;
+    titleText: string;
 }
 
-const CreateDatasetDialog: React.FC<ICreateDatasetDialog> = (props) => {
+const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
     const [hasEnteredText, setHasEnteredText] = useState(false);
 
-    const [newDatasetDetails, setNewDatasetDetails] = useState({
+    const [newDetails, setDetails] = useState({
         name: '',
         description: '',
     });
 
     const handleOnChange = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
         setHasEnteredText(true);
-        setNewDatasetDetails((prevState) => ({
+        setDetails((prevState) => ({
             ...prevState,
             [event.target.name]: event.target.value,
         }));
@@ -25,7 +26,7 @@ const CreateDatasetDialog: React.FC<ICreateDatasetDialog> = (props) => {
 
     const handleOnClose = () => {
         setHasEnteredText(false);
-        setNewDatasetDetails({
+        setDetails({
             name: '',
             description: '',
         });
@@ -34,44 +35,39 @@ const CreateDatasetDialog: React.FC<ICreateDatasetDialog> = (props) => {
 
     return (
         <Dialog open={props.isOpen} onClose={handleOnClose}>
-            <DialogTitle>Create new dataset</DialogTitle>
+            <DialogTitle>{props.titleText}</DialogTitle>
             <DialogContent>
                 <TextField
-                    label="Dataset Name"
-                    value={newDatasetDetails.name}
+                    label="Name"
+                    value={newDetails.name}
                     name="name"
                     id="dialog-dataset-name"
-                    error={newDatasetDetails.name.length === 0 && hasEnteredText}
+                    error={newDetails.name.length === 0 && hasEnteredText}
                     helperText={
-                        newDatasetDetails.name.length === 0 && hasEnteredText
-                            ? 'name is required'
-                            : ''
+                        newDetails.name.length === 0 && hasEnteredText ? 'name is required' : ''
                     }
                     required
                     onChange={handleOnChange}
                     sx={{ width: '100%', margin: '5px 0 1rem 0' }}
                 />
                 <TextField
-                    label="Dataset Description"
+                    label="Description"
                     multiline
                     id="dialog-dataset-description"
                     onChange={handleOnChange}
                     name="description"
-                    value={newDatasetDetails.description}
+                    value={newDetails.description}
                     sx={{ width: '100%', margin: '0 0 1.5rem 0' }}
                 />
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Button
                         sx={{ width: '150px' }}
                         onClick={() => {
-                            props.onCreateDataset(
-                                newDatasetDetails.name,
-                                newDatasetDetails.description
-                            );
+                            props.onCreate(newDetails.name, newDetails.description);
                             handleOnClose();
                         }}
                         variant="contained"
-                        disabled={newDatasetDetails.name.length === 0}
+                        disabled={newDetails.name.length === 0}
                     >
                         Create
                     </Button>
@@ -89,4 +85,4 @@ const CreateDatasetDialog: React.FC<ICreateDatasetDialog> = (props) => {
     );
 };
 
-export default CreateDatasetDialog;
+export default CreateDetailsDialog;

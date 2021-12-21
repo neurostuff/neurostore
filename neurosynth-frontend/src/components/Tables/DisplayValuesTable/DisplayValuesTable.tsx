@@ -1,32 +1,46 @@
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper,
+} from '@mui/material';
 import { Box } from '@mui/system';
 import { IDisplayValuesTableModel } from '.';
 import DisplayValuesTableRow from './DisplayValuesTableRow/DisplayValuesTableRow';
 
 const DisplayValuesTable: React.FC<IDisplayValuesTableModel> = (props) => {
-    if (
-        !props.rowData ||
-        props.rowData.length === 0 ||
-        !props.columnHeaders ||
-        props.columnHeaders.length === 0
-    ) {
-        return (
-            <Box component="span" sx={{ color: 'warning.dark' }}>
-                No data
-            </Box>
-        );
-    }
+    const noRowData = !props.rowData || props.rowData.length === 0;
+
+    const handleRowSelect = (selectedVal: string | number) => {
+        if (props.selectable) {
+            if (!props.onValueSelected)
+                throw new Error('table is selectable but handler is not defined');
+            props.onValueSelected(selectedVal);
+        }
+    };
 
     return (
-        <TableContainer>
+        <TableContainer component={props.paper ? Paper : 'div'}>
             <Table size="small">
                 <TableHead>
-                    <TableRow>
+                    <TableRow
+                        sx={{
+                            backgroundColor: props.tableHeadRowColor
+                                ? props.tableHeadRowColor
+                                : 'initial',
+                        }}
+                    >
                         {props.columnHeaders.map((colHeader, index) => (
                             <TableCell
                                 sx={{
                                     fontWeight: colHeader.bold ? 'bold' : 'normal',
                                     textAlign: colHeader.center ? 'center' : 'left',
+                                    color: props.tableHeadRowTextContrastColor
+                                        ? props.tableHeadRowTextContrastColor
+                                        : 'black',
                                 }}
                                 key={index}
                             >
@@ -37,10 +51,16 @@ const DisplayValuesTable: React.FC<IDisplayValuesTableModel> = (props) => {
                 </TableHead>
                 <TableBody>
                     {props.rowData.map((row) => (
-                        <DisplayValuesTableRow key={row.uniqueKey} {...row} />
+                        <DisplayValuesTableRow
+                            canSelectRow={!!props.selectable}
+                            onSelectRow={handleRowSelect}
+                            key={row.uniqueKey}
+                            {...row}
+                        />
                     ))}
                 </TableBody>
             </Table>
+            {noRowData && <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No data</Box>}
         </TableContainer>
     );
 };

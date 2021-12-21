@@ -1,19 +1,20 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import CreateDatasetDialog from './CreateDatasetDialog';
+import CreateDetailsDialog from './CreateDetailsDialog';
 
 describe('CreateDatasetDialog', () => {
     const mockOnCreateDataset = jest.fn();
     const mockOnCloseDialog = jest.fn();
     it('should render', () => {
         render(
-            <CreateDatasetDialog
+            <CreateDetailsDialog
+                titleText="some title text"
                 isOpen={true}
-                onCreateDataset={mockOnCreateDataset}
+                onCreate={mockOnCreateDataset}
                 onCloseDialog={mockOnCloseDialog}
             />
         );
-        const text = screen.getByText('Create new dataset');
+        const text = screen.getByText('some title text');
         const nameField = screen.getByLabelText('Dataset Name *'); // added to indicate it is required
         const descriptionField = screen.getByLabelText('Dataset Description');
         expect(text).toBeInTheDocument();
@@ -23,9 +24,10 @@ describe('CreateDatasetDialog', () => {
 
     it('should close when cancel is clicked', () => {
         render(
-            <CreateDatasetDialog
+            <CreateDetailsDialog
+                titleText="some title text"
                 isOpen={true}
-                onCreateDataset={mockOnCreateDataset}
+                onCreate={mockOnCreateDataset}
                 onCloseDialog={mockOnCloseDialog}
             />
         );
@@ -38,9 +40,10 @@ describe('CreateDatasetDialog', () => {
 
     it('should be disabled', () => {
         render(
-            <CreateDatasetDialog
+            <CreateDetailsDialog
+                titleText="some title text"
                 isOpen={true}
-                onCreateDataset={mockOnCreateDataset}
+                onCreate={mockOnCreateDataset}
                 onCloseDialog={mockOnCloseDialog}
             />
         );
@@ -50,9 +53,10 @@ describe('CreateDatasetDialog', () => {
 
     it('should update the name textfield when text is entered', () => {
         render(
-            <CreateDatasetDialog
+            <CreateDetailsDialog
+                titleText="some title text"
                 isOpen={true}
-                onCreateDataset={mockOnCreateDataset}
+                onCreate={mockOnCreateDataset}
                 onCloseDialog={mockOnCloseDialog}
             />
         );
@@ -66,9 +70,10 @@ describe('CreateDatasetDialog', () => {
 
     it('should update the description textfield when text is entered', () => {
         render(
-            <CreateDatasetDialog
+            <CreateDetailsDialog
+                titleText="some title text"
                 isOpen={true}
-                onCreateDataset={mockOnCreateDataset}
+                onCreate={mockOnCreateDataset}
                 onCloseDialog={mockOnCloseDialog}
             />
         );
@@ -82,9 +87,10 @@ describe('CreateDatasetDialog', () => {
 
     it('should call the create func with the correct data when create is clicked', () => {
         render(
-            <CreateDatasetDialog
+            <CreateDetailsDialog
+                titleText="some title text"
                 isOpen={true}
-                onCreateDataset={mockOnCreateDataset}
+                onCreate={mockOnCreateDataset}
                 onCloseDialog={mockOnCloseDialog}
             />
         );
