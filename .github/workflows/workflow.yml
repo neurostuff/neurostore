@@ -32,6 +32,9 @@ jobs:
       name: Create Test Database
       run: |
         docker-compose exec -T \
+        pgsql pg_isready -U postgres -t 10
+
+        docker-compose exec -T \
         pgsql \
         psql -U postgres -c "create database test_db"
     -
