@@ -31,8 +31,8 @@ jobs:
     - 
       name: Create Test Database
       run: |
-        docker-compose exec -T \
-        pgsql pg_isready -U postgres -t 10
+        until docker-compose exec -T \
+        pgsql pg_isready -U postgres; do sleep 1; done
 
         docker-compose exec -T \
         pgsql \
