@@ -8,6 +8,16 @@ import NavbarToolbar from './NavbarToolbar';
 
 jest.mock('@auth0/auth0-react');
 
+// already tested child component
+jest.mock('../NavbarPopupMenu/NavbarPopupMenu', () => {
+    return {
+        __esModule: true,
+        default: (props: any) => {
+            return <button>child-menuitem</button>;
+        },
+    };
+});
+
 describe('NavbarToolbar Component', () => {
     const mockedUseAuth0 = {
         isAuthenticated: false,
@@ -17,14 +27,17 @@ describe('NavbarToolbar Component', () => {
         {
             label: 'testLabel1',
             path: 'testPath1',
+            children: null,
         },
         {
             label: 'testLabel2',
             path: 'testPath2',
+            children: null,
         },
         {
             label: 'testLabel3',
             path: 'testPath3',
+            children: null,
         },
     ];
 
@@ -52,10 +65,8 @@ describe('NavbarToolbar Component', () => {
             </MockThemeProvider>
         );
 
-        mockNavOptions.forEach((element) => {
-            const buttonElement = screen.getByText(element.label);
-            expect(buttonElement).toBeInTheDocument();
-        });
+        const menuItems = screen.getAllByText('child-menuitem');
+        expect(menuItems.length).toEqual(mockNavOptions.length);
     });
 
     it('should login with login is clicked', () => {

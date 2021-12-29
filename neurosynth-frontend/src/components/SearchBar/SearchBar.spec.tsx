@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { SearchCriteria } from '../../pages/Studies/PublicStudiesPage/PublicStudiesPage';
 import SearchBar from './SearchBar';
-import { SearchCriteria } from '../../pages/StudiesPage/StudiesPage';
 
 describe('SearchBar Component', () => {
     const onSearchMock = jest.fn();

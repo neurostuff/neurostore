@@ -12,6 +12,7 @@ import {
 import { AxiosError } from 'axios';
 import React, { ChangeEvent, useContext, useEffect, useState } from 'react';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
+import useIsMounted from '../../../hooks/useIsMounted';
 import API from '../../../utils/api';
 import EditStudyDetailsStyles from './EditStudyDetails.styles';
 
@@ -29,16 +30,18 @@ export interface IEditStudyDetails extends IEditStudyDetailsProperties {
 }
 
 const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
+    const { studyId, name, authors, publication, doi, description } = props;
     const { getAccessTokenSilently } = useAuth0();
     const context = useContext(GlobalContext);
     const [updatedEnabled, setUpdateEnabled] = useState(false);
+    const isMountedRef = useIsMounted();
     const [originalDetails, setOriginalDetails] = useState<IEditStudyDetailsProperties>({
-        studyId: props.studyId,
-        name: props.name,
-        authors: props.authors,
-        publication: props.publication,
-        doi: props.doi,
-        description: props.description,
+        studyId: studyId,
+        name: name,
+        authors: authors,
+        publication: publication,
+        doi: doi,
+        description: description,
     });
 
     const textFieldInputProps = {
@@ -47,15 +50,18 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
         },
     };
 
+    // set original details without updating in the future
     useEffect(() => {
         setOriginalDetails({
-            studyId: props.studyId,
-            name: props.name,
-            authors: props.authors,
-            publication: props.publication,
-            doi: props.doi,
-            description: props.description,
+            studyId: studyId,
+            name: name,
+            authors: authors,
+            publication: publication,
+            doi: doi,
+            description: description,
         });
+        // we want to set the original details so this can only run once
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleOnEdit = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
@@ -82,16 +88,18 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
             doi: props.doi,
         })
             .then((res) => {
-                setUpdateEnabled(false);
                 context.showSnackbar('study successfully updated', SnackbarType.SUCCESS);
-                setOriginalDetails({
-                    studyId: props.studyId,
-                    name: props.name,
-                    description: props.description,
-                    authors: props.authors,
-                    publication: props.publication,
-                    doi: props.doi,
-                });
+                if (isMountedRef.current) {
+                    setUpdateEnabled(false);
+                    setOriginalDetails({
+                        studyId: props.studyId,
+                        name: props.name,
+                        description: props.description,
+                        authors: props.authors,
+                        publication: props.publication,
+                        doi: props.doi,
+                    });
+                }
             })
             .catch((err: Error | AxiosError) => {
                 context.showSnackbar('there was an error', SnackbarType.ERROR);
