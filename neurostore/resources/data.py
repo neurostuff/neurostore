@@ -182,7 +182,11 @@ class ObjectView(BaseView):
             abort(403)
 
         nested = request.args.get("nested")
-        return self.__class__._schema(context={'nested': nested}).dump(record)
+        export = request.args.get("export", False)
+        return self.__class__._schema(context={
+            'nested': nested,
+            'export': export,
+        }).dump(record)
 
     def put(self, id):
         data = parser.parse(self.__class__._schema, request)
@@ -218,6 +222,7 @@ LIST_USER_ARGS = {
     "nested": fields.Boolean(missing=False),
     "user_id": fields.String(missing=None),
     "dataset_id": fields.String(missing=None),
+    "export": fields.Boolean(missing=False),
 }
 
 
