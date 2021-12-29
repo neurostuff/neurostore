@@ -78,7 +78,7 @@ class AnnotationAnalysis(BaseMixin, db.Model):
     note = db.Column(MutableDict.as_mutable(db.JSON))
 
     study = relationship("Study", backref=backref("annotation_analyses"))
-    analysis = relationship("Analysis", backref=backref("annotation_analyses"))
+    # analysis = relationship("Analysis", backref=backref("annotation_analyses"))
     annotation = relationship("Annotation", backref=backref("annotation_analyses"))
 
     user_id = db.Column(db.Text, db.ForeignKey('users.external_id'))
@@ -140,7 +140,10 @@ class Analysis(BaseMixin, db.Model):
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("analyses"))
     analysis_conditions = relationship(
-        "AnalysisConditions", backref=backref("analysis"), cascade="all, delete"
+        "AnalysisConditions", backref=backref("analysis"), cascade="all, delete, delete-orphan"
+    )
+    annotation_analyses = relationship(
+        "AnnotationAnalysis", backref=backref("analysis"), cascade="all, delete, delete-orphan"
     )
 
 
