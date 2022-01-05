@@ -13,8 +13,10 @@ import {
 import AnnotationsTable from '../../../components/Tables/AnnotationsTable/AnnotationsTable';
 import TextEdit from '../../../components/TextEdit/TextEdit';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
+import { AnnotationNotes } from '../../../gen/api';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API, {
+    AnalysisApiResponse,
     AnnotationsApiResponse,
     DatasetsApiResponse,
     StudyApiResponse,
@@ -24,7 +26,7 @@ import DatasetPageStyles from './DatasetPage.styles';
 const DatasetPage: React.FC = (props) => {
     const [dataset, setDataset] = useState<DatasetsApiResponse | undefined>();
     const [annotations, setAnnotations] = useState<AnnotationsApiResponse[] | undefined>();
-    const { getAccessTokenSilently } = useAuth0();
+    const { getAccessTokenSilently, isAuthenticated } = useAuth0();
     const history = useHistory();
     const { showSnackbar, handleToken } = useContext(GlobalContext);
 
@@ -133,19 +135,44 @@ const DatasetPage: React.FC = (props) => {
     };
 
     const handleCreateAnnotation = async (name: string, description: string) => {
-        try {
-            const token = await getAccessTokenSilently();
-            handleToken(token);
-            console.log(token);
-        } catch (exception) {
-            showSnackbar('there was an error', SnackbarType.ERROR);
-            console.error(exception);
-        }
+        if (dataset && dataset?.id) {
+            try {
+                const token = await getAccessTokenSilently();
+                handleToken(token);
+            } catch (exception) {
+                showSnackbar('there was an error', SnackbarType.ERROR);
+                console.error(exception);
+            }
 
-        if (dataset?.id) {
-            API.Services.AnnotationsService.annotationsPost('neurosynth', dataset?.id)
+            const notes: AnnotationNotes[] = (dataset.studies as StudyApiResponse[]).reduce(
+                (total: AnnotationNotes[], curr) => {
+                    const convertedNotes: AnnotationNotes[] = (
+                        curr.analyses as AnalysisApiResponse[]
+                    ).map((analysis) => ({
+                        analysis: analysis.id,
+                        study: analysis.study,
+                        note: {},
+                    }));
+
+                    return total.concat(convertedNotes);
+                },
+                []
+            );
+
+            API.Services.AnnotationsService.annotationsPost('neurosynth', undefined, {
+                name,
+                description,
+                notes,
+                dataset: params.datasetId,
+            })
                 .then((res) => {
-                    console.log(res);
+                    showSnackbar('successfully created annotation', SnackbarType.SUCCESS);
+                    setAnnotations((prevState) => {
+                        if (!prevState) return prevState;
+                        const newState = [...prevState];
+                        newState.push(res.data);
+                        return newState;
+                    });
                 })
                 .catch((err) => {
                     showSnackbar('there was a problem getting annotations', SnackbarType.ERROR);
@@ -248,6 +275,7 @@ const DatasetPage: React.FC = (props) => {
                                 onClick={() => setCreateDetailsIsOpen(true)}
                                 color="primary"
                                 variant="contained"
+                                disabled={!isAuthenticated}
                             >
                                 Create new Annotation
                             </Button>
@@ -258,7 +286,10 @@ const DatasetPage: React.FC = (props) => {
                                 onCloseDialog={() => setCreateDetailsIsOpen(false)}
                             />
                         </Box>
-                        <AnnotationsTable annotations={annotations || []} />
+                        <AnnotationsTable
+                            datasetId={params.datasetId}
+                            annotations={annotations || []}
+                        />
                     </Box>
 
                     <Box>

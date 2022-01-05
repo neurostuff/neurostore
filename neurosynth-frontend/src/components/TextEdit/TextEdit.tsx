@@ -59,7 +59,7 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                     </Box>
                 </Box>
             ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
                     {props.children}
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <IconButton

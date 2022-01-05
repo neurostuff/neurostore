@@ -67,4 +67,22 @@ describe('DisplayValuesTable Component', () => {
         // add 1 to take into account the row header
         expect(rows.length).toBe(mockTableData.rowData.length + 1);
     });
+
+    it('should be selectable when the flag is enabled', () => {
+
+    });
+
+    it('should call the handleRowSelect handler when the row is clicked', () => {
+
+    });
+
+    it('should color the table header', () => {
+
+    });
+
+    it('should color the table header text', () => {
+        
+    })
+
+
 });

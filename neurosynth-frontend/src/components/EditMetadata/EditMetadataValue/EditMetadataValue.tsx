@@ -45,7 +45,7 @@ const EditMetadataValue: React.FC<IEditMetadataValue> = (props) => {
         [EPropertyType.STRING]: (
             <TextField
                 multiline
-                placeholder="New metadata value"
+                placeholder={props.placeholderText || 'New metadata value'}
                 onChange={(event) => {
                     handleEditMetadataValue(event.target.value);
                 }}

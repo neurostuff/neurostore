@@ -118,4 +118,12 @@ describe('DisplayMetadataTableRow Component', () => {
         expect(cellStyles.color).toBe('gray');
         expect(cellStyles.fontWeight).toBe('bold');
     });
+
+    it('should be selectable when the canSelectRow flag is enabled', () => {
+
+    })
+
+    it('should call the handler when the row is clicked', () => {
+        
+    })
 });

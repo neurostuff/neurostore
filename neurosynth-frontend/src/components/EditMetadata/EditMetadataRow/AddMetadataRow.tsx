@@ -82,9 +82,11 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                     sx={EditMetadataRowStyles.addMetadataTextfield}
                     onChange={handleMetadataKeyChange}
                     variant="outlined"
-                    placeholder="New metadata key"
+                    placeholder={props.keyPlaceholderText || 'New metadata key'}
                     fullWidth
-                    helperText={!isValid ? 'All metadata keys must be unique' : ''}
+                    helperText={
+                        !isValid ? props.errorMessage || 'All metadata keys must be unique' : ''
+                    }
                     error={!isValid}
                     value={metadataRow.metadataKey}
                 />
@@ -93,6 +95,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
             </Box>
             <Box sx={{ ...EditMetadataRowStyles.tableCell, width: '100%' }}>
                 <EditMetadataValue
+                    placeholderText={props.valuePlaceholderText}
                     onEditMetadataValue={handleMetadataValueChange}
                     value={metadataRow.metadataValue}
                     type={currType}

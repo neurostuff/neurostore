@@ -1376,10 +1376,11 @@ export const AnnotationsApiAxiosParamCreator = function (configuration?: Configu
          * @summary Post Annotation
          * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the resource you would like to filter/copy from
          * @param {string} [sourceId] id of the resource you are either filtering/copying on
+         * @param {Annotation} [annotation] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        annotationsPost: async (source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        annotationsPost: async (source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, annotation?: Annotation, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/annotations/`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1406,9 +1407,12 @@ export const AnnotationsApiAxiosParamCreator = function (configuration?: Configu
 
 
     
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(annotation, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1474,11 +1478,12 @@ export const AnnotationsApiFp = function(configuration?: Configuration) {
          * @summary Post Annotation
          * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the resource you would like to filter/copy from
          * @param {string} [sourceId] id of the resource you are either filtering/copying on
+         * @param {Annotation} [annotation] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async annotationsPost(source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Annotation>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.annotationsPost(source, sourceId, options);
+        async annotationsPost(source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, annotation?: Annotation, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Annotation>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.annotationsPost(source, sourceId, annotation, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
     }
@@ -1536,11 +1541,12 @@ export const AnnotationsApiFactory = function (configuration?: Configuration, ba
          * @summary Post Annotation
          * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the resource you would like to filter/copy from
          * @param {string} [sourceId] id of the resource you are either filtering/copying on
+         * @param {Annotation} [annotation] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        annotationsPost(source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, options?: any): AxiosPromise<Annotation> {
-            return localVarFp.annotationsPost(source, sourceId, options).then((request) => request(axios, basePath));
+        annotationsPost(source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, annotation?: Annotation, options?: any): AxiosPromise<Annotation> {
+            return localVarFp.annotationsPost(source, sourceId, annotation, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -1605,12 +1611,13 @@ export class AnnotationsApi extends BaseAPI {
      * @summary Post Annotation
      * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the resource you would like to filter/copy from
      * @param {string} [sourceId] id of the resource you are either filtering/copying on
+     * @param {Annotation} [annotation] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AnnotationsApi
      */
-    public annotationsPost(source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, options?: AxiosRequestConfig) {
-        return AnnotationsApiFp(this.configuration).annotationsPost(source, sourceId, options).then((request) => request(this.axios, this.basePath));
+    public annotationsPost(source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, annotation?: Annotation, options?: AxiosRequestConfig) {
+        return AnnotationsApiFp(this.configuration).annotationsPost(source, sourceId, annotation, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

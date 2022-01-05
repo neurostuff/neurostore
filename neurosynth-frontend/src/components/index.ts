@@ -19,6 +19,7 @@ import NeurosynthPopper from './NeurosynthPopper/NeurosynthPopper';
 import NeurosynthLoader from './NeurosynthLoader/NeurosynthLoader';
 import ConfirmationDialog from './Dialogs/ConfirmationDialog/ConfirmationDialog';
 import CreateDetailsDialog from './Dialogs/CreateDetailsDialog/CreateDetailsDialog';
+import NeurosynthSpreadsheet from './NeurosynthSpreadsheet/NeurosynthSpreadsheet';
 
 // models
 export * from './EditMetadata';
@@ -44,4 +45,5 @@ export {
     NeurosynthLoader,
     ConfirmationDialog,
     CreateDetailsDialog,
+    NeurosynthSpreadsheet,
 };
