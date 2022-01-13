@@ -303,6 +303,7 @@ const DatasetPage: React.FC = (props) => {
                         variant="contained"
                         color="error"
                         sx={{ marginTop: '1rem' }}
+                        disabled={!isAuthenticated}
                     >
                         Delete this dataset
                     </Button>

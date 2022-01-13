@@ -1,7 +1,8 @@
 import { IconButton, TextField, Theme, Button } from '@mui/material';
 import { Box, SxProps } from '@mui/system';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import EditIcon from '@mui/icons-material/Edit';
+import { useAuth0 } from '@auth0/auth0-react';
 
 export interface ITextEdit {
     textToEdit: string;
@@ -9,16 +10,30 @@ export interface ITextEdit {
     multiline?: boolean;
     placeholder?: string;
     label?: string;
+    display?: 'row' | 'column-reverse';
     onSave: (updatedText: string) => void;
 }
 
 const TextEdit: React.FC<ITextEdit> = (props) => {
+    const { isAuthenticated } = useAuth0();
+
+    const {
+        textToEdit = '',
+        sx = {},
+        multiline = false,
+        placeholder = '',
+        label = '',
+        display = 'row',
+        onSave = (updatedText: any) => {},
+        children,
+    } = props;
+
     const [editMode, setEditMode] = useState(false);
-    const [editedValue, setEditedValue] = useState(props.textToEdit);
+    const [editedValue, setEditedValue] = useState(textToEdit);
 
     useEffect(() => {
-        setEditedValue(props.textToEdit);
-    }, [props.textToEdit]);
+        setEditedValue(textToEdit);
+    }, [textToEdit]);
 
     return (
         <>
@@ -26,22 +41,23 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                 <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                     <TextField
                         variant="standard"
-                        multiline={!!props.multiline}
+                        multiline={!!multiline}
                         value={editedValue}
-                        label={props.label || ''}
-                        placeholder={props.placeholder || ''}
+                        label={label}
+                        placeholder={placeholder}
                         onChange={(event) => {
                             setEditedValue(event.target.value);
                         }}
                         sx={{
-                            '.MuiInputBase-root': { ...props.sx },
-                            '.MuiInputLabel-root': { ...props.sx },
+                            '.MuiInputBase-root': { ...sx },
+                            '.MuiInputLabel-root': { ...sx },
+                            maxWidth: '500px',
                         }}
                     />
                     <Box>
                         <Button
                             onClick={() => {
-                                props.onSave(editedValue);
+                                onSave(editedValue);
                                 setEditMode(false);
                             }}
                         >
@@ -49,7 +65,7 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                         </Button>
                         <Button
                             onClick={() => {
-                                setEditedValue(props.textToEdit);
+                                setEditedValue(textToEdit);
                                 setEditMode(false);
                             }}
                             color="secondary"
@@ -59,11 +75,12 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                     </Box>
                 </Box>
             ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-                    {props.children}
+                <Box sx={{ display: 'flex', flexDirection: display, alignItems: 'center' }}>
+                    {children}
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <IconButton
-                            sx={{ margin: '0 5px' }}
+                            sx={{ margin: '0 5px', display: isAuthenticated ? 'inline' : 'none' }}
+                            disabled={!isAuthenticated}
                             onClick={() => {
                                 setEditMode(true);
                             }}

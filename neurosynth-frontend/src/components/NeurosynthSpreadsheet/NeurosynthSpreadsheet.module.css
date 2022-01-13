@@ -1,0 +1,29 @@
+
+.string {
+    color: orange !important;
+}
+
+.number {
+    color: blue !important;
+}
+
+.boolean {
+    color: green !important;
+}
+
+.none {
+    color: gray !important;
+}
+
+.column-header {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 4px;
+}
+
+.delete-icon {
+    color: red;
+    cursor: pointer;
+    margin-left: 0.5rem;
+}

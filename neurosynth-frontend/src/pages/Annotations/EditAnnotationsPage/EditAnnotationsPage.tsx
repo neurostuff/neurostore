@@ -1,25 +1,31 @@
-import { Typography, Button, Box, TextField, Paper } from '@mui/material';
-import React, { MouseEvent, useEffect, useState } from 'react';
-import Spreadsheet, { CellBase, Matrix } from 'react-spreadsheet';
+import { Typography, Button, Box } from '@mui/material';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import { useParams } from 'react-router';
 import API, { AnnotationsApiResponse } from '../../../utils/api';
-import { EPropertyType, IMetadataRowModel, NeurosynthSpreadsheet } from '../../../components';
+import {
+    EPropertyType,
+    IMetadataRowModel,
+    NeurosynthSpreadsheet,
+    TextEdit,
+} from '../../../components';
 import { getType } from '../../../components/EditMetadata/EditMetadata';
-import ToggleType from '../../../components/EditMetadata/EditMetadataRow/ToggleType/ToggleType';
-import EditMetadataRowStyles from '../../../components/EditMetadata/EditMetadataRow/EditMetadataRow.styles';
 import EditStudyPageStyles from '../../Studies/EditStudyPage/EditStudyPage.styles';
 import EditAnnotationsPageStyles from './EditAnnotationsPage.styles';
-import AddMetadataRow, {
-    getStartValFromType,
-} from '../../../components/EditMetadata/EditMetadataRow/AddMetadataRow';
+import AddMetadataRow from '../../../components/EditMetadata/EditMetadataRow/AddMetadataRow';
+import { INeurosynthCell } from '../../../components/NeurosynthSpreadsheet/NeurosynthSpreadsheet';
 
 const EditAnnotationsPage: React.FC = (props) => {
     const [annotation, setAnnotation] = useState<AnnotationsApiResponse>();
-    const [data, setData] = useState<Matrix<CellBase<any>>>();
-    const [rowLabels, setRowLabels] = useState<string[]>();
-    const [columnLabels, setColumnLabels] = useState<{ value: string; type: EPropertyType }[]>();
+    const history = useHistory();
+    const [rowHeaders, setRowHeaders] = useState<string[]>([]);
+    const [columnHeaders, setColumnHeaders] = useState<INeurosynthCell[]>([]);
+    const [data, setData] = useState<(string | number)[][]>([]);
 
-    const params: { annotationId: string } = useParams();
+    const params: {
+        annotationId: string;
+        datasetId: string;
+    } = useParams();
 
     useEffect(() => {
         if (params.annotationId) {
@@ -32,10 +38,10 @@ const EditAnnotationsPage: React.FC = (props) => {
                         const notes = res.data.notes;
 
                         if (notes === undefined || notes.length === 0) {
-                            setData([]);
+                            // setData([]);
                         } else {
                             /**
-                             * Extract the keys from the first note. We can do this
+                             * Extract the keys from the first note obj. We can do this
                              * because we assume that all notes in the db have the same keys
                              *
                              * if notes.length is not 0, then the note object should not be undefined
@@ -43,25 +49,22 @@ const EditAnnotationsPage: React.FC = (props) => {
                             const noteKeys: string[] = Object.keys(notes[0].note as object);
                             const firstNote = notes[0].note as { [key: string]: any };
 
-                            const rowLabels = notes.map((note) => note.analysis || '');
-                            setRowLabels(rowLabels);
+                            const rowHeaders = notes.map((note) => note.analysis || '');
+                            setRowHeaders(rowHeaders);
 
                             const columnLabelValues = noteKeys.map((noteKey) => ({
                                 value: noteKey,
                                 type: getType(firstNote[noteKey]),
                             }));
-                            setColumnLabels(columnLabelValues);
+                            setColumnHeaders(columnLabelValues);
 
-                            const spreadsheetValues = notes.map((noteObj) => {
-                                const convertedNotes = noteKeys.map((key) => ({
-                                    value: (noteObj.note as any)[key],
-                                    className: getType((noteObj.note as any)[key]),
-                                }));
+                            const spreadsheetValues: string[][] = notes.map((noteObj) => {
+                                const convertedNotes = noteKeys.map(
+                                    (key) => (noteObj.note as any)[key]
+                                );
                                 return convertedNotes;
                             });
-
-                            const spreadsheetData: Matrix<CellBase<any>> = spreadsheetValues;
-                            setData(spreadsheetData);
+                            setData(spreadsheetValues);
                         }
                     })
                     .catch((err) => {
@@ -72,17 +75,21 @@ const EditAnnotationsPage: React.FC = (props) => {
         }
     }, [params.annotationId]);
 
+    const updateAnnotationDetails = (property: 'name' | 'description', updatedText: string) => {
+        // API.Services.AnnotationsService.annotationsIdPut(params.annotationId, )
+        alert('Editing annotation values still requires implementation');
+    };
+
     const handleAddColumn = (model: IMetadataRowModel) => {
-        const columnKeyExists = !!columnLabels?.find((col) => col.value === model.metadataKey);
+        const columnKeyExists = !!columnHeaders?.find((col) => col.value === model.metadataKey);
         if (columnKeyExists) return false;
 
-        setColumnLabels((prevState) => {
+        setColumnHeaders((prevState) => {
             if (!prevState) return prevState;
-            const newState = [...prevState];
-            newState.push({
-                value: model.metadataKey,
-                type: getType(model.metadataValue),
-            });
+            const newState = [
+                ...prevState,
+                { value: model.metadataKey, type: getType(model.metadataValue) },
+            ];
             return newState;
         });
 
@@ -91,22 +98,41 @@ const EditAnnotationsPage: React.FC = (props) => {
             const newState = [...prevState];
 
             for (let i = 0; i < newState.length; i++) {
-                const updatedRow = [
-                    ...newState[i],
-                    {
-                        value: model.metadataValue,
-                        className: getType(model.metadataValue),
-                    },
-                ];
+                const updatedRow = [...newState[i], `${model.metadataValue}`];
                 newState[i] = updatedRow;
             }
+
             return newState;
         });
 
         return true;
     };
 
-    const handleOnCancel = (event: React.MouseEvent) => {};
+    const handleOnCancel = (event: React.MouseEvent) => {
+        history.push(`/datasets/${params.datasetId}`);
+    };
+
+    const handleColumnDelete = useCallback((colDeleted: number) => {
+        console.log(colDeleted);
+
+        setColumnHeaders((prevState) => {
+            if (!prevState) return prevState;
+            const newState = [...prevState];
+            newState.splice(colDeleted, 1);
+            return newState;
+        });
+        setData((prevState) => {
+            if (!prevState) return prevState;
+            const newState = [...prevState];
+            for (let i = 0; i < newState.length; i++) {
+                const oldRow = newState[i];
+                const newRow = [...oldRow];
+                newRow.splice(colDeleted, 1);
+                newState[i] = newRow;
+            }
+            return newState;
+        });
+    }, []);
 
     const handleOnSaveChanges = (event: React.MouseEvent) => {};
 
@@ -117,6 +143,7 @@ const EditAnnotationsPage: React.FC = (props) => {
                     color="primary"
                     onClick={handleOnSaveChanges}
                     variant="contained"
+                    disabled={true}
                     sx={{ ...EditStudyPageStyles.button, marginRight: '1rem' }}
                 >
                     Save Changes
@@ -130,22 +157,47 @@ const EditAnnotationsPage: React.FC = (props) => {
                     Return to Dataset View
                 </Button>
             </Box>
-            <Typography sx={{ marginBottom: '1rem' }} variant="h4">
-                Annotation
-            </Typography>
+
+            <TextEdit
+                onSave={(updatedText) => updateAnnotationDetails('name', updatedText)}
+                textToEdit={annotation?.name || ''}
+                sx={{ fontSize: '2rem' }}
+            >
+                <Typography variant="h4">
+                    {annotation?.name || (
+                        <Box component="span" sx={{ color: 'warning.dark' }}>
+                            No name
+                        </Box>
+                    )}
+                </Typography>
+            </TextEdit>
+            <TextEdit
+                onSave={(updatedText) => updateAnnotationDetails('description', updatedText)}
+                textToEdit={annotation?.description || ''}
+            >
+                <Typography>
+                    {annotation?.description || (
+                        <Box component="span" sx={{ color: 'warning.dark' }}>
+                            No description
+                        </Box>
+                    )}
+                </Typography>
+            </TextEdit>
 
             <Box sx={EditAnnotationsPageStyles.addColumnContainer}>
                 <AddMetadataRow
                     keyPlaceholderText="Column Key"
                     valuePlaceholderText="Default Value"
+                    errorMessage="All column keys must be unique"
                     onAddMetadataRow={handleAddColumn}
                 />
             </Box>
 
             <NeurosynthSpreadsheet
-                columnLabelValues={columnLabels || []}
-                rowLabelValues={rowLabels || []}
+                onColumnDelete={handleColumnDelete}
                 data={data}
+                rowHeaderValues={rowHeaders}
+                columnHeaderValues={columnHeaders}
             />
         </>
     );
