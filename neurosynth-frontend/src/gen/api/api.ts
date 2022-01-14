@@ -81,12 +81,6 @@ export interface Annotation {
      * @type {string}
      * @memberof Annotation
      */
-    'id'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Annotation
-     */
     'dataset'?: string;
     /**
      * 
@@ -124,6 +118,31 @@ export interface Annotation {
      * @memberof Annotation
      */
     'source_updated_at'?: string | null;
+    /**
+     * 
+     * @type {object}
+     * @memberof Annotation
+     */
+    'metadata'?: object | null;
+}
+/**
+ * 
+ * @export
+ * @interface AnnotationExport
+ */
+export interface AnnotationExport {
+    /**
+     * 
+     * @type {object}
+     * @memberof AnnotationExport
+     */
+    'metadata'?: object | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof AnnotationExport
+     */
+    'annotation'?: string;
 }
 /**
  * 
@@ -656,13 +675,13 @@ export interface ReadOnly {
      * @type {string}
      * @memberof ReadOnly
      */
-    'created_at'?: string;
+    'created_at': string;
     /**
      * who owns the resource
      * @type {string}
      * @memberof ReadOnly
      */
-    'user'?: string | null;
+    'user': string | null;
 }
 /**
  * attributes of a study/published paper
@@ -1303,10 +1322,11 @@ export const AnnotationsApiAxiosParamCreator = function (configuration?: Configu
          * get an individual annotation
          * @summary Your GET endpoint
          * @param {string} id 
+         * @param {boolean} [_export] return endpoint data in consumable/readable format
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        annotationsIdGet: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        annotationsIdGet: async (id: string, _export?: boolean, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('annotationsIdGet', 'id', id)
             const localVarPath = `/annotations/{id}`
@@ -1321,6 +1341,10 @@ export const AnnotationsApiAxiosParamCreator = function (configuration?: Configu
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            if (_export !== undefined) {
+                localVarQueryParameter['export'] = _export;
+            }
 
 
     
@@ -1455,11 +1479,12 @@ export const AnnotationsApiFp = function(configuration?: Configuration) {
          * get an individual annotation
          * @summary Your GET endpoint
          * @param {string} id 
+         * @param {boolean} [_export] return endpoint data in consumable/readable format
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async annotationsIdGet(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Annotation & ReadOnly>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.annotationsIdGet(id, options);
+        async annotationsIdGet(id: string, _export?: boolean, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AnnotationExport | Annotation & ReadOnly>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.annotationsIdGet(id, _export, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -1520,11 +1545,12 @@ export const AnnotationsApiFactory = function (configuration?: Configuration, ba
          * get an individual annotation
          * @summary Your GET endpoint
          * @param {string} id 
+         * @param {boolean} [_export] return endpoint data in consumable/readable format
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        annotationsIdGet(id: string, options?: any): AxiosPromise<Annotation & ReadOnly> {
-            return localVarFp.annotationsIdGet(id, options).then((request) => request(axios, basePath));
+        annotationsIdGet(id: string, _export?: boolean, options?: any): AxiosPromise<AnnotationExport | Annotation & ReadOnly> {
+            return localVarFp.annotationsIdGet(id, _export, options).then((request) => request(axios, basePath));
         },
         /**
          * edit an existing annotation
@@ -1586,12 +1612,13 @@ export class AnnotationsApi extends BaseAPI {
      * get an individual annotation
      * @summary Your GET endpoint
      * @param {string} id 
+     * @param {boolean} [_export] return endpoint data in consumable/readable format
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AnnotationsApi
      */
-    public annotationsIdGet(id: string, options?: AxiosRequestConfig) {
-        return AnnotationsApiFp(this.configuration).annotationsIdGet(id, options).then((request) => request(this.axios, this.basePath));
+    public annotationsIdGet(id: string, _export?: boolean, options?: AxiosRequestConfig) {
+        return AnnotationsApiFp(this.configuration).annotationsIdGet(id, _export, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

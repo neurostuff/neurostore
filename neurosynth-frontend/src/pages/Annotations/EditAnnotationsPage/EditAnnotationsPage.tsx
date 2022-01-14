@@ -1,5 +1,5 @@
 import { Typography, Button, Box } from '@mui/material';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useParams } from 'react-router';
 import API, { AnnotationsApiResponse } from '../../../utils/api';
@@ -11,6 +11,8 @@ import AddMetadataRow from '../../../components/EditMetadata/EditMetadataRow/Add
 import { INeurosynthCell } from '../../../components/NeurosynthSpreadsheet/NeurosynthSpreadsheet';
 import { CellChange } from 'handsontable/common';
 import { AnnotationNotes } from '../../../gen/api';
+import { useAuth0 } from '@auth0/auth0-react';
+import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 
 export const convertToAnnotationObject = (
     annotation: AnnotationsApiResponse,
@@ -33,6 +35,8 @@ export const convertToAnnotationObject = (
 };
 
 const EditAnnotationsPage: React.FC = (props) => {
+    const { getAccessTokenSilently } = useAuth0();
+    const { handleToken, showSnackbar } = useContext(GlobalContext);
     const [annotation, setAnnotation] = useState<AnnotationsApiResponse>();
     const history = useHistory();
     const [rowHeaders, setRowHeaders] = useState<string[]>([]);
@@ -50,6 +54,9 @@ const EditAnnotationsPage: React.FC = (props) => {
             const getAnnotation = () => {
                 API.Services.AnnotationsService.annotationsIdGet(params.annotationId)
                     .then((res) => {
+                        console.log(res);
+                        return;
+
                         if (!res?.data) return;
 
                         setAnnotation(res.data);
@@ -171,9 +178,27 @@ const EditAnnotationsPage: React.FC = (props) => {
         setSaveChangesDisabled(false);
     };
 
-    const handleOnSaveChanges = (event: React.MouseEvent) => {
+    const handleOnSaveChanges = async (event: React.MouseEvent) => {
         if (annotation) {
-            console.log(convertToAnnotationObject(annotation, columnHeaders, data));
+            const annotationObject = convertToAnnotationObject(annotation, columnHeaders, data);
+
+            try {
+                const token = await getAccessTokenSilently();
+                handleToken(token);
+            } catch (exception) {
+                showSnackbar('there was an error', SnackbarType.ERROR);
+                console.error(exception);
+            }
+
+            // API.Services.AnnotationsService.annotationsIdPut(annotation.id, ).then(() => {
+
+            // }).catch(() => {
+
+            // }).finally(() => {
+
+            // })
+            setSaveChangesDisabled(false);
+            showSnackbar('annotation updated', SnackbarType.SUCCESS);
         }
     };
 
