@@ -14,9 +14,22 @@ def test_post_annotation(auth_client, ingest_neurosynth):
 
 
 def test_get_annotations(auth_client, ingest_neurosynth):
+    import pandas as pd
+    from io import StringIO
+
     dset = Dataset.query.first()
     resp = auth_client.get(f'/api/annotations/?dataset_id={dset.id}')
     assert resp.status_code == 200
+
+    annot_id = resp.json['results'][0]['id']
+
+    resp2 = auth_client.get(f"/api/annotations/{annot_id}?export=true")
+
+    assert resp2.status_code == 200
+
+    df = pd.read_csv(StringIO(resp2.json['annotation']))
+
+    assert isinstance(df, pd.DataFrame)
 
 
 def test_clone_annotation(auth_client, simple_neurosynth_annotation):
