@@ -3,24 +3,42 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useParams } from 'react-router';
 import API, { AnnotationsApiResponse } from '../../../utils/api';
-import {
-    EPropertyType,
-    IMetadataRowModel,
-    NeurosynthSpreadsheet,
-    TextEdit,
-} from '../../../components';
+import { IMetadataRowModel, NeurosynthSpreadsheet, TextEdit } from '../../../components';
 import { getType } from '../../../components/EditMetadata/EditMetadata';
 import EditStudyPageStyles from '../../Studies/EditStudyPage/EditStudyPage.styles';
 import EditAnnotationsPageStyles from './EditAnnotationsPage.styles';
 import AddMetadataRow from '../../../components/EditMetadata/EditMetadataRow/AddMetadataRow';
 import { INeurosynthCell } from '../../../components/NeurosynthSpreadsheet/NeurosynthSpreadsheet';
+import { CellChange } from 'handsontable/common';
+import { AnnotationNotes } from '../../../gen/api';
+
+export const convertToAnnotationObject = (
+    annotation: AnnotationsApiResponse,
+    columnHeaders: INeurosynthCell[],
+    data: (string | number | boolean | null)[][]
+): AnnotationNotes[] => {
+    return (annotation.notes || []).map((annotation, index) => {
+        const dataRow = data[index];
+        const newNote: { [key: string]: string | number | boolean | null } = {};
+        columnHeaders.forEach((columnHeader, columnIndex) => {
+            newNote[columnHeader.value] = dataRow[columnIndex];
+        });
+
+        return {
+            analysis: annotation.analysis,
+            study: annotation.study,
+            note: newNote,
+        };
+    });
+};
 
 const EditAnnotationsPage: React.FC = (props) => {
     const [annotation, setAnnotation] = useState<AnnotationsApiResponse>();
     const history = useHistory();
     const [rowHeaders, setRowHeaders] = useState<string[]>([]);
     const [columnHeaders, setColumnHeaders] = useState<INeurosynthCell[]>([]);
-    const [data, setData] = useState<(string | number)[][]>([]);
+    const [data, setData] = useState<(string | number | boolean | null)[][]>([]);
+    const [saveChangesDisabled, setSaveChangesDisabled] = useState(true);
 
     const params: {
         annotationId: string;
@@ -98,12 +116,14 @@ const EditAnnotationsPage: React.FC = (props) => {
             const newState = [...prevState];
 
             for (let i = 0; i < newState.length; i++) {
-                const updatedRow = [...newState[i], `${model.metadataValue}`];
+                const updatedRow = [...newState[i], model.metadataValue];
                 newState[i] = updatedRow;
             }
 
             return newState;
         });
+
+        setSaveChangesDisabled(false);
 
         return true;
     };
@@ -113,8 +133,6 @@ const EditAnnotationsPage: React.FC = (props) => {
     };
 
     const handleColumnDelete = useCallback((colDeleted: number) => {
-        console.log(colDeleted);
-
         setColumnHeaders((prevState) => {
             if (!prevState) return prevState;
             const newState = [...prevState];
@@ -132,9 +150,32 @@ const EditAnnotationsPage: React.FC = (props) => {
             }
             return newState;
         });
+        setSaveChangesDisabled(false);
     }, []);
 
-    const handleOnSaveChanges = (event: React.MouseEvent) => {};
+    const handleCellUpdates = (changes: CellChange[]) => {
+        if (!changes || changes.length === 0) return;
+
+        setData((prevState) => {
+            const newState = [...prevState];
+            changes.forEach((change) => {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const [row, col, oldCellVal, newCellVal] = change;
+                const oldRow = newState[row];
+                const updatedRow = [...oldRow];
+                updatedRow[col as number] = newCellVal;
+                newState[row] = updatedRow;
+            });
+            return newState;
+        });
+        setSaveChangesDisabled(false);
+    };
+
+    const handleOnSaveChanges = (event: React.MouseEvent) => {
+        if (annotation) {
+            console.log(convertToAnnotationObject(annotation, columnHeaders, data));
+        }
+    };
 
     return (
         <>
@@ -143,7 +184,7 @@ const EditAnnotationsPage: React.FC = (props) => {
                     color="primary"
                     onClick={handleOnSaveChanges}
                     variant="contained"
-                    disabled={true}
+                    disabled={saveChangesDisabled}
                     sx={{ ...EditStudyPageStyles.button, marginRight: '1rem' }}
                 >
                     Save Changes
@@ -194,6 +235,7 @@ const EditAnnotationsPage: React.FC = (props) => {
             </Box>
 
             <NeurosynthSpreadsheet
+                onCellUpdates={handleCellUpdates}
                 onColumnDelete={handleColumnDelete}
                 data={data}
                 rowHeaderValues={rowHeaders}

@@ -79,7 +79,12 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                     {children}
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <IconButton
-                            sx={{ margin: '0 5px', display: isAuthenticated ? 'inline' : 'none' }}
+                            sx={{
+                                width: '50px',
+                                height: '50px',
+                                margin: '0 5px',
+                                display: isAuthenticated ? 'inline' : 'none',
+                            }}
                             disabled={!isAuthenticated}
                             onClick={() => {
                                 setEditMode(true);
