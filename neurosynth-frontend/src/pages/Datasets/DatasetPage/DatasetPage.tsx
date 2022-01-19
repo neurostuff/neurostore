@@ -72,7 +72,7 @@ const DatasetPage: React.FC = (props) => {
             );
         };
 
-        getAnnotations(params.datasetId);
+        if (params.datasetId) getAnnotations(params.datasetId);
     }, [params.datasetId, showSnackbar, current]);
 
     const handleSaveTextEdit = (fieldName: 'name' | 'description' | 'publication' | 'doi') => {

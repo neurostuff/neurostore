@@ -57,40 +57,40 @@ const EditAnnotationsPage: React.FC = (props) => {
                         console.log(res);
                         return;
 
-                        if (!res?.data) return;
+                        // if (!res?.data) return;
 
-                        setAnnotation(res.data);
-                        const notes = res.data.notes;
+                        // setAnnotation(res.data);
+                        // const notes = res.data.notes;
 
-                        if (notes === undefined || notes.length === 0) {
-                            // setData([]);
-                        } else {
-                            /**
-                             * Extract the keys from the first note obj. We can do this
-                             * because we assume that all notes in the db have the same keys
-                             *
-                             * if notes.length is not 0, then the note object should not be undefined
-                             */
-                            const noteKeys: string[] = Object.keys(notes[0].note as object);
-                            const firstNote = notes[0].note as { [key: string]: any };
+                        // if (notes === undefined || notes.length === 0) {
+                        //     // setData([]);
+                        // } else {
+                        //     /**
+                        //      * Extract the keys from the first note obj. We can do this
+                        //      * because we assume that all notes in the db have the same keys
+                        //      *
+                        //      * if notes.length is not 0, then the note object should not be undefined
+                        //      */
+                        //     const noteKeys: string[] = Object.keys(notes[0].note as object);
+                        //     const firstNote = notes[0].note as { [key: string]: any };
 
-                            const rowHeaders = notes.map((note) => note.analysis || '');
-                            setRowHeaders(rowHeaders);
+                        //     const rowHeaders = notes.map((note) => note.analysis || '');
+                        //     setRowHeaders(rowHeaders);
 
-                            const columnLabelValues = noteKeys.map((noteKey) => ({
-                                value: noteKey,
-                                type: getType(firstNote[noteKey]),
-                            }));
-                            setColumnHeaders(columnLabelValues);
+                        //     const columnLabelValues = noteKeys.map((noteKey) => ({
+                        //         value: noteKey,
+                        //         type: getType(firstNote[noteKey]),
+                        //     }));
+                        //     setColumnHeaders(columnLabelValues);
 
-                            const spreadsheetValues: string[][] = notes.map((noteObj) => {
-                                const convertedNotes = noteKeys.map(
-                                    (key) => (noteObj.note as any)[key]
-                                );
-                                return convertedNotes;
-                            });
-                            setData(spreadsheetValues);
-                        }
+                        //     const spreadsheetValues: string[][] = notes.map((noteObj) => {
+                        //         const convertedNotes = noteKeys.map(
+                        //             (key) => (noteObj.note as any)[key]
+                        //         );
+                        //         return convertedNotes;
+                        //     });
+                        //     setData(spreadsheetValues);
+                        // }
                     })
                     .catch((err) => {
                         console.error(err);

@@ -87,7 +87,9 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                     setDatasets((prevState) => {
                         if (!prevState) return prevState;
                         const newDatasets = [...prevState];
-                        newDatasets.push(createdDataset);
+                        console.log(createdDataset);
+
+                        newDatasets.push(createdDataset as any);
                         return newDatasets;
                     });
                 }
