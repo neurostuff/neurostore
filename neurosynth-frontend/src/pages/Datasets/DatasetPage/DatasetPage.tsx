@@ -13,7 +13,7 @@ import {
 import AnnotationsTable from '../../../components/Tables/AnnotationsTable/AnnotationsTable';
 import TextEdit from '../../../components/TextEdit/TextEdit';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
-import { AnnotationNotes } from '../../../gen/api';
+import { AnnotationNote } from '../../../gen/api';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API, {
     AnalysisApiResponse,
@@ -144,9 +144,9 @@ const DatasetPage: React.FC = (props) => {
                 console.error(exception);
             }
 
-            const notes: AnnotationNotes[] = (dataset.studies as StudyApiResponse[]).reduce(
-                (total: AnnotationNotes[], curr) => {
-                    const convertedNotes: AnnotationNotes[] = (
+            const notes: AnnotationNote[] = (dataset.studies as StudyApiResponse[]).reduce(
+                (total: AnnotationNote[], curr) => {
+                    const convertedNotes: AnnotationNote[] = (
                         curr.analyses as AnalysisApiResponse[]
                     ).map((analysis) => ({
                         analysis: analysis.id,
@@ -162,7 +162,7 @@ const DatasetPage: React.FC = (props) => {
             API.Services.AnnotationsService.annotationsPost('neurosynth', undefined, {
                 name,
                 description,
-                notes,
+                notes: [], // TODO: discuss how handling of annotations will work in order to stay up to date with studies that are added/removed
                 dataset: params.datasetId,
             })
                 .then((res) => {

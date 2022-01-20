@@ -10,7 +10,7 @@ import EditAnnotationsPageStyles from './EditAnnotationsPage.styles';
 import AddMetadataRow from '../../../components/EditMetadata/EditMetadataRow/AddMetadataRow';
 import { INeurosynthCell } from '../../../components/NeurosynthSpreadsheet/NeurosynthSpreadsheet';
 import { CellChange } from 'handsontable/common';
-import { AnnotationNotes } from '../../../gen/api';
+import { AnnotationNote } from '../../../gen/api';
 import { useAuth0 } from '@auth0/auth0-react';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 
@@ -18,7 +18,11 @@ export const convertToAnnotationObject = (
     annotation: AnnotationsApiResponse,
     columnHeaders: INeurosynthCell[],
     data: (string | number | boolean | null)[][]
-): AnnotationNotes[] => {
+): AnnotationNote[] => {
+    // TODO: discuss this approach of creating a separate interface for annotation notes
+    // there seems to be a bug where types defined are being generated as Array<object>.
+    // we must use a ref for it to be recognized.
+    // https://github.com/OpenAPITools/openapi-generator/issues/7802
     return (annotation.notes || []).map((annotation, index) => {
         const dataRow = data[index];
         const newNote: { [key: string]: string | number | boolean | null } = {};
@@ -43,6 +47,7 @@ const EditAnnotationsPage: React.FC = (props) => {
     const [columnHeaders, setColumnHeaders] = useState<INeurosynthCell[]>([]);
     const [data, setData] = useState<(string | number | boolean | null)[][]>([]);
     const [saveChangesDisabled, setSaveChangesDisabled] = useState(true);
+    const context = useContext(GlobalContext);
 
     const params: {
         annotationId: string;
@@ -54,46 +59,50 @@ const EditAnnotationsPage: React.FC = (props) => {
             const getAnnotation = () => {
                 API.Services.AnnotationsService.annotationsIdGet(params.annotationId)
                     .then((res) => {
-                        console.log(res);
-                        return;
+                        if (!res?.data) return;
 
-                        // if (!res?.data) return;
+                        // temp solution until we handle annotationExport case
+                        const resData = res.data as AnnotationsApiResponse;
 
-                        // setAnnotation(res.data);
-                        // const notes = res.data.notes;
+                        setAnnotation(resData);
+                        const notes = resData.notes;
 
-                        // if (notes === undefined || notes.length === 0) {
-                        //     // setData([]);
-                        // } else {
-                        //     /**
-                        //      * Extract the keys from the first note obj. We can do this
-                        //      * because we assume that all notes in the db have the same keys
-                        //      *
-                        //      * if notes.length is not 0, then the note object should not be undefined
-                        //      */
-                        //     const noteKeys: string[] = Object.keys(notes[0].note as object);
-                        //     const firstNote = notes[0].note as { [key: string]: any };
+                        if (notes === undefined || notes.length === 0) {
+                            setData([]);
+                        } else {
+                            /**
+                             * Extract the keys from the first note obj. We can do this
+                             * because we assume that all notes in the db have the same keys
+                             *
+                             * if notes.length is not 0, then the note object should not be undefined
+                             */
+                            const noteKeys: string[] = Object.keys(notes[0].note as object);
+                            const firstNote = notes[0].note as { [key: string]: any };
 
-                        //     const rowHeaders = notes.map((note) => note.analysis || '');
-                        //     setRowHeaders(rowHeaders);
+                            const rowHeaders = notes.map((note) => note.analysis || '');
+                            setRowHeaders(rowHeaders);
 
-                        //     const columnLabelValues = noteKeys.map((noteKey) => ({
-                        //         value: noteKey,
-                        //         type: getType(firstNote[noteKey]),
-                        //     }));
-                        //     setColumnHeaders(columnLabelValues);
+                            const columnLabelValues = noteKeys.map((noteKey) => ({
+                                value: noteKey,
+                                type: getType(firstNote[noteKey]),
+                            }));
+                            setColumnHeaders(columnLabelValues);
 
-                        //     const spreadsheetValues: string[][] = notes.map((noteObj) => {
-                        //         const convertedNotes = noteKeys.map(
-                        //             (key) => (noteObj.note as any)[key]
-                        //         );
-                        //         return convertedNotes;
-                        //     });
-                        //     setData(spreadsheetValues);
-                        // }
+                            const spreadsheetValues: string[][] = notes.map((noteObj) => {
+                                const convertedNotes = noteKeys.map(
+                                    (key) => (noteObj.note as any)[key]
+                                );
+                                return convertedNotes;
+                            });
+                            setData(spreadsheetValues);
+                        }
                     })
                     .catch((err) => {
                         console.error(err);
+                        context.showSnackbar(
+                            'there was an error retrieving the annotation',
+                            SnackbarType.ERROR
+                        );
                     });
             };
             getAnnotation();
