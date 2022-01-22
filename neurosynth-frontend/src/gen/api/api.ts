@@ -681,13 +681,13 @@ export interface ReadOnly {
      * @type {string}
      * @memberof ReadOnly
      */
-    'created_at': string;
+    'created_at'?: string;
     /**
      * who owns the resource
      * @type {string}
      * @memberof ReadOnly
      */
-    'user': string | null;
+    'user'?: string | null;
 }
 /**
  * attributes of a study/published paper

@@ -1,7 +1,6 @@
 import { Box } from '@mui/system';
 import { EPropertyType } from '..';
-import { Paper } from '@mui/material';
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import HotTable from '@handsontable/react';
 import { CellProperties, GridSettings } from 'handsontable/settings';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -43,10 +42,7 @@ export interface INeurosynthSpreadsheetData {
 const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = (props) => {
     const HOT_LICENSE_KEY = 'non-commercial-and-evaluation';
     const ROW_HEIGHTS = 25;
-
-    const messageRef = useRef<HTMLElement>(null);
     const hotTableRef = useRef<HotTable>(null);
-    const [messageHeight, setMessageHeight] = useState(0);
 
     const getValidator = (type: EPropertyType) => {
         switch (type) {
@@ -94,7 +90,7 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = (props) => {
                 }
                 return value;
             case EPropertyType.NUMBER:
-                if (value === null) {
+                if (value === null || value === '') {
                     return 0;
                 }
                 return value;
@@ -107,10 +103,6 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = (props) => {
                 return value;
         }
     };
-
-    useLayoutEffect(() => {
-        setMessageHeight(messageRef.current?.offsetHeight || 0);
-    }, [messageRef, props.columnHeaderValues]);
 
     const handleOnHeaderClick = (
         event: MouseEvent,
@@ -142,10 +134,16 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = (props) => {
                     const oldValue = change[2];
                     const newValue = change[3];
 
+                    const isValidBoolInput =
+                        getType(oldValue) === EPropertyType.BOOLEAN &&
+                        isSpreadsheetBoolType(newValue);
+                    const numberRequiresChange =
+                        getType(oldValue) === EPropertyType.NUMBER && newValue === '';
+
                     if (
                         newValue === null ||
-                        (getType(oldValue) === EPropertyType.BOOLEAN && // this case exists because
-                            isSpreadsheetBoolType(newValue)) // we need to convert accepted values to booleans
+                        isValidBoolInput || // this case exists because we need to convert valid boolean values to booleans
+                        numberRequiresChange
                     ) {
                         updatedChanges.push([
                             change[0],
@@ -196,34 +194,15 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = (props) => {
         contextMenu: false,
     };
 
-    const getSpreadsheetContainerHeight = (): string => {
-        const extraHeaderHeight = 5;
-        return `${
-            (props.rowHeaderValues.length + 1) * ROW_HEIGHTS + messageHeight + extraHeaderHeight
-        }px`;
-    };
-
     return (
-        <>
-            <Box
-                component={Paper}
-                sx={{
-                    paddingLeft: '10px',
-                    paddingTop: '10px',
-                    paddingBottom: '10px',
-                    height: getSpreadsheetContainerHeight(),
-                    width: '100%',
-                    overflow: 'hidden',
-                }}
-            >
-                {props.columnHeaderValues.length === 0 && (
-                    <Box ref={messageRef} sx={{ color: 'warning.dark', padding: '1rem 0' }}>
-                        There are no notes for this annotation
-                    </Box>
-                )}
-                <HotTable ref={hotTableRef} settings={hotSettings} />
-            </Box>
-        </>
+        <Box component="div">
+            {props.columnHeaderValues.length === 0 && (
+                <Box sx={{ color: 'warning.dark', paddingBottom: '1rem' }}>
+                    There are no notes for this annotation yet
+                </Box>
+            )}
+            <HotTable ref={hotTableRef} settings={hotSettings} />
+        </Box>
     );
 };
 

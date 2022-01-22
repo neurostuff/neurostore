@@ -1,9 +1,14 @@
-import { Typography, Button, Box } from '@mui/material';
+import { Typography, Button, Box, Paper } from '@mui/material';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useParams } from 'react-router';
 import API, { AnnotationsApiResponse } from '../../../utils/api';
-import { IMetadataRowModel, NeurosynthSpreadsheet, TextEdit } from '../../../components';
+import {
+    ConfirmationDialog,
+    IMetadataRowModel,
+    NeurosynthSpreadsheet,
+    TextEdit,
+} from '../../../components';
 import { getType } from '../../../components/EditMetadata/EditMetadata';
 import EditStudyPageStyles from '../../Studies/EditStudyPage/EditStudyPage.styles';
 import EditAnnotationsPageStyles from './EditAnnotationsPage.styles';
@@ -39,6 +44,7 @@ export const convertToAnnotationObject = (
 };
 
 const EditAnnotationsPage: React.FC = (props) => {
+    const [confirmationIsOpen, setConfirmationIsOpen] = useState(false);
     const { getAccessTokenSilently } = useAuth0();
     const { handleToken, showSnackbar } = useContext(GlobalContext);
     const [annotation, setAnnotation] = useState<AnnotationsApiResponse>();
@@ -47,7 +53,6 @@ const EditAnnotationsPage: React.FC = (props) => {
     const [columnHeaders, setColumnHeaders] = useState<INeurosynthCell[]>([]);
     const [data, setData] = useState<(string | number | boolean | null)[][]>([]);
     const [saveChangesDisabled, setSaveChangesDisabled] = useState(true);
-    const context = useContext(GlobalContext);
 
     const params: {
         annotationId: string;
@@ -57,6 +62,8 @@ const EditAnnotationsPage: React.FC = (props) => {
     useEffect(() => {
         if (params.annotationId) {
             const getAnnotation = () => {
+                // TODO: annotationsIdGet is broken. Setting the export prop to true/false sets it to export mode
+                // We must keep it set to undefined as the backend reads it as falsey
                 API.Services.AnnotationsService.annotationsIdGet(params.annotationId)
                     .then((res) => {
                         if (!res?.data) return;
@@ -99,7 +106,7 @@ const EditAnnotationsPage: React.FC = (props) => {
                     })
                     .catch((err) => {
                         console.error(err);
-                        context.showSnackbar(
+                        showSnackbar(
                             'there was an error retrieving the annotation',
                             SnackbarType.ERROR
                         );
@@ -107,11 +114,40 @@ const EditAnnotationsPage: React.FC = (props) => {
             };
             getAnnotation();
         }
-    }, [params.annotationId]);
+    }, [params.annotationId, showSnackbar]);
 
-    const updateAnnotationDetails = (property: 'name' | 'description', updatedText: string) => {
-        // API.Services.AnnotationsService.annotationsIdPut(params.annotationId, )
-        alert('Editing annotation values still requires implementation');
+    const updateAnnotationDetails = async (
+        property: 'name' | 'description',
+        updatedText: string
+    ) => {
+        try {
+            const token = await getAccessTokenSilently();
+            handleToken(token);
+        } catch (exception) {
+            showSnackbar('there was an error', SnackbarType.ERROR);
+            console.error(exception);
+        }
+
+        API.Services.AnnotationsService.annotationsIdPut(params.annotationId, {
+            [property]: updatedText,
+        })
+            .then((res) => {
+                setAnnotation((prevState) => {
+                    if (!prevState) return prevState;
+                    return {
+                        ...prevState,
+                        [property]: res.data[property],
+                    };
+                });
+                showSnackbar(`updated the annotation ${property}`, SnackbarType.SUCCESS);
+            })
+            .catch((err) => {
+                console.error(err);
+                showSnackbar(
+                    `there was an error updating the annotation ${property}`,
+                    SnackbarType.ERROR
+                );
+            });
     };
 
     const handleAddColumn = (model: IMetadataRowModel) => {
@@ -188,7 +224,7 @@ const EditAnnotationsPage: React.FC = (props) => {
     };
 
     const handleOnSaveChanges = async (event: React.MouseEvent) => {
-        if (annotation) {
+        if (annotation && annotation.id) {
             const annotationObject = convertToAnnotationObject(annotation, columnHeaders, data);
 
             try {
@@ -199,30 +235,46 @@ const EditAnnotationsPage: React.FC = (props) => {
                 console.error(exception);
             }
 
-            // API.Services.AnnotationsService.annotationsIdPut(annotation.id, ).then(() => {
+            API.Services.AnnotationsService.annotationsIdPut(annotation.id, {
+                notes: annotationObject,
+            })
+                .then((res) => {
+                    showSnackbar('annotation updated', SnackbarType.SUCCESS);
+                    setSaveChangesDisabled(true);
+                })
+                .catch((err) => {
+                    console.error(err);
+                    showSnackbar('there was an error saving the annotation', SnackbarType.ERROR);
+                });
+        }
+    };
 
-            // }).catch(() => {
+    const handleCloseDialog = async (confirm: boolean | undefined) => {
+        setConfirmationIsOpen(false);
 
-            // }).finally(() => {
-
-            // })
-            setSaveChangesDisabled(false);
-            showSnackbar('annotation updated', SnackbarType.SUCCESS);
+        if (confirm && annotation && annotation.id) {
+            try {
+                const token = await getAccessTokenSilently();
+                handleToken(token);
+            } catch (exception) {
+                showSnackbar('there was an error', SnackbarType.ERROR);
+                console.error(exception);
+            }
+            API.Services.AnnotationsService.annotationsIdDelete(annotation.id)
+                .then(() => {
+                    history.push(`/datasets/${params.datasetId}`);
+                    showSnackbar('deleted annotation', SnackbarType.SUCCESS);
+                })
+                .catch((err) => {
+                    console.error(err);
+                    showSnackbar('there was an error deleting the annotation', SnackbarType.ERROR);
+                });
         }
     };
 
     return (
         <>
             <Box sx={EditAnnotationsPageStyles.stickyButtonContainer}>
-                <Button
-                    color="primary"
-                    onClick={handleOnSaveChanges}
-                    variant="contained"
-                    disabled={saveChangesDisabled}
-                    sx={{ ...EditStudyPageStyles.button, marginRight: '1rem' }}
-                >
-                    Save Changes
-                </Button>
                 <Button
                     color="error"
                     onClick={handleOnCancel}
@@ -233,47 +285,79 @@ const EditAnnotationsPage: React.FC = (props) => {
                 </Button>
             </Box>
 
-            <TextEdit
-                onSave={(updatedText) => updateAnnotationDetails('name', updatedText)}
-                textToEdit={annotation?.name || ''}
-                sx={{ fontSize: '2rem' }}
-            >
-                <Typography variant="h4">
-                    {annotation?.name || (
-                        <Box component="span" sx={{ color: 'warning.dark' }}>
-                            No name
-                        </Box>
-                    )}
-                </Typography>
-            </TextEdit>
-            <TextEdit
-                onSave={(updatedText) => updateAnnotationDetails('description', updatedText)}
-                textToEdit={annotation?.description || ''}
-            >
-                <Typography>
-                    {annotation?.description || (
-                        <Box component="span" sx={{ color: 'warning.dark' }}>
-                            No description
-                        </Box>
-                    )}
-                </Typography>
-            </TextEdit>
-
-            <Box sx={EditAnnotationsPageStyles.addColumnContainer}>
-                <AddMetadataRow
-                    keyPlaceholderText="Column Key"
-                    valuePlaceholderText="Default Value"
-                    errorMessage="All column keys must be unique"
-                    onAddMetadataRow={handleAddColumn}
-                />
+            <Box sx={{ marginBottom: '1rem' }}>
+                <TextEdit
+                    onSave={(updatedText) => updateAnnotationDetails('name', updatedText)}
+                    textToEdit={annotation?.name || ''}
+                    sx={{ fontSize: '2rem' }}
+                >
+                    <Typography variant="h4">
+                        {annotation?.name || (
+                            <Box component="span" sx={{ color: 'warning.dark' }}>
+                                No name
+                            </Box>
+                        )}
+                    </Typography>
+                </TextEdit>
+                <TextEdit
+                    onSave={(updatedText) => updateAnnotationDetails('description', updatedText)}
+                    textToEdit={annotation?.description || ''}
+                >
+                    <Typography>
+                        {annotation?.description || (
+                            <Box component="span" sx={{ color: 'warning.dark' }}>
+                                No description
+                            </Box>
+                        )}
+                    </Typography>
+                </TextEdit>
             </Box>
 
-            <NeurosynthSpreadsheet
-                onCellUpdates={handleCellUpdates}
-                onColumnDelete={handleColumnDelete}
-                data={data}
-                rowHeaderValues={rowHeaders}
-                columnHeaderValues={columnHeaders}
+            <Box component={Paper} sx={{ padding: '15px' }}>
+                <Box sx={EditAnnotationsPageStyles.addColumnContainer}>
+                    <AddMetadataRow
+                        keyPlaceholderText="Column Key"
+                        valuePlaceholderText="Default Value"
+                        errorMessage="All column keys must be unique"
+                        onAddMetadataRow={handleAddColumn}
+                    />
+                </Box>
+                <NeurosynthSpreadsheet
+                    onCellUpdates={handleCellUpdates}
+                    onColumnDelete={handleColumnDelete}
+                    data={data}
+                    rowHeaderValues={rowHeaders}
+                    columnHeaderValues={columnHeaders}
+                />
+
+                <Button
+                    color="primary"
+                    onClick={handleOnSaveChanges}
+                    variant="contained"
+                    disabled={saveChangesDisabled}
+                    sx={{
+                        ...EditStudyPageStyles.button,
+                        marginTop: '1rem',
+                    }}
+                >
+                    Save Annotation Changes
+                </Button>
+            </Box>
+
+            <Button
+                onClick={() => setConfirmationIsOpen(true)}
+                color="error"
+                variant="contained"
+                sx={{ marginTop: '2rem' }}
+            >
+                Delete this annotation
+            </Button>
+            <ConfirmationDialog
+                message="Are you sure you want to delete this annotation?"
+                confirmText="Yes"
+                rejectText="No"
+                isOpen={confirmationIsOpen}
+                onCloseDialog={handleCloseDialog}
             />
         </>
     );

@@ -273,7 +273,7 @@ const StudyPage: React.FC = (props) => {
                             </Tabs>
                         </Box>
                         <Box sx={StudyPageStyles.heightDefiningSibling}>
-                            {/* <DisplayAnalysis {...selectedAnalysis.analysis} /> */}
+                            <DisplayAnalysis {...selectedAnalysis.analysis} />
                         </Box>
                     </Box>
                 )}

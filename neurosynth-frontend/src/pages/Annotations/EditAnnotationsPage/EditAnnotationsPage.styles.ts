@@ -7,12 +7,10 @@ const EditAnnotationsPageStyles: Style = {
         marginBottom: '15px',
     },
     addColumnContainer: {
-        margin: '1rem 0',
         display: 'block',
-        height: '100%',
         width: '100%',
         borderCollapse: 'separate',
-        borderSpacing: '15px 0px',
+        borderSpacing: '15px 0',
     },
 };
 
