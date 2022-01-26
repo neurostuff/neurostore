@@ -81,7 +81,7 @@ class BaseView(MethodView):
     _linked = {}
 
     @classmethod
-    def update_or_create(cls, data, id=None, commit=True, patch=False):
+    def update_or_create(cls, data, id=None, commit=True):
         """
         scenerios:
         1. cloning a study
@@ -110,18 +110,6 @@ class BaseView(MethodView):
         id = id or data.get("id", None)  # want to handle case of {"id": "asdfasf"}
 
         only_ids = set(data.keys()) - set(['id']) == set()
-        if id is None and patch:
-            f_keys = [fk.parent.name for fk in list(cls._model.__table__.foreign_keys)]
-            if 'user_id' in f_keys:
-                f_keys.remove('user_id')
-            if set(f_keys) - set([k + '_id' for k in data.keys()]) != set():
-                raise ValueError("Cannot identify which resource to patch!")
-            q = cls._model.query
-            q = q.filter_by(user=current_user)
-
-            for f_key in f_keys:
-                q = q.filter(getattr(cls._model, f_key) == data[f_key.rstrip('_id')]['id'])
-            record = q.one()
         if id is None:
             record = cls._model()
             record.user = current_user
@@ -153,31 +141,26 @@ class BaseView(MethodView):
                 v = cls._linked[k].query.filter_by(id=v['id']).first()
 
             if k not in cls._nested and k not in ["id", "user"]:
-                if patch:
-                    value = getattr(record, k)
-                    if isinstance(value, dict):
-                        value.update(v)
-                        v = value
-                    elif isinstance(value, list):
-                        v += value
-                setattr(record, k, v)
+                try:
+                    setattr(record, k, v)
+                except AttributeError:
+                    print(k)
+                    raise AttributeError
 
         to_commit.append(record)
 
         # Update nested attributes recursively
         for field, res_name in cls._nested.items():
             ResCls = globals()[res_name]
-            # ResCls._model.query.filter_by(analysis_id=data.get(field)[0]['analysis']['id'], annotation_id=record.id).one()
             if data.get(field):
-                update_data
                 if isinstance(data.get(field), list):
                     nested = [
-                        ResCls.update_or_create(rec, commit=False, patch=patch)
+                        ResCls.update_or_create(rec, commit=False)
                         for rec in data.get(field)
                     ]
                     to_commit.extend(nested)
                 else:
-                    nested = ResCls.update_or_create(data.get(field), commit=False, patch=patch)
+                    nested = ResCls.update_or_create(data.get(field), commit=False)
                     to_commit.append(nested)
 
                 setattr(record, field, nested)
@@ -225,14 +208,6 @@ class ObjectView(BaseView):
         db.session.commit()
 
         return 204
-
-    def patch(self, id):
-        data = parser.parse(self.__class__._schema, request)
-
-        with db.session.no_autoflush:
-            record = self.__class__.update_or_create(data, id, patch=True)
-
-        return self.__class__._schema().dump(record)
 
 
 LIST_USER_ARGS = {
@@ -401,16 +376,6 @@ class AnnotationView(ObjectView):
         "dataset": Dataset,
     }
 
-    @classmethod
-    def get_nested_id(cls, rec, nested_rec, nested_model):
-        search_criteria = {
-            k + '_id': v['id'] for k, v in nested_rec.items() if nested_rec[k].get('id')
-        }
-        search_criteria['annotation_id'] = rec.id
-        record = nested_model.query.filter_by(**search_criteria).one_or_none()
-
-        return record.id if record else None
-
 
 @view_maker
 class StudyView(ObjectView):
@@ -506,16 +471,6 @@ class AnnotationListView(ListView):
         data['source_id'] = source_id
         data['source_updated_at'] = annotation.updated_at or annotation.created_at
         return data
-    
-    @classmethod
-    def get_nested_id(cls, rec, nested_rec, nested_model):
-        search_criteria = {
-            k + '_id': v['id'] for k, v in nested_rec.items() if nested_rec[k].get('id')
-        }
-        search_criteria['annotation_id'] = rec.id
-        record = nested_model.query.filter_by(**search_criteria).one_or_none()
-        
-        return record.id if record else None
 
 
 @view_maker
