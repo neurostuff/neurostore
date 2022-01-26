@@ -1,3 +1,4 @@
+from sqlalchemy import event
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship, backref
@@ -67,6 +68,7 @@ class Annotation(BaseMixin, db.Model):
     user = relationship('User', backref=backref('annotations'))
     dataset_id = db.Column(db.Text, db.ForeignKey('datasets.id'))
     metadata_ = db.Column(db.JSON)
+    annotation_analyses = relationship('AnnotationAnalysis', back_populates="annotation")
 
 
 class AnnotationAnalysis(BaseMixin, db.Model):
@@ -79,7 +81,7 @@ class AnnotationAnalysis(BaseMixin, db.Model):
 
     study = relationship("Study", backref=backref("annotation_analyses"))
     # analysis = relationship("Analysis", backref=backref("annotation_analyses"))
-    annotation = relationship("Annotation", backref=backref("annotation_analyses"))
+    annotation = relationship("Annotation", back_populates="annotation_analyses")
 
     user_id = db.Column(db.Text, db.ForeignKey('users.external_id'))
     user = relationship('User', backref=backref('annotation_analyses'))
@@ -251,3 +253,28 @@ class PointValue(BaseMixin, db.Model):
     point = relationship("Point", backref=backref("values"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("point_values"))
+
+
+def check_note_columns(annotation, annotation_analyses, collection_adapter):
+    "listen for the 'bulk_replace' event"
+
+    def _combine_compare_keys(aa1, aa2):
+        """compare keys """
+        aa1_dict = {aa.analysis.id: set(aa.note.keys()) for aa in aa1}
+        aa2_dict = {aa.analysis.id: set(aa.note.keys()) for aa in aa2}
+        aa_dict = {}
+        for key in aa1_dict.keys():
+            if key in aa2_dict:
+                aa_dict[key] = aa2_dict.pop(key)
+            else:
+                aa_dict[key] = aa1_dict[key]
+
+        aa_list = [*aa_dict.values(), *aa2_dict.values()]
+        return all([aa_list[0] == note for note in aa_list[1:]])
+
+    all_equal = _combine_compare_keys(annotation.annotation_analyses, annotation_analyses)
+    if not all_equal:
+        raise ValueError("All analyses must have the same annotations")
+
+
+event.listen(Annotation.annotation_analyses, 'bulk_replace', check_note_columns)
