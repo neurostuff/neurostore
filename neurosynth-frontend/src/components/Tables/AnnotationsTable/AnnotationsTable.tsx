@@ -9,7 +9,7 @@ const AnnotationsTable: React.FC<{ annotations: AnnotationsApiResponse[]; datase
     const history = useHistory();
 
     const handleRowClick = (id: string | number) => {
-        history.push(`/datasets/${props.datasetId}/annotation/${id}`);
+        history.push(`/datasets/${props.datasetId}/annotations/${id}`);
     };
 
     const dataForAnnotationsTable: IDisplayValuesTableModel = {

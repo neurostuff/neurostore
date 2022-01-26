@@ -162,14 +162,7 @@ const DatasetPage: React.FC = (props) => {
             API.Services.AnnotationsService.annotationsPost('neurosynth', undefined, {
                 name,
                 description,
-                notes: [
-                    {
-                        analysis: 'abc',
-                        study: 'abc',
-                        annotation: 'abc',
-                        note: {},
-                    },
-                ], // TODO: discuss how handling of annotations will work in order to stay up to date with studies that are added/removed
+                notes: notes, // TODO: discuss how handling of annotations will work in order to stay up to date with studies that are added/removed
                 dataset: params.datasetId,
             })
                 .then((res) => {

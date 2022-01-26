@@ -31,7 +31,7 @@
         "build:dev": "env-cmd -f .env.dev react-scripts build",
         "build:staging": "env-cmd -f .env.staging react-scripts build",
         "update-api-windows": "docker run --rm -v \"%cd%:/local\" openapitools/openapi-generator-cli generate -i https://raw.githubusercontent.com/neurostuff/neurostore-spec/main/neurostore-openapi.yml -g typescript-axios -o /local/src/gen/api",
-        "update-api-mac": "docker run --rm -v \"${PWD}:/local\" openapitools/openapi-generator-cli generate -i https://raw.githubusercontent.com/neurostuff/neurostore-spec/fix/resolve-frontend-typing-issues/neurostore-openapi.yml -g typescript-axios -o /local/src/gen/api",
+        "update-api-mac": "docker run --rm -v \"${PWD}:/local\" openapitools/openapi-generator-cli generate -i https://raw.githubusercontent.com/neurostuff/neurostore-spec/main/neurostore-openapi.yml -g typescript-axios -o /local/src/gen/api",
         "test": "react-scripts test",
         "test-with-coverage": "npm run test -- --coverage",
         "cy:e2e-headless": "cypress run",

@@ -12,6 +12,7 @@ import { CellChange, CellValue } from 'handsontable/common';
 import { textRenderer, numericRenderer } from 'handsontable/renderers';
 import Core from 'handsontable/core';
 import { getType } from '../EditMetadata/EditMetadata';
+import { useAuth0 } from '@auth0/auth0-react';
 
 export interface INeurosynthCell {
     value: string;
@@ -40,6 +41,7 @@ export interface INeurosynthSpreadsheetData {
 }
 
 const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = (props) => {
+    const { isAuthenticated } = useAuth0();
     const HOT_LICENSE_KEY = 'non-commercial-and-evaluation';
     const ROW_HEIGHTS = 25;
     const hotTableRef = useRef<HotTable>(null);
@@ -161,7 +163,7 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = (props) => {
         columns: props.columnHeaderValues.map((col) => {
             return {
                 copyable: false,
-                readOnly: col.type === EPropertyType.NONE,
+                readOnly: col.type === EPropertyType.NONE || !isAuthenticated,
                 type: col.type === EPropertyType.NUMBER ? 'numeric' : 'text',
                 className: styles[col.type],
                 allowInvalid: false,
@@ -186,7 +188,7 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = (props) => {
                 <div class="${styles['column-header']}"
                 >
                     <span class="${styles[col.type]}"><b>${col.value}</b></span>
-                    ${deleteIconStr}
+                    ${isAuthenticated ? deleteIconStr : '<span></span>'}
                 </div>
             `;
         }),
@@ -194,14 +196,25 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = (props) => {
         contextMenu: false,
     };
 
+    const getSpreadsheetContainerHeight = (): string => {
+        // extra height to take borders into account
+        const extraHeaderHeight = 5;
+        return `${(props.rowHeaderValues.length + 1) * ROW_HEIGHTS + extraHeaderHeight}px`;
+    };
+
     return (
         <Box component="div">
             {props.columnHeaderValues.length === 0 && (
-                <Box sx={{ color: 'warning.dark', paddingBottom: '1rem' }}>
+                <Box sx={{ color: 'warning.dark', height: '35px' }}>
                     There are no notes for this annotation yet
                 </Box>
             )}
-            <HotTable ref={hotTableRef} settings={hotSettings} />
+            <Box
+                component="div"
+                sx={{ overflowX: 'auto', height: getSpreadsheetContainerHeight() }}
+            >
+                <HotTable ref={hotTableRef} settings={hotSettings} />
+            </Box>
         </Box>
     );
 };

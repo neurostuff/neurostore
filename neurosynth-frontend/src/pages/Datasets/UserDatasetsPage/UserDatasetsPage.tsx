@@ -11,7 +11,7 @@ import API, { DatasetsApiResponse } from '../../../utils/api';
 const UserDatasetsPage: React.FC = (props) => {
     const { user, getAccessTokenSilently } = useAuth0();
     const [datasets, setDatasets] = useState<DatasetsApiResponse[]>();
-    const context = useContext(GlobalContext);
+    const { showSnackbar, handleToken } = useContext(GlobalContext);
     const [createDatasetDialogIsOpen, setCreateDatasetDialogIsOpen] = useState(false);
     const isMountedRef = useIsMounted();
 
@@ -46,9 +46,9 @@ const UserDatasetsPage: React.FC = (props) => {
     const handleCreateDataset = async (name: string, description: string) => {
         try {
             const token = await getAccessTokenSilently();
-            context.handleToken(token);
+            handleToken(token);
         } catch (exception) {
-            context.showSnackbar('there was an error', SnackbarType.ERROR);
+            showSnackbar('there was an error', SnackbarType.ERROR);
             console.error(exception);
         }
 
@@ -70,7 +70,8 @@ const UserDatasetsPage: React.FC = (props) => {
                 }
             })
             .catch((err) => {
-                console.log(err);
+                console.error(err);
+                showSnackbar('there was an error creating the dataset', SnackbarType.ERROR);
             });
     };
 

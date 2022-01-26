@@ -45,7 +45,7 @@ export const convertToAnnotationObject = (
 
 const EditAnnotationsPage: React.FC = (props) => {
     const [confirmationIsOpen, setConfirmationIsOpen] = useState(false);
-    const { getAccessTokenSilently } = useAuth0();
+    const { isAuthenticated, getAccessTokenSilently } = useAuth0();
     const { handleToken, showSnackbar } = useContext(GlobalContext);
     const [annotation, setAnnotation] = useState<AnnotationsApiResponse>();
     const history = useHistory();
@@ -314,14 +314,16 @@ const EditAnnotationsPage: React.FC = (props) => {
             </Box>
 
             <Box component={Paper} sx={{ padding: '15px' }}>
-                <Box sx={EditAnnotationsPageStyles.addColumnContainer}>
-                    <AddMetadataRow
-                        keyPlaceholderText="Column Key"
-                        valuePlaceholderText="Default Value"
-                        errorMessage="All column keys must be unique"
-                        onAddMetadataRow={handleAddColumn}
-                    />
-                </Box>
+                {isAuthenticated && (
+                    <Box sx={EditAnnotationsPageStyles.addColumnContainer}>
+                        <AddMetadataRow
+                            keyPlaceholderText="Column Key"
+                            valuePlaceholderText="Default Value"
+                            errorMessage="All column keys must be unique"
+                            onAddMetadataRow={handleAddColumn}
+                        />
+                    </Box>
+                )}
                 <NeurosynthSpreadsheet
                     onCellUpdates={handleCellUpdates}
                     onColumnDelete={handleColumnDelete}
@@ -329,26 +331,33 @@ const EditAnnotationsPage: React.FC = (props) => {
                     rowHeaderValues={rowHeaders}
                     columnHeaderValues={columnHeaders}
                 />
-
-                <Button
-                    color="primary"
-                    onClick={handleOnSaveChanges}
-                    variant="contained"
-                    disabled={saveChangesDisabled}
-                    sx={{
-                        ...EditStudyPageStyles.button,
-                        marginTop: '1rem',
-                    }}
-                >
-                    Save Annotation Changes
-                </Button>
+                {isAuthenticated && (
+                    <Box
+                        component="div"
+                        sx={{ width: '100%', display: 'flex', justifyContent: 'end' }}
+                    >
+                        <Button
+                            color="primary"
+                            onClick={handleOnSaveChanges}
+                            variant="contained"
+                            disabled={saveChangesDisabled}
+                            sx={{
+                                ...EditStudyPageStyles.button,
+                                marginTop: '1rem',
+                            }}
+                        >
+                            Save Annotation Changes
+                        </Button>
+                    </Box>
+                )}
             </Box>
 
             <Button
                 onClick={() => setConfirmationIsOpen(true)}
                 color="error"
                 variant="contained"
-                sx={{ marginTop: '2rem' }}
+                disabled={!isAuthenticated}
+                sx={{ ...EditStudyPageStyles.button, marginTop: '1rem' }}
             >
                 Delete this annotation
             </Button>

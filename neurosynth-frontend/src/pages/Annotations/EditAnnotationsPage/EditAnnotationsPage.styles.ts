@@ -3,8 +3,7 @@ import { Style } from '../../..';
 const EditAnnotationsPageStyles: Style = {
     stickyButtonContainer: {
         width: '100%',
-        padding: '10px 0px',
-        marginBottom: '15px',
+        marginBottom: '1rem',
     },
     addColumnContainer: {
         display: 'block',

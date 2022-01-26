@@ -9,9 +9,16 @@ const EditMetadataValue: React.FC<IEditMetadataValue> = (props) => {
         [EPropertyType.NUMBER]: (
             <TextField
                 sx={EditMetadataValueStyles.numberfield}
+                onBlur={(event) => {
+                    const num = event.target.value;
+                    if (num === '' || num === null || null === undefined) {
+                        handleEditMetadataValue(0);
+                    }
+                }}
                 onChange={(event) => {
                     const num = parseInt(event.target.value);
-                    if (!isNaN(num)) {
+                    // we want to allow empty textfield for numbers for a better user experience
+                    if (!isNaN(num) || event.target.value === '') {
                         handleEditMetadataValue(num);
                     }
                 }}
