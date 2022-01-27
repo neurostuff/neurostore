@@ -80,9 +80,10 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <IconButton
                             sx={{
-                                width: '50px',
-                                height: '50px',
-                                margin: '0 5px',
+                                width: '32px',
+                                height: '32px',
+                                padding: '4px',
+                                marginLeft: display === 'row' ? '5px' : '0px',
                                 display: isAuthenticated ? 'inline' : 'none',
                             }}
                             disabled={!isAuthenticated}
@@ -90,7 +91,7 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                                 setEditMode(true);
                             }}
                         >
-                            <EditIcon sx={{ fontSize: '1.5rem' }} color="primary" />
+                            <EditIcon sx={{ fontSize: '20px' }} color="primary" />
                         </IconButton>
                     </Box>
                 </Box>

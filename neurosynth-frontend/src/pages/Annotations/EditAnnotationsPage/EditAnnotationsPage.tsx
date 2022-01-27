@@ -285,13 +285,13 @@ const EditAnnotationsPage: React.FC = (props) => {
                 </Button>
             </Box>
 
-            <Box sx={{ marginBottom: '1rem' }}>
+            <Box sx={{ marginBottom: '0.5rem' }}>
                 <TextEdit
                     onSave={(updatedText) => updateAnnotationDetails('name', updatedText)}
                     textToEdit={annotation?.name || ''}
-                    sx={{ fontSize: '2rem' }}
+                    sx={{ fontSize: '1.5rem' }}
                 >
-                    <Typography variant="h4">
+                    <Typography variant="h5">
                         {annotation?.name || (
                             <Box component="span" sx={{ color: 'warning.dark' }}>
                                 No name
@@ -313,10 +313,11 @@ const EditAnnotationsPage: React.FC = (props) => {
                 </TextEdit>
             </Box>
 
-            <Box component={Paper} sx={{ padding: '15px' }}>
+            <Box component={Paper} sx={{ padding: '10px' }}>
                 {isAuthenticated && (
                     <Box sx={EditAnnotationsPageStyles.addColumnContainer}>
                         <AddMetadataRow
+                            allowNoneOption={false}
                             keyPlaceholderText="Column Key"
                             valuePlaceholderText="Default Value"
                             errorMessage="All column keys must be unique"
@@ -343,7 +344,7 @@ const EditAnnotationsPage: React.FC = (props) => {
                             disabled={saveChangesDisabled}
                             sx={{
                                 ...EditStudyPageStyles.button,
-                                marginTop: '1rem',
+                                marginTop: '0.5rem',
                             }}
                         >
                             Save Annotation Changes
@@ -357,7 +358,7 @@ const EditAnnotationsPage: React.FC = (props) => {
                 color="error"
                 variant="contained"
                 disabled={!isAuthenticated}
-                sx={{ ...EditStudyPageStyles.button, marginTop: '1rem' }}
+                sx={{ ...EditStudyPageStyles.button, marginTop: '0.5rem' }}
             >
                 Delete this annotation
             </Button>

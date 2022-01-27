@@ -10,6 +10,7 @@ export interface IEditMetadataModel {
 }
 
 export interface IAddMetadataRowModel {
+    allowNoneOption?: boolean;
     errorMessage?: string;
     keyPlaceholderText?: string;
     valuePlaceholderText?: string;
@@ -32,6 +33,7 @@ export interface IEditMetadataValue {
 
 export interface IToggleTypeModel {
     onToggle: (type: EPropertyType) => void;
+    allowNoneType?: boolean;
     type: EPropertyType;
 }
 

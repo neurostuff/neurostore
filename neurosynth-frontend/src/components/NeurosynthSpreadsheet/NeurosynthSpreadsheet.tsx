@@ -1,8 +1,8 @@
 import { Box } from '@mui/system';
 import { EPropertyType } from '..';
 import React, { useRef } from 'react';
-import HotTable from '@handsontable/react';
-import { CellProperties, GridSettings } from 'handsontable/settings';
+import HotTable, { HotColumn } from '@handsontable/react';
+import { GridSettings } from 'handsontable/settings';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { renderToString } from 'react-dom/server';
 import CellCoords from 'handsontable/3rdparty/walkontable/src/cell/coords';
@@ -10,7 +10,6 @@ import styles from './NeurosynthSpreadsheet.module.css';
 import { numericValidator } from 'handsontable/validators';
 import { CellChange, CellValue } from 'handsontable/common';
 import { textRenderer, numericRenderer } from 'handsontable/renderers';
-import Core from 'handsontable/core';
 import { getType } from '../EditMetadata/EditMetadata';
 import { useAuth0 } from '@auth0/auth0-react';
 
@@ -60,27 +59,6 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = (props) => {
         }
     };
 
-    const getRenderer = (type: EPropertyType) => {
-        switch (type) {
-            case EPropertyType.NUMBER:
-                return numericRenderer;
-            case EPropertyType.NONE:
-                return (
-                    instance: Core,
-                    td: HTMLTableCellElement,
-                    row: number,
-                    col: number,
-                    prop: string | number,
-                    value: any,
-                    cellProperties: CellProperties
-                ) => {
-                    td.innerHTML = 'null';
-                };
-            default:
-                return textRenderer;
-        }
-    };
-
     const getTransformedValue = (type: EPropertyType, value: any) => {
         switch (type) {
             case EPropertyType.BOOLEAN:
@@ -125,7 +103,6 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = (props) => {
         rowHeaders: props.rowHeaderValues,
         rowHeaderWidth: 150,
         afterSetDataAtCell: handleSetData,
-        autoRowSize: true,
         afterChange: (changes: CellChange[] | null) => {
             if (changes && hotTableRef.current && hotTableRef.current.hotInstance) {
                 const updatedChanges: [number, number, any][] = [];
@@ -168,7 +145,7 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = (props) => {
                 className: styles[col.type],
                 allowInvalid: false,
                 validator: getValidator(col.type),
-                renderer: getRenderer(col.type),
+                renderer: col.type === EPropertyType.NUMBER ? numericRenderer : textRenderer,
             };
         }),
         afterOnCellMouseDown: handleOnHeaderClick,
@@ -213,7 +190,7 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = (props) => {
                 component="div"
                 sx={{ overflowX: 'auto', height: getSpreadsheetContainerHeight() }}
             >
-                <HotTable ref={hotTableRef} settings={hotSettings} />
+                <HotTable ref={hotTableRef} settings={hotSettings}></HotTable>
             </Box>
         </Box>
     );

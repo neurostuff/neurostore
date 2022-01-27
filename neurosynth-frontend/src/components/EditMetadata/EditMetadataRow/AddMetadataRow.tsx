@@ -19,6 +19,14 @@ export const getStartValFromType = (type: EPropertyType): boolean | number | str
 };
 
 const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
+    const {
+        onAddMetadataRow,
+        keyPlaceholderText,
+        errorMessage,
+        valuePlaceholderText,
+        allowNoneOption = true,
+    } = props;
+
     const [currType, setCurrType] = useState(EPropertyType.STRING);
     const [isValid, setIsValid] = useState(true);
     const [metadataRow, setMetadataRow] = useState<IMetadataRowModel>({
@@ -38,7 +46,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
 
     const handleAdd = (event: React.MouseEvent) => {
         if (metadataRow.metadataKey.length > 0) {
-            const wasAdded = props.onAddMetadataRow(metadataRow);
+            const wasAdded = onAddMetadataRow(metadataRow);
 
             if (wasAdded) {
                 setMetadataRow({
@@ -75,18 +83,20 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
     return (
         <Box sx={EditMetadataRowStyles.tableRow}>
             <Box sx={{ display: 'flex' }}>
-                <ToggleType type={currType} onToggle={handleToggle} />
+                <ToggleType
+                    type={currType}
+                    onToggle={handleToggle}
+                    allowNoneType={allowNoneOption}
+                />
             </Box>
             <Box sx={{ ...EditMetadataRowStyles.tableCell, ...EditMetadataRowStyles.key }}>
                 <TextField
                     sx={EditMetadataRowStyles.addMetadataTextfield}
                     onChange={handleMetadataKeyChange}
                     variant="outlined"
-                    placeholder={props.keyPlaceholderText || 'New metadata key'}
+                    placeholder={keyPlaceholderText || 'New metadata key'}
                     fullWidth
-                    helperText={
-                        !isValid ? props.errorMessage || 'All metadata keys must be unique' : ''
-                    }
+                    helperText={!isValid ? errorMessage || 'All metadata keys must be unique' : ''}
                     error={!isValid}
                     value={metadataRow.metadataKey}
                 />
@@ -95,7 +105,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
             </Box>
             <Box sx={{ ...EditMetadataRowStyles.tableCell, width: '100%' }}>
                 <EditMetadataValue
-                    placeholderText={props.valuePlaceholderText}
+                    placeholderText={valuePlaceholderText}
                     onEditMetadataValue={handleMetadataValueChange}
                     value={metadataRow.metadataValue}
                     type={currType}
