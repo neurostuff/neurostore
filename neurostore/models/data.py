@@ -1,4 +1,4 @@
-from sqlalchemy import event, UniqueConstraint, PrimaryKeyConstraint
+from sqlalchemy import event
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship, backref
@@ -35,7 +35,6 @@ class BaseMixin(object):
 
 class Dataset(BaseMixin, db.Model):
     __tablename__ = "datasets"
-    __table_args__ = {'extend_existing': True}
 
     name = db.Column(db.String)
     description = db.Column(db.String)
@@ -55,18 +54,11 @@ class Dataset(BaseMixin, db.Model):
         secondary="dataset_studies",
         backref="datasets",
     )
-    annotations = relationship("Annotation", cascade="all, delete, delete-orphan", backref="dataset")
+    annotations = relationship("Annotation", cascade="all, delete", backref="dataset")
 
-
-class DatasetAnalysis(BaseMixin, db.Model):
-    __tablename__ = "dataset_analyses"
-    __table_args__ = {'extend_existing': True}
-    analysis_id = db.Column(db.ForeignKey('analyses.id', ondelete='CASCADE'))
-    dataset_id = db.Column(db.ForeignKey('datasets.id', ondelete='CASCADE'))
 
 class Annotation(BaseMixin, db.Model):
     __tablename__ = "annotations"
-    __table_args__ = {'extend_existing': True}
     name = db.Column(db.Text)
     description = db.Column(db.Text)
     source = db.Column(db.String)
@@ -76,30 +68,27 @@ class Annotation(BaseMixin, db.Model):
     user = relationship('User', backref=backref('annotations'))
     dataset_id = db.Column(db.Text, db.ForeignKey('datasets.id'))
     metadata_ = db.Column(db.JSON)
-    annotation_analyses = relationship('AnnotationAnalysis', cascade="all, delete, delete-orphan", backref=backref("annotation"))
+    annotation_analyses = relationship('AnnotationAnalysis', back_populates="annotation")
 
 
 class AnnotationAnalysis(BaseMixin, db.Model):
     __tablename__ = "annotation_analyses"
-    __table_args__ = {'extend_existing': True}
 
     annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"))
     analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id"))
     study_id = db.Column(db.Text, db.ForeignKey("studies.id"))
     note = db.Column(MutableDict.as_mutable(db.JSON))
-    dataset_id = db.Column(db.Text, db.ForeignKey("datasets.id"))
-    dataset_study_fk = db.Column(db.Text, db.ForeignKey("dataset_studies.dataset_study_pk"))
-    # dataset_study = relationship("DatasetStudy")
+
     study = relationship("Study", backref=backref("annotation_analyses"))
     # analysis = relationship("Analysis", backref=backref("annotation_analyses"))
-    # annotation = relationship("Annotation", back_populates="annotation_analyses")
+    annotation = relationship("Annotation", back_populates="annotation_analyses")
+
     user_id = db.Column(db.Text, db.ForeignKey('users.external_id'))
     user = relationship('User', backref=backref('annotation_analyses'))
 
 
 class Study(BaseMixin, db.Model):
     __tablename__ = "studies"
-    __table_args__ = {'extend_existing': True}
 
     name = db.Column(db.String)
     description = db.Column(db.String)
@@ -120,24 +109,16 @@ class Study(BaseMixin, db.Model):
         cascade="all, delete, delete-orphan",
     )
 
-class AnnotationAnalysisDatasetStudy(BaseMixin, db.Model):
-    __tablename__ = "annotation_analysis_dataset_studies"
-    __table_args__ = {'extend_existing': True}
-    dataset_study_id = db.Column(db.ForeignKey('dataset_studies.id', ondelete='CASCADE'))
-    annotation_analysis_id = db.Column(db.ForeignKey('annotation_analyses.id', ondelete='CASCADE'))
 
-class DatasetStudy(db.Model):
+class DatasetStudy(BaseMixin, db.Model):
     __tablename__ = "dataset_studies"
-    __table_args__ = {'extend_existing': True}
-    study_id = db.Column(db.ForeignKey('studies.id', ondelete='CASCADE'))
-    dataset_id = db.Column(db.ForeignKey('datasets.id', ondelete='CASCADE'))
-    PrimaryKeyConstraint('study_id', 'dataset_id', name='dataset_study_pk')
-    annotation_analyses = relationship(
-        "AnnotationAnalysis", backref=backref("dataset_study"), cascade="all, delete, delete-orphan"
-    )
+    study_id = db.Column(db.ForeignKey('studies.id', ondelete='CASCADE'), primary_key=True)
+    dataset_id = db.Column(db.ForeignKey('datasets.id', ondelete='CASCADE'), primary_key=True)
+
+
 class Analysis(BaseMixin, db.Model):
     __tablename__ = "analyses"
-    __table_args__ = {'extend_existing': True}
+
     study_id = db.Column(db.Text, db.ForeignKey("studies.id", ondelete='CASCADE'))
     name = db.Column(db.String)
     description = db.Column(db.String)
@@ -170,7 +151,7 @@ class Analysis(BaseMixin, db.Model):
 
 class Condition(BaseMixin, db.Model):
     __tablename__ = "conditions"
-    __table_args__ = {'extend_existing': True}
+
     name = db.Column(db.String)
     description = db.Column(db.String)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
@@ -182,7 +163,6 @@ class Condition(BaseMixin, db.Model):
 
 class AnalysisConditions(db.Model):
     __tablename__ = "analysis_conditions"
-    __table_args__ = {'extend_existing': True}
     weight = db.Column(db.Float)
     analysis_id = db.Column(
         db.Text, db.ForeignKey("analyses.id"), primary_key=True
