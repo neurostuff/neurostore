@@ -1,11 +1,11 @@
-from sqlalchemy import event
+from sqlalchemy import event, ForeignKeyConstraint
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 import shortuuid
 
-from ..database import db
+from ..database import Base, db
 
 
 def generate_id():
@@ -68,23 +68,22 @@ class Annotation(BaseMixin, db.Model):
     user = relationship('User', backref=backref('annotations'))
     dataset_id = db.Column(db.Text, db.ForeignKey('datasets.id'))
     metadata_ = db.Column(db.JSON)
-    annotation_analyses = relationship('AnnotationAnalysis', back_populates="annotation")
+    annotation_analyses = relationship('AnnotationAnalysis', backref=backref("annotation"))
 
+class DSAA(db.Model):
+    __tablename__ = 'wtf'
+    dataset_id = db.Column(db.Text, primary_key=True)
+    study_id = db.Column(db.Text, primary_key=True)
+    annotation_id = db.Column(db.Text, primary_key=True)
+    analysis_id = db.Column(db.Text, primary_key=True)
+    ForeignKeyConstraint(['dataset_id', 'study_id'], ['dataset_studies.dataset_id', 'dataset_studies.study_id'])
+    ForeignKeyConstraint(['annotation_id', 'analysis_id'], ['annotation_analyses.annotation_id', 'annotation_analyses.analysis_id'])
 
-class AnnotationAnalysis(BaseMixin, db.Model):
+class AnnotationAnalysis(db.Model):
     __tablename__ = "annotation_analyses"
-
-    annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"))
-    analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id"))
-    study_id = db.Column(db.Text, db.ForeignKey("studies.id"))
     note = db.Column(MutableDict.as_mutable(db.JSON))
-
-    study = relationship("Study", backref=backref("annotation_analyses"))
-    # analysis = relationship("Analysis", backref=backref("annotation_analyses"))
-    annotation = relationship("Annotation", back_populates="annotation_analyses")
-
-    user_id = db.Column(db.Text, db.ForeignKey('users.external_id'))
-    user = relationship('User', backref=backref('annotation_analyses'))
+    annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"), primary_key=True)
+    analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id"), primary_key=True)
 
 
 class Study(BaseMixin, db.Model):
@@ -110,11 +109,11 @@ class Study(BaseMixin, db.Model):
     )
 
 
-class DatasetStudy(BaseMixin, db.Model):
+class DatasetStudy(db.Model):
     __tablename__ = "dataset_studies"
     study_id = db.Column(db.ForeignKey('studies.id', ondelete='CASCADE'), primary_key=True)
     dataset_id = db.Column(db.ForeignKey('datasets.id', ondelete='CASCADE'), primary_key=True)
-
+    # annotation_analyses = relationship('AnnotationAnalysis', secondary='wtf', backref='dataset_study', cascade='all, delete')
 
 class Analysis(BaseMixin, db.Model):
     __tablename__ = "analyses"
