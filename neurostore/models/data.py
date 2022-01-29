@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 import shortuuid
 
-from ..database import Base, db
+from ..database import db
 
 
 def generate_id():
@@ -51,8 +51,9 @@ class Dataset(BaseMixin, db.Model):
     user = relationship("User", backref=backref("datasets"))
     studies = relationship(
         "Study",
+        cascade="all",
         secondary="dataset_studies",
-        backref="datasets",
+        backref=backref("datasets"),
     )
     annotations = relationship("Annotation", cascade="all, delete", backref="dataset")
 
@@ -69,7 +70,11 @@ class Annotation(BaseMixin, db.Model):
     dataset_id = db.Column(db.Text, db.ForeignKey('datasets.id'))
     metadata_ = db.Column(db.JSON)
     public = db.Column(db.Boolean, default=True)
-    annotation_analyses = relationship('AnnotationAnalysis', backref=backref("annotation"), cascade='all, delete-orphan')
+    annotation_analyses = relationship(
+        'AnnotationAnalysis',
+        backref=backref("annotation"),
+        cascade='all, delete-orphan'
+    )
 
 
 class AnnotationAnalysis(db.Model):
@@ -81,11 +86,12 @@ class AnnotationAnalysis(db.Model):
             ondelete="CASCADE"),
     )
 
-    study_id = db.Column(db.Text)
-    dataset_id = db.Column(db.Text)
+    study_id = db.Column(db.Text, nullable=False)
+    dataset_id = db.Column(db.Text, nullable=False)
     annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"), primary_key=True)
     analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id"), primary_key=True)
     note = db.Column(MutableDict.as_mutable(db.JSON))
+
 
 class Study(BaseMixin, db.Model):
     __tablename__ = "studies"
@@ -114,7 +120,7 @@ class DatasetStudy(db.Model):
     __tablename__ = "dataset_studies"
     study_id = db.Column(db.ForeignKey('studies.id', ondelete='CASCADE'), primary_key=True)
     dataset_id = db.Column(db.ForeignKey('datasets.id', ondelete='CASCADE'), primary_key=True)
-    study = relationship("Study", backref=backref("dataset_study"))
+    study = relationship("Study", backref=backref("dataset_study", cascade="all, delete-orphan"))
     dataset = relationship("Dataset", backref=backref("dataset_study"))
     annotation_analyses = relationship(
         "AnnotationAnalysis",
