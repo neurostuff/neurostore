@@ -83,10 +83,12 @@ def test_study_removal_from_dataset(auth_client, session, user_data):
     annotation_id = annotations.json['results'][0]['id']
     annotation = auth_client.get(f"/api/annotations/{annotation_id}")
     # remove study from dataset
-    studies = dataset.json['studies']
+    dataset.json['studies'].pop()
 
     # update dataset
-    auth_client.put(f"/api/datasets/{dataset_id}", data={'studies': studies})
+    auth_client.put(
+        f"/api/datasets/{dataset_id}", data={'studies': dataset.json['studies']}
+    )
 
     # test if annotations were updated
     updated_annotation = auth_client.get(f"/api/annotations/{annotation_id}")
