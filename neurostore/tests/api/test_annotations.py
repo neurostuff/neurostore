@@ -72,6 +72,29 @@ def test_single_analysis_delete(auth_client, user_data):
     assert (len(annotation.json['notes']) - 1) == (len(updated_annotation.json['notes']))
 
 
+def test_study_removal_from_dataset(auth_client, session, user_data):
+    user = User.query.filter_by(name="user1").first()
+    # get relevant dataset
+    datasets = auth_client.get(f"/api/datasets/?user_id={user.external_id}")
+    dataset_id = datasets.json['results'][0]['id']
+    dataset = auth_client.get(f"/api/datasets/{dataset_id}")
+    # get relevant annotation
+    annotations = auth_client.get(f"/api/annotations/?dataset_id={dataset_id}")
+    annotation_id = annotations.json['results'][0]['id']
+    annotation = auth_client.get(f"/api/annotations/{annotation_id}")
+    # remove study from dataset
+    studies = dataset.json['studies']
+
+    # update dataset
+    auth_client.put(f"/api/datasets/{dataset_id}", data={'studies': studies})
+
+    # test if annotations were updated
+    updated_annotation = auth_client.get(f"/api/annotations/{annotation_id}")
+
+    assert updated_annotation.status_code == 200
+    assert (len(annotation.json['notes']) - 1) == (len(updated_annotation.json['notes']))
+
+
 def test_mismatched_notes(auth_client, ingest_neurosynth):
     dset = Dataset.query.first()
     # y for x in non_flat for y in x
@@ -100,6 +123,29 @@ def test_mismatched_notes(auth_client, ingest_neurosynth):
         auth_client.put(f"/api/annotations/{annot.json['id']}", data=bad_payload)
 
 
+# test push analysis id that does not exist
+# Handle error better
+def test_put_nonexistent_analysis(auth_client, ingest_neurosynth):
+    dset = Dataset.query.first()
+    # y for x in non_flat for y in x
+    data = [
+        {'study': s.id, 'analysis': a.id, 'note': {'foo': a.id, 'doo': s.id}}
+        for s in dset.studies for a in s.analyses
+    ]
+    payload = {'dataset': dset.id, 'notes': data, 'name': 'mah notes'}
+
+    # proper post
+    annot = auth_client.post('/api/annotations/', data=payload)
+
+    # have to pass all the notes even if only updating one attribute
+    new_value = 'something new'
+    data[0]['analysis'] = new_value
+    bad_payload = {'notes': data}
+
+    with pytest.raises(Exception):
+        auth_client.put(f"/api/annotations/{annot.json['id']}", data=bad_payload)
+
+
 def test_correct_note_overwrite(auth_client, ingest_neurosynth):
     dset = Dataset.query.first()
     # y for x in non_flat for y in x
@@ -112,18 +158,15 @@ def test_correct_note_overwrite(auth_client, ingest_neurosynth):
     # proper post
     annot = auth_client.post('/api/annotations/', data=payload)
 
-    # update "doo" and only send "doo"
-    doo_data = data[1]
     # have to pass all the notes even if only updating one attribute
     new_value = 'something new'
-    doo_data['note']['doo'] = new_value
-    doo_payload = {'notes': [doo_data]}
+    data[0]['note']['doo'] = new_value
+    doo_payload = {'notes': data}
     put_resp = auth_client.put(f"/api/annotations/{annot.json['id']}", data=doo_payload)
 
     get_resp = auth_client.get(f"/api/annotations/{annot.json['id']}")
 
-    # put overwrites what is in notes so all other entries are removed
-    assert len(put_resp.json['notes']) == 1
+    assert len(put_resp.json['notes']) == len(data)
     assert get_resp.json == put_resp.json
     assert (
         get_resp.json['notes'][0]['note']['doo'] ==
