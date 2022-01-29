@@ -68,23 +68,24 @@ class Annotation(BaseMixin, db.Model):
     user = relationship('User', backref=backref('annotations'))
     dataset_id = db.Column(db.Text, db.ForeignKey('datasets.id'))
     metadata_ = db.Column(db.JSON)
-    annotation_analyses = relationship('AnnotationAnalysis', backref=backref("annotation"))
+    public = db.Column(db.Boolean, default=True)
+    annotation_analyses = relationship('AnnotationAnalysis', backref=backref("annotation"), cascade='all, delete-orphan')
 
-class DSAA(db.Model):
-    __tablename__ = 'wtf'
-    dataset_id = db.Column(db.Text, primary_key=True)
-    study_id = db.Column(db.Text, primary_key=True)
-    annotation_id = db.Column(db.Text, primary_key=True)
-    analysis_id = db.Column(db.Text, primary_key=True)
-    ForeignKeyConstraint(['dataset_id', 'study_id'], ['dataset_studies.dataset_id', 'dataset_studies.study_id'])
-    ForeignKeyConstraint(['annotation_id', 'analysis_id'], ['annotation_analyses.annotation_id', 'annotation_analyses.analysis_id'])
 
 class AnnotationAnalysis(db.Model):
     __tablename__ = "annotation_analyses"
-    note = db.Column(MutableDict.as_mutable(db.JSON))
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ('study_id', 'dataset_id'),
+            ('dataset_studies.study_id', 'dataset_studies.dataset_id'),
+            ondelete="CASCADE"),
+    )
+
+    study_id = db.Column(db.Text)
+    dataset_id = db.Column(db.Text)
     annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"), primary_key=True)
     analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id"), primary_key=True)
-
+    note = db.Column(MutableDict.as_mutable(db.JSON))
 
 class Study(BaseMixin, db.Model):
     __tablename__ = "studies"
@@ -113,7 +114,14 @@ class DatasetStudy(db.Model):
     __tablename__ = "dataset_studies"
     study_id = db.Column(db.ForeignKey('studies.id', ondelete='CASCADE'), primary_key=True)
     dataset_id = db.Column(db.ForeignKey('datasets.id', ondelete='CASCADE'), primary_key=True)
-    # annotation_analyses = relationship('AnnotationAnalysis', secondary='wtf', backref='dataset_study', cascade='all, delete')
+    study = relationship("Study", backref=backref("dataset_study"))
+    dataset = relationship("Dataset", backref=backref("dataset_study"))
+    annotation_analyses = relationship(
+        "AnnotationAnalysis",
+        cascade='all, delete-orphan',
+        backref=backref("dataset_study")
+    )
+
 
 class Analysis(BaseMixin, db.Model):
     __tablename__ = "analyses"
