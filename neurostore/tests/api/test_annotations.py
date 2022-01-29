@@ -32,7 +32,7 @@ def test_get_annotations(auth_client, ingest_neurosynth):
 
     assert annot_export.status_code == 200
 
-    df = pd.read_csv(StringIO(annot_export.json['annotation']))
+    df = pd.read_csv(StringIO(annot_export.json['annotation_csv']))
 
     assert isinstance(df, pd.DataFrame)
 

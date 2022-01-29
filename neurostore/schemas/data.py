@@ -242,6 +242,7 @@ class AnnotationSchema(BaseDataSchema):
     dataset_id = fields.String(data_key='dataset')
     annotation_analyses = fields.Nested(AnnotationAnalysisSchema, data_key="notes", many=True)
     annotation = fields.String(dump_only=True)
+    annotation_csv = fields.String(dump_only=True)
     source = fields.String(dump_only=True, db_only=True, allow_none=True)
     source_id = fields.String(dump_only=True, db_only=True, allow_none=True)
     source_updated_at = fields.DateTime(dump_only=True, db_only=True, allow_none=True)
@@ -282,7 +283,7 @@ class AnnotationSchema(BaseDataSchema):
             metadata = {**metadata, **data.metadata_} if data.metadata_ else metadata
             export_data = {
                 "metadata_": metadata,
-                "annotation": annotations
+                "annotation_csv": annotations
             }
 
             return export_data
