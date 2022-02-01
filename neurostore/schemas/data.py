@@ -223,6 +223,8 @@ class AnnotationAnalysisSchema(BaseDataSchema):
     study_id = fields.String(data_key="study")
     dataset_id = fields.String(data_key="dataset", load_only=True)
     dataset_study = fields.Nested(DatasetStudySchema)
+    study_name = fields.Function(lambda aa: aa.dataset_study.study.name, dump_only=True)
+    analysis_name = fields.Function(lambda aa: aa.analysis.name, dump_only=True)
 
     @post_load
     def add_id(self, data, **kwargs):
