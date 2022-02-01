@@ -13,13 +13,11 @@ import DisplayValuesTableRow from './DisplayValuesTableRow/DisplayValuesTableRow
 
 const DisplayValuesTable: React.FC<IDisplayValuesTableModel> = (props) => {
     const noRowData = !props.rowData || props.rowData.length === 0;
+    if (props.selectable && !props.onValueSelected)
+        throw new Error('table is selectable but handler is not defined');
 
     const handleRowSelect = (selectedVal: string | number) => {
-        if (props.selectable) {
-            if (!props.onValueSelected)
-                throw new Error('table is selectable but handler is not defined');
-            props.onValueSelected(selectedVal);
-        }
+        if (props.selectable && props.onValueSelected) props.onValueSelected(selectedVal);
     };
 
     return (

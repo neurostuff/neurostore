@@ -39,7 +39,7 @@ describe('ConfirmationDialog', () => {
         expect(mockOnClose).toBeCalledWith(false);
     });
 
-    it('should signal false when cancel is clicked', () => {
+    it('should signal true when confirm is clicked', () => {
         render(
             <ConfirmationDialog
                 isOpen={true}

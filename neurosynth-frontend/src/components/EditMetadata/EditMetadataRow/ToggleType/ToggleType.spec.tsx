@@ -89,4 +89,13 @@ describe('ToggleType Component', () => {
         // evaluate
         expect(mockOnToggle).toBeCalledWith(EPropertyType.NONE);
     });
+
+    it('should remove the none type', () => {
+        render(
+            <ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} allowNoneType={false} />
+        );
+
+        const noneOption = screen.queryByText('NONE');
+        expect(noneOption).toBeFalsy();
+    });
 });

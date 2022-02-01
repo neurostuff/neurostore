@@ -5,15 +5,17 @@ import { useParams } from 'react-router';
 import API, { AnnotationsApiResponse } from '../../../utils/api';
 import {
     ConfirmationDialog,
+    EPropertyType,
     IMetadataRowModel,
-    NeurosynthSpreadsheet,
+    INeurosynthCell,
+    NeurosynthLoader,
+    NeurosynthSpreadsheetWrapper,
     TextEdit,
 } from '../../../components';
 import { getType } from '../../../components/EditMetadata/EditMetadata';
 import EditStudyPageStyles from '../../Studies/EditStudyPage/EditStudyPage.styles';
 import EditAnnotationsPageStyles from './EditAnnotationsPage.styles';
 import AddMetadataRow from '../../../components/EditMetadata/EditMetadataRow/AddMetadataRow';
-import { INeurosynthCell } from '../../../components/NeurosynthSpreadsheet/NeurosynthSpreadsheet';
 import { CellChange } from 'handsontable/common';
 import { AnnotationNote } from '../../../gen/api';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -21,26 +23,27 @@ import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 
 export const convertToAnnotationObject = (
     annotation: AnnotationsApiResponse,
-    columnHeaders: INeurosynthCell[],
-    data: (string | number | boolean | null)[][]
+    data: { [key: string]: string | boolean | number }[]
 ): AnnotationNote[] => {
-    // TODO: discuss this approach of creating a separate interface for annotation notes
-    // there seems to be a bug where types defined are being generated as Array<object>.
-    // we must use a ref for it to be recognized.
-    // https://github.com/OpenAPITools/openapi-generator/issues/7802
-    return (annotation.notes || []).map((annotation, index) => {
-        const dataRow = data[index];
-        const newNote: { [key: string]: string | number | boolean | null } = {};
-        columnHeaders.forEach((columnHeader, columnIndex) => {
-            newNote[columnHeader.value] = dataRow[columnIndex];
-        });
-
+    return (annotation.notes || []).map((annotationNote, index) => {
         return {
-            analysis: annotation.analysis,
-            study: annotation.study,
-            note: newNote,
+            analysis: annotationNote.analysis,
+            study: annotationNote.study,
+            note: data[index],
         };
     });
+};
+
+export const getTypeForColumn = (columnKey: string, notes: AnnotationNote[]): EPropertyType => {
+    for (let i = 0; i < notes.length; i++) {
+        const currentNote = notes[i].note || null;
+        const value = (currentNote as any)[columnKey] as string | boolean | number | null;
+        if (value !== null) {
+            // typescript complains here that string cannot be used to index type {} so we must cast it
+            return getType(value);
+        }
+    }
+    return EPropertyType.STRING;
 };
 
 const EditAnnotationsPage: React.FC = (props) => {
@@ -50,8 +53,10 @@ const EditAnnotationsPage: React.FC = (props) => {
     const [annotation, setAnnotation] = useState<AnnotationsApiResponse>();
     const history = useHistory();
     const [rowHeaders, setRowHeaders] = useState<string[]>([]);
-    const [columnHeaders, setColumnHeaders] = useState<INeurosynthCell[]>([]);
-    const [data, setData] = useState<(string | number | boolean | null)[][]>([]);
+    const [columnHeaders, setColumnHeaders] = useState<INeurosynthCell[]>();
+
+    const [spreadsheetData, setSpreadsheetData] =
+        useState<{ [key: string]: string | boolean | number }[]>();
     const [saveChangesDisabled, setSaveChangesDisabled] = useState(true);
 
     const params: {
@@ -66,43 +71,41 @@ const EditAnnotationsPage: React.FC = (props) => {
                 // We must keep it set to undefined as the backend reads it as falsey
                 API.Services.AnnotationsService.annotationsIdGet(params.annotationId)
                     .then((res) => {
-                        if (!res?.data) return;
-
-                        // temp solution until we handle annotationExport case
+                        // temp solution to handle the annotationExport case
                         const resData = res.data as AnnotationsApiResponse;
 
-                        setAnnotation(resData);
-                        const notes = resData.notes;
-
-                        if (notes === undefined || notes.length === 0) {
-                            setData([]);
-                        } else {
-                            /**
-                             * Extract the keys from the first note obj. We can do this
-                             * because we assume that all notes in the db have the same keys
-                             *
-                             * if notes.length is not 0, then the note object should not be undefined
-                             */
-                            const noteKeys: string[] = Object.keys(notes[0].note as object);
-                            const firstNote = notes[0].note as { [key: string]: any };
-
-                            const rowHeaders = notes.map((note) => note.analysis || '');
-                            setRowHeaders(rowHeaders);
-
-                            const columnLabelValues = noteKeys.map((noteKey) => ({
-                                value: noteKey,
-                                type: getType(firstNote[noteKey]),
-                            }));
-                            setColumnHeaders(columnLabelValues);
-
-                            const spreadsheetValues: string[][] = notes.map((noteObj) => {
-                                const convertedNotes = noteKeys.map(
-                                    (key) => (noteObj.note as any)[key]
-                                );
-                                return convertedNotes;
-                            });
-                            setData(spreadsheetValues);
+                        if (!resData?.notes || resData.notes.length === 0) {
+                            setSpreadsheetData([]);
+                            return;
                         }
+
+                        const notes = resData.notes;
+                        setAnnotation(resData);
+
+                        /**
+                         * Extract the keys from the first note obj. We can do this
+                         * because we assume that all notes in the db have the same keys
+                         *
+                         * if notes.length is not 0, then the note object should not be undefined
+                         */
+                        const noteKeys: string[] = Object.keys(notes[0].note as object);
+
+                        const rowHeaders = notes.map((note) => note.analysis || '');
+                        setRowHeaders(rowHeaders);
+
+                        const columnLabelValues = noteKeys.map((noteKey) => ({
+                            value: noteKey,
+                            type: getTypeForColumn(noteKey, notes),
+                        }));
+                        setColumnHeaders(columnLabelValues);
+
+                        const spreadsheetValues: {
+                            [key: string]: string | number | boolean;
+                        }[] = notes.map(
+                            (noteObj) =>
+                                noteObj.note as { [key: string]: string | number | boolean }
+                        );
+                        setSpreadsheetData(spreadsheetValues);
                     })
                     .catch((err) => {
                         console.error(err);
@@ -163,15 +166,15 @@ const EditAnnotationsPage: React.FC = (props) => {
             return newState;
         });
 
-        setData((prevState) => {
+        setSpreadsheetData((prevState) => {
             if (!prevState) return prevState;
             const newState = [...prevState];
 
             for (let i = 0; i < newState.length; i++) {
-                const updatedRow = [...newState[i], model.metadataValue];
+                const updatedRow = { ...newState[i] };
+                updatedRow[model.metadataKey] = model.metadataValue;
                 newState[i] = updatedRow;
             }
-
             return newState;
         });
 
@@ -184,20 +187,19 @@ const EditAnnotationsPage: React.FC = (props) => {
         history.push(`/datasets/${params.datasetId}`);
     };
 
-    const handleColumnDelete = useCallback((colDeleted: number) => {
+    const handleColumnDelete = useCallback((colIndexDeleted: number, colDeleted: string) => {
         setColumnHeaders((prevState) => {
             if (!prevState) return prevState;
             const newState = [...prevState];
-            newState.splice(colDeleted, 1);
+            newState.splice(colIndexDeleted, 1);
             return newState;
         });
-        setData((prevState) => {
+        setSpreadsheetData((prevState) => {
             if (!prevState) return prevState;
             const newState = [...prevState];
             for (let i = 0; i < newState.length; i++) {
-                const oldRow = newState[i];
-                const newRow = [...oldRow];
-                newRow.splice(colDeleted, 1);
+                const newRow = { ...newState[i] };
+                delete newRow[colDeleted];
                 newState[i] = newRow;
             }
             return newState;
@@ -205,28 +207,28 @@ const EditAnnotationsPage: React.FC = (props) => {
         setSaveChangesDisabled(false);
     }, []);
 
-    const handleCellUpdates = (changes: CellChange[]) => {
+    const handleCellUpdates = useCallback((changes: CellChange[]) => {
         if (!changes || changes.length === 0) return;
 
-        setData((prevState) => {
+        setSpreadsheetData((prevState) => {
+            if (!prevState) return prevState;
             const newState = [...prevState];
             changes.forEach((change) => {
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                const [row, col, oldCellVal, newCellVal] = change;
+                const [row, colStringName, oldCellVal, newCellVal] = change;
                 const oldRow = newState[row];
-                const updatedRow = [...oldRow];
-                updatedRow[col as number] = newCellVal;
+                const updatedRow = { ...oldRow };
+                updatedRow[colStringName] = newCellVal;
                 newState[row] = updatedRow;
             });
             return newState;
         });
         setSaveChangesDisabled(false);
-    };
+    }, []);
 
     const handleOnSaveChanges = async (event: React.MouseEvent) => {
-        if (annotation && annotation.id) {
-            const annotationObject = convertToAnnotationObject(annotation, columnHeaders, data);
-
+        if (annotation && annotation.id && spreadsheetData) {
+            const annotationObject = convertToAnnotationObject(annotation, spreadsheetData);
             try {
                 const token = await getAccessTokenSilently();
                 handleToken(token);
@@ -234,7 +236,6 @@ const EditAnnotationsPage: React.FC = (props) => {
                 showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(exception);
             }
-
             API.Services.AnnotationsService.annotationsIdPut(annotation.id, {
                 notes: annotationObject,
             })
@@ -313,7 +314,13 @@ const EditAnnotationsPage: React.FC = (props) => {
                 </TextEdit>
             </Box>
 
-            <Box component={Paper} sx={{ padding: '10px' }}>
+            <Box
+                component={Paper}
+                sx={{
+                    padding: '10px',
+                    ...(saveChangesDisabled ? {} : EditAnnotationsPageStyles.unsavedChanges),
+                }}
+            >
                 {isAuthenticated && (
                     <Box sx={EditAnnotationsPageStyles.addColumnContainer}>
                         <AddMetadataRow
@@ -325,13 +332,17 @@ const EditAnnotationsPage: React.FC = (props) => {
                         />
                     </Box>
                 )}
-                <NeurosynthSpreadsheet
-                    onCellUpdates={handleCellUpdates}
-                    onColumnDelete={handleColumnDelete}
-                    data={data}
-                    rowHeaderValues={rowHeaders}
-                    columnHeaderValues={columnHeaders}
-                />
+                <NeurosynthLoader loaded={!!(spreadsheetData && columnHeaders && rowHeaders)}>
+                    {spreadsheetData && columnHeaders && rowHeaders && (
+                        <NeurosynthSpreadsheetWrapper
+                            onCellUpdates={handleCellUpdates}
+                            onColumnDelete={handleColumnDelete}
+                            data={spreadsheetData}
+                            rowHeaderValues={rowHeaders}
+                            columnHeaderValues={columnHeaders}
+                        />
+                    )}
+                </NeurosynthLoader>
                 {isAuthenticated && (
                     <Box
                         component="div"

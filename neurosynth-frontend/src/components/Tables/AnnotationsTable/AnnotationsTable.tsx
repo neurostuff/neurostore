@@ -24,7 +24,13 @@ const AnnotationsTable: React.FC<{ annotations: AnnotationsApiResponse[]; datase
         paper: true,
         rowData: props.annotations.map((annotation) => ({
             uniqueKey: annotation.id as string,
-            columnValues: [{ value: annotation.name }, { value: annotation.description }],
+            columnValues: [
+                { value: annotation.name ?? 'No name', shouldHighlightNoData: !annotation.name },
+                {
+                    value: annotation.description ?? 'No description',
+                    shouldHighlightNoData: !annotation.description,
+                },
+            ],
         })),
     };
 

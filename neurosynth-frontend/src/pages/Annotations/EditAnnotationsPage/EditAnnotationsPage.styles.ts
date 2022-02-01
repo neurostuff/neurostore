@@ -11,6 +11,9 @@ const EditAnnotationsPageStyles: Style = {
         borderCollapse: 'separate',
         borderSpacing: '15px 0',
     },
+    unsavedChanges: {
+        border: '2px solid orange',
+    },
 };
 
 export default EditAnnotationsPageStyles;

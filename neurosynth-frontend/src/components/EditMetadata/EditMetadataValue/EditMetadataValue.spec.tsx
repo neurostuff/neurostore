@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EPropertyType } from '..';
 import { MockThemeProvider } from '../../../testing/helpers';
@@ -36,7 +36,7 @@ describe('EditMetadataValue Component', () => {
     });
 
     describe('EditMetadataNumber Component', () => {
-        beforeEach(() => {
+        it('should render the editMetadataNumber component', () => {
             render(
                 <MockThemeProvider>
                     <EditMetadataValue
@@ -46,23 +46,68 @@ describe('EditMetadataValue Component', () => {
                     />
                 </MockThemeProvider>
             );
-        });
-
-        it('should render the editMetadataNumber component', () => {
             const numberInput = screen.getByRole('spinbutton');
             expect(numberInput).toBeInTheDocument();
         });
 
         it('should emit the entered numeric value', () => {
+            render(
+                <MockThemeProvider>
+                    <EditMetadataValue
+                        value={0}
+                        type={EPropertyType.NUMBER}
+                        onEditMetadataValue={onEditMock}
+                    />
+                </MockThemeProvider>
+            );
             const numberInput = screen.getByRole('spinbutton');
             userEvent.type(numberInput, '1');
             expect(onEditMock).toBeCalledWith(1);
         });
 
         it('should not emit for non numeric inputs', () => {
+            render(
+                <MockThemeProvider>
+                    <EditMetadataValue
+                        value={''}
+                        type={EPropertyType.NUMBER}
+                        onEditMetadataValue={onEditMock}
+                    />
+                </MockThemeProvider>
+            );
             const numberInput = screen.getByRole('spinbutton');
-            userEvent.type(numberInput, 'a');
+            userEvent.type(numberInput, 'abcdf');
             expect(onEditMock).not.toBeCalled();
+        });
+
+        it('should accept empty inputs', () => {
+            render(
+                <MockThemeProvider>
+                    <EditMetadataValue
+                        value={0}
+                        type={EPropertyType.NUMBER}
+                        onEditMetadataValue={onEditMock}
+                    />
+                </MockThemeProvider>
+            );
+            const numberInput = screen.getByRole('spinbutton');
+            userEvent.clear(numberInput);
+            expect(onEditMock).toBeCalledWith('');
+        });
+
+        it('should change to 0 on blur', async () => {
+            render(
+                <MockThemeProvider>
+                    <EditMetadataValue
+                        value={''}
+                        type={EPropertyType.NUMBER}
+                        onEditMetadataValue={onEditMock}
+                    />
+                </MockThemeProvider>
+            );
+            const numberInput = screen.getByRole('spinbutton');
+            fireEvent.blur(numberInput);
+            expect(onEditMock).toBeCalledWith(0);
         });
     });
 
@@ -74,6 +119,7 @@ describe('EditMetadataValue Component', () => {
                         value={''}
                         type={EPropertyType.STRING}
                         onEditMetadataValue={onEditMock}
+                        placeholderText="some-placeholder"
                     />
                 </MockThemeProvider>
             );
@@ -88,6 +134,11 @@ describe('EditMetadataValue Component', () => {
             const textInput = screen.getByRole('textbox');
             userEvent.type(textInput, 'a');
             expect(onEditMock).toBeCalledWith('a');
+        });
+
+        it('should have the custom placeholder text', () => {
+            const placeholder = screen.getByPlaceholderText('some-placeholder');
+            expect(placeholder).toBeInTheDocument();
         });
     });
 });
