@@ -41,7 +41,7 @@ const DatasetsTable: React.FC<IDatasetsTable> = (props) => {
             uniqueKey: dataset.id || index,
             columnValues: [
                 {
-                    value: !!dataset.name ? dataset.name : 'No name',
+                    value: dataset.name ?? 'No name',
                     shouldHighlightNoData: !dataset.name,
                 },
                 {
@@ -49,7 +49,7 @@ const DatasetsTable: React.FC<IDatasetsTable> = (props) => {
                     shouldHighlightNoData: getNumStudiesString(dataset.studies) === '0 studies',
                 },
                 {
-                    value: !!dataset.description ? dataset.description : 'No description',
+                    value: dataset.description ?? 'No description',
                     shouldHighlightNoData: !dataset.description,
                 },
             ],

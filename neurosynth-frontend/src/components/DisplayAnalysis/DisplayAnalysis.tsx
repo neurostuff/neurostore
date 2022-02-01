@@ -164,7 +164,10 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                     text={props.description || ''}
                 />
                 <Box sx={{ ...DisplayAnalysisStyles.spaceBelow, width: '100%' }}>
-                    <Accordion defaultExpanded={true} elevation={4}>
+                    <Accordion
+                        defaultExpanded={conditionsForTable.rowData.length > 0}
+                        elevation={4}
+                    >
                         <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
                             Conditions
                         </AccordionSummary>
@@ -187,7 +190,10 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                         width: '100%',
                     }}
                 >
-                    <Accordion elevation={4}>
+                    <Accordion
+                        defaultExpanded={coordinateDataForTable.rowData.length > 0}
+                        elevation={4}
+                    >
                         <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
                             Coordinates
                         </AccordionSummary>
@@ -204,7 +210,10 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                     </Accordion>
                 </Box>
                 <Box sx={{ ...DisplayAnalysisStyles.spaceBelow }}>
-                    <Accordion defaultExpanded={true} elevation={4}>
+                    <Accordion
+                        defaultExpanded={props.images && props.images.length > 0}
+                        elevation={4}
+                    >
                         <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
                             Images
                         </AccordionSummary>

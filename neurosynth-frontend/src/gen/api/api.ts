@@ -81,12 +81,6 @@ export interface Annotation {
      * @type {string}
      * @memberof Annotation
      */
-    'id'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Annotation
-     */
     'dataset'?: string;
     /**
      * 
@@ -102,10 +96,10 @@ export interface Annotation {
     'description'?: string | null;
     /**
      * 
-     * @type {Array<AnnotationNotes>}
+     * @type {Array<AnnotationNote & ReadOnly>}
      * @memberof Annotation
      */
-    'notes'?: Array<AnnotationNotes>;
+    'notes'?: Array<AnnotationNote & ReadOnly>;
     /**
      * 
      * @type {string}
@@ -124,29 +118,60 @@ export interface Annotation {
      * @memberof Annotation
      */
     'source_updated_at'?: string | null;
+    /**
+     * 
+     * @type {object}
+     * @memberof Annotation
+     */
+    'metadata'?: object | null;
 }
 /**
  * 
  * @export
- * @interface AnnotationNotes
+ * @interface AnnotationExport
  */
-export interface AnnotationNotes {
+export interface AnnotationExport {
+    /**
+     * 
+     * @type {object}
+     * @memberof AnnotationExport
+     */
+    'metadata'?: object | null;
     /**
      * 
      * @type {string}
-     * @memberof AnnotationNotes
+     * @memberof AnnotationExport
+     */
+    'annotation'?: string;
+}
+/**
+ * 
+ * @export
+ * @interface AnnotationNote
+ */
+export interface AnnotationNote {
+    /**
+     * 
+     * @type {string}
+     * @memberof AnnotationNote
      */
     'analysis'?: string;
     /**
      * 
      * @type {string}
-     * @memberof AnnotationNotes
+     * @memberof AnnotationNote
      */
     'study'?: string;
     /**
      * 
+     * @type {string}
+     * @memberof AnnotationNote
+     */
+    'annotation'?: string;
+    /**
+     * 
      * @type {object}
-     * @memberof AnnotationNotes
+     * @memberof AnnotationNote
      */
     'note'?: object;
 }
@@ -281,10 +306,10 @@ export interface Image {
 export interface InlineResponse200 {
     /**
      * 
-     * @type {Array<Study & ReadOnly>}
+     * @type {Array<Dataset & ReadOnly>}
      * @memberof InlineResponse200
      */
-    'results'?: Array<Study & ReadOnly>;
+    'results'?: Array<Dataset & ReadOnly>;
     /**
      * 
      * @type {Metadata}
@@ -300,16 +325,16 @@ export interface InlineResponse200 {
 export interface InlineResponse2001 {
     /**
      * 
+     * @type {Array<Study & ReadOnly>}
+     * @memberof InlineResponse2001
+     */
+    'results'?: Array<Study & ReadOnly>;
+    /**
+     * 
      * @type {Metadata}
      * @memberof InlineResponse2001
      */
     'metadata'?: Metadata;
-    /**
-     * 
-     * @type {Array<Analysis & ReadOnly>}
-     * @memberof InlineResponse2001
-     */
-    'results'?: Array<Analysis & ReadOnly>;
 }
 /**
  * 
@@ -319,16 +344,16 @@ export interface InlineResponse2001 {
 export interface InlineResponse2002 {
     /**
      * 
-     * @type {Array<Point & ReadOnly>}
-     * @memberof InlineResponse2002
-     */
-    'results'?: Array<Point & ReadOnly>;
-    /**
-     * 
      * @type {Metadata}
      * @memberof InlineResponse2002
      */
     'metadata'?: Metadata;
+    /**
+     * 
+     * @type {Array<Analysis & ReadOnly>}
+     * @memberof InlineResponse2002
+     */
+    'results'?: Array<Analysis & ReadOnly>;
 }
 /**
  * 
@@ -338,16 +363,16 @@ export interface InlineResponse2002 {
 export interface InlineResponse2003 {
     /**
      * 
+     * @type {Array<Point & ReadOnly>}
+     * @memberof InlineResponse2003
+     */
+    'results'?: Array<Point & ReadOnly>;
+    /**
+     * 
      * @type {Metadata}
      * @memberof InlineResponse2003
      */
     'metadata'?: Metadata;
-    /**
-     * 
-     * @type {Array<Image & ReadOnly>}
-     * @memberof InlineResponse2003
-     */
-    'results'?: Array<Image & ReadOnly>;
 }
 /**
  * 
@@ -363,10 +388,10 @@ export interface InlineResponse2004 {
     'metadata'?: Metadata;
     /**
      * 
-     * @type {Array<Condition & ReadOnly>}
+     * @type {Array<Image & ReadOnly>}
      * @memberof InlineResponse2004
      */
-    'results'?: Array<Condition & ReadOnly>;
+    'results'?: Array<Image & ReadOnly>;
 }
 /**
  * 
@@ -376,16 +401,16 @@ export interface InlineResponse2004 {
 export interface InlineResponse2005 {
     /**
      * 
-     * @type {Array<Dataset & ReadOnly>}
-     * @memberof InlineResponse2005
-     */
-    'results'?: Array<Dataset & ReadOnly>;
-    /**
-     * 
      * @type {Metadata}
      * @memberof InlineResponse2005
      */
     'metadata'?: Metadata;
+    /**
+     * 
+     * @type {Array<Condition & ReadOnly>}
+     * @memberof InlineResponse2005
+     */
+    'results'?: Array<Condition & ReadOnly>;
 }
 /**
  * 
@@ -401,10 +426,10 @@ export interface InlineResponse2006 {
     'metadata'?: Metadata;
     /**
      * 
-     * @type {Array<User>}
+     * @type {Array<Annotation & ReadOnly>}
      * @memberof InlineResponse2006
      */
-    'results'?: Array<User>;
+    'results'?: Array<Annotation & ReadOnly>;
 }
 /**
  * 
@@ -420,10 +445,10 @@ export interface InlineResponse2007 {
     'metadata'?: Metadata;
     /**
      * 
-     * @type {Array<Annotation & ReadOnly>}
+     * @type {Array<User>}
      * @memberof InlineResponse2007
      */
-    'results'?: Array<Annotation & ReadOnly>;
+    'results'?: Array<User>;
 }
 /**
  * 
@@ -1020,7 +1045,7 @@ export const AnalysesApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async analysesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, name?: string, description?: string, nested?: boolean, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2001>> {
+        async analysesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, name?: string, description?: string, nested?: boolean, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2002>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.analysesGet(search, sort, page, desc, pageSize, name, description, nested, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -1094,7 +1119,7 @@ export const AnalysesApiFactory = function (configuration?: Configuration, baseP
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        analysesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, name?: string, description?: string, nested?: boolean, options?: any): AxiosPromise<InlineResponse2001> {
+        analysesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, name?: string, description?: string, nested?: boolean, options?: any): AxiosPromise<InlineResponse2002> {
             return localVarFp.analysesGet(search, sort, page, desc, pageSize, name, description, nested, options).then((request) => request(axios, basePath));
         },
         /**
@@ -1303,10 +1328,11 @@ export const AnnotationsApiAxiosParamCreator = function (configuration?: Configu
          * get an individual annotation
          * @summary Your GET endpoint
          * @param {string} id 
+         * @param {boolean} [_export] return endpoint data in consumable/readable format
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        annotationsIdGet: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        annotationsIdGet: async (id: string, _export?: boolean, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('annotationsIdGet', 'id', id)
             const localVarPath = `/annotations/{id}`
@@ -1321,6 +1347,10 @@ export const AnnotationsApiAxiosParamCreator = function (configuration?: Configu
             const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+
+            if (_export !== undefined) {
+                localVarQueryParameter['export'] = _export;
+            }
 
 
     
@@ -1337,10 +1367,11 @@ export const AnnotationsApiAxiosParamCreator = function (configuration?: Configu
          * edit an existing annotation
          * @summary Update an annotation
          * @param {string} id 
+         * @param {Annotation} [annotation] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        annotationsIdPut: async (id: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        annotationsIdPut: async (id: string, annotation?: Annotation, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('annotationsIdPut', 'id', id)
             const localVarPath = `/annotations/{id}`
@@ -1362,9 +1393,12 @@ export const AnnotationsApiAxiosParamCreator = function (configuration?: Configu
 
 
     
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(annotation, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1376,10 +1410,11 @@ export const AnnotationsApiAxiosParamCreator = function (configuration?: Configu
          * @summary Post Annotation
          * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the resource you would like to filter/copy from
          * @param {string} [sourceId] id of the resource you are either filtering/copying on
+         * @param {Annotation} [annotation] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        annotationsPost: async (source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        annotationsPost: async (source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, annotation?: Annotation, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/annotations/`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1406,9 +1441,12 @@ export const AnnotationsApiAxiosParamCreator = function (configuration?: Configu
 
 
     
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(annotation, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -1432,7 +1470,7 @@ export const AnnotationsApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async annotationsGet(datasetId?: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2007>> {
+        async annotationsGet(datasetId?: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2006>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.annotationsGet(datasetId, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -1451,22 +1489,24 @@ export const AnnotationsApiFp = function(configuration?: Configuration) {
          * get an individual annotation
          * @summary Your GET endpoint
          * @param {string} id 
+         * @param {boolean} [_export] return endpoint data in consumable/readable format
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async annotationsIdGet(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Annotation & ReadOnly>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.annotationsIdGet(id, options);
+        async annotationsIdGet(id: string, _export?: boolean, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AnnotationExport | Annotation & ReadOnly>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.annotationsIdGet(id, _export, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * edit an existing annotation
          * @summary Update an annotation
          * @param {string} id 
+         * @param {Annotation} [annotation] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async annotationsIdPut(id: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Annotation>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.annotationsIdPut(id, options);
+        async annotationsIdPut(id: string, annotation?: Annotation, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Annotation>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.annotationsIdPut(id, annotation, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -1474,11 +1514,12 @@ export const AnnotationsApiFp = function(configuration?: Configuration) {
          * @summary Post Annotation
          * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the resource you would like to filter/copy from
          * @param {string} [sourceId] id of the resource you are either filtering/copying on
+         * @param {Annotation} [annotation] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async annotationsPost(source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Annotation>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.annotationsPost(source, sourceId, options);
+        async annotationsPost(source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, annotation?: Annotation, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Annotation & ReadOnly>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.annotationsPost(source, sourceId, annotation, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
     }
@@ -1498,7 +1539,7 @@ export const AnnotationsApiFactory = function (configuration?: Configuration, ba
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        annotationsGet(datasetId?: string, options?: any): AxiosPromise<InlineResponse2007> {
+        annotationsGet(datasetId?: string, options?: any): AxiosPromise<InlineResponse2006> {
             return localVarFp.annotationsGet(datasetId, options).then((request) => request(axios, basePath));
         },
         /**
@@ -1515,32 +1556,35 @@ export const AnnotationsApiFactory = function (configuration?: Configuration, ba
          * get an individual annotation
          * @summary Your GET endpoint
          * @param {string} id 
+         * @param {boolean} [_export] return endpoint data in consumable/readable format
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        annotationsIdGet(id: string, options?: any): AxiosPromise<Annotation & ReadOnly> {
-            return localVarFp.annotationsIdGet(id, options).then((request) => request(axios, basePath));
+        annotationsIdGet(id: string, _export?: boolean, options?: any): AxiosPromise<AnnotationExport | Annotation & ReadOnly> {
+            return localVarFp.annotationsIdGet(id, _export, options).then((request) => request(axios, basePath));
         },
         /**
          * edit an existing annotation
          * @summary Update an annotation
          * @param {string} id 
+         * @param {Annotation} [annotation] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        annotationsIdPut(id: string, options?: any): AxiosPromise<Annotation> {
-            return localVarFp.annotationsIdPut(id, options).then((request) => request(axios, basePath));
+        annotationsIdPut(id: string, annotation?: Annotation, options?: any): AxiosPromise<Annotation> {
+            return localVarFp.annotationsIdPut(id, annotation, options).then((request) => request(axios, basePath));
         },
         /**
          * Create an annotation
          * @summary Post Annotation
          * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the resource you would like to filter/copy from
          * @param {string} [sourceId] id of the resource you are either filtering/copying on
+         * @param {Annotation} [annotation] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        annotationsPost(source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, options?: any): AxiosPromise<Annotation> {
-            return localVarFp.annotationsPost(source, sourceId, options).then((request) => request(axios, basePath));
+        annotationsPost(source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, annotation?: Annotation, options?: any): AxiosPromise<Annotation & ReadOnly> {
+            return localVarFp.annotationsPost(source, sourceId, annotation, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -1580,24 +1624,26 @@ export class AnnotationsApi extends BaseAPI {
      * get an individual annotation
      * @summary Your GET endpoint
      * @param {string} id 
+     * @param {boolean} [_export] return endpoint data in consumable/readable format
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AnnotationsApi
      */
-    public annotationsIdGet(id: string, options?: AxiosRequestConfig) {
-        return AnnotationsApiFp(this.configuration).annotationsIdGet(id, options).then((request) => request(this.axios, this.basePath));
+    public annotationsIdGet(id: string, _export?: boolean, options?: AxiosRequestConfig) {
+        return AnnotationsApiFp(this.configuration).annotationsIdGet(id, _export, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * edit an existing annotation
      * @summary Update an annotation
      * @param {string} id 
+     * @param {Annotation} [annotation] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AnnotationsApi
      */
-    public annotationsIdPut(id: string, options?: AxiosRequestConfig) {
-        return AnnotationsApiFp(this.configuration).annotationsIdPut(id, options).then((request) => request(this.axios, this.basePath));
+    public annotationsIdPut(id: string, annotation?: Annotation, options?: AxiosRequestConfig) {
+        return AnnotationsApiFp(this.configuration).annotationsIdPut(id, annotation, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -1605,12 +1651,13 @@ export class AnnotationsApi extends BaseAPI {
      * @summary Post Annotation
      * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the resource you would like to filter/copy from
      * @param {string} [sourceId] id of the resource you are either filtering/copying on
+     * @param {Annotation} [annotation] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AnnotationsApi
      */
-    public annotationsPost(source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, options?: AxiosRequestConfig) {
-        return AnnotationsApiFp(this.configuration).annotationsPost(source, sourceId, options).then((request) => request(this.axios, this.basePath));
+    public annotationsPost(source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', sourceId?: string, annotation?: Annotation, options?: AxiosRequestConfig) {
+        return AnnotationsApiFp(this.configuration).annotationsPost(source, sourceId, annotation, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
@@ -1861,7 +1908,7 @@ export const ConditionsApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async conditionsGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, name?: string, description?: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2004>> {
+        async conditionsGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, name?: string, description?: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2005>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.conditionsGet(search, sort, page, desc, pageSize, name, description, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -1933,7 +1980,7 @@ export const ConditionsApiFactory = function (configuration?: Configuration, bas
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        conditionsGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, name?: string, description?: string, options?: any): AxiosPromise<InlineResponse2004> {
+        conditionsGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, name?: string, description?: string, options?: any): AxiosPromise<InlineResponse2005> {
             return localVarFp.conditionsGet(search, sort, page, desc, pageSize, name, description, options).then((request) => request(axios, basePath));
         },
         /**
@@ -2347,7 +2394,7 @@ export const DatasetsApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async datasetsGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, userId?: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2005>> {
+        async datasetsGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, userId?: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse200>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.datasetsGet(search, sort, page, desc, pageSize, nested, name, description, sourceId, unique, source, authors, userId, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2393,7 +2440,7 @@ export const DatasetsApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async datasetsPost(dataset?: Dataset, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Dataset>> {
+        async datasetsPost(dataset?: Dataset, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Dataset & ReadOnly>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.datasetsPost(dataset, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2426,7 +2473,7 @@ export const DatasetsApiFactory = function (configuration?: Configuration, baseP
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        datasetsGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, userId?: string, options?: any): AxiosPromise<InlineResponse2005> {
+        datasetsGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, userId?: string, options?: any): AxiosPromise<InlineResponse200> {
             return localVarFp.datasetsGet(search, sort, page, desc, pageSize, nested, name, description, sourceId, unique, source, authors, userId, options).then((request) => request(axios, basePath));
         },
         /**
@@ -2468,7 +2515,7 @@ export const DatasetsApiFactory = function (configuration?: Configuration, baseP
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        datasetsPost(dataset?: Dataset, options?: any): AxiosPromise<Dataset> {
+        datasetsPost(dataset?: Dataset, options?: any): AxiosPromise<Dataset & ReadOnly> {
             return localVarFp.datasetsPost(dataset, options).then((request) => request(axios, basePath));
         },
     };
@@ -2815,7 +2862,7 @@ export const ImagesApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async imagesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, filename?: string, analysisName?: string, valueType?: string, space?: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2003>> {
+        async imagesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, filename?: string, analysisName?: string, valueType?: string, space?: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2004>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.imagesGet(search, sort, page, desc, pageSize, filename, analysisName, valueType, space, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -2889,7 +2936,7 @@ export const ImagesApiFactory = function (configuration?: Configuration, basePat
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        imagesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, filename?: string, analysisName?: string, valueType?: string, space?: string, options?: any): AxiosPromise<InlineResponse2003> {
+        imagesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, filename?: string, analysisName?: string, valueType?: string, space?: string, options?: any): AxiosPromise<InlineResponse2004> {
             return localVarFp.imagesGet(search, sort, page, desc, pageSize, filename, analysisName, valueType, space, options).then((request) => request(axios, basePath));
         },
         /**
@@ -3218,7 +3265,7 @@ export const PointsApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async pointsGet(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2002>> {
+        async pointsGet(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2003>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.pointsGet(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3283,7 +3330,7 @@ export const PointsApiFactory = function (configuration?: Configuration, basePat
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        pointsGet(options?: any): AxiosPromise<InlineResponse2002> {
+        pointsGet(options?: any): AxiosPromise<InlineResponse2003> {
             return localVarFp.pointsGet(options).then((request) => request(axios, basePath));
         },
         /**
@@ -3700,7 +3747,7 @@ export const StudiesApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async studiesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, userId?: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse200>> {
+        async studiesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, userId?: string, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2001>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.studiesGet(search, sort, page, desc, pageSize, nested, name, description, sourceId, unique, source, authors, userId, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -3781,7 +3828,7 @@ export const StudiesApiFactory = function (configuration?: Configuration, basePa
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        studiesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, userId?: string, options?: any): AxiosPromise<InlineResponse200> {
+        studiesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, userId?: string, options?: any): AxiosPromise<InlineResponse2001> {
             return localVarFp.studiesGet(search, sort, page, desc, pageSize, nested, name, description, sourceId, unique, source, authors, userId, options).then((request) => request(axios, basePath));
         },
         /**
@@ -4009,7 +4056,7 @@ export const UserApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async usersGet(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2006>> {
+        async usersGet(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2007>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.usersGet(options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
@@ -4039,7 +4086,7 @@ export const UserApiFactory = function (configuration?: Configuration, basePath?
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        usersGet(options?: any): AxiosPromise<InlineResponse2006> {
+        usersGet(options?: any): AxiosPromise<InlineResponse2007> {
             return localVarFp.usersGet(options).then((request) => request(axios, basePath));
         },
         /**

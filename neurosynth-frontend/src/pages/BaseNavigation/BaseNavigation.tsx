@@ -25,7 +25,7 @@ const BaseNavigation = () => {
                     <Route path="/datasets/userdatasets" exact={true}>
                         <UserDatasetsPage />
                     </Route>
-                    <Route path="/datasets/:datasetId/annotation/:annotationId" exact={true}>
+                    <Route path="/datasets/:datasetId/annotations/:annotationId" exact={true}>
                         <EditAnnotationsPage />
                     </Route>
                     <Route path="/datasets/:datasetId" exact={true}>

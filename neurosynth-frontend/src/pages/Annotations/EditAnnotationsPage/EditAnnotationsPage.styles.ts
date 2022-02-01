@@ -1,5 +1,19 @@
 import { Style } from '../../..';
 
-const EditAnnotationsPage: Style = {};
+const EditAnnotationsPageStyles: Style = {
+    stickyButtonContainer: {
+        width: '100%',
+        marginBottom: '1rem',
+    },
+    addColumnContainer: {
+        display: 'block',
+        width: '100%',
+        borderCollapse: 'separate',
+        borderSpacing: '15px 0',
+    },
+    unsavedChanges: {
+        border: '2px solid orange',
+    },
+};
 
-export default EditAnnotationsPage;
+export default EditAnnotationsPageStyles;

@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CreateDetailsDialog from './CreateDetailsDialog';
 
-describe('CreateDatasetDialog', () => {
+describe('CreateDetailsDialog', () => {
     const mockOnCreateDataset = jest.fn();
     const mockOnCloseDialog = jest.fn();
     it('should render', () => {

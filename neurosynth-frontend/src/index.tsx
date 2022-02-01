@@ -7,6 +7,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Auth0Provider } from '@auth0/auth0-react';
 import { grey } from '@mui/material/colors';
 import { SxProps, Theme } from '@mui/system';
+import { registerAllModules } from 'handsontable/registry';
 
 export interface Style {
     [key: string]: SxProps<Theme>;
@@ -57,6 +58,8 @@ const theme = createTheme({
 const domain = process.env.REACT_APP_AUTH0_DOMAIN as string;
 const clientId = process.env.REACT_APP_AUTH0_CLIENT_ID as string;
 const audience = process.env.REACT_APP_AUTH0_AUDIENCE as string;
+
+registerAllModules();
 
 ReactDOM.render(
     <React.StrictMode>

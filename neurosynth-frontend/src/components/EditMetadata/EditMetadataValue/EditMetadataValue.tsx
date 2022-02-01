@@ -3,16 +3,27 @@ import { EPropertyType, IEditMetadataValue } from '..';
 import EditMetadataValueStyles from './EditMetadata.styles';
 
 const EditMetadataValue: React.FC<IEditMetadataValue> = (props) => {
-    const { onEditMetadataValue: handleEditMetadataValue, value, type } = props;
+    const { onEditMetadataValue, value, type } = props;
 
     const map = {
         [EPropertyType.NUMBER]: (
             <TextField
                 sx={EditMetadataValueStyles.numberfield}
+                onBlur={(event) => {
+                    const num = event.target.value;
+                    if (num === '' || num === null || num === undefined) {
+                        onEditMetadataValue(0);
+                    }
+                }}
                 onChange={(event) => {
-                    const num = parseInt(event.target.value);
-                    if (!isNaN(num)) {
-                        handleEditMetadataValue(num);
+                    const value = event.target.value;
+                    // we want to allow empty textfield for numbers for a better user experience
+                    if (value === '') {
+                        onEditMetadataValue('');
+                    } else {
+                        const num = parseInt(event.target.value);
+
+                        if (!isNaN(num)) onEditMetadataValue(num);
                     }
                 }}
                 value={value}
@@ -31,7 +42,7 @@ const EditMetadataValue: React.FC<IEditMetadataValue> = (props) => {
                     control={
                         <Switch
                             onChange={(event, checked) => {
-                                handleEditMetadataValue(checked);
+                                onEditMetadataValue(checked);
                             }}
                             color="primary"
                             size="medium"
@@ -45,9 +56,9 @@ const EditMetadataValue: React.FC<IEditMetadataValue> = (props) => {
         [EPropertyType.STRING]: (
             <TextField
                 multiline
-                placeholder="New metadata value"
+                placeholder={props.placeholderText || 'New metadata value'}
                 onChange={(event) => {
-                    handleEditMetadataValue(event.target.value);
+                    onEditMetadataValue(event.target.value);
                 }}
                 value={value}
                 variant="outlined"
