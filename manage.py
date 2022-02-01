@@ -3,57 +3,45 @@
 """
 import os
 
-from flask_script import Manager, Shell
-from flask_migrate import Migrate, MigrateCommand
+import click
+from flask_migrate import Migrate
 
 from neurostore.core import app, db
 from neurostore import ingest
 from neurostore import models
 
 app.config.from_object(os.environ["APP_SETTINGS"])
+
+
 migrate = Migrate(app, db, directory=app.config["MIGRATIONS_DIR"])
-manager = Manager(app)
+migrate.init_app(app, db)
 
 
-def _make_context():
+@app.shell_context_processor
+def make_shell_context():
     return dict(app=app, db=db, ms=models)
 
 
-manager.add_command("db", MigrateCommand)
-manager.add_command("shell", Shell(make_context=_make_context))
-
-
-# @manager.command
-# def add_user(email, password):
-#     """Add a user to the database.
-#     email - A valid email address (primary login key)
-#     password - Any string
-#     """
-#     user_datastore.create_user(email=email, password=encrypt_password(password))
-
-#     db.session.commit()
-
-
-@manager.command
-def ingest_neurosynth(max_rows=None):
+@app.cli.command()
+@click.option('--max-rows', default=None, help='ingest neurosynth')
+def ingest_neurosynth(max_rows):
     if max_rows is not None:
         max_rows = int(max_rows)
     ingest.ingest_neurosynth(max_rows=max_rows)
 
 
-@manager.command
-def ingest_neurovault(verbose=False, limit=None):
+@app.cli.command()
+@click.option('--verbose/-v', default=False, help='increase verbosity downloading neurovault')
+@click.option('--limit/-l', default=None, help='number of neurovault studies to download')
+def ingest_neurovault(verbose, limit):
     if limit is not None:
         limit = int(limit)
     ingest.ingest_neurovault(verbose=verbose, limit=limit)
 
 
-@manager.command
-def ingest_neuroquery(max_rows=None):
+@app.cli.command()
+@click.option('--max-rows', default=None, help='ingest neurosynth')
+def ingest_neuroquery(max_rows):
     if max_rows is not None:
         max_rows = int(max_rows)
     ingest.ingest_neuroquery(max_rows=max_rows)
-
-
-if __name__ == "__main__":
-    manager.run()
