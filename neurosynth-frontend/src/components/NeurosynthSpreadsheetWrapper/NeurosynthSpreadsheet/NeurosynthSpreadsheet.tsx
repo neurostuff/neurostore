@@ -1,7 +1,7 @@
 import { textRenderer, numericRenderer } from 'handsontable/renderers';
 import { useAuth0 } from '@auth0/auth0-react';
 import HotTable from '@handsontable/react';
-import { GridSettings } from 'handsontable/settings';
+import { CellMeta, CellProperties, GridSettings } from 'handsontable/settings';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { renderToString } from 'react-dom/server';
 import CellCoords from 'handsontable/3rdparty/walkontable/src/cell/coords';
@@ -64,8 +64,6 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = memo((props)
         rowHeaderWidth: 150,
         afterSetDataAtCell: onCellUpdates,
         afterChange: (changes: CellChange[] | null) => {
-            console.log(hotTableRef);
-
             if (changes && hotTableRef.current && hotTableRef.current.hotInstance) {
                 const updatedChanges: [number, number, any][] = [];
 
@@ -111,6 +109,20 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = memo((props)
             }
         },
         rowHeights: ROW_HEIGHTS,
+        mergeCells: [{ row: 3, col: 0, colspan: 3, rowspan: 1 }],
+        cells: function (
+            this: CellProperties,
+            row: number,
+            column: number,
+            prop: string | number
+        ): CellMeta {
+            const cellProperties: any = {};
+            if (row === 3) {
+                cellProperties['readOnly'] = true;
+                cellProperties['className'] = styles['some-class-name'];
+            }
+            return cellProperties;
+        },
         columns: columnHeaderValues.map((col) => {
             return {
                 copyable: false,

@@ -208,6 +208,8 @@ const EditAnnotationsPage: React.FC = (props) => {
     }, []);
 
     const handleCellUpdates = useCallback((changes: CellChange[]) => {
+        console.log(changes);
+
         if (!changes || changes.length === 0) return;
 
         setSpreadsheetData((prevState) => {

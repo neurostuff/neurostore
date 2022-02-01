@@ -10,7 +10,7 @@ export interface INeurosynthSpreadsheetData {
     rowHeaderValues: string[];
     columnHeaderValues: INeurosynthCell[];
     data: {
-        [key: string]: string | number | boolean;
+        [key: string]: string | number | boolean | null;
     }[];
     onColumnDelete: (colIndexDeleted: number, colDeleted: string) => void;
     onCellUpdates: (changes: CellChange[]) => void;
