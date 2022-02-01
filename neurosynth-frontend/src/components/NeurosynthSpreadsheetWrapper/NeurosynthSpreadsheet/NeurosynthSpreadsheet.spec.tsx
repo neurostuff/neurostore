@@ -6,7 +6,6 @@ import { CellChange } from 'handsontable/common';
 import React from 'react';
 import { INeurosynthSpreadsheetData } from '..';
 import { EPropertyType } from '../..';
-import MockHandsOnTable from './N';
 import NeurosynthSpreadsheet from './NeurosynthSpreadsheet';
 
 // mock out useRef to remove warnings
