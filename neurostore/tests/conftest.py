@@ -1,6 +1,6 @@
 import pytest
 from os import environ
-from neurostore.models.data import Analysis, Condition
+from neurostore.models.data import Analysis, Condition, DatasetStudy
 from ..database import db as _db
 import sqlalchemy as sa
 from .. import ingest
@@ -238,19 +238,79 @@ def ingest_neuroquery(session):
 @pytest.fixture(scope="function")
 def user_data(session, mock_add_users):
     to_commit = []
-    for user_info in mock_add_users.values():
-        user = User.query.filter_by(id=user_info['id']).first()
-        for public in [True, False]:
-            if public:
+    with session.no_autoflush:
+        for user_info in mock_add_users.values():
+            user = User.query.filter_by(id=user_info['id']).first()
+            for public in [True, False]:
+                if public:
+                    name = f"{user.id}'s public "
+                else:
+                    name = f"{user.id}'s private "
+
+                dataset = Dataset(
+                    name=name + "dataset",
+                    user=user,
+                    public=public,
+                )
+
+                study = Study(
+                        name=name + 'study',
+                        user=user,
+                        public=public,
+                    )
+
+                analysis = Analysis(user=user)
+
+                condition = Condition(
+                    name=name + "condition",
+                    user=user,
+                )
+
+                analysis_condition = AnalysisConditions(
+                    condition=condition,
+                    weight=1,
+                )
+
+                point = Point(
+                    x=0,
+                    y=0,
+                    z=0,
+                    user=user,
+                )
+
+                image = Image(
+                    url="made up",
+                    filename="also made up",
+                    user=user,
+                )
+
+                # put together the analysis
+                analysis.images = [image]
+                analysis.points = [point]
+                analysis.analysis_conditions = [analysis_condition]
+
+                # put together the study
+                study.analyses = [analysis]
+
+                # put together the dataset
+                dataset.studies = [study]
+
+                # add everything to commit
+                to_commit.append(dataset)
+
+        session.add_all(to_commit)
+        session.commit()
+
+    to_commit = []
+    with session.no_autoflush:
+        datasets = Dataset.query.all()
+        for dataset in datasets:
+            user = dataset.user
+
+            if dataset.public:
                 name = f"{user.id}'s public "
             else:
                 name = f"{user.id}'s private "
-
-            dataset = Dataset(
-                name=name + "dataset",
-                user=user,
-                public=public,
-            )
 
             annotation = Annotation(
                 name=name + 'annotation',
@@ -258,87 +318,46 @@ def user_data(session, mock_add_users):
                 dataset=dataset,
                 user=user,
             )
+            for study in dataset.studies:
+                dataset_study = DatasetStudy.query.filter_by(
+                    study_id=study.id, dataset_id=dataset.id
+                ).first()
 
-            study = Study(
-                    name=name + 'study',
-                    user=user,
-                    public=public,
-                )
-
-            analysis = Analysis(user=user)
-
-            note = AnnotationAnalysis(
-                note={'food': 'bar'},
-                analysis=analysis,
-                study=study,
-                user=user,
-            )
-
-            condition = Condition(
-                name=name + "condition",
-                user=user,
-            )
-
-            analysis_condition = AnalysisConditions(
-                condition=condition,
-                weight=1,
-            )
-
-            point = Point(
-                x=0,
-                y=0,
-                z=0,
-                user=user,
-            )
-
-            image = Image(
-                url="made up",
-                filename="also made up",
-                user=user,
-            )
-
-            # put together the analysis
-            analysis.images = [image]
-            analysis.points = [point]
-            analysis.analysis_conditions = [analysis_condition]
-
-            # put together the study
-            study.analyses = [analysis]
-
-            # put together the annotation
-            annotation.annotation_analyses = [note]
-
-            # put together the dataset
-            dataset.studies = [study]
-
-            # add everything to commit
-            to_commit.append(dataset)
+                for analysis in study.analyses:
+                    note = AnnotationAnalysis(
+                        note={'food': 'bar'},
+                        analysis=analysis,
+                        dataset_study=dataset_study,
+                    )
+                    annotation.annotation_analyses.append(note)
             to_commit.append(annotation)
 
-    session.add_all(to_commit)
-    session.commit()
+        session.add_all(to_commit)
+        session.commit()
 
 
 @pytest.fixture(scope="function")
 def simple_neurosynth_annotation(session, ingest_neurosynth):
-    dset = Dataset.query.filter_by(name="neurosynth").first()
+    with session.no_autoflush:
+        dset = Dataset.query.filter_by(name="neurosynth").first()
     annot = dset.annotations[0]
     smol_notes = []
-    for note in annot.annotation_analyses:
-        smol_notes.append(
-            AnnotationAnalysis(
-                study=note.study,
-                analysis=note.analysis,
-                note={'animal': note.note['animal']},
+    with session.no_autoflush:
+        for note in annot.annotation_analyses:
+            smol_notes.append(
+                AnnotationAnalysis(
+                    dataset_study=note.dataset_study,
+                    analysis=note.analysis,
+                    note={'animal': note.note['animal']},
+                )
             )
-        )
 
-    smol_annot = Annotation(
-        name="smol " + annot.name,
-        source="neurostore",
-        dataset=annot.dataset,
-        annotation_analyses=smol_notes,
-    )
+        smol_annot = Annotation(
+            name="smol " + annot.name,
+            source="neurostore",
+            dataset=annot.dataset,
+            annotation_analyses=smol_notes,
+        )
     session.add(smol_annot)
     session.commit()
 

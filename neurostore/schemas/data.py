@@ -151,6 +151,13 @@ class AnalysisConditionSchema(BaseDataSchema):
     analysis = fields.Function(lambda analysis: analysis.id, dump_only=True, db_only=True)
 
 
+class DatasetStudySchema(BaseDataSchema):
+
+    @pre_load
+    def process_values(self, data, **kwargs):
+        pass
+
+
 class AnalysisSchema(BaseDataSchema):
 
     # serialization
@@ -211,16 +218,23 @@ class DatasetSchema(BaseDataSchema):
 
 class AnnotationAnalysisSchema(BaseDataSchema):
     note = fields.Dict()
-    annotation = StringOrNested("AnnotationSchema", use_nested=False)
+    annotation = StringOrNested("AnnotationSchema", use_nested=False, load_only=True)
     analysis_id = fields.String(data_key="analysis")
     study_id = fields.String(data_key="study")
+    dataset_id = fields.String(data_key="dataset", load_only=True)
+    dataset_study = fields.Nested(DatasetStudySchema)
+    study_name = fields.Function(lambda aa: aa.dataset_study.study.name, dump_only=True)
+    analysis_name = fields.Function(lambda aa: aa.analysis.name, dump_only=True)
 
     @post_load
     def add_id(self, data, **kwargs):
         if isinstance(data['analysis_id'], str):
             data['analysis'] = {'id': data.pop('analysis_id')}
-        if isinstance(data['study_id'], str):
-            data['study'] = {'id': data.pop('study_id')}
+        if isinstance(data.get('study_id'), str) and isinstance(data.get('dataset_id'), str):
+            data['dataset_study'] = {
+                'study': {'id': data.pop('study_id')},
+                'dataset': {'id': data.pop('dataset_id')}
+            }
 
         return data
 
@@ -230,6 +244,7 @@ class AnnotationSchema(BaseDataSchema):
     dataset_id = fields.String(data_key='dataset')
     annotation_analyses = fields.Nested(AnnotationAnalysisSchema, data_key="notes", many=True)
     annotation = fields.String(dump_only=True)
+    annotation_csv = fields.String(dump_only=True)
     source = fields.String(dump_only=True, db_only=True, allow_none=True)
     source_id = fields.String(dump_only=True, db_only=True, allow_none=True)
     source_updated_at = fields.DateTime(dump_only=True, db_only=True, allow_none=True)
@@ -241,6 +256,14 @@ class AnnotationSchema(BaseDataSchema):
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
+
+    @pre_load
+    def add_dataset_id(self, data, **kwargs):
+        if data.get("dataset"):
+            for note in data['notes']:
+                note['dataset'] = data['dataset']
+
+        return data
 
     @pre_dump
     def export_annotations(self, data, **kwargs):
@@ -262,7 +285,7 @@ class AnnotationSchema(BaseDataSchema):
             metadata = {**metadata, **data.metadata_} if data.metadata_ else metadata
             export_data = {
                 "metadata_": metadata,
-                "annotation": annotations
+                "annotation_csv": annotations
             }
 
             return export_data

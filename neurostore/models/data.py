@@ -1,3 +1,4 @@
+from sqlalchemy import event, ForeignKeyConstraint
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship, backref
@@ -50,8 +51,9 @@ class Dataset(BaseMixin, db.Model):
     user = relationship("User", backref=backref("datasets"))
     studies = relationship(
         "Study",
+        cascade="all",
         secondary="dataset_studies",
-        backref="datasets",
+        backref=backref("datasets"),
     )
     annotations = relationship("Annotation", cascade="all, delete", backref="dataset")
 
@@ -67,22 +69,28 @@ class Annotation(BaseMixin, db.Model):
     user = relationship('User', backref=backref('annotations'))
     dataset_id = db.Column(db.Text, db.ForeignKey('datasets.id'))
     metadata_ = db.Column(db.JSON)
+    public = db.Column(db.Boolean, default=True)
+    annotation_analyses = relationship(
+        'AnnotationAnalysis',
+        backref=backref("annotation"),
+        cascade='all, delete-orphan'
+    )
 
 
-class AnnotationAnalysis(BaseMixin, db.Model):
+class AnnotationAnalysis(db.Model):
     __tablename__ = "annotation_analyses"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ('study_id', 'dataset_id'),
+            ('dataset_studies.study_id', 'dataset_studies.dataset_id'),
+            ondelete="CASCADE"),
+    )
 
-    annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"))
-    analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id"))
-    study_id = db.Column(db.Text, db.ForeignKey("studies.id"))
+    study_id = db.Column(db.Text, nullable=False)
+    dataset_id = db.Column(db.Text, nullable=False)
+    annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"), primary_key=True)
+    analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id"), primary_key=True)
     note = db.Column(MutableDict.as_mutable(db.JSON))
-
-    study = relationship("Study", backref=backref("annotation_analyses"))
-    analysis = relationship("Analysis", backref=backref("annotation_analyses"))
-    annotation = relationship("Annotation", backref=backref("annotation_analyses"))
-
-    user_id = db.Column(db.Text, db.ForeignKey('users.external_id'))
-    user = relationship('User', backref=backref('annotation_analyses'))
 
 
 class Study(BaseMixin, db.Model):
@@ -108,10 +116,17 @@ class Study(BaseMixin, db.Model):
     )
 
 
-class DatasetStudy(BaseMixin, db.Model):
+class DatasetStudy(db.Model):
     __tablename__ = "dataset_studies"
     study_id = db.Column(db.ForeignKey('studies.id', ondelete='CASCADE'), primary_key=True)
     dataset_id = db.Column(db.ForeignKey('datasets.id', ondelete='CASCADE'), primary_key=True)
+    study = relationship("Study", backref=backref("dataset_study", cascade="all, delete-orphan"))
+    dataset = relationship("Dataset", backref=backref("dataset_study"))
+    annotation_analyses = relationship(
+        "AnnotationAnalysis",
+        cascade='all, delete-orphan',
+        backref=backref("dataset_study")
+    )
 
 
 class Analysis(BaseMixin, db.Model):
@@ -140,7 +155,10 @@ class Analysis(BaseMixin, db.Model):
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("analyses"))
     analysis_conditions = relationship(
-        "AnalysisConditions", backref=backref("analysis"), cascade="all, delete"
+        "AnalysisConditions", backref=backref("analysis"), cascade="all, delete, delete-orphan"
+    )
+    annotation_analyses = relationship(
+        "AnnotationAnalysis", backref=backref("analysis"), cascade="all, delete, delete-orphan"
     )
 
 
@@ -248,3 +266,28 @@ class PointValue(BaseMixin, db.Model):
     point = relationship("Point", backref=backref("values"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("point_values"))
+
+
+def check_note_columns(annotation, annotation_analyses, collection_adapter):
+    "listen for the 'bulk_replace' event"
+
+    def _combine_compare_keys(aa1, aa2):
+        """compare keys """
+        aa1_dict = {aa.analysis.id: set(aa.note.keys()) for aa in aa1}
+        aa2_dict = {aa.analysis.id: set(aa.note.keys()) for aa in aa2}
+        aa_dict = {}
+        for key in aa1_dict.keys():
+            if key in aa2_dict:
+                aa_dict[key] = aa2_dict.pop(key)
+            else:
+                aa_dict[key] = aa1_dict[key]
+
+        aa_list = [*aa_dict.values(), *aa2_dict.values()]
+        return all([aa_list[0] == note for note in aa_list[1:]])
+
+    all_equal = _combine_compare_keys(annotation.annotation_analyses, annotation_analyses)
+    if not all_equal:
+        raise ValueError("All analyses must have the same annotations")
+
+
+event.listen(Annotation.annotation_analyses, 'bulk_replace', check_note_columns)
