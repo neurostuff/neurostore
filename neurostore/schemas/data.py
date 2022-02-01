@@ -3,11 +3,13 @@ from marshmallow import (
     Schema,
     SchemaOpts,
     post_dump,
+    pre_dump,
     pre_load,
 )
 from flask import request
 from marshmallow.decorators import post_load
 from pyld import jsonld
+import pandas as pd
 
 
 class StringOrNested(fields.Nested):
@@ -88,7 +90,7 @@ class BaseSchema(Schema):
 
 
 class BaseDataSchema(BaseSchema):
-    user = fields.Function(lambda user: user.user_id, dump_only=True, db_only=True)
+    user = fields.String(attribute="user_id", dump_only=True, db_only=True)
 
 
 class ConditionSchema(BaseDataSchema):
@@ -147,6 +149,13 @@ class AnalysisConditionSchema(BaseDataSchema):
     weight = fields.Float()
     condition = fields.Nested(ConditionSchema)
     analysis = fields.Function(lambda analysis: analysis.id, dump_only=True, db_only=True)
+
+
+class DatasetStudySchema(BaseDataSchema):
+
+    @pre_load
+    def process_values(self, data, **kwargs):
+        pass
 
 
 class AnalysisSchema(BaseDataSchema):
@@ -209,16 +218,21 @@ class DatasetSchema(BaseDataSchema):
 
 class AnnotationAnalysisSchema(BaseDataSchema):
     note = fields.Dict()
-    annotation = StringOrNested("AnnotationSchema", use_nested=False)
+    annotation = StringOrNested("AnnotationSchema", use_nested=False, load_only=True)
     analysis_id = fields.String(data_key="analysis")
     study_id = fields.String(data_key="study")
+    dataset_id = fields.String(data_key="dataset", load_only=True)
+    dataset_study = fields.Nested(DatasetStudySchema)
 
     @post_load
     def add_id(self, data, **kwargs):
         if isinstance(data['analysis_id'], str):
             data['analysis'] = {'id': data.pop('analysis_id')}
-        if isinstance(data['study_id'], str):
-            data['study'] = {'id': data.pop('study_id')}
+        if isinstance(data.get('study_id'), str) and isinstance(data.get('dataset_id'), str):
+            data['dataset_study'] = {
+                'study': {'id': data.pop('study_id')},
+                'dataset': {'id': data.pop('dataset_id')}
+            }
 
         return data
 
@@ -227,14 +241,54 @@ class AnnotationSchema(BaseDataSchema):
     # serialization
     dataset_id = fields.String(data_key='dataset')
     annotation_analyses = fields.Nested(AnnotationAnalysisSchema, data_key="notes", many=True)
-
+    annotation = fields.String(dump_only=True)
+    annotation_csv = fields.String(dump_only=True)
     source = fields.String(dump_only=True, db_only=True, allow_none=True)
     source_id = fields.String(dump_only=True, db_only=True, allow_none=True)
     source_updated_at = fields.DateTime(dump_only=True, db_only=True, allow_none=True)
 
+    metadata = fields.Dict(attribute="metadata_", dump_only=True)
+    # deserialization
+    metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
+
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
+
+    @pre_load
+    def add_dataset_id(self, data, **kwargs):
+        if data.get("dataset"):
+            for note in data['notes']:
+                note['dataset'] = data['dataset']
+
+        return data
+
+    @pre_dump
+    def export_annotations(self, data, **kwargs):
+        if getattr(data, "annotation_analyses") and self.context.get('export'):
+            annotations = pd.DataFrame.from_records(
+                [
+                    {
+                        "study_id": aa.study_id,
+                        "analysis_id": aa.analysis_id,
+                        **aa.note
+                    } for aa in data.annotation_analyses
+                ]
+            ).to_csv(index=False)
+            metadata = {
+                "dataset_id": data.dataset_id,
+                "annotation_id": data.id,
+                "created_at": data.created_at,
+            }
+            metadata = {**metadata, **data.metadata_} if data.metadata_ else metadata
+            export_data = {
+                "metadata_": metadata,
+                "annotation_csv": annotations
+            }
+
+            return export_data
+
+        return data
 
     @post_load
     def add_id(self, data, **kwargs):

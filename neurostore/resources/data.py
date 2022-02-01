@@ -12,7 +12,7 @@ from webargs import fields
 
 from ..database import db
 from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions, User, AnnotationAnalysis, Annotation  # noqa E401
-
+from ..models.data import DatasetStudy
 
 from ..schemas import (  # noqa E401
     DatasetSchema,
@@ -25,6 +25,7 @@ from ..schemas import (  # noqa E401
     PointValueSchema,
     AnalysisConditionSchema,
     AnnotationAnalysisSchema,
+    DatasetStudySchema,
 )
 
 
@@ -45,8 +46,6 @@ __all__ = [
     "DatasetListView",
     "ConditionListView",
 ]
-
-PARENT_RESOURCES = {'study': Study, 'analysis': Analysis, 'dataset': Dataset}
 
 
 # https://www.geeksforgeeks.org/python-split-camelcase-string-to-individual-strings/
@@ -79,6 +78,7 @@ class BaseView(MethodView):
     _nested = {}
     _parent = {}
     _linked = {}
+    _composite_key = {}
 
     @classmethod
     def update_or_create(cls, data, id=None, commit=True):
@@ -110,6 +110,7 @@ class BaseView(MethodView):
         id = id or data.get("id", None)  # want to handle case of {"id": "asdfasf"}
 
         only_ids = set(data.keys()) - set(['id']) == set()
+
         if id is None:
             record = cls._model()
             record.user = current_user
@@ -131,14 +132,21 @@ class BaseView(MethodView):
         # Update all non-nested attributes
         for k, v in data.items():
             if k in cls._parent and v is not None:
+                PrtCls = globals()[cls._parent[k]]
                 # DO NOT WANT PEOPLE TO BE ABLE TO ADD ANALYSES
                 # TO STUDIES UNLESS THEY OWN THE STUDY
-                v = cls._parent[k].query.filter_by(id=v['id']).first()
+                v = PrtCls._model.query.filter_by(id=v['id']).first()
                 if current_user != v.user:
                     abort(403)
             if k in cls._linked and v is not None:
+                LnCls = globals()[cls._linked[k]]
                 # this can be owned by someone else
-                v = cls._linked[k].query.filter_by(id=v['id']).first()
+                if LnCls._composite_key:
+                    # composite key is defined in linked class, so need to lookup
+                    query_args = {k: v[k.rstrip('_id')]['id'] for k in LnCls._composite_key}
+                else:
+                    query_args = {'id': v['id']}
+                v = LnCls._model.query.filter_by(**query_args).first()
 
             if k not in cls._nested and k not in ["id", "user"]:
                 try:
@@ -152,7 +160,7 @@ class BaseView(MethodView):
         # Update nested attributes recursively
         for field, res_name in cls._nested.items():
             ResCls = globals()[res_name]
-            if data.get(field):
+            if data.get(field) is not None:
                 if isinstance(data.get(field), list):
                     nested = [
                         ResCls.update_or_create(rec, commit=False)
@@ -182,10 +190,18 @@ class ObjectView(BaseView):
             abort(403)
 
         nested = request.args.get("nested")
-        return self.__class__._schema(context={'nested': nested}).dump(record)
+        export = request.args.get("export", False)
+        return self.__class__._schema(context={
+            'nested': nested,
+            'export': export,
+        }).dump(record)
+
+    def insert_data(self, id, data):
+        return data
 
     def put(self, id):
-        data = parser.parse(self.__class__._schema, request)
+        request_data = self.insert_data(id, request.json)
+        data = self.__class__._schema().load(request_data)
 
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data, id)
@@ -218,6 +234,7 @@ LIST_USER_ARGS = {
     "nested": fields.Boolean(missing=False),
     "user_id": fields.String(missing=None),
     "dataset_id": fields.String(missing=None),
+    "export": fields.Boolean(missing=False),
 }
 
 
@@ -368,8 +385,14 @@ class AnnotationView(ObjectView):
         "annotation_analyses": "AnnotationAnalysisResource"
     }
     _linked = {
-        "dataset": Dataset,
+        "dataset": "DatasetView",
     }
+
+    def insert_data(self, id, data):
+        if not data.get('dataset'):
+            with db.session.no_autoflush:
+                data['dataset'] = self._model.query.filter_by(id=id).first().dataset.id
+        return data
 
 
 @view_maker
@@ -378,7 +401,7 @@ class StudyView(ObjectView):
         "analyses": "AnalysisView",
     }
     _linked = {
-        "dataset": Dataset,
+        "dataset": "DatasetView",
     }
 
 
@@ -390,7 +413,7 @@ class AnalysisView(ObjectView):
         "analysis_conditions": "AnalysisConditionResource"
     }
     _parent = {
-        "study": Study,
+        "study": "StudyView",
     }
 
 
@@ -402,7 +425,7 @@ class ConditionView(ObjectView):
 @view_maker
 class ImageView(ObjectView):
     _parent = {
-        "analysis": Analysis,
+        "analysis": "AnalysisView",
     }
 
 
@@ -412,7 +435,7 @@ class PointView(ObjectView):
         "values": "PointValueView",
     }
     _parent = {
-        "analysis": Analysis,
+        "analysis": "AnalysisView",
     }
 
 
@@ -438,9 +461,15 @@ class AnnotationListView(ListView):
         "annotation_analyses": "AnnotationAnalysisResource",
     }
     _linked = {
-        "dataset": Dataset,
+        "dataset": "DatasetView",
     }
     _search_fields = ("name", "description")
+
+    def insert_data(self, id, data):
+        if not data.get('dataset'):
+            with db.session.no_autoflush:
+                data['dataset'] = self._model.query.filter_by(id=id).first().dataset.id
+        return data
 
     @classmethod
     def _load_from_source(cls, source, source_id):
@@ -461,7 +490,10 @@ class AnnotationListView(ListView):
             parent_source_id = parent.source_id
 
         schema = cls._schema(copy=True)
-        data = schema.load(schema.dump(annotation))
+        tmp_data = schema.dump(annotation)
+        for note in tmp_data['notes']:
+            note.pop('dataset_study')
+        data = schema.load(tmp_data)
         data['source'] = "neurostore"
         data['source_id'] = source_id
         data['source_updated_at'] = annotation.updated_at or annotation.created_at
@@ -474,7 +506,7 @@ class StudyListView(ListView):
         "analyses": "AnalysisView",
     }
     _linked = {
-        "dataset": Dataset,
+        "dataset": "DatasetView",
     }
     _search_fields = ("name", "description", "source_id", "source", "authors", "publication")
 
@@ -525,7 +557,7 @@ class AnalysisListView(ListView):
     }
 
     _parent = {
-        "study": Study,
+        "study": "StudyView",
     }
 
     _search_fields = ("name", "description")
@@ -539,7 +571,7 @@ class ConditionListView(ListView):
 @view_maker
 class ImageListView(ListView):
     _parent = {
-        "analysis": Analysis,
+        "analysis": "AnalysisView",
     }
     _search_fields = ("filename", "space", "value_type", "analysis_name")
 
@@ -550,25 +582,40 @@ class PointListView(ListView):
         "values": "PointValueView",
     }
     _parent = {
-        "analysis": Analysis,
+        "analysis": "AnalysisView",
     }
 
 
 # Utility resources for updating data
 class AnalysisConditionResource(BaseView):
     _nested = {'condition': 'ConditionView'}
-    _parent = {'analysis': Analysis}
+    _parent = {'analysis': "AnalysisView"}
     _model = AnalysisConditions
     _schema = AnalysisConditionSchema
+    _composite_key = {}
 
 
 class AnnotationAnalysisResource(BaseView):
     _parent = {
-        'annotation': Annotation,
+        'annotation': "AnnotationView",
     }
     _linked = {
-        'analysis': Analysis,
-        'study': Study,
+        'analysis': "AnalysisView",
+        'dataset_study': "DatasetStudyResource",
     }
     _model = AnnotationAnalysis
     _schema = AnnotationAnalysisSchema
+    _composite_key = {}
+
+
+class DatasetStudyResource(BaseView):
+    _parent = {
+        'dataset': "DatasetView",
+        'study': "StudyView",
+    }
+    _composite_key = {
+        'dataset_id': Dataset,
+        'study_id': Study,
+    }
+    _model = DatasetStudy
+    _schema = DatasetStudySchema

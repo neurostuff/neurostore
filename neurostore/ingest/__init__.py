@@ -22,6 +22,7 @@ from neurostore.models import (
     Study,
     Dataset,
 )
+from neurostore.models.data import DatasetStudy
 
 
 def ingest_neurovault(verbose=False, limit=20):
@@ -145,55 +146,8 @@ def ingest_neurosynth(max_rows=None):
     if max_rows is not None:
         metadata = metadata.iloc[:max_rows]
         annotations = annotations.iloc[:max_rows]
-    # collect notes (single annotations) for each analysis
-    notes = []
-    for (metadata_row, annotation_row) in zip(
-        metadata.itertuples(), annotations.itertuples(index=False)
-    ):
-        id_ = metadata_row.Index
-        study_coord_data = coord_data.loc[[id_]]
-        md = {
-            "year": int(metadata_row.year),
-        }
-        s = Study(
-            name=metadata_row.title,
-            authors=metadata_row.authors,
-            publication=metadata_row.journal,
-            metadata=md,
-            pmid=id_,
-            doi=metadata_row.doi,
-            source="neurosynth",
-            source_id=id_,
-        )
-        analyses = []
-        points = []
 
-        for t_id, df in study_coord_data.groupby("table_id"):
-            a = Analysis(name=str(t_id), study=s)
-            analyses.append(a)
-            for _, p in df.iterrows():
-                point = Point(
-                    x=p["x"],
-                    y=p["y"],
-                    z=p["z"],
-                    space=metadata_row.space,
-                    kind="unknown",
-                    analysis=a,
-                )
-                points.append(point)
-            # add annotation
-            notes.append(
-                AnnotationAnalysis(
-                    note=annotation_row._asdict(),
-                    study=s,
-                    analysis=a,
-                )
-            )
-
-        db.session.add_all([s] + analyses + points)
-        db.session.commit()
-
-    # make a neurosynth dataset
+    # create dataset object
     d = Dataset(
         name="neurosynth",
         description="TODO",
@@ -201,22 +155,92 @@ def ingest_neurosynth(max_rows=None):
         pmid="21706013",
         doi="10.1038/nmeth.1635",
         authors="Yarkoni T, Poldrack RA, Nichols TE, Van Essen DC, Wager TD",
-        public=True,
-        studies=Study.query.filter_by(source="neurosynth").all(),
+        public=True
     )
 
-    # create annotation
-    annot = Annotation(
-        name="neurosynth",
-        source="neurostore",
-        source_id=None,
-        description="TODO",
-        dataset=d,
-        annotation_analyses=notes,
-    )
+    studies = []
+    to_commit = []
+    with db.session.no_autoflush:
+        for (metadata_row, annotation_row) in zip(
+            metadata.itertuples(), annotations.itertuples(index=False)
+        ):
+            id_ = metadata_row.Index
+            study_coord_data = coord_data.loc[[id_]]
+            md = {
+                "year": int(metadata_row.year),
+            }
+            s = Study(
+                name=metadata_row.title,
+                authors=metadata_row.authors,
+                publication=metadata_row.journal,
+                metadata=md,
+                pmid=id_,
+                doi=metadata_row.doi,
+                source="neurosynth",
+                source_id=id_,
+            )
+            analyses = []
+            points = []
 
-    db.session.add_all([d, annot])
-    db.session.commit()
+            for t_id, df in study_coord_data.groupby("table_id"):
+                a = Analysis(name=str(t_id), study=s)
+                analyses.append(a)
+                for _, p in df.iterrows():
+                    point = Point(
+                        x=p["x"],
+                        y=p["y"],
+                        z=p["z"],
+                        space=metadata_row.space,
+                        kind="unknown",
+                        analysis=a,
+                    )
+                    points.append(point)
+            to_commit.extend(points)
+            to_commit.extend(analyses)
+            studies.append(s)
+
+        # add studies to dataset
+        d.studies = studies
+        db.session.add(d)
+        db.session.commit()
+
+        # create annotation object
+        annot = Annotation(
+            name="neurosynth",
+            source="neurostore",
+            source_id=None,
+            description="TODO",
+            dataset=d,
+        )
+
+        # collect notes (single annotations) for each analysis
+        notes = []
+        for (metadata_row, annotation_row) in zip(
+            metadata.itertuples(), annotations.itertuples(index=False)
+        ):
+            id_ = metadata_row.Index
+            study_coord_data = coord_data.loc[[id_]]
+            study = Study.query.filter_by(pmid=id_).one()
+            dataset_study = DatasetStudy.query.filter_by(
+                study_id=study.id, dataset_id=d.id
+            ).one()
+
+            for analysis in study.analyses:
+                # add annotation
+                notes.append(
+                    AnnotationAnalysis(
+                        note=annotation_row._asdict(),
+                        analysis=analysis,
+                        annotation=annot,
+                        dataset_study=dataset_study,
+                    )
+                )
+
+        # add notes to annotation
+        annot.annotation_analyses = notes
+
+        db.session.add(annot)
+        db.session.commit()
 
 
 def ingest_neuroquery(max_rows=None):
