@@ -29,21 +29,21 @@ Next, migrate and upgrade the database migrations.
 
     docker-compose exec neurostore \
         bash -c \
-            "python manage.py db merge heads && \
-             python manage.py db stamp head && \
-             python manage.py db migrate && \
-             python manage.py db upgrade"
+            "flask db merge heads && \
+             flask db stamp head && \
+             flask db migrate && \
+             flask db upgrade"
 
-**Note**: `python manage.py db merge heads` is not strictly necessary
+**Note**: `flask db merge heads` is not strictly necessary
 unless you have multiple schema versions that are not from the same history
 (e.g., multiple files in the `versions` directory).
-However, `python manage.py db merge heads` makes the migration more robust
+However, `flask db merge heads` makes the migration more robust
 when there are multiple versions from different histories.
 
 Finally ingest data
 
     docker-compose exec neurostore \
-        bash -c "python manage.py ingest_neurosynth"
+        bash -c "flask ingest-neurosynth"
 
 
 ## Maintaining docker image and db
@@ -53,8 +53,8 @@ If you make a change to neurostore, you should be able to simply restart the ser
 
 If you need to upgrade the db after changing any models:
 
-    docker-compose exec neurostore python manage.py db migrate
-    docker-compose exec neurostore python manage.py db upgrade
+    docker-compose exec neurostore flask db migrate
+    docker-compose exec neurostore flask db upgrade
 
 
 ## Running tests
