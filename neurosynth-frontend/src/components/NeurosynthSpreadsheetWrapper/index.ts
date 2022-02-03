@@ -9,9 +9,13 @@ export interface INeurosynthCell {
 export interface INeurosynthSpreadsheetData {
     rowHeaderValues: string[];
     columnHeaderValues: INeurosynthCell[];
-    data: {
-        [key: string]: string | number | boolean | null;
-    }[];
+    data: ISpreadsheetDataRow[];
     onColumnDelete: (colIndexDeleted: number, colDeleted: string) => void;
     onCellUpdates: (changes: CellChange[]) => void;
+}
+
+export interface ISpreadsheetDataRow {
+    [key: string]: string | boolean | number;
+    _isStudyTitle: boolean;
+    _studyTitle: string;
 }

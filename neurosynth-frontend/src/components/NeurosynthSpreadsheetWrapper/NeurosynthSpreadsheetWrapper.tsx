@@ -7,7 +7,7 @@ import NeurosynthSpreadsheet from './NeurosynthSpreadsheet/NeurosynthSpreadsheet
  * This component is mainly used as a wrapper in order to improve performance and reduce re renders due to
  * changing state
  */
-const NeurosynthSpreadsheetWrapper: React.FC<INeurosynthSpreadsheetData> = (props) => {
+const NeurosynthSpreadsheetWrapper: React.FC<INeurosynthSpreadsheetData> = React.memo((props) => {
     const { data, onColumnDelete, onCellUpdates, columnHeaderValues, rowHeaderValues } = props;
     const [spreadsheetData, setSpreadsheetData] = useState(data);
 
@@ -27,12 +27,7 @@ const NeurosynthSpreadsheetWrapper: React.FC<INeurosynthSpreadsheetData> = (prop
 
     return (
         <Box component="div">
-            {columnHeaderValues.length === 0 && (
-                <Box sx={{ color: 'warning.dark', height: '35px' }}>
-                    There are no notes for this annotation yet
-                </Box>
-            )}
-
+            {/* row headers (analyses) exist but no notes have been created for these analyses yet */}
             <NeurosynthSpreadsheet
                 rowHeaderValues={rowHeaderValues}
                 columnHeaderValues={columnHeaderValues}
@@ -42,6 +37,6 @@ const NeurosynthSpreadsheetWrapper: React.FC<INeurosynthSpreadsheetData> = (prop
             />
         </Box>
     );
-};
+});
 
 export default NeurosynthSpreadsheetWrapper;

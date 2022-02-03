@@ -167,7 +167,19 @@ export interface AnnotationNote {
      * @type {string}
      * @memberof AnnotationNote
      */
+    study_name?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof AnnotationNote
+     */
     annotation?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof AnnotationNote
+     */
+    analysis_name?: string;
     /**
      * 
      * @type {object}

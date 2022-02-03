@@ -8,10 +8,13 @@ import CellCoords from 'handsontable/3rdparty/walkontable/src/cell/coords';
 import styles from './NeurosynthSpreadsheet.module.css';
 import { CellChange, CellValue } from 'handsontable/common';
 import { numericValidator } from 'handsontable/validators';
-import { useRef, memo } from 'react';
+import { memo, useRef } from 'react';
 import { EPropertyType } from '../..';
 import { Box } from '@mui/system';
+import { Link } from '@mui/material';
 import { INeurosynthSpreadsheetData } from '..';
+import { NavLink } from 'react-router-dom';
+import Stylez from './Test.styles';
 
 export const isSpreadsheetBoolType = (value: any): boolean => {
     return (
@@ -27,11 +30,36 @@ export const isSpreadsheetBoolType = (value: any): boolean => {
 };
 
 const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = memo((props) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { data, onColumnDelete, onCellUpdates, columnHeaderValues, rowHeaderValues } = props;
     const { isAuthenticated } = useAuth0();
     const HOT_LICENSE_KEY = 'non-commercial-and-evaluation';
     const ROW_HEIGHTS = 25;
     const hotTableRef = useRef<HotTable>(null);
+
+    const studyTitleRows: number[] = [];
+    data.forEach((row, index) => {
+        if (row._isStudyTitle) {
+            studyTitleRows.push(index);
+        }
+    });
+
+    const rowIsStudyTitle = (row: number): boolean => {
+        return studyTitleRows.includes(row);
+    };
+
+    const getMergeCells = (
+        rowsThatRequireMerging: number[]
+    ): { row: number; col: number; rowspan: number; colspan: number }[] => {
+        if (columnHeaderValues.length === 0 || columnHeaderValues.length === 1) return [];
+
+        return rowsThatRequireMerging.map((rowNum) => ({
+            row: rowNum,
+            col: 0,
+            rowspan: 1,
+            colspan: columnHeaderValues.length,
+        }));
+    };
 
     const getValidator = (type: EPropertyType) => {
         switch (type) {
@@ -53,7 +81,10 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = memo((props)
         TD: HTMLTableCellElement
     ) => {
         const target = event.target as HTMLButtonElement;
-        if (target.tagName === 'svg' || target.tagName === 'path')
+        if (
+            target.tagName === 'svg' ||
+            (target.tagName === 'path' && columnHeaderValues.length > coords.col)
+        )
             onColumnDelete(coords.col, columnHeaderValues[coords.col].value);
     };
 
@@ -62,54 +93,8 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = memo((props)
         licenseKey: HOT_LICENSE_KEY,
         rowHeaders: rowHeaderValues,
         rowHeaderWidth: 150,
-        afterSetDataAtCell: onCellUpdates,
-        afterChange: (changes: CellChange[] | null) => {
-            if (changes && hotTableRef.current && hotTableRef.current.hotInstance) {
-                const updatedChanges: [number, number, any][] = [];
-
-                for (let i = 0; i < changes.length; i++) {
-                    const change = changes[i];
-
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    const [rowValue, colValue, _, newValue] = change;
-
-                    const columnIndex = columnHeaderValues.findIndex(
-                        (colHeaderVal) => colHeaderVal.value === colValue
-                    );
-                    if (columnIndex < 0) throw new Error('could not find nonexistent column');
-                    const column = columnHeaderValues[columnIndex];
-
-                    const isValidSpreadsheetBooleanValueAndRequiresChange =
-                        column.type === EPropertyType.BOOLEAN &&
-                        newValue !== true &&
-                        newValue !== false &&
-                        newValue !== null;
-
-                    if (isValidSpreadsheetBooleanValueAndRequiresChange) {
-                        let transformedValue = null;
-                        switch (newValue) {
-                            case '':
-                            case null:
-                                transformedValue = null;
-                                break;
-                            case 't':
-                            case 'true':
-                                transformedValue = true;
-                                break;
-                            default:
-                                transformedValue = false;
-                                break;
-                        }
-
-                        updatedChanges.push([rowValue, columnIndex, transformedValue]);
-                    }
-                }
-                if (updatedChanges.length > 0)
-                    hotTableRef.current.hotInstance.setDataAtCell(updatedChanges);
-            }
-        },
         rowHeights: ROW_HEIGHTS,
-        mergeCells: [{ row: 3, col: 0, colspan: 3, rowspan: 1 }],
+        mergeCells: getMergeCells(studyTitleRows),
         cells: function (
             this: CellProperties,
             row: number,
@@ -117,16 +102,70 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = memo((props)
             prop: string | number
         ): CellMeta {
             const cellProperties: any = {};
-            if (row === 3) {
-                cellProperties['readOnly'] = true;
+            if (rowIsStudyTitle(row)) {
+                // cellProperties.readOnly = true;
                 cellProperties['className'] = styles['some-class-name'];
             }
             return cellProperties;
         },
+        fillHandle: false,
+        beforeChange: function (changes: CellChange[], source) {
+            /**
+             * Prevent study name from being selectable and copyable
+             */
+            if (columnHeaderValues.length <= 0) return;
+
+            changes.forEach((change, index) => {
+                const [rowValue, colValue, _, newValue] = change;
+
+                const col = columnHeaderValues.find((col) => col.value === colValue);
+                if (col === undefined || rowIsStudyTitle(rowValue)) {
+                    changes[index] = null as any;
+                    return;
+                }
+
+                const isValidSpreadsheetBooleanValueAndRequiresChange =
+                    col.type === EPropertyType.BOOLEAN &&
+                    newValue !== true &&
+                    newValue !== false &&
+                    newValue !== null;
+
+                if (isValidSpreadsheetBooleanValueAndRequiresChange) {
+                    let transformedValue = null;
+                    switch (newValue) {
+                        case '':
+                        case null:
+                            transformedValue = null;
+                            break;
+                        case 't':
+                        case 'true':
+                            transformedValue = true;
+                            break;
+                        default:
+                            transformedValue = false;
+                            break;
+                    }
+
+                    changes[index][3] = transformedValue;
+                }
+            });
+        },
+        afterSetDataAtCell: function (changes: CellChange[]) {
+            const updatedChanges = changes.filter((change) => !rowIsStudyTitle(change[0]));
+            if (updatedChanges.length > 0) onCellUpdates(updatedChanges);
+        },
+        beforeOnCellMouseDown: function (event: MouseEvent, coords: CellCoords, TH: HTMLElement) {
+            /**
+             * Prevent study name from being selectable and copyable
+             */
+            if (rowIsStudyTitle(coords.row)) {
+                event.stopImmediatePropagation();
+            }
+        },
         columns: columnHeaderValues.map((col) => {
             return {
-                copyable: false,
-                data: col.value,
+                copyable: true,
+                data: col.value, // handsontable reads the data and gets the value that has col.value as its key
                 readOnly: col.type === EPropertyType.NONE || !isAuthenticated,
                 type: col.type === EPropertyType.NUMBER ? 'numeric' : 'text',
                 className: styles[col.type],
@@ -136,6 +175,18 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = memo((props)
             };
         }),
         afterOnCellMouseDown: handleOnHeaderClick,
+        stretchH: 'all',
+        afterGetRowHeader: function (row, TH: HTMLElement) {
+            /**
+             * style the row header if it is a study title row
+             */
+            if (rowIsStudyTitle(row)) {
+                TH.setAttribute(
+                    'style',
+                    'background-color: #0077b6; color: white; border-left-color: #0077b6; border-right-color: #0077b6;'
+                );
+            }
+        },
         afterGetColHeader: (column: number, TH: HTMLElement) => {
             const isBoolType = TH.querySelector(`.${styles['boolean']}`);
 
@@ -156,7 +207,6 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = memo((props)
                 </div>
             `;
         }),
-
         contextMenu: false,
     };
 
@@ -167,13 +217,40 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = memo((props)
         return totalHeightInPixels > 600 ? '600px' : `${totalHeightInPixels}px`;
     };
 
+    const canShowTable = rowHeaderValues.length > 0;
+
     return (
-        <Box
-            component="div"
-            sx={{ overflowX: 'auto', height: getSpreadsheetContainerHeight(), overflowY: 'auto' }}
-        >
-            <HotTable ref={hotTableRef} settings={hotSettings} />
-        </Box>
+        <>
+            {columnHeaderValues.length === 0 && canShowTable && (
+                <Box sx={{ color: 'warning.dark', height: '35px' }}>
+                    There are no notes for this annotation yet
+                </Box>
+            )}
+            {canShowTable && (
+                <Box
+                    component="div"
+                    sx={{
+                        overflow: 'auto',
+                        height: getSpreadsheetContainerHeight(),
+                    }}
+                >
+                    <Box
+                        sx={Stylez.test}
+                        ref={hotTableRef}
+                        component={HotTable}
+                        settings={hotSettings}
+                    />
+                </Box>
+            )}
+            {!canShowTable && (
+                <Box component="div" color="warning.dark" sx={{ margin: '1rem 0' }}>
+                    There are no analyses to annotate yet. Start by{' '}
+                    <Link color="primary" exact component={NavLink} to="/studies">
+                        adding studies to this dataset
+                    </Link>
+                </Box>
+            )}
+        </>
     );
 });
 
