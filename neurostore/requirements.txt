@@ -23,3 +23,4 @@ webargs>=7.0.1
 wheel>=0.36.2
 wrapt>=1.12.1
 scipy
+pytest
