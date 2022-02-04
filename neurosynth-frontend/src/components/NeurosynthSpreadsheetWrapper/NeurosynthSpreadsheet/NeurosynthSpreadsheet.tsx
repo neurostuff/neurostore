@@ -14,7 +14,6 @@ import { Box } from '@mui/system';
 import { Link } from '@mui/material';
 import { INeurosynthSpreadsheetData } from '..';
 import { NavLink } from 'react-router-dom';
-import Stylez from './Test.styles';
 
 export const isSpreadsheetBoolType = (value: any): boolean => {
     return (
@@ -88,8 +87,16 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = memo((props)
             onColumnDelete(coords.col, columnHeaderValues[coords.col].value);
     };
 
+    const getSpreadsheetContainerHeight = (): string => {
+        // extra height to take borders into account
+        const extraHeaderHeight = 5;
+        const totalHeightInPixels = (rowHeaderValues.length + 1) * ROW_HEIGHTS + extraHeaderHeight;
+        return totalHeightInPixels > 600 ? '600px' : `${totalHeightInPixels}px`;
+    };
+
     const hotSettings: GridSettings = {
         data: data,
+        maxRows: data.length,
         licenseKey: HOT_LICENSE_KEY,
         rowHeaders: rowHeaderValues,
         rowHeaderWidth: 150,
@@ -103,7 +110,7 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = memo((props)
         ): CellMeta {
             const cellProperties: any = {};
             if (rowIsStudyTitle(row)) {
-                // cellProperties.readOnly = true;
+                cellProperties.readOnly = true;
                 cellProperties['className'] = styles['some-class-name'];
             }
             return cellProperties;
@@ -150,10 +157,14 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = memo((props)
                 }
             });
         },
-        afterSetDataAtCell: function (changes: CellChange[]) {
+        afterSetDataAtCell: function (changes: CellChange[], source) {
+            // we don't want to update when data is set due to irrelevant actions
+            if (source === 'populateFromArray') return;
             const updatedChanges = changes.filter((change) => !rowIsStudyTitle(change[0]));
             if (updatedChanges.length > 0) onCellUpdates(updatedChanges);
         },
+        viewportRowRenderingOffset: 100,
+        viewportColumnRenderingOffset: 30,
         beforeOnCellMouseDown: function (event: MouseEvent, coords: CellCoords, TH: HTMLElement) {
             /**
              * Prevent study name from being selectable and copyable
@@ -183,7 +194,7 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = memo((props)
             if (rowIsStudyTitle(row)) {
                 TH.setAttribute(
                     'style',
-                    'background-color: #0077b6; color: white; border-left-color: #0077b6; border-right-color: #0077b6;'
+                    'background-color: #ccc; color: black; border-left-color: #ccc; border-right-color: #ccc;'
                 );
             }
         },
@@ -208,13 +219,8 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = memo((props)
             `;
         }),
         contextMenu: false,
-    };
-
-    const getSpreadsheetContainerHeight = (): string => {
-        // extra height to take borders into account
-        const extraHeaderHeight = 5;
-        const totalHeightInPixels = (rowHeaderValues.length + 1) * ROW_HEIGHTS + extraHeaderHeight;
-        return totalHeightInPixels > 600 ? '600px' : `${totalHeightInPixels}px`;
+        height: getSpreadsheetContainerHeight(),
+        width: '100%',
     };
 
     const canShowTable = rowHeaderValues.length > 0;
@@ -230,12 +236,15 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = memo((props)
                 <Box
                     component="div"
                     sx={{
-                        overflow: 'auto',
-                        height: getSpreadsheetContainerHeight(),
+                        overflow: 'hidden',
                     }}
                 >
                     <Box
-                        sx={Stylez.test}
+                        sx={{
+                            '& .rowHeader': {
+                                whiteSpace: 'normal',
+                            },
+                        }}
                         ref={hotTableRef}
                         component={HotTable}
                         settings={hotSettings}

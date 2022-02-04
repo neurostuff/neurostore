@@ -23,11 +23,10 @@
 }
 
 .some-class-name {
-    background-color: #0077b6 !important;
-    color: white !important;
-    border-left-color: #0077b6 !important;
-    border-right-color: #0077b6 !important;
-    font-weight: bold;
+    background-color: #ccc !important;
+    color: black !important;
+    border-left-color: #ccc !important;
+    border-right-color: #ccc !important;
 }
 
 .delete-icon {

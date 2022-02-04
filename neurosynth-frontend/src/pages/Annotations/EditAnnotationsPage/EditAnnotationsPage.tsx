@@ -214,7 +214,14 @@ const EditAnnotationsPage: React.FC = (props) => {
 
         API.Services.AnnotationsService.annotationsIdPut(params.annotationId, {
             [property]: updatedText,
-            notes: annotation?.notes, // we get a 500 error if we do not include notes
+            notes: (annotation?.notes || []).map((annotationNote) => {
+                const { study_name, analysis_name, note, analysis, ...everythingElse } =
+                    annotationNote;
+                return {
+                    analysis,
+                    note,
+                };
+            }), // we get a 500 error if we do not include notes
         })
             .then((res) => {
                 setAnnotation((prevState) => {
@@ -235,7 +242,7 @@ const EditAnnotationsPage: React.FC = (props) => {
             });
     };
 
-    const handleColumnAdd = (model: IMetadataRowModel) => {
+    const handleColumnAdd = (model: IMetadataRowModel): boolean => {
         const columnKeyExists = !!columnHeaders?.find((col) => col.value === model.metadataKey);
         if (columnKeyExists) return false;
 
@@ -325,8 +332,9 @@ const EditAnnotationsPage: React.FC = (props) => {
     }, []);
 
     const handleCellUpdates = useCallback((changes: CellChange[]) => {
-        if (!changes || changes.length === 0) return;
+        console.log('update');
 
+        if (!changes || changes.length === 0) return;
         setSpreadsheetData((prevState) => {
             if (!prevState) return prevState;
             const newState = [...prevState];
