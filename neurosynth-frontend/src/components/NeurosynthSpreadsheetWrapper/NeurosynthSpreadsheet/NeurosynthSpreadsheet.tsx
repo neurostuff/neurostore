@@ -163,8 +163,6 @@ const NeurosynthSpreadsheet: React.FC<INeurosynthSpreadsheetData> = memo((props)
             const updatedChanges = changes.filter((change) => !rowIsStudyTitle(change[0]));
             if (updatedChanges.length > 0) onCellUpdates(updatedChanges);
         },
-        viewportRowRenderingOffset: 100,
-        viewportColumnRenderingOffset: 30,
         beforeOnCellMouseDown: function (event: MouseEvent, coords: CellCoords, TH: HTMLElement) {
             /**
              * Prevent study name from being selectable and copyable
