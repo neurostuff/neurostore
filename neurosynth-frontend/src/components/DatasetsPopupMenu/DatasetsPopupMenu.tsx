@@ -59,11 +59,8 @@ const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
                 onClickAway={handleClickClose}
                 anchorElement={anchorRef.current}
             >
-                <MenuList>
-                    <Box
-                        onClick={(e) => e.stopPropagation()}
-                        sx={{ padding: '6px 16px', fontSize: '1rem' }}
-                    >
+                <MenuList sx={{ cursor: 'default' }} onClick={(e) => e.stopPropagation()}>
+                    <Box sx={{ padding: '6px 16px', fontSize: '1rem' }}>
                         <Box sx={{ fontWeight: 'bold', marginBottom: '8px' }}>
                             Add to a dataset...
                         </Box>

@@ -121,7 +121,10 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                 // temporary fix. TODO: fix open-api spec
                 const updatedDataset = res.data as unknown as DatasetsApiResponse;
 
-                showSnackbar(`study added to ${dataset.name || dataset.id}`, SnackbarType.SUCCESS);
+                showSnackbar(
+                    `${study.name} added to ${dataset.name || dataset.id}`,
+                    SnackbarType.SUCCESS
+                );
                 if (current) {
                     setDatasets((prevState) => {
                         if (!prevState) return prevState;

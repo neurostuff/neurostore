@@ -8,6 +8,7 @@ import {
     EPropertyType,
     IMetadataRowModel,
     INeurosynthCell,
+    ISpreadsheetDataRow,
     NeurosynthLoader,
     NeurosynthSpreadsheetWrapper,
     TextEdit,
@@ -23,13 +24,19 @@ import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 
 export const convertToAnnotationObject = (
     annotation: AnnotationsApiResponse,
-    data: { [key: string]: string | boolean | number }[]
+    data: ISpreadsheetDataRow[]
 ): AnnotationNote[] => {
+    const pureData = data
+        .filter((row) => !row._isStudyTitle)
+        .map((row) => {
+            const { _studyTitle, _isStudyTitle, ...everythingElse } = row;
+            return everythingElse;
+        });
     return (annotation.notes || []).map((annotationNote, index) => {
         return {
             analysis: annotationNote.analysis,
             study: annotationNote.study,
-            note: data[index],
+            note: pureData[index],
         };
     });
 };
@@ -47,16 +54,15 @@ export const getTypeForColumn = (columnKey: string, notes: AnnotationNote[]): EP
 };
 
 const EditAnnotationsPage: React.FC = (props) => {
-    const [confirmationIsOpen, setConfirmationIsOpen] = useState(false);
+    const history = useHistory();
     const { isAuthenticated, getAccessTokenSilently } = useAuth0();
     const { handleToken, showSnackbar } = useContext(GlobalContext);
-    const [annotation, setAnnotation] = useState<AnnotationsApiResponse>();
-    const history = useHistory();
-    const [rowHeaders, setRowHeaders] = useState<string[]>([]);
-    const [columnHeaders, setColumnHeaders] = useState<INeurosynthCell[]>();
 
-    const [spreadsheetData, setSpreadsheetData] =
-        useState<{ [key: string]: string | boolean | number }[]>();
+    const [confirmationIsOpen, setConfirmationIsOpen] = useState(false);
+    const [annotation, setAnnotation] = useState<AnnotationsApiResponse>();
+    const [rowHeaders, setRowHeaders] = useState<string[]>();
+    const [columnHeaders, setColumnHeaders] = useState<INeurosynthCell[]>();
+    const [spreadsheetData, setSpreadsheetData] = useState<ISpreadsheetDataRow[]>();
     const [saveChangesDisabled, setSaveChangesDisabled] = useState(true);
 
     const params: {
@@ -73,14 +79,20 @@ const EditAnnotationsPage: React.FC = (props) => {
                     .then((res) => {
                         // temp solution to handle the annotationExport case
                         const resData = res.data as AnnotationsApiResponse;
+                        setAnnotation(resData);
 
-                        if (!resData?.notes || resData.notes.length === 0) {
+                        const notes = (resData.notes || []).sort((a, b) => {
+                            const firstStudyId = a.study as string;
+                            const secondStudyId = b.study as string;
+                            return firstStudyId.localeCompare(secondStudyId);
+                        });
+
+                        if (!notes || notes.length === 0) {
                             setSpreadsheetData([]);
+                            setColumnHeaders([]);
+                            setRowHeaders([]);
                             return;
                         }
-
-                        const notes = resData.notes;
-                        setAnnotation(resData);
 
                         /**
                          * Extract the keys from the first note obj. We can do this
@@ -90,22 +102,69 @@ const EditAnnotationsPage: React.FC = (props) => {
                          */
                         const noteKeys: string[] = Object.keys(notes[0].note as object);
 
-                        const rowHeaders = notes.map((note) => note.analysis || '');
-                        setRowHeaders(rowHeaders);
-
                         const columnLabelValues = noteKeys.map((noteKey) => ({
                             value: noteKey,
                             type: getTypeForColumn(noteKey, notes),
                         }));
                         setColumnHeaders(columnLabelValues);
 
-                        const spreadsheetValues: {
-                            [key: string]: string | number | boolean;
-                        }[] = notes.map(
-                            (noteObj) =>
-                                noteObj.note as { [key: string]: string | number | boolean }
-                        );
-                        setSpreadsheetData(spreadsheetValues);
+                        const rowHeaders: string[] = [];
+                        const spreadsheetData: ISpreadsheetDataRow[] = [];
+                        let index = 0;
+                        let lastStudyId: string | undefined = undefined;
+
+                        while (index < notes.length) {
+                            const currNote = notes[index];
+                            const currStudyId = currNote.study as string;
+                            const currStudyName = currNote.study_name as string;
+
+                            if (currStudyId !== lastStudyId) {
+                                // we hit a new study, do not increase index as we need to push a title row
+
+                                if (noteKeys.length > 0) {
+                                    // columns exist, so we want to set the study title as the first column (for handsontable to show value as
+                                    // as merged group of cells)
+                                    rowHeaders.push('');
+                                    spreadsheetData.push({
+                                        [noteKeys[0]]: currStudyName,
+                                        _studyTitle: currStudyName,
+                                        _isStudyTitle: true,
+                                    });
+                                } else {
+                                    // no columns exist, we set the study title in the row header
+                                    rowHeaders.push(currStudyName);
+                                    spreadsheetData.push({
+                                        _studyTitle: currStudyName,
+                                        _isStudyTitle: true,
+                                    });
+                                }
+                                lastStudyId = currStudyId;
+                            } else {
+                                // we do not need to push a new title row
+
+                                if (noteKeys.length > 0) {
+                                    // columns exist, just add the regular row
+                                    spreadsheetData.push({
+                                        ...(currNote.note as {
+                                            [key: string]: string | boolean | number;
+                                        }),
+                                        _studyTitle: currStudyName,
+                                        _isStudyTitle: false,
+                                    });
+                                } else {
+                                    // no columns exist, there is no data to add to the row
+                                    spreadsheetData.push({
+                                        _studyTitle: currStudyName,
+                                        _isStudyTitle: false,
+                                    });
+                                }
+                                rowHeaders.push(currNote.analysis_name || '');
+                                index++;
+                            }
+                        }
+
+                        setRowHeaders(rowHeaders);
+                        setSpreadsheetData(spreadsheetData);
                     })
                     .catch((err) => {
                         console.error(err);
@@ -118,6 +177,28 @@ const EditAnnotationsPage: React.FC = (props) => {
             getAnnotation();
         }
     }, [params.annotationId, showSnackbar]);
+
+    useEffect(() => {
+        if (spreadsheetData) {
+            setRowHeaders((prevState) => {
+                if (!prevState) return prevState;
+                const hasColumns = Object.keys(spreadsheetData[0]).length - 2 > 0;
+                const updatedState = [...prevState];
+                let requiresUpdate = false;
+                for (let i = 0; i < updatedState.length; i++) {
+                    const rowHeaderIsStudyTitle = spreadsheetData[i]._isStudyTitle;
+                    const rowHeaderStudyTitle = spreadsheetData[i]._studyTitle;
+                    const tempVal = hasColumns ? '' : rowHeaderStudyTitle;
+
+                    if (rowHeaderIsStudyTitle && tempVal !== updatedState[i]) {
+                        requiresUpdate = true;
+                        updatedState[i] = tempVal;
+                    }
+                }
+                return requiresUpdate ? updatedState : prevState;
+            });
+        }
+    }, [spreadsheetData]);
 
     const updateAnnotationDetails = async (
         property: 'name' | 'description',
@@ -133,6 +214,14 @@ const EditAnnotationsPage: React.FC = (props) => {
 
         API.Services.AnnotationsService.annotationsIdPut(params.annotationId, {
             [property]: updatedText,
+            notes: (annotation?.notes || []).map((annotationNote) => {
+                const { study_name, analysis_name, note, analysis, ...everythingElse } =
+                    annotationNote;
+                return {
+                    analysis,
+                    note,
+                };
+            }), // we get a 500 error if we do not include notes
         })
             .then((res) => {
                 setAnnotation((prevState) => {
@@ -153,7 +242,7 @@ const EditAnnotationsPage: React.FC = (props) => {
             });
     };
 
-    const handleAddColumn = (model: IMetadataRowModel) => {
+    const handleColumnAdd = (model: IMetadataRowModel): boolean => {
         const columnKeyExists = !!columnHeaders?.find((col) => col.value === model.metadataKey);
         if (columnKeyExists) return false;
 
@@ -172,14 +261,27 @@ const EditAnnotationsPage: React.FC = (props) => {
 
             for (let i = 0; i < newState.length; i++) {
                 const updatedRow = { ...newState[i] };
-                updatedRow[model.metadataKey] = model.metadataValue;
+                if (updatedRow._isStudyTitle) {
+                    /**
+                     * for rows that are study titles, we want to set the first column as the title,
+                     * and the other columns as null for HandsOnTable to merge the cells
+                     */
+
+                    // first time adding a column, subtract 2 for the two keys we added manually
+                    const noColumns = Object.keys(updatedRow).length - 2 === 0;
+                    updatedRow[model.metadataKey] = noColumns
+                        ? updatedRow._studyTitle
+                        : (null as any);
+                } else {
+                    // for rows that are not study titles, we just set the data as usual
+                    updatedRow[model.metadataKey] = model.metadataValue;
+                }
                 newState[i] = updatedRow;
             }
             return newState;
         });
 
         setSaveChangesDisabled(false);
-
         return true;
     };
 
@@ -190,26 +292,49 @@ const EditAnnotationsPage: React.FC = (props) => {
     const handleColumnDelete = useCallback((colIndexDeleted: number, colDeleted: string) => {
         setColumnHeaders((prevState) => {
             if (!prevState) return prevState;
-            const newState = [...prevState];
-            newState.splice(colIndexDeleted, 1);
-            return newState;
-        });
-        setSpreadsheetData((prevState) => {
-            if (!prevState) return prevState;
-            const newState = [...prevState];
-            for (let i = 0; i < newState.length; i++) {
-                const newRow = { ...newState[i] };
-                delete newRow[colDeleted];
-                newState[i] = newRow;
-            }
-            return newState;
+            const newColumnHeadersState = [...prevState];
+            newColumnHeadersState.splice(colIndexDeleted, 1);
+
+            setSpreadsheetData((prevState) => {
+                if (!prevState) return prevState;
+                const newSpreadsheetDataState = [...prevState];
+                for (let i = 0; i < newSpreadsheetDataState.length; i++) {
+                    const newSpreadsheetRow = { ...newSpreadsheetDataState[i] };
+                    const spreadsheetRowHasColumns = newColumnHeadersState.length > 0;
+                    delete newSpreadsheetRow[colDeleted];
+
+                    if (
+                        newSpreadsheetRow._isStudyTitle &&
+                        colIndexDeleted === 0 &&
+                        spreadsheetRowHasColumns
+                    ) {
+                        // As all study titles are set as the 0th column key, we need to handle the case where the 0th column is removed.
+                        // We don't care about other cases.
+
+                        /**
+                         * Handle case where there are still columns.
+                         * Note that this could either be updated or not, as setColumnHeaders() is asynchronous.
+                         * We therefore need to handle both cases.
+                         *
+                         * (1) If the first column header value is the same as colDeleted, that means that it hasn't been updated yet and we need to get the next one.
+                         * (2) If the first column header value is different than colDeleted, that means it has been updated and we can use it.
+                         */
+                        const newFirstColumnKey = newColumnHeadersState[0].value;
+                        newSpreadsheetRow[newFirstColumnKey] = newSpreadsheetRow._studyTitle;
+                    }
+                    newSpreadsheetDataState[i] = newSpreadsheetRow;
+                }
+                return newSpreadsheetDataState;
+            });
+            return newColumnHeadersState;
         });
         setSaveChangesDisabled(false);
     }, []);
 
     const handleCellUpdates = useCallback((changes: CellChange[]) => {
-        if (!changes || changes.length === 0) return;
+        console.log('update');
 
+        if (!changes || changes.length === 0) return;
         setSpreadsheetData((prevState) => {
             if (!prevState) return prevState;
             const newState = [...prevState];
@@ -273,6 +398,9 @@ const EditAnnotationsPage: React.FC = (props) => {
         }
     };
 
+    const hasRowHeaders = rowHeaders && rowHeaders.length > 0;
+    const showAnnotationEditControls = isAuthenticated && hasRowHeaders;
+
     return (
         <>
             <Box sx={EditAnnotationsPageStyles.stickyButtonContainer}>
@@ -321,14 +449,14 @@ const EditAnnotationsPage: React.FC = (props) => {
                     ...(saveChangesDisabled ? {} : EditAnnotationsPageStyles.unsavedChanges),
                 }}
             >
-                {isAuthenticated && (
+                {showAnnotationEditControls && (
                     <Box sx={EditAnnotationsPageStyles.addColumnContainer}>
                         <AddMetadataRow
                             allowNoneOption={false}
                             keyPlaceholderText="Column Key"
                             valuePlaceholderText="Default Value"
                             errorMessage="All column keys must be unique"
-                            onAddMetadataRow={handleAddColumn}
+                            onAddMetadataRow={handleColumnAdd}
                         />
                     </Box>
                 )}
@@ -343,7 +471,7 @@ const EditAnnotationsPage: React.FC = (props) => {
                         />
                     )}
                 </NeurosynthLoader>
-                {isAuthenticated && (
+                {showAnnotationEditControls && (
                     <Box
                         component="div"
                         sx={{ width: '100%', display: 'flex', justifyContent: 'end' }}
