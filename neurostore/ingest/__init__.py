@@ -172,6 +172,7 @@ def ingest_neurosynth(max_rows=None):
             s = Study(
                 name=metadata_row.title,
                 authors=metadata_row.authors,
+                year=metadata_row.year,
                 publication=metadata_row.journal,
                 metadata=md,
                 pmid=id_,
