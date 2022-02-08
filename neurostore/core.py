@@ -46,19 +46,3 @@ auth0 = oauth.register(
         'scope': 'openid profile email',
     },
 )
-
-# Flask-Dance (OAuth)
-# app.secret_key = app.config["DANCE_SECRET_KEY"]
-# blueprint = make_github_blueprint(
-#     client_id=app.config["GITHUB_CLIENT_ID"],
-#     client_secret=app.config["GITHUB_CLIENT_SECRET"],
-# )
-# app.register_blueprint(blueprint, url_prefix="/login")
-# blueprint.storage = SQLAlchemyStorage(OAuth, db.session)
-
-# # GraphQL API
-# from flask_graphql import GraphQLView
-# from .schemas.graphql import graphql_schema
-# app.add_url_rule('/graphql', view_func=GraphQLView.as_view(
-#                  'graphql',schema=graphql_schema, graphiql=True,
-#                  context_value={'session': db.session}))

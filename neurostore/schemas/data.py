@@ -202,8 +202,8 @@ class StudySchema(BaseDataSchema):
     source_updated_at = fields.DateTime(dump_only=True, db_only=True, allow_none=True)
 
     class Meta:
-        additional = ("name", "description", "publication", "doi", "pmid", "authors")
-        allow_none = ("name", "description", "publication", "doi", "pmid", "authors")
+        additional = ("name", "description", "publication", "doi", "pmid", "authors", "year")
+        allow_none = ("name", "description", "publication", "doi", "pmid", "authors", "year")
 
 
 class DatasetSchema(BaseDataSchema):
@@ -222,9 +222,12 @@ class AnnotationAnalysisSchema(BaseDataSchema):
     analysis_id = fields.String(data_key="analysis")
     study_id = fields.String(data_key="study")
     dataset_id = fields.String(data_key="dataset", load_only=True)
-    dataset_study = fields.Nested(DatasetStudySchema)
     study_name = fields.Function(lambda aa: aa.dataset_study.study.name, dump_only=True)
     analysis_name = fields.Function(lambda aa: aa.analysis.name, dump_only=True)
+    dataset_study = fields.Nested(DatasetStudySchema, load_only=True)
+    study_year = fields.Function(lambda aa: aa.dataset_study.study.year, dump_only=True)
+    authors = fields.Function(lambda aa: aa.dataset_study.study.authors, dump_only=True)
+    publication = fields.Function(lambda aa: aa.dataset_study.study.publication, dump_only=True)
 
     @post_load
     def add_id(self, data, **kwargs):
