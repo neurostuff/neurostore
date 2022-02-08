@@ -492,7 +492,7 @@ class AnnotationListView(ListView):
         schema = cls._schema(copy=True)
         tmp_data = schema.dump(annotation)
         for note in tmp_data['notes']:
-            note.pop('dataset_study')
+            note.pop('study_year')
         data = schema.load(tmp_data)
         data['source'] = "neurostore"
         data['source_id'] = source_id
