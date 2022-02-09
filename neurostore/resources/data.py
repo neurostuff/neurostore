@@ -235,6 +235,7 @@ LIST_USER_ARGS = {
     "user_id": fields.String(missing=None),
     "dataset_id": fields.String(missing=None),
     "export": fields.Boolean(missing=False),
+    "data_type": fields.String(missing=None),
 }
 
 
@@ -275,6 +276,17 @@ class ListView(BaseView):
         # query annotations for a specific dataset
         if args.get('dataset_id'):
             q = q.filter(m.dataset_id == args.get('dataset_id'))
+
+        # search studies for data_type
+        if args.get('data_type'):
+            if args['data_type'] == 'coordinate':
+                q = q.filter(m.analyses.any(Analysis.points.any()))
+            elif args['data_type'] == 'image':
+                q = q.filter(m.analyses.any(Analysis.images.any()))
+            elif args['data_type'] == 'both':
+                q = q.filter(sae.and_(
+                    m.analyses.any(Analysis.images.any()),
+                    m.analyses.any(Analysis.points.any())))
 
         # For multi-column search, default to using search fields
         if s is not None and self._fulltext_fields:
