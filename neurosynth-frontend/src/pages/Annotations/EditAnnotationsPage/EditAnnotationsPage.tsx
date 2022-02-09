@@ -104,14 +104,16 @@ const EditAnnotationsPage: React.FC = (props) => {
 
         authorText = authors.split(', ')[0].slice(0, authorTextLimit);
         if (authors.split(', ').length > 1) authorText += authorEtAlText;
+        if (authorText.length > 0) authorText += ' | ';
 
         studyTitleText = studyName.slice(0, studyTitleTextLimit);
         if (studyTitleText.length < studyName.length) studyTitleText += '...';
 
         publicationText = journalName.slice(0, publicationTextLimit);
         if (publicationText.length < journalName.length) publicationText += '...';
+        if (publicationText.length > 0) publicationText = ` | ${publicationText}`;
 
-        return `${authorText} | ${studyYearText} ${studyTitleText} | ${publicationText}`;
+        return `${authorText} ${studyYearText} ${studyTitleText} ${publicationText}`;
     };
 
     useEffect(() => {
