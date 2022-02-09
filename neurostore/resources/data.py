@@ -183,21 +183,12 @@ class BaseView(MethodView):
 class ObjectView(BaseView):
     def get(self, id):
         record = self._model.query.filter_by(id=id).first_or_404()
-        current_user = get_current_user()
-        user_id = None if not current_user else current_user.external_id
-
-        if hasattr(record, 'public') and not record.public and record.user_id != user_id:
-            abort(403)
-
         nested = request.args.get("nested")
         export = request.args.get("export", False)
         return self.__class__._schema(context={
             'nested': nested,
             'export': export,
         }).dump(record)
-
-    def insert_data(self, id, data):
-        return data
 
     def put(self, id):
         request_data = self.insert_data(id, request.json)
@@ -220,6 +211,9 @@ class ObjectView(BaseView):
         db.session.commit()
 
         return 204
+
+    def insert_data(self, id, data):
+        return data
 
 
 LIST_USER_ARGS = {
@@ -267,7 +261,6 @@ class ListView(BaseView):
             q = q.filter(m.user_id == args.get("user_id"))
 
         # query items that are public and/or you own them
-        # (only pertinant for studies currently)
         if hasattr(m, 'public'):
             current_user = get_current_user()
             q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
