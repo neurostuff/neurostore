@@ -10,3 +10,14 @@ def test_create_user(auth_client):
 
     assert resp.status_code == 200
     assert User.query.filter_by(external_id='1234').first() is not None
+
+
+def test_list_users(auth_client):
+    resp = auth_client.get("/api/users/")
+    assert resp.status_code == 200
+
+
+def test_list_user(auth_client):
+    user = User.query.filter_by(name="user1").first()
+    resp = auth_client.get(f"/api/users/{user.id}")
+    assert resp.status_code == 200
