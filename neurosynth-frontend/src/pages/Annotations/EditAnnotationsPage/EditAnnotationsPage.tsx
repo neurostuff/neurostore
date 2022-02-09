@@ -89,7 +89,7 @@ const EditAnnotationsPage: React.FC = (props) => {
         let authorText = '';
         let studyTitleText = '';
         let publicationText = '';
-        let studyYearText = studyYear ? `(${studyYear})` : '';
+        let studyYearText = studyYear ? ` (${studyYear}) ` : '';
 
         if (windowWidth <= 900) {
             authorTextLimit = 15;
@@ -113,7 +113,7 @@ const EditAnnotationsPage: React.FC = (props) => {
         if (publicationText.length < journalName.length) publicationText += '...';
         if (publicationText.length > 0) publicationText = ` | ${publicationText}`;
 
-        return `${authorText} ${studyYearText} ${studyTitleText} ${publicationText}`;
+        return `${authorText}${studyYearText}${studyTitleText} ${publicationText}`;
     };
 
     useEffect(() => {
