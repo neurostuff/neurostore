@@ -113,7 +113,7 @@ const EditAnnotationsPage: React.FC = (props) => {
         if (publicationText.length < journalName.length) publicationText += '...';
         if (publicationText.length > 0) publicationText = ` | ${publicationText}`;
 
-        return `${authorText}${studyYearText}${studyTitleText} ${publicationText}`;
+        return `${authorText}${studyYearText}${studyTitleText}${publicationText}`;
     };
 
     useEffect(() => {
