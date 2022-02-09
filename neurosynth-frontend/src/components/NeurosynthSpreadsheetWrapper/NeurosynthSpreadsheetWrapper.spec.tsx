@@ -20,12 +20,6 @@ describe('NeurosynthSpreadsheetWrapper Component', () => {
         data: [],
     };
 
-    it('should render', () => {
-        render(<NeurosynthSpreadsheetWrapper {...mockSpreadsheetData} />);
-        const noDataMsg = screen.getByText('There are no notes for this annotation yet');
-        expect(noDataMsg).toBeInTheDocument();
-    });
-
     it('should not show an error message', () => {
         const mockColumnHeaderValues = [
             {

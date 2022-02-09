@@ -21,6 +21,7 @@ import { CellChange } from 'handsontable/common';
 import { AnnotationNote } from '../../../gen/api';
 import { useAuth0 } from '@auth0/auth0-react';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
+import useWindowDimensions from '../../../hooks/useWindowDimensions';
 
 export const convertToAnnotationObject = (
     annotation: AnnotationsApiResponse,
@@ -57,7 +58,7 @@ const EditAnnotationsPage: React.FC = (props) => {
     const history = useHistory();
     const { isAuthenticated, getAccessTokenSilently } = useAuth0();
     const { handleToken, showSnackbar } = useContext(GlobalContext);
-
+    const { windowWidth, windowHeight } = useWindowDimensions();
     const [confirmationIsOpen, setConfirmationIsOpen] = useState(false);
     const [annotation, setAnnotation] = useState<AnnotationsApiResponse>();
     const [rowHeaders, setRowHeaders] = useState<string[]>();
@@ -69,6 +70,49 @@ const EditAnnotationsPage: React.FC = (props) => {
         annotationId: string;
         datasetId: string;
     } = useParams();
+
+    const buildStudyDisplayText = (
+        studyName: string,
+        studyYear: number | undefined,
+        authors: string,
+        journalName: string
+    ): string => {
+        // 900px = 50 characters
+        // 1200px = 70 characters
+        // 1536px = 100 characters
+        let authorTextLimit = 0;
+        let studyTitleTextLimit =
+            windowWidth < 900 ? 30 : 40 + Math.floor((windowWidth - 900) / 100) * 15;
+        let publicationTextLimit = 20;
+        const authorEtAlText = ' et al.,';
+
+        let authorText = '';
+        let studyTitleText = '';
+        let publicationText = '';
+        let studyYearText = studyYear ? `(${studyYear})` : '';
+
+        if (windowWidth <= 900) {
+            authorTextLimit = 15;
+        } else if (windowWidth > 900 && windowWidth <= 1200) {
+            authorTextLimit = 15;
+        } else if (windowWidth > 1200 && windowWidth <= 1500) {
+            authorTextLimit = 20;
+        } else if (windowWidth > 1500) {
+            authorTextLimit = 20;
+            publicationTextLimit = 50;
+        }
+
+        authorText = authors.split(', ')[0].slice(0, authorTextLimit);
+        if (authors.split(', ').length > 1) authorText += authorEtAlText;
+
+        studyTitleText = studyName.slice(0, studyTitleTextLimit);
+        if (studyTitleText.length < studyName.length) studyTitleText += '...';
+
+        publicationText = journalName.slice(0, publicationTextLimit);
+        if (publicationText.length < journalName.length) publicationText += '...';
+
+        return `${authorText} | ${studyYearText} ${studyTitleText} | ${publicationText}`;
+    };
 
     useEffect(() => {
         if (params.annotationId) {
@@ -116,7 +160,12 @@ const EditAnnotationsPage: React.FC = (props) => {
                         while (index < notes.length) {
                             const currNote = notes[index];
                             const currStudyId = currNote.study as string;
-                            const currStudyName = currNote.study_name as string;
+                            const currStudyName = buildStudyDisplayText(
+                                currNote.study_name || '',
+                                currNote.study_year || undefined,
+                                currNote.authors || '',
+                                currNote.publication || ''
+                            );
 
                             if (currStudyId !== lastStudyId) {
                                 // we hit a new study, do not increase index as we need to push a title row

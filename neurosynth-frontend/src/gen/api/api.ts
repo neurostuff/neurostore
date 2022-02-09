@@ -179,13 +179,31 @@ export interface AnnotationNote {
      * @type {string}
      * @memberof AnnotationNote
      */
-    analysis_name?: string;
+    analysis_name?: string | null;
     /**
      * 
      * @type {object}
      * @memberof AnnotationNote
      */
     note?: object;
+    /**
+     * 
+     * @type {number}
+     * @memberof AnnotationNote
+     */
+    study_year?: number | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof AnnotationNote
+     */
+    publication?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof AnnotationNote
+     */
+    authors?: string | null;
 }
 /**
  * 
@@ -779,6 +797,12 @@ export interface Study {
      * @memberof Study
      */
     source_updated_at?: string | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof Study
+     */
+    year?: number | null;
 }
 /**
  * 

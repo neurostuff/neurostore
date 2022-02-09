@@ -15,8 +15,8 @@ describe('CreateDetailsDialog', () => {
             />
         );
         const text = screen.getByText('some title text');
-        const nameField = screen.getByLabelText('Dataset Name *'); // added to indicate it is required
-        const descriptionField = screen.getByLabelText('Dataset Description');
+        const nameField = screen.getByLabelText('Name *'); // added to indicate it is required
+        const descriptionField = screen.getByLabelText('Description');
         expect(text).toBeInTheDocument();
         expect(nameField).toBeInTheDocument();
         expect(descriptionField).toBeInTheDocument();
@@ -61,7 +61,7 @@ describe('CreateDetailsDialog', () => {
             />
         );
 
-        const nameField = screen.getByLabelText('Dataset Name *');
+        const nameField = screen.getByLabelText('Name *');
         userEvent.type(nameField, 'ABC');
 
         const displayNameFieldText = screen.getByDisplayValue('ABC');
@@ -78,7 +78,7 @@ describe('CreateDetailsDialog', () => {
             />
         );
 
-        const descriptionField = screen.getByLabelText('Dataset Description');
+        const descriptionField = screen.getByLabelText('Description');
         userEvent.type(descriptionField, 'ABC');
 
         const displayDescriptionFieldText = screen.getByDisplayValue('ABC');
@@ -95,7 +95,7 @@ describe('CreateDetailsDialog', () => {
             />
         );
 
-        const nameField = screen.getByLabelText('Dataset Name *');
+        const nameField = screen.getByLabelText('Name *');
         userEvent.type(nameField, 'ABC');
 
         const createButton = screen.getByRole('button', { name: 'Create' });
