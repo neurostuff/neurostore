@@ -48,3 +48,12 @@ def test_source_id(auth_client, ingest_neurosynth):
     get = auth_client.get(f"/api/studies/?source_id={study.id}&nested=true")
 
     assert post.json == get.json['results'][0]
+
+
+def test_data_type(auth_client, ingest_neurosynth, ingest_neurovault):
+    get_coord = auth_client.get("/api/studies/?data_type=coordinate")
+    assert get_coord.status_code == 200
+    get_img = auth_client.get("/api/studies/?data_type=image")
+    assert get_img.status_code == 200
+    get_both = auth_client.get("/api/studies/?data_type=both")
+    assert get_both.status_code == 200
