@@ -1,6 +1,6 @@
 from sqlalchemy import event, ForeignKeyConstraint
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.orm.interfaces import EXT_STOP
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
@@ -276,6 +276,8 @@ def check_note_columns(mapper, connection, annotation):
 
     note_keys = annotation.note_keys
     aa_list = annotation.annotation_analyses
+    if not note_keys and aa_list:
+        raise SQLAlchemyError("Cannot have empty note_keys with annotations")
     for aa in aa_list:
         if set(note_keys.keys()) != set(aa.note.keys()):
             msg = "ERROR: "
@@ -285,14 +287,12 @@ def check_note_columns(mapper, connection, annotation):
                 msg = msg + f"Annotations are missing these keys: {nk_set - aa_set}. "
             if aa_set - nk_set:
                 msg = msg + f"Annotations have extra keys: {aa_set - nk_set}."
-            return EXT_STOP
-            raise ValueError(msg)
+            raise SQLAlchemyError(msg)
 
         for key, _type in note_keys.items():
             aa_type = _check_type(aa.note[key])
             if aa_type is not None and aa_type != _type:
-                return EXT_STOP
-                raise ValueError(f"value for key {key} is not of type {_type}")
+                raise SQLAlchemyError(f"value for key {key} is not of type {_type}")
 
 
 def add_necessary_annotation_analyses(dataset, studies, collection_adapter):
