@@ -128,7 +128,7 @@ class BaseView(MethodView):
                     db.session.add_all(to_commit)
                     try:
                         db.session.commit()
-                    except SQLAlchemyError as e:
+                    except SQLAlchemyError:
                         db.session.rollback()
                         abort(400)
 
@@ -182,7 +182,7 @@ class BaseView(MethodView):
             db.session.add_all(to_commit)
             try:
                 db.session.commit()
-            except SQLAlchemyError as e:
+            except SQLAlchemyError:
                 db.session.rollback()
                 abort(400)
 
