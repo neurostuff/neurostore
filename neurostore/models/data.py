@@ -291,4 +291,34 @@ def check_note_columns(annotation, annotation_analyses, collection_adapter):
         raise ValueError("All analyses must have the same annotations")
 
 
+def add_necessary_annotation_analyses(dataset, studies, collection_adapter):
+    new_studies = set(studies) - set(dataset.studies)
+    new_aas = []
+    for annot in dataset.annotations:
+        for study in new_studies:
+            for analysis in study.analyses:
+                if annot.annotation_analyses:
+                    keys = list(annot.annotation_analyses[0].note.keys())
+                else:
+                    keys = None
+                new_aas.append(
+                    AnnotationAnalysis(
+                        study_id=study.id,
+                        dataset_id=dataset.id,
+                        annotation_id=annot.id,
+                        analysis_id=analysis.id,
+                        note={} if not keys else {k: None for k in keys},
+                        analysis=analysis,
+                        annotation=annot,
+                    )
+                )
+    if new_aas:
+        db.session.add_all(new_aas)
+
+
+# ensure all keys are the same across all notes
 event.listen(Annotation.annotation_analyses, 'bulk_replace', check_note_columns)
+
+
+# ensure new annotation_analyses are added when study is added to dataset
+event.listen(Dataset.studies, 'bulk_replace', add_necessary_annotation_analyses)
