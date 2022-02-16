@@ -10,7 +10,9 @@ def test_post_annotation(auth_client, ingest_neurosynth):
         {'study': s.id, 'analysis': a.id, 'note': {'foo': a.id}}
         for s in dset.studies for a in s.analyses
     ]
-    payload = {'dataset': dset.id, 'notes': data, 'name': 'mah notes'}
+    payload = {
+        'dataset': dset.id, 'notes': data, 'note_keys': {'foo': 'string'}, 'name': 'mah notes'
+    }
     resp = auth_client.post('/api/annotations/', data=payload)
     assert resp.status_code == 200
 
@@ -134,7 +136,8 @@ def test_mismatched_notes(auth_client, ingest_neurosynth):
         {'study': s.id, 'analysis': a.id, 'note': {'foo': a.id, 'doo': s.id}}
         for s in dset.studies for a in s.analyses
     ]
-    payload = {'dataset': dset.id, 'notes': data, 'name': 'mah notes'}
+    note_keys = {'foo': 'string', 'doo': 'string'}
+    payload = {'dataset': dset.id, 'notes': data, 'note_keys': note_keys, 'name': 'mah notes'}
 
     # proper post
     annot = auth_client.post('/api/annotations/', data=payload)
@@ -164,7 +167,8 @@ def test_put_nonexistent_analysis(auth_client, ingest_neurosynth):
         {'study': s.id, 'analysis': a.id, 'note': {'foo': a.id, 'doo': s.id}}
         for s in dset.studies for a in s.analyses
     ]
-    payload = {'dataset': dset.id, 'notes': data, 'name': 'mah notes'}
+    note_keys = {'foo': 'string', 'doo': 'string'}
+    payload = {'dataset': dset.id, 'notes': data, 'note_keys': note_keys, 'name': 'mah notes'}
 
     # proper post
     annot = auth_client.post('/api/annotations/', data=payload)
@@ -185,7 +189,12 @@ def test_correct_note_overwrite(auth_client, ingest_neurosynth):
         {'study': s.id, 'analysis': a.id, 'note': {'foo': a.id, 'doo': s.id}}
         for s in dset.studies for a in s.analyses
     ]
-    payload = {'dataset': dset.id, 'notes': data, 'name': 'mah notes'}
+    payload = {
+        'dataset': dset.id,
+        'notes': data,
+        'note_keys': {'foo': 'string', 'doo': 'string'},
+        'name': 'mah notes',
+    }
 
     # proper post
     annot = auth_client.post('/api/annotations/', data=payload)

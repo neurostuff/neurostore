@@ -315,6 +315,7 @@ def user_data(session, mock_add_users):
             annotation = Annotation(
                 name=name + 'annotation',
                 source='neurostore',
+                note_keys={'food': 'string'},
                 dataset=dataset,
                 user=user,
             )
@@ -356,6 +357,7 @@ def simple_neurosynth_annotation(session, ingest_neurosynth):
             name="smol " + annot.name,
             source="neurostore",
             dataset=annot.dataset,
+            note_keys={'animal': 'number'},
             annotation_analyses=smol_notes,
         )
     session.add(smol_annot)
