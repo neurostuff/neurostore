@@ -22,7 +22,6 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     volumes_from:
       - neurostore
-      - neurosynth
     environment:
       - VIRTUAL_HOST=${V_HOST}
       - LETSENCRYPT_HOST=${V_HOST}
