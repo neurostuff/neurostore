@@ -1,0 +1,2 @@
+Generic single-database configuration.
+Generated with `python manage.py db init` from the repository root
