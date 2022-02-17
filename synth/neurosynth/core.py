@@ -7,7 +7,9 @@ import connexion
 from .database import init_db
 
 
-connexion_app = connexion.FlaskApp(__name__, specification_dir="../neurostore/openapi/", debug=True)
+connexion_app = connexion.FlaskApp(
+    __name__, specification_dir="openapi/", debug=True
+)
 app = connexion_app.app
 
 app.config.from_object(os.environ["APP_SETTINGS"])

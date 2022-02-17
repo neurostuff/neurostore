@@ -22,9 +22,9 @@ requirements = [
 print("PACKAGES:", find_packages(exclude=["tests", "test_*"]))
 
 setup(
-    name="neurostore",
+    name="neurosynth",
     version="0.0.0",
-    description="neurostore",
+    description="neurosynth",
     install_requires=requirements,
     maintainer="Tal Yarkoni",
     maintainer_email="tyarkoni@gmail.com",

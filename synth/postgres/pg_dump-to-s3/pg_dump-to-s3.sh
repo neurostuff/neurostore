@@ -9,7 +9,7 @@ PG_USER="postgres"
 
 
 # S3
-S3_PATH="neurostore-backup"
+S3_PATH="neurosynth-backup"
 
 # get databases list
 dbs=("$@")
