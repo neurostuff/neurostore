@@ -23,7 +23,7 @@ class MetaAnalysisSchema(BaseSchema):
         allow_none = ("name", "description")
 
 
-class StudySetSchema(BaseSchema):
+class StudysetSchema(BaseSchema):
     studyset = fields.Dict()
     neurostore_id = fields.String()
 

@@ -1,5 +1,3 @@
-import re
-
 import connexion
 from flask import abort, request, jsonify
 from flask.views import MethodView
@@ -12,7 +10,7 @@ from webargs import fields
 
 from ..database import db
 from ..models.analysis import (   # noqa E401
-    Studyset, Annotation, MetaAnalysis
+    Studyset, Annotation, MetaAnalysis, Bundle,
 )
 from ..models.auth import User
 
@@ -20,12 +18,9 @@ from ..schemas import (  # noqa E401
     MetaAnalysisSchema,
     AnnotationSchema,
     StudysetSchema,
+    BundleSchema,
 )
-
-
-# https://www.geeksforgeeks.org/python-split-camelcase-string-to-individual-strings/
-def camel_case_split(str):
-    return re.findall(r'[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))', str)
+from .singular import singularize
 
 
 def get_current_user():
@@ -36,7 +31,7 @@ def get_current_user():
 
 
 def view_maker(cls):
-    basename = camel_case_split(cls.__name__)[0]
+    basename = singularize(cls.__name__.rstrip('View'), custom={"MetaAnalyses": 'MetaAnalysis'})
 
     class ClassView(cls):
         _model = globals()[basename]
@@ -262,32 +257,20 @@ class ListView(BaseView):
 
 
 @view_maker
-class MetaAnalysisView(ObjectView):
-    pass
-
-
-@view_maker
-class AnnotationView(ObjectView):
-    pass
-
-
-@view_maker
-class StudysetView(ObjectView):
-    pass
-
-# List resource views
-
-
-@view_maker
-class StudysetListView(ListView):
-    pass
-
-
-@view_maker
-class AnnotationListView(ListView):
-    pass
-
-
-@view_maker
-class MetaAnalysisListView(ListView):
+class MetaAnalysesView(ObjectView, ListView):
     _search_fields = ("name", "description")
+
+
+@view_maker
+class AnnotationsView(ObjectView, ListView):
+    pass
+
+
+@view_maker
+class StudysetsView(ObjectView, ListView):
+    pass
+
+
+@view_maker
+class BundlesView(ObjectView, ListView):
+    pass

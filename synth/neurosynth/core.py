@@ -3,7 +3,7 @@ from flask_cors import CORS
 
 from authlib.integrations.flask_client import OAuth
 import connexion
-
+from connexion.resolver import MethodViewResolver
 from .database import init_db
 
 
@@ -28,6 +28,7 @@ connexion_app.add_api(
     base_path="/api",
     options=options,
     arguments={"title": "NeuroSynth API"},
+    resolver=MethodViewResolver("neurosynth.resources"),
     strict_validation=True,
     validate_responses=True,
 )
