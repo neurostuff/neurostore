@@ -2,21 +2,8 @@ import React from 'react';
 import EditMetadataStyles from './EditMetadata.styles';
 import EditMetadataRow from './EditMetadataRow/EditMetadataRow';
 import AddMetadataRow from './EditMetadataRow/AddMetadataRow';
-import { EPropertyType, IEditMetadataModel } from '.';
+import { IEditMetadataModel, getType } from '.';
 import { Box, Divider } from '@mui/material';
-
-export const getType = (value: any): EPropertyType => {
-    switch (typeof value) {
-        case EPropertyType.BOOLEAN:
-            return EPropertyType.BOOLEAN;
-        case EPropertyType.STRING:
-            return EPropertyType.STRING;
-        case EPropertyType.NUMBER:
-            return EPropertyType.NUMBER;
-        default:
-            return EPropertyType.NONE;
-    }
-};
 
 const EditMetadata: React.FC<IEditMetadataModel> = React.memo((props) => {
     const { metadata, onMetadataRowEdit, onMetadataRowDelete, onMetadataRowAdd } = props;

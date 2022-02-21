@@ -14,6 +14,11 @@ const EditAnnotationsPageStyles: Style = {
     unsavedChanges: {
         border: '2px solid orange',
     },
+    spreadsheetContainer: {
+        padding: '10px',
+        width: '100%',
+        maxWidth: '1536px',
+    },
 };
 
 export default EditAnnotationsPageStyles;

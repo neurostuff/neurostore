@@ -19,14 +19,14 @@ import NeurosynthPopper from './NeurosynthPopper/NeurosynthPopper';
 import NeurosynthLoader from './NeurosynthLoader/NeurosynthLoader';
 import ConfirmationDialog from './Dialogs/ConfirmationDialog/ConfirmationDialog';
 import CreateDetailsDialog from './Dialogs/CreateDetailsDialog/CreateDetailsDialog';
-import NeurosynthSpreadsheetWrapper from './NeurosynthSpreadsheetWrapper/NeurosynthSpreadsheetWrapper';
+import NeurosynthSpreadsheet from './NeurosynthSpreadsheet/NeurosynthSpreadsheet';
 
 // models
 export * from './EditMetadata';
 export * from './Navbar';
 export * from './Tables/DisplayValuesTable';
 export * from './Tables/DisplayImagesTable';
-export * from './NeurosynthSpreadsheetWrapper';
+export * from './NeurosynthSpreadsheet/NeurosynthSpreadsheet';
 
 // export components
 export {
@@ -46,5 +46,5 @@ export {
     NeurosynthLoader,
     ConfirmationDialog,
     CreateDetailsDialog,
-    NeurosynthSpreadsheetWrapper,
+    NeurosynthSpreadsheet,
 };

@@ -1,0 +1,65 @@
+
+.string {
+    color: orange !important;
+}
+
+.number {
+    color: blue !important;
+}
+
+.boolean {
+    color: green !important;
+}
+
+.none {
+    color: gray !important;
+}
+
+.show {
+    display: block !important;
+}
+
+.hide {
+    display: none !important;
+}
+
+.column-header {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 4px;
+}
+
+.study-details-row {
+    background-color: #ccc !important;
+    color: black !important;
+    position: initial !important;
+}
+
+.delete-icon {
+    color: red;
+    cursor: pointer;
+    margin-left: 0.5rem;
+}
+
+.delete-icon:hover {
+    color: darkred !important;
+}
+
+.study-details-text {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.authors {
+    width: 10% !important;
+}
+
+.study-name {
+    width: 65% !important;
+}
+
+.publication {
+    width: 20% !important;
+}

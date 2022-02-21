@@ -2,7 +2,7 @@ import { TableCell, TableRow } from '@mui/material';
 import { Box } from '@mui/system';
 import React from 'react';
 import { IDisplayValuesTableRowModel } from '..';
-import { EPropertyType } from '../../..';
+import { EPropertyType, getType } from '../../..';
 import DisplayValuesTableRowStyles from './DisplayValuesTableRow.styles';
 
 const getValue = (value: any): string => {
@@ -12,20 +12,6 @@ const getValue = (value: any): string => {
         return 'none';
     } else {
         return value.toString();
-    }
-};
-
-const getType = (value: any): EPropertyType => {
-    const type = typeof value;
-    switch (type) {
-        case EPropertyType.BOOLEAN:
-            return EPropertyType.BOOLEAN;
-        case EPropertyType.STRING:
-            return EPropertyType.STRING;
-        case EPropertyType.NUMBER:
-            return EPropertyType.NUMBER;
-        default:
-            return EPropertyType.NONE;
     }
 };
 

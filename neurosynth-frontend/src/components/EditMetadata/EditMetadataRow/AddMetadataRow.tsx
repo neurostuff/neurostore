@@ -118,6 +118,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                     sx={EditMetadataRowStyles.updateButton}
                     disabled={!(metadataRow.metadataKey.length > 0)}
                     onClick={handleAdd}
+                    variant="contained"
                     color="primary"
                 >
                     ADD
