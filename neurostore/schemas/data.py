@@ -248,6 +248,7 @@ class AnnotationSchema(BaseDataSchema):
     source_id = fields.String(dump_only=True, db_only=True, allow_none=True)
     source_updated_at = fields.DateTime(dump_only=True, db_only=True, allow_none=True)
 
+    note_keys = fields.Dict()
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     # deserialization
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)

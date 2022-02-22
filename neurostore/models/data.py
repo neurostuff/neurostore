@@ -1,5 +1,6 @@
 from sqlalchemy import event, ForeignKeyConstraint
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
@@ -70,6 +71,7 @@ class Annotation(BaseMixin, db.Model):
     dataset_id = db.Column(db.Text, db.ForeignKey('datasets.id'))
     metadata_ = db.Column(db.JSON)
     public = db.Column(db.Boolean, default=True)
+    note_keys = db.Column(MutableDict.as_mutable(db.JSON))
     annotation_analyses = relationship(
         'AnnotationAnalysis',
         backref=backref("annotation"),
@@ -269,26 +271,28 @@ class PointValue(BaseMixin, db.Model):
     user = relationship("User", backref=backref("point_values"))
 
 
-def check_note_columns(annotation, annotation_analyses, collection_adapter):
-    "listen for the 'bulk_replace' event"
+def check_note_columns(mapper, connection, annotation):
+    """ensure note_keys and notes in annotationanalyses are consistent"""
 
-    def _combine_compare_keys(aa1, aa2):
-        """compare keys """
-        aa1_dict = {aa.analysis.id: set(aa.note.keys()) for aa in aa1}
-        aa2_dict = {aa.analysis.id: set(aa.note.keys()) for aa in aa2}
-        aa_dict = {}
-        for key in aa1_dict.keys():
-            if key in aa2_dict:
-                aa_dict[key] = aa2_dict.pop(key)
-            else:
-                aa_dict[key] = aa1_dict[key]
+    note_keys = annotation.note_keys
+    aa_list = annotation.annotation_analyses
+    if not note_keys and aa_list:
+        raise SQLAlchemyError("Cannot have empty note_keys with annotations")
+    for aa in aa_list:
+        if set(note_keys.keys()) != set(aa.note.keys()):
+            msg = "ERROR: "
+            nk_set = set(note_keys.keys())
+            aa_set = set(aa.note.keys())
+            if nk_set - aa_set:
+                msg = msg + f"Annotations are missing these keys: {nk_set - aa_set}. "
+            if aa_set - nk_set:
+                msg = msg + f"Annotations have extra keys: {aa_set - nk_set}."
+            raise SQLAlchemyError(msg)
 
-        aa_list = [*aa_dict.values(), *aa2_dict.values()]
-        return all([aa_list[0] == note for note in aa_list[1:]])
-
-    all_equal = _combine_compare_keys(annotation.annotation_analyses, annotation_analyses)
-    if not all_equal:
-        raise ValueError("All analyses must have the same annotations")
+        for key, _type in note_keys.items():
+            aa_type = _check_type(aa.note[key])
+            if aa_type is not None and aa_type != _type:
+                raise SQLAlchemyError(f"value for key {key} is not of type {_type}")
 
 
 def add_necessary_annotation_analyses(dataset, studies, collection_adapter):
@@ -316,8 +320,25 @@ def add_necessary_annotation_analyses(dataset, studies, collection_adapter):
         db.session.add_all(new_aas)
 
 
+def _check_type(x):
+    """check annotation key type"""
+    if isinstance(x, (int, float)):
+        return 'number'
+    elif isinstance(x, str):
+        return 'string'
+    elif isinstance(x, bool):
+        return 'boolean'
+    elif x is None:
+        return None
+    else:
+        return None
+
+
 # ensure all keys are the same across all notes
-event.listen(Annotation.annotation_analyses, 'bulk_replace', check_note_columns)
+event.listen(Annotation, 'before_insert', check_note_columns, retval=True)
+
+
+# event.listen(Annotation.annotation_analyses, 'bulk_replace', check_note_columns)
 
 
 # ensure new annotation_analyses are added when study is added to dataset

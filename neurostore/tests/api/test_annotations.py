@@ -1,7 +1,5 @@
 from ...models import Dataset, User
 
-import pytest
-
 
 def test_post_annotation(auth_client, ingest_neurosynth):
     dset = Dataset.query.first()
@@ -10,7 +8,9 @@ def test_post_annotation(auth_client, ingest_neurosynth):
         {'study': s.id, 'analysis': a.id, 'note': {'foo': a.id}}
         for s in dset.studies for a in s.analyses
     ]
-    payload = {'dataset': dset.id, 'notes': data, 'name': 'mah notes'}
+    payload = {
+        'dataset': dset.id, 'notes': data, 'note_keys': {'foo': 'string'}, 'name': 'mah notes'
+    }
     resp = auth_client.post('/api/annotations/', data=payload)
     assert resp.status_code == 200
 
@@ -134,25 +134,23 @@ def test_mismatched_notes(auth_client, ingest_neurosynth):
         {'study': s.id, 'analysis': a.id, 'note': {'foo': a.id, 'doo': s.id}}
         for s in dset.studies for a in s.analyses
     ]
-    payload = {'dataset': dset.id, 'notes': data, 'name': 'mah notes'}
+    note_keys = {'foo': 'string', 'doo': 'string'}
+    payload = {'dataset': dset.id, 'notes': data, 'note_keys': note_keys, 'name': 'mah notes'}
 
     # proper post
-    annot = auth_client.post('/api/annotations/', data=payload)
+    auth_client.post('/api/annotations/', data=payload)
 
     # additional key only added to one analysis
     data[0]['note']['bar'] = "not real!"
-    with pytest.raises(ValueError):
-        auth_client.post('/api/annotations/', data=payload)
+    assert auth_client.post('/api/annotations/', data=payload).status_code == 400
 
     # incorrect key in one analysis
     data[0]['note'].pop('foo')
-    with pytest.raises(ValueError):
-        auth_client.post('/api/annotations/', data=payload)
+    assert auth_client.post('/api/annotations/', data=payload).status_code == 400
 
     # update a single analysis with incorrect key
     bad_payload = {'notes': [data[0]]}
-    with pytest.raises(ValueError):
-        auth_client.put(f"/api/annotations/{annot.json['id']}", data=bad_payload)
+    assert auth_client.post('/api/annotations/', data=bad_payload).status_code == 400
 
 
 # test push analysis id that does not exist
@@ -164,7 +162,8 @@ def test_put_nonexistent_analysis(auth_client, ingest_neurosynth):
         {'study': s.id, 'analysis': a.id, 'note': {'foo': a.id, 'doo': s.id}}
         for s in dset.studies for a in s.analyses
     ]
-    payload = {'dataset': dset.id, 'notes': data, 'name': 'mah notes'}
+    note_keys = {'foo': 'string', 'doo': 'string'}
+    payload = {'dataset': dset.id, 'notes': data, 'note_keys': note_keys, 'name': 'mah notes'}
 
     # proper post
     annot = auth_client.post('/api/annotations/', data=payload)
@@ -174,8 +173,9 @@ def test_put_nonexistent_analysis(auth_client, ingest_neurosynth):
     data[0]['analysis'] = new_value
     bad_payload = {'notes': data}
 
-    with pytest.raises(Exception):
-        auth_client.put(f"/api/annotations/{annot.json['id']}", data=bad_payload)
+    assert auth_client.put(
+        f"/api/annotations/{annot.json['id']}", data=bad_payload
+    ).status_code == 400
 
 
 def test_correct_note_overwrite(auth_client, ingest_neurosynth):
@@ -185,7 +185,12 @@ def test_correct_note_overwrite(auth_client, ingest_neurosynth):
         {'study': s.id, 'analysis': a.id, 'note': {'foo': a.id, 'doo': s.id}}
         for s in dset.studies for a in s.analyses
     ]
-    payload = {'dataset': dset.id, 'notes': data, 'name': 'mah notes'}
+    payload = {
+        'dataset': dset.id,
+        'notes': data,
+        'note_keys': {'foo': 'string', 'doo': 'string'},
+        'name': 'mah notes',
+    }
 
     # proper post
     annot = auth_client.post('/api/annotations/', data=payload)
