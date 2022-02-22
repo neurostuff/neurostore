@@ -8,7 +8,7 @@ import CellCoords from 'handsontable/3rdparty/walkontable/src/cell/coords';
 import styles from './NeurosynthSpreadsheet.module.css';
 import { CellChange, CellValue } from 'handsontable/common';
 import { numericValidator } from 'handsontable/validators';
-import { memo, useEffect, useRef } from 'react';
+import React, { memo, useEffect, useRef } from 'react';
 import { EPropertyType, IMetadataRowModel } from '..';
 import { Box } from '@mui/system';
 import { useParams, NavLink } from 'react-router-dom';
@@ -23,26 +23,6 @@ export interface INeurosynthColumn {
     value: string;
     type: EPropertyType;
 }
-
-// export const convertToAnnotationObject = (
-//     annotation: AnnotationsApiResponse,
-//     data: any[][]
-// ): AnnotationNote[] => {
-//     // const pureData = data
-//     //     .filter((row) => !row._isStudyTitle)
-//     //     .map((row) => {
-//     //         const { _studyTitle, _isStudyTitle, ...everythingElse } = row;
-//     //         return everythingElse;
-//     //     });
-//     // return (annotation.notes || []).map((annotationNote, index) => {
-//     //     return {
-//     //         analysis: annotationNote.analysis,
-//     //         study: annotationNote.study,
-//     //         note: pureData[index],
-//     //     };
-//     // });
-//     return [];
-// };
 
 export const isSpreadsheetBoolType = (value: any): boolean => {
     return (
@@ -85,6 +65,7 @@ const getValidator = (type: EPropertyType) => {
 
 const NeurosynthSpreadsheet: React.FC<{
     annotationNotes: (AnnotationNote & ReadOnly)[] | undefined;
+    onSaveAnnotation: (args: AnnotationNote[]) => void;
 }> = memo((props) => {
     console.log('rerendered neurosynth spreadsheet');
 
@@ -97,7 +78,7 @@ const NeurosynthSpreadsheet: React.FC<{
     const ROW_HEIGHTS = 25;
     const ROW_HEADER_WIDTH = 200;
 
-    // these arrays represent spreadsheet state of columns
+    // these arrays represent GLOBAL CONSTANT spreadsheet state of columns
     const studyTitleRows: {
         studyDetails: {
             publication: string;
@@ -203,6 +184,27 @@ const NeurosynthSpreadsheet: React.FC<{
         if (target.tagName === 'svg' || (target.tagName === 'path' && coords.row < 0)) {
             removeColumnAt(coords.col);
         }
+    };
+
+    const convertToAnnotationObject = (
+        data: (string | boolean | number | null)[][]
+    ): AnnotationNote[] => {
+        const annotationNotes = props.annotationNotes || [];
+        const pureData = data.filter((row, index) => !rowIsStudyTitle(index));
+
+        return annotationNotes.map((annotationNote, index) => {
+            const newNote: { [key: string]: string | number | boolean | null } = {};
+            const row = pureData[index];
+            row.forEach((value, colIndex) => {
+                const colValue = columnObjects[colIndex].value;
+                newNote[colValue] = value;
+            });
+
+            return {
+                ...annotationNote,
+                note: newNote,
+            };
+        });
     };
 
     // helper methods end
@@ -316,6 +318,8 @@ const NeurosynthSpreadsheet: React.FC<{
         },
         afterOnCellMouseUp: handleOnHeaderClick,
     };
+
+    // init spreadsheet and parse data
 
     useEffect(() => {
         if (!params.annotationId || !hotTableRef.current?.hotInstance || !props.annotationNotes)
@@ -466,21 +470,40 @@ const NeurosynthSpreadsheet: React.FC<{
         if (!hotTable) return;
 
         const updatedData = hotTable.getData();
+        const updatedRowHeaders = hotTable.getRowHeader();
         updatedData.forEach((row, index) => {
-            // if we are at the first column
-            if (indexToDelete === 0 && rowIsStudyTitle(index)) {
-                const studyDetailString = row[0] as string;
-                row.splice(0, 1);
-                row[0] = studyDetailString;
-            } else {
-                row.splice(indexToDelete, 1);
+            if (rowIsStudyTitle(index)) {
+                if (columnObjects.length === 1) {
+                    // we are deleting the only column in the spreadsheet
+                    updatedRowHeaders[index] = buildDescriptionForStudyRow(index, false);
+                    row.splice(0, 1);
+                } else if (indexToDelete === 0) {
+                    // there is more than one column in spreadsheet and we are deleting the first item
+                    const studyDetailString = row[0] as string;
+                    row.splice(0, 1);
+                    row[0] = studyDetailString;
+                } else {
+                    row.splice(indexToDelete, 1);
+                }
             }
         });
         columnObjects.splice(indexToDelete, 1);
 
         updateSpreadsheet({
             data: updatedData,
+            rowHeaders: updatedRowHeaders,
         });
+    };
+
+    const handleOnSaveAnnotationChangeClick = (event: React.MouseEvent) => {
+        const hotTable = hotTableRef.current?.hotInstance;
+        if (!hotTable) return;
+        const data = hotTable.getData() as (string | boolean | number | null)[][];
+        console.log(props.annotationNotes);
+        const convertedAnnotation = convertToAnnotationObject(data);
+        console.log(convertedAnnotation);
+
+        props.onSaveAnnotation(convertedAnnotation);
     };
 
     return (
@@ -528,6 +551,7 @@ const NeurosynthSpreadsheet: React.FC<{
                         color="primary"
                         variant="contained"
                         disabled={!isAuthenticated}
+                        onClick={handleOnSaveAnnotationChangeClick}
                         sx={{
                             ...EditStudyPageStyles.button,
                             marginTop: '0.5rem',

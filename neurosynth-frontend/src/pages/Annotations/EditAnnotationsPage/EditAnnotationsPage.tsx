@@ -1,5 +1,5 @@
 import { Typography, Button, Box, Paper } from '@mui/material';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useParams } from 'react-router';
 import API, { AnnotationsApiResponse } from '../../../utils/api';
@@ -8,6 +8,7 @@ import EditStudyPageStyles from '../../Studies/EditStudyPage/EditStudyPage.style
 import EditAnnotationsPageStyles from './EditAnnotationsPage.styles';
 import { useAuth0 } from '@auth0/auth0-react';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
+import { AnnotationNote } from '../../../gen/api';
 
 const EditAnnotationsPage: React.FC = (props) => {
     const history = useHistory();
@@ -100,6 +101,34 @@ const EditAnnotationsPage: React.FC = (props) => {
         }
     };
 
+    const handleSaveAnnotation = useCallback(
+        async (annotationNotes: AnnotationNote[]) => {
+            try {
+                const token = await getAccessTokenSilently();
+                handleToken(token);
+            } catch (exception) {
+                showSnackbar('there was an error', SnackbarType.ERROR);
+                console.error(exception);
+            }
+
+            API.Services.AnnotationsService.annotationsIdPut(params.annotationId, {
+                notes: annotationNotes.map((annotationNote) => ({
+                    note: annotationNote.note,
+                    analysis: annotationNote.analysis,
+                    study: annotationNote.study,
+                })),
+            })
+                .then((res) => {
+                    showSnackbar('annotation successfully updated', SnackbarType.SUCCESS);
+                })
+                .catch((err) => {
+                    showSnackbar('there was an error updating the annotation', SnackbarType.ERROR);
+                    console.error(err);
+                });
+        },
+        [getAccessTokenSilently, handleToken, params.annotationId, showSnackbar]
+    );
+
     return (
         <>
             <Box sx={EditAnnotationsPageStyles.stickyButtonContainer}>
@@ -142,7 +171,10 @@ const EditAnnotationsPage: React.FC = (props) => {
             </Box>
 
             <Box component={Paper} sx={EditAnnotationsPageStyles.spreadsheetContainer}>
-                <NeurosynthSpreadsheet annotationNotes={annotation?.notes} />
+                <NeurosynthSpreadsheet
+                    annotationNotes={annotation?.notes}
+                    onSaveAnnotation={handleSaveAnnotation}
+                />
             </Box>
 
             <Button
