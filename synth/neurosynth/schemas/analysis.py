@@ -11,7 +11,7 @@ class BaseSchema(Schema):
     user = fields.String(attribute="user_id")
 
 
-class MetaAnalysisSchema(BaseSchema):
+class SpecificationSchema(BaseSchema):
 
     type = fields.String()
     estimator = fields.Dict()
@@ -33,7 +33,7 @@ class AnnotationSchema(BaseSchema):
     neurostore_id = fields.String()
 
 
-class BundleSchema(BaseSchema):
-    meta_analysis = fields.String()
+class MetaAnalysisSchema(BaseSchema):
+    specification = fields.String()
     studyset = fields.String()
     annotation = fields.String()

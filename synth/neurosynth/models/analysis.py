@@ -27,11 +27,9 @@ class BaseMixin(object):
     #     relationship("User", backref=cls.__tablename__, uselist=False)
 
 
-class MetaAnalysis(BaseMixin, db.Model):
-    __tablename__ = "meta_analyses"
+class Specification(BaseMixin, db.Model):
+    __tablename__ = "specifications"
 
-    name = db.Column(db.Text)
-    description = db.Column(db.Text)
     type = db.Column(db.Text)
     estimator = db.Column(db.JSON)
     contrast = db.Column(db.JSON)
@@ -50,6 +48,8 @@ class Studyset(BaseMixin, db.Model):
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     neurostore_id = db.Column(db.Text)
 
+    user = relationship("User", backref=backref("studysets"))
+
 
 class Annotation(BaseMixin, db.Model):
     __tablename__ = "annotations"
@@ -59,13 +59,19 @@ class Annotation(BaseMixin, db.Model):
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     neurostore_id = db.Column(db.Text)
 
+    user = relationship("User", backref=backref("annotations"))
 
-class Bundle(db.Model):
-    __tablename__ = "bundles"
 
-    meta_analysis = db.Column(db.Text, db.ForeignKey('meta_analyses.id'), primary_key=True)
+class MetaAnalysis(BaseMixin, db.Model):
+    __tablename__ = "meta_analyses"
+
+    name = db.Column(db.Text)
+    description = db.Column(db.Text)
+    specification = db.Column(db.Text, db.ForeignKey('specifications.id'), primary_key=True)
     studyset = db.Column(db.Text, db.ForeignKey('studysets.id'), primary_key=True)
     annotation = db.Column(db.Text, db.ForeignKey('annotations.id'), primary_key=True)
+
+    # user = relationship("User", backref=backref("meta_analyses"))
 
 
 # class MetaAnalysisImage(db.Model):

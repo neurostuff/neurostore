@@ -10,7 +10,7 @@ from webargs import fields
 
 from ..database import db
 from ..models.analysis import (   # noqa E401
-    Studyset, Annotation, MetaAnalysis, Bundle,
+    Studyset, Annotation, MetaAnalysis, Specification,
 )
 from ..models.auth import User
 
@@ -18,7 +18,7 @@ from ..schemas import (  # noqa E401
     MetaAnalysisSchema,
     AnnotationSchema,
     StudysetSchema,
-    BundleSchema,
+    SpecificationSchema,
 )
 from .singular import singularize
 
@@ -272,5 +272,5 @@ class StudysetsView(ObjectView, ListView):
 
 
 @view_maker
-class BundlesView(ObjectView, ListView):
+class SpecificationsView(ObjectView, ListView):
     pass
