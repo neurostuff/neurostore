@@ -68,3 +68,11 @@ export class NeurosynthSpreadsheetHelper {
             : `${authorText} | ${studyNameText} | ${journalName}`;
     }
 }
+
+/**
+ * `<div style="width: ${visibleWidth}px; display: flex; position: absolute !important; z-index: 9">` +
+                  `<span class="${styles.authors} ${styles['study-details-text']}">${authorText}</span>` +
+                  `<span class="${styles['study-name']} ${styles['study-details-text']}">${studyNameText}</span>` +
+                  `<span class="${styles.publication} ${styles['study-details-text']}">${journalName}</span>` +
+                  `</div>`
+ */

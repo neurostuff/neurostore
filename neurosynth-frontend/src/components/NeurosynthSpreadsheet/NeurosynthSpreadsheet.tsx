@@ -191,6 +191,13 @@ const NeurosynthSpreadsheet: React.FC<{
                 <Box component="div" style={{ overflow: 'hidden' }}>
                     <Box
                         sx={{
+                            '& .relative': {
+                                height: 'calc(100% - 4px)', // 4px comes from handsontable padding
+                            },
+                            '& .colHeader': {
+                                display: 'block !important',
+                                height: '100%',
+                            },
                             '& .rowHeader': {
                                 whiteSpace: 'normal',
                             },

@@ -103,7 +103,6 @@ class NeurosynthSpreadsheetState {
 
     public removeColumnAtIndex = (colIndex: number): void => {
         if (!this.ref) return;
-
         let rowHeadersWereChanged = false;
 
         const updatedData = this.ref.getData();
@@ -164,9 +163,16 @@ class NeurosynthSpreadsheetState {
             colHeaders: this.columnObjects.map((col) => {
                 const deleteIconStr = renderToString(this.deleteIcon);
 
-                return `<div class="${styles['column-header']}"><span class="${
-                    styles[col.type]
-                }"><b>${col.value}</b></span>${this.isAuthenticated ? deleteIconStr : ''}</div>`;
+                return `
+                    <div style="display: flex; word-break: break-all; align-items: center; white-space: normal; height: 100%;">
+                        <div class="${styles[col.type]}" style="width: 75%;">${col.value}</div>
+                        <div style="width: 25%;">${this.isAuthenticated ? deleteIconStr : ''}</div>
+                    </div>
+                `;
+
+                // return `<div class="${styles['column-header']}"><span class="${
+                //     styles[col.type]
+                // }"><b>${col.value}</b></span>${this.isAuthenticated ? deleteIconStr : ''}</div>`;
             }),
             ...additionalUpdates,
         });

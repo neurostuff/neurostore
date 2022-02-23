@@ -11,17 +11,16 @@ class HotSettingsBuilder {
     private state;
 
     private data = [[]];
-    private mergeCells = [];
-    private stretchH: 'all' | 'none' | 'last' | undefined = 'all';
     private rowHeaderWidth = NeurosynthSpreadsheetHelper.ROW_HEADER_WIDTH;
     private rowHeights = NeurosynthSpreadsheetHelper.ROW_HEIGHTS;
     private height = '70px';
     private fillHandle = false;
     private contextMenu = false;
     private licenseKey = 'non-commercial-and-evaluation';
-    private viewportColumnRenderingOffset = 9;
-    private viewportRowRenderingOffset = 9;
+    private viewportColumnRenderingOffset = 4;
+    private viewportRowRenderingOffset = 20;
     private renderAllRows = false;
+    private colWidths = 160;
 
     constructor(state: NeurosynthSpreadsheetState) {
         this.state = state;
@@ -30,8 +29,6 @@ class HotSettingsBuilder {
     public getBaseHotSettings(): GridSettings {
         return {
             data: this.data,
-            mergeCells: this.mergeCells,
-            stretchH: this.stretchH,
             rowHeaderWidth: this.rowHeaderWidth,
             rowHeights: this.rowHeights,
             height: this.height,
@@ -41,6 +38,7 @@ class HotSettingsBuilder {
             viewportColumnRenderingOffset: this.viewportColumnRenderingOffset,
             viewportRowRenderingOffset: this.viewportRowRenderingOffset,
             renderAllRows: this.renderAllRows,
+            colWidths: this.colWidths,
 
             afterGetColHeader: this.afterGetColHeader,
             afterGetRowHeader: this.afterGetRowHeader,
