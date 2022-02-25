@@ -8,7 +8,7 @@ class BaseSchema(Schema):
     id = fields.String()
     created_at = fields.DateTime()
     updated_at = fields.DateTime()
-    user = fields.String(attribute="user_id")
+    user_id = fields.String(data_key="user")
 
 
 class SpecificationSchema(BaseSchema):
@@ -34,6 +34,6 @@ class AnnotationSchema(BaseSchema):
 
 
 class MetaAnalysisSchema(BaseSchema):
-    specification = fields.String()
-    studyset = fields.String()
-    annotation = fields.String()
+    specification_id = fields.String(data_key="specification")
+    studyset_id = fields.String(data_key="studyset")
+    annotation_id = fields.String(data_key="annotation")
