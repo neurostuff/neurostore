@@ -33,7 +33,7 @@
         "update-api-windows": "docker run --rm -v \"%cd%:/local\" openapitools/openapi-generator-cli generate -i https://raw.githubusercontent.com/neurostuff/neurostore-spec/feat/annotations-page/neurostore-openapi.yml -g typescript-axios -o /local/src/gen/api",
         "update-api-mac": "docker run --rm -v \"${PWD}:/local\" openapitools/openapi-generator-cli generate -i https://raw.githubusercontent.com/neurostuff/neurostore-spec/main/neurostore-openapi.yml -g typescript-axios -o /local/src/gen/api",
         "test": "react-scripts test",
-        "test-with-coverage": "npm run test -- --coverage",
+        "test-with-coverage": "npm run test -- --coverage --watchAll=false",
         "cy:e2e-headless": "cypress run",
         "cy:e2e-browser": "cypress open",
         "eject": "react-scripts eject"

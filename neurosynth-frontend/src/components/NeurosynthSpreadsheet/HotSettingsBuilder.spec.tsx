@@ -354,6 +354,7 @@ describe('HotSettingsHelper', () => {
                         [0, 0, null, 't'],
                         [0, 0, null, 'false'],
                         [0, 0, null, 'f'],
+                        [0, 0, null, ''],
                     ],
                     'populateFromArray'
                 );
@@ -363,6 +364,7 @@ describe('HotSettingsHelper', () => {
                     [0, 0, true],
                     [0, 0, false],
                     [0, 0, false],
+                    [0, 0, null],
                 ]);
             });
 
