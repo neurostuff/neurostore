@@ -10,13 +10,10 @@ from ..database import db
 
 class UserListView(ListView):
     _model = User
-
-    @property
-    def schema(self):
-        return globals()[self._model.__name__ + 'Schema']
+    _schema = UserSchema
 
     def post(self, **kwargs):
-        data = parser.parse(self.schema, request)
+        data = parser.parse(self.__class__._schema, request)
         record = self._model()
         # Store all models so we can atomically update in one commit
         to_commit = []
@@ -30,15 +27,12 @@ class UserListView(ListView):
         db.session.add_all(to_commit)
         db.session.commit()
 
-        return self.schema().dump(record)
+        return self.__class__._schema().dump(record)
 
 
 class UserView(ObjectView):
     _model = User
-
-    @property
-    def schema(self):
-        return globals()[self._model.__name__ + 'Schema']
+    _schema = UserSchema
 
     def put(self, id):
         current_user = User.query.filter_by(external_id=connexion.context['user']).first()

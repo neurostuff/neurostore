@@ -97,6 +97,13 @@ def test_private_studies(user_data, auth_clients):
     assert f"{user1.id}'s private study" in (name_set1 - name_set2)
     assert f"{user2.id}'s private study" in (name_set2 - name_set1)
 
+    # but users can still access private studies with given link
+    user2_private_study = next((s['id'] for s in resp2.json['results'] if 'private' in s['name']))
+
+    user1_get = client1.get(f"/api/studies/{user2_private_study}")
+
+    assert user1_get.status_code == 200
+
 
 def test_post_studies(auth_client, ingest_neurosynth):
     payload = auth_client.get("/api/analyses/").json['results']

@@ -22,7 +22,7 @@ from neurostore.models import (
     Study,
     Dataset,
 )
-from neurostore.models.data import DatasetStudy
+from neurostore.models.data import DatasetStudy, _check_type
 
 
 def ingest_neurovault(verbose=False, limit=20):
@@ -238,8 +238,8 @@ def ingest_neurosynth(max_rows=None):
                 )
 
         # add notes to annotation
+        annot.note_keys = {k: _check_type(v) for k, v in annotation_row._asdict().items()}
         annot.annotation_analyses = notes
-
         db.session.add(annot)
         db.session.commit()
 

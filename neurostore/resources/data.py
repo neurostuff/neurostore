@@ -6,6 +6,7 @@ from flask.views import MethodView
 
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
 import sqlalchemy.sql.expression as sae
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
@@ -125,7 +126,11 @@ class BaseView(MethodView):
 
                 if commit:
                     db.session.add_all(to_commit)
-                    db.session.commit()
+                    try:
+                        db.session.commit()
+                    except SQLAlchemyError:
+                        db.session.rollback()
+                        abort(400)
 
                 return record
 
@@ -175,7 +180,11 @@ class BaseView(MethodView):
 
         if commit:
             db.session.add_all(to_commit)
-            db.session.commit()
+            try:
+                db.session.commit()
+            except SQLAlchemyError:
+                db.session.rollback()
+                abort(400)
 
         return record
 
@@ -183,21 +192,12 @@ class BaseView(MethodView):
 class ObjectView(BaseView):
     def get(self, id):
         record = self._model.query.filter_by(id=id).first_or_404()
-        current_user = get_current_user()
-        user_id = None if not current_user else current_user.external_id
-
-        if hasattr(record, 'public') and not record.public and record.user_id != user_id:
-            abort(403)
-
         nested = request.args.get("nested")
         export = request.args.get("export", False)
         return self.__class__._schema(context={
             'nested': nested,
             'export': export,
         }).dump(record)
-
-    def insert_data(self, id, data):
-        return data
 
     def put(self, id):
         request_data = self.insert_data(id, request.json)
@@ -221,6 +221,9 @@ class ObjectView(BaseView):
 
         return 204
 
+    def insert_data(self, id, data):
+        return data
+
 
 LIST_USER_ARGS = {
     "search": fields.String(missing=None),
@@ -235,6 +238,7 @@ LIST_USER_ARGS = {
     "user_id": fields.String(missing=None),
     "dataset_id": fields.String(missing=None),
     "export": fields.Boolean(missing=False),
+    "data_type": fields.String(missing=None),
 }
 
 
@@ -267,7 +271,6 @@ class ListView(BaseView):
             q = q.filter(m.user_id == args.get("user_id"))
 
         # query items that are public and/or you own them
-        # (only pertinant for studies currently)
         if hasattr(m, 'public'):
             current_user = get_current_user()
             q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
@@ -275,6 +278,17 @@ class ListView(BaseView):
         # query annotations for a specific dataset
         if args.get('dataset_id'):
             q = q.filter(m.dataset_id == args.get('dataset_id'))
+
+        # search studies for data_type
+        if args.get('data_type'):
+            if args['data_type'] == 'coordinate':
+                q = q.filter(m.analyses.any(Analysis.points.any()))
+            elif args['data_type'] == 'image':
+                q = q.filter(m.analyses.any(Analysis.images.any()))
+            elif args['data_type'] == 'both':
+                q = q.filter(sae.and_(
+                    m.analyses.any(Analysis.images.any()),
+                    m.analyses.any(Analysis.points.any())))
 
         # For multi-column search, default to using search fields
         if s is not None and self._fulltext_fields:
