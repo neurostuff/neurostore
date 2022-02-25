@@ -99,14 +99,12 @@ registerCellType(HandsontableCellType);
 registerCellType(NumericCellType);
 registerCellType(TextCellType);
 
-registerPlugin(AutoColumnSize);
 registerPlugin(CopyPaste);
 registerPlugin(MergeCells);
 registerPlugin(DragToScroll);
 registerPlugin(MultipleSelectionHandles);
 registerPlugin(UndoRedo);
 registerPlugin(BasePlugin);
-registerPlugin(AutoRowSize);
 
 ReactDOM.render(
     <React.StrictMode>

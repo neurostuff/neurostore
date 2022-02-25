@@ -4,16 +4,15 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import styles from './NeurosynthSpreadsheet.module.css';
 import React, { memo, useEffect, useRef } from 'react';
 import { EPropertyType, IMetadataRowModel } from '..';
-import { Box } from '@mui/system';
-import { useParams, NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import AddMetadataRow from '../EditMetadata/EditMetadataRow/AddMetadataRow';
 import EditAnnotationsPageStyles from '../../pages/Annotations/EditAnnotationsPage/EditAnnotationsPage.styles';
 import { AnnotationNote, ReadOnly } from '../../gen/api';
 import EditStudyPageStyles from '../../pages/Studies/EditStudyPage/EditStudyPage.styles';
-import { Button, Link } from '@mui/material';
-import HotSettingsBuilder from './HotSettingsHelper';
+import { Button, Link, Box } from '@mui/material';
+import HotSettingsBuilder from './HotSettingsBuilder';
 import NeurosynthSpreadsheetState from './NeurosynthSpreadsheetState';
-import { NeurosynthSpreadsheetHelper } from './NeurosynthSpreadsheetHelper';
+import NeurosynthSpreadsheetHelper from './NeurosynthSpreadsheetHelper';
 
 export interface INeurosynthColumn {
     value: string;
@@ -26,10 +25,6 @@ const NeurosynthSpreadsheet: React.FC<{
 }> = memo((props) => {
     const hotTableRef = useRef<HotTable>(null);
     const { isAuthenticated } = useAuth0();
-    const params: {
-        annotationId: string;
-        datasetId: string;
-    } = useParams();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const STATE = new NeurosynthSpreadsheetState(
@@ -40,8 +35,7 @@ const NeurosynthSpreadsheet: React.FC<{
     const hotSettings = new HotSettingsBuilder(STATE).getBaseHotSettings();
 
     useEffect(() => {
-        if (!params.annotationId || !hotTableRef.current?.hotInstance || !props.annotationNotes)
-            return;
+        if (!STATE.ref || !props.annotationNotes) return;
         const getAnnotation = () => {
             // sort notes by study id. This is necessary to visually group them by study in the spreadsheet
             const notes = (props.annotationNotes as (AnnotationNote & ReadOnly)[]).sort((a, b) => {
@@ -143,13 +137,13 @@ const NeurosynthSpreadsheet: React.FC<{
             }
         };
         getAnnotation();
-    }, [isAuthenticated, params.annotationId, props.annotationNotes, STATE]);
+    }, [isAuthenticated, props.annotationNotes, STATE]);
 
     const addColumnHeader = (column: IMetadataRowModel): boolean => {
         const keyExists = STATE.columnValueExists(column.metadataKey);
         if (keyExists) return false;
 
-        STATE.addColumn(column);
+        STATE.addColumnToSpreadsheet(column);
 
         const noColumnsMessage = document.querySelector('#no-columns-message');
         noColumnsMessage?.setAttribute('class', styles.hide);

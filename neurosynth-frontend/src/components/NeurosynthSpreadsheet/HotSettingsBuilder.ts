@@ -1,10 +1,10 @@
 import CellCoords from 'handsontable/3rdparty/walkontable/src/cell/coords';
 import { CellChange, ChangeSource } from 'handsontable/common';
 import { htmlRenderer } from 'handsontable/renderers';
-import { CellMeta, GridSettings } from 'handsontable/settings';
+import { CellMeta } from 'handsontable/settings';
 import { EPropertyType } from '..';
 import styles from './NeurosynthSpreadsheet.module.css';
-import { NeurosynthSpreadsheetHelper } from './NeurosynthSpreadsheetHelper';
+import NeurosynthSpreadsheetHelper from './NeurosynthSpreadsheetHelper';
 import NeurosynthSpreadsheetState from './NeurosynthSpreadsheetState';
 
 class HotSettingsBuilder {
@@ -20,13 +20,14 @@ class HotSettingsBuilder {
     private viewportColumnRenderingOffset = 4;
     private viewportRowRenderingOffset = 20;
     private renderAllRows = false;
-    private colWidths = 160;
+    private colWidths = NeurosynthSpreadsheetHelper.COL_WIDTHS;
+    private stretchH: 'all' | 'none' | 'last' | undefined = 'all';
 
     constructor(state: NeurosynthSpreadsheetState) {
         this.state = state;
     }
 
-    public getBaseHotSettings(): GridSettings {
+    public getBaseHotSettings() {
         return {
             data: this.data,
             rowHeaderWidth: this.rowHeaderWidth,
@@ -39,6 +40,7 @@ class HotSettingsBuilder {
             viewportRowRenderingOffset: this.viewportRowRenderingOffset,
             renderAllRows: this.renderAllRows,
             colWidths: this.colWidths,
+            stretchH: this.stretchH,
 
             afterGetColHeader: this.afterGetColHeader,
             afterGetRowHeader: this.afterGetRowHeader,
@@ -51,8 +53,11 @@ class HotSettingsBuilder {
     }
 
     private afterGetColHeader = (column: number, TH: HTMLElement): void => {
-        const isBoolType = TH.querySelector(`.${styles.boolean}`);
-        if (TH && isBoolType) {
+        const col = this.state.getColumnObjectAtIndex(column);
+        if (!col) return;
+
+        const isBoolType = col.type === EPropertyType.BOOLEAN;
+        if (isBoolType) {
             TH.setAttribute(
                 'title',
                 'valid boolean entries include "t" or "true" for true and "f" or "false" for false.'
@@ -62,10 +67,7 @@ class HotSettingsBuilder {
 
     private afterGetRowHeader = (row: number, TH: HTMLElement): void => {
         if (this.state.rowIsStudyTitle(row)) {
-            TH.setAttribute(
-                'style',
-                'background-color: #ccc; color: black; border-left-color: #ccc; border-right-color: #ccc;'
-            );
+            TH.setAttribute('style', 'background-color: #ccc; color: black;');
         }
     };
 
@@ -93,8 +95,8 @@ class HotSettingsBuilder {
         TD: HTMLTableCellElement
     ): void => {
         const target = event.target as HTMLButtonElement;
-        if (target.tagName === 'svg' || (target.tagName === 'path' && coords.row < 0)) {
-            this.state.removeColumnAtIndex(coords.col);
+        if (coords.row < 0 && (target.tagName === 'svg' || target.tagName === 'path')) {
+            this.state.removeColumnFromSpreadsheetAtIndex(coords.col);
         }
     };
 
@@ -114,13 +116,14 @@ class HotSettingsBuilder {
     };
 
     private afterChange = (changes: CellChange[] | null, source: ChangeSource) => {
-        if (this.state.numColumns <= 0 || !changes) return;
+        if (this.state.numColumns <= 0 || !changes || changes.length === 0) return;
         const requiredChanges: [number, number, string | number | boolean | null][] = [];
         changes.forEach((change, index) => {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const [rowValue, colValue, _, newValue] = change;
             const col = this.state.getColumnObjectAtIndex(colValue as number);
             const isValidSpreadsheetBooleanValueAndRequiresChange =
+                col &&
                 col.type === EPropertyType.BOOLEAN &&
                 newValue !== true &&
                 newValue !== false &&
@@ -144,7 +147,7 @@ class HotSettingsBuilder {
             }
         });
 
-        this.state.ref?.setDataAtCell(requiredChanges);
+        if (requiredChanges.length > 0) this.state.ref?.setDataAtCell(requiredChanges);
     };
 }
 

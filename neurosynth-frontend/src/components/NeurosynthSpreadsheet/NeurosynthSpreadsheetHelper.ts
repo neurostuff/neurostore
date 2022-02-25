@@ -2,9 +2,10 @@ import { EPropertyType, getType } from '..';
 import { AnnotationNote } from '../../gen/api';
 import styles from './NeurosynthSpreadsheet.module.css';
 
-export class NeurosynthSpreadsheetHelper {
+class NeurosynthSpreadsheetHelper {
     public static readonly ROW_HEADER_WIDTH = 200;
     public static readonly ROW_HEIGHTS = 25;
+    public static readonly COL_WIDTHS = 160;
 
     public static IsSpreadsheetBoolType(value: any): boolean {
         return (
@@ -60,7 +61,7 @@ export class NeurosynthSpreadsheetHelper {
         const studyNameText = studyYear ? `(${studyYear}) ${studyName}` : studyName;
         const visibleWidth = NeurosynthSpreadsheetHelper.GetVisibleStudyTitleWidth();
         return isHTML
-            ? `<div style="width: ${visibleWidth}px; display: flex; position: absolute !important; z-index: 9">` +
+            ? `<div style="width: ${visibleWidth}px;" class="${styles['study-details-row-content']}">` +
                   `<span class="${styles.authors} ${styles['study-details-text']}">${authorText}</span>` +
                   `<span class="${styles['study-name']} ${styles['study-details-text']}">${studyNameText}</span>` +
                   `<span class="${styles.publication} ${styles['study-details-text']}">${journalName}</span>` +
@@ -69,10 +70,4 @@ export class NeurosynthSpreadsheetHelper {
     }
 }
 
-/**
- * `<div style="width: ${visibleWidth}px; display: flex; position: absolute !important; z-index: 9">` +
-                  `<span class="${styles.authors} ${styles['study-details-text']}">${authorText}</span>` +
-                  `<span class="${styles['study-name']} ${styles['study-details-text']}">${studyNameText}</span>` +
-                  `<span class="${styles.publication} ${styles['study-details-text']}">${journalName}</span>` +
-                  `</div>`
- */
+export default NeurosynthSpreadsheetHelper;

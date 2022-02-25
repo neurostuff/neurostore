@@ -25,16 +25,25 @@
 
 .column-header {
     display: flex;
+    word-break: break-all;
     align-items: center;
+    white-space: normal;
     height: 100%;
-    padding: 0 4px;
+    margin: 0 auto;
 }
 
 .study-details-row {
     background-color: #ccc !important;
     color: black !important;
+
+    /* fixes styling issue where text disappears when first col header is selected */
     position: initial !important;
-    width: 500px !important;
+}
+
+.study-details-row-content {
+    display: flex;
+    position: absolute !important;
+    z-index: 9
 }
 
 .delete-icon {

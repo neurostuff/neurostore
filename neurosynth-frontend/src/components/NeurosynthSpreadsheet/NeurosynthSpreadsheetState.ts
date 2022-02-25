@@ -5,7 +5,7 @@ import { numericValidator } from 'handsontable/validators';
 import React from 'react';
 import { EPropertyType, getType, IMetadataRowModel, INeurosynthColumn } from '..';
 import { AnnotationNote } from '../../gen/api';
-import { NeurosynthSpreadsheetHelper } from './NeurosynthSpreadsheetHelper';
+import NeurosynthSpreadsheetHelper from './NeurosynthSpreadsheetHelper';
 import styles from './NeurosynthSpreadsheet.module.css';
 import { numericRenderer, textRenderer } from 'handsontable/renderers';
 import { renderToString } from 'react-dom/server';
@@ -33,8 +33,8 @@ class NeurosynthSpreadsheetState {
         return this.columnObjects.length;
     }
 
-    public getColumnObjectAtIndex = (col: number): INeurosynthColumn => {
-        return { ...this.columnObjects[col] };
+    public getColumnObjectAtIndex = (col: number): INeurosynthColumn | undefined => {
+        return this.columnObjects[col] ? { ...this.columnObjects[col] } : undefined;
     };
 
     public columnValueExists = (key: string): boolean => {
@@ -59,10 +59,9 @@ class NeurosynthSpreadsheetState {
         this.studyTitleRows[index] = studyTitleRow;
     };
 
-    public addColumn = (column: IMetadataRowModel): void => {
+    public addColumnToSpreadsheet = (column: IMetadataRowModel): void => {
         const keyExists = this.columnObjects.some((col) => col.value === column.metadataKey);
         if (keyExists || !this.ref) return;
-
         let rowHeadersWereChanged = false;
 
         const updatedData: (string | boolean | number | null)[][] = this.ref.getData();
@@ -84,6 +83,11 @@ class NeurosynthSpreadsheetState {
                     row.unshift(studyDetailString);
                 }
             } else {
+                /** if a spreadsheet has 0 columns, then ref.getData() will still return an array of arrays with nulls, i.e.
+                 * i.e: [ [null], [null], [null] ... ] instead of [ [], [], [], ...]
+                 * Therefore, if no columns exist, we want to just set the first element to our value
+                 */
+
                 this.numColumns === 0
                     ? (row[0] = column.metadataValue)
                     : row.unshift(column.metadataValue);
@@ -101,8 +105,13 @@ class NeurosynthSpreadsheetState {
         });
     };
 
-    public removeColumnAtIndex = (colIndex: number): void => {
-        if (!this.ref) return;
+    public removeColumnFromSpreadsheetAtIndex = (colIndex: number): void => {
+        if (
+            this.numColumns <= 0 ||
+            this.getColumnObjectAtIndex(colIndex) === undefined ||
+            !this.ref
+        )
+            return;
         let rowHeadersWereChanged = false;
 
         const updatedData = this.ref.getData();
@@ -124,6 +133,7 @@ class NeurosynthSpreadsheetState {
                 row.splice(colIndex, 1);
             }
         });
+
         this.columnObjects.splice(colIndex, 1);
 
         this.updateSpreadsheet({
@@ -163,16 +173,12 @@ class NeurosynthSpreadsheetState {
             colHeaders: this.columnObjects.map((col) => {
                 const deleteIconStr = renderToString(this.deleteIcon);
 
-                return `
-                    <div style="display: flex; word-break: break-all; align-items: center; white-space: normal; height: 100%;">
-                        <div class="${styles[col.type]}" style="width: 75%;">${col.value}</div>
-                        <div style="width: 25%;">${this.isAuthenticated ? deleteIconStr : ''}</div>
-                    </div>
-                `;
-
-                // return `<div class="${styles['column-header']}"><span class="${
-                //     styles[col.type]
-                // }"><b>${col.value}</b></span>${this.isAuthenticated ? deleteIconStr : ''}</div>`;
+                return (
+                    `<div class="${styles['column-header']}" style="max-width: ${NeurosynthSpreadsheetHelper.COL_WIDTHS}px">` +
+                    `<div class="${styles[col.type]}" style="width: 75%;">${col.value}</div>` +
+                    `<div style="width: 25%;">${this.isAuthenticated ? deleteIconStr : ''}</div>` +
+                    `</div>`
+                );
             }),
             ...additionalUpdates,
         });
