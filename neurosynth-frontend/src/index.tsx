@@ -23,8 +23,6 @@ import {
     TextCellType,
 } from 'handsontable/cellTypes';
 import {
-    AutoColumnSize,
-    AutoRowSize,
     BasePlugin,
     CopyPaste,
     DragToScroll,

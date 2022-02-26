@@ -191,16 +191,21 @@ class NeurosynthSpreadsheetState {
     public convertToAnnotationObject = (
         annotationNotes: AnnotationNote[],
         data: (string | boolean | number | null)[][]
-    ): AnnotationNote[] => {
+    ) => {
         if (this.numColumns === 0) {
-            return annotationNotes.map((annotationNote) => ({
+            const updatedAnnotationNotes = annotationNotes.map((annotationNote) => ({
                 ...annotationNote,
                 note: {},
             }));
+
+            return {
+                annotationNotes: updatedAnnotationNotes,
+                noteKeyTypes: {},
+            };
         }
 
         const pureData = data.filter((row, index) => !this.rowIsStudyTitle(index));
-        return annotationNotes.map((annotationNote, index) => {
+        const updatedAnnotationNotes = annotationNotes.map((annotationNote, index) => {
             const newNote: { [key: string]: string | number | boolean | null } = {};
             const row = pureData[index];
             row.forEach((value, colIndex) => {
@@ -213,6 +218,16 @@ class NeurosynthSpreadsheetState {
                 note: newNote,
             };
         });
+
+        const updatedNoteKeyTypes: { [key: string]: EPropertyType } = {};
+        this.columnObjects.forEach((col) => {
+            updatedNoteKeyTypes[col.value] = col.type;
+        });
+
+        return {
+            annotationNotes: updatedAnnotationNotes,
+            noteKeyTypes: updatedNoteKeyTypes,
+        };
     };
 
     // helper functions

@@ -3,7 +3,12 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useParams } from 'react-router';
 import API, { AnnotationsApiResponse } from '../../../utils/api';
-import { ConfirmationDialog, TextEdit, NeurosynthSpreadsheet } from '../../../components';
+import {
+    ConfirmationDialog,
+    TextEdit,
+    NeurosynthSpreadsheet,
+    EPropertyType,
+} from '../../../components';
 import EditStudyPageStyles from '../../Studies/EditStudyPage/EditStudyPage.styles';
 import EditAnnotationsPageStyles from './EditAnnotationsPage.styles';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -47,6 +52,7 @@ const EditAnnotationsPage: React.FC = (props) => {
         API.Services.AnnotationsService.annotationsIdPut(params.annotationId, {
             [property]: updatedText,
             notes: (annotation?.notes || []).map((annotationNote) => {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 const { study_name, analysis_name, note, analysis, ...everythingElse } =
                     annotationNote;
                 return {
@@ -102,7 +108,10 @@ const EditAnnotationsPage: React.FC = (props) => {
     };
 
     const handleSaveAnnotation = useCallback(
-        async (annotationNotes: AnnotationNote[]) => {
+        async (
+            annotationNotes: AnnotationNote[],
+            noteKeyTypes: { [key: string]: EPropertyType }
+        ) => {
             try {
                 const token = await getAccessTokenSilently();
                 handleToken(token);
@@ -117,6 +126,7 @@ const EditAnnotationsPage: React.FC = (props) => {
                     analysis: annotationNote.analysis,
                     study: annotationNote.study,
                 })),
+                note_keys: noteKeyTypes,
             })
                 .then((res) => {
                     showSnackbar('annotation successfully updated', SnackbarType.SUCCESS);
@@ -173,6 +183,7 @@ const EditAnnotationsPage: React.FC = (props) => {
             <Box component={Paper} sx={EditAnnotationsPageStyles.spreadsheetContainer}>
                 <NeurosynthSpreadsheet
                     annotationNotes={annotation?.notes}
+                    annotationNoteKeyTypes={annotation?.note_keys}
                     onSaveAnnotation={handleSaveAnnotation}
                 />
             </Box>

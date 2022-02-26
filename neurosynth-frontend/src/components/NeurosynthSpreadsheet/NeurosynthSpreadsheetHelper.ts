@@ -1,5 +1,3 @@
-import { EPropertyType, getType } from '..';
-import { AnnotationNote } from '../../gen/api';
 import styles from './NeurosynthSpreadsheet.module.css';
 
 class NeurosynthSpreadsheetHelper {
@@ -18,20 +16,6 @@ class NeurosynthSpreadsheetHelper {
             value === false ||
             value === ''
         );
-    }
-
-    public static GetTypeForColumn(columnKey: string, notes: AnnotationNote[]): EPropertyType {
-        for (let i = 0; i < notes.length; i++) {
-            const currentNote = notes[i].note as {
-                [key: string]: string | boolean | number | null;
-            };
-            const value = currentNote[columnKey];
-            if (value !== null) {
-                // typescript complains here that string cannot be used to index type {} so we must cast it
-                return getType(value);
-            }
-        }
-        return EPropertyType.STRING;
     }
 
     public static GetVisibleStudyTitleWidth(): number {

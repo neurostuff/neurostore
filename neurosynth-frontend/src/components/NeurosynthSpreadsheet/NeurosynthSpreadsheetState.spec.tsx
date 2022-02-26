@@ -212,7 +212,7 @@ describe('NeurosynthSpreadsheetState', () => {
             });
 
             const mockAnnotation = STATE.convertToAnnotationObject(mockAnnotationNotes, mockData);
-            expect(mockAnnotation).toEqual([
+            expect(mockAnnotation.annotationNotes).toEqual([
                 {
                     study: 'study_id_1',
                     study_name: 'study_name_1',
@@ -259,6 +259,11 @@ describe('NeurosynthSpreadsheetState', () => {
                     },
                 },
             ]);
+            expect(mockAnnotation.noteKeyTypes).toEqual({
+                key1: EPropertyType.STRING,
+                key2: EPropertyType.BOOLEAN,
+                key3: EPropertyType.NUMBER,
+            });
         });
 
         it('should return empty note objects if a spreadsheet does not have any columns', () => {
@@ -277,7 +282,7 @@ describe('NeurosynthSpreadsheetState', () => {
             });
 
             const mockAnnotation = STATE.convertToAnnotationObject(mockAnnotationNotes, []);
-            expect(mockAnnotation).toEqual([
+            expect(mockAnnotation.annotationNotes).toEqual([
                 {
                     study: 'study_id_1',
                     study_name: 'study_name_1',
@@ -312,6 +317,7 @@ describe('NeurosynthSpreadsheetState', () => {
                     note: {},
                 },
             ]);
+            expect(mockAnnotation.noteKeyTypes).toEqual({});
         });
     });
 

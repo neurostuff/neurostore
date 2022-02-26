@@ -124,6 +124,18 @@ export interface Annotation {
      * @memberof Annotation
      */
     metadata?: object | null;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Annotation
+     */
+    _public?: boolean;
+    /**
+     * 
+     * @type {object}
+     * @memberof Annotation
+     */
+    note_keys?: object;
 }
 /**
  * 
@@ -272,6 +284,12 @@ export interface Dataset {
      * @memberof Dataset
      */
     user?: string | null;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof Dataset
+     */
+    _public?: boolean;
 }
 /**
  * representation of a statistical brain image
@@ -3504,10 +3522,11 @@ export const StudiesApiAxiosParamCreator = function (configuration?: Configurati
          * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the resource you would like to filter/copy from
          * @param {string} [authors] search authors
          * @param {string} [userId] user id you want to filter by
+         * @param {'coordinate' | 'image' | 'both'} [dataType] whether searching for studies that contain coordinates, images, or both
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        studiesGet: async (search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, userId?: string, options: any = {}): Promise<RequestArgs> => {
+        studiesGet: async (search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, userId?: string, dataType?: 'coordinate' | 'image' | 'both', options: any = {}): Promise<RequestArgs> => {
             const localVarPath = `/studies/`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -3574,6 +3593,10 @@ export const StudiesApiAxiosParamCreator = function (configuration?: Configurati
 
             if (userId !== undefined) {
                 localVarQueryParameter['user_id'] = userId;
+            }
+
+            if (dataType !== undefined) {
+                localVarQueryParameter['data_type'] = dataType;
             }
 
 
@@ -3780,11 +3803,12 @@ export const StudiesApiFp = function(configuration?: Configuration) {
          * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the resource you would like to filter/copy from
          * @param {string} [authors] search authors
          * @param {string} [userId] user id you want to filter by
+         * @param {'coordinate' | 'image' | 'both'} [dataType] whether searching for studies that contain coordinates, images, or both
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async studiesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, userId?: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2001>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.studiesGet(search, sort, page, desc, pageSize, nested, name, description, sourceId, unique, source, authors, userId, options);
+        async studiesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, userId?: string, dataType?: 'coordinate' | 'image' | 'both', options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<InlineResponse2001>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.studiesGet(search, sort, page, desc, pageSize, nested, name, description, sourceId, unique, source, authors, userId, dataType, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -3861,11 +3885,12 @@ export const StudiesApiFactory = function (configuration?: Configuration, basePa
          * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the resource you would like to filter/copy from
          * @param {string} [authors] search authors
          * @param {string} [userId] user id you want to filter by
+         * @param {'coordinate' | 'image' | 'both'} [dataType] whether searching for studies that contain coordinates, images, or both
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        studiesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, userId?: string, options?: any): AxiosPromise<InlineResponse2001> {
-            return localVarFp.studiesGet(search, sort, page, desc, pageSize, nested, name, description, sourceId, unique, source, authors, userId, options).then((request) => request(axios, basePath));
+        studiesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, userId?: string, dataType?: 'coordinate' | 'image' | 'both', options?: any): AxiosPromise<InlineResponse2001> {
+            return localVarFp.studiesGet(search, sort, page, desc, pageSize, nested, name, description, sourceId, unique, source, authors, userId, dataType, options).then((request) => request(axios, basePath));
         },
         /**
          * delete a study
@@ -3937,12 +3962,13 @@ export class StudiesApi extends BaseAPI {
      * @param {'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery'} [source] the source of the resource you would like to filter/copy from
      * @param {string} [authors] search authors
      * @param {string} [userId] user id you want to filter by
+     * @param {'coordinate' | 'image' | 'both'} [dataType] whether searching for studies that contain coordinates, images, or both
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof StudiesApi
      */
-    public studiesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, userId?: string, options?: any) {
-        return StudiesApiFp(this.configuration).studiesGet(search, sort, page, desc, pageSize, nested, name, description, sourceId, unique, source, authors, userId, options).then((request) => request(this.axios, this.basePath));
+    public studiesGet(search?: string, sort?: string, page?: number, desc?: boolean, pageSize?: number, nested?: boolean, name?: string, description?: string, sourceId?: string, unique?: boolean, source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery', authors?: string, userId?: string, dataType?: 'coordinate' | 'image' | 'both', options?: any) {
+        return StudiesApiFp(this.configuration).studiesGet(search, sort, page, desc, pageSize, nested, name, description, sourceId, unique, source, authors, userId, dataType, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -4040,6 +4066,82 @@ export const UserApiAxiosParamCreator = function (configuration?: Configuration)
             };
         },
         /**
+         * 
+         * @summary Individual User Profile
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        usersIdGet: async (id: string, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('usersIdGet', 'id', id)
+            const localVarPath = `/users/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Update Individual Profile
+         * @param {string} id 
+         * @param {User} [user] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        usersIdPut: async (id: string, user?: User, options: any = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('usersIdPut', 'id', id)
+            const localVarPath = `/users/{id}`
+                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication JSON-Web-Token required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter, options.query);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(user, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * create a user
          * @param {User} [user] 
          * @param {*} [options] Override http request option.
@@ -4097,6 +4199,29 @@ export const UserApiFp = function(configuration?: Configuration) {
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
+         * 
+         * @summary Individual User Profile
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async usersIdGet(id: string, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<User>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.usersIdGet(id, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * 
+         * @summary Update Individual Profile
+         * @param {string} id 
+         * @param {User} [user] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async usersIdPut(id: string, user?: User, options?: any): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<User>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.usersIdPut(id, user, options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
          * create a user
          * @param {User} [user] 
          * @param {*} [options] Override http request option.
@@ -4126,6 +4251,27 @@ export const UserApiFactory = function (configuration?: Configuration, basePath?
             return localVarFp.usersGet(options).then((request) => request(axios, basePath));
         },
         /**
+         * 
+         * @summary Individual User Profile
+         * @param {string} id 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        usersIdGet(id: string, options?: any): AxiosPromise<User> {
+            return localVarFp.usersIdGet(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Update Individual Profile
+         * @param {string} id 
+         * @param {User} [user] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        usersIdPut(id: string, user?: User, options?: any): AxiosPromise<User> {
+            return localVarFp.usersIdPut(id, user, options).then((request) => request(axios, basePath));
+        },
+        /**
          * create a user
          * @param {User} [user] 
          * @param {*} [options] Override http request option.
@@ -4153,6 +4299,31 @@ export class UserApi extends BaseAPI {
      */
     public usersGet(options?: any) {
         return UserApiFp(this.configuration).usersGet(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Individual User Profile
+     * @param {string} id 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof UserApi
+     */
+    public usersIdGet(id: string, options?: any) {
+        return UserApiFp(this.configuration).usersIdGet(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Update Individual Profile
+     * @param {string} id 
+     * @param {User} [user] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof UserApi
+     */
+    public usersIdPut(id: string, user?: User, options?: any) {
+        return UserApiFp(this.configuration).usersIdPut(id, user, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

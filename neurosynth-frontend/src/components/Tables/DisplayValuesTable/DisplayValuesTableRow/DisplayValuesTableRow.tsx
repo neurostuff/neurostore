@@ -2,7 +2,7 @@ import { TableCell, TableRow } from '@mui/material';
 import { Box } from '@mui/system';
 import React from 'react';
 import { IDisplayValuesTableRowModel } from '..';
-import { EPropertyType, getType } from '../../..';
+import { getType } from '../../..';
 import DisplayValuesTableRowStyles from './DisplayValuesTableRow.styles';
 
 const getValue = (value: any): string => {

@@ -2,7 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useRef } from 'react';
-import { NeurosynthSpreadsheet } from '..';
+import { EPropertyType, NeurosynthSpreadsheet } from '..';
 import { AnnotationNote } from '../../gen/api';
 import HotSettingsBuilder from './HotSettingsBuilder';
 import NeurosynthSpreadsheetHelper from './NeurosynthSpreadsheetHelper';
@@ -122,6 +122,12 @@ const mockAnnotationNotes: AnnotationNote[] = [
     },
 ];
 
+const mockNoteKeyTypes: { [key: string]: EPropertyType } = {
+    key1: EPropertyType.STRING,
+    key2: EPropertyType.BOOLEAN,
+    key3: EPropertyType.NUMBER,
+};
+
 describe('NeurosynthSpreadsheet', () => {
     const mockOnSaveAnnotation = jest.fn();
     const mockGetColumnObjectAtIndex = jest.fn();
@@ -184,6 +190,7 @@ describe('NeurosynthSpreadsheet', () => {
     it('should render', () => {
         render(
             <NeurosynthSpreadsheet
+                annotationNoteKeyTypes={mockNoteKeyTypes}
                 annotationNotes={mockAnnotationNotes}
                 onSaveAnnotation={mockOnSaveAnnotation}
             />
@@ -193,7 +200,20 @@ describe('NeurosynthSpreadsheet', () => {
     it('should handle undefined annotation note values', () => {
         render(
             <NeurosynthSpreadsheet
+                annotationNoteKeyTypes={mockNoteKeyTypes}
                 annotationNotes={undefined}
+                onSaveAnnotation={mockOnSaveAnnotation}
+            />
+        );
+
+        expect(mockUpdateSpreadsheet).not.toHaveBeenCalled();
+    });
+
+    it('should handle undefined note key type values', () => {
+        render(
+            <NeurosynthSpreadsheet
+                annotationNoteKeyTypes={undefined}
+                annotationNotes={mockAnnotationNotes}
                 onSaveAnnotation={mockOnSaveAnnotation}
             />
         );
@@ -203,7 +223,11 @@ describe('NeurosynthSpreadsheet', () => {
 
     it('should not update the spreadsheet if no notes exist', async () => {
         render(
-            <NeurosynthSpreadsheet annotationNotes={[]} onSaveAnnotation={mockOnSaveAnnotation} />
+            <NeurosynthSpreadsheet
+                annotationNoteKeyTypes={mockNoteKeyTypes}
+                annotationNotes={[]}
+                onSaveAnnotation={mockOnSaveAnnotation}
+            />
         );
 
         const spreadsheetContainer = document.querySelector('#spreadsheet-container');
@@ -230,6 +254,7 @@ describe('NeurosynthSpreadsheet', () => {
 
         render(
             <NeurosynthSpreadsheet
+                annotationNoteKeyTypes={mockNoteKeyTypes}
                 annotationNotes={mockAnnotationNotes}
                 onSaveAnnotation={mockOnSaveAnnotation}
             />
@@ -247,6 +272,7 @@ describe('NeurosynthSpreadsheet', () => {
         it('should disable the save annotation button', () => {
             render(
                 <NeurosynthSpreadsheet
+                    annotationNoteKeyTypes={mockNoteKeyTypes}
                     annotationNotes={mockAnnotationNotes}
                     onSaveAnnotation={mockOnSaveAnnotation}
                 />
@@ -262,6 +288,7 @@ describe('NeurosynthSpreadsheet', () => {
         it('should hide the add metadata control when there is data', () => {
             render(
                 <NeurosynthSpreadsheet
+                    annotationNoteKeyTypes={mockNoteKeyTypes}
                     annotationNotes={mockAnnotationNotes}
                     onSaveAnnotation={mockOnSaveAnnotation}
                 />
@@ -280,6 +307,7 @@ describe('NeurosynthSpreadsheet', () => {
              */
             render(
                 <NeurosynthSpreadsheet
+                    annotationNoteKeyTypes={mockNoteKeyTypes}
                     annotationNotes={mockAnnotationNotes}
                     onSaveAnnotation={mockOnSaveAnnotation}
                 />
@@ -295,6 +323,7 @@ describe('NeurosynthSpreadsheet', () => {
     it('should populate the state correctly when multiple columns exist', async () => {
         render(
             <NeurosynthSpreadsheet
+                annotationNoteKeyTypes={mockNoteKeyTypes}
                 annotationNotes={mockAnnotationNotes}
                 onSaveAnnotation={mockOnSaveAnnotation}
             />
@@ -360,6 +389,7 @@ describe('NeurosynthSpreadsheet', () => {
                 note: {},
             },
         ];
+        const mockNoteKeyTypesNoColumns: { [key: string]: EPropertyType } = {};
         beforeEach(() => {
             (NeurosynthSpreadsheetState as jest.Mock).mockClear();
             (NeurosynthSpreadsheetState as jest.Mock).mockImplementation(() => {
@@ -376,6 +406,7 @@ describe('NeurosynthSpreadsheet', () => {
         it('should show a message', () => {
             render(
                 <NeurosynthSpreadsheet
+                    annotationNoteKeyTypes={mockNoteKeyTypesNoColumns}
                     annotationNotes={mockAnnotationNotesWithNoColumns}
                     onSaveAnnotation={mockOnSaveAnnotation}
                 />
@@ -391,6 +422,7 @@ describe('NeurosynthSpreadsheet', () => {
         it('should populate the state correctly', () => {
             render(
                 <NeurosynthSpreadsheet
+                    annotationNoteKeyTypes={mockNoteKeyTypesNoColumns}
                     annotationNotes={mockAnnotationNotesWithNoColumns}
                     onSaveAnnotation={mockOnSaveAnnotation}
                 />
@@ -416,6 +448,7 @@ describe('NeurosynthSpreadsheet', () => {
         it('should add a column', () => {
             render(
                 <NeurosynthSpreadsheet
+                    annotationNoteKeyTypes={mockNoteKeyTypes}
                     annotationNotes={mockAnnotationNotes}
                     onSaveAnnotation={mockOnSaveAnnotation}
                 />
@@ -434,6 +467,7 @@ describe('NeurosynthSpreadsheet', () => {
             mockColumnValueExists.mockReturnValue(true);
             render(
                 <NeurosynthSpreadsheet
+                    annotationNoteKeyTypes={mockNoteKeyTypes}
                     annotationNotes={mockAnnotationNotes}
                     onSaveAnnotation={mockOnSaveAnnotation}
                 />
@@ -481,6 +515,7 @@ describe('NeurosynthSpreadsheet', () => {
                     note: {},
                 },
             ];
+            const mockNoteKeyTypesNoColumns: { [key: string]: EPropertyType } = {};
             (NeurosynthSpreadsheetState as jest.Mock).mockClear();
             (NeurosynthSpreadsheetState as jest.Mock).mockImplementation(() => {
                 return {
@@ -497,6 +532,7 @@ describe('NeurosynthSpreadsheet', () => {
 
             render(
                 <NeurosynthSpreadsheet
+                    annotationNoteKeyTypes={mockNoteKeyTypesNoColumns}
                     annotationNotes={mockAnnotationNotesWithNoColumns}
                     onSaveAnnotation={mockOnSaveAnnotation}
                 />
@@ -520,6 +556,7 @@ describe('NeurosynthSpreadsheet', () => {
 
             render(
                 <NeurosynthSpreadsheet
+                    annotationNoteKeyTypes={mockNoteKeyTypes}
                     annotationNotes={mockAnnotationNotes}
                     onSaveAnnotation={mockOnSaveAnnotation}
                 />
@@ -531,6 +568,7 @@ describe('NeurosynthSpreadsheet', () => {
         it('should not save the annotation if no annotationNotes are defined', () => {
             render(
                 <NeurosynthSpreadsheet
+                    annotationNoteKeyTypes={mockNoteKeyTypes}
                     annotationNotes={undefined}
                     onSaveAnnotation={mockOnSaveAnnotation}
                 />
@@ -551,11 +589,15 @@ describe('NeurosynthSpreadsheet', () => {
             });
 
             mockConvertToAnnotationObject.mockImplementation(() => {
-                return [];
+                return {
+                    annotationNotes: [],
+                    noteKeyTypes: {},
+                };
             });
 
             render(
                 <NeurosynthSpreadsheet
+                    annotationNoteKeyTypes={mockNoteKeyTypes}
                     annotationNotes={mockAnnotationNotes}
                     onSaveAnnotation={mockOnSaveAnnotation}
                 />
@@ -567,7 +609,7 @@ describe('NeurosynthSpreadsheet', () => {
 
             userEvent.click(saveAnnotationsButton);
 
-            expect(mockOnSaveAnnotation).toBeCalledWith([]);
+            expect(mockOnSaveAnnotation).toBeCalledWith([], {});
         });
     });
 });

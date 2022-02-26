@@ -21,7 +21,11 @@ export interface INeurosynthColumn {
 
 const NeurosynthSpreadsheet: React.FC<{
     annotationNotes: (AnnotationNote & ReadOnly)[] | undefined;
-    onSaveAnnotation: (args: AnnotationNote[]) => void;
+    annotationNoteKeyTypes: object | undefined;
+    onSaveAnnotation: (
+        annotationNotes: AnnotationNote[],
+        noteKeyTypes: { [key: string]: EPropertyType }
+    ) => void;
 }> = memo((props) => {
     const hotTableRef = useRef<HotTable>(null);
     const { isAuthenticated } = useAuth0();
@@ -35,7 +39,7 @@ const NeurosynthSpreadsheet: React.FC<{
     const hotSettings = new HotSettingsBuilder(STATE).getBaseHotSettings();
 
     useEffect(() => {
-        if (!STATE.ref || !props.annotationNotes) return;
+        if (!STATE.ref || !props.annotationNotes || !props.annotationNoteKeyTypes) return;
         const getAnnotation = () => {
             // sort notes by study id. This is necessary to visually group them by study in the spreadsheet
             const notes = (props.annotationNotes as (AnnotationNote & ReadOnly)[]).sort((a, b) => {
@@ -43,6 +47,8 @@ const NeurosynthSpreadsheet: React.FC<{
                 const secondStudyId = b.study as string;
                 return firstStudyId.localeCompare(secondStudyId);
             });
+
+            const noteKeyTypes = props.annotationNoteKeyTypes as { [key: string]: EPropertyType };
 
             if (!notes || notes.length === 0) {
                 const noDataMessage = document.querySelector('#no-data-message');
@@ -58,12 +64,12 @@ const NeurosynthSpreadsheet: React.FC<{
              *
              * if notes.length is not 0, then the note object should not be undefined
              */
-            const noteKeys: string[] = Object.keys(notes[0].note as object);
+            const noteKeyList: string[] = Object.keys(noteKeyTypes);
 
-            noteKeys.forEach((noteKey) => {
+            noteKeyList.forEach((noteKey) => {
                 STATE.addToColumnObjectList({
                     value: noteKey,
-                    type: NeurosynthSpreadsheetHelper.GetTypeForColumn(noteKey, notes),
+                    type: noteKeyTypes[noteKey],
                 });
             });
 
@@ -88,9 +94,9 @@ const NeurosynthSpreadsheet: React.FC<{
                 if (prevStudy !== currStudy) {
                     // check if we are at a new study. We then want to push a study title row to the spreadsheet
 
-                    if (noteKeys.length > 0) {
+                    if (noteKeyList.length > 0) {
                         // check if columns exist. If so, we add a studyTitleRow and an accompanying empty row header
-                        const spreadsheetRow = new Array(noteKeys.length).fill(null);
+                        const spreadsheetRow = new Array(noteKeyList.length).fill(null);
                         spreadsheetRow[0] = currStudyBlurb;
                         spreadsheetData.push(spreadsheetRow);
                         rowHeaders.push('');
@@ -109,7 +115,7 @@ const NeurosynthSpreadsheet: React.FC<{
                 } else {
                     // we are dealing with an analysis that is part of the same study. We create a regular spreadsheet data row
                     const spreadsheetRow: (string | boolean | number | null)[] = [];
-                    noteKeys.forEach((noteKey, index) => {
+                    noteKeyList.forEach((noteKey, index) => {
                         const tempNoteObj = currNote.note as {
                             [key: string]: boolean | number | string | null;
                         };
@@ -137,7 +143,7 @@ const NeurosynthSpreadsheet: React.FC<{
             }
         };
         getAnnotation();
-    }, [isAuthenticated, props.annotationNotes, STATE]);
+    }, [isAuthenticated, props.annotationNotes, STATE, props.annotationNoteKeyTypes]);
 
     const addColumnHeader = (column: IMetadataRowModel): boolean => {
         const keyExists = STATE.columnValueExists(column.metadataKey);
@@ -153,8 +159,11 @@ const NeurosynthSpreadsheet: React.FC<{
     const handleOnSaveAnnotationChangeClick = (event: React.MouseEvent) => {
         if (!STATE.ref || !props.annotationNotes) return;
         const data = STATE.ref.getData() as (string | boolean | number | null)[][];
-        const convertedAnnotation = STATE.convertToAnnotationObject(props.annotationNotes, data);
-        props.onSaveAnnotation(convertedAnnotation);
+        const { annotationNotes, noteKeyTypes } = STATE.convertToAnnotationObject(
+            props.annotationNotes,
+            data
+        );
+        props.onSaveAnnotation(annotationNotes, noteKeyTypes);
     };
 
     return (

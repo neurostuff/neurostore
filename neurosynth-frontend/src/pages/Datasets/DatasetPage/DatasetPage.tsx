@@ -144,25 +144,11 @@ const DatasetPage: React.FC = (props) => {
                 console.error(exception);
             }
 
-            const notes: AnnotationNote[] = (dataset.studies as StudyApiResponse[]).reduce(
-                (total: AnnotationNote[], curr) => {
-                    const convertedNotes: AnnotationNote[] = (
-                        curr.analyses as AnalysisApiResponse[]
-                    ).map((analysis) => ({
-                        analysis: analysis.id,
-                        study: analysis.study,
-                        note: {},
-                    }));
-
-                    return total.concat(convertedNotes);
-                },
-                []
-            );
-
             API.Services.AnnotationsService.annotationsPost('neurosynth', undefined, {
                 name,
                 description,
-                notes: notes, // TODO: discuss how handling of annotations will work in order to stay up to date with studies that are added/removed
+                note_keys: {},
+                notes: [],
                 dataset: params.datasetId,
             })
                 .then((res) => {
