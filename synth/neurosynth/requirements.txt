@@ -25,3 +25,4 @@ wheel>=0.36.2
 wrapt>=1.12.1
 scipy
 pytest
+nimare>=0.0.11
