@@ -15,6 +15,10 @@ RUN apt-get install -y nodejs
 RUN npm install -g yarn
 
 COPY requirements.txt /usr/src/app/
+# in order to install nimare dependency indexed_gzip (no binaries for python 3.10)
+RUN apt-get install -y build-essential
+RUN pip install cython
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /usr/src/app
