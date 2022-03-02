@@ -2,7 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Typography, Button } from '@mui/material';
 import { useContext, useEffect, useState } from 'react';
 import { NeurosynthLoader } from '../../../components';
-import CreateDatasetDialog from '../../../components/Dialogs/CreateDatasetDialog/CreateDatasetDialog';
+import CreateDetailsDialog from '../../../components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import DatasetsTable from '../../../components/Tables/DatasetsTable/DatasetsTable';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import useIsMounted from '../../../hooks/useIsMounted';
@@ -11,7 +11,7 @@ import API, { DatasetsApiResponse } from '../../../utils/api';
 const UserDatasetsPage: React.FC = (props) => {
     const { user, getAccessTokenSilently } = useAuth0();
     const [datasets, setDatasets] = useState<DatasetsApiResponse[]>();
-    const context = useContext(GlobalContext);
+    const { showSnackbar, handleToken } = useContext(GlobalContext);
     const [createDatasetDialogIsOpen, setCreateDatasetDialogIsOpen] = useState(false);
     const isMountedRef = useIsMounted();
 
@@ -46,9 +46,9 @@ const UserDatasetsPage: React.FC = (props) => {
     const handleCreateDataset = async (name: string, description: string) => {
         try {
             const token = await getAccessTokenSilently();
-            context.handleToken(token);
+            handleToken(token);
         } catch (exception) {
-            context.showSnackbar('there was an error', SnackbarType.ERROR);
+            showSnackbar('there was an error', SnackbarType.ERROR);
             console.error(exception);
         }
 
@@ -70,7 +70,8 @@ const UserDatasetsPage: React.FC = (props) => {
                 }
             })
             .catch((err) => {
-                console.log(err);
+                console.error(err);
+                showSnackbar('there was an error creating the dataset', SnackbarType.ERROR);
             });
     };
 
@@ -90,15 +91,16 @@ const UserDatasetsPage: React.FC = (props) => {
                 </Button>
             </Box>
 
-            <CreateDatasetDialog
+            <CreateDetailsDialog
+                titleText="Create new Dataset"
                 onCloseDialog={() => {
                     setCreateDatasetDialogIsOpen(false);
                 }}
-                onCreateDataset={handleCreateDataset}
+                onCreate={handleCreateDataset}
                 isOpen={createDatasetDialogIsOpen}
             />
 
-            <DatasetsTable tableSize="medium" datasets={datasets || []} />
+            <DatasetsTable datasets={datasets || []} />
         </NeurosynthLoader>
     );
 };

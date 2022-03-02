@@ -206,7 +206,10 @@ const StudyPage: React.FC = (props) => {
                     <Typography variant="h6">{study?.publication}</Typography>
                     {study?.doi && <Typography variant="h6">DOI: {study?.doi}</Typography>}
                 </Box>
-                <TextExpansion text={study?.description || ''} sx={StudyPageStyles.spaceBelow} />
+                <TextExpansion
+                    text={study?.description || ''}
+                    sx={{ ...StudyPageStyles.spaceBelow, whiteSpace: 'pre-wrap' }}
+                />
             </Box>
             <Box sx={{ margin: '15px 0' }}>
                 <Accordion elevation={2}>

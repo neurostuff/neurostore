@@ -1,20 +1,23 @@
-import { Popper, Grow, Paper, ClickAwayListener } from '@mui/material';
+import { Popper, Grow, Paper, ClickAwayListener, PopperPlacementType } from '@mui/material';
 
 export interface INeurosynthPopper {
     open: boolean;
     anchorElement: HTMLButtonElement | null;
+    placement?: PopperPlacementType;
     onClickAway: (event: MouseEvent | TouchEvent) => void;
 }
 
 const NeurosynthPopper: React.FC<INeurosynthPopper> = (props) => {
+    const { open, anchorElement, placement = 'bottom-start', onClickAway, children } = props;
+
     return (
         <Popper
             style={{ zIndex: 1 }}
-            anchorEl={props.anchorElement}
-            open={props.open}
+            anchorEl={anchorElement}
+            open={open}
             disablePortal
             transition
-            placement="bottom-start"
+            placement={placement}
         >
             {({ TransitionProps, placement }) => (
                 <Grow
@@ -24,8 +27,8 @@ const NeurosynthPopper: React.FC<INeurosynthPopper> = (props) => {
                     }}
                 >
                     <Paper>
-                        <ClickAwayListener onClickAway={props.onClickAway}>
-                            <div>{props.children}</div>
+                        <ClickAwayListener onClickAway={onClickAway}>
+                            <div>{children}</div>
                         </ClickAwayListener>
                     </Paper>
                 </Grow>

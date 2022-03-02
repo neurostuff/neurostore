@@ -38,7 +38,7 @@ const EditStudyPage = () => {
                             publication: studyRes.publication || '',
                             doi: studyRes.doi || '',
                             description: studyRes.description || '',
-                            metadata: studyRes.metadata ? studyRes.metadata : [],
+                            metadata: studyRes.metadata ? studyRes.metadata : {},
                             analyses: studyRes.analyses as AnalysisApiResponse[] | undefined,
                         });
                     }

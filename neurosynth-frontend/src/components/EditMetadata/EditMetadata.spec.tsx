@@ -1,9 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { EPropertyType, IMetadataRowModel } from '.';
+import { EPropertyType, IMetadataRowModel, getType } from '.';
 import { EditMetadata } from '..';
 import { MockThemeProvider } from '../../testing/helpers';
-import { getType } from './EditMetadata';
 
 describe('EditMetadata Component', () => {
     const handleMetadataRowEdit = jest.fn();

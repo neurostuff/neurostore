@@ -7,6 +7,30 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Auth0Provider } from '@auth0/auth0-react';
 import { grey } from '@mui/material/colors';
 import { SxProps, Theme } from '@mui/system';
+import { BaseEditor, NumericEditor, registerEditor, TextEditor } from 'handsontable/editors';
+import {
+    baseRenderer,
+    htmlRenderer,
+    numericRenderer,
+    registerRenderer,
+    textRenderer,
+} from 'handsontable/renderers';
+import { numericValidator, registerValidator } from 'handsontable/validators';
+import {
+    HandsontableCellType,
+    NumericCellType,
+    registerCellType,
+    TextCellType,
+} from 'handsontable/cellTypes';
+import {
+    BasePlugin,
+    CopyPaste,
+    DragToScroll,
+    MergeCells,
+    MultipleSelectionHandles,
+    UndoRedo,
+    registerPlugin,
+} from 'handsontable/plugins';
 
 export interface Style {
     [key: string]: SxProps<Theme>;
@@ -57,6 +81,28 @@ const theme = createTheme({
 const domain = process.env.REACT_APP_AUTH0_DOMAIN as string;
 const clientId = process.env.REACT_APP_AUTH0_CLIENT_ID as string;
 const audience = process.env.REACT_APP_AUTH0_AUDIENCE as string;
+
+registerEditor(BaseEditor);
+registerEditor(NumericEditor);
+registerEditor(TextEditor);
+
+registerRenderer(baseRenderer);
+registerRenderer(htmlRenderer);
+registerRenderer(numericRenderer);
+registerRenderer(textRenderer);
+
+registerValidator(numericValidator);
+
+registerCellType(HandsontableCellType);
+registerCellType(NumericCellType);
+registerCellType(TextCellType);
+
+registerPlugin(CopyPaste);
+registerPlugin(MergeCells);
+registerPlugin(DragToScroll);
+registerPlugin(MultipleSelectionHandles);
+registerPlugin(UndoRedo);
+registerPlugin(BasePlugin);
 
 ReactDOM.render(
     <React.StrictMode>
