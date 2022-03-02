@@ -253,7 +253,7 @@ def user_data(session, mock_add_users):
 
             specification = Specification(
                 user=user,
-                type='CBMA',
+                type='cbma',
                 estimator={
                     'algorithm': 'ALE',
                     'kernel_transformer': 'ALEKernel',
@@ -264,10 +264,9 @@ def user_data(session, mock_add_users):
                     'alpha': 0.05,
                     'method': 'indep',
                 },
-                contrast={
+                filter={
                     'name': 'included analyses',
-                    'ConditionList': ['include'],
-                    'Weights': [1],
+                    'columns': ['include'],
                 },
                 public=True,
             )
