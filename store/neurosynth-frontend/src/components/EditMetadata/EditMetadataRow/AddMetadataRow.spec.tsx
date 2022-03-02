@@ -154,7 +154,7 @@ describe('AddMetadataRow Component', () => {
         expect(onAddMetadataRowMock).toBeCalledWith(mockArg);
     });
 
-    it('should not show an error message if the key is invalid', () => {
+    it('should show an error message if the key is invalid', () => {
         const onAddMetadataRowMock = jest.fn();
         onAddMetadataRowMock.mockReturnValue(false);
 
@@ -172,5 +172,39 @@ describe('AddMetadataRow Component', () => {
 
         const errorMessage = screen.getByText('All metadata keys must be unique');
         expect(errorMessage).toBeInTheDocument();
+    });
+
+    it('should set a new key placeholder text', () => {
+        const onAddMetadataRowMock = jest.fn();
+        onAddMetadataRowMock.mockReturnValue(false);
+
+        render(
+            <MockThemeProvider>
+                <AddMetadataRow
+                    onAddMetadataRow={onAddMetadataRowMock}
+                    keyPlaceholderText="some-new-key-placeholder"
+                />
+            </MockThemeProvider>
+        );
+
+        const placeholderText = screen.getByPlaceholderText('some-new-key-placeholder');
+        expect(placeholderText).toBeInTheDocument();
+    });
+
+    it('should set a new value placeholder text', () => {
+        const onAddMetadataRowMock = jest.fn();
+        onAddMetadataRowMock.mockReturnValue(false);
+
+        render(
+            <MockThemeProvider>
+                <AddMetadataRow
+                    onAddMetadataRow={onAddMetadataRowMock}
+                    valuePlaceholderText="some-new-value-placeholder"
+                />
+            </MockThemeProvider>
+        );
+
+        const placeholderText = screen.getByPlaceholderText('some-new-value-placeholder');
+        expect(placeholderText).toBeInTheDocument();
     });
 });

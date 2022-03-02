@@ -212,7 +212,7 @@ describe('StudiesTable Component', () => {
         expect(API.Services.DataSetsService.datasetsGet).toHaveBeenCalled();
     });
 
-    it('should show no results', async () => {
+    it('should show no data', async () => {
         await act(async () => {
             render(
                 <MockThemeProvider>
@@ -222,7 +222,7 @@ describe('StudiesTable Component', () => {
                 </MockThemeProvider>
             );
         });
-        const noResults = screen.getByText('No results');
+        const noResults = screen.getByText('No data');
         expect(noResults).toBeInTheDocument();
     });
 

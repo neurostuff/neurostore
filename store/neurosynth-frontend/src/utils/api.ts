@@ -1,6 +1,8 @@
 import {
     AnalysesApiFactory,
     Analysis,
+    Annotation,
+    AnnotationsApiFactory,
     ConditionsApiFactory,
     Configuration,
     Dataset,
@@ -18,6 +20,7 @@ export type StudyApiResponse = Study & ReadOnly;
 export type AnalysisApiResponse = Analysis & ReadOnly;
 export type PointsApiResponse = Point & ReadOnly;
 export type DatasetsApiResponse = Dataset & ReadOnly;
+export type AnnotationsApiResponse = Annotation & ReadOnly;
 
 const APIDomain = process.env.REACT_APP_API_DOMAIN as string;
 const config: Configuration = new Configuration({
@@ -32,6 +35,7 @@ const Services = {
     ImagesService: ImagesApiFactory(config, undefined, undefined),
     PointsService: PointsApiFactory(config, undefined, undefined),
     UsersService: UserApiFactory(config, undefined, undefined),
+    AnnotationsService: AnnotationsApiFactory(config, undefined, undefined),
 };
 
 const UpdateServicesWithToken = (token: string) => {
@@ -51,6 +55,7 @@ const UpdateServicesWithToken = (token: string) => {
     Services.ImagesService = ImagesApiFactory(config, undefined, undefined);
     Services.PointsService = PointsApiFactory(config, undefined, undefined);
     Services.UsersService = UserApiFactory(config, undefined, undefined);
+    Services.AnnotationsService = AnnotationsApiFactory(config, undefined, undefined);
 };
 
 const API = {

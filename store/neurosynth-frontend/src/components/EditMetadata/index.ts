@@ -10,6 +10,10 @@ export interface IEditMetadataModel {
 }
 
 export interface IAddMetadataRowModel {
+    allowNoneOption?: boolean;
+    errorMessage?: string;
+    keyPlaceholderText?: string;
+    valuePlaceholderText?: string;
     onAddMetadataRow: (row: IMetadataRowModel) => boolean;
 }
 
@@ -22,12 +26,14 @@ export interface IEditMetadataRowModel {
 
 export interface IEditMetadataValue {
     onEditMetadataValue: (newValue: string | number | boolean) => void;
+    placeholderText?: string;
     type: EPropertyType;
     value: string | number | boolean;
 }
 
 export interface IToggleTypeModel {
     onToggle: (type: EPropertyType) => void;
+    allowNoneType?: boolean;
     type: EPropertyType;
 }
 
@@ -42,3 +48,16 @@ export enum EPropertyType {
     NUMBER = 'number',
     BOOLEAN = 'boolean',
 }
+
+export const getType = (value: any): EPropertyType => {
+    switch (typeof value) {
+        case EPropertyType.BOOLEAN:
+            return EPropertyType.BOOLEAN;
+        case EPropertyType.STRING:
+            return EPropertyType.STRING;
+        case EPropertyType.NUMBER:
+            return EPropertyType.NUMBER;
+        default:
+            return EPropertyType.NONE;
+    }
+};

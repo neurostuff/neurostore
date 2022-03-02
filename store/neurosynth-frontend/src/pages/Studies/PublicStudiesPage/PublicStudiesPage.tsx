@@ -149,7 +149,8 @@ const PublicStudiesPage = () => {
                 // whereas 0 and 1 are the same in the backend
                 page={searchCriteria.pageOfResults - 1}
                 count={searchMetadata?.total_count || 0}
-            ></TablePagination>
+                sx={PublicStudiesPageStyles.paginator}
+            />
 
             <NeurosynthLoader loaded={!!studies}>
                 <Box sx={{ marginBottom: '1rem' }}>

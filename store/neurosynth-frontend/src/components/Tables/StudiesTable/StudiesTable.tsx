@@ -87,7 +87,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                     setDatasets((prevState) => {
                         if (!prevState) return prevState;
                         const newDatasets = [...prevState];
-                        newDatasets.push(createdDataset);
+                        newDatasets.push(createdDataset as any);
                         return newDatasets;
                     });
                 }
@@ -121,7 +121,10 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                 // temporary fix. TODO: fix open-api spec
                 const updatedDataset = res.data as unknown as DatasetsApiResponse;
 
-                showSnackbar(`study added to ${dataset.name || dataset.id}`, SnackbarType.SUCCESS);
+                showSnackbar(
+                    `${study.name} added to ${dataset.name || dataset.id}`,
+                    SnackbarType.SUCCESS
+                );
                 if (current) {
                     setDatasets((prevState) => {
                         if (!prevState) return prevState;
@@ -200,7 +203,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                 </TableBody>
             </Table>
             {props.studies.length === 0 && (
-                <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No results</Box>
+                <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No data</Box>
             )}
         </TableContainer>
     );

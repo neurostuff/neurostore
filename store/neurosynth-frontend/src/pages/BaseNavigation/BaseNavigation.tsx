@@ -1,5 +1,6 @@
 import { Box } from '@mui/system';
 import { Switch, Route } from 'react-router-dom';
+import EditAnnotationsPage from '../Annotations/EditAnnotationsPage/EditAnnotationsPage';
 import DatasetPage from '../Datasets/DatasetPage/DatasetPage';
 import DatasetsPage from '../Datasets/PublicDatasetsPage/PublicDatasetsPage';
 import UserDatasetsPage from '../Datasets/UserDatasetsPage/UserDatasetsPage';
@@ -23,6 +24,9 @@ const BaseNavigation = () => {
                     </Route>
                     <Route path="/datasets/userdatasets" exact={true}>
                         <UserDatasetsPage />
+                    </Route>
+                    <Route path="/datasets/:datasetId/annotations/:annotationId" exact={true}>
+                        <EditAnnotationsPage />
                     </Route>
                     <Route path="/datasets/:datasetId" exact={true}>
                         <DatasetPage />

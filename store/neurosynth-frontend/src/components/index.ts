@@ -17,12 +17,16 @@ import EditStudyDetails from './EditStudyComponents/EditStudyDetails/EditStudyDe
 import TextEdit from './TextEdit/TextEdit';
 import NeurosynthPopper from './NeurosynthPopper/NeurosynthPopper';
 import NeurosynthLoader from './NeurosynthLoader/NeurosynthLoader';
+import ConfirmationDialog from './Dialogs/ConfirmationDialog/ConfirmationDialog';
+import CreateDetailsDialog from './Dialogs/CreateDetailsDialog/CreateDetailsDialog';
+import NeurosynthSpreadsheet from './NeurosynthSpreadsheet/NeurosynthSpreadsheet';
 
 // models
 export * from './EditMetadata';
 export * from './Navbar';
 export * from './Tables/DisplayValuesTable';
 export * from './Tables/DisplayImagesTable';
+export * from './NeurosynthSpreadsheet/NeurosynthSpreadsheet';
 
 // export components
 export {
@@ -40,4 +44,7 @@ export {
     TextEdit,
     NeurosynthPopper,
     NeurosynthLoader,
+    ConfirmationDialog,
+    CreateDetailsDialog,
+    NeurosynthSpreadsheet,
 };

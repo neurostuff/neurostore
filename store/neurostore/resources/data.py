@@ -6,6 +6,7 @@ from flask.views import MethodView
 
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
 import sqlalchemy.sql.expression as sae
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
@@ -125,7 +126,11 @@ class BaseView(MethodView):
 
                 if commit:
                     db.session.add_all(to_commit)
-                    db.session.commit()
+                    try:
+                        db.session.commit()
+                    except SQLAlchemyError:
+                        db.session.rollback()
+                        abort(400)
 
                 return record
 
@@ -175,7 +180,11 @@ class BaseView(MethodView):
 
         if commit:
             db.session.add_all(to_commit)
-            db.session.commit()
+            try:
+                db.session.commit()
+            except SQLAlchemyError:
+                db.session.rollback()
+                abort(400)
 
         return record
 
@@ -497,7 +506,11 @@ class AnnotationListView(ListView):
         schema = cls._schema(copy=True)
         tmp_data = schema.dump(annotation)
         for note in tmp_data['notes']:
+            note.pop('analysis_name')
+            note.pop('study_name')
             note.pop('study_year')
+            note.pop('publication')
+            note.pop('authors')
         data = schema.load(tmp_data)
         data['source'] = "neurostore"
         data['source_id'] = source_id

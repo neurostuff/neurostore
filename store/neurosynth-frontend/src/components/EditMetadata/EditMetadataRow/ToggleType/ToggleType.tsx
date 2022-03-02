@@ -5,23 +5,21 @@ import { EPropertyType, IToggleTypeModel } from '../..';
 import ToggleTypeStyles from './ToggleType.styles';
 
 const ToggleType: React.FC<IToggleTypeModel> = React.memo((props) => {
+    const { onToggle, type, allowNoneType = true } = props;
+
     const handleSetType = (event: SelectChangeEvent<EPropertyType>, child: ReactNode) => {
         const selected = event.target.value as EPropertyType;
-        props.onToggle(selected);
+        onToggle(selected);
     };
 
-    const myClass:
-        | 'type_number'
-        | 'type_boolean'
-        | 'type_string'
-        | 'type_none' = `type_${props.type}`;
+    const myClass: 'type_number' | 'type_boolean' | 'type_string' | 'type_none' = `type_${type}`;
 
     return (
         <Box sx={ToggleTypeStyles.toggleItemContainer}>
             <FormControl variant="outlined">
                 <Select
                     sx={{ ...ToggleTypeStyles[myClass], ...ToggleTypeStyles.toggle_item }}
-                    value={props.type}
+                    value={type}
                     onChange={handleSetType}
                 >
                     <MenuItem sx={ToggleTypeStyles.type_string} value="string">
@@ -33,9 +31,11 @@ const ToggleType: React.FC<IToggleTypeModel> = React.memo((props) => {
                     <MenuItem sx={ToggleTypeStyles.type_boolean} value="boolean">
                         BOOLEAN
                     </MenuItem>
-                    <MenuItem sx={ToggleTypeStyles.type_none} value="none">
-                        NONE
-                    </MenuItem>
+                    {allowNoneType && (
+                        <MenuItem sx={ToggleTypeStyles.type_none} value="none">
+                            NONE
+                        </MenuItem>
+                    )}
                 </Select>
             </FormControl>
         </Box>

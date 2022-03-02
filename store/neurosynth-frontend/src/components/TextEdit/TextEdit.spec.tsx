@@ -1,8 +1,18 @@
+import { useAuth0 } from '@auth0/auth0-react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TextEdit from './TextEdit';
 
+jest.mock('@auth0/auth0-react');
+
 describe('TextEdit', () => {
+    beforeEach(() => {
+        (useAuth0 as any).mockReturnValue({
+            getAccessTokenSilently: () => {},
+            isAuthenticated: true,
+        });
+    });
+
     const mockOnSave = jest.fn();
     it('should render', () => {
         render(
@@ -70,6 +80,33 @@ describe('TextEdit', () => {
 
         const newVal = screen.getByDisplayValue('test-textA');
         expect(newVal).toBeInTheDocument();
+    });
+
+    it('should not show the edit button when not authenticated', () => {
+        (useAuth0 as any).mockReturnValue({
+            getAccessTokenSilently: () => {},
+            isAuthenticated: false,
+        });
+
+        render(
+            <TextEdit onSave={mockOnSave} textToEdit="test-text">
+                <span>test-text</span>
+            </TextEdit>
+        );
+
+        const button = screen.queryByRole('button');
+        expect(button).toBeFalsy();
+    });
+
+    it('should show the edit button when authenticated', () => {
+        render(
+            <TextEdit onSave={mockOnSave} textToEdit="test-text">
+                <span>test-text</span>
+            </TextEdit>
+        );
+
+        const button = screen.queryByRole('button');
+        expect(button).toBeInTheDocument();
     });
 
     it('should call onSave when the save button is clicked', () => {
