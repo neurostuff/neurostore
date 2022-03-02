@@ -4,6 +4,7 @@ from marshmallow import (
     utils
 )
 
+
 class StringOrNested(fields.Nested):
 
     #: Default error messages.
@@ -18,7 +19,8 @@ class StringOrNested(fields.Nested):
         nested = self.context.get("nested")
         if nested:
             many = self.schema.many or self.many
-            return self.schema.dump(value, many=many)
+            nested_obj = getattr(obj, self.data_key)
+            return self.schema.dump(nested_obj, many=many)
         else:
             return utils.ensure_text_type(value)
 
@@ -48,6 +50,7 @@ class SpecificationSchema(BaseSchema):
     type = fields.String()
     estimator = fields.Dict()
     contrast = fields.Dict()
+    filter = fields.Dict()
     corrector = fields.Dict()
 
     class Meta:

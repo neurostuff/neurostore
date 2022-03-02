@@ -32,6 +32,7 @@ class Specification(BaseMixin, db.Model):
 
     type = db.Column(db.Text)
     estimator = db.Column(db.JSON)
+    filter = db.Column(db.JSON)
     contrast = db.Column(db.JSON)
     corrector = db.Column(db.JSON)
     public = db.Column(db.Boolean, default=True)
