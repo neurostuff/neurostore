@@ -63,7 +63,21 @@ def create_workflow(spec):
         return lambda dset: estimator_init.fit(dset)
 
 
+def filter_analyses(specification, annotation):
+    columns = specification['filter']['columns']
+    keep_ids = []
+    for annot in annotation['notes']:
+        if all([annot['note'].get(c) for c in columns]):
+            keep_ids.append(f"{annot['study']}-{annot['analysis']}")
+    return keep_ids
+
+
 def run_nimare(meta_analysis):
-    sset = Dataset(convert_neurostore_to_dict(meta_analysis['studyset']))
-    wf = create_workflow(meta_analysis['studyset'])
-    return wf(sset)
+    sset = Dataset(convert_neurostore_to_dict(meta_analysis['studyset']['studyset']))
+    wf = create_workflow(meta_analysis['specification'])
+    selected_analyses = filter_analyses(
+        meta_analysis['specification'],
+        meta_analysis['annotation']['annotation']
+    )
+    filtered_sset = sset.slice(selected_analyses)
+    return wf(filtered_sset)
