@@ -1,7 +1,7 @@
 aniso8601>=8.1.0
 auth0-python>=3.16.2
 authlib>=0.15.4
-connexion[swagger-ui]>=2.7.0
+git+https://github.com/spec-first/connexion.git@main#egg=connexion[swagger-ui]
 email-validator>=1.1.2
 flake8>=3.8.4
 flask>=2.0.0
