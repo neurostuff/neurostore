@@ -1,7 +1,5 @@
 # neurostore
 
-[![Build Status](https://travis-ci.com/PsychoinformaticsLab/neurostore.svg?branch=master)](https://travis-ci.com/PsychoinformaticsLab/neurostore)
-
 Requirements: Docker and docker-compose.
 
 ## Configuration
@@ -9,12 +7,7 @@ First, set up the main environment variables in `.env` (see: `.env.example`).
 
     cp .env.example .env
 
-Next, set up the Flask server's environment variables:
-
-    cp neurostore/example_config.py neurostore/config.py
-
-
-Edit both of these template files to set the correct variables
+Edit the `.env` template to set the correct variables
 
 ## Initalizing backend
 Create the network, build the containers, and start services using the development configuration:
@@ -24,6 +17,10 @@ Create the network, build the containers, and start services using the developme
     docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 The server should now be running at http://localhost/
+
+Create the database for neurostore:
+
+    docker-compose exec store_pgsql psql -U postgres -c "create database neurostore"
 
 Next, migrate and upgrade the database migrations.
 
@@ -43,7 +40,7 @@ when there are multiple versions from different histories.
 Finally ingest data
 
     docker-compose exec neurostore \
-        bash -c "flask ingest-neurosynth"
+        bash -c "flask ingest-neurosynth --max-rows 100"
 
 
 ## Maintaining docker image and db
@@ -60,7 +57,7 @@ If you need to upgrade the db after changing any models:
 ## Running tests
 To run tests, after starting services, create a test database:
 
-    docker-compose exec pgsql psql -U postgres -c "create database test_db"
+    docker-compose exec store_pgsql psql -U postgres -c "create database test_db"
 
 **NOTE**: This command will ask you for the postgres password which is defined
 in the `.env` file.

@@ -21,7 +21,6 @@ jobs:
       name: Configuration
       run: |
         cp .env.example .env
-        cp neurostore/example_config.py neurostore/config.py
     - 
       name: Build backend
       run: |
@@ -106,7 +105,6 @@ jobs:
       name: Configuration
       run: |
         cp .env.example .env
-        cp neurosynth/example_config.py neurosynth/config.py
     - 
       name: Build backend
       run: |

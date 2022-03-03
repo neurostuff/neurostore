@@ -1,6 +1,4 @@
 historical/
-store/neurostore/config.py
-synth/neurosynth/config.py
 
 # node
 node_modules/
