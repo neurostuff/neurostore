@@ -142,7 +142,7 @@ jobs:
           -e "AUTH0_ACCESS_TOKEN_URL=${AUTH0_ACCESS_TOKEN_URL}" \
           -e "AUTH0_AUTH_URL=${AUTH0_AUTH_URL}" \
           --rm -w /neurosynth \
-          neurostore \
+          neurosynth \
           python -m pytest neurosynth/tests
 
   style_check:
