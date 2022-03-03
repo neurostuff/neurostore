@@ -2,9 +2,9 @@ version: "2"
 services:
   nginx:
     ports:
-      - "80:80"
+      - "81:80"
 
-  neurostore:
+  neurosynth:
     expose:
       - "8000"
     command: /usr/local/bin/gunicorn -w 2 -b :8000 neurostore.core:app --log-level debug --timeout 300 --reload

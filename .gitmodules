@@ -1,3 +1,7 @@
-[submodule "neurostore/openapi"]
-	path = neurostore/openapi
+[submodule "store/neurostore/openapi"]
+	path = store/neurostore/openapi
 	url = https://github.com/neurostuff/neurostore-spec.git
+
+[submodule "synth/neurosynth/openapi"]
+	path = synth/neurosynth/openapi
+	url = https://github.com/neurostuff/neurostore-spec
