@@ -46,7 +46,6 @@ class BaseSchema(Schema):
 
 
 class SpecificationSchema(BaseSchema):
-
     type = fields.String()
     estimator = fields.Dict()
     contrast = fields.Dict()
