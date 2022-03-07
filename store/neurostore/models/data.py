@@ -276,7 +276,11 @@ def check_note_columns(mapper, connection, annotation):
 
     note_keys = annotation.note_keys
     aa_list = annotation.annotation_analyses
-    if not note_keys and aa_list:
+    any_notes = any([aa.note for aa in aa_list])
+    if not any_notes:
+        # there are no notes to check
+        return
+    if not note_keys and any_notes:
         raise SQLAlchemyError("Cannot have empty note_keys with annotations")
     for aa in aa_list:
         if set(note_keys.keys()) != set(aa.note.keys()):
@@ -294,6 +298,24 @@ def check_note_columns(mapper, connection, annotation):
             if aa_type is not None and aa_type != _type:
                 raise SQLAlchemyError(f"value for key {key} is not of type {_type}")
 
+
+def create_blank_notes(dataset, annotation, initiator):
+    if not annotation.annotation_analyses:
+        annotation_analyses = []
+        for study in dataset.studies:
+                for analysis in study.analyses:
+                    annotation_analyses.append(
+                        AnnotationAnalysis(
+                            study_id=study.id,
+                            dataset_id=dataset.id,
+                            annotation_id=annotation.id,
+                            analysis_id=analysis.id,
+                            analysis=analysis,
+                            annotation=annotation,
+                        )
+                    )
+    
+        db.session.add_all(annotation_analyses)
 
 def add_necessary_annotation_analyses(dataset, studies, collection_adapter):
     new_studies = set(studies) - set(dataset.studies)
@@ -337,8 +359,8 @@ def _check_type(x):
 # ensure all keys are the same across all notes
 event.listen(Annotation, 'before_insert', check_note_columns, retval=True)
 
-
-# event.listen(Annotation.annotation_analyses, 'bulk_replace', check_note_columns)
+# create notes when annotation is first created
+event.listen(Dataset.annotations, 'append', create_blank_notes)
 
 
 # ensure new annotation_analyses are added when study is added to dataset
