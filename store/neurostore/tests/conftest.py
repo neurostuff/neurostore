@@ -1,6 +1,6 @@
 import pytest
 from os import environ
-from neurostore.models.data import Analysis, Condition, DatasetStudy
+from neurostore.models.data import Analysis, Condition
 from ..database import db as _db
 import sqlalchemy as sa
 from .. import ingest

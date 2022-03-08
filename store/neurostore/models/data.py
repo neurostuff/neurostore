@@ -303,18 +303,18 @@ def create_blank_notes(dataset, annotation, initiator):
     if not annotation.annotation_analyses:
         annotation_analyses = []
         for dset_study in dataset.dataset_studies:
-                for analysis in dset_study.study.analyses:
-                    annotation_analyses.append(
-                        AnnotationAnalysis(
-                            study_id=dset_study.study.id,
-                            dataset_id=dataset.id,
-                            annotation_id=annotation.id,
-                            analysis_id=analysis.id,
-                            analysis=analysis,
-                            annotation=annotation,
-                            dataset_study=dset_study,
-                        )
+            for analysis in dset_study.study.analyses:
+                annotation_analyses.append(
+                    AnnotationAnalysis(
+                        study_id=dset_study.study.id,
+                        dataset_id=dataset.id,
+                        annotation_id=annotation.id,
+                        analysis_id=analysis.id,
+                        analysis=analysis,
+                        annotation=annotation,
+                        dataset_study=dset_study,
                     )
+                )
 
         db.session.add_all(annotation_analyses)
 
