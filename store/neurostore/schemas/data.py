@@ -263,7 +263,7 @@ class AnnotationSchema(BaseDataSchema):
 
     @pre_load
     def add_dataset_id(self, data, **kwargs):
-        if data.get("dataset"):
+        if data.get("dataset") and data.get('notes'):
             for note in data['notes']:
                 note['dataset'] = data['dataset']
 
