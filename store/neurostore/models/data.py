@@ -123,8 +123,8 @@ class DatasetStudy(db.Model):
     __tablename__ = "dataset_studies"
     study_id = db.Column(db.ForeignKey('studies.id', ondelete='CASCADE'), primary_key=True)
     dataset_id = db.Column(db.ForeignKey('datasets.id', ondelete='CASCADE'), primary_key=True)
-    study = relationship("Study", backref=backref("dataset_study", cascade="all, delete-orphan"))
-    dataset = relationship("Dataset", backref=backref("dataset_study"))
+    study = relationship("Study", backref=backref("dataset_studies", cascade="all, delete-orphan"))
+    dataset = relationship("Dataset", backref=backref("dataset_studies"))
     annotation_analyses = relationship(
         "AnnotationAnalysis",
         cascade='all, delete-orphan',
@@ -302,20 +302,22 @@ def check_note_columns(mapper, connection, annotation):
 def create_blank_notes(dataset, annotation, initiator):
     if not annotation.annotation_analyses:
         annotation_analyses = []
-        for study in dataset.studies:
-                for analysis in study.analyses:
+        for dset_study in dataset.dataset_studies:
+                for analysis in dset_study.study.analyses:
                     annotation_analyses.append(
                         AnnotationAnalysis(
-                            study_id=study.id,
+                            study_id=dset_study.study.id,
                             dataset_id=dataset.id,
                             annotation_id=annotation.id,
                             analysis_id=analysis.id,
                             analysis=analysis,
                             annotation=annotation,
+                            dataset_study=dset_study,
                         )
                     )
-    
+
         db.session.add_all(annotation_analyses)
+
 
 def add_necessary_annotation_analyses(dataset, studies, collection_adapter):
     new_studies = set(studies) - set(dataset.studies)
