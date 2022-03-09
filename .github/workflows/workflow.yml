@@ -58,34 +58,6 @@ jobs:
           --rm -w /neurostore \
           neurostore \
           python -m pytest neurostore/tests
-    -
-      name: Frontend Tests
-      env:
-        AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
-        AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET }}
-        AUTH0_BASE_URL: ${{ secrets.AUTH0_BASE_URL }}
-        AUTH0_ACCESS_TOKEN_URL: ${{ secrets.AUTH0_ACCESS_TOKEN_URL }}
-        AUTH0_AUTH_URL: ${{ secrets.AUTH0_AUTH_URL }}
-        REACT_APP_AUTH0_CLIENT_ID: ${{ secrets.REACT_APP_AUTH0_CLIENT_ID }}
-        REACT_APP_AUTH0_DOMAIN: ${{ secrets.REACT_APP_AUTH0_DOMAIN }}
-      run: |
-        docker-compose run \
-          -e "APP_SETTINGS=neurostore.config.DockerTestConfig" \
-          -e "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
-          -e "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
-          -e "AUTH0_BASE_URL=${AUTH0_BASE_URL}" \
-          -e "AUTH0_ACCESS_TOKEN_URL=${AUTH0_ACCESS_TOKEN_URL}" \
-          -e "AUTH0_AUTH_URL=${AUTH0_AUTH_URL}" \
-          -e "REACT_APP_AUTH0_DOMAIN=${REACT_APP_AUTH0_DOMAIN}" \
-          -e "REACT_APP_AUTH0_CLIENT_ID=${REACT_APP_AUTH0_CLIENT_ID}" \
-          -e "REACT_APP_AUTH0_AUDIENCE=localhost" \
-          -e "REACT_APP_API_DOMAIN=http://localhost/api" \
-          -e "CI=true" \
-          --rm -w /neurostore/neurosynth-frontend \
-          neurostore \
-          bash -c "cd /neurostore/neurosynth-frontend && \
-          npm install && \
-          npm run test"
 
   neurosynth_build_and_test:
     runs-on: ubuntu-latest
@@ -142,6 +114,33 @@ jobs:
           --rm -w /neurosynth \
           neurosynth \
           python -m pytest neurosynth/tests
+    -
+      name: Frontend Tests
+      env:
+        AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
+        AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET }}
+        AUTH0_BASE_URL: ${{ secrets.AUTH0_BASE_URL }}
+        AUTH0_ACCESS_TOKEN_URL: ${{ secrets.AUTH0_ACCESS_TOKEN_URL }}
+        AUTH0_AUTH_URL: ${{ secrets.AUTH0_AUTH_URL }}
+        REACT_APP_AUTH0_CLIENT_ID: ${{ secrets.REACT_APP_AUTH0_CLIENT_ID }}
+      run: |
+        docker-compose run \
+          -e "APP_SETTINGS=neurostore.config.DockerTestConfig" \
+          -e "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
+          -e "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
+          -e "AUTH0_BASE_URL=${AUTH0_BASE_URL}" \
+          -e "AUTH0_ACCESS_TOKEN_URL=${AUTH0_ACCESS_TOKEN_URL}" \
+          -e "AUTH0_AUTH_URL=${AUTH0_AUTH_URL}" \
+          -e "REACT_APP_AUTH0_DOMAIN=${REACT_APP_AUTH0_DOMAIN}" \
+          -e "REACT_APP_AUTH0_CLIENT_ID=${REACT_APP_AUTH0_CLIENT_ID}" \
+          -e "REACT_APP_AUTH0_AUDIENCE=localhost" \
+          -e "REACT_APP_API_DOMAIN=http://localhost/api" \
+          -e "CI=true" \
+          --rm -w /neurostore/neurosynth-frontend \
+          neurostore \
+          bash -c "cd /neurostore/neurosynth-frontend && \
+          npm install && \
+          npm run test"
 
   style_check:
     runs-on: ubuntu-latest
