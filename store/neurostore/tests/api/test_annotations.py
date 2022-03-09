@@ -1,6 +1,17 @@
 from ...models import Dataset, User
 
 
+def test_post_blank_annotation(auth_client, ingest_neurosynth):
+    dset = Dataset.query.first()
+    payload = {
+        'dataset': dset.id, 'name': 'mah notes',
+    }
+    resp = auth_client.post('/api/annotations/', data=payload)
+    assert resp.status_code == 200
+    # assert there exists an annotation analysis for every analysis
+    assert len(resp.json['notes']) == len([a for study in dset.studies for a in study.analyses])
+
+
 def test_post_annotation(auth_client, ingest_neurosynth):
     dset = Dataset.query.first()
     # y for x in non_flat for y in x

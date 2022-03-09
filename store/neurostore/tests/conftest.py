@@ -1,6 +1,6 @@
 import pytest
 from os import environ
-from neurostore.models.data import Analysis, Condition, DatasetStudy
+from neurostore.models.data import Analysis, Condition
 from ..database import db as _db
 import sqlalchemy as sa
 from .. import ingest
@@ -319,18 +319,9 @@ def user_data(session, mock_add_users):
                 dataset=dataset,
                 user=user,
             )
-            for study in dataset.studies:
-                dataset_study = DatasetStudy.query.filter_by(
-                    study_id=study.id, dataset_id=dataset.id
-                ).first()
+            for aa in annotation.annotation_analyses:
+                aa.note = {"food": "bar"}
 
-                for analysis in study.analyses:
-                    note = AnnotationAnalysis(
-                        note={'food': 'bar'},
-                        analysis=analysis,
-                        dataset_study=dataset_study,
-                    )
-                    annotation.annotation_analyses.append(note)
             to_commit.append(annotation)
 
         session.add_all(to_commit)
