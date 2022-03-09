@@ -129,7 +129,7 @@ const NeurosynthSpreadsheet: React.FC<{
 
             // add one to take account of the header and extra padding to account for border
             const totalHeightInPixels =
-                (rowHeaders.length + 1) * NeurosynthSpreadsheetHelper.ROW_HEIGHTS + 5;
+                (rowHeaders.length + 1) * NeurosynthSpreadsheetHelper.ROW_HEIGHTS + 8;
 
             STATE.updateSpreadsheet({
                 data: spreadsheetData,
