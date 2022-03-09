@@ -339,7 +339,7 @@ describe('NeurosynthSpreadsheet', () => {
                 ['study_name_2', null, null],
                 ['another_value', false, 0],
             ],
-            height: '155px',
+            height: '158px',
             rowHeaders: [
                 '',
                 'study_name_1_analysis_1',
@@ -432,7 +432,7 @@ describe('NeurosynthSpreadsheet', () => {
 
             expect(mockUpdateSpreadsheet).toHaveBeenCalledWith({
                 data: [[], [], [], [], []],
-                height: '155px',
+                height: '158px',
                 rowHeaders: [
                     'study_name_1',
                     'study_name_1_analysis_1',
