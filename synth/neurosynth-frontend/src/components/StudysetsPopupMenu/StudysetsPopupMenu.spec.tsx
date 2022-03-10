@@ -1,6 +1,6 @@
 import { act, render, screen } from '@testing-library/react';
-import { DatasetsApiResponse, StudyApiResponse } from '../../utils/api';
-import DatasetsPopupMenu from './DatasetsPopupMenu';
+import { StudysetsApiResponse, StudyApiResponse } from '../../utils/api';
+import StudysetsPopupMenu from './StudysetsPopupMenu';
 import userEvent from '@testing-library/user-event';
 import { INeurosynthPopper } from '../NeurosynthPopper/NeurosynthPopper';
 
@@ -152,7 +152,7 @@ const mockStudy: StudyApiResponse = {
     user: null,
 };
 
-const mockDatasets: DatasetsApiResponse[] = [
+const mockStudysets: StudysetsApiResponse[] = [
     {
         created_at: '2021-12-14T05:05:45.722157+00:00',
         description: null,
@@ -199,55 +199,55 @@ const mockDatasets: DatasetsApiResponse[] = [
     },
 ];
 
-describe('DatasetsPopupMenu', () => {
-    const mockHandleDatasetCreated = jest.fn();
-    const mockHandleStudyAddedToDataset = jest.fn();
+describe('StudysetsPopupMenu', () => {
+    const mockHandleStudysetCreated = jest.fn();
+    const mockHandleStudyAddedToStudyset = jest.fn();
 
     it('should render', () => {
         render(
-            <DatasetsPopupMenu
-                onCreateDataset={mockHandleDatasetCreated}
-                onStudyAddedToDataset={mockHandleStudyAddedToDataset}
-                datasets={[]}
+            <StudysetsPopupMenu
+                onCreateStudyset={mockHandleStudysetCreated}
+                onStudyAddedToStudyset={mockHandleStudyAddedToStudyset}
+                studysets={[]}
                 study={mockStudy}
             />
         );
 
-        const text = screen.getByText('Add to a dataset...');
+        const text = screen.getByText('Add to a studyset...');
         expect(text).toBeInTheDocument();
     });
 
-    it('should have the correct number of datasets', () => {
+    it('should have the correct number of studysets', () => {
         render(
-            <DatasetsPopupMenu
-                onCreateDataset={mockHandleDatasetCreated}
-                onStudyAddedToDataset={mockHandleStudyAddedToDataset}
-                datasets={mockDatasets}
+            <StudysetsPopupMenu
+                onCreateStudyset={mockHandleStudysetCreated}
+                onStudyAddedToStudyset={mockHandleStudyAddedToStudyset}
+                studysets={mockStudysets}
                 study={mockStudy}
             />
         );
 
         const rows = screen.getAllByRole('menuitem');
-        // add one to include the "Create dataset" option
-        expect(rows.length).toEqual(mockDatasets.length + 1);
+        // add one to include the "Create studyset" option
+        expect(rows.length).toEqual(mockStudysets.length + 1);
     });
 
-    it('should switch to create dataset mode when the button is clicked', () => {
+    it('should switch to create studyset mode when the button is clicked', () => {
         render(
-            <DatasetsPopupMenu
-                onCreateDataset={mockHandleDatasetCreated}
-                onStudyAddedToDataset={mockHandleStudyAddedToDataset}
-                datasets={mockDatasets}
+            <StudysetsPopupMenu
+                onCreateStudyset={mockHandleStudysetCreated}
+                onStudyAddedToStudyset={mockHandleStudyAddedToStudyset}
+                studysets={mockStudysets}
                 study={mockStudy}
             />
         );
 
         // enable edit mode
-        const createDatasetButton = screen.getByText('Create new dataset');
-        userEvent.click(createDatasetButton);
+        const createStudysetButton = screen.getByText('Create new studyset');
+        userEvent.click(createStudysetButton);
 
-        const nameField = screen.getByText('Dataset name');
-        const descriptionField = screen.getByText('Dataset description');
+        const nameField = screen.getByText('Studyset name');
+        const descriptionField = screen.getByText('Studyset description');
         const createButton = screen.getByText('Create');
 
         expect(nameField).toBeInTheDocument();
@@ -258,22 +258,22 @@ describe('DatasetsPopupMenu', () => {
 
     it('should enable the create button when the name is not null', () => {
         render(
-            <DatasetsPopupMenu
-                onCreateDataset={mockHandleDatasetCreated}
-                onStudyAddedToDataset={mockHandleStudyAddedToDataset}
-                datasets={mockDatasets}
+            <StudysetsPopupMenu
+                onCreateStudyset={mockHandleStudysetCreated}
+                onStudyAddedToStudyset={mockHandleStudyAddedToStudyset}
+                studysets={mockStudysets}
                 study={mockStudy}
             />
         );
 
         // enable edit mode
-        const createDatasetButton = screen.getByText('Create new dataset');
-        userEvent.click(createDatasetButton);
+        const createStudysetButton = screen.getByText('Create new studyset');
+        userEvent.click(createStudysetButton);
 
         let createButton = screen.getByText('Create');
         expect(createButton).toBeDisabled();
 
-        const nameField = screen.getByLabelText('Dataset name');
+        const nameField = screen.getByLabelText('Studyset name');
         userEvent.type(nameField, 'ABC');
 
         createButton = screen.getByText('Create');
@@ -282,20 +282,20 @@ describe('DatasetsPopupMenu', () => {
 
     it('should update the values in edit mode respectively', async () => {
         render(
-            <DatasetsPopupMenu
-                onCreateDataset={mockHandleDatasetCreated}
-                onStudyAddedToDataset={mockHandleStudyAddedToDataset}
-                datasets={mockDatasets}
+            <StudysetsPopupMenu
+                onCreateStudyset={mockHandleStudysetCreated}
+                onStudyAddedToStudyset={mockHandleStudyAddedToStudyset}
+                studysets={mockStudysets}
                 study={mockStudy}
             />
         );
 
         // enable edit mode
-        const createDatasetButton = screen.getByText('Create new dataset');
-        userEvent.click(createDatasetButton);
+        const createStudysetButton = screen.getByText('Create new studyset');
+        userEvent.click(createStudysetButton);
 
-        const nameField = screen.getByLabelText('Dataset name');
-        const descriptionField = screen.getByLabelText('Dataset description');
+        const nameField = screen.getByLabelText('Studyset name');
+        const descriptionField = screen.getByLabelText('Studyset description');
 
         expect(nameField).toBeInTheDocument();
         expect(descriptionField).toBeInTheDocument();
@@ -310,22 +310,22 @@ describe('DatasetsPopupMenu', () => {
         expect(updatedDescriptionField).toBeInTheDocument();
     });
 
-    it('should create a dataset when create is clicked', async () => {
+    it('should create a studyset when create is clicked', async () => {
         render(
-            <DatasetsPopupMenu
-                onCreateDataset={mockHandleDatasetCreated}
-                onStudyAddedToDataset={mockHandleStudyAddedToDataset}
-                datasets={mockDatasets}
+            <StudysetsPopupMenu
+                onCreateStudyset={mockHandleStudysetCreated}
+                onStudyAddedToStudyset={mockHandleStudyAddedToStudyset}
+                studysets={mockStudysets}
                 study={mockStudy}
             />
         );
 
         // enable edit mode
-        const createDatasetButton = screen.getByText('Create new dataset');
-        userEvent.click(createDatasetButton);
+        const createStudysetButton = screen.getByText('Create new studyset');
+        userEvent.click(createStudysetButton);
 
         // enter in text for the name
-        const nameField = screen.getByLabelText('Dataset name');
+        const nameField = screen.getByLabelText('Studyset name');
         userEvent.type(nameField, 'ABC');
 
         const createButton = screen.getByText('Create');
@@ -333,22 +333,22 @@ describe('DatasetsPopupMenu', () => {
             userEvent.click(createButton);
         });
 
-        expect(mockHandleDatasetCreated).toBeCalledWith('ABC', '');
+        expect(mockHandleStudysetCreated).toBeCalledWith('ABC', '');
     });
 
-    it('should add the study to the clicked dataset', async () => {
+    it('should add the study to the clicked studyset', async () => {
         render(
-            <DatasetsPopupMenu
-                onCreateDataset={mockHandleDatasetCreated}
-                onStudyAddedToDataset={mockHandleStudyAddedToDataset}
-                datasets={mockDatasets}
+            <StudysetsPopupMenu
+                onCreateStudyset={mockHandleStudysetCreated}
+                onStudyAddedToStudyset={mockHandleStudyAddedToStudyset}
+                studysets={mockStudysets}
                 study={mockStudy}
             />
         );
 
         // enable edit mode
-        const createDatasetButton = screen.getByText('Create new dataset');
-        userEvent.click(createDatasetButton);
+        const createStudysetButton = screen.getByText('Create new studyset');
+        userEvent.click(createStudysetButton);
 
         const menuItem = screen.getByRole('menuitem', { name: 'test set' });
 
@@ -356,15 +356,15 @@ describe('DatasetsPopupMenu', () => {
             userEvent.click(menuItem);
         });
 
-        expect(mockHandleStudyAddedToDataset).toBeCalledWith(mockStudy, mockDatasets[1]);
+        expect(mockHandleStudyAddedToStudyset).toBeCalledWith(mockStudy, mockStudysets[1]);
     });
 
     it('should handle closing the popper when clickaway is triggered', () => {
         render(
-            <DatasetsPopupMenu
-                onCreateDataset={mockHandleDatasetCreated}
-                onStudyAddedToDataset={mockHandleStudyAddedToDataset}
-                datasets={mockDatasets}
+            <StudysetsPopupMenu
+                onCreateStudyset={mockHandleStudysetCreated}
+                onStudyAddedToStudyset={mockHandleStudyAddedToStudyset}
+                studysets={mockStudysets}
                 study={mockStudy}
             />
         );

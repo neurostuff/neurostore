@@ -17,22 +17,22 @@ const navItems: NavOptionsModel[] = [
             { label: 'Public Studies', path: '/studies', children: null },
             {
                 label: 'My Studies',
-                path: '/studies/userclonedstudies',
+                path: '/userclonedstudies',
                 children: null,
                 authenticationRequired: true,
             },
         ],
     },
     {
-        label: 'DATASETS',
+        label: 'STUDYSETS',
         path: '',
         disabled: false,
         authenticationRequired: false,
         children: [
-            { label: 'Public Datasets', path: '/datasets', children: null },
+            { label: 'Public Studysets', path: '/studysets', children: null },
             {
-                label: 'My Datasets',
-                path: '/datasets/userdatasets',
+                label: 'My Studysets',
+                path: '/userstudysets',
                 children: null,
                 authenticationRequired: true,
             },

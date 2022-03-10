@@ -1,9 +1,9 @@
 import { Box } from '@mui/system';
 import { Switch, Route } from 'react-router-dom';
 import EditAnnotationsPage from '../Annotations/EditAnnotationsPage/EditAnnotationsPage';
-import DatasetPage from '../Datasets/DatasetPage/DatasetPage';
-import DatasetsPage from '../Datasets/PublicDatasetsPage/PublicDatasetsPage';
-import UserDatasetsPage from '../Datasets/UserDatasetsPage/UserDatasetsPage';
+import StudysetPage from '../Studysets/StudysetPage/StudysetPage';
+import PublicStudysetsPage from '../Studysets/PublicStudysetsPage/PublicStudysetsPage';
+import UserStudysetsPage from '../Studysets/UserStudysetsPage/UserStudysetsPage';
 import LandingPage from '../LandingPage/LandingPage';
 import EditStudyPage from '../Studies/EditStudyPage/EditStudyPage';
 import PublicStudiesPage from '../Studies/PublicStudiesPage/PublicStudiesPage';
@@ -19,22 +19,22 @@ const BaseNavigation = () => {
                     <Route path="/" exact={true}>
                         <LandingPage />
                     </Route>
-                    <Route path="/datasets" exact={true}>
-                        <DatasetsPage />
+                    <Route path="/studysets" exact={true}>
+                        <PublicStudysetsPage />
                     </Route>
-                    <Route path="/datasets/userdatasets" exact={true}>
-                        <UserDatasetsPage />
+                    <Route path="/userstudysets" exact={true}>
+                        <UserStudysetsPage />
                     </Route>
-                    <Route path="/datasets/:datasetId/annotations/:annotationId" exact={true}>
+                    <Route path="/studysets/:studysetId/annotations/:annotationId" exact={true}>
                         <EditAnnotationsPage />
                     </Route>
-                    <Route path="/datasets/:datasetId" exact={true}>
-                        <DatasetPage />
+                    <Route path="/studysets/:studysetId" exact={true}>
+                        <StudysetPage />
                     </Route>
                     <Route path="/studies" exact={true}>
                         <PublicStudiesPage />
                     </Route>
-                    <Route path="/studies/userclonedstudies" exact={true}>
+                    <Route path="/userclonedstudies" exact={true}>
                         <UserStudiesPage />
                     </Route>
                     <Route path="/studies/:studyId" exact={true}>
@@ -42,6 +42,9 @@ const BaseNavigation = () => {
                     </Route>
                     <Route path="/studies/edit/:studyId">
                         <EditStudyPage />
+                    </Route>
+                    <Route>
+                        <div>Page not found</div>
                     </Route>
                 </Switch>
             </Box>

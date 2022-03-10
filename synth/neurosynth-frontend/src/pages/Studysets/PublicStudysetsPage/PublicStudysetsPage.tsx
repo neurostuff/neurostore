@@ -2,18 +2,18 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { NeurosynthLoader } from '../../../components';
-import DatasetsTable from '../../../components/Tables/DatasetsTable/DatasetsTable';
+import StudysetsTable from '../../../components/Tables/StudysetsTable/StudysetsTable';
 import useIsMounted from '../../../hooks/useIsMounted';
-import API, { DatasetsApiResponse } from '../../../utils/api';
+import API, { StudysetsApiResponse } from '../../../utils/api';
 
-const PublicDatasetsPage: React.FC = (props) => {
+const PublicStudysetsPage: React.FC = (props) => {
     const { user } = useAuth0();
-    const [datasets, setDatasets] = useState<DatasetsApiResponse[]>();
+    const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
     const isMountedRef = useIsMounted();
 
     useEffect(() => {
-        const getDatasets = async () => {
-            API.Services.DataSetsService.datasetsGet(
+        const getStudysets = async () => {
+            API.Services.StudySetsService.datasetsGet(
                 undefined,
                 undefined,
                 undefined,
@@ -29,22 +29,18 @@ const PublicDatasetsPage: React.FC = (props) => {
                 undefined
             )
                 .then((res) => {
-                    if (isMountedRef.current && res?.data?.results) setDatasets(res.data.results);
+                    if (isMountedRef.current && res?.data?.results) setStudysets(res.data.results);
                 })
                 .catch((err) => {
                     console.error(err);
                 });
         };
 
-        getDatasets();
-
-        return () => {
-            setDatasets(undefined);
-        };
+        getStudysets();
     }, [user?.sub, isMountedRef]);
 
     return (
-        <NeurosynthLoader loaded={!!datasets}>
+        <NeurosynthLoader loaded={!!studysets}>
             <Box
                 sx={{
                     display: 'flex',
@@ -52,12 +48,12 @@ const PublicDatasetsPage: React.FC = (props) => {
                     marginBottom: '1rem',
                 }}
             >
-                <Typography variant="h4">Public Datasets</Typography>
+                <Typography variant="h4">Public Studysets</Typography>
             </Box>
 
-            <DatasetsTable datasets={datasets || []} />
+            <StudysetsTable studysets={studysets || []} />
         </NeurosynthLoader>
     );
 };
 
-export default PublicDatasetsPage;
+export default PublicStudysetsPage;

@@ -1,6 +1,6 @@
 import { Style } from '../../..';
 
-const DatasetPageStyles: Style = {
+const StudysetPageStyles: Style = {
     noData: {
         color: 'warning.dark',
     },
@@ -9,4 +9,4 @@ const DatasetPageStyles: Style = {
     },
 };
 
-export default DatasetPageStyles;
+export default StudysetPageStyles;

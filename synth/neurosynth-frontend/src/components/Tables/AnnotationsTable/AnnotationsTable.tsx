@@ -3,13 +3,13 @@ import { AnnotationsApiResponse } from '../../../utils/api';
 import { IDisplayValuesTableModel } from '../DisplayValuesTable';
 import { useHistory } from 'react-router';
 
-const AnnotationsTable: React.FC<{ annotations: AnnotationsApiResponse[]; datasetId: string }> = (
+const AnnotationsTable: React.FC<{ annotations: AnnotationsApiResponse[]; studysetId: string }> = (
     props
 ) => {
     const history = useHistory();
 
     const handleRowClick = (id: string | number) => {
-        history.push(`/datasets/${props.datasetId}/annotations/${id}`);
+        history.push(`/studysets/${props.studysetId}/annotations/${id}`);
     };
 
     const dataForAnnotationsTable: IDisplayValuesTableModel = {

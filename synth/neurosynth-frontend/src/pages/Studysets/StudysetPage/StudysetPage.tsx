@@ -13,18 +13,16 @@ import {
 import AnnotationsTable from '../../../components/Tables/AnnotationsTable/AnnotationsTable';
 import TextEdit from '../../../components/TextEdit/TextEdit';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
-import { AnnotationNote } from '../../../gen/api';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API, {
-    AnalysisApiResponse,
     AnnotationsApiResponse,
-    DatasetsApiResponse,
+    StudysetsApiResponse,
     StudyApiResponse,
 } from '../../../utils/api';
-import DatasetPageStyles from './DatasetPage.styles';
+import StudysetPageStyles from './StudysetPage.styles';
 
-const DatasetPage: React.FC = (props) => {
-    const [dataset, setDataset] = useState<DatasetsApiResponse | undefined>();
+const StudysetsPage: React.FC = (props) => {
+    const [studyset, setStudyset] = useState<StudysetsApiResponse | undefined>();
     const [annotations, setAnnotations] = useState<AnnotationsApiResponse[] | undefined>();
     const { getAccessTokenSilently, isAuthenticated } = useAuth0();
     const history = useHistory();
@@ -33,16 +31,16 @@ const DatasetPage: React.FC = (props) => {
     const [confirmationIsOpen, setConfirmationIsOpen] = useState(false);
     const [createDetailsIsOpen, setCreateDetailsIsOpen] = useState(false);
 
-    const params: { datasetId: string } = useParams();
+    const params: { studysetId: string } = useParams();
     const { current } = useIsMounted();
 
     useEffect(() => {
-        const getDataset = async (id: string) => {
-            API.Services.DataSetsService.datasetsIdGet(id, true)
+        const getStudyset = async (id: string) => {
+            API.Services.StudySetsService.datasetsIdGet(id, true)
                 .then((res) => {
                     if (current) {
-                        const receivedDataset = res.data;
-                        setDataset(receivedDataset);
+                        const receivedStudyset = res.data;
+                        setStudyset(receivedStudyset);
                     }
                 })
                 .catch((err) => {
@@ -51,8 +49,8 @@ const DatasetPage: React.FC = (props) => {
                 });
         };
 
-        getDataset(params.datasetId);
-    }, [params.datasetId, current, showSnackbar]);
+        getStudyset(params.studysetId);
+    }, [params.studysetId, current, showSnackbar]);
 
     useEffect(() => {
         const getAnnotations = async (id: string) => {
@@ -65,15 +63,15 @@ const DatasetPage: React.FC = (props) => {
                 (err) => {
                     console.error(err);
                     showSnackbar(
-                        'there was an error getting annotations for this dataset',
+                        'there was an error getting annotations for this studyset',
                         SnackbarType.ERROR
                     );
                 }
             );
         };
 
-        if (params.datasetId) getAnnotations(params.datasetId);
-    }, [params.datasetId, showSnackbar, current]);
+        if (params.studysetId) getAnnotations(params.studysetId);
+    }, [params.studysetId, showSnackbar, current]);
 
     const handleSaveTextEdit = (fieldName: 'name' | 'description' | 'publication' | 'doi') => {
         return async (editedText: string) => {
@@ -85,17 +83,17 @@ const DatasetPage: React.FC = (props) => {
                 console.error(exception);
             }
 
-            if (!dataset) return;
+            if (!studyset) return;
 
-            API.Services.DataSetsService.datasetsIdPut(params.datasetId, {
-                name: dataset.name,
-                studies: (dataset.studies as StudyApiResponse[]).map((x) => x.id as string),
+            API.Services.StudySetsService.datasetsIdPut(params.studysetId, {
+                name: studyset.name,
+                studies: (studyset.studies as StudyApiResponse[]).map((x) => x.id as string),
                 [fieldName]: editedText,
             })
                 .then(() => {
                     showSnackbar('analysis successfully updated', SnackbarType.SUCCESS);
                     if (current) {
-                        setDataset((prevState) => {
+                        setStudyset((prevState) => {
                             if (!prevState) return prevState;
                             return {
                                 ...prevState,
@@ -105,7 +103,7 @@ const DatasetPage: React.FC = (props) => {
                     }
                 })
                 .catch((err) => {
-                    showSnackbar('there was an error updating the dataset', SnackbarType.ERROR);
+                    showSnackbar('there was an error updating the studyset', SnackbarType.ERROR);
                     console.error(err);
                 });
         };
@@ -114,7 +112,7 @@ const DatasetPage: React.FC = (props) => {
     const handleCloseDialog = async (confirm: boolean | undefined) => {
         setConfirmationIsOpen(false);
 
-        if (dataset?.id && confirm) {
+        if (studyset?.id && confirm) {
             try {
                 const token = await getAccessTokenSilently();
                 handleToken(token);
@@ -122,20 +120,20 @@ const DatasetPage: React.FC = (props) => {
                 showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(exception);
             }
-            API.Services.DataSetsService.datasetsIdDelete(dataset.id)
+            API.Services.StudySetsService.datasetsIdDelete(studyset.id)
                 .then((res) => {
-                    history.push('/datasets/userdatasets');
-                    showSnackbar('deleted dataset', SnackbarType.SUCCESS);
+                    history.push('/userstudysets');
+                    showSnackbar('deleted studyset', SnackbarType.SUCCESS);
                 })
                 .catch((err) => {
-                    showSnackbar('there was a problem deleting the dataset', SnackbarType.ERROR);
+                    showSnackbar('there was a problem deleting the studyset', SnackbarType.ERROR);
                     console.error(err);
                 });
         }
     };
 
     const handleCreateAnnotation = async (name: string, description: string) => {
-        if (dataset && dataset?.id) {
+        if (studyset && studyset?.id) {
             try {
                 const token = await getAccessTokenSilently();
                 handleToken(token);
@@ -148,7 +146,7 @@ const DatasetPage: React.FC = (props) => {
                 name,
                 description,
                 note_keys: {},
-                dataset: params.datasetId,
+                dataset: params.studysetId,
             })
                 .then((res) => {
                     showSnackbar('successfully created annotation', SnackbarType.SUCCESS);
@@ -167,25 +165,25 @@ const DatasetPage: React.FC = (props) => {
     };
 
     return (
-        <NeurosynthLoader loaded={!!dataset}>
-            {dataset && (
+        <NeurosynthLoader loaded={!!studyset}>
+            {studyset && (
                 <>
                     <Box sx={{ marginBottom: '1rem' }}>
                         <TextEdit
                             onSave={handleSaveTextEdit('name')}
                             sx={{ fontSize: '1.25rem' }}
                             label="Name"
-                            textToEdit={dataset.name || ''}
+                            textToEdit={studyset.name || ''}
                         >
-                            <Box sx={DatasetPageStyles.displayedText}>
+                            <Box sx={StudysetPageStyles.displayedText}>
                                 <Typography
                                     sx={{
-                                        ...DatasetPageStyles.displayedText,
-                                        ...(!dataset.name ? DatasetPageStyles.noData : {}),
+                                        ...StudysetPageStyles.displayedText,
+                                        ...(!studyset.name ? StudysetPageStyles.noData : {}),
                                     }}
                                     variant="h6"
                                 >
-                                    {dataset.name || 'No name'}
+                                    {studyset.name || 'No name'}
                                 </Typography>
                             </Box>
                         </TextEdit>
@@ -193,50 +191,50 @@ const DatasetPage: React.FC = (props) => {
                         <TextEdit
                             onSave={handleSaveTextEdit('publication')}
                             label="Publication"
-                            textToEdit={dataset.publication || ''}
+                            textToEdit={studyset.publication || ''}
                         >
-                            <Box sx={DatasetPageStyles.displayedText}>
+                            <Box sx={StudysetPageStyles.displayedText}>
                                 <Typography
                                     sx={{
-                                        ...DatasetPageStyles.displayedText,
-                                        ...(!dataset.publication ? DatasetPageStyles.noData : {}),
+                                        ...StudysetPageStyles.displayedText,
+                                        ...(!studyset.publication ? StudysetPageStyles.noData : {}),
                                     }}
                                 >
-                                    {dataset.publication || 'No publication'}
+                                    {studyset.publication || 'No publication'}
                                 </Typography>
                             </Box>
                         </TextEdit>
                         <TextEdit
                             label="DOI"
                             onSave={handleSaveTextEdit('doi')}
-                            textToEdit={dataset.doi || ''}
+                            textToEdit={studyset.doi || ''}
                         >
-                            <Box sx={DatasetPageStyles.displayedText}>
+                            <Box sx={StudysetPageStyles.displayedText}>
                                 <Typography
                                     sx={{
-                                        ...DatasetPageStyles.displayedText,
-                                        ...(!dataset.doi ? DatasetPageStyles.noData : {}),
+                                        ...StudysetPageStyles.displayedText,
+                                        ...(!studyset.doi ? StudysetPageStyles.noData : {}),
                                     }}
                                 >
-                                    {dataset.doi || 'No DOI'}
+                                    {studyset.doi || 'No DOI'}
                                 </Typography>
                             </Box>
                         </TextEdit>
                         <TextEdit
                             onSave={handleSaveTextEdit('description')}
                             label="Description"
-                            textToEdit={dataset.description || ''}
+                            textToEdit={studyset.description || ''}
                             multiline
                         >
                             <Box
                                 sx={{
-                                    ...DatasetPageStyles.displayedText,
-                                    ...(!dataset.description ? DatasetPageStyles.noData : {}),
+                                    ...StudysetPageStyles.displayedText,
+                                    ...(!studyset.description ? StudysetPageStyles.noData : {}),
                                 }}
                             >
                                 <TextExpansion
                                     sx={{ fontSize: '12px' }}
-                                    text={dataset.description || 'No description'}
+                                    text={studyset.description || 'No description'}
                                 />
                             </Box>
                         </TextEdit>
@@ -254,7 +252,7 @@ const DatasetPage: React.FC = (props) => {
                                 variant="h6"
                                 sx={{ marginBottom: '1rem', fontWeight: 'bold', margin: 'auto 0' }}
                             >
-                                Annotations for this dataset
+                                Annotations for this studyset
                             </Typography>
                             <Button
                                 onClick={() => setCreateDetailsIsOpen(true)}
@@ -272,17 +270,17 @@ const DatasetPage: React.FC = (props) => {
                             />
                         </Box>
                         <AnnotationsTable
-                            datasetId={params.datasetId}
+                            studysetId={params.studysetId}
                             annotations={annotations || []}
                         />
                     </Box>
 
                     <Box>
                         <Typography variant="h6" sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
-                            Studies in this dataset
+                            Studies in this studyset
                         </Typography>
                     </Box>
-                    <StudiesTable studies={dataset.studies as StudyApiResponse[]} />
+                    <StudiesTable studies={studyset.studies as StudyApiResponse[]} />
                     <Button
                         onClick={() => setConfirmationIsOpen(true)}
                         variant="contained"
@@ -290,10 +288,10 @@ const DatasetPage: React.FC = (props) => {
                         sx={{ marginTop: '1rem' }}
                         disabled={!isAuthenticated}
                     >
-                        Delete this dataset
+                        Delete this studyset
                     </Button>
                     <ConfirmationDialog
-                        message="Are you sure you want to delete the dataset?"
+                        message="Are you sure you want to delete the studyset?"
                         confirmText="Yes"
                         rejectText="No"
                         isOpen={confirmationIsOpen}
@@ -305,4 +303,4 @@ const DatasetPage: React.FC = (props) => {
     );
 };
 
-export default DatasetPage;
+export default StudysetsPage;

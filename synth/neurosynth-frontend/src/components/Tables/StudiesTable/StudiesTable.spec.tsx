@@ -4,8 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { Router } from 'react-router-dom';
 import { StudiesTable } from '../..';
 import { MockThemeProvider } from '../../../testing/helpers';
-import API, { DatasetsApiResponse, StudyApiResponse } from '../../../utils/api';
-import { IDatasetsPopupMenu } from '../../DatasetsPopupMenu/DatasetsPopupMenu';
+import API, { StudysetsApiResponse, StudyApiResponse } from '../../../utils/api';
+import { IStudysetsPopupMenu } from '../../StudysetsPopupMenu/StudysetsPopupMenu';
 
 jest.mock('../../../hooks/useIsMounted', () => {
     return {
@@ -23,7 +23,7 @@ jest.mock('../../../utils/api', () => {
             Services: {
                 DataSetsService: {
                     datasetsGet: jest.fn(() => {
-                        const mockDatasets: DatasetsApiResponse[] = [
+                        const mockStudysets: StudysetsApiResponse[] = [
                             {
                                 created_at: '2021-12-14T05:05:45.722157+00:00',
                                 description: null,
@@ -38,12 +38,12 @@ jest.mock('../../../utils/api', () => {
                         ];
                         return Promise.resolve({
                             data: {
-                                results: mockDatasets,
+                                results: mockStudysets,
                             },
                         });
                     }),
                     datasetsPost: jest.fn(() => {
-                        const mockDataset: DatasetsApiResponse = {
+                        const mockStudyset: StudysetsApiResponse = {
                             created_at: '2021-12-14T05:05:34.722631+00:00',
                             description: null,
                             doi: null,
@@ -55,11 +55,11 @@ jest.mock('../../../utils/api', () => {
                             user: 'test-user',
                         };
                         return Promise.resolve({
-                            data: mockDataset,
+                            data: mockStudyset,
                         });
                     }),
                     datasetsIdPut: jest.fn(() => {
-                        const mockDataset: DatasetsApiResponse = {
+                        const mockStudyset: StudysetsApiResponse = {
                             created_at: '2021-12-14T05:05:34.722631+00:00',
                             description: null,
                             doi: null,
@@ -71,7 +71,7 @@ jest.mock('../../../utils/api', () => {
                             user: 'test-user',
                         };
                         return Promise.resolve({
-                            data: mockDataset,
+                            data: mockStudyset,
                         });
                     }),
                 },
@@ -80,32 +80,32 @@ jest.mock('../../../utils/api', () => {
     };
 });
 
-jest.mock('../../DatasetsPopupMenu/DatasetsPopupMenu', () => {
+jest.mock('../../StudysetsPopupMenu/StudysetsPopupMenu', () => {
     return {
         __esModule: true,
-        default: (props: IDatasetsPopupMenu) => {
+        default: (props: IStudysetsPopupMenu) => {
             return (
                 <>
                     <button
-                        onClick={() => props.onCreateDataset('test-name', 'test-description')}
-                        data-testid="add-dataset-button"
+                        onClick={() => props.onCreateStudyset('test-name', 'test-description')}
+                        data-testid="add-studyset-button"
                     >
-                        mock add dataset
+                        mock add studyset
                     </button>
                     <button
                         onClick={() =>
-                            props.onStudyAddedToDataset(
+                            props.onStudyAddedToStudyset(
                                 props.study,
-                                (props.datasets as DatasetsApiResponse[])[0]
+                                (props.studysets as StudysetsApiResponse[])[0]
                             )
                         }
-                        data-testid="edit-dataset-button"
+                        data-testid="edit-studyset-button"
                     >
-                        mock edit dataset
+                        mock edit studyset
                     </button>
-                    {props.datasets?.map((dataset, index) => (
-                        <span data-testid="child-dataset" key={dataset.id || index}>
-                            child-mock-dataset
+                    {props.studysets?.map((studyset, index) => (
+                        <span data-testid="child-studyset" key={studyset.id || index}>
+                            child-mock-studyset
                         </span>
                     ))}
                 </>
@@ -209,7 +209,7 @@ describe('StudiesTable Component', () => {
 
         // subtract 1 to account for the table header
         expect(rows.length - 1).toEqual(mockStudies.length);
-        expect(API.Services.DataSetsService.datasetsGet).toHaveBeenCalled();
+        expect(API.Services.StudySetsService.datasetsGet).toHaveBeenCalled();
     });
 
     it('should show no data', async () => {
@@ -256,7 +256,7 @@ describe('StudiesTable Component', () => {
         expect(noPublicationText).toBeInTheDocument();
     });
 
-    it('should create the dataset', async () => {
+    it('should create the studyset', async () => {
         (useAuth0 as any).mockReturnValue({
             isAuthenticated: true,
             getAccessTokenSilently: jest.fn(),
@@ -275,16 +275,16 @@ describe('StudiesTable Component', () => {
             );
         });
 
-        const datasetCreatedButton = screen.getByTestId('add-dataset-button');
+        const studysetCreatedButton = screen.getByTestId('add-studyset-button');
 
         await act(async () => {
-            userEvent.click(datasetCreatedButton);
+            userEvent.click(studysetCreatedButton);
         });
 
-        expect(API.Services.DataSetsService.datasetsPost).toBeCalled();
+        expect(API.Services.StudySetsService.datasetsPost).toBeCalled();
     });
 
-    it('should edit the dataset', async () => {
+    it('should edit the studyset', async () => {
         (useAuth0 as any).mockReturnValue({
             isAuthenticated: true,
             getAccessTokenSilently: jest.fn(),
@@ -303,13 +303,13 @@ describe('StudiesTable Component', () => {
             );
         });
 
-        const datasetEditButton = screen.getByTestId('edit-dataset-button');
+        const studysetEditButton = screen.getByTestId('edit-studyset-button');
 
         await act(async () => {
-            userEvent.click(datasetEditButton);
+            userEvent.click(studysetEditButton);
         });
 
-        expect(API.Services.DataSetsService.datasetsIdPut).toBeCalledWith('123', {
+        expect(API.Services.StudySetsService.datasetsIdPut).toBeCalledWith('123', {
             name: 'test-name',
             studies: ['5LMdXPD3ocgD'],
         });
@@ -357,7 +357,7 @@ describe('StudiesTable Component', () => {
             );
         });
 
-        const icon = screen.getByTestId('add-dataset-button');
+        const icon = screen.getByTestId('add-studyset-button');
         expect(icon).toBeInTheDocument();
     });
 
@@ -378,7 +378,7 @@ describe('StudiesTable Component', () => {
             );
         });
 
-        const icon = screen.queryByTestId('add-dataset-button');
+        const icon = screen.queryByTestId('add-studyset-button');
         expect(icon).not.toBeInTheDocument();
     });
 });
