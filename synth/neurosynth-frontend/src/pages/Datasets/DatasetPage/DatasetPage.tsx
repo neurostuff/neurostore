@@ -148,7 +148,6 @@ const DatasetPage: React.FC = (props) => {
                 name,
                 description,
                 note_keys: {},
-                notes: [],
                 dataset: params.datasetId,
             })
                 .then((res) => {
