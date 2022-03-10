@@ -7,6 +7,7 @@ from flask.views import MethodView
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import selectinload
 from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
@@ -71,6 +72,24 @@ def view_maker(cls):
     ClassView.__name__ = cls.__name__
 
     return ClassView
+
+# want something like this
+# options(selectinload(Dataset.studies).selectinload(Study.analyses).\
+#     selectinload(Analysis.points),\
+#         selectinload(Dataset.studies).selectinload(Study.analyses).\
+#         selectinload(Analysis.images),\
+#             selectinload(Dataset.studies).selectinload(Study.analyses).\
+#         selectinload(Analysis.conditions))
+def nest_selectinload(view, options=None):
+    for k in view._nested.keys():
+        if options:
+            options = options.selectinload(getattr(view._model, k))
+        else:
+            options = selectinload(getattr(view._model, k))
+
+        if globals()[view._nested[k]]._nested:
+            for nest in globals()[view._nested[k]]._nested:
+                nest_selectinload(nest, options)
 
 
 class BaseView(MethodView):
@@ -351,9 +370,13 @@ class ListView(BaseView):
             else:
                 unique_count = count
 
-        records = q.paginate(args["page"], args["page_size"], False).items
         # check if results should be nested
         nested = True if args.get("nested") else False
+        if nested:
+            for k in self._nested.keys():
+                selectinload
+            q = q.options
+        records = q.paginate(args["page"], args["page_size"], False).items
         content = self.__class__._schema(
             only=self._only, many=True, context={'nested': nested}
         ).dump(records)
