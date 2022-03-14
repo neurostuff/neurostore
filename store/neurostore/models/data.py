@@ -364,6 +364,5 @@ event.listen(Annotation, 'before_insert', check_note_columns, retval=True)
 # create notes when annotation is first created
 event.listen(Dataset.annotations, 'append', create_blank_notes)
 
-
 # ensure new annotation_analyses are added when study is added to dataset
 event.listen(Dataset.studies, 'bulk_replace', add_necessary_annotation_analyses)

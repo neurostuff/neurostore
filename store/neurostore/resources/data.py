@@ -7,7 +7,7 @@ from flask.views import MethodView
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import subqueryload, Load
 from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
@@ -73,23 +73,45 @@ def view_maker(cls):
 
     return ClassView
 
+
 # want something like this
 # options(selectinload(Dataset.studies).selectinload(Study.analyses).\
 #     selectinload(Analysis.points),\
 #         selectinload(Dataset.studies).selectinload(Study.analyses).\
-#         selectinload(Analysis.images),\
+#         options(selectinload(Analysis.images), selectinload(Analysis.points), selectinload(Analysis.analysis_conditions)\
 #             selectinload(Dataset.studies).selectinload(Study.analyses).\
 #         selectinload(Analysis.conditions))
-def nest_selectinload(view, options=None):
-    for k in view._nested.keys():
+def nested_load(view, options=None):
+    nested_keys = list(view._nested.keys())
+    if len(nested_keys) == 1:
         if options:
-            options = options.selectinload(getattr(view._model, k))
+            options = options.subqueryload(getattr(view._model, nested_keys[0]))
         else:
-            options = selectinload(getattr(view._model, k))
+            options = subqueryload(getattr(view._model, nested_keys[0]))
+        nested_view = globals()[view._nested[nested_keys[0]]]
+        if nested_view._nested:
+            options = nested_load(nested_view, options)
+    elif len(nested_keys) > 1:
+        nested_loads = []
+        for k in nested_keys:
+            nested_view = globals()[view._nested[k]]
+            if nested_view._nested:
+                nested_loads.append(
+                    nested_load(
+                        nested_view, subqueryload(
+                            getattr(view._model, k)
+                        )
+                    )
+                )
+            else:
+                nested_loads.append(subqueryload(getattr(view._model, k)))
 
-        if globals()[view._nested[k]]._nested:
-            for nest in globals()[view._nested[k]]._nested:
-                nest_selectinload(nest, options)
+        if options:
+            options = options.options(*nested_loads)
+        else:
+            print("Error")
+
+    return options
 
 
 class BaseView(MethodView):
@@ -373,9 +395,7 @@ class ListView(BaseView):
         # check if results should be nested
         nested = True if args.get("nested") else False
         if nested:
-            for k in self._nested.keys():
-                selectinload
-            q = q.options
+            q = nested_load(self, Load(m))
         records = q.paginate(args["page"], args["page_size"], False).items
         content = self.__class__._schema(
             only=self._only, many=True, context={'nested': nested}
@@ -412,6 +432,8 @@ class ListView(BaseView):
 class DatasetView(ObjectView):
     _nested = {
         "studies": "StudyView",
+    }
+    _linked = {
         "annotations": "AnnotationView",
     }
 
@@ -487,6 +509,8 @@ class PointValueView(ObjectView):
 class DatasetListView(ListView):
     _nested = {
         "studies": "StudyView",
+    }
+    _linked = {
         "annotations": "AnnotationView",
     }
     _search_fields = ("name", "description", "publication", "doi", "pmid")
