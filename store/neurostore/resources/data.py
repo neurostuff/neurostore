@@ -7,7 +7,8 @@ from flask.views import MethodView
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import subqueryload, Load
+from sqlalchemy.orm import subqueryload
+from sqlalchemy.orm.strategy_options import _UnboundLoad
 from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
@@ -74,14 +75,11 @@ def view_maker(cls):
     return ClassView
 
 
-# want something like this
-# options(selectinload(Dataset.studies).selectinload(Study.analyses).\
-#     selectinload(Analysis.points),\
-#         selectinload(Dataset.studies).selectinload(Study.analyses).\
-#         options(selectinload(Analysis.images), selectinload(Analysis.points), selectinload(Analysis.analysis_conditions)\
-#             selectinload(Dataset.studies).selectinload(Study.analyses).\
-#         selectinload(Analysis.conditions))
 def nested_load(view, options=None):
+    """
+    SQL: Change lazy loading to eager loading when accessing all
+    nested attributes.
+    """
     nested_keys = list(view._nested.keys())
     if len(nested_keys) == 1:
         if options:
@@ -109,8 +107,7 @@ def nested_load(view, options=None):
         if options:
             options = options.options(*nested_loads)
         else:
-            print("Error")
-
+            options = _UnboundLoad().options(*nested_loads)
     return options
 
 
@@ -232,9 +229,13 @@ class BaseView(MethodView):
 
 class ObjectView(BaseView):
     def get(self, id):
-        record = self._model.query.filter_by(id=id).first_or_404()
         nested = request.args.get("nested")
         export = request.args.get("export", False)
+        q = self._model.query
+        if nested:
+            q = q.options(nested_load(self))
+
+        record = q.filter_by(id=id).first_or_404()
         return self.__class__._schema(context={
             'nested': nested,
             'export': export,
@@ -395,7 +396,7 @@ class ListView(BaseView):
         # check if results should be nested
         nested = True if args.get("nested") else False
         if nested:
-            q = nested_load(self, Load(m))
+            q = q.options(nested_load(self))
         records = q.paginate(args["page"], args["page_size"], False).items
         content = self.__class__._schema(
             only=self._only, many=True, context={'nested': nested}
