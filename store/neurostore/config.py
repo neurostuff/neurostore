@@ -78,7 +78,7 @@ class DockerTestConfig(TestingConfig):
     DB_NAME = 'test_db'
     POSTGRES_HOST = os.environ.get('POSTGRES_HOST')
     POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', '')
-    SQLALCHEMY_DATABASE_URI = f'postgres://postgres:' \
+    SQLALCHEMY_DATABASE_URI = f'postgresql://postgres:' \
         f'{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}'
 
 
