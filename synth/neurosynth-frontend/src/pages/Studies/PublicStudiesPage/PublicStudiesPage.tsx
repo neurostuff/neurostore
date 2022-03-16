@@ -127,6 +127,7 @@ const PublicStudiesPage = () => {
                     }
                 })
                 .catch((err) => {
+                    setStudies([]);
                     console.error(err);
                 });
         };

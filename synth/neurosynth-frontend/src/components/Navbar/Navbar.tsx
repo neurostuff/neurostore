@@ -38,6 +38,21 @@ const navItems: NavOptionsModel[] = [
             },
         ],
     },
+    {
+        label: 'META-ANALYSES',
+        path: '',
+        disabled: false,
+        authenticationRequired: false,
+        children: [
+            { label: 'Public Meta-Analyses', path: '/meta-analyses', children: null },
+            {
+                label: 'My Meta-Analyses',
+                path: '/usermeta-analyses',
+                children: null,
+                authenticationRequired: true,
+            },
+        ],
+    },
 ];
 
 const Navbar = () => {

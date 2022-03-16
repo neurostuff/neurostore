@@ -143,7 +143,7 @@ const EditAnnotationsPage: React.FC = (props) => {
         <>
             <Box sx={EditAnnotationsPageStyles.stickyButtonContainer}>
                 <Button
-                    color="error"
+                    color="secondary"
                     onClick={handleOnCancel}
                     sx={EditStudyPageStyles.button}
                     variant="outlined"

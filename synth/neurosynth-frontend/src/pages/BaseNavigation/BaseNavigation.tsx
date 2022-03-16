@@ -10,6 +10,7 @@ import PublicStudiesPage from '../Studies/PublicStudiesPage/PublicStudiesPage';
 import StudyPage from '../Studies/StudyPage/StudyPage';
 import UserStudiesPage from '../Studies/UserStudiesPage/UserStudiesPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
+import MetaAnalysisBuilderPage from '../MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 
 const BaseNavigation = () => {
     return (
@@ -42,6 +43,15 @@ const BaseNavigation = () => {
                     </Route>
                     <Route path="/studies/edit/:studyId">
                         <EditStudyPage />
+                    </Route>
+                    <Route path="/meta-analyses">
+                        <div>WORK IN PROGRESS PUBLIC META ANALYSES</div>
+                    </Route>
+                    <Route path="/usermeta-analyses">
+                        <div>WORK IN PROGRESS USER META ANALYSES</div>
+                    </Route>
+                    <Route path="/meta-analysisbuilder">
+                        <MetaAnalysisBuilderPage />
                     </Route>
                     <Route>
                         <div>Page not found</div>
