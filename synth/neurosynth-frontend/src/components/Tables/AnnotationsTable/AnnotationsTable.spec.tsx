@@ -1,7 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { itIT } from 'handsontable/i18n';
 import { Router } from 'react-router-dom';
 import { AnnotationsApiResponse } from '../../../utils/api';
 import { IDisplayValuesTableModel } from '../DisplayValuesTable';
