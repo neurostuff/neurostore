@@ -1,9 +1,13 @@
+import { useAuth0 } from '@auth0/auth0-react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { itIT } from 'handsontable/i18n';
 import { Router } from 'react-router-dom';
 import { AnnotationsApiResponse } from '../../../utils/api';
 import { IDisplayValuesTableModel } from '../DisplayValuesTable';
 import AnnotationsTable from './AnnotationsTable';
+
+jest.mock('@auth0/auth0-react');
 
 jest.mock('../DisplayValuesTable/DisplayValuesTable', () => {
     return (props: IDisplayValuesTableModel) => {
@@ -39,7 +43,7 @@ describe('AnnotationsTable component', () => {
             notes: [],
             id: 'unique-id-1',
             created_at: 'some-created-at-date',
-            user: 'github|user',
+            user: 'github|user-1',
             name: 'annotation-name-1',
             description: 'some-description-1',
             metadata: {},
@@ -49,7 +53,7 @@ describe('AnnotationsTable component', () => {
             notes: [],
             id: 'unique-id-2',
             created_at: 'some-created-at-date',
-            user: 'github|user',
+            user: 'github|user-2',
             name: 'annotation-name-2',
             description: 'some-description-2',
             metadata: {},
@@ -62,7 +66,7 @@ describe('AnnotationsTable component', () => {
             notes: [],
             id: 'unique-id-1',
             created_at: 'some-created-at-date',
-            user: 'github|user',
+            user: 'some-github-user',
             name: undefined,
             description: undefined,
             metadata: {},
@@ -76,6 +80,14 @@ describe('AnnotationsTable component', () => {
         location: {},
         listen: jest.fn(),
     };
+
+    beforeEach(() => {
+        (useAuth0 as any).mockReturnValue({
+            user: {
+                sub: 'some-github-user',
+            },
+        });
+    });
 
     it('should render', () => {
         render(
@@ -112,9 +124,11 @@ describe('AnnotationsTable component', () => {
             const uniqueKey = screen.getByText(`unique key: ${res.id}`);
             const name = screen.getByText(`Name: ${res.name}`);
             const description = screen.getByText(`Description: ${res.description}`);
+            const user = screen.getByText(`Owner: ${res.user}`);
             expect(uniqueKey).toBeInTheDocument();
             expect(name).toBeInTheDocument();
             expect(description).toBeInTheDocument();
+            expect(user).toBeInTheDocument();
         });
     });
 
@@ -144,5 +158,19 @@ describe('AnnotationsTable component', () => {
 
         const noDescription = screen.getByText('Description: No description');
         expect(noDescription).toBeInTheDocument();
+    });
+
+    it('should show Me if the user is the current user', () => {
+        render(
+            <Router history={historyMock as any}>
+                <AnnotationsTable
+                    annotations={mockAnnotationApiResponseNoData}
+                    datasetId={datasetId}
+                />
+            </Router>
+        );
+
+        const meText = screen.getByText('Owner: Me');
+        expect(meText).toBeInTheDocument();
     });
 });
