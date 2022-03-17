@@ -1,4 +1,5 @@
 import os
+import orjson
 from flask_cors import CORS
 
 from authlib.integrations.flask_client import OAuth
@@ -28,8 +29,8 @@ connexion_app.add_api(
     options=options,
     arguments={"title": "NeuroStore API"},
     resolver=MethodListViewResolver("neurostore.resources"),
-    strict_validation=True,
-    validate_responses=True,
+    strict_validation=os.getenv("DEBUG", False) == "True",
+    validate_responses=os.getenv("DEBUG", False) == "True",
 )
 
 # Enable CORS
@@ -46,3 +47,28 @@ auth0 = oauth.register(
         'scope': 'openid profile email',
     },
 )
+
+
+class ORJSONDecoder:
+
+    def __init__(self, **kwargs):
+        # eventually take into consideration when deserializing
+        self.options = kwargs
+
+    def decode(self, obj):
+        return orjson.loads(obj)
+
+
+class ORJSONEncoder:
+
+    def __init__(self, **kwargs):
+        # eventually take into consideration when serializing
+        self.options = kwargs
+
+    def encode(self, obj):
+        # decode back to str, as orjson returns bytes
+        return orjson.dumps(obj).decode('utf-8')
+
+
+app.json_encoder = ORJSONEncoder
+app.json_decoder = ORJSONDecoder
