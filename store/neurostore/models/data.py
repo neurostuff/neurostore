@@ -123,8 +123,8 @@ class DatasetStudy(db.Model):
     __tablename__ = "dataset_studies"
     study_id = db.Column(db.ForeignKey('studies.id', ondelete='CASCADE'), primary_key=True)
     dataset_id = db.Column(db.ForeignKey('datasets.id', ondelete='CASCADE'), primary_key=True)
-    study = relationship("Study", backref=backref("dataset_studies", cascade="all, delete-orphan"))
-    dataset = relationship("Dataset", backref=backref("dataset_studies"))
+    study = relationship("Study", backref=backref("dataset_studies"), viewonly=True)
+    dataset = relationship("Dataset", backref=backref("dataset_studies"), viewonly=True)
     annotation_analyses = relationship(
         "AnnotationAnalysis",
         cascade='all, delete-orphan',
@@ -138,12 +138,6 @@ class Analysis(BaseMixin, db.Model):
     study_id = db.Column(db.Text, db.ForeignKey("studies.id", ondelete='CASCADE'))
     name = db.Column(db.String)
     description = db.Column(db.String)
-    conditions = relationship(
-        "Condition",
-        secondary="analysis_conditions",
-        backref=backref("analyses"),
-        # cascade="all, delete",
-    )
     points = relationship(
         "Point",
         backref=backref("analysis"),
