@@ -80,3 +80,24 @@ def test_delete_image_analyses(auth_client, ingest_neurovault, session):
 
     for image in analysis['images']:
         assert Image.query.filter_by(id=image).first() is None
+
+
+def test_update_condition_analysis(auth_client, ingest_neurosynth, session):
+    analysis_db = Analysis.query.first()
+    analysis = AnalysisSchema().dump(analysis_db)
+    id_ = auth_client.username
+    user = User.query.filter_by(external_id=id_).first()
+    analysis_db.user = user
+    session.add(analysis_db)
+    session.commit()
+
+    # create condition
+    my_condition = {"name": "ice cream", "description": "suprise, it's rocky road!"}
+    cond_resp = auth_client.post("/api/conditions/", data=my_condition)
+
+    # update analysis with condition
+    payload = {"conditions": [cond_resp.json['id']], "weights": [1]}
+
+    update_resp = auth_client.put(f"/api/analyses/{analysis['id']}", data=payload)
+
+    assert update_resp.status_code == 200
