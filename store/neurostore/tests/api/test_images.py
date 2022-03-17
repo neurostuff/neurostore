@@ -3,7 +3,7 @@ from ...models import Study, Analysis, User, Image
 
 
 def test_get_images(auth_client, ingest_neurovault):
-    # List of datasets
+    # List of studysets
     resp = auth_client.get("/api/images/")
     assert resp.status_code == 200
     images_list = decode_json(resp)['results']

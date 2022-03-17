@@ -151,7 +151,7 @@ class AnalysisConditionSchema(BaseDataSchema):
     analysis = fields.Function(lambda analysis: analysis.id, dump_only=True, db_only=True)
 
 
-class DatasetStudySchema(BaseDataSchema):
+class StudysetStudySchema(BaseDataSchema):
 
     @pre_load
     def process_values(self, data, **kwargs):
@@ -206,7 +206,7 @@ class StudySchema(BaseDataSchema):
         allow_none = ("name", "description", "publication", "doi", "pmid", "authors", "year")
 
 
-class DatasetSchema(BaseDataSchema):
+class StudysetSchema(BaseDataSchema):
     # serialize
     user = fields.Function(lambda user: user.user_id, dump_only=True, db_only=True)
     studies = StringOrNested(StudySchema, many=True)  # This needs to be nested, but not cloned
@@ -221,22 +221,22 @@ class AnnotationAnalysisSchema(BaseDataSchema):
     annotation = StringOrNested("AnnotationSchema", use_nested=False, load_only=True)
     analysis_id = fields.String(data_key="analysis")
     study_id = fields.String(data_key="study")
-    dataset_id = fields.String(data_key="dataset", load_only=True)
-    study_name = fields.Function(lambda aa: aa.dataset_study.study.name, dump_only=True)
+    studyset_id = fields.String(data_key="studyset", load_only=True)
+    study_name = fields.Function(lambda aa: aa.studyset_study.study.name, dump_only=True)
     analysis_name = fields.Function(lambda aa: aa.analysis.name, dump_only=True)
-    dataset_study = fields.Nested(DatasetStudySchema, load_only=True)
-    study_year = fields.Function(lambda aa: aa.dataset_study.study.year, dump_only=True)
-    authors = fields.Function(lambda aa: aa.dataset_study.study.authors, dump_only=True)
-    publication = fields.Function(lambda aa: aa.dataset_study.study.publication, dump_only=True)
+    studyset_study = fields.Nested(StudysetStudySchema, load_only=True)
+    study_year = fields.Function(lambda aa: aa.studyset_study.study.year, dump_only=True)
+    authors = fields.Function(lambda aa: aa.studyset_study.study.authors, dump_only=True)
+    publication = fields.Function(lambda aa: aa.studyset_study.study.publication, dump_only=True)
 
     @post_load
     def add_id(self, data, **kwargs):
         if isinstance(data['analysis_id'], str):
             data['analysis'] = {'id': data.pop('analysis_id')}
-        if isinstance(data.get('study_id'), str) and isinstance(data.get('dataset_id'), str):
-            data['dataset_study'] = {
+        if isinstance(data.get('study_id'), str) and isinstance(data.get('studyset_id'), str):
+            data['studyset_study'] = {
                 'study': {'id': data.pop('study_id')},
-                'dataset': {'id': data.pop('dataset_id')}
+                'studyset': {'id': data.pop('studyset_id')}
             }
 
         return data
@@ -244,7 +244,7 @@ class AnnotationAnalysisSchema(BaseDataSchema):
 
 class AnnotationSchema(BaseDataSchema):
     # serialization
-    dataset_id = fields.String(data_key='dataset')
+    studyset_id = fields.String(data_key='studyset')
     annotation_analyses = fields.Nested(AnnotationAnalysisSchema, data_key="notes", many=True)
     annotation = fields.String(dump_only=True)
     annotation_csv = fields.String(dump_only=True)
@@ -262,10 +262,10 @@ class AnnotationSchema(BaseDataSchema):
         allow_none = ("name", "description")
 
     @pre_load
-    def add_dataset_id(self, data, **kwargs):
-        if data.get("dataset") and data.get('notes'):
+    def add_studyset_id(self, data, **kwargs):
+        if data.get("studyset") and data.get('notes'):
             for note in data['notes']:
-                note['dataset'] = data['dataset']
+                note['studyset'] = data['studyset']
 
         return data
 
@@ -282,7 +282,7 @@ class AnnotationSchema(BaseDataSchema):
                 ]
             ).to_csv(index=False)
             metadata = {
-                "dataset_id": data.dataset_id,
+                "studyset_id": data.studyset_id,
                 "annotation_id": data.id,
                 "created_at": data.created_at,
             }
@@ -298,8 +298,8 @@ class AnnotationSchema(BaseDataSchema):
 
     @post_load
     def add_id(self, data, **kwargs):
-        if isinstance(data.get('dataset_id'), str):
-            data['dataset'] = {'id': data.pop('dataset_id')}
+        if isinstance(data.get('studyset_id'), str):
+            data['studyset'] = {'id': data.pop('studyset_id')}
         return data
 
 

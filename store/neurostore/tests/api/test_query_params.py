@@ -1,12 +1,12 @@
 import pytest
-from ...schemas.data import DatasetSchema, StudySchema, AnalysisSchema, StringOrNested
+from ...schemas.data import StudysetSchema, StudySchema, AnalysisSchema, StringOrNested
 
 
 @pytest.mark.parametrize("nested", ['true', 'false'])
 @pytest.mark.parametrize(
     "resource_schema",
     [
-        ('datasets', DatasetSchema()),
+        ('studysets', StudysetSchema()),
         ('studies', StudySchema()),
         ('analyses', AnalysisSchema()),
     ]

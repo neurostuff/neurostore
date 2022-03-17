@@ -1,10 +1,10 @@
-from ...models import Dataset, User
+from ...models import Studyset, User
 
 
 def test_post_blank_annotation(auth_client, ingest_neurosynth):
-    dset = Dataset.query.first()
+    dset = Studyset.query.first()
     payload = {
-        'dataset': dset.id, 'name': 'mah notes',
+        'studyset': dset.id, 'name': 'mah notes',
     }
     resp = auth_client.post('/api/annotations/', data=payload)
     assert resp.status_code == 200
@@ -13,14 +13,14 @@ def test_post_blank_annotation(auth_client, ingest_neurosynth):
 
 
 def test_post_annotation(auth_client, ingest_neurosynth):
-    dset = Dataset.query.first()
+    dset = Studyset.query.first()
     # y for x in non_flat for y in x
     data = [
         {'study': s.id, 'analysis': a.id, 'note': {'foo': a.id}}
         for s in dset.studies for a in s.analyses
     ]
     payload = {
-        'dataset': dset.id, 'notes': data, 'note_keys': {'foo': 'string'}, 'name': 'mah notes'
+        'studyset': dset.id, 'notes': data, 'note_keys': {'foo': 'string'}, 'name': 'mah notes'
     }
     resp = auth_client.post('/api/annotations/', data=payload)
     assert resp.status_code == 200
@@ -30,8 +30,8 @@ def test_get_annotations(auth_client, ingest_neurosynth):
     import pandas as pd
     from io import StringIO
 
-    dset = Dataset.query.first()
-    resp = auth_client.get(f'/api/annotations/?dataset_id={dset.id}')
+    dset = Studyset.query.first()
+    resp = auth_client.get(f'/api/annotations/?studyset_id={dset.id}')
     assert resp.status_code == 200
 
     annot_id = resp.json['results'][0]['id']
@@ -60,16 +60,16 @@ def test_clone_annotation(auth_client, simple_neurosynth_annotation):
 
 def test_single_analysis_delete(auth_client, user_data):
     user = User.query.filter_by(name="user1").first()
-    # get relevant dataset
-    datasets = auth_client.get(f"/api/datasets/?user_id={user.external_id}")
-    dataset_id = datasets.json['results'][0]['id']
-    dataset = auth_client.get(f"/api/datasets/{dataset_id}")
+    # get relevant studyset
+    studysets = auth_client.get(f"/api/studysets/?user_id={user.external_id}")
+    studyset_id = studysets.json['results'][0]['id']
+    studyset = auth_client.get(f"/api/studysets/{studyset_id}")
     # get relevant annotation
-    annotations = auth_client.get(f"/api/annotations/?dataset_id={dataset_id}")
+    annotations = auth_client.get(f"/api/annotations/?studyset_id={studyset_id}")
     annotation_id = annotations.json['results'][0]['id']
     annotation = auth_client.get(f"/api/annotations/{annotation_id}")
     # pick study to edit
-    study_id = dataset.json['studies'][0]
+    study_id = studyset.json['studies'][0]
     study = auth_client.get(f"/api/studies/{study_id}")
 
     # select analysis to delete
@@ -83,23 +83,23 @@ def test_single_analysis_delete(auth_client, user_data):
     assert (len(annotation.json['notes']) - 1) == (len(updated_annotation.json['notes']))
 
 
-def test_study_removal_from_dataset(auth_client, session, user_data):
+def test_study_removal_from_studyset(auth_client, session, user_data):
     user = User.query.filter_by(name="user1").first()
-    # get relevant dataset
-    datasets = auth_client.get(f"/api/datasets/?user_id={user.external_id}")
-    dataset_id = datasets.json['results'][0]['id']
-    dataset = auth_client.get(f"/api/datasets/{dataset_id}")
+    # get relevant studyset
+    studysets = auth_client.get(f"/api/studysets/?user_id={user.external_id}")
+    studyset_id = studysets.json['results'][0]['id']
+    studyset = auth_client.get(f"/api/studysets/{studyset_id}")
     # get relevant annotation
-    annotations = auth_client.get(f"/api/annotations/?dataset_id={dataset_id}")
+    annotations = auth_client.get(f"/api/annotations/?studyset_id={studyset_id}")
     annotation_id = annotations.json['results'][0]['id']
     annotation = auth_client.get(f"/api/annotations/{annotation_id}")
-    # remove study from dataset
-    studies = dataset.json['studies']
+    # remove study from studyset
+    studies = studyset.json['studies']
     studies.pop()
 
-    # update dataset
+    # update studyset
     auth_client.put(
-        f"/api/datasets/{dataset_id}", data={'studies': studies}
+        f"/api/studysets/{studyset_id}", data={'studies': studies}
     )
 
     # test if annotations were updated
@@ -109,26 +109,26 @@ def test_study_removal_from_dataset(auth_client, session, user_data):
     assert (len(annotation.json['notes']) - 1) == (len(updated_annotation.json['notes']))
 
 
-def test_study_addition_to_dataset(auth_client, session, user_data):
+def test_study_addition_to_studyset(auth_client, session, user_data):
     user = User.query.filter_by(name="user1").first()
-    # get relevant dataset
-    datasets = auth_client.get(f"/api/datasets/?user_id={user.external_id}")
-    dataset_id = datasets.json['results'][0]['id']
-    dataset = auth_client.get(f"/api/datasets/{dataset_id}")
+    # get relevant studyset
+    studysets = auth_client.get(f"/api/studysets/?user_id={user.external_id}")
+    studyset_id = studysets.json['results'][0]['id']
+    studyset = auth_client.get(f"/api/studysets/{studyset_id}")
     # get relevant annotation
-    annotations = auth_client.get(f"/api/annotations/?dataset_id={dataset_id}")
+    annotations = auth_client.get(f"/api/annotations/?studyset_id={studyset_id}")
     annotation_id = annotations.json['results'][0]['id']
     annotation = auth_client.get(f"/api/annotations/{annotation_id}")
     # add a new study
-    studies = dataset.json['studies']
+    studies = studyset.json['studies']
     user2 = User.query.filter_by(name="user2").first()
     studies_u2 = auth_client.get(f"/api/studies/?user_id={user2.external_id}")
     studies_u2_ids = [s['id'] for s in studies_u2.json['results']]
     studies.extend(studies_u2_ids)
 
-    # update dataset
+    # update studyset
     auth_client.put(
-        f"/api/datasets/{dataset_id}", data={'studies': studies}
+        f"/api/studysets/{studyset_id}", data={'studies': studies}
     )
 
     # test if annotations were updated
@@ -139,14 +139,14 @@ def test_study_addition_to_dataset(auth_client, session, user_data):
 
 
 def test_mismatched_notes(auth_client, ingest_neurosynth):
-    dset = Dataset.query.first()
+    dset = Studyset.query.first()
     # y for x in non_flat for y in x
     data = [
         {'study': s.id, 'analysis': a.id, 'note': {'foo': a.id, 'doo': s.id}}
         for s in dset.studies for a in s.analyses
     ]
     note_keys = {'foo': 'string', 'doo': 'string'}
-    payload = {'dataset': dset.id, 'notes': data, 'note_keys': note_keys, 'name': 'mah notes'}
+    payload = {'studyset': dset.id, 'notes': data, 'note_keys': note_keys, 'name': 'mah notes'}
 
     # proper post
     auth_client.post('/api/annotations/', data=payload)
@@ -167,14 +167,14 @@ def test_mismatched_notes(auth_client, ingest_neurosynth):
 # test push analysis id that does not exist
 # Handle error better
 def test_put_nonexistent_analysis(auth_client, ingest_neurosynth):
-    dset = Dataset.query.first()
+    dset = Studyset.query.first()
     # y for x in non_flat for y in x
     data = [
         {'study': s.id, 'analysis': a.id, 'note': {'foo': a.id, 'doo': s.id}}
         for s in dset.studies for a in s.analyses
     ]
     note_keys = {'foo': 'string', 'doo': 'string'}
-    payload = {'dataset': dset.id, 'notes': data, 'note_keys': note_keys, 'name': 'mah notes'}
+    payload = {'studyset': dset.id, 'notes': data, 'note_keys': note_keys, 'name': 'mah notes'}
 
     # proper post
     annot = auth_client.post('/api/annotations/', data=payload)
@@ -190,14 +190,14 @@ def test_put_nonexistent_analysis(auth_client, ingest_neurosynth):
 
 
 def test_correct_note_overwrite(auth_client, ingest_neurosynth):
-    dset = Dataset.query.first()
+    dset = Studyset.query.first()
     # y for x in non_flat for y in x
     data = [
         {'study': s.id, 'analysis': a.id, 'note': {'foo': a.id, 'doo': s.id}}
         for s in dset.studies for a in s.analyses
     ]
     payload = {
-        'dataset': dset.id,
+        'studyset': dset.id,
         'notes': data,
         'note_keys': {'foo': 'string', 'doo': 'string'},
         'name': 'mah notes',

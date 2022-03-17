@@ -34,8 +34,8 @@ class BaseMixin(object):
         return f"http://neurostore.org/api/{self.__tablename__}/{self.id}"
 
 
-class Dataset(BaseMixin, db.Model):
-    __tablename__ = "datasets"
+class Studyset(BaseMixin, db.Model):
+    __tablename__ = "studysets"
 
     name = db.Column(db.String)
     description = db.Column(db.String)
@@ -49,14 +49,14 @@ class Dataset(BaseMixin, db.Model):
     pmid = db.Column(db.String)
     public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
-    user = relationship("User", backref=backref("datasets"))
+    user = relationship("User", backref=backref("studysets"))
     studies = relationship(
         "Study",
         cascade="all",
-        secondary="dataset_studies",
-        backref=backref("datasets"),
+        secondary="studyset_studies",
+        backref=backref("studysets"),
     )
-    annotations = relationship("Annotation", cascade="all, delete", backref="dataset")
+    annotations = relationship("Annotation", cascade="all, delete", backref="studyset")
 
 
 class Annotation(BaseMixin, db.Model):
@@ -68,7 +68,7 @@ class Annotation(BaseMixin, db.Model):
     source_updated_at = db.Column(db.DateTime(timezone=True))
     user_id = db.Column(db.Text, db.ForeignKey('users.external_id'))
     user = relationship('User', backref=backref('annotations'))
-    dataset_id = db.Column(db.Text, db.ForeignKey('datasets.id'))
+    studyset_id = db.Column(db.Text, db.ForeignKey('studysets.id'))
     metadata_ = db.Column(db.JSON)
     public = db.Column(db.Boolean, default=True)
     note_keys = db.Column(MutableDict.as_mutable(db.JSON))
@@ -83,13 +83,13 @@ class AnnotationAnalysis(db.Model):
     __tablename__ = "annotation_analyses"
     __table_args__ = (
         ForeignKeyConstraint(
-            ('study_id', 'dataset_id'),
-            ('dataset_studies.study_id', 'dataset_studies.dataset_id'),
+            ('study_id', 'studyset_id'),
+            ('studyset_studies.study_id', 'studyset_studies.studyset_id'),
             ondelete="CASCADE"),
     )
 
     study_id = db.Column(db.Text, nullable=False)
-    dataset_id = db.Column(db.Text, nullable=False)
+    studyset_id = db.Column(db.Text, nullable=False)
     annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"), primary_key=True)
     analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id"), primary_key=True)
     note = db.Column(MutableDict.as_mutable(db.JSON))
@@ -119,16 +119,16 @@ class Study(BaseMixin, db.Model):
     )
 
 
-class DatasetStudy(db.Model):
-    __tablename__ = "dataset_studies"
+class StudysetStudy(db.Model):
+    __tablename__ = "studyset_studies"
     study_id = db.Column(db.ForeignKey('studies.id', ondelete='CASCADE'), primary_key=True)
-    dataset_id = db.Column(db.ForeignKey('datasets.id', ondelete='CASCADE'), primary_key=True)
-    study = relationship("Study", backref=backref("dataset_studies", cascade="all, delete-orphan"))
-    dataset = relationship("Dataset", backref=backref("dataset_studies"))
+    studyset_id = db.Column(db.ForeignKey('studysets.id', ondelete='CASCADE'), primary_key=True)
+    study = relationship("Study", backref=backref("studyset_studies", cascade="all, delete-orphan"))
+    studyset = relationship("Studyset", backref=backref("studyset_studies"))
     annotation_analyses = relationship(
         "AnnotationAnalysis",
         cascade='all, delete-orphan',
-        backref=backref("dataset_study")
+        backref=backref("studyset_study")
     )
 
 
@@ -299,30 +299,30 @@ def check_note_columns(mapper, connection, annotation):
                 raise SQLAlchemyError(f"value for key {key} is not of type {_type}")
 
 
-def create_blank_notes(dataset, annotation, initiator):
+def create_blank_notes(studyset, annotation, initiator):
     if not annotation.annotation_analyses:
         annotation_analyses = []
-        for dset_study in dataset.dataset_studies:
+        for dset_study in studyset.studyset_studies:
             for analysis in dset_study.study.analyses:
                 annotation_analyses.append(
                     AnnotationAnalysis(
                         study_id=dset_study.study.id,
-                        dataset_id=dataset.id,
+                        studyset_id=studyset.id,
                         annotation_id=annotation.id,
                         analysis_id=analysis.id,
                         analysis=analysis,
                         annotation=annotation,
-                        dataset_study=dset_study,
+                        studyset_study=dset_study,
                     )
                 )
 
         db.session.add_all(annotation_analyses)
 
 
-def add_necessary_annotation_analyses(dataset, studies, collection_adapter):
-    new_studies = set(studies) - set(dataset.studies)
+def add_necessary_annotation_analyses(studyset, studies, collection_adapter):
+    new_studies = set(studies) - set(studyset.studies)
     new_aas = []
-    for annot in dataset.annotations:
+    for annot in studyset.annotations:
         for study in new_studies:
             for analysis in study.analyses:
                 if annot.annotation_analyses:
@@ -332,7 +332,7 @@ def add_necessary_annotation_analyses(dataset, studies, collection_adapter):
                 new_aas.append(
                     AnnotationAnalysis(
                         study_id=study.id,
-                        dataset_id=dataset.id,
+                        studyset_id=studyset.id,
                         annotation_id=annot.id,
                         analysis_id=analysis.id,
                         note={} if not keys else {k: None for k in keys},
@@ -362,8 +362,8 @@ def _check_type(x):
 event.listen(Annotation, 'before_insert', check_note_columns, retval=True)
 
 # create notes when annotation is first created
-event.listen(Dataset.annotations, 'append', create_blank_notes)
+event.listen(Studyset.annotations, 'append', create_blank_notes)
 
 
-# ensure new annotation_analyses are added when study is added to dataset
-event.listen(Dataset.studies, 'bulk_replace', add_necessary_annotation_analyses)
+# ensure new annotation_analyses are added when study is added to studyset
+event.listen(Studyset.studies, 'bulk_replace', add_necessary_annotation_analyses)

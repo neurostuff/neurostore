@@ -4,12 +4,12 @@ from .data import (
     ConditionSchema,
     ImageSchema,
     PointSchema,
-    DatasetSchema,
+    StudysetSchema,
     PointValueSchema,
     AnalysisConditionSchema,
     AnnotationSchema,
     AnnotationAnalysisSchema,
-    DatasetStudySchema,
+    StudysetStudySchema,
 )
 
 from .auth import UserSchema
@@ -20,11 +20,11 @@ __all__ = [
     "ConditionSchema",
     "ImageSchema",
     "PointSchema",
-    "DatasetSchema",
+    "StudysetSchema",
     "UserSchema",
     "PointValueSchema",
     "AnalysisConditionSchema",
     "AnnotationSchema",
     "AnnotationAnalysisSchema",
-    "DatasetStudySchema",
+    "StudysetStudySchema",
 ]

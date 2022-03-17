@@ -12,11 +12,11 @@ from webargs.flaskparser import parser
 from webargs import fields
 
 from ..database import db
-from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions, User, AnnotationAnalysis, Annotation  # noqa E401
-from ..models.data import DatasetStudy
+from ..models import Studyset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions, User, AnnotationAnalysis, Annotation  # noqa E401
+from ..models.data import StudysetStudy
 
 from ..schemas import (  # noqa E401
-    DatasetSchema,
+    StudysetSchema,
     AnnotationSchema,
     StudySchema,
     AnalysisSchema,
@@ -26,12 +26,12 @@ from ..schemas import (  # noqa E401
     PointValueSchema,
     AnalysisConditionSchema,
     AnnotationAnalysisSchema,
-    DatasetStudySchema,
+    StudysetStudySchema,
 )
 
 
 __all__ = [
-    "DatasetView",
+    "StudysetView",
     "AnnotationView",
     "StudyView",
     "AnalysisView",
@@ -44,7 +44,7 @@ __all__ = [
     "AnnotationListView",
     "AnalysisListView",
     "ImageListView",
-    "DatasetListView",
+    "StudysetListView",
     "ConditionListView",
 ]
 
@@ -87,14 +87,14 @@ class BaseView(MethodView):
         scenerios:
         1. cloning a study
           a. clone everything, a study is an object
-        2. cloning a dataset
-          a. studies are linked to a dataset, so create a new dataset with same links
+        2. cloning a studyset
+          a. studies are linked to a studyset, so create a new studyset with same links
         3. cloning an annotation
-          a. annotations are linked to datasets, update when dataset updates
+          a. annotations are linked to studysets, update when studyset updates
         2. creating an analysis
           a. I should have to own all (relevant) parent objects
         3. creating an annotation
-            a. I should not have to own the dataset to create an annotation
+            a. I should not have to own the studyset to create an annotation
         """
 
         # Store all models so we can atomically update in one commit
@@ -236,7 +236,7 @@ LIST_USER_ARGS = {
     "unique": fields.Boolean(missing=False),
     "nested": fields.Boolean(missing=False),
     "user_id": fields.String(missing=None),
-    "dataset_id": fields.String(missing=None),
+    "studyset_id": fields.String(missing=None),
     "export": fields.Boolean(missing=False),
     "data_type": fields.String(missing=None),
 }
@@ -275,9 +275,9 @@ class ListView(BaseView):
             current_user = get_current_user()
             q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
 
-        # query annotations for a specific dataset
-        if args.get('dataset_id'):
-            q = q.filter(m.dataset_id == args.get('dataset_id'))
+        # query annotations for a specific studyset
+        if args.get('studyset_id'):
+            q = q.filter(m.studyset_id == args.get('studyset_id'))
 
         # search studies for data_type
         if args.get('data_type'):
@@ -386,7 +386,7 @@ class ListView(BaseView):
 
 
 @view_maker
-class DatasetView(ObjectView):
+class StudysetView(ObjectView):
     _nested = {
         "studies": "StudyView",
         "annotations": "AnnotationView",
@@ -399,13 +399,13 @@ class AnnotationView(ObjectView):
         "annotation_analyses": "AnnotationAnalysisResource"
     }
     _linked = {
-        "dataset": "DatasetView",
+        "studyset": "StudysetView",
     }
 
     def insert_data(self, id, data):
-        if not data.get('dataset'):
+        if not data.get('studyset'):
             with db.session.no_autoflush:
-                data['dataset'] = self._model.query.filter_by(id=id).first().dataset.id
+                data['studyset'] = self._model.query.filter_by(id=id).first().studyset.id
         return data
 
 
@@ -415,7 +415,7 @@ class StudyView(ObjectView):
         "analyses": "AnalysisView",
     }
     _linked = {
-        "dataset": "DatasetView",
+        "studyset": "StudysetView",
     }
 
 
@@ -461,7 +461,7 @@ class PointValueView(ObjectView):
 # List resource views
 
 @view_maker
-class DatasetListView(ListView):
+class StudysetListView(ListView):
     _nested = {
         "studies": "StudyView",
         "annotations": "AnnotationView",
@@ -475,14 +475,14 @@ class AnnotationListView(ListView):
         "annotation_analyses": "AnnotationAnalysisResource",
     }
     _linked = {
-        "dataset": "DatasetView",
+        "studyset": "StudysetView",
     }
     _search_fields = ("name", "description")
 
     def insert_data(self, id, data):
-        if not data.get('dataset'):
+        if not data.get('studyset'):
             with db.session.no_autoflush:
-                data['dataset'] = self._model.query.filter_by(id=id).first().dataset.id
+                data['studyset'] = self._model.query.filter_by(id=id).first().studyset.id
         return data
 
     @classmethod
@@ -524,7 +524,7 @@ class StudyListView(ListView):
         "analyses": "AnalysisView",
     }
     _linked = {
-        "dataset": "DatasetView",
+        "studyset": "StudysetView",
     }
     _search_fields = ("name", "description", "source_id", "source", "authors", "publication")
 
@@ -619,21 +619,21 @@ class AnnotationAnalysisResource(BaseView):
     }
     _linked = {
         'analysis': "AnalysisView",
-        'dataset_study': "DatasetStudyResource",
+        'studyset_study': "StudysetStudyResource",
     }
     _model = AnnotationAnalysis
     _schema = AnnotationAnalysisSchema
     _composite_key = {}
 
 
-class DatasetStudyResource(BaseView):
+class StudysetStudyResource(BaseView):
     _parent = {
-        'dataset': "DatasetView",
+        'studyset': "StudysetView",
         'study': "StudyView",
     }
     _composite_key = {
-        'dataset_id': Dataset,
+        'studyset_id': Studyset,
         'study_id': Study,
     }
-    _model = DatasetStudy
-    _schema = DatasetStudySchema
+    _model = StudysetStudy
+    _schema = StudysetStudySchema

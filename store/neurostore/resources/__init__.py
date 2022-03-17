@@ -1,5 +1,5 @@
 from .data import (
-    DatasetView,
+    StudysetView,
     AnnotationView,
     StudyView,
     AnalysisView,
@@ -7,7 +7,7 @@ from .data import (
     ImageView,
     PointView,
     PointValueView,
-    DatasetListView,
+    StudysetListView,
     AnnotationListView,
     StudyListView,
     AnalysisListView,
@@ -23,7 +23,7 @@ from .users import (
 )
 
 __all__ = [
-    "DatasetView",
+    "StudysetView",
     "AnnotationView",
     "StudyView",
     "AnalysisView",
@@ -34,7 +34,7 @@ __all__ = [
     "StudyListView",
     "AnalysisListView",
     "ImageListView",
-    "DatasetListView",
+    "StudysetListView",
     "AnnotationListView",
     "ConditionListView",
     "AnalysisConditionResource",

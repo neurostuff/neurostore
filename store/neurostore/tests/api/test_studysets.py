@@ -1,5 +1,5 @@
-def test_post_and_get_datasets(auth_client, ingest_neurosynth):
-    # create a dataset
+def test_post_and_get_studysets(auth_client, ingest_neurosynth):
+    # create a studyset
     payload = auth_client.get("/api/studies/").json
     study_ids = [study['id'] for study in payload['results']]
     post_data = {
@@ -7,10 +7,10 @@ def test_post_and_get_datasets(auth_client, ingest_neurosynth):
         "description": "mah ice cram",
         "studies": study_ids,
     }
-    post_resp = auth_client.post("/api/datasets/", data=post_data)
+    post_resp = auth_client.post("/api/studysets/", data=post_data)
     assert post_resp.status_code == 200
 
-    get_resp = auth_client.get("/api/datasets/")
+    get_resp = auth_client.get("/api/studysets/")
 
     assert next(
         d for d in get_resp.json['results'] if d['name'] == "rock road"
