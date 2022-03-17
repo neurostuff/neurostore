@@ -302,3 +302,22 @@ def ingest_neuroquery(max_rows=None):
     )
     db.session.add(d)
     db.session.commit()
+
+
+def ingest_cognitive_atlas(max_terms=None, resource="task"):
+    url = f"https://www.cognitiveatlas.org/api/v-alpha/{resource}?format=json"
+    cog_atlas_data = requests.get(url).json()
+    if max_terms:
+        cog_atlas_data = cog_atlas_data[:max_terms]
+    conditions = []
+    names = [c.name for c in Condition.query.all()]
+    for task in cog_atlas_data:
+        if task['name'] not in names:
+            conditions.append(
+                Condition(
+                    name=task['name'],
+                    description=task['definition_text'],
+                )
+            )
+    db.session.add_all(conditions)
+    db.session.commit()

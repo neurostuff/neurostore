@@ -220,6 +220,11 @@ def add_users(app, db):
 
 
 @pytest.fixture(scope="function")
+def ingest_cognitive_atlas(session):
+    return ingest.ingest_cognitive_atlas(20)
+
+
+@pytest.fixture(scope="function")
 def ingest_neurosynth(session):
     """ Add a dataset with two subjects """
     return ingest.ingest_neurosynth(5)
