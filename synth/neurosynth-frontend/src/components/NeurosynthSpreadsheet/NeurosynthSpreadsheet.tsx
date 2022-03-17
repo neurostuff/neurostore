@@ -219,10 +219,7 @@ const NeurosynthSpreadsheet: React.FC<{
                         variant="contained"
                         disabled={!isAuthenticated}
                         onClick={handleOnSaveAnnotationChangeClick}
-                        sx={{
-                            ...EditStudyPageStyles.button,
-                            marginTop: '0.5rem',
-                        }}
+                        sx={[EditStudyPageStyles.button, { marginTop: '0.5rem' }]}
                     >
                         Save Annotation Changes
                     </Button>

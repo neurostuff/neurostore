@@ -161,7 +161,7 @@ const StudyPage: React.FC = (props) => {
 
     return (
         <NeurosynthLoader loaded={!!study}>
-            <Box sx={{ ...StudyPageStyles.buttonContainer, ...StudyPageStyles.spaceBelow }}>
+            <Box sx={[StudyPageStyles.buttonContainer, StudyPageStyles.spaceBelow]}>
                 <Tooltip
                     placement="top"
                     title={
@@ -232,11 +232,13 @@ const StudyPage: React.FC = (props) => {
             <Box>
                 <Typography
                     variant="h6"
-                    sx={{
-                        marginLeft: '15px',
-                        fontWeight: 'bold',
-                        ...StudyPageStyles.spaceBelow,
-                    }}
+                    sx={[
+                        {
+                            marginLeft: '15px',
+                            fontWeight: 'bold',
+                        },
+                        StudyPageStyles.spaceBelow,
+                    ]}
                 >
                     Analyses
                 </Typography>

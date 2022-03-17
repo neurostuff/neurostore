@@ -185,7 +185,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
                         onClick={handleOnUpdate}
                         color="success"
                         variant="contained"
-                        sx={{ ...EditStudyDetailsStyles.button, marginRight: '15px' }}
+                        sx={[EditStudyDetailsStyles.button, { marginRight: '15px' }]}
                     >
                         Update
                     </Button>

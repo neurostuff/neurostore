@@ -10,7 +10,7 @@ const EditMetadata: React.FC<IEditMetadataModel> = React.memo((props) => {
 
     return (
         <>
-            <Box sx={{ ...EditMetadataStyles.table, marginTop: '7px' }}>
+            <Box sx={[EditMetadataStyles.table, { marginTop: '7px' }]}>
                 <AddMetadataRow onAddMetadataRow={onMetadataRowAdd} />
             </Box>
             <Divider sx={EditMetadataStyles.hr} />

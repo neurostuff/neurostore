@@ -58,7 +58,7 @@ const DisplayValuesTable: React.FC<IDisplayValuesTableModel> = (props) => {
                     ))}
                 </TableBody>
             </Table>
-            {noRowData && <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No data</Box>}
+            {noRowData && <Box sx={{ color: 'warning.dark', padding: '0.5rem 1rem' }}>No data</Box>}
         </TableContainer>
     );
 };

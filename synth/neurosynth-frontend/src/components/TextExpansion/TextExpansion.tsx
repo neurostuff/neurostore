@@ -38,7 +38,7 @@ const TextExpansion: React.FC<{ text: string; sx?: SxProps<Theme> }> = (props) =
     }, [props.text, expanded]);
 
     return (
-        <Box component="div" sx={{ ...props.sx }}>
+        <Box component="div" sx={props.sx}>
             <Typography sx={expanded ? {} : TextExpansionStyles.limitToOneLine} ref={textRef}>
                 {props.text}
             </Typography>

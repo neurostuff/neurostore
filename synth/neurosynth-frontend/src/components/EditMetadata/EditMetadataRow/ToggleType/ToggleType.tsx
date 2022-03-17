@@ -18,7 +18,7 @@ const ToggleType: React.FC<IToggleTypeModel> = React.memo((props) => {
         <Box sx={ToggleTypeStyles.toggleItemContainer}>
             <FormControl variant="outlined">
                 <Select
-                    sx={{ ...ToggleTypeStyles[myClass], ...ToggleTypeStyles.toggle_item }}
+                    sx={[ToggleTypeStyles[myClass], ToggleTypeStyles.toggle_item]}
                     value={type}
                     onChange={handleSetType}
                 >

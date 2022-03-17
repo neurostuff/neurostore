@@ -10,7 +10,7 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
     const { isAuthenticated } = useAuth0();
 
     return (
-        <Toolbar sx={{ ...NavbarStyles.toolbar, ...NavbarStyles.mdUp }}>
+        <Toolbar sx={[NavbarStyles.toolbar, NavbarStyles.mdUp]}>
             <Button>
                 <Box to="/" exact sx={NavbarStyles.neurosynthLink} component={NavLink}>
                     <Typography variant="h5">
@@ -26,7 +26,7 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
                         key={navOption.label}
                         navOption={navOption}
                         menuPosition={{ vertical: 'bottom', horizontal: 'left' }}
-                        sx={{
+                        styling={{
                             ...NavbarToolbarStyles.button,
                             padding: '0px 8px',
                             color: 'primary.contrastText',

@@ -39,11 +39,11 @@ const DisplayMetadataTableRow: React.FC<IDisplayValuesTableRowModel> = (props) =
                     <TableCell key={index} sx={{ textAlign: col.center ? 'center' : 'left' }}>
                         <Box
                             component="span"
-                            sx={{
-                                fontWeight: col.bold ? 'bold' : 'normal',
-                                ...DisplayValuesTableRowStyles.root,
-                                ...typedStyles,
-                            }}
+                            sx={[
+                                { fontWeight: col.bold ? 'bold' : 'normal' },
+                                DisplayValuesTableRowStyles.root,
+                                typedStyles,
+                            ]}
                         >
                             {getValue(col.value)}
                         </Box>

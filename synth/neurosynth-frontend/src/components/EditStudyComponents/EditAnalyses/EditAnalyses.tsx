@@ -136,10 +136,10 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
                             </Tabs>
                         </Box>
                         <Box
-                            sx={{
-                                ...EditAnalysesStyles.analysisContainer,
-                                ...EditAnalysesStyles.heightDefiningSibling,
-                            }}
+                            sx={[
+                                EditAnalysesStyles.analysisContainer,
+                                EditAnalysesStyles.heightDefiningSibling,
+                            ]}
                         >
                             <EditAnalysis
                                 analysis={selectedAnalysis.analysis}

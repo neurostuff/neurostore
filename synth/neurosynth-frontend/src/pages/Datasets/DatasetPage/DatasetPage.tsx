@@ -13,10 +13,8 @@ import {
 import AnnotationsTable from '../../../components/Tables/AnnotationsTable/AnnotationsTable';
 import TextEdit from '../../../components/TextEdit/TextEdit';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
-import { AnnotationNote } from '../../../gen/api';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API, {
-    AnalysisApiResponse,
     AnnotationsApiResponse,
     DatasetsApiResponse,
     StudyApiResponse,
@@ -47,6 +45,7 @@ const DatasetPage: React.FC = (props) => {
                 })
                 .catch((err) => {
                     console.error(err);
+                    setDataset({});
                     showSnackbar('there was an error', SnackbarType.ERROR);
                 });
         };
@@ -64,6 +63,7 @@ const DatasetPage: React.FC = (props) => {
                 },
                 (err) => {
                     console.error(err);
+                    setAnnotations([]);
                     showSnackbar(
                         'there was an error getting annotations for this dataset',
                         SnackbarType.ERROR
@@ -179,10 +179,10 @@ const DatasetPage: React.FC = (props) => {
                         >
                             <Box sx={DatasetPageStyles.displayedText}>
                                 <Typography
-                                    sx={{
-                                        ...DatasetPageStyles.displayedText,
-                                        ...(!dataset.name ? DatasetPageStyles.noData : {}),
-                                    }}
+                                    sx={[
+                                        DatasetPageStyles.displayedText,
+                                        !dataset.name ? DatasetPageStyles.noData : {},
+                                    ]}
                                     variant="h6"
                                 >
                                     {dataset.name || 'No name'}
@@ -213,10 +213,10 @@ const DatasetPage: React.FC = (props) => {
                         >
                             <Box sx={DatasetPageStyles.displayedText}>
                                 <Typography
-                                    sx={{
-                                        ...DatasetPageStyles.displayedText,
-                                        ...(!dataset.doi ? DatasetPageStyles.noData : {}),
-                                    }}
+                                    sx={[
+                                        DatasetPageStyles.displayedText,
+                                        !dataset.doi ? DatasetPageStyles.noData : {},
+                                    ]}
                                 >
                                     {dataset.doi || 'No DOI'}
                                 </Typography>

@@ -36,6 +36,7 @@ const UserDatasetsPage: React.FC = (props) => {
                     if (isMountedRef.current && res?.data?.results) setDatasets(res.data.results);
                 })
                 .catch((err) => {
+                    setDatasets([]);
                     console.error(err);
                 });
         };

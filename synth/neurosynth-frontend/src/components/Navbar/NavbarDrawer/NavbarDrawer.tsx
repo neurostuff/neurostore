@@ -26,7 +26,7 @@ const NavbarDrawer: React.FC<NavbarArgs> = (props) => {
     };
 
     return (
-        <Toolbar sx={{ ...NavbarStyles.toolbar, ...NavbarStyles.mdDown }}>
+        <Toolbar sx={[NavbarStyles.toolbar, NavbarStyles.mdDown]}>
             <Button>
                 <Box to="/" exact sx={NavbarStyles.neurosynthLink} component={NavLink}>
                     <Typography variant="h5">
@@ -46,7 +46,7 @@ const NavbarDrawer: React.FC<NavbarArgs> = (props) => {
                                     vertical: 'top',
                                     horizontal: 'right',
                                 }}
-                                sx={{
+                                styling={{
                                     ...NavbarDrawerStyles.buttonOverride,
                                     ...NavbarDrawerStyles.innerButtonOverride,
                                     display: 'flex',
@@ -57,10 +57,10 @@ const NavbarDrawer: React.FC<NavbarArgs> = (props) => {
                     ))}
                     <ListItem sx={NavbarDrawerStyles.listItem}>
                         <Button
-                            sx={{
-                                ...NavbarDrawerStyles.buttonOverride,
-                                ...NavbarDrawerStyles.innerButtonOverride,
-                            }}
+                            sx={[
+                                NavbarDrawerStyles.buttonOverride,
+                                NavbarDrawerStyles.innerButtonOverride,
+                            ]}
                             onClick={isAuthenticated ? props.logout : props.login}
                         >
                             <Box component="span">{isAuthenticated ? 'Logout' : 'Login'}</Box>

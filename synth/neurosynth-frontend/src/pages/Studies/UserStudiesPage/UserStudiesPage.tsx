@@ -43,6 +43,7 @@ const UserStudiesPage: React.FC = (props) => {
                 })
                 .catch((err) => {
                     showSnackbar('there was an error', SnackbarType.ERROR);
+                    setStudies([]);
                     console.error(err);
                 });
         };

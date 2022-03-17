@@ -1,5 +1,5 @@
 import IconButton from '@mui/material/IconButton';
-import Snackbar from '@mui/material/Snackbar';
+import Snackbar, { SnackbarCloseReason } from '@mui/material/Snackbar';
 import { Close } from '@mui/icons-material';
 import React, { useCallback, useState } from 'react';
 import MuiAlert from '@mui/material/Alert';
@@ -60,7 +60,7 @@ const GlobalContextProvider = (props: any) => {
         });
     }, []);
 
-    const handleSnackbarClose = (event?: React.SyntheticEvent, reason?: string) => {
+    const handleSnackbarClose = (event: any, reason?: SnackbarCloseReason) => {
         if (reason === 'clickaway') {
             return;
         }

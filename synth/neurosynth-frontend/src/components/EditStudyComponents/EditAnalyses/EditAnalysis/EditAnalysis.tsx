@@ -4,7 +4,7 @@ import { IEditAnalysis } from '..';
 import EditAnalysisDetails from './EditAnalysisDetails/EditAnalysisDetails';
 import EditAnalysisPoints from './EditAnalysisPoints/EditAnalysisPoints';
 import EditAnalysisStyles from './EditAnalysis.styles';
-import { PointsApiResponse } from '../../../../utils/api';
+import { ConditionApiResponse, PointsApiResponse } from '../../../../utils/api';
 import EditAnalysisConditions from './EditAnalysisConditions/EditAnalysisConditions';
 import EditAnalysisImages from './EditAnalysisImages/EditAnalysisImages';
 
@@ -20,6 +20,56 @@ const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
     const handleAddPoint = (pointToAdd: { x: number; y: number; z: number }) => {};
     const handleRemovePoint = (pointId: string) => {};
     const handleUpdatePoint = (pointId: string, update: { x: number; y: number; z: number }) => {};
+
+    // TODO: Just for testing and development, delete this later
+    if (props?.analysis?.conditions) {
+        props.analysis.conditions = [
+            {
+                created_at: '2022-03-08T16:31:18.693178+00:00',
+                description: null,
+                id: 'dJeZjzTPM5ob',
+                name: 'delayed match to sample task',
+                user: null,
+            },
+            {
+                created_at: '2022-03-08T16:31:18.626189+00:00',
+                description: null,
+                id: '3HCqyCDwmhfn',
+                name: 'audio narrative',
+                user: null,
+            },
+            {
+                created_at: '2022-03-08T16:31:18.626189+00:00',
+                description: null,
+                id: '4yNzdWd4LjiX',
+                name: 'reading (overt)',
+                user: null,
+            },
+            {
+                created_at: '2022-03-08T16:31:14.653935+00:00',
+                description: null,
+                id: '37ftCZRDpb7H',
+                name: 'motor sequencing task',
+                user: null,
+            },
+            {
+                created_at: '2022-03-08T16:31:14.653935+00:00',
+                description: null,
+                id: '6uF4Njgj4xNa',
+                name: 'multi-object localizer task',
+                user: null,
+            },
+            {
+                created_at: '2022-03-08T16:31:13.197400+00:00',
+                description: null,
+                id: 'bG8X3dkNhdjM',
+                name: 'face monitor/discrimination',
+                user: null,
+            },
+        ];
+
+        props.analysis.weights = [0.5, 0.5, 1, 1, 1, 1];
+    }
 
     return (
         <Box>
@@ -62,7 +112,14 @@ const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
                                 points={props.analysis.points as PointsApiResponse[] | undefined}
                             />
                         )}
-                        {editTab === 2 && <EditAnalysisConditions />}
+                        {editTab === 2 && (
+                            <EditAnalysisConditions
+                                conditions={
+                                    props.analysis.conditions as ConditionApiResponse[] | undefined
+                                }
+                                weights={props.analysis.weights}
+                            />
+                        )}
                         {editTab === 3 && <EditAnalysisImages />}
                     </Box>
                 </>

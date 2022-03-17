@@ -3,6 +3,7 @@ import {
     Analysis,
     Annotation,
     AnnotationsApiFactory,
+    Condition,
     ConditionsApiFactory,
     Configuration,
     Dataset,
@@ -21,6 +22,7 @@ export type AnalysisApiResponse = Analysis & ReadOnly;
 export type PointsApiResponse = Point & ReadOnly;
 export type DatasetsApiResponse = Dataset & ReadOnly;
 export type AnnotationsApiResponse = Annotation & ReadOnly;
+export type ConditionApiResponse = Condition & ReadOnly;
 
 const APIDomain = process.env.REACT_APP_API_DOMAIN as string;
 const config: Configuration = new Configuration({

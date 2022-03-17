@@ -90,10 +90,10 @@ const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
     return (
         <Box>
             <TextField
-                sx={{
-                    ...EditAnalysisDetailsStyles.textfield,
-                    ...(updatedEnabled.name ? EditAnalysisDetailsStyles.unsavedChanges : {}),
-                }}
+                sx={[
+                    EditAnalysisDetailsStyles.textfield,
+                    updatedEnabled.name ? EditAnalysisDetailsStyles.unsavedChanges : {},
+                ]}
                 variant="outlined"
                 label="Edit Analysis Name"
                 value={props.name || ''}
@@ -117,7 +117,7 @@ const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Box>
                     <Button
-                        sx={{ ...EditAnalysisDetailsStyles.button, marginRight: '15px' }}
+                        sx={[EditAnalysisDetailsStyles.button, { marginRight: '15px' }]}
                         variant="contained"
                         color="success"
                         onClick={handleUpdateAnalysis}

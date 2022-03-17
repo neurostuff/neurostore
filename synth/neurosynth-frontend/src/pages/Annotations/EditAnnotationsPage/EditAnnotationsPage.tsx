@@ -193,7 +193,7 @@ const EditAnnotationsPage: React.FC = (props) => {
                 color="error"
                 variant="contained"
                 disabled={!isAuthenticated}
-                sx={{ ...EditStudyPageStyles.button, marginTop: '0.5rem' }}
+                sx={[EditStudyPageStyles.button, { marginTop: '0.5rem' }]}
             >
                 Delete this annotation
             </Button>
