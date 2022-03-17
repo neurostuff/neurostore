@@ -30,6 +30,13 @@ def ingest_neurovault(verbose=False, limit=20):
     # Store existing studies for quick lookup
     all_studies = {s.doi: s for s in Study.query.filter(Study.doi.isnot(None)).all()}
 
+    # create unknown condition if it does not exist
+    unknown_condition = Condition.query.filter_by(
+        name="UNKNOWN").first() or Condition(
+            name="UNKNOWN",
+            description="please update with better description"
+        )
+
     def add_collection(data):
         if data["DOI"] in all_studies:
             print("Skipping {} (already exists)...".format(data["DOI"]))
@@ -71,10 +78,12 @@ def ingest_neurovault(verbose=False, limit=20):
                             if cond.name == condition), Condition(name=condition)
                     )
                     conditions.add(cond)
+                else:
+                    cond = unknown_condition
 
-                    analysis.analysis_conditions.append(
-                        AnalysisConditions(weight=1, condition=cond)
-                    )
+                analysis.analysis_conditions.append(
+                    AnalysisConditions(weight=1, condition=cond)
+                )
 
                 analyses[aname] = analysis
             else:
@@ -147,6 +156,12 @@ def ingest_neurosynth(max_rows=None):
         metadata = metadata.iloc[:max_rows]
         annotations = annotations.iloc[:max_rows]
 
+    # create unkown condition if it does not exist
+    unknown_condition = Condition.query.filter_by(
+        name="UNKNOWN").first() or Condition(
+            name="UNKNOWN",
+            description="please update with better description"
+        )
     # create dataset object
     d = Dataset(
         name="neurosynth",
@@ -184,7 +199,13 @@ def ingest_neurosynth(max_rows=None):
             points = []
 
             for t_id, df in study_coord_data.groupby("table_id"):
-                a = Analysis(name=str(t_id), study=s)
+                a = Analysis(
+                    name="UNKNOWN",
+                    study=s,
+                    analysis_conditions=[
+                        AnalysisConditions(condition=unknown_condition, weight=1),
+                    ],
+                )
                 analyses.append(a)
                 for _, p in df.iterrows():
                     point = Point(
@@ -261,6 +282,13 @@ def ingest_neuroquery(max_rows=None):
     if max_rows is not None:
         metadata = metadata.iloc[:max_rows]
 
+    # create unkown condition if it does not exist
+    unknown_condition = Condition.query.filter_by(
+        name="UNKNOWN").first() or Condition(
+            name="UNKNOWN",
+            description="please update with better description"
+        )
+
     for id_, metadata_row in metadata.iterrows():
         study_coord_data = coord_data.loc[[id_]]
         s = Study(
@@ -274,7 +302,13 @@ def ingest_neuroquery(max_rows=None):
         points = []
 
         for t_id, df in study_coord_data.groupby("table_id"):
-            a = Analysis(name=str(t_id), study=s)
+            a = Analysis(
+                name="UNKNOWN",
+                study=s,
+                analysis_conditions=[
+                        AnalysisConditions(condition=unknown_condition, weight=1),
+                    ],
+                )
             analyses.append(a)
             for _, p in df.iterrows():
                 point = Point(
