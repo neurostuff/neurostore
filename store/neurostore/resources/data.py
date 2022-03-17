@@ -1,10 +1,11 @@
 import re
 
 import connexion
-from flask import abort, request, jsonify
+from flask import abort, request  # jsonify
 from flask.views import MethodView
 
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
+# from flask import make_response
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import subqueryload
@@ -31,6 +32,7 @@ from ..schemas import (  # noqa E401
     DatasetStudySchema,
 )
 
+from ..schemas.data import StudysetSnapshot
 
 __all__ = [
     "DatasetView",
@@ -236,10 +238,14 @@ class ObjectView(BaseView):
             q = q.options(nested_load(self))
 
         record = q.filter_by(id=id).first_or_404()
-        return self.__class__._schema(context={
-            'nested': nested,
-            'export': export,
-        }).dump(record)
+        if self._model is Dataset and nested:
+            snapshot = StudysetSnapshot()
+            return snapshot.dump(record)
+        else:
+            return self.__class__._schema(context={
+                'nested': nested,
+                'export': export,
+            }).dump(record)
 
     def put(self, id):
         request_data = self.insert_data(id, request.json)
@@ -398,14 +404,23 @@ class ListView(BaseView):
         if nested:
             q = q.options(nested_load(self))
         records = q.paginate(args["page"], args["page_size"], False).items
-        content = self.__class__._schema(
-            only=self._only, many=True, context={'nested': nested}
-        ).dump(records)
-        response = {
-            'metadata': {'total_count': count, 'unique_count': unique_count},
-            'results': content,
-        }
-        return jsonify(response), 200
+        if m is Dataset and nested:
+            snapshot = StudysetSnapshot()
+            content = [snapshot.dump(r) for r in records]
+            response = {
+                'metadata': {'total_count': count, 'unique_count': unique_count},
+                'results': content,
+            }
+            return response, 200
+        else:
+            content = self.__class__._schema(
+                only=self._only, many=True, context={'nested': nested}
+            ).dump(records)
+            response = {
+                'metadata': {'total_count': count, 'unique_count': unique_count},
+                'results': content,
+            }
+            return response, 200
 
     def post(self):
         # TODO: check to make sure current user hasn't already created a

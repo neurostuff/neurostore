@@ -7,6 +7,7 @@ from marshmallow import (
     pre_load,
 )
 from flask import request
+import orjson as json
 from marshmallow.decorators import post_load
 from pyld import jsonld
 import pandas as pd
@@ -148,7 +149,7 @@ class PointSchema(BaseDataSchema):
 class AnalysisConditionSchema(BaseDataSchema):
     weight = fields.Float()
     condition = fields.Nested(ConditionSchema)
-    analysis = fields.Function(lambda analysis: analysis.id, dump_only=True, db_only=True)
+    analysis_id = fields.String(data_key="analysis")
 
 
 class DatasetStudySchema(BaseDataSchema):
@@ -163,9 +164,8 @@ class AnalysisSchema(BaseDataSchema):
     # serialization
     study = StringOrNested("StudySchema", use_nested=False)
     conditions = StringOrNested(ConditionSchema, many=True, dump_only=True)
-    weights = fields.List(fields.Float(), dump_only=True)
 
-    analysis_conditions = fields.Nested(AnalysisConditionSchema, many=True, load_only=True)
+    analysis_conditions = fields.Nested(AnalysisConditionSchema, many=True)
     images = StringOrNested(ImageSchema, many=True)
     points = StringOrNested(PointSchema, many=True)
     weights = fields.List(fields.Float())
@@ -175,7 +175,7 @@ class AnalysisSchema(BaseDataSchema):
         allow_none = ("name", "description")
 
     @pre_load
-    def process_values(self, data, **kwargs):
+    def load_values(self, data, **kwargs):
         # conditions/weights need special processing
         if data.get("conditions") is not None and data.get("weights") is not None:
             assert len(data.get("conditions")) == len(data.get("weights"))
@@ -188,6 +188,14 @@ class AnalysisSchema(BaseDataSchema):
 
         data.pop("conditions", None)
         data.pop("weights", None)
+        return data
+
+    @post_dump
+    def dump_values(self, data, **kwargs):
+        if data.get("analysis_conditions") is not None:
+            data['conditions'] = [ac['condition'] for ac in data['analysis_conditions']]
+        data.pop("analysis_conditions", None)
+
         return data
 
 
@@ -346,3 +354,95 @@ class JSONLDImageSchema(ImageSchema):
 class JSONLSAnalysisSchema(AnalysisSchema):
     # serialization
     study = fields.Function(lambda analysis: analysis.study.IRI, dump_only=True)
+
+
+class StudysetSnapshot(object):
+    def __init__(self):
+        pass
+
+    def dump(self, studyset):
+        return {
+            'id': studyset.id,
+            'name': studyset.name,
+            'user': studyset.user,
+            'description': studyset.description,
+            'publication': studyset.publication,
+            'doi': studyset.doi,
+            'pmid': studyset.pmid,
+            'created_at': studyset.created_at,
+            'updated_at': studyset.updated_at,
+            'studies': [
+                {
+                    'id': s.id,
+                    'created_at': s.created_at,
+                    'updated_at': s.updated_at,
+                    'name': s.name,
+                    'description': s.description,
+                    'publication': s.publication,
+                    'doi': s.doi,
+                    'pmid': s.pmid,
+                    'authors': s.authors,
+                    'year': s.year,
+                    'metadata': s.metadata_,
+                    'source': s.source,
+                    'source_id': s.source_id,
+                    'source_updated_at': s.source_updated_at,
+                    'analyses': [
+                        {
+                            'id': a.id,
+                            'created_at': a.created_at,
+                            'updated_at': a.updated_at,
+                            "study": s.id,
+                            "name": a.name,
+                            "description": a.description,
+                            "conditions": [
+                                ac.condition_id for ac in a.analysis_conditions
+                            ],
+                            "weights": list(a.weights),
+                            "points": [
+                                {
+                                    'id': p.id,
+                                    'created_at': p.created_at,
+                                    'updated_at': p.updated_at,
+                                    "coordinates": p.coordinates,
+                                    "analysis": a.id,
+                                    "kind": p.kind,
+                                    "space": p.space,
+                                    "image": p.image,
+                                    "label_id": p.label_id,
+                                    "values": [
+                                        {
+                                            "kind": v.kind,
+                                            "value": v.value,
+                                        } for v in p.values
+                                    ],
+                                } for p in a.points
+                            ],
+                            "images": [
+                                {
+                                    "id": i.id,
+                                    'created_at': i.created_at,
+                                    'updated_at': i.updated_at,
+                                    "analysis": a.id,
+                                    "analysis_name": a.name,
+                                    "metadata": i.metadata_,
+                                    "url": i.url,
+                                    "space": i.space,
+                                    "value_type": i.value_type,
+                                    "filename": i.filename,
+                                    "add_date": i.add_date,
+                                } for i in a.images
+                            ],
+                        } for a in s.analyses
+                    ]
+                } for s in studyset.studies
+            ]
+        }
+
+    def serialize(self, studyset_dict):
+        return json.dumps(studyset_dict)
+
+    def dump_and_serialize(self, studyset):
+        return self.serialize(
+            self.dump(studyset)
+        )
