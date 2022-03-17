@@ -123,7 +123,9 @@ class StudysetStudy(db.Model):
     __tablename__ = "studyset_studies"
     study_id = db.Column(db.ForeignKey('studies.id', ondelete='CASCADE'), primary_key=True)
     studyset_id = db.Column(db.ForeignKey('studysets.id', ondelete='CASCADE'), primary_key=True)
-    study = relationship("Study", backref=backref("studyset_studies", cascade="all, delete-orphan"))
+    study = relationship(
+        "Study", backref=backref("studyset_studies", cascade="all, delete-orphan")
+    )
     studyset = relationship("Studyset", backref=backref("studyset_studies"))
     annotation_analyses = relationship(
         "AnnotationAnalysis",
