@@ -366,7 +366,7 @@ class ListView(BaseView):
 
         # check if results should be nested
         nested = True if args.get("nested") else False
-        if not nested or m is not Annotation:
+        if m is not Annotation and not nested:
             q = q.options(lazyload("*"))
         records = q.paginate(args["page"], args["page_size"], False).items
         if m is Dataset and nested:
