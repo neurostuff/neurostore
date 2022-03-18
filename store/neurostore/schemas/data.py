@@ -105,11 +105,7 @@ class ImageSchema(BaseDataSchema):
     # serialization
     analysis = StringOrNested("AnalysisSchema", use_nested=False)
     analysis_name = fields.String(dump_only=True, db_only=True)
-    metadata = fields.Dict(attribute="metadata_", dump_only=True)
     add_date = fields.DateTime(dump_only=True, db_only=True)
-
-    # deserialization
-    metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
 
     class Meta:
         additional = ("url", "filename", "space", "value_type")
@@ -422,7 +418,6 @@ class StudysetSnapshot(object):
                                     'updated_at': i.updated_at,
                                     "analysis": a.id,
                                     "analysis_name": a.name,
-                                    "metadata": i.metadata_,
                                     "url": i.url,
                                     "space": i.space,
                                     "value_type": i.value_type,
