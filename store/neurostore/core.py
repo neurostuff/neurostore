@@ -1,10 +1,10 @@
 import os
-import orjson
 from flask_cors import CORS
 
 from authlib.integrations.flask_client import OAuth
 import connexion
 
+from .or_json import ORJSONDecoder, ORJSONEncoder
 from .resolver import MethodListViewResolver
 from .database import init_db
 
@@ -18,8 +18,7 @@ oauth = OAuth(app)
 
 db = init_db(app)
 
-# setup authentication
-# jwt = JWTManager(app)
+
 app.secret_key = app.config["JWT_SECRET_KEY"]
 
 options = {"swagger_ui": True}
@@ -47,27 +46,6 @@ auth0 = oauth.register(
         'scope': 'openid profile email',
     },
 )
-
-
-class ORJSONDecoder:
-
-    def __init__(self, **kwargs):
-        # eventually take into consideration when deserializing
-        self.options = kwargs
-
-    def decode(self, obj):
-        return orjson.loads(obj)
-
-
-class ORJSONEncoder:
-
-    def __init__(self, **kwargs):
-        # eventually take into consideration when serializing
-        self.options = kwargs
-
-    def encode(self, obj):
-        # decode back to str, as orjson returns bytes
-        return orjson.dumps(obj).decode('utf-8')
 
 
 app.json_encoder = ORJSONEncoder
