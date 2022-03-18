@@ -104,9 +104,7 @@ class ImageSchema(BaseDataSchema):
 
     # serialization
     analysis = StringOrNested("AnalysisSchema", use_nested=False)
-    analysis_name = fields.Function(
-        lambda image: image.analysis.name, dump_only=True, db_only=True
-    )
+    analysis_name = fields.String(dump_only=True, db_only=True)
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     add_date = fields.DateTime(dump_only=True, db_only=True)
 
@@ -216,7 +214,6 @@ class StudySchema(BaseDataSchema):
 
 class DatasetSchema(BaseDataSchema):
     # serialize
-    user = fields.Function(lambda user: user.user_id, dump_only=True, db_only=True)
     studies = StringOrNested(StudySchema, many=True)  # This needs to be nested, but not cloned
 
     class Meta:
