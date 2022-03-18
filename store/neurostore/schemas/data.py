@@ -357,7 +357,7 @@ class StudysetSnapshot(object):
         return {
             'id': studyset.id,
             'name': studyset.name,
-            'user': studyset.user,
+            'user': studyset.user_id,
             'description': studyset.description,
             'publication': studyset.publication,
             'doi': studyset.doi,
@@ -369,6 +369,7 @@ class StudysetSnapshot(object):
                     'id': s.id,
                     'created_at': s.created_at,
                     'updated_at': s.updated_at,
+                    'user': s.user_id,
                     'name': s.name,
                     'description': s.description,
                     'publication': s.publication,
@@ -385,11 +386,17 @@ class StudysetSnapshot(object):
                             'id': a.id,
                             'created_at': a.created_at,
                             'updated_at': a.updated_at,
+                            'user': a.user_id,
                             "study": s.id,
                             "name": a.name,
                             "description": a.description,
                             "conditions": [
-                                ac.condition_id for ac in a.analysis_conditions
+                                {
+                                    "id": ac.condition_id,
+                                    "user": ac.condition.user_id,
+                                    "name": ac.condition.name,
+                                    "description": ac.condition.description,
+                                } for ac in a.analysis_conditions
                             ],
                             "weights": list(a.weights),
                             "points": [
@@ -397,6 +404,7 @@ class StudysetSnapshot(object):
                                     'id': p.id,
                                     'created_at': p.created_at,
                                     'updated_at': p.updated_at,
+                                    'user': p.user_id,
                                     "coordinates": p.coordinates,
                                     "analysis": a.id,
                                     "kind": p.kind,
@@ -416,6 +424,7 @@ class StudysetSnapshot(object):
                                     "id": i.id,
                                     'created_at': i.created_at,
                                     'updated_at': i.updated_at,
+                                    'user': i.user_id,
                                     "analysis": a.id,
                                     "analysis_name": a.name,
                                     "url": i.url,
