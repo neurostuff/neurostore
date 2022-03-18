@@ -49,14 +49,20 @@ class Dataset(BaseMixin, db.Model):
     pmid = db.Column(db.String)
     public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
-    user = relationship("User", backref=backref("datasets"))
+    user = relationship("User", backref=backref("datasets"), lazy='select')
     studies = relationship(
         "Study",
         cascade="all",
         secondary="dataset_studies",
         backref=backref("datasets"),
+        lazy='subquery',
     )
-    annotations = relationship("Annotation", cascade="all, delete", backref="dataset")
+    annotations = relationship(
+        "Annotation",
+        cascade="all, delete",
+        backref="dataset",
+        lazy='select',
+        )
 
 
 class Annotation(BaseMixin, db.Model):
@@ -75,7 +81,8 @@ class Annotation(BaseMixin, db.Model):
     annotation_analyses = relationship(
         'AnnotationAnalysis',
         backref=backref("annotation"),
-        cascade='all, delete-orphan'
+        cascade='all, delete-orphan',
+        lazy='subquery',
     )
 
 
@@ -111,11 +118,12 @@ class Study(BaseMixin, db.Model):
     source_id = db.Column(db.String)
     source_updated_at = db.Column(db.DateTime(timezone=True))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
-    user = relationship("User", backref=backref("studies"))
+    user = relationship("User", backref=backref("studies"), lazy='select')
     analyses = relationship(
         "Analysis",
         backref=backref("study"),
         cascade="all, delete, delete-orphan",
+        lazy='subquery',
     )
 
 
@@ -123,12 +131,18 @@ class DatasetStudy(db.Model):
     __tablename__ = "dataset_studies"
     study_id = db.Column(db.ForeignKey('studies.id', ondelete='CASCADE'), primary_key=True)
     dataset_id = db.Column(db.ForeignKey('datasets.id', ondelete='CASCADE'), primary_key=True)
-    study = relationship("Study", backref=backref("dataset_studies"), viewonly=True)
+    study = relationship(
+        "Study",
+        backref=backref("dataset_studies"),
+        viewonly=True,
+        lazy='subquery'
+    )
     dataset = relationship("Dataset", backref=backref("dataset_studies"), viewonly=True)
     annotation_analyses = relationship(
         "AnnotationAnalysis",
         cascade='all, delete-orphan',
-        backref=backref("dataset_study")
+        backref=backref("dataset_study", lazy='subquery'),
+        lazy='select',
     )
 
 
@@ -141,21 +155,29 @@ class Analysis(BaseMixin, db.Model):
     points = relationship(
         "Point",
         backref=backref("analysis"),
-        cascade="all, delete, delete-orphan",
+        cascade="all, delete-orphan",
+        lazy='subquery',
     )
     images = relationship(
         "Image",
         backref=backref("analysis"),
-        cascade="all, delete, delete-orphan",
+        cascade="all, delete-orphan",
+        lazy='subquery',
         )
     weights = association_proxy("analysis_conditions", "weight")
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
-    user = relationship("User", backref=backref("analyses"))
+    user = relationship("User", backref=backref("analyses"), lazy='select')
     analysis_conditions = relationship(
-        "AnalysisConditions", backref=backref("analysis"), cascade="all, delete, delete-orphan"
+        "AnalysisConditions",
+        backref=backref("analysis"),
+        cascade="all, delete-orphan",
+        lazy='subquery',
     )
     annotation_analyses = relationship(
-        "AnnotationAnalysis", backref=backref("analysis"), cascade="all, delete, delete-orphan"
+        "AnnotationAnalysis",
+        backref=backref("analysis", lazy='subquery'),
+        cascade="all, delete-orphan",
+        lazy='select',
     )
 
 
@@ -167,7 +189,10 @@ class Condition(BaseMixin, db.Model):
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("conditions"))
     analysis_conditions = relationship(
-        "AnalysisConditions", backref=backref("condition"), cascade="all, delete"
+        "AnalysisConditions",
+        backref=backref("condition", lazy='subquery'),
+        cascade="all, delete",
+        lazy='select',
     )
 
 
@@ -231,7 +256,7 @@ class Point(BaseMixin, db.Model):
         "Entity", secondary=PointEntityMap, backref=backref("points")
     )
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
-    user = relationship("User", backref=backref("points"))
+    user = relationship("User", backref=backref("points"), lazy='select')
 
 
 class Image(BaseMixin, db.Model):
@@ -250,7 +275,7 @@ class Image(BaseMixin, db.Model):
         "Entity", secondary=ImageEntityMap, backref=backref("images")
     )
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
-    user = relationship("User", backref=backref("images"))
+    user = relationship("User", backref=backref("images"), lazy='select')
 
 
 class PointValue(BaseMixin, db.Model):
@@ -260,7 +285,7 @@ class PointValue(BaseMixin, db.Model):
     kind = db.Column(db.String)
     value = db.Column(db.String)
     dtype = db.Column(db.String, default="str")
-    point = relationship("Point", backref=backref("values"))
+    point = relationship("Point", backref=backref("values", lazy='subquery'))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("point_values"))
 
