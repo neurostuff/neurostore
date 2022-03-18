@@ -279,6 +279,11 @@ class ListView(BaseView):
         # Search
         s = args["search"]
 
+        # check if results should be nested
+        nested = True if args.get("nested") else False
+        if m is not Annotation and not nested:
+            q = q.options(lazyload("*"))
+
         # query items that are owned by a user_id
         if args.get("user_id"):
             q = q.filter(m.user_id == args.get("user_id"))
@@ -364,10 +369,6 @@ class ListView(BaseView):
             else:
                 unique_count = count
 
-        # check if results should be nested
-        nested = True if args.get("nested") else False
-        if m is not Annotation and not nested:
-            q = q.options(lazyload("*"))
         records = q.paginate(args["page"], args["page_size"], False).items
         if m is Dataset and nested:
             snapshot = StudysetSnapshot()
