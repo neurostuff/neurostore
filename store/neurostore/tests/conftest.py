@@ -221,7 +221,7 @@ def add_users(app, db):
 
 @pytest.fixture(scope="function")
 def ingest_cognitive_atlas(session):
-    return ingest.ingest_cognitive_atlas(20)
+    return ingest.ingest_cognitive_atlas(20, resource=('condition',))
 
 
 @pytest.fixture(scope="function")

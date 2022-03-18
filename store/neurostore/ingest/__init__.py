@@ -4,6 +4,7 @@ Ingest and sync data from various sources (Neurosynth, NeuroVault, etc.).
 import os.path as op
 import re
 from pathlib import Path
+import base64
 
 import numpy as np
 import pandas as pd
@@ -338,20 +339,41 @@ def ingest_neuroquery(max_rows=None):
     db.session.commit()
 
 
-def ingest_cognitive_atlas(max_terms=None, resource="task"):
-    url = f"https://www.cognitiveatlas.org/api/v-alpha/{resource}?format=json"
-    cog_atlas_data = requests.get(url).json()
-    if max_terms:
-        cog_atlas_data = cog_atlas_data[:max_terms]
+def ingest_cognitive_atlas(max_terms=None, resource=("task", "condition")):
     conditions = []
     names = [c.name for c in Condition.query.all()]
-    for task in cog_atlas_data:
-        if task['name'] not in names:
-            conditions.append(
-                Condition(
-                    name=task['name'],
-                    description=task['definition_text'],
+    if "task" in resource:
+        url = f"https://www.cognitiveatlas.org/api/v-alpha/{resource}?format=json"
+        task_data = requests.get(url).json()
+        if max_terms:
+            task_data = task_data[:max_terms]
+        for task in task_data:
+            if task['name'] not in names:
+                conditions.append(
+                    Condition(
+                        name=task['name'],
+                        description=task['definition_text'],
+                    )
                 )
-            )
+
+    if "condition" in resource:
+        url = "https://api.github.com/repos/rwblair/cognitive_atlas_json/git/trees/a4803fa0586f988711d03b954751981944ae4a74" # noqa E501
+        condition_data = requests.get(url).json()
+
+        if max_terms:
+            condition_data = condition_data[:max_terms]
+
+        for condition in condition_data['tree']:
+            cond_base64 = requests.get(condition['url']).json()['content'].replace("\n", '')
+            cond = base64.decode(cond_base64)
+            if cond['properties']['name'] not in names:
+                description = cond['properties'].get("condition_description", None)
+                conditions.append(
+                    Condition(
+                        name=cond['properties']['name'],
+                        description=description,
+                    )
+                )
+
     db.session.add_all(conditions)
     db.session.commit()
