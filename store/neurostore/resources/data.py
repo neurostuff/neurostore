@@ -8,8 +8,7 @@ from flask.views import MethodView
 # from flask import make_response
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import subqueryload
-from sqlalchemy.orm.strategy_options import _UnboundLoad
+from sqlalchemy.orm import lazyload
 from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
@@ -75,42 +74,6 @@ def view_maker(cls):
     ClassView.__name__ = cls.__name__
 
     return ClassView
-
-
-def nested_load(view, options=None):
-    """
-    SQL: Change lazy loading to eager loading when accessing all
-    nested attributes.
-    """
-    nested_keys = list(view._nested.keys())
-    if len(nested_keys) == 1:
-        if options:
-            options = options.subqueryload(getattr(view._model, nested_keys[0]))
-        else:
-            options = subqueryload(getattr(view._model, nested_keys[0]))
-        nested_view = globals()[view._nested[nested_keys[0]]]
-        if nested_view._nested:
-            options = nested_load(nested_view, options)
-    elif len(nested_keys) > 1:
-        nested_loads = []
-        for k in nested_keys:
-            nested_view = globals()[view._nested[k]]
-            if nested_view._nested:
-                nested_loads.append(
-                    nested_load(
-                        nested_view, subqueryload(
-                            getattr(view._model, k)
-                        )
-                    )
-                )
-            else:
-                nested_loads.append(subqueryload(getattr(view._model, k)))
-
-        if options:
-            options = options.options(*nested_loads)
-        else:
-            options = _UnboundLoad().options(*nested_loads)
-    return options
 
 
 class BaseView(MethodView):
@@ -192,6 +155,8 @@ class BaseView(MethodView):
                 else:
                     query_args = {'id': v['id']}
                 v = LnCls._model.query.filter_by(**query_args).first()
+                if v is None:
+                    abort(400)
 
             if k not in cls._nested and k not in ["id", "user"]:
                 try:
@@ -234,8 +199,8 @@ class ObjectView(BaseView):
         nested = request.args.get("nested")
         export = request.args.get("export", False)
         q = self._model.query
-        if nested:
-            q = q.options(nested_load(self))
+        if not nested or self._model is not Annotation:
+            q = q.options(lazyload("*"))
 
         record = q.filter_by(id=id).first_or_404()
         if self._model is Dataset and nested:
@@ -401,8 +366,8 @@ class ListView(BaseView):
 
         # check if results should be nested
         nested = True if args.get("nested") else False
-        if nested:
-            q = q.options(nested_load(self))
+        if not nested or m is not Annotation:
+            q = q.options(lazyload("*"))
         records = q.paginate(args["page"], args["page_size"], False).items
         if m is Dataset and nested:
             snapshot = StudysetSnapshot()
