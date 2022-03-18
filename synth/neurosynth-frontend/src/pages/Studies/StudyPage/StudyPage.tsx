@@ -48,7 +48,7 @@ const StudyPage: React.FC = (props) => {
     const handleCloneStudy = async () => {
         try {
             const token = await getAccessTokenSilently();
-            context?.handleToken(token);
+            API.UpdateServicesWithToken(token);
         } catch (exception) {
             context.showSnackbar('There was an error', SnackbarType.ERROR);
             console.error(exception);

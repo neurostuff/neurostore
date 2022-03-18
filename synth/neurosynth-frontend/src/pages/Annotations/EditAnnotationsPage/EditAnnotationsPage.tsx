@@ -18,7 +18,7 @@ import { AnnotationNote } from '../../../gen/api';
 const EditAnnotationsPage: React.FC = (props) => {
     const history = useHistory();
     const { isAuthenticated, getAccessTokenSilently } = useAuth0();
-    const { handleToken, showSnackbar } = useContext(GlobalContext);
+    const { showSnackbar } = useContext(GlobalContext);
 
     const [confirmationIsOpen, setConfirmationIsOpen] = useState(false);
     const [annotation, setAnnotation] = useState<AnnotationsApiResponse>();
@@ -43,7 +43,7 @@ const EditAnnotationsPage: React.FC = (props) => {
     ) => {
         try {
             const token = await getAccessTokenSilently();
-            handleToken(token);
+            API.UpdateServicesWithToken(token);
         } catch (exception) {
             showSnackbar('there was an error', SnackbarType.ERROR);
             console.error(exception);
@@ -90,7 +90,7 @@ const EditAnnotationsPage: React.FC = (props) => {
         if (confirm && annotation && annotation.id) {
             try {
                 const token = await getAccessTokenSilently();
-                handleToken(token);
+                API.UpdateServicesWithToken(token);
             } catch (exception) {
                 showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(exception);
@@ -114,7 +114,7 @@ const EditAnnotationsPage: React.FC = (props) => {
         ) => {
             try {
                 const token = await getAccessTokenSilently();
-                handleToken(token);
+                API.UpdateServicesWithToken(token);
             } catch (exception) {
                 showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(exception);
@@ -136,7 +136,7 @@ const EditAnnotationsPage: React.FC = (props) => {
                     console.error(err);
                 });
         },
-        [getAccessTokenSilently, handleToken, params.annotationId, showSnackbar]
+        [getAccessTokenSilently, params.annotationId, showSnackbar]
     );
 
     return (

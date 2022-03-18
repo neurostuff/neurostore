@@ -27,7 +27,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     const { isAuthenticated, user, getAccessTokenSilently } = useAuth0();
     const [datasets, setDatasets] = useState<DatasetsApiResponse[]>();
     const history = useHistory();
-    const { handleToken, showSnackbar } = useContext(GlobalContext);
+    const { showSnackbar } = useContext(GlobalContext);
     const { current } = useIsMounted();
 
     const handleSelectTableRow = (row: Study & ReadOnly) => {
@@ -71,7 +71,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     const handleDatasetCreated = async (name: string, description: string) => {
         try {
             const token = await getAccessTokenSilently();
-            handleToken(token);
+            API.UpdateServicesWithToken(token);
         } catch (exception) {
             showSnackbar('there was an error', SnackbarType.ERROR);
             console.error(exception);
@@ -104,7 +104,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     ) => {
         try {
             const token = await getAccessTokenSilently();
-            handleToken(token);
+            API.UpdateServicesWithToken(token);
         } catch (exception) {
             showSnackbar('there was an error', SnackbarType.ERROR);
             console.error(exception);

@@ -4,7 +4,7 @@ import { useHistory, useParams } from 'react-router-dom';
 import { EditAnalyses, EditStudyDetails, NeurosynthLoader } from '../../../components';
 import EditStudyMetadata from '../../../components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import useIsMounted from '../../../hooks/useIsMounted';
-import API, { AnalysisApiResponse } from '../../../utils/api';
+import API, { AnalysisApiResponse, ConditionApiResponse } from '../../../utils/api';
 import EditStudyPageStyles from './EditStudyPage.styles';
 
 interface IStudyEdit {
@@ -66,12 +66,10 @@ const EditStudyPage = () => {
         });
     }, []);
 
-    // idToUpdate: string, update: { key: string, value: string }
     const handleEditAnalysisDetails = useCallback(
         (idToUpdate: string | undefined, update: { [key: string]: any }) => {
             setStudy((prevState) => {
-                if (!prevState) return undefined;
-                else if (prevState.analyses === undefined) return { ...prevState };
+                if (!prevState || !prevState.analyses) return prevState;
 
                 // set new ref to array and object for react to detect
                 const newAnalyses = [...prevState.analyses];
@@ -82,6 +80,31 @@ const EditStudyPage = () => {
                 newAnalyses[analysisIndexToUpdate] = {
                     ...newAnalyses[analysisIndexToUpdate],
                     ...update,
+                };
+
+                return {
+                    ...prevState,
+                    analyses: newAnalyses,
+                };
+            });
+        },
+        []
+    );
+
+    const handleEditAnalysisConditions = useCallback(
+        (idToUpdate: string, newConditions: ConditionApiResponse[], newWeights: number[]) => {
+            setStudy((prevState) => {
+                if (!prevState || !prevState.analyses) return prevState;
+
+                const newAnalyses = [...prevState.analyses];
+                const analysisIndexToUpdate = newAnalyses.findIndex(
+                    (analysis) => analysis.id === idToUpdate
+                );
+                if (analysisIndexToUpdate < 0) return { ...prevState };
+                newAnalyses[analysisIndexToUpdate] = {
+                    ...newAnalyses[analysisIndexToUpdate],
+                    conditions: newConditions,
+                    weights: newWeights,
                 };
 
                 return {
@@ -148,6 +171,7 @@ const EditStudyPage = () => {
                             onEditAnalysisDetails={handleEditAnalysisDetails}
                             onEditAnalysisImages={handleEditAnalysisImages}
                             onEditAnalysisPoints={handleEditAnalysisPoints}
+                            onEditAnalysisConditions={handleEditAnalysisConditions}
                             analyses={study.analyses}
                         />
                     </Box>

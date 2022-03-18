@@ -3,10 +3,8 @@ import Snackbar, { SnackbarCloseReason } from '@mui/material/Snackbar';
 import { Close } from '@mui/icons-material';
 import React, { useCallback, useState } from 'react';
 import MuiAlert from '@mui/material/Alert';
-import API from '../utils/api';
 
 export interface IGlobalContext {
-    handleToken: (token: string) => void;
     showSnackbar: (message: string, snackbarType: SnackbarType) => void;
 }
 
@@ -24,27 +22,15 @@ interface ISnackbar {
 }
 
 const GlobalContext = React.createContext<IGlobalContext>({
-    handleToken: (token: string) => {},
     showSnackbar: (message: string) => {},
 });
 
 const GlobalContextProvider = (props: any) => {
-    const [token, setToken] = useState('');
     const [snackbarState, setSnackbarState] = useState<ISnackbar>({
         openSnackbar: false,
         message: '',
         snackbarType: SnackbarType.INFO,
     });
-
-    const handleTokenFunc = useCallback(
-        (givenToken: string) => {
-            if (givenToken !== token) {
-                API.UpdateServicesWithToken(givenToken);
-                setToken(givenToken);
-            }
-        },
-        [token]
-    );
 
     const handleShowSnackbar = useCallback((message: string, snackbarType: SnackbarType) => {
         // reset snackbar
@@ -75,7 +61,6 @@ const GlobalContextProvider = (props: any) => {
     // store in state in order to prevent rerenders when snackbar is called
     const [globalContextFuncs, _] = useState({
         showSnackbar: handleShowSnackbar,
-        handleToken: handleTokenFunc,
     });
 
     const action = (

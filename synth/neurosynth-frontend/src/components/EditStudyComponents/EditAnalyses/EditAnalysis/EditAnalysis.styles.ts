@@ -11,6 +11,10 @@ const EditAnalysisStyles: Style = {
             color: 'secondary.main',
         },
     },
+    analysisButton: {
+        padding: '8px',
+        width: '200px',
+    },
 };
 
 export default EditAnalysisStyles;

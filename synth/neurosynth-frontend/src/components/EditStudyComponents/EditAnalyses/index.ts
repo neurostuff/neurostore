@@ -1,7 +1,11 @@
-import { AnalysisApiResponse, PointsApiResponse } from '../../../utils/api';
+import { AnalysisApiResponse, ConditionApiResponse, PointsApiResponse } from '../../../utils/api';
 
 export interface IEditAnalysisDetailsFn {
     (idToUpdate: string, update: { [key: string]: any }): void;
+}
+
+export interface IEditAnalysisConditionsFn {
+    (idtoUpdate: string, newConditions: ConditionApiResponse[], newWeights: number[]): void;
 }
 
 export interface IDeleteAnalysisFn {
@@ -13,13 +17,15 @@ export interface IEditAnalyses {
     onEditAnalysisPoints: (points: PointsApiResponse[]) => void;
     onEditAnalysisImages: () => void;
     onEditAnalysisDetails: IEditAnalysisDetailsFn;
+    onEditAnalysisConditions: IEditAnalysisConditionsFn;
 }
 
 export interface IEditAnalysis {
     analysis: AnalysisApiResponse | undefined;
+    onEditAnalysisPoints: (points: PointsApiResponse[]) => void;
     onDeleteAnalysis: IDeleteAnalysisFn;
     onEditAnalysisDetails: IEditAnalysisDetailsFn;
-    onEditAnalysisPoints: (points: PointsApiResponse[]) => void;
+    onEditAnalysisConditions: IEditAnalysisConditionsFn;
 }
 
 export interface IEditAnalysisDetails {
@@ -35,4 +41,11 @@ export interface IEditAnalysisPoints {
     onRemovePoint: (pointId: string) => void;
     onUpdatePoint: (pointId: string, update: { x: number; y: number; z: number }) => void;
     points: PointsApiResponse[] | undefined;
+}
+
+export interface IEditAnalysisConditions {
+    analysisId: string;
+    conditions: ConditionApiResponse[] | undefined;
+    weights: number[] | undefined;
+    onConditionWeightChange: IEditAnalysisConditionsFn;
 }

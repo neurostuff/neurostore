@@ -1,17 +1,18 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Button, TextField } from '@mui/material';
 import { AxiosError } from 'axios';
-import React, { ChangeEvent, useContext, useEffect, useState } from 'react';
+import React, { ChangeEvent, useContext, useState } from 'react';
 import { IEditAnalysisDetails } from '../..';
 import { GlobalContext, SnackbarType } from '../../../../../contexts/GlobalContext';
 import useIsMounted from '../../../../../hooks/useIsMounted';
 import API from '../../../../../utils/api';
 import EditAnalysisDetailsStyles from './EditAnalysisDetails.styles';
+import EditAnalysisStyles from '../EditAnalysis.styles';
 
 const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
     const [originalDetails, setOriginalDetails] = useState({
-        name: '',
-        description: '',
+        name: props.name,
+        description: props.description,
     });
     const [updatedEnabled, setUpdateEnabled] = useState({
         name: false,
@@ -20,15 +21,6 @@ const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
     const context = useContext(GlobalContext);
     const isMountedRef = useIsMounted();
     const { getAccessTokenSilently } = useAuth0();
-
-    // as this saves the original details, we only want it to run once in the beginning to save the data in local memory
-    useEffect(() => {
-        setOriginalDetails({
-            name: props.name,
-            description: props.description,
-        });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
     const textFieldInputProps = {
         style: {
@@ -49,7 +41,7 @@ const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
     const handleUpdateAnalysis = async (event: React.MouseEvent) => {
         try {
             const token = await getAccessTokenSilently();
-            context.handleToken(token);
+            API.UpdateServicesWithToken(token);
         } catch (exception) {
             context.showSnackbar('there was an error', SnackbarType.ERROR);
             console.error(exception);
@@ -77,14 +69,6 @@ const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
                 context.showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(err.message);
             });
-    };
-
-    const handleRevertChanges = (event: React.MouseEvent) => {
-        setUpdateEnabled({
-            name: false,
-            description: false,
-        });
-        props.onEditAnalysisDetails({ ...originalDetails });
     };
 
     return (
@@ -117,7 +101,7 @@ const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Box>
                     <Button
-                        sx={[EditAnalysisDetailsStyles.button, { marginRight: '15px' }]}
+                        sx={[EditAnalysisStyles.analysisButton, { marginRight: '15px' }]}
                         variant="contained"
                         color="success"
                         onClick={handleUpdateAnalysis}
@@ -125,18 +109,9 @@ const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
                     >
                         Update
                     </Button>
-                    <Button
-                        sx={EditAnalysisDetailsStyles.button}
-                        color="secondary"
-                        disabled={!(updatedEnabled.name || updatedEnabled.description)}
-                        variant="outlined"
-                        onClick={handleRevertChanges}
-                    >
-                        Revert Changes
-                    </Button>
                 </Box>
                 <Button
-                    sx={EditAnalysisDetailsStyles.button}
+                    sx={EditAnalysisStyles.analysisButton}
                     color="error"
                     variant="contained"
                     onClick={() => props.onDeleteAnalysis(props.analysisId)}

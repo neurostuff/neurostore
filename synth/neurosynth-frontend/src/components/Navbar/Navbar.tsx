@@ -2,9 +2,8 @@ import { AppBar } from '@mui/material';
 import NavbarDrawer from './NavbarDrawer/NavbarDrawer';
 import NavbarToolbar from './NavbarToolbar/NavbarToolbar';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useContext } from 'react';
-import { GlobalContext } from '../../contexts/GlobalContext';
 import { NavOptionsModel } from '.';
+import API from '../../utils/api';
 
 const navItems: NavOptionsModel[] = [
     { label: 'HOME', path: '/', children: null },
@@ -41,14 +40,13 @@ const navItems: NavOptionsModel[] = [
 ];
 
 const Navbar = () => {
-    const context = useContext(GlobalContext);
     const { loginWithPopup, getAccessTokenSilently, logout } = useAuth0();
 
     const handleLogin = async () => {
         try {
             await loginWithPopup();
-            const accessToken = await getAccessTokenSilently();
-            context?.handleToken(accessToken);
+            const token = await getAccessTokenSilently();
+            API.UpdateServicesWithToken(token);
         } catch (exception) {
             console.error(exception);
         }

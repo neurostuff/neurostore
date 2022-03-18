@@ -54,7 +54,7 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
     const handleOnUpdate = async (event: React.MouseEvent) => {
         try {
             const token = await getAccessTokenSilently();
-            context.handleToken(token);
+            API.UpdateServicesWithToken(token);
         } catch (exception) {
             context.showSnackbar('there was an error', SnackbarType.ERROR);
             console.error(exception);

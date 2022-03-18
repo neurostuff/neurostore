@@ -21,56 +21,6 @@ const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
     const handleRemovePoint = (pointId: string) => {};
     const handleUpdatePoint = (pointId: string, update: { x: number; y: number; z: number }) => {};
 
-    // TODO: Just for testing and development, delete this later
-    if (props?.analysis?.conditions) {
-        props.analysis.conditions = [
-            {
-                created_at: '2022-03-08T16:31:18.693178+00:00',
-                description: null,
-                id: 'dJeZjzTPM5ob',
-                name: 'delayed match to sample task',
-                user: null,
-            },
-            {
-                created_at: '2022-03-08T16:31:18.626189+00:00',
-                description: null,
-                id: '3HCqyCDwmhfn',
-                name: 'audio narrative',
-                user: null,
-            },
-            {
-                created_at: '2022-03-08T16:31:18.626189+00:00',
-                description: null,
-                id: '4yNzdWd4LjiX',
-                name: 'reading (overt)',
-                user: null,
-            },
-            {
-                created_at: '2022-03-08T16:31:14.653935+00:00',
-                description: null,
-                id: '37ftCZRDpb7H',
-                name: 'motor sequencing task',
-                user: null,
-            },
-            {
-                created_at: '2022-03-08T16:31:14.653935+00:00',
-                description: null,
-                id: '6uF4Njgj4xNa',
-                name: 'multi-object localizer task',
-                user: null,
-            },
-            {
-                created_at: '2022-03-08T16:31:13.197400+00:00',
-                description: null,
-                id: 'bG8X3dkNhdjM',
-                name: 'face monitor/discrimination',
-                user: null,
-            },
-        ];
-
-        props.analysis.weights = [0.5, 0.5, 1, 1, 1, 1];
-    }
-
     return (
         <Box>
             {props.analysis && (
@@ -94,15 +44,13 @@ const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
                     </Tabs>
                     <Box>
                         {editTab === 0 && (
-                            <>
-                                <EditAnalysisDetails
-                                    analysisId={props.analysis.id || ''}
-                                    name={props.analysis.name || ''}
-                                    description={props.analysis.description || ''}
-                                    onEditAnalysisDetails={handleEditAnalysisDetails}
-                                    onDeleteAnalysis={props.onDeleteAnalysis}
-                                />
-                            </>
+                            <EditAnalysisDetails
+                                analysisId={props.analysis.id || ''}
+                                name={props.analysis.name || ''}
+                                description={props.analysis.description || ''}
+                                onEditAnalysisDetails={handleEditAnalysisDetails}
+                                onDeleteAnalysis={props.onDeleteAnalysis}
+                            />
                         )}
                         {editTab === 1 && (
                             <EditAnalysisPoints
@@ -114,10 +62,12 @@ const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
                         )}
                         {editTab === 2 && (
                             <EditAnalysisConditions
+                                analysisId={props.analysis.id || ''}
                                 conditions={
                                     props.analysis.conditions as ConditionApiResponse[] | undefined
                                 }
                                 weights={props.analysis.weights}
+                                onConditionWeightChange={props.onEditAnalysisConditions}
                             />
                         )}
                         {editTab === 3 && <EditAnalysisImages />}

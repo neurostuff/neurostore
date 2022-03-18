@@ -26,7 +26,7 @@ const DatasetPage: React.FC = (props) => {
     const [annotations, setAnnotations] = useState<AnnotationsApiResponse[] | undefined>();
     const { getAccessTokenSilently, isAuthenticated } = useAuth0();
     const history = useHistory();
-    const { showSnackbar, handleToken } = useContext(GlobalContext);
+    const { showSnackbar } = useContext(GlobalContext);
 
     const [confirmationIsOpen, setConfirmationIsOpen] = useState(false);
     const [createDetailsIsOpen, setCreateDetailsIsOpen] = useState(false);
@@ -79,7 +79,7 @@ const DatasetPage: React.FC = (props) => {
         return async (editedText: string) => {
             try {
                 const token = await getAccessTokenSilently();
-                handleToken(token);
+                API.UpdateServicesWithToken(token);
             } catch (exception) {
                 showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(exception);
@@ -117,7 +117,7 @@ const DatasetPage: React.FC = (props) => {
         if (dataset?.id && confirm) {
             try {
                 const token = await getAccessTokenSilently();
-                handleToken(token);
+                API.UpdateServicesWithToken(token);
             } catch (exception) {
                 showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(exception);
@@ -138,7 +138,7 @@ const DatasetPage: React.FC = (props) => {
         if (dataset && dataset?.id) {
             try {
                 const token = await getAccessTokenSilently();
-                handleToken(token);
+                API.UpdateServicesWithToken(token);
             } catch (exception) {
                 showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(exception);

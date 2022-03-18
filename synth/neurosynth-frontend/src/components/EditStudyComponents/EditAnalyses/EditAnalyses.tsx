@@ -1,7 +1,7 @@
 import { Typography, Box, Tabs, Tab, Button, TabProps, Divider } from '@mui/material';
 import React, { useEffect, useState, SyntheticEvent } from 'react';
 import { IEditAnalyses } from '.';
-import { AnalysisApiResponse } from '../../../utils/api';
+import { AnalysisApiResponse, ConditionApiResponse } from '../../../utils/api';
 import EditAnalysesStyles from './EditAnalyses.styles';
 import EditAnalysis from './EditAnalysis/EditAnalysis';
 
@@ -145,6 +145,7 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
                                 analysis={selectedAnalysis.analysis}
                                 onEditAnalysisPoints={props.onEditAnalysisPoints}
                                 onEditAnalysisDetails={props.onEditAnalysisDetails}
+                                onEditAnalysisConditions={props.onEditAnalysisConditions}
                                 onDeleteAnalysis={handleDeleteAnalysis}
                             />
                         </Box>

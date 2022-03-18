@@ -25,6 +25,7 @@ export type AnnotationsApiResponse = Annotation & ReadOnly;
 export type ConditionApiResponse = Condition & ReadOnly;
 
 const APIDomain = process.env.REACT_APP_API_DOMAIN as string;
+let TOKEN = '';
 const config: Configuration = new Configuration({
     basePath: APIDomain,
 });
@@ -41,23 +42,27 @@ const Services = {
 };
 
 const UpdateServicesWithToken = (token: string) => {
-    const config: Configuration = new Configuration({
-        basePath: APIDomain,
-        baseOptions: {
-            headers: {
-                Authorization: `Bearer ${token}`,
+    if (token !== TOKEN) {
+        const config: Configuration = new Configuration({
+            basePath: APIDomain,
+            baseOptions: {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
             },
-        },
-    });
+        });
 
-    Services.StudiesService = StudiesApiFactory(config, undefined, undefined);
-    Services.AnalysesService = AnalysesApiFactory(config, undefined, undefined);
-    Services.ConditionsService = ConditionsApiFactory(config, undefined, undefined);
-    Services.DataSetsService = DatasetsApiFactory(config, undefined, undefined);
-    Services.ImagesService = ImagesApiFactory(config, undefined, undefined);
-    Services.PointsService = PointsApiFactory(config, undefined, undefined);
-    Services.UsersService = UserApiFactory(config, undefined, undefined);
-    Services.AnnotationsService = AnnotationsApiFactory(config, undefined, undefined);
+        Services.StudiesService = StudiesApiFactory(config, undefined, undefined);
+        Services.AnalysesService = AnalysesApiFactory(config, undefined, undefined);
+        Services.ConditionsService = ConditionsApiFactory(config, undefined, undefined);
+        Services.DataSetsService = DatasetsApiFactory(config, undefined, undefined);
+        Services.ImagesService = ImagesApiFactory(config, undefined, undefined);
+        Services.PointsService = PointsApiFactory(config, undefined, undefined);
+        Services.UsersService = UserApiFactory(config, undefined, undefined);
+        Services.AnnotationsService = AnnotationsApiFactory(config, undefined, undefined);
+
+        TOKEN = token;
+    }
 };
 
 const API = {
