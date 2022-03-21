@@ -132,6 +132,7 @@ class DatasetStudy(db.Model):
         "Study",
         backref=backref("dataset_studies"),
         viewonly=True,
+        lazy='subquery',
     )
     dataset = relationship("Dataset", backref=backref("dataset_studies"), viewonly=True)
     annotation_analyses = relationship(
