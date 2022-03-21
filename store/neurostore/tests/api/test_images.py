@@ -58,10 +58,10 @@ def test_put_images(auth_client, session):
     session.commit()
 
     image_id = s.analyses[0].images[0].id
-    new_data = {'metadata': {'this': 'is'}}
+    new_data = {'url': "new fake"}
     resp = auth_client.put(f"/api/images/{image_id}", data=new_data)
 
-    assert resp.json['metadata'] == new_data['metadata']
+    assert resp.json['url'] == new_data['url']
 
 
 def test_delete_images(auth_client, session):
