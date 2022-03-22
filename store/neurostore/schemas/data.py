@@ -7,6 +7,7 @@ from marshmallow import (
     pre_load,
 )
 from flask import request
+import orjson as json
 from marshmallow.decorators import post_load
 from pyld import jsonld
 import pandas as pd
@@ -80,6 +81,7 @@ class BaseSchema(Schema):
 
     _id = fields.String(attribute="id", data_key=id_key, dump_only=True, db_only=True)
     created_at = fields.DateTime(dump_only=True, db_only=True)
+    updated_at = fields.DateTime(dump_only=True, db_only=True)
 
     id = fields.String(load_only=True)
 
@@ -103,14 +105,8 @@ class ImageSchema(BaseDataSchema):
 
     # serialization
     analysis = StringOrNested("AnalysisSchema", use_nested=False)
-    analysis_name = fields.Function(
-        lambda image: image.analysis.name, dump_only=True, db_only=True
-    )
-    metadata = fields.Dict(attribute="metadata_", dump_only=True)
+    analysis_name = fields.String(dump_only=True, db_only=True)
     add_date = fields.DateTime(dump_only=True, db_only=True)
-
-    # deserialization
-    metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
 
     class Meta:
         additional = ("url", "filename", "space", "value_type")
@@ -125,7 +121,7 @@ class PointValueSchema(BaseDataSchema):
 class PointSchema(BaseDataSchema):
     # serialization
     analysis = StringOrNested("AnalysisSchema", use_nested=False)
-    value = fields.Nested(PointValueSchema, attribute="values", many=True)
+    values = fields.Nested(PointValueSchema, many=True)
 
     # deserialization
     x = fields.Float(load_only=True)
@@ -148,7 +144,7 @@ class PointSchema(BaseDataSchema):
 class AnalysisConditionSchema(BaseDataSchema):
     weight = fields.Float()
     condition = fields.Nested(ConditionSchema)
-    analysis = fields.Function(lambda analysis: analysis.id, dump_only=True, db_only=True)
+    analysis_id = fields.String(data_key="analysis")
 
 
 class DatasetStudySchema(BaseDataSchema):
@@ -163,9 +159,8 @@ class AnalysisSchema(BaseDataSchema):
     # serialization
     study = StringOrNested("StudySchema", use_nested=False)
     conditions = StringOrNested(ConditionSchema, many=True, dump_only=True)
-    weights = fields.List(fields.Float(), dump_only=True)
 
-    analysis_conditions = fields.Nested(AnalysisConditionSchema, many=True, load_only=True)
+    analysis_conditions = fields.Nested(AnalysisConditionSchema, many=True)
     images = StringOrNested(ImageSchema, many=True)
     points = StringOrNested(PointSchema, many=True)
     weights = fields.List(fields.Float())
@@ -175,7 +170,7 @@ class AnalysisSchema(BaseDataSchema):
         allow_none = ("name", "description")
 
     @pre_load
-    def process_values(self, data, **kwargs):
+    def load_values(self, data, **kwargs):
         # conditions/weights need special processing
         if data.get("conditions") is not None and data.get("weights") is not None:
             assert len(data.get("conditions")) == len(data.get("weights"))
@@ -188,6 +183,14 @@ class AnalysisSchema(BaseDataSchema):
 
         data.pop("conditions", None)
         data.pop("weights", None)
+        return data
+
+    @post_dump
+    def dump_values(self, data, **kwargs):
+        if data.get("analysis_conditions") is not None:
+            data['conditions'] = [ac['condition'] for ac in data['analysis_conditions']]
+        data.pop("analysis_conditions", None)
+
         return data
 
 
@@ -208,7 +211,6 @@ class StudySchema(BaseDataSchema):
 
 class DatasetSchema(BaseDataSchema):
     # serialize
-    user = fields.Function(lambda user: user.user_id, dump_only=True, db_only=True)
     studies = StringOrNested(StudySchema, many=True)  # This needs to be nested, but not cloned
 
     class Meta:
@@ -346,3 +348,108 @@ class JSONLDImageSchema(ImageSchema):
 class JSONLSAnalysisSchema(AnalysisSchema):
     # serialization
     study = fields.Function(lambda analysis: analysis.study.IRI, dump_only=True)
+
+
+class StudysetSnapshot(object):
+    def __init__(self):
+        pass
+
+    def _serialize_dt(self, dt):
+        return dt.isoformat() if dt else dt
+
+    def dump(self, studyset):
+        return {
+            'id': studyset.id,
+            'name': studyset.name,
+            'user': studyset.user_id,
+            'description': studyset.description,
+            'publication': studyset.publication,
+            'doi': studyset.doi,
+            'pmid': studyset.pmid,
+            'created_at': self._serialize_dt(studyset.created_at),
+            'updated_at': self._serialize_dt(studyset.updated_at),
+            'studies': [
+                {
+                    'id': s.id,
+                    'created_at': self._serialize_dt(s.created_at),
+                    'updated_at': self._serialize_dt(s.updated_at),
+                    'user': s.user_id,
+                    'name': s.name,
+                    'description': s.description,
+                    'publication': s.publication,
+                    'doi': s.doi,
+                    'pmid': s.pmid,
+                    'authors': s.authors,
+                    'year': s.year,
+                    'metadata': s.metadata_,
+                    'source': s.source,
+                    'source_id': s.source_id,
+                    'source_updated_at': self._serialize_dt(s.source_updated_at),
+                    'analyses': [
+                        {
+                            'id': a.id,
+                            'created_at': self._serialize_dt(a.created_at),
+                            'updated_at': self._serialize_dt(a.updated_at),
+                            'user': a.user_id,
+                            "study": s.id,
+                            "name": a.name,
+                            "description": a.description,
+                            "conditions": [
+                                {
+                                    "id": ac.condition_id,
+                                    "user": ac.condition.user_id,
+                                    "name": ac.condition.name,
+                                    "description": ac.condition.description,
+                                    "created_at": self._serialize_dt(ac.condition.created_at),
+                                    "updated_at": self._serialize_dt(ac.condition.updated_at),
+                                } for ac in a.analysis_conditions
+                            ],
+                            "weights": list(a.weights),
+                            "points": [
+                                {
+                                    'id': p.id,
+                                    'created_at': self._serialize_dt(p.created_at),
+                                    'updated_at': self._serialize_dt(p.updated_at),
+                                    'user': p.user_id,
+                                    "coordinates": p.coordinates,
+                                    "analysis": a.id,
+                                    "kind": p.kind,
+                                    "space": p.space,
+                                    "image": p.image,
+                                    "label_id": p.label_id,
+                                    "values": [
+                                        {
+                                            "kind": v.kind,
+                                            "value": v.value,
+                                        } for v in p.values
+                                    ],
+                                } for p in a.points
+                            ],
+                            "images": [
+                                {
+                                    "id": i.id,
+                                    'created_at': self._serialize_dt(i.created_at),
+                                    'updated_at': self._serialize_dt(i.updated_at),
+                                    'user': i.user_id,
+                                    "analysis": a.id,
+                                    "analysis_name": a.name,
+                                    "url": i.url,
+                                    "space": i.space,
+                                    "value_type": i.value_type,
+                                    "filename": i.filename,
+                                    "add_date": i.add_date,
+                                } for i in a.images
+                            ],
+                        } for a in s.analyses
+                    ]
+                } for s in studyset.studies
+            ]
+        }
+
+    def serialize(self, studyset_dict):
+        return json.dumps(studyset_dict)
+
+    def dump_and_serialize(self, studyset):
+        return self.serialize(
+            self.dump(studyset)
+        )

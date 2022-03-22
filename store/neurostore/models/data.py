@@ -56,7 +56,11 @@ class Dataset(BaseMixin, db.Model):
         secondary="dataset_studies",
         backref=backref("datasets"),
     )
-    annotations = relationship("Annotation", cascade="all, delete", backref="dataset")
+    annotations = relationship(
+        "Annotation",
+        cascade="all, delete",
+        backref="dataset",
+        )
 
 
 class Annotation(BaseMixin, db.Model):
@@ -75,7 +79,8 @@ class Annotation(BaseMixin, db.Model):
     annotation_analyses = relationship(
         'AnnotationAnalysis',
         backref=backref("annotation"),
-        cascade='all, delete-orphan'
+        cascade='all, delete-orphan',
+        lazy='subquery',
     )
 
 
@@ -123,12 +128,17 @@ class DatasetStudy(db.Model):
     __tablename__ = "dataset_studies"
     study_id = db.Column(db.ForeignKey('studies.id', ondelete='CASCADE'), primary_key=True)
     dataset_id = db.Column(db.ForeignKey('datasets.id', ondelete='CASCADE'), primary_key=True)
-    study = relationship("Study", backref=backref("dataset_studies", cascade="all, delete-orphan"))
-    dataset = relationship("Dataset", backref=backref("dataset_studies"))
+    study = relationship(
+        "Study",
+        backref=backref("dataset_studies"),
+        viewonly=True,
+        lazy='subquery',
+    )
+    dataset = relationship("Dataset", backref=backref("dataset_studies"), viewonly=True)
     annotation_analyses = relationship(
         "AnnotationAnalysis",
         cascade='all, delete-orphan',
-        backref=backref("dataset_study")
+        backref=backref("dataset_study", lazy='subquery'),
     )
 
 
@@ -138,30 +148,29 @@ class Analysis(BaseMixin, db.Model):
     study_id = db.Column(db.Text, db.ForeignKey("studies.id", ondelete='CASCADE'))
     name = db.Column(db.String)
     description = db.Column(db.String)
-    conditions = relationship(
-        "Condition",
-        secondary="analysis_conditions",
-        backref=backref("analyses"),
-        # cascade="all, delete",
-    )
     points = relationship(
         "Point",
         backref=backref("analysis"),
-        cascade="all, delete, delete-orphan",
+        cascade="all, delete-orphan",
     )
     images = relationship(
         "Image",
         backref=backref("analysis"),
-        cascade="all, delete, delete-orphan",
+        cascade="all, delete-orphan",
         )
     weights = association_proxy("analysis_conditions", "weight")
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("analyses"))
     analysis_conditions = relationship(
-        "AnalysisConditions", backref=backref("analysis"), cascade="all, delete, delete-orphan"
+        "AnalysisConditions",
+        backref=backref("analysis"),
+        cascade="all, delete-orphan",
+        lazy='subquery',
     )
     annotation_analyses = relationship(
-        "AnnotationAnalysis", backref=backref("analysis"), cascade="all, delete, delete-orphan"
+        "AnnotationAnalysis",
+        backref=backref("analysis", lazy='subquery'),
+        cascade="all, delete-orphan",
     )
 
 
@@ -173,7 +182,9 @@ class Condition(BaseMixin, db.Model):
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("conditions"))
     analysis_conditions = relationship(
-        "AnalysisConditions", backref=backref("condition"), cascade="all, delete"
+        "AnalysisConditions",
+        backref=backref("condition", lazy='subquery'),
+        cascade="all, delete",
     )
 
 
@@ -266,7 +277,7 @@ class PointValue(BaseMixin, db.Model):
     kind = db.Column(db.String)
     value = db.Column(db.String)
     dtype = db.Column(db.String, default="str")
-    point = relationship("Point", backref=backref("values"))
+    point = relationship("Point", backref=backref("values", lazy='subquery'))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("point_values"))
 
@@ -363,7 +374,6 @@ event.listen(Annotation, 'before_insert', check_note_columns, retval=True)
 
 # create notes when annotation is first created
 event.listen(Dataset.annotations, 'append', create_blank_notes)
-
 
 # ensure new annotation_analyses are added when study is added to dataset
 event.listen(Dataset.studies, 'bulk_replace', add_necessary_annotation_analyses)
