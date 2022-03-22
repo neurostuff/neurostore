@@ -45,7 +45,7 @@ def test_post_analyses(auth_client, ingest_neurosynth, session):
     analysis_db.study.user = user
     session.add(analysis_db.study)
     session.commit()
-    for k in ["user", "id", "created_at"]:
+    for k in ["user", "id", "created_at", "updated_at"]:
         analysis.pop(k)
     resp = auth_client.post("/api/analyses/", data=analysis)
 
