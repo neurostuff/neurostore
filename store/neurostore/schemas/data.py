@@ -81,6 +81,7 @@ class BaseSchema(Schema):
 
     _id = fields.String(attribute="id", data_key=id_key, dump_only=True, db_only=True)
     created_at = fields.DateTime(dump_only=True, db_only=True)
+    updated_at = fields.DateTime(dump_only=True, db_only=True)
 
     id = fields.String(load_only=True)
 
@@ -120,7 +121,7 @@ class PointValueSchema(BaseDataSchema):
 class PointSchema(BaseDataSchema):
     # serialization
     analysis = StringOrNested("AnalysisSchema", use_nested=False)
-    value = fields.Nested(PointValueSchema, attribute="values", many=True)
+    values = fields.Nested(PointValueSchema, many=True)
 
     # deserialization
     x = fields.Float(load_only=True)
@@ -353,6 +354,9 @@ class StudysetSnapshot(object):
     def __init__(self):
         pass
 
+    def _serialize_dt(self, dt):
+        return dt.isoformat() if dt else dt
+
     def dump(self, studyset):
         return {
             'id': studyset.id,
@@ -362,13 +366,13 @@ class StudysetSnapshot(object):
             'publication': studyset.publication,
             'doi': studyset.doi,
             'pmid': studyset.pmid,
-            'created_at': studyset.created_at,
-            'updated_at': studyset.updated_at,
+            'created_at': self._serialize_dt(studyset.created_at),
+            'updated_at': self._serialize_dt(studyset.updated_at),
             'studies': [
                 {
                     'id': s.id,
-                    'created_at': s.created_at,
-                    'updated_at': s.updated_at,
+                    'created_at': self._serialize_dt(s.created_at),
+                    'updated_at': self._serialize_dt(s.updated_at),
                     'user': s.user_id,
                     'name': s.name,
                     'description': s.description,
@@ -380,12 +384,12 @@ class StudysetSnapshot(object):
                     'metadata': s.metadata_,
                     'source': s.source,
                     'source_id': s.source_id,
-                    'source_updated_at': s.source_updated_at,
+                    'source_updated_at': self._serialize_dt(s.source_updated_at),
                     'analyses': [
                         {
                             'id': a.id,
-                            'created_at': a.created_at,
-                            'updated_at': a.updated_at,
+                            'created_at': self._serialize_dt(a.created_at),
+                            'updated_at': self._serialize_dt(a.updated_at),
                             'user': a.user_id,
                             "study": s.id,
                             "name": a.name,
@@ -396,14 +400,16 @@ class StudysetSnapshot(object):
                                     "user": ac.condition.user_id,
                                     "name": ac.condition.name,
                                     "description": ac.condition.description,
+                                    "created_at": self._serialize_dt(ac.condition.created_at),
+                                    "updated_at": self._serialize_dt(ac.condition.updated_at),
                                 } for ac in a.analysis_conditions
                             ],
                             "weights": list(a.weights),
                             "points": [
                                 {
                                     'id': p.id,
-                                    'created_at': p.created_at,
-                                    'updated_at': p.updated_at,
+                                    'created_at': self._serialize_dt(p.created_at),
+                                    'updated_at': self._serialize_dt(p.updated_at),
                                     'user': p.user_id,
                                     "coordinates": p.coordinates,
                                     "analysis": a.id,
@@ -422,8 +428,8 @@ class StudysetSnapshot(object):
                             "images": [
                                 {
                                     "id": i.id,
-                                    'created_at': i.created_at,
-                                    'updated_at': i.updated_at,
+                                    'created_at': self._serialize_dt(i.created_at),
+                                    'updated_at': self._serialize_dt(i.updated_at),
                                     'user': i.user_id,
                                     "analysis": a.id,
                                     "analysis_name": a.name,
