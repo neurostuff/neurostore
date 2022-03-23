@@ -17,7 +17,7 @@ def test_post_and_get_studysets(auth_client, ingest_neurosynth):
         ) == post_resp.json
 
 
-def test_add_study_to_dataset(auth_client, ingest_neurosynth):
+def test_add_study_to_studyset(auth_client, ingest_neurosynth):
     payload = auth_client.get("/api/studies/").json
     study_ids = [study['id'] for study in payload['results']]
     post_data = {
@@ -25,10 +25,10 @@ def test_add_study_to_dataset(auth_client, ingest_neurosynth):
         "description": "mah ice cram",
         "studies": study_ids[:-1],
     }
-    post_resp = auth_client.post("/api/datasets/", data=post_data)
+    post_resp = auth_client.post("/api/studysets/", data=post_data)
     assert post_resp.status_code == 200
 
     dset_id = post_resp.json['id']
 
-    put_resp = auth_client.put(f"/api/datasets/{dset_id}", data={"studies": study_ids})
+    put_resp = auth_client.put(f"/api/studysets/{dset_id}", data={"studies": study_ids})
     assert put_resp.status_code == 200

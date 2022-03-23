@@ -16,7 +16,7 @@ from webargs import fields
 from ..database import db
 from .utils import get_current_user
 from .nested import nested_load
-from ..models import Dataset, Study, Analysis, User, Annotation
+from ..models import Studyset, Study, Analysis, User, Annotation
 from ..schemas.data import StudysetSnapshot
 from . import data as viewdata
 
@@ -35,14 +35,14 @@ class BaseView(MethodView):
         scenerios:
         1. cloning a study
           a. clone everything, a study is an object
-        2. cloning a dataset
-          a. studies are linked to a dataset, so create a new dataset with same links
+        2. cloning a studyset
+          a. studies are linked to a studyset, so create a new studyset with same links
         3. cloning an annotation
-          a. annotations are linked to datasets, update when dataset updates
+          a. annotations are linked to studysets, update when studyset updates
         2. creating an analysis
           a. I should have to own all (relevant) parent objects
         3. creating an annotation
-            a. I should not have to own the dataset to create an annotation
+            a. I should not have to own the studyset to create an annotation
         """
 
         # Store all models so we can atomically update in one commit
@@ -148,7 +148,7 @@ class ObjectView(BaseView):
             q = q.options(nested_load(self))
 
         record = q.filter_by(id=id).first_or_404()
-        if self._model is Dataset and nested:
+        if self._model is Studyset and nested:
             snapshot = StudysetSnapshot()
             return snapshot.dump(record)
         else:
@@ -194,7 +194,7 @@ LIST_USER_ARGS = {
     "unique": fields.Boolean(missing=False),
     "nested": fields.Boolean(missing=False),
     "user_id": fields.String(missing=None),
-    "dataset_id": fields.String(missing=None),
+    "studyset_id": fields.String(missing=None),
     "export": fields.Boolean(missing=False),
     "data_type": fields.String(missing=None),
 }
@@ -238,9 +238,9 @@ class ListView(BaseView):
             current_user = get_current_user()
             q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
 
-        # query annotations for a specific dataset
-        if args.get('dataset_id'):
-            q = q.filter(m.dataset_id == args.get('dataset_id'))
+        # query annotations for a specific studyset
+        if args.get('studyset_id'):
+            q = q.filter(m.studyset_id == args.get('studyset_id'))
 
         # search studies for data_type
         if args.get('data_type'):
@@ -315,7 +315,7 @@ class ListView(BaseView):
                 unique_count = count
 
         records = q.paginate(args["page"], args["page_size"], False).items
-        if m is Dataset and nested:
+        if m is Studyset and nested:
             snapshot = StudysetSnapshot()
             content = [snapshot.dump(r) for r in records]
             response = {
