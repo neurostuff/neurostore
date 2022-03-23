@@ -75,7 +75,8 @@ class Annotation(BaseMixin, db.Model):
     annotation_analyses = relationship(
         'AnnotationAnalysis',
         backref=backref("annotation"),
-        cascade='all, delete-orphan'
+        cascade='all, delete-orphan',
+        lazy='subquery',
     )
 
 
@@ -124,13 +125,16 @@ class StudysetStudy(db.Model):
     study_id = db.Column(db.ForeignKey('studies.id', ondelete='CASCADE'), primary_key=True)
     studyset_id = db.Column(db.ForeignKey('studysets.id', ondelete='CASCADE'), primary_key=True)
     study = relationship(
-        "Study", backref=backref("studyset_studies", cascade="all, delete-orphan")
+        "Study",
+        backref=backref("studyset_studies"),
+        viewonly=True,
+        lazy='subquery',
     )
-    studyset = relationship("Studyset", backref=backref("studyset_studies"))
+    studyset = relationship("Studyset", backref=backref("studyset_studies"), viewonly=True)
     annotation_analyses = relationship(
         "AnnotationAnalysis",
         cascade='all, delete-orphan',
-        backref=backref("studyset_study")
+        backref=backref("studyset_study", lazy='subquery'),
     )
 
 
@@ -140,30 +144,29 @@ class Analysis(BaseMixin, db.Model):
     study_id = db.Column(db.Text, db.ForeignKey("studies.id", ondelete='CASCADE'))
     name = db.Column(db.String)
     description = db.Column(db.String)
-    conditions = relationship(
-        "Condition",
-        secondary="analysis_conditions",
-        backref=backref("analyses"),
-        # cascade="all, delete",
-    )
     points = relationship(
         "Point",
         backref=backref("analysis"),
-        cascade="all, delete, delete-orphan",
+        cascade="all, delete-orphan",
     )
     images = relationship(
         "Image",
         backref=backref("analysis"),
-        cascade="all, delete, delete-orphan",
+        cascade="all, delete-orphan",
         )
     weights = association_proxy("analysis_conditions", "weight")
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("analyses"))
     analysis_conditions = relationship(
-        "AnalysisConditions", backref=backref("analysis"), cascade="all, delete, delete-orphan"
+        "AnalysisConditions",
+        backref=backref("analysis"),
+        cascade="all, delete-orphan",
+        lazy='subquery',
     )
     annotation_analyses = relationship(
-        "AnnotationAnalysis", backref=backref("analysis"), cascade="all, delete, delete-orphan"
+        "AnnotationAnalysis",
+        backref=backref("analysis", lazy='subquery'),
+        cascade="all, delete-orphan",
     )
 
 
@@ -175,7 +178,9 @@ class Condition(BaseMixin, db.Model):
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("conditions"))
     analysis_conditions = relationship(
-        "AnalysisConditions", backref=backref("condition"), cascade="all, delete"
+        "AnalysisConditions",
+        backref=backref("condition", lazy='subquery'),
+        cascade="all, delete",
     )
 
 
@@ -268,7 +273,7 @@ class PointValue(BaseMixin, db.Model):
     kind = db.Column(db.String)
     value = db.Column(db.String)
     dtype = db.Column(db.String, default="str")
-    point = relationship("Point", backref=backref("values"))
+    point = relationship("Point", backref=backref("values", lazy='subquery'))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("point_values"))
 

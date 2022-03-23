@@ -10,6 +10,7 @@ from .data import (
     AnnotationSchema,
     AnnotationAnalysisSchema,
     StudysetStudySchema,
+    StudysetSnapshot,
 )
 
 from .auth import UserSchema
@@ -27,4 +28,5 @@ __all__ = [
     "AnnotationSchema",
     "AnnotationAnalysisSchema",
     "StudysetStudySchema",
+    "StudysetSnapshot",
 ]
