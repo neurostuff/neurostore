@@ -2,20 +2,23 @@ import { AddCircle, Add } from '@mui/icons-material';
 import { IconButton, MenuItem, Divider, Box, TextField, Button, MenuList } from '@mui/material';
 import React, { ChangeEvent, useState, useRef } from 'react';
 import { NeurosynthLoader, NeurosynthPopper } from '..';
-import { DatasetsApiResponse, StudyApiResponse } from '../../utils/api';
+import { StudysetsApiResponse, StudyApiResponse } from '../../utils/api';
 
-export interface IDatasetsPopupMenu {
-    datasets: DatasetsApiResponse[] | undefined;
+export interface IStudysetsPopupMenu {
+    studysets: StudysetsApiResponse[] | undefined;
     study: StudyApiResponse;
-    onCreateDataset: (datasetName: string, datasetDescription: string) => void;
-    onStudyAddedToDataset: (study: StudyApiResponse, updatedDataset: DatasetsApiResponse) => void;
+    onCreateStudyset: (studysetName: string, studysetDescription: string) => void;
+    onStudyAddedToStudyset: (
+        study: StudyApiResponse,
+        updatedStudyset: StudysetsApiResponse
+    ) => void;
 }
 
-const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
+const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
     const anchorRef = useRef<HTMLButtonElement>(null);
     const [open, setOpen] = useState(false);
     const [inCreateMode, setInCreateMode] = useState(false);
-    const [datasetDetails, setDetasetDetails] = useState({
+    const [studysetDetails, setStudysetDetails] = useState({
         name: '',
         description: '',
     });
@@ -27,7 +30,7 @@ const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
 
     const handleClose = () => {
         setInCreateMode(false);
-        setDetasetDetails({
+        setStudysetDetails({
             name: '',
             description: '',
         });
@@ -39,10 +42,10 @@ const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
         setOpen(true);
     };
 
-    const handleDatasetDetailsChange = (
+    const handleStudysetDetailsChange = (
         event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
     ) => {
-        setDetasetDetails((prevState) => ({
+        setStudysetDetails((prevState) => ({
             ...prevState,
             [event.target.name]: event.target.value,
         }));
@@ -62,24 +65,24 @@ const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
                 <MenuList sx={{ cursor: 'default' }} onClick={(e) => e.stopPropagation()}>
                     <Box sx={{ padding: '6px 16px', fontSize: '1rem' }}>
                         <Box sx={{ fontWeight: 'bold', marginBottom: '8px' }}>
-                            Add to a dataset...
+                            Add to a studyset...
                         </Box>
                     </Box>
-                    <NeurosynthLoader loadingText="fetching datasets" loaded={!!props.datasets}>
-                        {props.datasets && (
+                    <NeurosynthLoader loadingText="fetching studysets" loaded={!!props.studysets}>
+                        {props.studysets && (
                             <>
-                                {props.datasets.length > 0 && <Divider />}
+                                {props.studysets.length > 0 && <Divider />}
                                 <Box sx={{ maxHeight: '300px', overflowY: 'scroll' }}>
-                                    {props.datasets.map((dataset) => (
+                                    {props.studysets.map((studyset) => (
                                         <MenuItem
                                             onClick={(event) => {
                                                 event.stopPropagation();
-                                                props.onStudyAddedToDataset(props.study, dataset);
+                                                props.onStudyAddedToStudyset(props.study, studyset);
                                                 setOpen(false);
                                             }}
-                                            key={dataset.id}
+                                            key={studyset.id}
                                         >
-                                            {dataset.name || dataset.id}
+                                            {studyset.name || studyset.id}
                                         </MenuItem>
                                     ))}
                                 </Box>
@@ -97,32 +100,32 @@ const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
                                     >
                                         <TextField
                                             name="name"
-                                            onChange={handleDatasetDetailsChange}
-                                            value={datasetDetails.name}
+                                            onChange={handleStudysetDetailsChange}
+                                            value={studysetDetails.name}
                                             sx={{ marginBottom: '0.5rem', width: '100%' }}
-                                            label="Dataset name"
+                                            label="Studyset name"
                                             variant="standard"
-                                            id="dataset-name"
+                                            id="studyset-name"
                                         />
                                         <TextField
                                             name="description"
-                                            onChange={handleDatasetDetailsChange}
-                                            value={datasetDetails.description}
-                                            label="Dataset description"
+                                            onChange={handleStudysetDetailsChange}
+                                            value={studysetDetails.description}
+                                            label="Studyset description"
                                             variant="standard"
                                             sx={{ width: '100%' }}
-                                            id="dataset-description"
+                                            id="studyset-description"
                                         />
                                         <Button
                                             onClick={(event) => {
                                                 event.stopPropagation();
-                                                props.onCreateDataset(
-                                                    datasetDetails.name,
-                                                    datasetDetails.description
+                                                props.onCreateStudyset(
+                                                    studysetDetails.name,
+                                                    studysetDetails.description
                                                 );
                                                 handleClose();
                                             }}
-                                            disabled={datasetDetails.name.length === 0}
+                                            disabled={studysetDetails.name.length === 0}
                                             sx={{ marginTop: '1rem', width: '100%' }}
                                         >
                                             Create
@@ -137,7 +140,7 @@ const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
                                         sx={{ marginTop: '8px' }}
                                     >
                                         <Add sx={{ marginRight: '0.5rem' }} />
-                                        Create new dataset
+                                        Create new studyset
                                     </MenuItem>
                                 )}
                             </>
@@ -149,4 +152,4 @@ const DatasetsPopupMenu: React.FC<IDatasetsPopupMenu> = (props) => {
     );
 };
 
-export default DatasetsPopupMenu;
+export default StudysetsPopupMenu;

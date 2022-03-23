@@ -3,21 +3,21 @@ import { Box, Typography, Button } from '@mui/material';
 import { useContext, useEffect, useState } from 'react';
 import { NeurosynthLoader } from '../../../components';
 import CreateDetailsDialog from '../../../components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
-import DatasetsTable from '../../../components/Tables/DatasetsTable/DatasetsTable';
+import StudysetsTable from '../../../components/Tables/StudysetsTable/StudysetsTable';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import useIsMounted from '../../../hooks/useIsMounted';
-import API, { DatasetsApiResponse } from '../../../utils/api';
+import API, { StudysetsApiResponse } from '../../../utils/api';
 
-const UserDatasetsPage: React.FC = (props) => {
+const UserStudysetsPage: React.FC = (props) => {
     const { user, getAccessTokenSilently } = useAuth0();
-    const [datasets, setDatasets] = useState<DatasetsApiResponse[]>();
+    const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
     const { showSnackbar, handleToken } = useContext(GlobalContext);
-    const [createDatasetDialogIsOpen, setCreateDatasetDialogIsOpen] = useState(false);
+    const [createStudysetDialogIsOpen, setCreateStudysetDialogIsOpen] = useState(false);
     const isMountedRef = useIsMounted();
 
     useEffect(() => {
-        const getDatasets = async () => {
-            API.Services.DataSetsService.datasetsGet(
+        const getStudysets = async () => {
+            API.Services.StudySetsService.studysetsGet(
                 undefined,
                 undefined,
                 undefined,
@@ -33,17 +33,17 @@ const UserDatasetsPage: React.FC = (props) => {
                 user?.sub
             )
                 .then((res) => {
-                    if (isMountedRef.current && res?.data?.results) setDatasets(res.data.results);
+                    if (isMountedRef.current && res?.data?.results) setStudysets(res.data.results);
                 })
                 .catch((err) => {
                     console.error(err);
                 });
         };
 
-        getDatasets();
+        getStudysets();
     }, [user?.sub, isMountedRef]);
 
-    const handleCreateDataset = async (name: string, description: string) => {
+    const handleCreateStudyset = async (name: string, description: string) => {
         try {
             const token = await getAccessTokenSilently();
             handleToken(token);
@@ -52,31 +52,31 @@ const UserDatasetsPage: React.FC = (props) => {
             console.error(exception);
         }
 
-        API.Services.DataSetsService.datasetsPost({
+        API.Services.StudySetsService.studysetsPost({
             name,
             description,
         })
             .then((res) => {
-                const newDataset = res.data;
-                setCreateDatasetDialogIsOpen(false);
+                const newStudyset = res.data;
+                setCreateStudysetDialogIsOpen(false);
 
                 if (isMountedRef.current) {
-                    setDatasets((prevState) => {
+                    setStudysets((prevState) => {
                         if (!prevState) return prevState;
                         const newState = [...prevState];
-                        newState.push(newDataset);
+                        newState.push(newStudyset);
                         return newState;
                     });
                 }
             })
             .catch((err) => {
                 console.error(err);
-                showSnackbar('there was an error creating the dataset', SnackbarType.ERROR);
+                showSnackbar('there was an error creating the studyset', SnackbarType.ERROR);
             });
     };
 
     return (
-        <NeurosynthLoader loaded={!!datasets}>
+        <NeurosynthLoader loaded={!!studysets}>
             <Box
                 sx={{
                     display: 'flex',
@@ -84,25 +84,25 @@ const UserDatasetsPage: React.FC = (props) => {
                     marginBottom: '1rem',
                 }}
             >
-                <Typography variant="h4">My Datasets</Typography>
+                <Typography variant="h4">My Studysets</Typography>
 
-                <Button variant="contained" onClick={() => setCreateDatasetDialogIsOpen(true)}>
-                    Create new dataset
+                <Button variant="contained" onClick={() => setCreateStudysetDialogIsOpen(true)}>
+                    Create new studyset
                 </Button>
             </Box>
 
             <CreateDetailsDialog
-                titleText="Create new Dataset"
+                titleText="Create new Studyset"
                 onCloseDialog={() => {
-                    setCreateDatasetDialogIsOpen(false);
+                    setCreateStudysetDialogIsOpen(false);
                 }}
-                onCreate={handleCreateDataset}
-                isOpen={createDatasetDialogIsOpen}
+                onCreate={handleCreateStudyset}
+                isOpen={createStudysetDialogIsOpen}
             />
 
-            <DatasetsTable datasets={datasets || []} />
+            <StudysetsTable studysets={studysets || []} />
         </NeurosynthLoader>
     );
 };
 
-export default UserDatasetsPage;
+export default UserStudysetsPage;

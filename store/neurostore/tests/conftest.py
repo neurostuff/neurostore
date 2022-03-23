@@ -5,7 +5,7 @@ from ..database import db as _db
 import sqlalchemy as sa
 from .. import ingest
 from ..models import (
-    User, Study, Dataset, Annotation, AnnotationAnalysis,
+    User, Study, Studyset, Annotation, AnnotationAnalysis,
     AnalysisConditions, Point, Image
 )
 from auth0.v3.authentication import GetToken
@@ -222,7 +222,7 @@ def add_users(app, db):
 
 @pytest.fixture(scope="function")
 def ingest_neurosynth(session):
-    """ Add a dataset with two subjects """
+    """ Add a studyset with two subjects """
     return ingest.ingest_neurosynth(5)
 
 
@@ -248,8 +248,8 @@ def user_data(session, mock_add_users):
                 else:
                     name = f"{user.id}'s private "
 
-                dataset = Dataset(
-                    name=name + "dataset",
+                studyset = Studyset(
+                    name=name + "studyset",
                     user=user,
                     public=public,
                 )
@@ -293,22 +293,22 @@ def user_data(session, mock_add_users):
                 # put together the study
                 study.analyses = [analysis]
 
-                # put together the dataset
-                dataset.studies = [study]
+                # put together the studyset
+                studyset.studies = [study]
 
                 # add everything to commit
-                to_commit.append(dataset)
+                to_commit.append(studyset)
 
         session.add_all(to_commit)
         session.commit()
 
     to_commit = []
     with session.no_autoflush:
-        datasets = Dataset.query.all()
-        for dataset in datasets:
-            user = dataset.user
+        studysets = Studyset.query.all()
+        for studyset in studysets:
+            user = studyset.user
 
-            if dataset.public:
+            if studyset.public:
                 name = f"{user.id}'s public "
             else:
                 name = f"{user.id}'s private "
@@ -317,7 +317,7 @@ def user_data(session, mock_add_users):
                 name=name + 'annotation',
                 source='neurostore',
                 note_keys={'food': 'string'},
-                dataset=dataset,
+                studyset=studyset,
                 user=user,
             )
             for aa in annotation.annotation_analyses:
@@ -332,14 +332,14 @@ def user_data(session, mock_add_users):
 @pytest.fixture(scope="function")
 def simple_neurosynth_annotation(session, ingest_neurosynth):
     with session.no_autoflush:
-        dset = Dataset.query.filter_by(name="neurosynth").first()
+        dset = Studyset.query.filter_by(name="neurosynth").first()
     annot = dset.annotations[0]
     smol_notes = []
     with session.no_autoflush:
         for note in annot.annotation_analyses:
             smol_notes.append(
                 AnnotationAnalysis(
-                    dataset_study=note.dataset_study,
+                    studyset_study=note.studyset_study,
                     analysis=note.analysis,
                     note={'animal': note.note['animal']},
                 )
@@ -348,7 +348,7 @@ def simple_neurosynth_annotation(session, ingest_neurosynth):
         smol_annot = Annotation(
             name="smol " + annot.name,
             source="neurostore",
-            dataset=annot.dataset,
+            studyset=annot.studyset,
             note_keys={'animal': 'number'},
             annotation_analyses=smol_notes,
         )

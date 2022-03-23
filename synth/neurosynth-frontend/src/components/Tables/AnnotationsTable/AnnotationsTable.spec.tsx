@@ -38,7 +38,7 @@ jest.mock('../DisplayValuesTable/DisplayValuesTable', () => {
 describe('AnnotationsTable component', () => {
     const mockAnnotationApiResponse: AnnotationsApiResponse[] = [
         {
-            dataset: 'test-dataset-id',
+            studyset: 'test-studyset-id',
             notes: [],
             id: 'unique-id-1',
             created_at: 'some-created-at-date',
@@ -48,7 +48,7 @@ describe('AnnotationsTable component', () => {
             metadata: {},
         },
         {
-            dataset: 'test-dataset-id',
+            studyset: 'test-studyset-id',
             notes: [],
             id: 'unique-id-2',
             created_at: 'some-created-at-date',
@@ -61,7 +61,7 @@ describe('AnnotationsTable component', () => {
 
     const mockAnnotationApiResponseNoData: AnnotationsApiResponse[] = [
         {
-            dataset: 'test-dataset-id',
+            studyset: 'test-studyset-id',
             notes: [],
             id: 'unique-id-1',
             created_at: 'some-created-at-date',
@@ -72,7 +72,7 @@ describe('AnnotationsTable component', () => {
         },
     ];
 
-    const datasetId = 'test-dataset-id';
+    const studysetId = 'test-studyset-id';
 
     const historyMock = {
         push: jest.fn(),
@@ -91,7 +91,7 @@ describe('AnnotationsTable component', () => {
     it('should render', () => {
         render(
             <Router history={historyMock as any}>
-                <AnnotationsTable annotations={mockAnnotationApiResponse} datasetId={datasetId} />
+                <AnnotationsTable annotations={mockAnnotationApiResponse} studysetId={studysetId} />
             </Router>
         );
         const row = screen.getByText('mock table');
@@ -101,21 +101,21 @@ describe('AnnotationsTable component', () => {
     it('should handle row selection', () => {
         render(
             <Router history={historyMock as any}>
-                <AnnotationsTable annotations={mockAnnotationApiResponse} datasetId={datasetId} />
+                <AnnotationsTable annotations={mockAnnotationApiResponse} studysetId={studysetId} />
             </Router>
         );
 
         const button = screen.getByTestId('simulate-row-click');
         userEvent.click(button);
         expect(historyMock.push).toBeCalledWith(
-            '/datasets/test-dataset-id/annotations/some-selected-id'
+            '/studysets/test-studyset-id/annotations/some-selected-id'
         );
     });
 
     it('should format the data correctly', () => {
         render(
             <Router history={historyMock as any}>
-                <AnnotationsTable annotations={mockAnnotationApiResponse} datasetId={datasetId} />
+                <AnnotationsTable annotations={mockAnnotationApiResponse} studysetId={studysetId} />
             </Router>
         );
 
@@ -136,7 +136,7 @@ describe('AnnotationsTable component', () => {
             <Router history={historyMock as any}>
                 <AnnotationsTable
                     annotations={mockAnnotationApiResponseNoData}
-                    datasetId={datasetId}
+                    studysetId={studysetId}
                 />
             </Router>
         );
@@ -150,7 +150,7 @@ describe('AnnotationsTable component', () => {
             <Router history={historyMock as any}>
                 <AnnotationsTable
                     annotations={mockAnnotationApiResponseNoData}
-                    datasetId={datasetId}
+                    studysetId={studysetId}
                 />
             </Router>
         );

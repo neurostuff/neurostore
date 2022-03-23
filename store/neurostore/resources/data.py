@@ -2,11 +2,11 @@
 from .utils import view_maker
 from .base import BaseView, ObjectView, ListView
 from ..database import db
-from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions, User, AnnotationAnalysis, Annotation  # noqa E401
-from ..models.data import DatasetStudy
+from ..models import Studyset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions, User, AnnotationAnalysis, Annotation  # noqa E401
+from ..models.data import StudysetStudy
 
 from ..schemas import (  # noqa E401
-    DatasetSchema,
+    StudysetSchema,
     AnnotationSchema,
     StudySchema,
     AnalysisSchema,
@@ -16,12 +16,12 @@ from ..schemas import (  # noqa E401
     PointValueSchema,
     AnalysisConditionSchema,
     AnnotationAnalysisSchema,
-    DatasetStudySchema,
+    StudysetStudySchema,
 )
 
 
 __all__ = [
-    "DatasetView",
+    "StudysetView",
     "AnnotationView",
     "StudyView",
     "AnalysisView",
@@ -34,7 +34,7 @@ __all__ = [
     "AnnotationListView",
     "AnalysisListView",
     "ImageListView",
-    "DatasetListView",
+    "StudysetListView",
     "ConditionListView",
 ]
 
@@ -42,7 +42,7 @@ __all__ = [
 
 
 @view_maker
-class DatasetView(ObjectView):
+class StudysetView(ObjectView):
     _nested = {
         "studies": "StudyView",
     }
@@ -57,13 +57,13 @@ class AnnotationView(ObjectView):
         "annotation_analyses": "AnnotationAnalysisResource"
     }
     _linked = {
-        "dataset": "DatasetView",
+        "studyset": "StudysetView",
     }
 
     def insert_data(self, id, data):
-        if not data.get('dataset'):
+        if not data.get('studyset'):
             with db.session.no_autoflush:
-                data['dataset'] = self._model.query.filter_by(id=id).first().dataset.id
+                data['studyset'] = self._model.query.filter_by(id=id).first().studyset.id
         return data
 
 
@@ -73,7 +73,7 @@ class StudyView(ObjectView):
         "analyses": "AnalysisView",
     }
     _linked = {
-        "dataset": "DatasetView",
+        "studyset": "StudysetView",
     }
 
 
@@ -119,7 +119,7 @@ class PointValueView(ObjectView):
 # List resource views
 
 @view_maker
-class DatasetListView(ListView):
+class StudysetListView(ListView):
     _nested = {
         "studies": "StudyView",
     }
@@ -135,14 +135,14 @@ class AnnotationListView(ListView):
         "annotation_analyses": "AnnotationAnalysisResource",
     }
     _linked = {
-        "dataset": "DatasetView",
+        "studyset": "StudysetView",
     }
     _search_fields = ("name", "description")
 
     def insert_data(self, id, data):
-        if not data.get('dataset'):
+        if not data.get('studyset'):
             with db.session.no_autoflush:
-                data['dataset'] = self._model.query.filter_by(id=id).first().dataset.id
+                data['studyset'] = self._model.query.filter_by(id=id).first().studyset.id
         return data
 
     @classmethod
@@ -184,7 +184,7 @@ class StudyListView(ListView):
         "analyses": "AnalysisView",
     }
     _linked = {
-        "dataset": "DatasetView",
+        "studyset": "StudysetView",
     }
     _search_fields = ("name", "description", "source_id", "source", "authors", "publication")
 
@@ -279,21 +279,21 @@ class AnnotationAnalysisResource(BaseView):
     }
     _linked = {
         'analysis': "AnalysisView",
-        'dataset_study': "DatasetStudyResource",
+        'studyset_study': "StudysetStudyResource",
     }
     _model = AnnotationAnalysis
     _schema = AnnotationAnalysisSchema
     _composite_key = {}
 
 
-class DatasetStudyResource(BaseView):
+class StudysetStudyResource(BaseView):
     _parent = {
-        'dataset': "DatasetView",
+        'studyset': "StudysetView",
         'study': "StudyView",
     }
     _composite_key = {
-        'dataset_id': Dataset,
+        'studyset_id': Studyset,
         'study_id': Study,
     }
-    _model = DatasetStudy
-    _schema = DatasetStudySchema
+    _model = StudysetStudy
+    _schema = StudysetStudySchema

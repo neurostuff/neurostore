@@ -6,7 +6,7 @@ from ..models import (
     Point,
     PointValue,
     Image,
-    Dataset,
+    Studyset,
 )
 
 
@@ -43,5 +43,5 @@ def test_Image():
     Image()
 
 
-def test_Dataset():
-    Dataset()
+def test_Studyset():
+    Studyset()

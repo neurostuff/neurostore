@@ -1,11 +1,11 @@
 import React from 'react';
 import { useHistory } from 'react-router';
 import { DisplayValuesTable } from '../..';
-import { DatasetsApiResponse } from '../../../utils/api';
+import { StudysetsApiResponse } from '../../../utils/api';
 import { IDisplayValuesTableModel } from '../DisplayValuesTable';
 
-export interface IDatasetsTable {
-    datasets: DatasetsApiResponse[];
+export interface IStudysetsTable {
+    studysets: StudysetsApiResponse[];
     tableSize?: 'small' | 'medium';
 }
 
@@ -19,14 +19,14 @@ const getNumStudiesString = (studies: any[] | undefined): string => {
     }
 };
 
-const DatasetsTable: React.FC<IDatasetsTable> = (props) => {
+const StudysetsTable: React.FC<IStudysetsTable> = (props) => {
     const history = useHistory();
 
     const handleRowClick = (id: string | number) => {
-        history.push(`/datasets/${id}`);
+        history.push(`/studysets/${id}`);
     };
 
-    const dataForDatasetsTable: IDisplayValuesTableModel = {
+    const dataForStudysetsTable: IDisplayValuesTableModel = {
         columnHeaders: [
             { value: 'Name', bold: true },
             { value: '# of Studies', bold: true },
@@ -37,26 +37,26 @@ const DatasetsTable: React.FC<IDatasetsTable> = (props) => {
         tableHeadRowTextContrastColor: 'white',
         onValueSelected: handleRowClick,
         paper: true,
-        rowData: props.datasets.map((dataset, index) => ({
-            uniqueKey: dataset.id || index,
+        rowData: props.studysets.map((studyset, index) => ({
+            uniqueKey: studyset.id || index,
             columnValues: [
                 {
-                    value: dataset.name ?? 'No name',
-                    shouldHighlightNoData: !dataset.name,
+                    value: studyset.name ?? 'No name',
+                    shouldHighlightNoData: !studyset.name,
                 },
                 {
-                    value: getNumStudiesString(dataset.studies),
-                    shouldHighlightNoData: getNumStudiesString(dataset.studies) === '0 studies',
+                    value: getNumStudiesString(studyset.studies),
+                    shouldHighlightNoData: getNumStudiesString(studyset.studies) === '0 studies',
                 },
                 {
-                    value: dataset.description ?? 'No description',
-                    shouldHighlightNoData: !dataset.description,
+                    value: studyset.description ?? 'No description',
+                    shouldHighlightNoData: !studyset.description,
                 },
             ],
         })),
     };
 
-    return <DisplayValuesTable {...dataForDatasetsTable} />;
+    return <DisplayValuesTable {...dataForStudysetsTable} />;
 };
 
-export default DatasetsTable;
+export default StudysetsTable;

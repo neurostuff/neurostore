@@ -1,8 +1,8 @@
 import pytest
 from marshmallow import fields
-from ...models import User, Dataset, Study, Annotation, Analysis, Condition, Image, Point
+from ...models import User, Studyset, Study, Annotation, Analysis, Condition, Image, Point
 from ...schemas import (
-    DatasetSchema, StudySchema, AnnotationSchema, AnalysisSchema,
+    StudysetSchema, StudySchema, AnnotationSchema, AnalysisSchema,
     ConditionSchema, ImageSchema, PointSchema
 )
 from ...schemas.data import StringOrNested
@@ -11,7 +11,7 @@ from ...schemas.data import StringOrNested
 @pytest.mark.parametrize(
     "endpoint,model,schema",
     [
-        ("datasets", Dataset, DatasetSchema),
+        ("studysets", Studyset, StudysetSchema),
         # ("annotations", Annotation, AnnotationSchema), FIX
         ("studies", Study, StudySchema),
         ("analyses", Analysis, AnalysisSchema),
@@ -42,7 +42,7 @@ def test_create(auth_client, user_data, endpoint, model, schema):
 @pytest.mark.parametrize(
     "endpoint,model,schema",
     [
-        ("datasets", Dataset, DatasetSchema),
+        ("studysets", Studyset, StudysetSchema),
         ("annotations", Annotation, AnnotationSchema),
         ("studies", Study, StudySchema),
         ("analyses", Analysis, AnalysisSchema),
@@ -72,7 +72,7 @@ def test_read(auth_client, user_data, endpoint, model, schema):
 @pytest.mark.parametrize(
     "endpoint,model,schema,update",
     [
-        ("datasets", Dataset, DatasetSchema, {'description': 'mine'}),
+        ("studysets", Studyset, StudysetSchema, {'description': 'mine'}),
         # ("annotations", Annotation, AnnotationSchema, {'description': 'mine'}), FIX
         ("studies", Study, StudySchema, {'description': 'mine'}),
         ("analyses", Analysis, AnalysisSchema, {'description': 'mine'}),
@@ -96,7 +96,7 @@ def test_update(auth_client, user_data, endpoint, model, schema, update):
 @pytest.mark.parametrize(
     "endpoint,model,schema",
     [
-        ("datasets", Dataset, DatasetSchema),
+        ("studysets", Studyset, StudysetSchema),
         ("annotations", Annotation, AnnotationSchema),
         ("studies", Study, StudySchema),
         ("analyses", Analysis, AnalysisSchema),

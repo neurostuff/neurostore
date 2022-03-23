@@ -20,9 +20,9 @@ from neurostore.models import (
     Image,
     Point,
     Study,
-    Dataset,
+    Studyset,
 )
-from neurostore.models.data import DatasetStudy, _check_type
+from neurostore.models.data import StudysetStudy, _check_type
 
 
 def ingest_neurovault(verbose=False, limit=20):
@@ -147,8 +147,8 @@ def ingest_neurosynth(max_rows=None):
         metadata = metadata.iloc[:max_rows]
         annotations = annotations.iloc[:max_rows]
 
-    # create dataset object
-    d = Dataset(
+    # create studyset object
+    d = Studyset(
         name="neurosynth",
         description="TODO",
         publication="Nature Methods",
@@ -200,7 +200,7 @@ def ingest_neurosynth(max_rows=None):
             to_commit.extend(analyses)
             studies.append(s)
 
-        # add studies to dataset
+        # add studies to studyset
         d.studies = studies
         db.session.add(d)
         db.session.commit()
@@ -211,7 +211,7 @@ def ingest_neurosynth(max_rows=None):
             source="neurostore",
             source_id=None,
             description="TODO",
-            dataset=d,
+            studyset=d,
         )
 
         # collect notes (single annotations) for each analysis
@@ -222,8 +222,8 @@ def ingest_neurosynth(max_rows=None):
             id_ = metadata_row.Index
             study_coord_data = coord_data.loc[[id_]]
             study = Study.query.filter_by(pmid=id_).one()
-            dataset_study = DatasetStudy.query.filter_by(
-                study_id=study.id, dataset_id=d.id
+            studyset_study = StudysetStudy.query.filter_by(
+                study_id=study.id, studyset_id=d.id
             ).one()
 
             for analysis in study.analyses:
@@ -233,7 +233,7 @@ def ingest_neurosynth(max_rows=None):
                         note=annotation_row._asdict(),
                         analysis=analysis,
                         annotation=annot,
-                        dataset_study=dataset_study,
+                        studyset_study=studyset_study,
                     )
                 )
 
@@ -290,8 +290,8 @@ def ingest_neuroquery(max_rows=None):
         db.session.add_all([s] + analyses + points)
         db.session.commit()
 
-    # make a neuroquery dataset
-    d = Dataset(
+    # make a neuroquery studyset
+    d = Studyset(
         name="neuroquery",
         description="TODO",
         publication="eLife",

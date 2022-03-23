@@ -25,7 +25,7 @@ const EditAnnotationsPage: React.FC = (props) => {
 
     const params: {
         annotationId: string;
-        datasetId: string;
+        studysetId: string;
     } = useParams();
 
     useEffect(() => {
@@ -81,7 +81,7 @@ const EditAnnotationsPage: React.FC = (props) => {
     };
 
     const handleOnCancel = (event: React.MouseEvent) => {
-        history.push(`/datasets/${params.datasetId}`);
+        history.push(`/studysets/${params.studysetId}`);
     };
 
     const handleCloseConfirmationDialog = async (confirm: boolean | undefined) => {
@@ -97,7 +97,7 @@ const EditAnnotationsPage: React.FC = (props) => {
             }
             API.Services.AnnotationsService.annotationsIdDelete(annotation.id)
                 .then(() => {
-                    history.push(`/datasets/${params.datasetId}`);
+                    history.push(`/studysets/${params.studysetId}`);
                     showSnackbar('deleted annotation', SnackbarType.SUCCESS);
                 })
                 .catch((err) => {
@@ -148,7 +148,7 @@ const EditAnnotationsPage: React.FC = (props) => {
                     sx={EditStudyPageStyles.button}
                     variant="outlined"
                 >
-                    Return to Dataset View
+                    Return to Studyset View
                 </Button>
             </Box>
 

@@ -3,14 +3,14 @@ import userEvent from '@testing-library/user-event';
 import CreateDetailsDialog from './CreateDetailsDialog';
 
 describe('CreateDetailsDialog', () => {
-    const mockOnCreateDataset = jest.fn();
+    const mockOnCreateStudyset = jest.fn();
     const mockOnCloseDialog = jest.fn();
     it('should render', () => {
         render(
             <CreateDetailsDialog
                 titleText="some title text"
                 isOpen={true}
-                onCreate={mockOnCreateDataset}
+                onCreate={mockOnCreateStudyset}
                 onCloseDialog={mockOnCloseDialog}
             />
         );
@@ -27,7 +27,7 @@ describe('CreateDetailsDialog', () => {
             <CreateDetailsDialog
                 titleText="some title text"
                 isOpen={true}
-                onCreate={mockOnCreateDataset}
+                onCreate={mockOnCreateStudyset}
                 onCloseDialog={mockOnCloseDialog}
             />
         );
@@ -43,7 +43,7 @@ describe('CreateDetailsDialog', () => {
             <CreateDetailsDialog
                 titleText="some title text"
                 isOpen={true}
-                onCreate={mockOnCreateDataset}
+                onCreate={mockOnCreateStudyset}
                 onCloseDialog={mockOnCloseDialog}
             />
         );
@@ -56,7 +56,7 @@ describe('CreateDetailsDialog', () => {
             <CreateDetailsDialog
                 titleText="some title text"
                 isOpen={true}
-                onCreate={mockOnCreateDataset}
+                onCreate={mockOnCreateStudyset}
                 onCloseDialog={mockOnCloseDialog}
             />
         );
@@ -73,7 +73,7 @@ describe('CreateDetailsDialog', () => {
             <CreateDetailsDialog
                 titleText="some title text"
                 isOpen={true}
-                onCreate={mockOnCreateDataset}
+                onCreate={mockOnCreateStudyset}
                 onCloseDialog={mockOnCloseDialog}
             />
         );
@@ -90,7 +90,7 @@ describe('CreateDetailsDialog', () => {
             <CreateDetailsDialog
                 titleText="some title text"
                 isOpen={true}
-                onCreate={mockOnCreateDataset}
+                onCreate={mockOnCreateStudyset}
                 onCloseDialog={mockOnCloseDialog}
             />
         );
@@ -101,6 +101,6 @@ describe('CreateDetailsDialog', () => {
         const createButton = screen.getByRole('button', { name: 'Create' });
         userEvent.click(createButton);
 
-        expect(mockOnCreateDataset).toBeCalledWith('ABC', '');
+        expect(mockOnCreateStudyset).toBeCalledWith('ABC', '');
     });
 });

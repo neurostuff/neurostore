@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Router } from 'react-router-dom';
-import { DatasetsApiResponse } from '../../../utils/api';
+import { StudysetsApiResponse } from '../../../utils/api';
 import { IDisplayValuesTableModel } from '../DisplayValuesTable';
-import DatasetsTable from './DatasetsTable';
+import StudysetsTable from './StudysetsTable';
 
 jest.mock('../DisplayValuesTable/DisplayValuesTable', () => {
     return (props: IDisplayValuesTableModel) => {
@@ -32,8 +32,8 @@ jest.mock('../DisplayValuesTable/DisplayValuesTable', () => {
     };
 });
 
-describe('DatasetsTable', () => {
-    const mockDatasets: DatasetsApiResponse[] = [
+describe('StudysetsTable', () => {
+    const mockStudysets: StudysetsApiResponse[] = [
         {
             created_at: '2021-12-14T05:05:45.722157+00:00',
             description: 'test-description-1',
@@ -58,7 +58,7 @@ describe('DatasetsTable', () => {
         },
     ];
 
-    const mockDatasetsNoInfo: DatasetsApiResponse[] = [
+    const mockStudysetsNoInfo: StudysetsApiResponse[] = [
         {
             created_at: '2021-12-14T05:05:45.722157+00:00',
             description: null,
@@ -81,7 +81,7 @@ describe('DatasetsTable', () => {
     it('should render', () => {
         render(
             <Router history={historyMock as any}>
-                <DatasetsTable datasets={mockDatasets} />
+                <StudysetsTable studysets={mockStudysets} />
             </Router>
         );
         const table = screen.getByText('mock table');
@@ -91,7 +91,7 @@ describe('DatasetsTable', () => {
     it('should show no name message when there is no name', () => {
         render(
             <Router history={historyMock as any}>
-                <DatasetsTable datasets={mockDatasetsNoInfo} />
+                <StudysetsTable studysets={mockStudysetsNoInfo} />
             </Router>
         );
         const noNameMessage = screen.getByText('Name: No name');
@@ -101,7 +101,7 @@ describe('DatasetsTable', () => {
     it('should show no description message when there is no description', () => {
         render(
             <Router history={historyMock as any}>
-                <DatasetsTable datasets={mockDatasetsNoInfo} />
+                <StudysetsTable studysets={mockStudysetsNoInfo} />
             </Router>
         );
         const noDescriptionMessage = screen.getByText('Description: No description');
@@ -111,7 +111,7 @@ describe('DatasetsTable', () => {
     it('should show 0 studies', () => {
         render(
             <Router history={historyMock as any}>
-                <DatasetsTable datasets={mockDatasetsNoInfo} />
+                <StudysetsTable studysets={mockStudysetsNoInfo} />
             </Router>
         );
         const noStudies = screen.getByText('# of Studies: 0 studies');
@@ -119,7 +119,7 @@ describe('DatasetsTable', () => {
     });
 
     it('should show 1 study', () => {
-        const mockDataWithOneStudy: DatasetsApiResponse[] = [
+        const mockDataWithOneStudy: StudysetsApiResponse[] = [
             {
                 created_at: '2021-12-14T05:05:45.722157+00:00',
                 description: null,
@@ -134,7 +134,7 @@ describe('DatasetsTable', () => {
         ];
         render(
             <Router history={historyMock as any}>
-                <DatasetsTable datasets={mockDataWithOneStudy} />
+                <StudysetsTable studysets={mockDataWithOneStudy} />
             </Router>
         );
 
@@ -143,7 +143,7 @@ describe('DatasetsTable', () => {
     });
 
     it('should show multiple studies', () => {
-        const mockDataWithOneStudy: DatasetsApiResponse[] = [
+        const mockDataWithOneStudy: StudysetsApiResponse[] = [
             {
                 created_at: '2021-12-14T05:05:45.722157+00:00',
                 description: null,
@@ -158,7 +158,7 @@ describe('DatasetsTable', () => {
         ];
         render(
             <Router history={historyMock as any}>
-                <DatasetsTable datasets={mockDataWithOneStudy} />
+                <StudysetsTable studysets={mockDataWithOneStudy} />
             </Router>
         );
 
@@ -169,24 +169,24 @@ describe('DatasetsTable', () => {
     it('should handle the selection on row select', () => {
         render(
             <Router history={historyMock as any}>
-                <DatasetsTable datasets={mockDatasets} />
+                <StudysetsTable studysets={mockStudysets} />
             </Router>
         );
 
         const row = screen.getByTestId('simulate-row-click');
         userEvent.click(row);
 
-        expect(historyMock.push).toBeCalledWith('/datasets/some-selected-id');
+        expect(historyMock.push).toBeCalledWith('/studysets/some-selected-id');
     });
 
     it('should format the data correctly', () => {
         render(
             <Router history={historyMock as any}>
-                <DatasetsTable datasets={mockDatasets} />
+                <StudysetsTable studysets={mockStudysets} />
             </Router>
         );
 
-        mockDatasets.forEach((res) => {
+        mockStudysets.forEach((res) => {
             const uniqueKey = screen.getByText(`unique key: ${res.id}`);
             const name = screen.getByText(`Name: ${res.name}`);
             const description = screen.getByText(`Description: ${res.description}`);

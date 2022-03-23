@@ -14,8 +14,8 @@ import { useHistory } from 'react-router-dom';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import { ReadOnly, Study } from '../../../gen/api';
 import useIsMounted from '../../../hooks/useIsMounted';
-import API, { DatasetsApiResponse, StudyApiResponse } from '../../../utils/api';
-import DatasetsPopupMenu from '../../DatasetsPopupMenu/DatasetsPopupMenu';
+import API, { StudysetsApiResponse, StudyApiResponse } from '../../../utils/api';
+import StudysetsPopupMenu from '../../StudysetsPopupMenu/StudysetsPopupMenu';
 import StudiesTableStyles from './StudiesTable.styles';
 
 interface StudiesTableModel {
@@ -25,7 +25,7 @@ interface StudiesTableModel {
 
 const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     const { isAuthenticated, user, getAccessTokenSilently } = useAuth0();
-    const [datasets, setDatasets] = useState<DatasetsApiResponse[]>();
+    const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
     const history = useHistory();
     const { handleToken, showSnackbar } = useContext(GlobalContext);
     const { current } = useIsMounted();
@@ -38,8 +38,8 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
 
     useEffect(() => {
         if (shouldShowStudyOptions) {
-            const getDatasets = async () => {
-                API.Services.DataSetsService.datasetsGet(
+            const getStudysets = async () => {
+                API.Services.StudySetsService.studysetsGet(
                     undefined,
                     undefined,
                     undefined,
@@ -56,7 +56,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                 )
                     .then((res) => {
                         if (current && res?.data?.results) {
-                            setDatasets(res.data.results);
+                            setStudysets(res.data.results);
                         }
                     })
                     .catch((err) => {
@@ -64,11 +64,11 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                     });
             };
 
-            getDatasets();
+            getStudysets();
         }
     }, [shouldShowStudyOptions, user?.sub, current]);
 
-    const handleDatasetCreated = async (name: string, description: string) => {
+    const handleStudysetCreated = async (name: string, description: string) => {
         try {
             const token = await getAccessTokenSilently();
             handleToken(token);
@@ -76,19 +76,19 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
             showSnackbar('there was an error', SnackbarType.ERROR);
             console.error(exception);
         }
-        API.Services.DataSetsService.datasetsPost({
+        API.Services.StudySetsService.studysetsPost({
             name,
             description,
         })
             .then((res) => {
-                showSnackbar('dataset created', SnackbarType.SUCCESS);
+                showSnackbar('studyset created', SnackbarType.SUCCESS);
                 if (current) {
-                    const createdDataset = res.data;
-                    setDatasets((prevState) => {
+                    const createdStudyset = res.data;
+                    setStudysets((prevState) => {
                         if (!prevState) return prevState;
-                        const newDatasets = [...prevState];
-                        newDatasets.push(createdDataset as any);
-                        return newDatasets;
+                        const newStudysets = [...prevState];
+                        newStudysets.push(createdStudyset as any);
+                        return newStudysets;
                     });
                 }
             })
@@ -98,9 +98,9 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
             });
     };
 
-    const handleAddStudyToDataset = async (
+    const handleAddStudyToStudyset = async (
         study: StudyApiResponse,
-        dataset: DatasetsApiResponse
+        studyset: StudysetsApiResponse
     ) => {
         try {
             const token = await getAccessTokenSilently();
@@ -110,29 +110,29 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
             console.error(exception);
         }
 
-        const selectedDatasetStudies = [...(dataset.studies || [])] as string[];
-        selectedDatasetStudies.push(study.id as string);
+        const selectedStudysetStudies = [...(studyset.studies || [])] as string[];
+        selectedStudysetStudies.push(study.id as string);
 
-        API.Services.DataSetsService.datasetsIdPut(dataset.id as string, {
-            name: dataset.name,
-            studies: selectedDatasetStudies as string[],
+        API.Services.StudySetsService.studysetsIdPut(studyset.id as string, {
+            name: studyset.name,
+            studies: selectedStudysetStudies as string[],
         })
             .then((res) => {
                 // temporary fix. TODO: fix open-api spec
-                const updatedDataset = res.data as unknown as DatasetsApiResponse;
+                const updatedStudyset = res.data as unknown as StudysetsApiResponse;
 
                 showSnackbar(
-                    `${study.name} added to ${dataset.name || dataset.id}`,
+                    `${study.name} added to ${studyset.name || studyset.id}`,
                     SnackbarType.SUCCESS
                 );
                 if (current) {
-                    setDatasets((prevState) => {
+                    setStudysets((prevState) => {
                         if (!prevState) return prevState;
                         const newArr = [...prevState];
-                        const modifiedDatasetIndex = newArr.findIndex(
-                            (x) => x.id === updatedDataset.id
+                        const modifiedStudysetIndex = newArr.findIndex(
+                            (x) => x.id === updatedStudyset.id
                         );
-                        newArr[modifiedDatasetIndex] = { ...updatedDataset };
+                        newArr[modifiedStudysetIndex] = { ...updatedStudyset };
                         return newArr;
                     });
                 }
@@ -164,11 +164,11 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                         >
                             {shouldShowStudyOptions && (
                                 <TableCell>
-                                    <DatasetsPopupMenu
+                                    <StudysetsPopupMenu
                                         study={row}
-                                        onStudyAddedToDataset={handleAddStudyToDataset}
-                                        onCreateDataset={handleDatasetCreated}
-                                        datasets={datasets}
+                                        onStudyAddedToStudyset={handleAddStudyToStudyset}
+                                        onCreateStudyset={handleStudysetCreated}
+                                        studysets={studysets}
                                     />
                                 </TableCell>
                             )}
