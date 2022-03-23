@@ -17,7 +17,7 @@ const UserStudysetsPage: React.FC = (props) => {
 
     useEffect(() => {
         const getStudysets = async () => {
-            API.Services.StudySetsService.datasetsGet(
+            API.Services.StudySetsService.studysetsGet(
                 undefined,
                 undefined,
                 undefined,
@@ -52,7 +52,7 @@ const UserStudysetsPage: React.FC = (props) => {
             console.error(exception);
         }
 
-        API.Services.StudySetsService.datasetsPost({
+        API.Services.StudySetsService.studysetsPost({
             name,
             description,
         })

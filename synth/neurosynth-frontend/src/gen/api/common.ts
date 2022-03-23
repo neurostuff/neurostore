@@ -2,7 +2,7 @@
 /* eslint-disable */
 /**
  * neurostore api
- * Create datasets for meta-analysis
+ * Create studysets for meta-analysis
  *
  * The version of the OpenAPI document: 1.0
  * Contact: jamesdkent21@gmail.com

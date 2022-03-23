@@ -36,7 +36,7 @@ const StudysetsPage: React.FC = (props) => {
 
     useEffect(() => {
         const getStudyset = async (id: string) => {
-            API.Services.StudySetsService.datasetsIdGet(id, true)
+            API.Services.StudySetsService.studysetsIdGet(id, true)
                 .then((res) => {
                     if (current) {
                         const receivedStudyset = res.data;
@@ -85,7 +85,7 @@ const StudysetsPage: React.FC = (props) => {
 
             if (!studyset) return;
 
-            API.Services.StudySetsService.datasetsIdPut(params.studysetId, {
+            API.Services.StudySetsService.studysetsIdPut(params.studysetId, {
                 name: studyset.name,
                 studies: (studyset.studies as StudyApiResponse[]).map((x) => x.id as string),
                 [fieldName]: editedText,
@@ -120,7 +120,7 @@ const StudysetsPage: React.FC = (props) => {
                 showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(exception);
             }
-            API.Services.StudySetsService.datasetsIdDelete(studyset.id)
+            API.Services.StudySetsService.studysetsIdDelete(studyset.id)
                 .then((res) => {
                     history.push('/userstudysets');
                     showSnackbar('deleted studyset', SnackbarType.SUCCESS);
@@ -146,7 +146,7 @@ const StudysetsPage: React.FC = (props) => {
                 name,
                 description,
                 note_keys: {},
-                dataset: params.studysetId,
+                studyset: params.studysetId,
             })
                 .then((res) => {
                     showSnackbar('successfully created annotation', SnackbarType.SUCCESS);

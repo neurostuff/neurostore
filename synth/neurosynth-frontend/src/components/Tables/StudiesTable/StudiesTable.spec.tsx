@@ -21,8 +21,8 @@ jest.mock('../../../utils/api', () => {
         __esModule: true,
         default: {
             Services: {
-                DataSetsService: {
-                    datasetsGet: jest.fn(() => {
+                StudySetsService: {
+                    studysetsGet: jest.fn(() => {
                         const mockStudysets: StudysetsApiResponse[] = [
                             {
                                 created_at: '2021-12-14T05:05:45.722157+00:00',
@@ -42,7 +42,7 @@ jest.mock('../../../utils/api', () => {
                             },
                         });
                     }),
-                    datasetsPost: jest.fn(() => {
+                    studysetsPost: jest.fn(() => {
                         const mockStudyset: StudysetsApiResponse = {
                             created_at: '2021-12-14T05:05:34.722631+00:00',
                             description: null,
@@ -58,7 +58,7 @@ jest.mock('../../../utils/api', () => {
                             data: mockStudyset,
                         });
                     }),
-                    datasetsIdPut: jest.fn(() => {
+                    studysetsIdPut: jest.fn(() => {
                         const mockStudyset: StudysetsApiResponse = {
                             created_at: '2021-12-14T05:05:34.722631+00:00',
                             description: null,
@@ -209,7 +209,7 @@ describe('StudiesTable Component', () => {
 
         // subtract 1 to account for the table header
         expect(rows.length - 1).toEqual(mockStudies.length);
-        expect(API.Services.StudySetsService.datasetsGet).toHaveBeenCalled();
+        expect(API.Services.StudySetsService.studysetsGet).toHaveBeenCalled();
     });
 
     it('should show no data', async () => {
@@ -281,7 +281,7 @@ describe('StudiesTable Component', () => {
             userEvent.click(studysetCreatedButton);
         });
 
-        expect(API.Services.StudySetsService.datasetsPost).toBeCalled();
+        expect(API.Services.StudySetsService.studysetsPost).toBeCalled();
     });
 
     it('should edit the studyset', async () => {
@@ -309,7 +309,7 @@ describe('StudiesTable Component', () => {
             userEvent.click(studysetEditButton);
         });
 
-        expect(API.Services.StudySetsService.datasetsIdPut).toBeCalledWith('123', {
+        expect(API.Services.StudySetsService.studysetsIdPut).toBeCalledWith('123', {
             name: 'test-name',
             studies: ['5LMdXPD3ocgD'],
         });

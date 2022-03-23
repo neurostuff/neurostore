@@ -39,7 +39,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     useEffect(() => {
         if (shouldShowStudyOptions) {
             const getStudysets = async () => {
-                API.Services.StudySetsService.datasetsGet(
+                API.Services.StudySetsService.studysetsGet(
                     undefined,
                     undefined,
                     undefined,
@@ -76,7 +76,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
             showSnackbar('there was an error', SnackbarType.ERROR);
             console.error(exception);
         }
-        API.Services.StudySetsService.datasetsPost({
+        API.Services.StudySetsService.studysetsPost({
             name,
             description,
         })
@@ -113,7 +113,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
         const selectedStudysetStudies = [...(studyset.studies || [])] as string[];
         selectedStudysetStudies.push(study.id as string);
 
-        API.Services.StudySetsService.datasetsIdPut(studyset.id as string, {
+        API.Services.StudySetsService.studysetsIdPut(studyset.id as string, {
             name: studyset.name,
             studies: selectedStudysetStudies as string[],
         })

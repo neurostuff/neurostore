@@ -35,7 +35,7 @@ jest.mock('../DisplayValuesTable/DisplayValuesTable', () => {
 describe('AnnotationsTable component', () => {
     const mockAnnotationApiResponse: AnnotationsApiResponse[] = [
         {
-            dataset: 'test-dataset-id',
+            studyset: 'test-studyset-id',
             notes: [],
             id: 'unique-id-1',
             created_at: 'some-created-at-date',
@@ -45,7 +45,7 @@ describe('AnnotationsTable component', () => {
             metadata: {},
         },
         {
-            dataset: 'test-dataset-id',
+            studyset: 'test-studyset-id',
             notes: [],
             id: 'unique-id-2',
             created_at: 'some-created-at-date',
@@ -58,7 +58,7 @@ describe('AnnotationsTable component', () => {
 
     const mockAnnotationApiResponseNoData: AnnotationsApiResponse[] = [
         {
-            dataset: 'test-dataset-id',
+            studyset: 'test-studyset-id',
             notes: [],
             id: 'unique-id-1',
             created_at: 'some-created-at-date',
