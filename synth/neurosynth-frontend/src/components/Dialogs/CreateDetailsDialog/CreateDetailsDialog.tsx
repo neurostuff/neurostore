@@ -1,11 +1,12 @@
 import { Box, Button, Dialog, DialogContent, DialogTitle, TextField } from '@mui/material';
-import { ChangeEvent, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 
 export interface ICreateDetailsDialog {
     isOpen: boolean;
     onCreate: (name: string, description: string) => void;
     onCloseDialog: () => void;
     titleText: string;
+    initName?: string;
 }
 
 const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
@@ -15,6 +16,13 @@ const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
         name: '',
         description: '',
     });
+
+    useEffect(() => {
+        setDetails({
+            name: props.initName || '',
+            description: '',
+        });
+    }, [props.initName]);
 
     const handleOnChange = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
         setHasEnteredText(true);

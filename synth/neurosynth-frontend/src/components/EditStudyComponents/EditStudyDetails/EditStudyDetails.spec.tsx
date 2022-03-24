@@ -182,16 +182,16 @@ describe('EditStudyDetails Component', () => {
         expect(saveChangesText).not.toBeInTheDocument();
     });
 
-    it('should call the onEditStudyDetails func with the original data when the revertChanges button is clicked', () => {
+    it('should call the onEditStudyDetails func with the original data when the cancel button is clicked', () => {
         // open accordion
         const title = screen.getByText('Edit Study Details');
         userEvent.click(title);
 
-        // we expect the revert changes button to be disabled initially
-        let revertChangesButton = screen.getByRole('button', { name: 'Revert Changes' });
+        // we expect the cancel button to be disabled initially
+        let revertChangesButton = screen.getByRole('button', { name: 'Cancel' });
         expect(revertChangesButton).toBeDisabled();
 
-        // mock a type event in order to enable the revert changes button
+        // mock a type event in order to enable the cancel button
         let descriptionTextbox = screen.getByDisplayValue(mockStudyDetails.description);
         userEvent.type(descriptionTextbox, 'E');
 
@@ -203,8 +203,8 @@ describe('EditStudyDetails Component', () => {
         descriptionTextbox = screen.getByDisplayValue(mockStudyDetails.description);
         expect(descriptionTextbox).toBeInTheDocument();
 
-        // revert changes button should now be enabled
-        revertChangesButton = screen.getByRole('button', { name: 'Revert Changes' });
+        // cancel button should now be enabled
+        revertChangesButton = screen.getByRole('button', { name: 'Cancel' });
         expect(revertChangesButton).not.toBeDisabled();
 
         userEvent.click(revertChangesButton);
@@ -222,21 +222,21 @@ describe('EditStudyDetails Component', () => {
         });
     });
 
-    it('should not indicate unsaved changes when the revert changes button is clicked', () => {
+    it('should not indicate unsaved changes when the Cancel button is clicked', () => {
         // open accordion
         const title = screen.getByText('Edit Study Details');
         userEvent.click(title);
 
-        // we expect the revert changes button to be disabled initially
-        let revertChangesButton = screen.getByRole('button', { name: 'Revert Changes' });
+        // we expect the cancel button to be disabled initially
+        let revertChangesButton = screen.getByRole('button', { name: 'Cancel' });
         expect(revertChangesButton).toBeDisabled();
 
-        // mock a type event in order to enable the revert changes button
+        // mock a type event in order to enable the cancel button
         let descriptionTextbox = screen.getByDisplayValue(mockStudyDetails.description);
         userEvent.type(descriptionTextbox, 'E');
 
-        // revert changes button should now be enabled
-        revertChangesButton = screen.getByRole('button', { name: 'Revert Changes' });
+        // Cancel button should now be enabled
+        revertChangesButton = screen.getByRole('button', { name: 'Cancel' });
         expect(revertChangesButton).not.toBeDisabled();
 
         userEvent.click(revertChangesButton);
@@ -244,7 +244,7 @@ describe('EditStudyDetails Component', () => {
         const unsavedChangesText = screen.queryByText('unsaved changes');
         expect(unsavedChangesText).not.toBeInTheDocument();
 
-        revertChangesButton = screen.getByRole('button', { name: 'Revert Changes' });
+        revertChangesButton = screen.getByRole('button', { name: 'Cancel' });
         expect(revertChangesButton).toBeDisabled();
 
         const updateButton = screen.getByRole('button', { name: 'Update' });

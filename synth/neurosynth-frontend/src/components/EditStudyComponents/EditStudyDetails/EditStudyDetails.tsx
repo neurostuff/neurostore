@@ -196,7 +196,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
                         variant="outlined"
                         sx={EditStudyDetailsStyles.button}
                     >
-                        Revert Changes
+                        Cancel
                     </Button>
                 </AccordionDetails>
             </Accordion>

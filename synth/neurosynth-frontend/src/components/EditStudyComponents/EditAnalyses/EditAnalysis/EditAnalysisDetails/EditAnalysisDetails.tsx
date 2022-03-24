@@ -9,7 +9,7 @@ import API from '../../../../../utils/api';
 import EditAnalysisDetailsStyles from './EditAnalysisDetails.styles';
 import EditAnalysisStyles from '../EditAnalysis.styles';
 
-const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
+const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = React.memo((props) => {
     const [originalDetails, setOriginalDetails] = useState({
         name: props.name,
         description: props.description,
@@ -71,6 +71,14 @@ const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
             });
     };
 
+    const handleRevertChanges = (event: React.MouseEvent) => {
+        props.onEditAnalysisDetails({ ...originalDetails });
+        setUpdateEnabled({
+            name: false,
+            description: false,
+        });
+    };
+
     return (
         <Box>
             <TextField
@@ -109,6 +117,15 @@ const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
                     >
                         Update
                     </Button>
+                    <Button
+                        sx={[EditAnalysisStyles.analysisButton, { marginRight: '15px' }]}
+                        variant="outlined"
+                        color="secondary"
+                        onClick={handleRevertChanges}
+                        disabled={!(updatedEnabled.name || updatedEnabled.description)}
+                    >
+                        Cancel
+                    </Button>
                 </Box>
                 <Button
                     sx={EditAnalysisStyles.analysisButton}
@@ -121,6 +138,6 @@ const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = (props) => {
             </Box>
         </Box>
     );
-};
+});
 
 export default EditAnalysisDetails;

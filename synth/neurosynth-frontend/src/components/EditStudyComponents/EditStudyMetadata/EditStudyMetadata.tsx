@@ -170,7 +170,7 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
                     onClick={handleRevertChanges}
                     sx={EditStudyMetadataStyles.button}
                 >
-                    Revert Changes
+                    Cancel
                 </Button>
             </AccordionDetails>
         </Accordion>

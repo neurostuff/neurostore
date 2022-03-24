@@ -8,7 +8,7 @@ import {
     MuiEvent,
 } from '@mui/x-data-grid';
 import { AxiosError } from 'axios';
-import { MouseEvent, useContext, useState } from 'react';
+import React, { MouseEvent, useContext, useState } from 'react';
 import { IEditAnalysisConditions } from '../..';
 import { GlobalContext, SnackbarType } from '../../../../../contexts/GlobalContext';
 import useIsMounted from '../../../../../hooks/useIsMounted';
@@ -16,7 +16,11 @@ import API, { ConditionApiResponse } from '../../../../../utils/api';
 import ConditionSelector from './ConditionSelector/ConditionSelector';
 import EditAnalysisStyles from '../EditAnalysis.styles';
 
-const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = (props) => {
+const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = React.memo((props) => {
+    const [originalDetails, setOriginalDetails] = useState({
+        conditions: props.conditions,
+        weights: props.weights,
+    });
     const isMountedRef = useIsMounted();
     const { getAccessTokenSilently } = useAuth0();
     const context = useContext(GlobalContext);
@@ -124,6 +128,14 @@ const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = (props) => {
         }
     };
 
+    const handleRevertConditions = (_event: MouseEvent) => {
+        props.onConditionWeightChange(
+            props.analysisId,
+            originalDetails.conditions as ConditionApiResponse[],
+            originalDetails.weights as number[]
+        );
+    };
+
     return (
         <>
             <ConditionSelector onConditionSelected={handleConditionSelected} />
@@ -132,13 +144,28 @@ const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = (props) => {
                 sx={{
                     '& .MuiDataGrid-root': {
                         borderColor: updatedEnabled ? '#ef8a24 !important' : 'lightgray',
+                        borderWidth: '2px',
                     },
                 }}
             >
-                <Typography variant="h6" sx={{ marginBottom: '1rem' }}>
-                    Conditions for this analysis
-                </Typography>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-end',
+                        marginBottom: '1rem',
+                    }}
+                >
+                    <Typography variant="h6">Conditions for this analysis</Typography>
 
+                    {updatedEnabled && (
+                        <Typography color="secondary" variant="caption">
+                            unsaved changes
+                        </Typography>
+                    )}
+                </Box>
+
+                {/* we get an error as we are doing display: block. This seems to be harmless */}
                 <DataGrid
                     sx={{
                         '& .readonly': {
@@ -200,9 +227,18 @@ const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = (props) => {
                 >
                     Update
                 </Button>
+                <Button
+                    sx={EditAnalysisStyles.analysisButton}
+                    variant="outlined"
+                    color="secondary"
+                    disabled={!updatedEnabled}
+                    onClick={handleRevertConditions}
+                >
+                    Cancel
+                </Button>
             </Box>
         </>
     );
-};
+});
 
 export default EditAnalysisConditions;

@@ -6,12 +6,14 @@ import useIsMounted from '../../../../../../hooks/useIsMounted';
 import API, { ConditionApiResponse } from '../../../../../../utils/api';
 import CreateDetailsDialog from '../../../../../Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 
-const filterOptions = createFilterOptions<{
+interface ConditionOption {
     id: string;
     label: string;
     description: string;
-    isAddOption?: boolean;
-}>();
+    addOptionActualLabel?: string | null;
+}
+
+const filterOptions = createFilterOptions<ConditionOption>();
 
 const ConditionSelector: React.FC<{
     onConditionSelected: (condition: ConditionApiResponse) => void;
@@ -20,14 +22,12 @@ const ConditionSelector: React.FC<{
     const isMountedRef = useIsMounted();
     const { getAccessTokenSilently } = useAuth0();
 
-    const [selectedValue, setSelectedValue] = useState<{
-        id: string;
-        label: string;
-        description: string;
-        isAddOption?: boolean;
-    } | null>(null);
+    const [selectedValue, setSelectedValue] = useState<ConditionOption | null>(null);
     const [allConditions, setAllConditions] = useState<ConditionApiResponse[]>([]);
-    const [dialogIsOpen, setDialogIsOpen] = useState(false);
+    const [dialog, setDialog] = useState({
+        isOpen: false,
+        initName: '',
+    });
 
     useEffect(() => {
         const getConditions = () => {
@@ -62,37 +62,48 @@ const ConditionSelector: React.FC<{
         API.Services.ConditionsService.conditionsPost({
             name,
             description,
-        });
+        })
+            .then((res) => {
+                if (isMountedRef.current && res.data) {
+                    setAllConditions((prevState) => {
+                        const newState = [...prevState];
+                        newState.unshift(res.data);
+                        return newState;
+                    });
+                }
+            })
+            .catch((exception) => {
+                context.showSnackbar('there was an error', SnackbarType.ERROR);
+                console.error(exception);
+            });
     };
 
     const handleOnChange = (
         _event: SyntheticEvent,
-        newValue: { id: string; label: string; description: string; isAddOption?: boolean } | null,
+        newValue: ConditionOption | null,
         _reason?: 'createOption' | 'selectOption' | 'removeOption' | 'blur' | 'clear'
     ) => {
-        if (newValue?.isAddOption) {
-            setDialogIsOpen(true);
-        }
+        if (newValue) {
+            if (newValue.addOptionActualLabel) {
+                setDialog({ isOpen: true, initName: newValue.addOptionActualLabel });
+                return;
+            }
 
-        const selectedCondition = (allConditions || [])?.find(
-            (condition) => condition.id === newValue?.id
-        );
-        if (selectedCondition) {
-            setSelectedValue(newValue);
-            props.onConditionSelected(selectedCondition);
+            const selectedCondition = (allConditions || [])?.find(
+                (condition) => condition.id === newValue?.id
+            );
+            if (selectedCondition) {
+                setSelectedValue(newValue);
+                props.onConditionSelected(selectedCondition);
+            }
         }
     };
 
-    const conditionOptions: {
-        id: string;
-        label: string;
-        description: string;
-        isAddOption?: boolean;
-    }[] = allConditions.map((condition) => ({
+    const conditionOptions: ConditionOption[] = allConditions.map((condition) => ({
         id: condition.id || '',
         label: condition.name || '',
         description: condition.description || '',
-        isAddOption: false,
+        isAddOption: null,
     }));
 
     return (
@@ -120,17 +131,18 @@ const ConditionSelector: React.FC<{
                             id: '',
                             label: `Add "${params.inputValue}"`,
                             description: '',
-                            isAddOption: true,
+                            addOptionActualLabel: params.inputValue,
                         });
                     }
                     return filteredValues;
                 }}
             />
             <CreateDetailsDialog
-                isOpen={dialogIsOpen}
+                isOpen={dialog.isOpen}
                 onCreate={handleOnCreate}
                 titleText="Create a new condition"
-                onCloseDialog={() => setDialogIsOpen(false)}
+                onCloseDialog={() => setDialog({ isOpen: false, initName: '' })}
+                initName={dialog.initName}
             />
         </>
     );

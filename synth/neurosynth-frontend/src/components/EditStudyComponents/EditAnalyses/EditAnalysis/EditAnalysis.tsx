@@ -22,7 +22,7 @@ const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
     const handleUpdatePoint = (pointId: string, update: { x: number; y: number; z: number }) => {};
 
     return (
-        <Box>
+        <>
             {props.analysis && (
                 <>
                     <Tabs
@@ -37,30 +37,21 @@ const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
                             setEditTab(newValue);
                         }}
                     >
-                        <Tab sx={EditAnalysisStyles.tab} value={0} label="Details"></Tab>
-                        <Tab sx={EditAnalysisStyles.tab} value={1} label="Coordinates"></Tab>
-                        <Tab sx={EditAnalysisStyles.tab} value={2} label="Conditions"></Tab>
-                        <Tab sx={EditAnalysisStyles.tab} value={3} label="Images"></Tab>
+                        <Tab sx={EditAnalysisStyles.tab} value={0} label="Coordinates"></Tab>
+                        <Tab sx={EditAnalysisStyles.tab} value={1} label="Conditions"></Tab>
+                        <Tab sx={EditAnalysisStyles.tab} value={2} label="Images"></Tab>
+                        <Tab sx={EditAnalysisStyles.tab} value={3} label="Details"></Tab>
                     </Tabs>
                     <Box>
-                        {editTab === 0 && (
-                            <EditAnalysisDetails
-                                analysisId={props.analysis.id || ''}
-                                name={props.analysis.name || ''}
-                                description={props.analysis.description || ''}
-                                onEditAnalysisDetails={handleEditAnalysisDetails}
-                                onDeleteAnalysis={props.onDeleteAnalysis}
-                            />
-                        )}
-                        {editTab === 1 && (
+                        <Box sx={{ display: editTab === 0 ? 'block' : 'none' }}>
                             <EditAnalysisPoints
                                 onRemovePoint={handleRemovePoint}
                                 onUpdatePoint={handleUpdatePoint}
                                 onAddPoint={handleAddPoint}
                                 points={props.analysis.points as PointsApiResponse[] | undefined}
                             />
-                        )}
-                        {editTab === 2 && (
+                        </Box>
+                        <Box sx={{ display: editTab === 1 ? 'block' : 'none' }}>
                             <EditAnalysisConditions
                                 analysisId={props.analysis.id || ''}
                                 conditions={
@@ -69,12 +60,23 @@ const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
                                 weights={props.analysis.weights}
                                 onConditionWeightChange={props.onEditAnalysisConditions}
                             />
-                        )}
-                        {editTab === 3 && <EditAnalysisImages />}
+                        </Box>
+                        <Box sx={{ display: editTab === 2 ? 'block' : 'none' }}>
+                            <EditAnalysisImages />
+                        </Box>
+                        <Box sx={{ display: editTab === 3 ? 'block' : 'none' }}>
+                            <EditAnalysisDetails
+                                analysisId={props.analysis.id || ''}
+                                name={props.analysis.name || ''}
+                                description={props.analysis.description || ''}
+                                onEditAnalysisDetails={handleEditAnalysisDetails}
+                                onDeleteAnalysis={props.onDeleteAnalysis}
+                            />
+                        </Box>
                     </Box>
                 </>
             )}
-        </Box>
+        </>
     );
 };
 

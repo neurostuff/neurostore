@@ -33,16 +33,21 @@ const GlobalContextProvider = (props: any) => {
     });
 
     const handleShowSnackbar = useCallback((message: string, snackbarType: SnackbarType) => {
-        // reset snackbar
-        setSnackbarState((prevState) => ({
-            openSnackbar: false,
-            message: '',
-            snackbarType: prevState.snackbarType,
-        }));
-        setSnackbarState({
-            openSnackbar: true,
-            message: message,
-            snackbarType: snackbarType,
+        setSnackbarState((p) => {
+            console.log('close snackbar');
+            return {
+                openSnackbar: false,
+                message: '',
+                snackbarType: p.snackbarType,
+            };
+        });
+        setSnackbarState((p) => {
+            console.log('set snackbar to true');
+            return {
+                openSnackbar: true,
+                message: message,
+                snackbarType: snackbarType,
+            };
         });
     }, []);
 
@@ -50,12 +55,14 @@ const GlobalContextProvider = (props: any) => {
         if (reason === 'clickaway') {
             return;
         }
-
-        setSnackbarState((prevState) => ({
-            openSnackbar: false,
-            message: '',
-            snackbarType: prevState.snackbarType,
-        }));
+        setSnackbarState((prevState) => {
+            console.log('closing snackbar');
+            return {
+                openSnackbar: false,
+                message: '',
+                snackbarType: prevState.snackbarType,
+            };
+        });
     };
 
     // store in state in order to prevent rerenders when snackbar is called

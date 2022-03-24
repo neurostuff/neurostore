@@ -11,7 +11,7 @@ const EditAnalysisDetailsStyles: Style = {
     },
     unsavedChanges: {
         '.MuiOutlinedInput-notchedOutline': {
-            borderColor: '#ef8a24 !important',
+            border: '2px solid #ef8a24 !important',
         },
     },
 };

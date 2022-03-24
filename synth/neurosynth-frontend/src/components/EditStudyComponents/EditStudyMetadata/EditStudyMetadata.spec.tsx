@@ -61,7 +61,7 @@ describe('EditStudyMetadata Component', () => {
         const updateButton = screen.getByText('Update');
         expect(updateButton).toBeDisabled();
 
-        const revertChanges = screen.getByText('Revert Changes');
+        const revertChanges = screen.getByText('Cancel');
         expect(revertChanges).toBeDisabled();
     });
 
@@ -194,7 +194,7 @@ describe('EditStudyMetadata Component', () => {
         });
     });
 
-    it('should revert changes when the revert changes button is clicked', () => {
+    it('should revert changes when the Cancel button is clicked', () => {
         // open accordion
         const title = screen.getByText('Edit Study Metadata');
         userEvent.click(title);
@@ -208,7 +208,7 @@ describe('EditStudyMetadata Component', () => {
         let addedKVP = screen.queryByText('X');
         expect(addedKVP).toBeInTheDocument();
 
-        const revertChangesButton = screen.getByRole('button', { name: 'Revert Changes' });
+        const revertChangesButton = screen.getByRole('button', { name: 'Cancel' });
         userEvent.click(revertChangesButton);
 
         const updateButton = screen.getByRole('button', { name: 'Update' });

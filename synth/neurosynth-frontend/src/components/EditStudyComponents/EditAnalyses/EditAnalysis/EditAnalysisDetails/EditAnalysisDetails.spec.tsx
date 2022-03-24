@@ -89,7 +89,7 @@ describe('EditAnalysisDetails Component', () => {
         );
     });
 
-    it('should call the handleRevertChanges func when the revert changes button is clicked', () => {
+    it('should call the handleRevertChanges func when the cancel button is clicked', () => {
         let analysisNameDescription = screen.getByDisplayValue(mockAnalysisDetails.description);
         userEvent.type(analysisNameDescription, 'A');
 
@@ -97,7 +97,7 @@ describe('EditAnalysisDetails Component', () => {
         mockAnalysisDetails.description = mockAnalysisDetails.description + 'A';
         renderResult.rerender(<EditAnalysisDetails {...mockAnalysisDetails} />);
 
-        const revertChangesButton = screen.getByRole('button', { name: 'Revert Changes' });
+        const revertChangesButton = screen.getByRole('button', { name: 'Cancel' });
         userEvent.click(revertChangesButton);
 
         analysisNameDescription = screen.getByDisplayValue(mockAnalysisDetails.description);
