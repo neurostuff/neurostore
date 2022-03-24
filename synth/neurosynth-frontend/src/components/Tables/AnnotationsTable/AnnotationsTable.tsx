@@ -4,14 +4,14 @@ import { IDisplayValuesTableModel } from '../DisplayValuesTable';
 import { useHistory } from 'react-router';
 import { useAuth0 } from '@auth0/auth0-react';
 
-const AnnotationsTable: React.FC<{ annotations: AnnotationsApiResponse[]; datasetId: string }> = (
+const AnnotationsTable: React.FC<{ annotations: AnnotationsApiResponse[]; studysetId: string }> = (
     props
 ) => {
     const history = useHistory();
     const { user } = useAuth0();
 
     const handleRowClick = (id: string | number) => {
-        history.push(`/datasets/${props.datasetId}/annotations/${id}`);
+        history.push(`/studysets/${props.studysetId}/annotations/${id}`);
     };
 
     const dataForAnnotationsTable: IDisplayValuesTableModel = {

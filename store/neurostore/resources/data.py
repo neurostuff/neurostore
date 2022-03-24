@@ -1,22 +1,12 @@
-import re
 
-import connexion
-from flask import abort, request, jsonify
-from flask.views import MethodView
-
-# from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
-import sqlalchemy.sql.expression as sae
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import func
-from webargs.flaskparser import parser
-from webargs import fields
-
+from .utils import view_maker
+from .base import BaseView, ObjectView, ListView
 from ..database import db
-from ..models import Dataset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions, User, AnnotationAnalysis, Annotation  # noqa E401
-from ..models.data import DatasetStudy
+from ..models import Studyset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions, User, AnnotationAnalysis, Annotation  # noqa E401
+from ..models.data import StudysetStudy
 
 from ..schemas import (  # noqa E401
-    DatasetSchema,
+    StudysetSchema,
     AnnotationSchema,
     StudySchema,
     AnalysisSchema,
@@ -26,12 +16,12 @@ from ..schemas import (  # noqa E401
     PointValueSchema,
     AnalysisConditionSchema,
     AnnotationAnalysisSchema,
-    DatasetStudySchema,
+    StudysetStudySchema,
 )
 
 
 __all__ = [
-    "DatasetView",
+    "StudysetView",
     "AnnotationView",
     "StudyView",
     "AnalysisView",
@@ -44,351 +34,19 @@ __all__ = [
     "AnnotationListView",
     "AnalysisListView",
     "ImageListView",
-    "DatasetListView",
+    "StudysetListView",
     "ConditionListView",
 ]
-
-
-# https://www.geeksforgeeks.org/python-split-camelcase-string-to-individual-strings/
-def camel_case_split(str):
-    return re.findall(r'[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))', str)
-
-
-def get_current_user():
-    user = connexion.context.get('user')
-    if user:
-        return User.query.filter_by(external_id=connexion.context['user']).first()
-    return None
-
-
-def view_maker(cls):
-    basename = camel_case_split(cls.__name__)[0]
-
-    class ClassView(cls):
-        _model = globals()[basename]
-        _schema = globals()[basename + "Schema"]
-
-    ClassView.__name__ = cls.__name__
-
-    return ClassView
-
-
-class BaseView(MethodView):
-
-    _model = None
-    _nested = {}
-    _parent = {}
-    _linked = {}
-    _composite_key = {}
-
-    @classmethod
-    def update_or_create(cls, data, id=None, commit=True):
-        """
-        scenerios:
-        1. cloning a study
-          a. clone everything, a study is an object
-        2. cloning a dataset
-          a. studies are linked to a dataset, so create a new dataset with same links
-        3. cloning an annotation
-          a. annotations are linked to datasets, update when dataset updates
-        2. creating an analysis
-          a. I should have to own all (relevant) parent objects
-        3. creating an annotation
-            a. I should not have to own the dataset to create an annotation
-        """
-
-        # Store all models so we can atomically update in one commit
-        to_commit = []
-
-        current_user = get_current_user()
-        if not current_user:
-            # user signed up with auth0, but has not made any queries yet...
-            # should have endpoint to "create user" after sign on with auth0
-            current_user = User(external_id=connexion.context['user'])
-            db.session.add(current_user)
-            db.session.commit()
-
-        id = id or data.get("id", None)  # want to handle case of {"id": "asdfasf"}
-
-        only_ids = set(data.keys()) - set(['id']) == set()
-
-        if id is None:
-            record = cls._model()
-            record.user = current_user
-        else:
-            record = cls._model.query.filter_by(id=id).first()
-            if record is None:
-                abort(422)
-            elif record.user_id != current_user.external_id and not only_ids:
-                abort(403)
-            elif only_ids:
-                to_commit.append(record)
-
-                if commit:
-                    db.session.add_all(to_commit)
-                    try:
-                        db.session.commit()
-                    except SQLAlchemyError:
-                        db.session.rollback()
-                        abort(400)
-
-                return record
-
-        # Update all non-nested attributes
-        for k, v in data.items():
-            if k in cls._parent and v is not None:
-                PrtCls = globals()[cls._parent[k]]
-                # DO NOT WANT PEOPLE TO BE ABLE TO ADD ANALYSES
-                # TO STUDIES UNLESS THEY OWN THE STUDY
-                v = PrtCls._model.query.filter_by(id=v['id']).first()
-                if current_user != v.user:
-                    abort(403)
-            if k in cls._linked and v is not None:
-                LnCls = globals()[cls._linked[k]]
-                # this can be owned by someone else
-                if LnCls._composite_key:
-                    # composite key is defined in linked class, so need to lookup
-                    query_args = {k: v[k.rstrip('_id')]['id'] for k in LnCls._composite_key}
-                else:
-                    query_args = {'id': v['id']}
-                v = LnCls._model.query.filter_by(**query_args).first()
-
-            if k not in cls._nested and k not in ["id", "user"]:
-                try:
-                    setattr(record, k, v)
-                except AttributeError:
-                    print(k)
-                    raise AttributeError
-
-        to_commit.append(record)
-
-        # Update nested attributes recursively
-        for field, res_name in cls._nested.items():
-            ResCls = globals()[res_name]
-            if data.get(field) is not None:
-                if isinstance(data.get(field), list):
-                    nested = [
-                        ResCls.update_or_create(rec, commit=False)
-                        for rec in data.get(field)
-                    ]
-                    to_commit.extend(nested)
-                else:
-                    nested = ResCls.update_or_create(data.get(field), commit=False)
-                    to_commit.append(nested)
-
-                setattr(record, field, nested)
-
-        if commit:
-            db.session.add_all(to_commit)
-            try:
-                db.session.commit()
-            except SQLAlchemyError:
-                db.session.rollback()
-                abort(400)
-
-        return record
-
-
-class ObjectView(BaseView):
-    def get(self, id):
-        record = self._model.query.filter_by(id=id).first_or_404()
-        nested = request.args.get("nested")
-        export = request.args.get("export", False)
-        return self.__class__._schema(context={
-            'nested': nested,
-            'export': export,
-        }).dump(record)
-
-    def put(self, id):
-        request_data = self.insert_data(id, request.json)
-        data = self.__class__._schema().load(request_data)
-
-        with db.session.no_autoflush:
-            record = self.__class__.update_or_create(data, id)
-
-        return self.__class__._schema().dump(record)
-
-    def delete(self, id):
-        record = self.__class__._model.query.filter_by(id=id).first()
-
-        current_user = get_current_user()
-        if record.user_id != current_user.external_id:
-            abort(403)
-        else:
-            db.session.delete(record)
-
-        db.session.commit()
-
-        return 204
-
-    def insert_data(self, id, data):
-        return data
-
-
-LIST_USER_ARGS = {
-    "search": fields.String(missing=None),
-    "sort": fields.String(missing="created_at"),
-    "page": fields.Int(missing=1),
-    "desc": fields.Boolean(missing=True),
-    "page_size": fields.Int(missing=20, validate=lambda val: val < 100),
-    "source_id": fields.String(missing=None),
-    "source": fields.String(missing=None),
-    "unique": fields.Boolean(missing=False),
-    "nested": fields.Boolean(missing=False),
-    "user_id": fields.String(missing=None),
-    "dataset_id": fields.String(missing=None),
-    "export": fields.Boolean(missing=False),
-    "data_type": fields.String(missing=None),
-}
-
-
-class ListView(BaseView):
-
-    _only = None
-    _search_fields = []
-    _multi_search = None
-
-    def __init__(self):
-        # Initialize expected arguments based on class attributes
-        self._fulltext_fields = self._multi_search or self._search_fields
-        self._user_args = {
-            **LIST_USER_ARGS,
-            **{f: fields.Str() for f in self._fulltext_fields},
-        }
-
-    def search(self):
-        # Parse arguments using webargs
-        args = parser.parse(self._user_args, request, location="query")
-
-        m = self._model  # for brevity
-        q = m.query
-
-        # Search
-        s = args["search"]
-
-        # query items that are owned by a user_id
-        if args.get("user_id"):
-            q = q.filter(m.user_id == args.get("user_id"))
-
-        # query items that are public and/or you own them
-        if hasattr(m, 'public'):
-            current_user = get_current_user()
-            q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
-
-        # query annotations for a specific dataset
-        if args.get('dataset_id'):
-            q = q.filter(m.dataset_id == args.get('dataset_id'))
-
-        # search studies for data_type
-        if args.get('data_type'):
-            if args['data_type'] == 'coordinate':
-                q = q.filter(m.analyses.any(Analysis.points.any()))
-            elif args['data_type'] == 'image':
-                q = q.filter(m.analyses.any(Analysis.images.any()))
-            elif args['data_type'] == 'both':
-                q = q.filter(sae.and_(
-                    m.analyses.any(Analysis.images.any()),
-                    m.analyses.any(Analysis.points.any())))
-
-        # For multi-column search, default to using search fields
-        if s is not None and self._fulltext_fields:
-            search_expr = [
-                getattr(m, field).ilike(f"%{s}%") for field in self._fulltext_fields
-            ]
-            q = q.filter(sae.or_(*search_expr))
-
-        # Alternatively (or in addition), search on individual fields.
-        for field in self._search_fields:
-            s = args.get(field, None)
-            if s is not None:
-                q = q.filter(getattr(m, field).ilike(f"%{s}%"))
-
-        # Sort
-        sort_col = args["sort"]
-        desc = False if sort_col != "created_at" else args["desc"]
-        desc = {False: "asc", True: "desc"}[desc]
-
-        attr = getattr(m, sort_col)
-
-        # Case-insensitive sorting
-        if sort_col != "created_at":
-            attr = func.lower(attr)
-
-        # TODO: if the sort field is proxied, bad stuff happens. In theory
-        # the next two lines should address this by joining the proxied model,
-        # but weird things are happening. look into this as time allows.
-        # if isinstance(attr, ColumnAssociationProxyInstance):
-        #     q = q.join(*attr.attr)
-        q = q.order_by(getattr(attr, desc)())
-
-        if args.get('unique'):
-            if hasattr(m, 'source_id'):
-                q = q.filter((Study.source != 'neurostore') | (Study.source_id == None))  # noqa E711
-            elif hasattr(m, 'study'):
-                q = q.join(Study).filter(
-                    (Study.source != 'neurostore') | (Study.source_id == None)  # noqa E711
-                )
-            elif hasattr(m, 'analysis'):
-                q = q.join(Analysis).join(Study).filter(
-                    (Study.source != 'neurostore') | (Study.source_id == None)  # noqa E711
-                )
-            else:
-                # nothing to do here
-                pass
-            unique_count = count = q.count()
-        else:
-            # unique_count may need to represent user clones
-            # instead of original studies
-            # (e.g., a clone may have a different number of points
-            # than the original)
-            count = q.count()
-            if hasattr(m, 'source_id'):
-                unique_count = q.filter_by(source_id=None).count()
-            elif hasattr(m, 'study'):
-                unique_count = q.join(Study).filter_by(source_id=None).count()
-            elif hasattr(m, 'analysis'):
-                unique_count = q.join(Analysis).join(Study).filter_by(source_id=None).count()
-            else:
-                unique_count = count
-
-        records = q.paginate(args["page"], args["page_size"], False).items
-        # check if results should be nested
-        nested = True if args.get("nested") else False
-        content = self.__class__._schema(
-            only=self._only, many=True, context={'nested': nested}
-        ).dump(records)
-        response = {
-            'metadata': {'total_count': count, 'unique_count': unique_count},
-            'results': content,
-        }
-        return jsonify(response), 200
-
-    def post(self):
-        # TODO: check to make sure current user hasn't already created a
-        # record with most/all of the same details (e.g., DOI for studies)
-
-        # Parse arguments using webargs
-        args = parser.parse(self._user_args, request, location="query")
-        source_id = args.get('source_id')
-        source = args.get('source') or 'neurostore'
-        if source_id:
-            data = self._load_from_source(source, source_id)
-        else:
-            data = parser.parse(self.__class__._schema, request)
-
-        nested = bool(request.args.get("nested") or request.args.get("source_id"))
-        with db.session.no_autoflush:
-            record = self.__class__.update_or_create(data)
-        return self.__class__._schema(context={'nested': nested}).dump(record)
-
 
 # Individual resource views
 
 
 @view_maker
-class DatasetView(ObjectView):
+class StudysetView(ObjectView):
     _nested = {
         "studies": "StudyView",
+    }
+    _linked = {
         "annotations": "AnnotationView",
     }
 
@@ -399,13 +57,13 @@ class AnnotationView(ObjectView):
         "annotation_analyses": "AnnotationAnalysisResource"
     }
     _linked = {
-        "dataset": "DatasetView",
+        "studyset": "StudysetView",
     }
 
     def insert_data(self, id, data):
-        if not data.get('dataset'):
+        if not data.get('studyset'):
             with db.session.no_autoflush:
-                data['dataset'] = self._model.query.filter_by(id=id).first().dataset.id
+                data['studyset'] = self._model.query.filter_by(id=id).first().studyset.id
         return data
 
 
@@ -415,7 +73,7 @@ class StudyView(ObjectView):
         "analyses": "AnalysisView",
     }
     _linked = {
-        "dataset": "DatasetView",
+        "studyset": "StudysetView",
     }
 
 
@@ -461,9 +119,11 @@ class PointValueView(ObjectView):
 # List resource views
 
 @view_maker
-class DatasetListView(ListView):
+class StudysetListView(ListView):
     _nested = {
         "studies": "StudyView",
+    }
+    _linked = {
         "annotations": "AnnotationView",
     }
     _search_fields = ("name", "description", "publication", "doi", "pmid")
@@ -475,14 +135,14 @@ class AnnotationListView(ListView):
         "annotation_analyses": "AnnotationAnalysisResource",
     }
     _linked = {
-        "dataset": "DatasetView",
+        "studyset": "StudysetView",
     }
     _search_fields = ("name", "description")
 
     def insert_data(self, id, data):
-        if not data.get('dataset'):
+        if not data.get('studyset'):
             with db.session.no_autoflush:
-                data['dataset'] = self._model.query.filter_by(id=id).first().dataset.id
+                data['studyset'] = self._model.query.filter_by(id=id).first().studyset.id
         return data
 
     @classmethod
@@ -524,7 +184,7 @@ class StudyListView(ListView):
         "analyses": "AnalysisView",
     }
     _linked = {
-        "dataset": "DatasetView",
+        "studyset": "StudysetView",
     }
     _search_fields = ("name", "description", "source_id", "source", "authors", "publication")
 
@@ -619,21 +279,21 @@ class AnnotationAnalysisResource(BaseView):
     }
     _linked = {
         'analysis': "AnalysisView",
-        'dataset_study': "DatasetStudyResource",
+        'studyset_study': "StudysetStudyResource",
     }
     _model = AnnotationAnalysis
     _schema = AnnotationAnalysisSchema
     _composite_key = {}
 
 
-class DatasetStudyResource(BaseView):
+class StudysetStudyResource(BaseView):
     _parent = {
-        'dataset': "DatasetView",
+        'studyset': "StudysetView",
         'study': "StudyView",
     }
     _composite_key = {
-        'dataset_id': Dataset,
+        'studyset_id': Studyset,
         'study_id': Study,
     }
-    _model = DatasetStudy
-    _schema = DatasetStudySchema
+    _model = StudysetStudy
+    _schema = StudysetStudySchema

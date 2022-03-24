@@ -45,7 +45,7 @@ def test_post_analyses(auth_client, ingest_neurosynth, session):
     analysis_db.study.user = user
     session.add(analysis_db.study)
     session.commit()
-    for k in ["user", "id", "created_at"]:
+    for k in ["user", "id", "created_at", "updated_at"]:
         analysis.pop(k)
     resp = auth_client.post("/api/analyses/", data=analysis)
 
@@ -82,7 +82,7 @@ def test_delete_image_analyses(auth_client, ingest_neurovault, session):
         assert Image.query.filter_by(id=image).first() is None
 
 
-def test_update_condition_analysis(auth_client, ingest_neurosynth, session):
+def test_update_points_analyses(auth_client, ingest_neurovault, session):
     analysis_db = Analysis.query.first()
     analysis = AnalysisSchema().dump(analysis_db)
     id_ = auth_client.username
@@ -91,13 +91,11 @@ def test_update_condition_analysis(auth_client, ingest_neurosynth, session):
     session.add(analysis_db)
     session.commit()
 
-    # create condition
-    my_condition = {"name": "ice cream", "description": "suprise, it's rocky road!"}
-    cond_resp = auth_client.post("/api/conditions/", data=my_condition)
+    points = analysis['points']
 
-    # update analysis with condition
-    payload = {"conditions": [cond_resp.json['id']], "weights": [1]}
+    payload = {"points": points[:-1]}
 
-    update_resp = auth_client.put(f"/api/analyses/{analysis['id']}", data=payload)
+    update_points = auth_client.put(f"/api/analyses/{analysis_db.id}", data=payload)
 
-    assert update_resp.status_code == 200
+    assert update_points.status_code == 200
+    assert payload['points'] == update_points.json['points']

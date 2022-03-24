@@ -104,6 +104,7 @@ const PublicStudiesPage = () => {
 
     // runs for any change in study query
     useEffect(() => {
+        // const timeout = setTimeout(() => {
         const getStudies = (searchCriteria: SearchCriteria) => {
             API.Services.StudiesService.studiesGet(
                 searchCriteria.genericSearchStr,
@@ -132,6 +133,11 @@ const PublicStudiesPage = () => {
         };
 
         getStudies(searchCriteria);
+        // }, 700);
+
+        // return () => {
+        //     clearTimeout(timeout);
+        // };
     }, [searchCriteria, isMountedRef]);
 
     return (

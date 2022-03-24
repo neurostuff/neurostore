@@ -234,7 +234,7 @@ const NeurosynthSpreadsheet: React.FC<{
             >
                 There are no analyses to annotate yet. Start by{' '}
                 <Link color="primary" exact component={NavLink} to="/studies">
-                    adding studies to this dataset
+                    adding studies to this studyset
                 </Link>
             </Box>
         </>

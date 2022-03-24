@@ -15,7 +15,7 @@ class MetaAnalysis(BaseMixin, db.Model):
     estimator_options = db.Column(db.JSON)
     variable_names = db.Column(db.JSON)
     variable_descs = db.Column(db.JSON)
-    dataset = db.Column(db.JSON)
+    studyset = db.Column(db.JSON)
     annotation = db.Column(db.JSON)
     user_id = db.Column(db.Text, db.ForeignKey("users.id"), primary_key=True)
 

@@ -4,6 +4,7 @@ from flask_cors import CORS
 from authlib.integrations.flask_client import OAuth
 import connexion
 
+from .or_json import ORJSONDecoder, ORJSONEncoder
 from .resolver import MethodListViewResolver
 from .database import init_db
 
@@ -17,8 +18,7 @@ oauth = OAuth(app)
 
 db = init_db(app)
 
-# setup authentication
-# jwt = JWTManager(app)
+
 app.secret_key = app.config["JWT_SECRET_KEY"]
 
 options = {"swagger_ui": True}
@@ -28,8 +28,8 @@ connexion_app.add_api(
     options=options,
     arguments={"title": "NeuroStore API"},
     resolver=MethodListViewResolver("neurostore.resources"),
-    strict_validation=True,
-    validate_responses=True,
+    strict_validation=os.getenv("DEBUG", False) == "True",
+    validate_responses=os.getenv("DEBUG", False) == "True",
 )
 
 # Enable CORS
@@ -46,3 +46,7 @@ auth0 = oauth.register(
         'scope': 'openid profile email',
     },
 )
+
+
+app.json_encoder = ORJSONEncoder
+app.json_decoder = ORJSONDecoder

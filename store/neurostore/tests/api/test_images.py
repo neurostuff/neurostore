@@ -3,7 +3,7 @@ from ...models import Study, Analysis, User, Image
 
 
 def test_get_images(auth_client, ingest_neurovault):
-    # List of datasets
+    # List of studysets
     resp = auth_client.get("/api/images/")
     assert resp.status_code == 200
     images_list = decode_json(resp)['results']
@@ -58,10 +58,10 @@ def test_put_images(auth_client, session):
     session.commit()
 
     image_id = s.analyses[0].images[0].id
-    new_data = {'metadata': {'this': 'is'}}
+    new_data = {'url': "new fake"}
     resp = auth_client.put(f"/api/images/{image_id}", data=new_data)
 
-    assert resp.json['metadata'] == new_data['metadata']
+    assert resp.json['url'] == new_data['url']
 
 
 def test_delete_images(auth_client, session):

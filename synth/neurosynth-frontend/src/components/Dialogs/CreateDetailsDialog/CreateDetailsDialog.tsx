@@ -49,7 +49,7 @@ const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
                     label="Name"
                     value={newDetails.name}
                     name="name"
-                    id="dialog-dataset-name"
+                    id="dialog-name"
                     error={newDetails.name.length === 0 && hasEnteredText}
                     helperText={
                         newDetails.name.length === 0 && hasEnteredText ? 'name is required' : ''
@@ -61,7 +61,7 @@ const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
                 <TextField
                     label="Description"
                     multiline
-                    id="dialog-dataset-description"
+                    id="dialog-description"
                     onChange={handleOnChange}
                     name="description"
                     value={newDetails.description}
