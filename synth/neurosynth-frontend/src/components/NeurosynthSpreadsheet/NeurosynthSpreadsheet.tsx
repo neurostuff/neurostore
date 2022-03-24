@@ -21,7 +21,7 @@ export interface INeurosynthColumn {
 
 const NeurosynthSpreadsheet: React.FC<{
     annotationNotes: (AnnotationNote & ReadOnly)[] | undefined;
-    annotationNoteKeyTypes: object | undefined;
+    annotationNoteKeyTypes: object | undefined | null;
     onSaveAnnotation: (
         annotationNotes: AnnotationNote[],
         noteKeyTypes: { [key: string]: EPropertyType }

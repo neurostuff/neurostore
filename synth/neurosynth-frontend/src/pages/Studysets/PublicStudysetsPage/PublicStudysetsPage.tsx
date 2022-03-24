@@ -32,7 +32,7 @@ const PublicStudysetsPage: React.FC = (props) => {
                     if (isMountedRef.current && res?.data?.results) setStudysets(res.data.results);
                 })
                 .catch((err) => {
-                    setDatasets([]);
+                    setStudysets([]);
                     console.error(err);
                 });
         };

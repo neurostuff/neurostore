@@ -51,22 +51,13 @@ const EditAnnotationsPage: React.FC = (props) => {
 
         API.Services.AnnotationsService.annotationsIdPut(params.annotationId, {
             [property]: updatedText,
-            notes: (annotation?.notes || []).map((annotationNote) => {
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                const { study_name, analysis_name, note, analysis, ...everythingElse } =
-                    annotationNote;
-                return {
-                    analysis,
-                    note,
-                };
-            }), // we get a 500 error if we do not include notes
         })
             .then((res) => {
                 setAnnotation((prevState) => {
                     if (!prevState) return prevState;
                     return {
                         ...prevState,
-                        [property]: res.data[property],
+                        [property]: (res.data as AnnotationsApiResponse)[property],
                     };
                 });
                 showSnackbar(`updated the annotation ${property}`, SnackbarType.SUCCESS);
