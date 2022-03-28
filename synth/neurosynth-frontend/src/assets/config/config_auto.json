@@ -1,0 +1,183 @@
+{
+    "CBMA": {
+        "MKDADensity": {
+            "parameters": {
+                "kernel_transformer": {
+                    "description": "Kernel with which to convolve coordinates from dataset. Default is\n:class:`~nimare.meta.kernel.MKDAKernel`.",
+                    "type": ":obj:`~nimare.meta.kernel.KernelTransformer`"
+                },
+                "null_method": {
+                    "description": "Method by which to determine uncorrected p-values.\n\"approximate\" is faster, but slightly less accurate.\n\"montecarlo\" can be much slower, and is only slightly more accurate.",
+                    "type": "{\"approximate\", \"montecarlo\"}"
+                },
+                "n_iters": {
+                    "description": "Number of iterations to use to define the null distribution.\nThis is only used if ``null_method==\"montecarlo\"``.\nDefault is 10000.",
+                    "type": "int"
+                },
+                "n_cores": {
+                    "description": "Number of cores to use for parallelization.\nThis is only used if ``null_method==\"montecarlo\"``.\nIf <=0, defaults to using all available cores.\nDefault is 1.",
+                    "type": ":obj:`int`"
+                }
+            }
+        },
+        "KDA": {
+            "parameters": {
+                "kernel_transformer": {
+                    "description": "Kernel with which to convolve coordinates from dataset. Default is\n:class:`~nimare.meta.kernel.KDAKernel`.",
+                    "type": ":obj:`~nimare.meta.kernel.KernelTransformer`"
+                },
+                "null_method": {
+                    "description": "Method by which to determine uncorrected p-values.\n\"approximate\" is faster, but slightly less accurate.\n\"montecarlo\" can be much slower, and is only slightly more accurate.",
+                    "type": "{\"approximate\", \"montecarlo\"}"
+                },
+                "n_iters": {
+                    "description": "Number of iterations to use to define the null distribution.\nThis is only used if ``null_method==\"montecarlo\"``.\nDefault is 10000.",
+                    "type": "int"
+                },
+                "n_cores": {
+                    "description": "Number of cores to use for parallelization.\nThis is only used if ``null_method==\"montecarlo\"``.\nIf <=0, defaults to using all available cores.\nDefault is 1.",
+                    "type": ":obj:`int`"
+                }
+            }
+        },
+        "MKDAChi2": {
+            "parameters": {
+                "kernel_transformer": {
+                    "description": "Kernel with which to convolve coordinates from dataset. Default is\n:class:`~nimare.meta.kernel.MKDAKernel`.",
+                    "type": ":obj:`~nimare.meta.kernel.KernelTransformer`"
+                },
+                "prior": {
+                    "description": "Uniform prior probability of each feature being active in a map in\nthe absence of evidence from the map. Default: 0.5",
+                    "type": "float"
+                }
+            }
+        },
+        "ALE": {
+            "parameters": {
+                "kernel_transformer": {
+                    "description": "Kernel with which to convolve coordinates from dataset. Default is\nALEKernel.",
+                    "type": ":obj:`~nimare.meta.kernel.KernelTransformer`"
+                },
+                "null_method": {
+                    "description": "Method by which to determine uncorrected p-values.\n\"approximate\" is faster, but slightly less accurate.\n\"montecarlo\" can be much slower, and is only slightly more accurate.",
+                    "type": "{\"approximate\", \"montecarlo\"}"
+                },
+                "n_iters": {
+                    "description": "Number of iterations to use to define the null distribution.\nThis is only used if ``null_method==\"montecarlo\"``.\nDefault is 10000.",
+                    "type": "int"
+                },
+                "n_cores": {
+                    "description": "Number of cores to use for parallelization.\nThis is only used if ``null_method==\"montecarlo\"``.\nIf <=0, defaults to using all available cores.\nDefault is 1.",
+                    "type": ":obj:`int`"
+                },
+                "masker": {
+                    "description": null,
+                    "type": null
+                },
+                "inputs_": {
+                    "description": "Inputs to the Estimator. For CBMA estimators, there is only one key:\ncoordinates. This is an edited version of the dataset's coordinates\nDataFrame.",
+                    "type": ":obj:`dict`"
+                },
+                "null_distributions_": {
+                    "description": "Null distributions for ALE and any multiple-comparisons correction\nmethods. Entries are added to this attribute if and when the\ncorresponding method is fit.",
+                    "type": ":obj:`dict` or :class:`numpy.ndarray`"
+                }
+            }
+        },
+        "ALESubtraction": {
+            "parameters": {
+                "kernel_transformer": {
+                    "description": "Kernel with which to convolve coordinates from dataset.\nDefault is ALEKernel.",
+                    "type": ":obj:`~nimare.meta.kernel.KernelTransformer`"
+                },
+                "n_iters": {
+                    "description": "Default is 10000.",
+                    "type": ":obj:`int`"
+                },
+                "memory_limit": {
+                    "description": "Memory limit to apply to data. If None, no memory management will be applied.\nOtherwise, the memory limit will be used to (1) assign memory-mapped files and\n(2) restrict memory during array creation to the limit.\nDefault is None.",
+                    "type": ":obj:`str` or None"
+                }
+            }
+        },
+        "SCALE": {
+            "parameters": {
+                "voxel_thresh": {
+                    "description": "Uncorrected voxel-level threshold. Default: 0.001",
+                    "type": "float"
+                },
+                "n_iters": {
+                    "description": "Number of iterations for correction. Default: 10000",
+                    "type": "int"
+                },
+                "n_cores": {
+                    "description": "Number of processes to use for meta-analysis. If -1, use all\navailable cores. Default: -1",
+                    "type": "int"
+                },
+                "xyz": {
+                    "description": "Tab-delimited file of coordinates from database or numpy array with XYZ\ncoordinates. Voxels are rows and x, y, z (meaning coordinates) values\nare the three columnns.",
+                    "type": ":obj:`str` or (N x 3) array_like"
+                },
+                "kernel_transformer": {
+                    "description": "Kernel with which to convolve coordinates from dataset. Default is\n:class:`~nimare.meta.kernel.ALEKernel`.",
+                    "type": ":obj:`~nimare.meta.kernel.KernelTransformer`"
+                },
+                "memory_limit": {
+                    "description": "Memory limit to apply to data. If None, no memory management will be applied.\nOtherwise, the memory limit will be used to (1) assign memory-mapped files and\n(2) restrict memory during array creation to the limit.\nDefault is None.",
+                    "type": ":obj:`str` or None"
+                }
+            }
+        }
+    },
+    "IBMA": {},
+    "Kernel": {
+        "ALEKernel": {
+            "parameters": {
+                "fwhm": {
+                    "description": "Full-width half-max for Gaussian kernel, if you want to have a\nconstant kernel across Contrasts. Mutually exclusive with\n``sample_size``.",
+                    "type": ":obj:`float`"
+                },
+                "sample_size": {
+                    "description": "Sample size, used to derive FWHM for Gaussian kernel based on\nformulae from Eickhoff et al. (2012). This sample size overwrites\nthe Contrast-specific sample sizes in the dataset, in order to hold\nkernel constant across Contrasts. Mutually exclusive with ``fwhm``.",
+                    "type": ":obj:`int`"
+                },
+                "memory_limit": {
+                    "description": "Memory limit to apply to data. If None, no memory management will be applied.\nOtherwise, the memory limit will be used to (1) assign memory-mapped files and\n(2) restrict memory during array creation to the limit.\nDefault is None.",
+                    "type": ":obj:`str` or None"
+                }
+            }
+        },
+        "KDAKernel": {
+            "parameters": {
+                "r": {
+                    "description": "Sphere radius, in mm.",
+                    "type": ":obj:`int`"
+                },
+                "value": {
+                    "description": "Value for sphere.",
+                    "type": ":obj:`int`"
+                },
+                "memory_limit": {
+                    "description": "Memory limit to apply to data. If None, no memory management will be applied.\nOtherwise, the memory limit will be used to (1) assign memory-mapped files and\n(2) restrict memory during array creation to the limit.\nDefault is None.",
+                    "type": ":obj:`str` or None"
+                }
+            }
+        },
+        "MKDAKernel": {
+            "parameters": {
+                "r": {
+                    "description": "Sphere radius, in mm.",
+                    "type": ":obj:`int`"
+                },
+                "value": {
+                    "description": "Value for sphere.",
+                    "type": ":obj:`int`"
+                },
+                "memory_limit": {
+                    "description": "Memory limit to apply to data. If None, no memory management will be applied.\nOtherwise, the memory limit will be used to (1) assign memory-mapped files and\n(2) restrict memory during array creation to the limit.\nDefault is None.",
+                    "type": ":obj:`str` or None"
+                }
+            }
+        }
+    }
+}
