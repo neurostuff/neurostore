@@ -1,0 +1,30 @@
+{
+    "estimator": {
+        "name": "MKDADensity",
+        "parameters": {
+            "kernel_transformer": {
+                "MKDAKernel": {
+                    "parameters": {
+                        "r": {
+                            "type": "integer",
+                            "description": "Sphere radius, in mm."
+                        },
+                        "value": {
+                            "type": "integer",
+                            "description": "Value for sphere."
+                        }
+                    }
+                }
+            },
+            "null_method": {
+                "type": "string",
+                "enum": ["approximate", "montecarlo"],
+                "description": "Method by which to determine uncorrected p-values."
+            },
+            "n_iters": {
+                "type": "integer",
+                "description": "Number of iterations to use to define the null distribution. This is only used if null_method=='montecarlo'. Default is 10000."
+            }
+        }
+    }
+}
