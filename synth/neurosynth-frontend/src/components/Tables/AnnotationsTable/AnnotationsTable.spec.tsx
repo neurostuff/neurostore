@@ -164,7 +164,7 @@ describe('AnnotationsTable component', () => {
             <Router history={historyMock as any}>
                 <AnnotationsTable
                     annotations={mockAnnotationApiResponseNoData}
-                    datasetId={datasetId}
+                    studysetId={studysetId}
                 />
             </Router>
         );
