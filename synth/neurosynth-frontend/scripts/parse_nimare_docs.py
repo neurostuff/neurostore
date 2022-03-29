@@ -6,6 +6,7 @@ import re
 
 from numpydoc.docscrape import ClassDoc
 import nimare.meta.cbma as nicoords
+import nimare.meta.ibma as niimgs
 import nimare.meta.kernel as nikern
 import nimare.correct as crrct
 import nimare
@@ -23,6 +24,17 @@ NIMARE_COORDINATE_ALGORITHMS = [
     "ALE",
     "ALESubtraction",
     "SCALE",
+]
+
+NIMARE_IMAGE_ALGORITHMS = [
+    "DerSimonianLaird",
+    "Fishers",
+    "Hedges",
+    "PermutedOLS",
+    "SampleSizeBasedLikelihood",
+    "Stouffers",
+    "VarianceBasedLikelihood",
+    "WeightedLeastSquares",
 ]
 
 NIMARE_KERNELS = [
@@ -110,6 +122,21 @@ for corrector in NIMARE_CORRECTORS:
         }
     }
 
+
+for algo in NIMARE_IMAGE_ALGORITHMS:
+    func = getattr(niimgs, algo)
+    docs = ClassDoc(func)
+    func_signature = inspect.signature(func)
+    config["IBMA"][algo] = {
+        "summary": ' '.join(docs._parsed_data["Summary"]),
+        "parameters": {
+            param.name: {
+                "description": ' '.join(param.desc),
+                "type": _derive_type(param.type) or None,
+                "default": getattr(func_signature.parameters.get(param.name), "default", None),
+            } for param in docs._parsed_data["Parameters"] if param.name not in BLACKLIST_PARAMS
+        }
+    }
 
 
 # save config file
