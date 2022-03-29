@@ -1,10 +1,16 @@
+import inspect
 import json
 from pathlib import Path
+import re
 
-from docstring_parser.numpydoc import NumpydocParser
+
+from numpydoc.docscrape import ClassDoc
 import nimare.meta.cbma as nicoords
 import nimare.meta.kernel as nikern
 import nimare
+
+PARAM_OPTIONAL_REGEX = re.compile(r"(?P<type>.*?)(?:, optional|\(optional\))$")
+
 NIMARE_COORDINATE_ALGORITHMS = [
     "MKDADensity",
     "KDA",
@@ -38,34 +44,44 @@ BLACKLIST_PARAMS = [
     "kernel_transformer",
 ]
 
-numparse = NumpydocParser()
 config = {
     "VERSION": nimare.__version__,
     "CBMA": {},
     "IBMA": {},
 }
 
+def _derive_type(type_name):
+    optional_type = PARAM_OPTIONAL_REGEX.match(type_name)
+    if optional_type:
+        return optional_type.group("type")
+    return type_name
+
+
 for algo in NIMARE_COORDINATE_ALGORITHMS:
     func = getattr(nicoords, algo)
-    docs = numparse.parse(func.__doc__)
-
+    docs = ClassDoc(func)
+    func_signature = inspect.signature(func)
     config["CBMA"][algo] = {
+        "summary": ' '.join(docs._parsed_data["Summary"]),
         "parameters": {
-            param.arg_name: {
-                "description": param.description,
-                "type": param.type_name,
-            } for param in docs.params if param.arg_name not in BLACKLIST_PARAMS
+            param.name: {
+                "description": ' '.join(param.desc),
+                "type": _derive_type(param.type),
+                "default": getattr(func_signature.parameters.get(param.name), "default", None),
+            } for param in docs._parsed_data["Parameters"] if param.name not in BLACKLIST_PARAMS
         }
     }
 
     kern_func = getattr(nikern, DEFAULT_KERNELS[algo])
-    kern_docs = numparse.parse(kern_func.__doc__)
+    kern_docs = ClassDoc(kern_func)
+    kern_func_signature = inspect.signature(kern_func)
     config["CBMA"][algo]['parameters'].update(
         {
-            "kernel__" + param.arg_name: {
-                "description": param.description,
-                "type": param.type_name,
-            } for param in kern_docs.params if param.arg_name not in BLACKLIST_PARAMS
+            "kernel__" + param.name: {
+                "description": ' '.join(param.desc),
+                "type": _derive_type(param.type),
+                "default":  getattr(kern_func_signature.parameters.get(param.name), "default", None),
+            } for param in kern_docs._parsed_data["Parameters"] if param.name not in BLACKLIST_PARAMS
         }
     )
 

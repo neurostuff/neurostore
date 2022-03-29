@@ -2,142 +2,177 @@
     "VERSION": "0.0.11",
     "CBMA": {
         "MKDADensity": {
+            "summary": "Multilevel kernel density analysis- Density analysis.",
             "parameters": {
                 "null_method": {
-                    "description": "Method by which to determine uncorrected p-values.\n\"approximate\" is faster, but slightly less accurate.\n\"montecarlo\" can be much slower, and is only slightly more accurate.",
-                    "type": "{\"approximate\", \"montecarlo\"}"
+                    "description": "Method by which to determine uncorrected p-values. \"approximate\" is faster, but slightly less accurate. \"montecarlo\" can be much slower, and is only slightly more accurate.",
+                    "type": "{\"approximate\", \"montecarlo\"}",
+                    "default": "approximate"
                 },
                 "n_iters": {
-                    "description": "Number of iterations to use to define the null distribution.\nThis is only used if ``null_method==\"montecarlo\"``.\nDefault is 10000.",
-                    "type": "int"
+                    "description": "Number of iterations to use to define the null distribution. This is only used if ``null_method==\"montecarlo\"``. Default is 10000.",
+                    "type": "int",
+                    "default": 10000
                 },
                 "**kwargs": {
-                    "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned\nhere, with the prefix '\\kernel__' in the variable name.",
-                    "type": null
+                    "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix '\\kernel__' in the variable name.",
+                    "type": "",
+                    "default": null
                 },
                 "kernel__r": {
                     "description": "Sphere radius, in mm.",
-                    "type": ":obj:`int`"
+                    "type": ":obj:`int`",
+                    "default": 10
                 },
                 "kernel__value": {
                     "description": "Value for sphere.",
-                    "type": ":obj:`int`"
+                    "type": ":obj:`int`",
+                    "default": 1
                 }
             }
         },
         "KDA": {
+            "summary": "Kernel density analysis.",
             "parameters": {
                 "null_method": {
-                    "description": "Method by which to determine uncorrected p-values.\n\"approximate\" is faster, but slightly less accurate.\n\"montecarlo\" can be much slower, and is only slightly more accurate.",
-                    "type": "{\"approximate\", \"montecarlo\"}"
+                    "description": "Method by which to determine uncorrected p-values. \"approximate\" is faster, but slightly less accurate. \"montecarlo\" can be much slower, and is only slightly more accurate.",
+                    "type": "{\"approximate\", \"montecarlo\"}",
+                    "default": "approximate"
                 },
                 "n_iters": {
-                    "description": "Number of iterations to use to define the null distribution.\nThis is only used if ``null_method==\"montecarlo\"``.\nDefault is 10000.",
-                    "type": "int"
+                    "description": "Number of iterations to use to define the null distribution. This is only used if ``null_method==\"montecarlo\"``. Default is 10000.",
+                    "type": "int",
+                    "default": 10000
                 },
                 "**kwargs": {
-                    "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned\nhere, with the prefix '\\kernel__' in the variable name.",
-                    "type": null
+                    "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix '\\kernel__' in the variable name.",
+                    "type": "",
+                    "default": null
                 },
                 "kernel__r": {
                     "description": "Sphere radius, in mm.",
-                    "type": ":obj:`int`"
+                    "type": ":obj:`int`",
+                    "default": 10
                 },
                 "kernel__value": {
                     "description": "Value for sphere.",
-                    "type": ":obj:`int`"
+                    "type": ":obj:`int`",
+                    "default": 1
                 }
             }
         },
         "MKDAChi2": {
+            "summary": "Multilevel kernel density analysis- Chi-square analysis.",
             "parameters": {
                 "prior": {
-                    "description": "Uniform prior probability of each feature being active in a map in\nthe absence of evidence from the map. Default: 0.5",
-                    "type": "float"
+                    "description": "Uniform prior probability of each feature being active in a map in the absence of evidence from the map. Default: 0.5",
+                    "type": "float",
+                    "default": 0.5
                 },
                 "**kwargs": {
-                    "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned\nhere, with the prefix '\\kernel__' in the variable name.",
-                    "type": null
+                    "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix '\\kernel__' in the variable name.",
+                    "type": "",
+                    "default": null
                 },
                 "kernel__r": {
                     "description": "Sphere radius, in mm.",
-                    "type": ":obj:`int`"
+                    "type": ":obj:`int`",
+                    "default": 10
                 },
                 "kernel__value": {
                     "description": "Value for sphere.",
-                    "type": ":obj:`int`"
+                    "type": ":obj:`int`",
+                    "default": 1
                 }
             }
         },
         "ALE": {
+            "summary": "Activation likelihood estimation.",
             "parameters": {
                 "null_method": {
-                    "description": "Method by which to determine uncorrected p-values.\n\"approximate\" is faster, but slightly less accurate.\n\"montecarlo\" can be much slower, and is only slightly more accurate.",
-                    "type": "{\"approximate\", \"montecarlo\"}"
+                    "description": "Method by which to determine uncorrected p-values. \"approximate\" is faster, but slightly less accurate. \"montecarlo\" can be much slower, and is only slightly more accurate.",
+                    "type": "{\"approximate\", \"montecarlo\"}",
+                    "default": "approximate"
                 },
                 "n_iters": {
-                    "description": "Number of iterations to use to define the null distribution.\nThis is only used if ``null_method==\"montecarlo\"``.\nDefault is 10000.",
-                    "type": "int"
+                    "description": "Number of iterations to use to define the null distribution. This is only used if ``null_method==\"montecarlo\"``. Default is 10000.",
+                    "type": "int",
+                    "default": 10000
                 },
                 "**kwargs": {
-                    "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned\nhere, with the prefix '\\kernel__' in the variable name.\nAnother optional argument is ``mask``.",
-                    "type": null
+                    "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix '\\kernel__' in the variable name. Another optional argument is ``mask``.",
+                    "type": "",
+                    "default": null
                 },
                 "kernel__fwhm": {
-                    "description": "Full-width half-max for Gaussian kernel, if you want to have a\nconstant kernel across Contrasts. Mutually exclusive with\n``sample_size``.",
-                    "type": ":obj:`float`"
+                    "description": "Full-width half-max for Gaussian kernel, if you want to have a constant kernel across Contrasts. Mutually exclusive with ``sample_size``.",
+                    "type": ":obj:`float`",
+                    "default": null
                 },
                 "kernel__sample_size": {
-                    "description": "Sample size, used to derive FWHM for Gaussian kernel based on\nformulae from Eickhoff et al. (2012). This sample size overwrites\nthe Contrast-specific sample sizes in the dataset, in order to hold\nkernel constant across Contrasts. Mutually exclusive with ``fwhm``.",
-                    "type": ":obj:`int`"
+                    "description": "Sample size, used to derive FWHM for Gaussian kernel based on formulae from Eickhoff et al. (2012). This sample size overwrites the Contrast-specific sample sizes in the dataset, in order to hold kernel constant across Contrasts. Mutually exclusive with ``fwhm``.",
+                    "type": ":obj:`int`",
+                    "default": null
                 }
             }
         },
         "ALESubtraction": {
+            "summary": "ALE subtraction analysis.",
             "parameters": {
                 "n_iters": {
                     "description": "Default is 10000.",
-                    "type": ":obj:`int`"
+                    "type": ":obj:`int`",
+                    "default": 10000
                 },
                 "**kwargs": {
-                    "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned\nhere, with the prefix '\\kernel__' in the variable name.\nAnother optional argument is ``mask``.",
-                    "type": null
+                    "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix '\\kernel__' in the variable name. Another optional argument is ``mask``.",
+                    "type": "",
+                    "default": null
                 },
                 "kernel__fwhm": {
-                    "description": "Full-width half-max for Gaussian kernel, if you want to have a\nconstant kernel across Contrasts. Mutually exclusive with\n``sample_size``.",
-                    "type": ":obj:`float`"
+                    "description": "Full-width half-max for Gaussian kernel, if you want to have a constant kernel across Contrasts. Mutually exclusive with ``sample_size``.",
+                    "type": ":obj:`float`",
+                    "default": null
                 },
                 "kernel__sample_size": {
-                    "description": "Sample size, used to derive FWHM for Gaussian kernel based on\nformulae from Eickhoff et al. (2012). This sample size overwrites\nthe Contrast-specific sample sizes in the dataset, in order to hold\nkernel constant across Contrasts. Mutually exclusive with ``fwhm``.",
-                    "type": ":obj:`int`"
+                    "description": "Sample size, used to derive FWHM for Gaussian kernel based on formulae from Eickhoff et al. (2012). This sample size overwrites the Contrast-specific sample sizes in the dataset, in order to hold kernel constant across Contrasts. Mutually exclusive with ``fwhm``.",
+                    "type": ":obj:`int`",
+                    "default": null
                 }
             }
         },
         "SCALE": {
+            "summary": "Specific coactivation likelihood estimation.",
             "parameters": {
                 "voxel_thresh": {
                     "description": "Uncorrected voxel-level threshold. Default: 0.001",
-                    "type": "float"
+                    "type": "float",
+                    "default": 0.001
                 },
                 "n_iters": {
                     "description": "Number of iterations for correction. Default: 10000",
-                    "type": "int"
+                    "type": "int",
+                    "default": 10000
                 },
                 "xyz": {
-                    "description": "Tab-delimited file of coordinates from database or numpy array with XYZ\ncoordinates. Voxels are rows and x, y, z (meaning coordinates) values\nare the three columnns.",
-                    "type": ":obj:`str` or (N x 3) array_like"
+                    "description": "Tab-delimited file of coordinates from database or numpy array with XYZ coordinates. Voxels are rows and x, y, z (meaning coordinates) values are the three columnns.",
+                    "type": ":obj:`str` or (N x 3) array_like",
+                    "default": null
                 },
                 "**kwargs": {
-                    "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned\nhere, with the prefix '\\kernel__' in the variable name.",
-                    "type": null
+                    "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix '\\kernel__' in the variable name.",
+                    "type": "",
+                    "default": null
                 },
                 "kernel__fwhm": {
-                    "description": "Full-width half-max for Gaussian kernel, if you want to have a\nconstant kernel across Contrasts. Mutually exclusive with\n``sample_size``.",
-                    "type": ":obj:`float`"
+                    "description": "Full-width half-max for Gaussian kernel, if you want to have a constant kernel across Contrasts. Mutually exclusive with ``sample_size``.",
+                    "type": ":obj:`float`",
+                    "default": null
                 },
                 "kernel__sample_size": {
-                    "description": "Sample size, used to derive FWHM for Gaussian kernel based on\nformulae from Eickhoff et al. (2012). This sample size overwrites\nthe Contrast-specific sample sizes in the dataset, in order to hold\nkernel constant across Contrasts. Mutually exclusive with ``fwhm``.",
-                    "type": ":obj:`int`"
+                    "description": "Sample size, used to derive FWHM for Gaussian kernel based on formulae from Eickhoff et al. (2012). This sample size overwrites the Contrast-specific sample sizes in the dataset, in order to hold kernel constant across Contrasts. Mutually exclusive with ``fwhm``.",
+                    "type": ":obj:`int`",
+                    "default": null
                 }
             }
         }
