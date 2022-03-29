@@ -7,10 +7,15 @@ import re
 from numpydoc.docscrape import ClassDoc
 import nimare.meta.cbma as nicoords
 import nimare.meta.kernel as nikern
+import nimare.correct as crrct
 import nimare
 
-PARAM_OPTIONAL_REGEX = re.compile(r"(?P<type>.*?)(?:, optional|\(optional\))$")
+PARAM_OPTIONAL_REGEX = re.compile(r"(?:\:obj\:`)?(?P<type>.*?)`?(?:, optional|\(optional\))?$")
 
+NIMARE_CORRECTORS = [
+    "FDRCorrector",
+    "FWECorrector",
+]
 NIMARE_COORDINATE_ALGORITHMS = [
     "MKDADensity",
     "KDA",
@@ -48,9 +53,14 @@ config = {
     "VERSION": nimare.__version__,
     "CBMA": {},
     "IBMA": {},
+    "CORRECTOR": {},
 }
 
+
 def _derive_type(type_name):
+    if "or" in type_name:
+        spl = type_name.split(' ')
+        type_name, _ = spl[0], spl[1:]
     optional_type = PARAM_OPTIONAL_REGEX.match(type_name)
     if optional_type:
         return optional_type.group("type")
@@ -66,7 +76,7 @@ for algo in NIMARE_COORDINATE_ALGORITHMS:
         "parameters": {
             param.name: {
                 "description": ' '.join(param.desc),
-                "type": _derive_type(param.type),
+                "type": _derive_type(param.type) or None,
                 "default": getattr(func_signature.parameters.get(param.name), "default", None),
             } for param in docs._parsed_data["Parameters"] if param.name not in BLACKLIST_PARAMS
         }
@@ -84,6 +94,23 @@ for algo in NIMARE_COORDINATE_ALGORITHMS:
             } for param in kern_docs._parsed_data["Parameters"] if param.name not in BLACKLIST_PARAMS
         }
     )
+
+for corrector in NIMARE_CORRECTORS:
+    func = getattr(crrct, corrector)
+    docs = ClassDoc(func)
+    func_signature = inspect.signature(func)
+    config["CORRECTOR"][corrector] = {
+        "summary": ' '.join(docs._parsed_data["Summary"]),
+        "parameters": {
+            param.name: {
+                "description": ' '.join(param.desc),
+                "type": _derive_type(param.type) or None,
+                "default": getattr(func_signature.parameters.get(param.name), "default", None),
+            } for param in docs._parsed_data["Parameters"] if param.name not in BLACKLIST_PARAMS
+        }
+    }
+
+
 
 # save config file
 fname = Path(__file__).parent.parent / "src" / "assets" / "config" / "meta_analysis_params.json"

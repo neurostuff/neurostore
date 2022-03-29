@@ -16,17 +16,17 @@
                 },
                 "**kwargs": {
                     "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix '\\kernel__' in the variable name.",
-                    "type": "",
+                    "type": null,
                     "default": null
                 },
                 "kernel__r": {
                     "description": "Sphere radius, in mm.",
-                    "type": ":obj:`int`",
+                    "type": "int",
                     "default": 10
                 },
                 "kernel__value": {
                     "description": "Value for sphere.",
-                    "type": ":obj:`int`",
+                    "type": "int",
                     "default": 1
                 }
             }
@@ -46,17 +46,17 @@
                 },
                 "**kwargs": {
                     "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix '\\kernel__' in the variable name.",
-                    "type": "",
+                    "type": null,
                     "default": null
                 },
                 "kernel__r": {
                     "description": "Sphere radius, in mm.",
-                    "type": ":obj:`int`",
+                    "type": "int",
                     "default": 10
                 },
                 "kernel__value": {
                     "description": "Value for sphere.",
-                    "type": ":obj:`int`",
+                    "type": "int",
                     "default": 1
                 }
             }
@@ -71,17 +71,17 @@
                 },
                 "**kwargs": {
                     "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix '\\kernel__' in the variable name.",
-                    "type": "",
+                    "type": null,
                     "default": null
                 },
                 "kernel__r": {
                     "description": "Sphere radius, in mm.",
-                    "type": ":obj:`int`",
+                    "type": "int",
                     "default": 10
                 },
                 "kernel__value": {
                     "description": "Value for sphere.",
-                    "type": ":obj:`int`",
+                    "type": "int",
                     "default": 1
                 }
             }
@@ -101,17 +101,17 @@
                 },
                 "**kwargs": {
                     "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix '\\kernel__' in the variable name. Another optional argument is ``mask``.",
-                    "type": "",
+                    "type": null,
                     "default": null
                 },
                 "kernel__fwhm": {
                     "description": "Full-width half-max for Gaussian kernel, if you want to have a constant kernel across Contrasts. Mutually exclusive with ``sample_size``.",
-                    "type": ":obj:`float`",
+                    "type": "float",
                     "default": null
                 },
                 "kernel__sample_size": {
                     "description": "Sample size, used to derive FWHM for Gaussian kernel based on formulae from Eickhoff et al. (2012). This sample size overwrites the Contrast-specific sample sizes in the dataset, in order to hold kernel constant across Contrasts. Mutually exclusive with ``fwhm``.",
-                    "type": ":obj:`int`",
+                    "type": "int",
                     "default": null
                 }
             }
@@ -121,22 +121,22 @@
             "parameters": {
                 "n_iters": {
                     "description": "Default is 10000.",
-                    "type": ":obj:`int`",
+                    "type": "int",
                     "default": 10000
                 },
                 "**kwargs": {
                     "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix '\\kernel__' in the variable name. Another optional argument is ``mask``.",
-                    "type": "",
+                    "type": null,
                     "default": null
                 },
                 "kernel__fwhm": {
                     "description": "Full-width half-max for Gaussian kernel, if you want to have a constant kernel across Contrasts. Mutually exclusive with ``sample_size``.",
-                    "type": ":obj:`float`",
+                    "type": "float",
                     "default": null
                 },
                 "kernel__sample_size": {
                     "description": "Sample size, used to derive FWHM for Gaussian kernel based on formulae from Eickhoff et al. (2012). This sample size overwrites the Contrast-specific sample sizes in the dataset, in order to hold kernel constant across Contrasts. Mutually exclusive with ``fwhm``.",
-                    "type": ":obj:`int`",
+                    "type": "int",
                     "default": null
                 }
             }
@@ -156,26 +156,58 @@
                 },
                 "xyz": {
                     "description": "Tab-delimited file of coordinates from database or numpy array with XYZ coordinates. Voxels are rows and x, y, z (meaning coordinates) values are the three columnns.",
-                    "type": ":obj:`str` or (N x 3) array_like",
+                    "type": "str",
                     "default": null
                 },
                 "**kwargs": {
                     "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix '\\kernel__' in the variable name.",
-                    "type": "",
+                    "type": null,
                     "default": null
                 },
                 "kernel__fwhm": {
                     "description": "Full-width half-max for Gaussian kernel, if you want to have a constant kernel across Contrasts. Mutually exclusive with ``sample_size``.",
-                    "type": ":obj:`float`",
+                    "type": "float",
                     "default": null
                 },
                 "kernel__sample_size": {
                     "description": "Sample size, used to derive FWHM for Gaussian kernel based on formulae from Eickhoff et al. (2012). This sample size overwrites the Contrast-specific sample sizes in the dataset, in order to hold kernel constant across Contrasts. Mutually exclusive with ``fwhm``.",
-                    "type": ":obj:`int`",
+                    "type": "int",
                     "default": null
                 }
             }
         }
     },
-    "IBMA": {}
+    "IBMA": {},
+    "CORRECTOR": {
+        "FDRCorrector": {
+            "summary": "Perform false discovery rate correction on a meta-analysis.",
+            "parameters": {
+                "alpha": {
+                    "description": "The FDR correction rate to use.",
+                    "type": "float",
+                    "default": 0.05
+                },
+                "method": {
+                    "description": "The FDR correction to use. Either 'indep' (for independent or positively correlated values) or 'negcorr' (for general or negatively correlated tests).",
+                    "type": "str",
+                    "default": "indep"
+                }
+            }
+        },
+        "FWECorrector": {
+            "summary": "Perform family-wise error rate correction on a meta-analysis.",
+            "parameters": {
+                "method": {
+                    "description": "The FWE correction to use. Available internal methods are 'bonferroni'. Additional methods may be implemented within the provided Estimator.",
+                    "type": "str",
+                    "default": "bonferroni"
+                },
+                "**kwargs": {
+                    "description": "Keyword arguments to be used by the FWE correction implementation.",
+                    "type": null,
+                    "default": null
+                }
+            }
+        }
+    }
 }
