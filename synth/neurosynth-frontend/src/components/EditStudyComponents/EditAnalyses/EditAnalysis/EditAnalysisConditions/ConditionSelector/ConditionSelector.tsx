@@ -111,6 +111,7 @@ const ConditionSelector: React.FC<{
             <Autocomplete
                 sx={{ margin: '1rem 0rem' }}
                 options={conditionOptions || []}
+                isOptionEqualToValue={(option, value) => option.id === value.id}
                 value={selectedValue}
                 onChange={handleOnChange}
                 getOptionLabel={(option) => option.label}

@@ -15,6 +15,9 @@ const EditAnalysisStyles: Style = {
         padding: '8px',
         width: '200px',
     },
+    unsavedChanges: {
+        backgroundColor: '#ffd892',
+    },
 };
 
 export default EditAnalysisStyles;

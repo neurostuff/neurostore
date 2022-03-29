@@ -8,7 +8,7 @@ describe('ConfirmationDialog', () => {
         render(
             <ConfirmationDialog
                 isOpen={true}
-                message="test-message"
+                dialogTitle="test-message"
                 onCloseDialog={mockOnClose}
                 confirmText="confirm"
                 rejectText="reject"
@@ -27,7 +27,7 @@ describe('ConfirmationDialog', () => {
         render(
             <ConfirmationDialog
                 isOpen={true}
-                message="test-message"
+                dialogTitle="test-message"
                 onCloseDialog={mockOnClose}
                 confirmText="confirm"
                 rejectText="reject"
@@ -43,7 +43,7 @@ describe('ConfirmationDialog', () => {
         render(
             <ConfirmationDialog
                 isOpen={true}
-                message="test-message"
+                dialogTitle="test-message"
                 onCloseDialog={mockOnClose}
                 confirmText="confirm"
                 rejectText="reject"
@@ -60,7 +60,7 @@ describe('ConfirmationDialog', () => {
             <>
                 <ConfirmationDialog
                     isOpen={true}
-                    message="test-message"
+                    dialogTitle="test-message"
                     onCloseDialog={mockOnClose}
                     confirmText="confirm"
                     rejectText="reject"

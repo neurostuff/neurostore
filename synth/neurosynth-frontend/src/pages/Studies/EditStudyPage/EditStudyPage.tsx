@@ -55,66 +55,48 @@ const EditStudyPage = () => {
         history.push(`/studies/${params.studyId}`);
     };
 
-    const handleEditStudyDetails = useCallback((update: { [key: string]: string }) => {
+    const handleEditAnalysisDetails = useCallback((idToUpdate, field, value) => {
         setStudy((prevState) => {
-            if (!prevState) return undefined;
+            if (!prevState || !prevState.analyses) return prevState;
+
+            // set new ref to array and object for react to detect
+            const newAnalyses = [...prevState.analyses];
+            const analysisIndexToUpdate = newAnalyses.findIndex(
+                (analysis) => analysis.id === idToUpdate
+            );
+            if (analysisIndexToUpdate < 0) return { ...prevState };
+            newAnalyses[analysisIndexToUpdate] = {
+                ...newAnalyses[analysisIndexToUpdate],
+                [field]: value,
+            };
 
             return {
                 ...prevState,
-                ...update,
+                analyses: newAnalyses,
             };
         });
     }, []);
 
-    const handleEditAnalysisDetails = useCallback(
-        (idToUpdate: string | undefined, update: { [key: string]: any }) => {
-            setStudy((prevState) => {
-                if (!prevState || !prevState.analyses) return prevState;
+    const handleAnalysisUpdate = (analysisId: string, newAnalysis: AnalysisApiResponse) => {
+        setStudy((prevState) => {
+            if (!prevState || !prevState.analyses) return prevState;
+            const newAnalyses = [...prevState.analyses];
+            const analysisIndexToUpdate = newAnalyses.findIndex(
+                (analysis) => analysis.id === analysisId
+            );
 
-                // set new ref to array and object for react to detect
-                const newAnalyses = [...prevState.analyses];
-                const analysisIndexToUpdate = newAnalyses.findIndex(
-                    (analysis) => analysis.id === idToUpdate
-                );
-                if (analysisIndexToUpdate < 0) return { ...prevState };
-                newAnalyses[analysisIndexToUpdate] = {
-                    ...newAnalyses[analysisIndexToUpdate],
-                    ...update,
-                };
+            if (analysisIndexToUpdate < 0) return { ...prevState };
+            newAnalyses[analysisIndexToUpdate] = {
+                ...newAnalyses[analysisIndexToUpdate],
+                ...newAnalysis,
+            };
 
-                return {
-                    ...prevState,
-                    analyses: newAnalyses,
-                };
-            });
-        },
-        []
-    );
-
-    const handleEditAnalysisConditions = useCallback(
-        (idToUpdate: string, newConditions: ConditionApiResponse[], newWeights: number[]) => {
-            setStudy((prevState) => {
-                if (!prevState || !prevState.analyses) return prevState;
-
-                const newAnalyses = [...prevState.analyses];
-                const analysisIndexToUpdate = newAnalyses.findIndex(
-                    (analysis) => analysis.id === idToUpdate
-                );
-                if (analysisIndexToUpdate < 0) return { ...prevState };
-                newAnalyses[analysisIndexToUpdate] = {
-                    ...newAnalyses[analysisIndexToUpdate],
-                    conditions: newConditions,
-                    weights: newWeights,
-                };
-
-                return {
-                    ...prevState,
-                    analyses: newAnalyses,
-                };
-            });
-        },
-        []
-    );
+            return {
+                ...prevState,
+                analyses: newAnalyses,
+            };
+        });
+    };
 
     const handleUpdateStudyMetadata = useCallback((updatedMetadata: any) => {
         setStudy((prevState) => {
@@ -148,7 +130,7 @@ const EditStudyPage = () => {
                 <>
                     <Box sx={{ marginBottom: '15px', padding: '0 10px' }}>
                         <EditStudyDetails
-                            onEditStudyDetails={handleEditStudyDetails}
+                            // onEditStudyDetails={handleEditStudyDetails}
                             studyId={params.studyId}
                             name={study.name}
                             description={study.description}
@@ -171,7 +153,7 @@ const EditStudyPage = () => {
                             onEditAnalysisDetails={handleEditAnalysisDetails}
                             onEditAnalysisImages={handleEditAnalysisImages}
                             onEditAnalysisPoints={handleEditAnalysisPoints}
-                            onEditAnalysisConditions={handleEditAnalysisConditions}
+                            onUpdateAnalysis={handleAnalysisUpdate}
                             analyses={study.analyses}
                         />
                     </Box>

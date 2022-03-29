@@ -1,4 +1,3 @@
-import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Typography, Button } from '@mui/material';
 import {
     DataGrid,
@@ -7,52 +6,15 @@ import {
     MuiBaseEvent,
     MuiEvent,
 } from '@mui/x-data-grid';
-import { AxiosError } from 'axios';
-import React, { MouseEvent, useContext, useState } from 'react';
-import { IEditAnalysisConditions } from '../..';
+import React, { useContext } from 'react';
+import { EAnalysisEdit, EAnalysisEditButtonType, IEditAnalysisConditions } from '../..';
 import { GlobalContext, SnackbarType } from '../../../../../contexts/GlobalContext';
-import useIsMounted from '../../../../../hooks/useIsMounted';
-import API, { ConditionApiResponse } from '../../../../../utils/api';
+import { ConditionApiResponse } from '../../../../../utils/api';
 import ConditionSelector from './ConditionSelector/ConditionSelector';
 import EditAnalysisStyles from '../EditAnalysis.styles';
 
 const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = React.memo((props) => {
-    const [originalDetails, setOriginalDetails] = useState({
-        conditions: props.conditions,
-        weights: props.weights,
-    });
-    const isMountedRef = useIsMounted();
-    const { getAccessTokenSilently } = useAuth0();
     const context = useContext(GlobalContext);
-
-    const [updatedEnabled, setUpdateEnabled] = useState(false);
-
-    const handleUpdateConditions = async (event: MouseEvent) => {
-        try {
-            const token = await getAccessTokenSilently();
-            API.UpdateServicesWithToken(token);
-        } catch (exception) {
-            context.showSnackbar('there was an error', SnackbarType.ERROR);
-            console.error(exception);
-        }
-
-        if (props.conditions && props.weights) {
-            API.Services.AnalysesService.analysesIdPut(props.analysisId, {
-                conditions: props.conditions.map((x) => x.id || ''),
-                weights: props.weights,
-            })
-                .then((res) => {
-                    if (isMountedRef.current) {
-                        setUpdateEnabled(false);
-                        context.showSnackbar('analysis successfully updated', SnackbarType.SUCCESS);
-                    }
-                })
-                .catch((err: Error | AxiosError) => {
-                    context.showSnackbar('there was an error', SnackbarType.ERROR);
-                    console.error(err.message);
-                });
-        }
-    };
 
     const handleConditionSelected = (condition: ConditionApiResponse) => {
         const conditionExistsInTable =
@@ -75,8 +37,7 @@ const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = React.memo((pr
             updatedConditions.push({ ...condition });
             updatedWeights.push(1);
 
-            props.onConditionWeightChange(props.analysisId, updatedConditions, updatedWeights);
-            setUpdateEnabled(true);
+            props.onConditionWeightChange(updatedConditions, updatedWeights);
         }
     };
 
@@ -94,13 +55,11 @@ const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = React.memo((pr
             return;
         }
 
-        setUpdateEnabled(true);
-
         const updatedWeights = [...props.weights];
         // we are only updating weights, so it is safe to cast this to a number
         updatedWeights[conditionWeightToUpdateIndex] = params.value as number;
 
-        props.onConditionWeightChange(props.analysisId, props.conditions, updatedWeights);
+        props.onConditionWeightChange(props.conditions, updatedWeights);
     };
 
     const conditionWeightsList = (props.conditions || []).map((condition, index) => ({
@@ -122,18 +81,9 @@ const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = React.memo((pr
                 updatedConditions.splice(indexToDelete, 1);
                 updatedWeights.splice(indexToDelete, 1);
 
-                props.onConditionWeightChange(props.analysisId, updatedConditions, updatedWeights);
-                setUpdateEnabled(true);
+                props.onConditionWeightChange(updatedConditions, updatedWeights);
             }
         }
-    };
-
-    const handleRevertConditions = (_event: MouseEvent) => {
-        props.onConditionWeightChange(
-            props.analysisId,
-            originalDetails.conditions as ConditionApiResponse[],
-            originalDetails.weights as number[]
-        );
     };
 
     return (
@@ -143,7 +93,7 @@ const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = React.memo((pr
             <Box
                 sx={{
                     '& .MuiDataGrid-root': {
-                        borderColor: updatedEnabled ? '#ef8a24 !important' : 'lightgray',
+                        borderColor: props.updateEnabled ? '#ef8a24 !important' : 'lightgray',
                         borderWidth: '2px',
                     },
                 }}
@@ -158,7 +108,7 @@ const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = React.memo((pr
                 >
                     <Typography variant="h6">Conditions for this analysis</Typography>
 
-                    {updatedEnabled && (
+                    {props.updateEnabled && (
                         <Typography color="secondary" variant="caption">
                             unsaved changes
                         </Typography>
@@ -167,12 +117,18 @@ const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = React.memo((pr
 
                 {/* we get an error as we are doing display: block. This seems to be harmless */}
                 <DataGrid
-                    sx={{
-                        '& .readonly': {
-                            color: 'darkgray',
-                            cursor: 'default',
+                    sx={[
+                        {
+                            '& .readonly': {
+                                color: 'darkgray',
+                                cursor: 'default',
+                            },
                         },
-                    }}
+                        {
+                            height: conditionWeightsList.length === 0 ? '112px !important' : 'auto',
+                        },
+                    ]}
+                    disableVirtualization
                     onCellEditCommit={handleCellEditCommit}
                     autoHeight
                     hideFooter={true}
@@ -222,8 +178,13 @@ const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = React.memo((pr
                     sx={[EditAnalysisStyles.analysisButton, { marginRight: '15px' }]}
                     variant="contained"
                     color="success"
-                    disabled={!updatedEnabled}
-                    onClick={handleUpdateConditions}
+                    disabled={!props.updateEnabled}
+                    onClick={() =>
+                        props.onEditAnalysisButtonPress(
+                            EAnalysisEdit.CONDITIONS,
+                            EAnalysisEditButtonType.UPDATE
+                        )
+                    }
                 >
                     Update
                 </Button>
@@ -231,8 +192,13 @@ const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = React.memo((pr
                     sx={EditAnalysisStyles.analysisButton}
                     variant="outlined"
                     color="secondary"
-                    disabled={!updatedEnabled}
-                    onClick={handleRevertConditions}
+                    disabled={!props.updateEnabled}
+                    onClick={() =>
+                        props.onEditAnalysisButtonPress(
+                            EAnalysisEdit.CONDITIONS,
+                            EAnalysisEditButtonType.CANCEL
+                        )
+                    }
                 >
                     Cancel
                 </Button>

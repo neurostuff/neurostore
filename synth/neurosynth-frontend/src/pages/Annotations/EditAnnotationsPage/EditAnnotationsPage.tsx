@@ -53,11 +53,12 @@ const EditAnnotationsPage: React.FC = (props) => {
             [property]: updatedText,
         })
             .then((res) => {
+                const typedRes = res.data as AnnotationsApiResponse;
                 setAnnotation((prevState) => {
                     if (!prevState) return prevState;
                     return {
                         ...prevState,
-                        [property]: (res.data as AnnotationsApiResponse)[property],
+                        [property]: typedRes[property],
                     };
                 });
                 showSnackbar(`updated the annotation ${property}`, SnackbarType.SUCCESS);
@@ -189,7 +190,7 @@ const EditAnnotationsPage: React.FC = (props) => {
                 Delete this annotation
             </Button>
             <ConfirmationDialog
-                message="Are you sure you want to delete this annotation?"
+                dialogTitle="Are you sure you want to delete this annotation?"
                 confirmText="Yes"
                 rejectText="No"
                 isOpen={confirmationIsOpen}

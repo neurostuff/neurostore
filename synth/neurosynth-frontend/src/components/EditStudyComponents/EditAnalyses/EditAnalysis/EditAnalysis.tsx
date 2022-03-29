@@ -1,5 +1,5 @@
 import { Tabs, Tab, Box } from '@mui/material';
-import { SyntheticEvent, useState } from 'react';
+import React, { SyntheticEvent, useState } from 'react';
 import { IEditAnalysis } from '..';
 import EditAnalysisDetails from './EditAnalysisDetails/EditAnalysisDetails';
 import EditAnalysisPoints from './EditAnalysisPoints/EditAnalysisPoints';
@@ -10,12 +10,6 @@ import EditAnalysisImages from './EditAnalysisImages/EditAnalysisImages';
 
 const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
     const [editTab, setEditTab] = useState(0);
-
-    const handleEditAnalysisDetails = (update: { [key: string]: any }) => {
-        if (props.analysis && props.analysis.id) {
-            props.onEditAnalysisDetails(props.analysis.id as string, update);
-        }
-    };
 
     const handleAddPoint = (pointToAdd: { x: number; y: number; z: number }) => {};
     const handleRemovePoint = (pointId: string) => {};
@@ -37,42 +31,60 @@ const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
                             setEditTab(newValue);
                         }}
                     >
-                        <Tab sx={EditAnalysisStyles.tab} value={0} label="Coordinates"></Tab>
-                        <Tab sx={EditAnalysisStyles.tab} value={1} label="Conditions"></Tab>
+                        <Tab sx={[EditAnalysisStyles.tab]} value={0} label="Coordinates"></Tab>
+                        <Tab
+                            sx={[
+                                EditAnalysisStyles.tab,
+                                props.updateState.conditions
+                                    ? EditAnalysisStyles.unsavedChanges
+                                    : {},
+                            ]}
+                            value={1}
+                            label="Conditions"
+                        ></Tab>
                         <Tab sx={EditAnalysisStyles.tab} value={2} label="Images"></Tab>
-                        <Tab sx={EditAnalysisStyles.tab} value={3} label="Details"></Tab>
+                        <Tab
+                            sx={[
+                                EditAnalysisStyles.tab,
+                                props.updateState.details.name ||
+                                props.updateState.details.description
+                                    ? EditAnalysisStyles.unsavedChanges
+                                    : {},
+                            ]}
+                            value={3}
+                            label="Details"
+                        ></Tab>
                     </Tabs>
                     <Box>
-                        <Box sx={{ display: editTab === 0 ? 'block' : 'none' }}>
+                        {editTab === 0 && (
                             <EditAnalysisPoints
                                 onRemovePoint={handleRemovePoint}
                                 onUpdatePoint={handleUpdatePoint}
                                 onAddPoint={handleAddPoint}
                                 points={props.analysis.points as PointsApiResponse[] | undefined}
                             />
-                        </Box>
-                        <Box sx={{ display: editTab === 1 ? 'block' : 'none' }}>
+                        )}
+                        {editTab === 1 && (
                             <EditAnalysisConditions
-                                analysisId={props.analysis.id || ''}
                                 conditions={
                                     props.analysis.conditions as ConditionApiResponse[] | undefined
                                 }
+                                updateEnabled={props.updateState.conditions}
                                 weights={props.analysis.weights}
                                 onConditionWeightChange={props.onEditAnalysisConditions}
+                                onEditAnalysisButtonPress={props.onEditAnalysisButtonPress}
                             />
-                        </Box>
-                        <Box sx={{ display: editTab === 2 ? 'block' : 'none' }}>
-                            <EditAnalysisImages />
-                        </Box>
-                        <Box sx={{ display: editTab === 3 ? 'block' : 'none' }}>
+                        )}
+                        {editTab === 2 && <EditAnalysisImages />}
+                        {editTab === 3 && (
                             <EditAnalysisDetails
-                                analysisId={props.analysis.id || ''}
+                                updateEnabled={props.updateState.details}
                                 name={props.analysis.name || ''}
                                 description={props.analysis.description || ''}
-                                onEditAnalysisDetails={handleEditAnalysisDetails}
-                                onDeleteAnalysis={props.onDeleteAnalysis}
+                                onEditAnalysisDetails={props.onEditAnalysisDetails}
+                                onEditAnalysisButtonPress={props.onEditAnalysisButtonPress}
                             />
-                        </Box>
+                        )}
                     </Box>
                 </>
             )}

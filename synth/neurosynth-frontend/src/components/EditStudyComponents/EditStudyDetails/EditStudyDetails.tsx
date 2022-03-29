@@ -8,9 +8,10 @@ import {
     AccordionSummary,
     Typography,
     Box,
+    TextFieldProps,
 } from '@mui/material';
 import { AxiosError } from 'axios';
-import React, { ChangeEvent, useContext, useEffect, useState } from 'react';
+import React, { ChangeEvent, useContext, useState } from 'react';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API from '../../../utils/api';
@@ -26,7 +27,7 @@ export interface IEditStudyDetailsProperties {
 }
 
 export interface IEditStudyDetails extends IEditStudyDetailsProperties {
-    onEditStudyDetails: (update: { [key: string]: string }) => void;
+    // onEditStudyDetails: (update: { [key: string]: string }) => void;
 }
 
 const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
@@ -35,7 +36,18 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
     const context = useContext(GlobalContext);
     const [updatedEnabled, setUpdateEnabled] = useState(false);
     const isMountedRef = useIsMounted();
+
+    // save original details for revert behavior
     const [originalDetails, setOriginalDetails] = useState<IEditStudyDetailsProperties>({
+        studyId: studyId,
+        name: name,
+        authors: authors,
+        publication: publication,
+        doi: doi,
+        description: description,
+    });
+
+    const [details, setDetails] = useState<IEditStudyDetailsProperties>({
         studyId: studyId,
         name: name,
         authors: authors,
@@ -50,24 +62,11 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
         },
     };
 
-    // set original details without updating in the future
-    useEffect(() => {
-        setOriginalDetails({
-            studyId: studyId,
-            name: name,
-            authors: authors,
-            publication: publication,
-            doi: doi,
-            description: description,
-        });
-        // we want to set the original details so this can only run once
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
     const handleOnEdit = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-        props.onEditStudyDetails({
+        setDetails((prevState) => ({
+            ...prevState,
             [event.target.name]: event.target.value,
-        });
+        }));
         setUpdateEnabled(true);
     };
 
@@ -81,24 +80,17 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
         }
 
         API.Services.StudiesService.studiesIdPut(props.studyId, {
-            name: props.name,
-            description: props.description,
-            authors: props.authors,
-            publication: props.publication,
-            doi: props.doi,
+            name: details.name,
+            description: details.description,
+            authors: details.authors,
+            publication: details.publication,
+            doi: details.doi,
         })
             .then((res) => {
                 context.showSnackbar('study successfully updated', SnackbarType.SUCCESS);
                 if (isMountedRef.current) {
                     setUpdateEnabled(false);
-                    setOriginalDetails({
-                        studyId: props.studyId,
-                        name: props.name,
-                        description: props.description,
-                        authors: props.authors,
-                        publication: props.publication,
-                        doi: props.doi,
-                    });
+                    setOriginalDetails({ ...details });
                 }
             })
             .catch((err: Error | AxiosError) => {
@@ -108,7 +100,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
     };
 
     const handleRevertChanges = (event: React.MouseEvent) => {
-        props.onEditStudyDetails({ ...originalDetails });
+        setDetails({ ...originalDetails });
         setUpdateEnabled(false);
     };
 
@@ -138,7 +130,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
                         label="Edit Title"
                         variant="outlined"
                         sx={EditStudyDetailsStyles.textfield}
-                        value={props.name}
+                        value={details.name}
                         InputProps={textFieldInputProps}
                         name="name"
                         onChange={handleOnEdit}
@@ -147,7 +139,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
                         label="Edit Authors"
                         sx={EditStudyDetailsStyles.textfield}
                         variant="outlined"
-                        value={props.authors}
+                        value={details.authors}
                         InputProps={textFieldInputProps}
                         name="authors"
                         onChange={handleOnEdit}
@@ -156,7 +148,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
                         label="Edit Journal"
                         variant="outlined"
                         sx={EditStudyDetailsStyles.textfield}
-                        value={props.publication}
+                        value={details.publication}
                         InputProps={textFieldInputProps}
                         name="publication"
                         onChange={handleOnEdit}
@@ -165,7 +157,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
                         label="Edit DOI"
                         variant="outlined"
                         sx={EditStudyDetailsStyles.textfield}
-                        value={props.doi}
+                        value={details.doi}
                         InputProps={textFieldInputProps}
                         name="doi"
                         onChange={handleOnEdit}
@@ -175,7 +167,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
                         variant="outlined"
                         sx={EditStudyDetailsStyles.textfield}
                         multiline
-                        value={props.description}
+                        value={details.description}
                         InputProps={textFieldInputProps}
                         name="description"
                         onChange={handleOnEdit}

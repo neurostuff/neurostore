@@ -1,39 +1,74 @@
 import { AnalysisApiResponse, ConditionApiResponse, PointsApiResponse } from '../../../utils/api';
 
+export enum EAnalysisEdit {
+    ALL = 'all',
+    DETAILS = 'details',
+    CONDITIONS = 'conditions',
+    POINTS = 'points',
+    IMAGES = 'images',
+}
+
+export enum EAnalysisEditButtonType {
+    UPDATE = 'update',
+    CANCEL = 'cancel',
+    DELETE = 'delete',
+}
+
 export interface IEditAnalysisDetailsFn {
-    (idToUpdate: string, update: { [key: string]: any }): void;
+    (field: 'name' | 'description', value: string): void;
 }
 
 export interface IEditAnalysisConditionsFn {
-    (idtoUpdate: string, newConditions: ConditionApiResponse[], newWeights: number[]): void;
+    (newConditions: ConditionApiResponse[], newWeights: number[]): void;
+}
+
+export interface IOnButtonPressFn {
+    (editor: EAnalysisEdit, buttonType: EAnalysisEditButtonType): void;
 }
 
 export interface IDeleteAnalysisFn {
     (idToDelete: string): void;
 }
 
+// TODO: add images and points if necessary
+export interface IUpdateState {
+    details: {
+        name: boolean;
+        description: boolean;
+    };
+    conditions: boolean;
+}
+
 export interface IEditAnalyses {
     analyses: AnalysisApiResponse[] | undefined;
     onEditAnalysisPoints: (points: PointsApiResponse[]) => void;
     onEditAnalysisImages: () => void;
-    onEditAnalysisDetails: IEditAnalysisDetailsFn;
-    onEditAnalysisConditions: IEditAnalysisConditionsFn;
+    onEditAnalysisDetails: (
+        idToUpdate: string,
+        field: 'name' | 'description',
+        value: string
+    ) => void;
+    onUpdateAnalysis: (analysisId: string, analysis: AnalysisApiResponse) => void;
 }
 
 export interface IEditAnalysis {
+    updateState: IUpdateState;
     analysis: AnalysisApiResponse | undefined;
     onEditAnalysisPoints: (points: PointsApiResponse[]) => void;
-    onDeleteAnalysis: IDeleteAnalysisFn;
     onEditAnalysisDetails: IEditAnalysisDetailsFn;
     onEditAnalysisConditions: IEditAnalysisConditionsFn;
+    onEditAnalysisButtonPress: IOnButtonPressFn;
 }
 
 export interface IEditAnalysisDetails {
-    analysisId: string;
     name: string;
     description: string;
-    onEditAnalysisDetails: (update: { [key: string]: any }) => void;
-    onDeleteAnalysis: IDeleteAnalysisFn;
+    updateEnabled: {
+        name: boolean;
+        description: boolean;
+    };
+    onEditAnalysisDetails: IEditAnalysisDetailsFn;
+    onEditAnalysisButtonPress: IOnButtonPressFn;
 }
 
 export interface IEditAnalysisPoints {
@@ -44,8 +79,9 @@ export interface IEditAnalysisPoints {
 }
 
 export interface IEditAnalysisConditions {
-    analysisId: string;
     conditions: ConditionApiResponse[] | undefined;
     weights: number[] | undefined;
+    updateEnabled: boolean;
     onConditionWeightChange: IEditAnalysisConditionsFn;
+    onEditAnalysisButtonPress: IOnButtonPressFn;
 }

@@ -293,7 +293,7 @@ const StudysetsPage: React.FC = (props) => {
                         Delete this studyset
                     </Button>
                     <ConfirmationDialog
-                        message="Are you sure you want to delete the studyset?"
+                        dialogTitle="Are you sure you want to delete the studyset?"
                         confirmText="Yes"
                         rejectText="No"
                         isOpen={confirmationIsOpen}
