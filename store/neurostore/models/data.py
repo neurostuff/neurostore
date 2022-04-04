@@ -219,7 +219,8 @@ class Entity(BaseMixin, db.Model):
     # link to analysis
     analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id", ondelete='CASCADE'))
     label = db.Column(db.String)  # bids-entity
-    level = db.Column(db.String)  # constrained enumeration (bids-entity, run, session, subject, group, meta)
+    # constrained enumeration (bids-entity, run, session, subject, group, meta)
+    level = db.Column(db.String)
     data = db.Column(db.JSON)  # metadata (participants.tsv, or something else)
     analysis = relationship("Analysis", backref=backref("entities"))
 
