@@ -217,11 +217,11 @@ class Entity(BaseMixin, db.Model):
     __tablename__ = "entities"
 
     # link to analysis
-    study_id = db.Column(db.Text, db.ForeignKey("studies.id", ondelete='CASCADE'))
+    analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id", ondelete='CASCADE'))
     label = db.Column(db.String)  # bids-entity
-    level = db.Column(db.String)  # constrained enumeration (bids-entity, run, session, subject)
+    level = db.Column(db.String)  # constrained enumeration (bids-entity, run, session, subject, group, meta)
     data = db.Column(db.JSON)  # metadata (participants.tsv, or something else)
-    study = relationship("Study", backref=backref("entities"))
+    analysis = relationship("Analysis", backref=backref("entities"))
 
 
 class Point(BaseMixin, db.Model):

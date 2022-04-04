@@ -41,4 +41,5 @@ __all__ = [
     "UserView",
     "UserListView",
     "PointListView",
+    "EntityView",
 ]
