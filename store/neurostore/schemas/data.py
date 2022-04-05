@@ -79,9 +79,14 @@ class BaseSchema(Schema):
     # normal return key
     id_key = "id"
 
-    _id = fields.String(attribute="id", data_key=id_key, dump_only=True, db_only=True)
-    created_at = fields.DateTime(dump_only=True, db_only=True)
-    updated_at = fields.DateTime(dump_only=True, db_only=True)
+    _id = fields.String(
+        attribute="id",
+        data_key=id_key,
+        dump_only=True,
+        metadata={'db_only': True}
+    )
+    created_at = fields.DateTime(dump_only=True, metadata={'db_only': True})
+    updated_at = fields.DateTime(dump_only=True, metadata={'db_only': True})
 
     id = fields.String(load_only=True)
 
@@ -92,7 +97,7 @@ class BaseSchema(Schema):
 
 
 class BaseDataSchema(BaseSchema):
-    user = fields.String(attribute="user_id", dump_only=True, db_only=True)
+    user = fields.String(attribute="user_id", dump_only=True, metadata={'db_only': True})
 
 
 class ConditionSchema(BaseDataSchema):
@@ -101,12 +106,19 @@ class ConditionSchema(BaseDataSchema):
         allow_none = ("name", "description")
 
 
+class EntitySchema(BaseDataSchema):
+    analysis_id = fields.String(data_key="analysis")
+
+    class Meta:
+        additional = ("level", "label")
+
+
 class ImageSchema(BaseDataSchema):
 
     # serialization
     analysis = StringOrNested("AnalysisSchema", use_nested=False)
-    analysis_name = fields.String(dump_only=True, db_only=True)
-    add_date = fields.DateTime(dump_only=True, db_only=True)
+    analysis_name = fields.String(dump_only=True, metadata={'db_only': True})
+    add_date = fields.DateTime(dump_only=True, metadata={'db_only': True})
 
     class Meta:
         additional = ("url", "filename", "space", "value_type")
@@ -122,6 +134,7 @@ class PointSchema(BaseDataSchema):
     # serialization
     analysis = StringOrNested("AnalysisSchema", use_nested=False)
     values = fields.Nested(PointValueSchema, many=True)
+    entities = fields.Nested(EntitySchema, many=True)
 
     # deserialization
     x = fields.Float(load_only=True)
@@ -200,9 +213,11 @@ class StudySchema(BaseDataSchema):
 
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
     analyses = StringOrNested(AnalysisSchema, many=True)
-    source = fields.String(dump_only=True, db_only=True, allow_none=True)
-    source_id = fields.String(dump_only=True, db_only=True, allow_none=True)
-    source_updated_at = fields.DateTime(dump_only=True, db_only=True, allow_none=True)
+    source = fields.String(dump_only=True, metadata={'db_only': True}, allow_none=True)
+    source_id = fields.String(dump_only=True, metadata={'db_only': True}, allow_none=True)
+    source_updated_at = fields.DateTime(
+        dump_only=True, metadata={'db_only': True}, allow_none=True
+    )
 
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid", "authors", "year")
@@ -250,9 +265,11 @@ class AnnotationSchema(BaseDataSchema):
     annotation_analyses = fields.Nested(AnnotationAnalysisSchema, data_key="notes", many=True)
     annotation = fields.String(dump_only=True)
     annotation_csv = fields.String(dump_only=True)
-    source = fields.String(dump_only=True, db_only=True, allow_none=True)
-    source_id = fields.String(dump_only=True, db_only=True, allow_none=True)
-    source_updated_at = fields.DateTime(dump_only=True, db_only=True, allow_none=True)
+    source = fields.String(dump_only=True, metadata={'db_only': True}, allow_none=True)
+    source_id = fields.String(dump_only=True, metadata={'db_only': True}, allow_none=True)
+    source_updated_at = fields.DateTime(
+        dump_only=True, metadata={'db_only': True}, allow_none=True
+    )
 
     note_keys = fields.Dict()
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
@@ -417,6 +434,16 @@ class StudysetSnapshot(object):
                                     "space": p.space,
                                     "image": p.image,
                                     "label_id": p.label_id,
+                                    "entities": [
+                                        {
+                                            "id": e.id,
+                                            'created_at': self._serialize_dt(e.created_at),
+                                            'updated_at': self._serialize_dt(e.updated_at),
+                                            "level": e.level,
+                                            "label": e.label,
+                                            "analysis": a.id,
+                                        } for e in p.entities
+                                    ],
                                     "values": [
                                         {
                                             "kind": v.kind,
@@ -433,6 +460,16 @@ class StudysetSnapshot(object):
                                     'user': i.user_id,
                                     "analysis": a.id,
                                     "analysis_name": a.name,
+                                    "entities": [
+                                        {
+                                            "id": i.id,
+                                            'created_at': self._serialize_dt(i.created_at),
+                                            'updated_at': self._serialize_dt(i.updated_at),
+                                            "level": e.level,
+                                            "label": e.label,
+                                            "analysis": a.id,
+                                        } for e in i.entities
+                                    ],
                                     "url": i.url,
                                     "space": i.space,
                                     "value_type": i.value_type,

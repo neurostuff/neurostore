@@ -11,6 +11,7 @@ from .data import (
     AnnotationAnalysisSchema,
     StudysetStudySchema,
     StudysetSnapshot,
+    EntitySchema,
 )
 
 from .auth import UserSchema
@@ -29,4 +30,5 @@ __all__ = [
     "AnnotationAnalysisSchema",
     "StudysetStudySchema",
     "StudysetSnapshot",
+    "EntitySchema",
 ]
