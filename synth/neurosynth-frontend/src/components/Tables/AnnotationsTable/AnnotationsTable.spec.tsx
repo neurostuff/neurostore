@@ -3,37 +3,10 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Router } from 'react-router-dom';
 import { AnnotationsApiResponse } from '../../../utils/api';
-import { IDisplayValuesTableModel } from '../DisplayValuesTable';
 import AnnotationsTable from './AnnotationsTable';
 
 jest.mock('@auth0/auth0-react');
-
-jest.mock('../DisplayValuesTable/DisplayValuesTable', () => {
-    return (props: IDisplayValuesTableModel) => {
-        const handleRowClick = () => {
-            if (props.onValueSelected) props.onValueSelected('some-selected-id');
-        };
-
-        return (
-            <>
-                <div>mock table</div>
-                {props.rowData.map((row) => (
-                    <div key={row.uniqueKey}>
-                        <span>{`unique key: ${row.uniqueKey}`}</span>
-                        {props.columnHeaders.map((col, index) => (
-                            <span
-                                key={col.value}
-                            >{`${col.value}: ${row.columnValues[index].value}`}</span>
-                        ))}
-                    </div>
-                ))}
-                <button data-testid="simulate-row-click" onClick={handleRowClick}>
-                    simulate row click
-                </button>
-            </>
-        );
-    };
-});
+jest.mock('../DisplayValuesTable/DisplayValuesTable');
 
 describe('AnnotationsTable component', () => {
     const mockAnnotationApiResponse: AnnotationsApiResponse[] = [
@@ -86,6 +59,10 @@ describe('AnnotationsTable component', () => {
                 sub: 'some-github-user',
             },
         });
+    });
+
+    afterAll(() => {
+        jest.clearAllMocks();
     });
 
     it('should render', () => {

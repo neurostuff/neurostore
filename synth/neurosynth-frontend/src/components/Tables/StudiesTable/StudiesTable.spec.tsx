@@ -4,115 +4,12 @@ import userEvent from '@testing-library/user-event';
 import { Router } from 'react-router-dom';
 import { StudiesTable } from '../..';
 import { MockThemeProvider } from '../../../testing/helpers';
-import API, { StudysetsApiResponse, StudyApiResponse } from '../../../utils/api';
-import { IStudysetsPopupMenu } from '../../StudysetsPopupMenu/StudysetsPopupMenu';
+import API, { StudyApiResponse, StudysetsApiResponse } from '../../../utils/api';
 
-jest.mock('../../../hooks/useIsMounted', () => {
-    return {
-        __esModule: true,
-        default: () => ({ current: true }),
-    };
-});
-
+jest.mock('../../../hooks/useIsMounted');
 jest.mock('@auth0/auth0-react');
-
-jest.mock('../../../utils/api', () => {
-    return {
-        __esModule: true,
-        default: {
-            Services: {
-                StudySetsService: {
-                    studysetsGet: jest.fn(() => {
-                        const mockStudysets: StudysetsApiResponse[] = [
-                            {
-                                created_at: '2021-12-14T05:05:45.722157+00:00',
-                                description: null,
-                                doi: null,
-                                id: '123',
-                                name: 'test-name',
-                                pmid: null,
-                                publication: '',
-                                studies: [],
-                                user: 'some-user',
-                            },
-                        ];
-                        return Promise.resolve({
-                            data: {
-                                results: mockStudysets,
-                            },
-                        });
-                    }),
-                    studysetsPost: jest.fn(() => {
-                        const mockStudyset: StudysetsApiResponse = {
-                            created_at: '2021-12-14T05:05:34.722631+00:00',
-                            description: null,
-                            doi: null,
-                            id: 'test-id',
-                            name: null,
-                            pmid: null,
-                            publication: null,
-                            studies: [],
-                            user: 'test-user',
-                        };
-                        return Promise.resolve({
-                            data: mockStudyset,
-                        });
-                    }),
-                    studysetsIdPut: jest.fn(() => {
-                        const mockStudyset: StudysetsApiResponse = {
-                            created_at: '2021-12-14T05:05:34.722631+00:00',
-                            description: null,
-                            doi: null,
-                            id: 'test-id',
-                            name: null,
-                            pmid: null,
-                            publication: null,
-                            studies: ['5LMdXPD3ocgD'],
-                            user: 'test-user',
-                        };
-                        return Promise.resolve({
-                            data: mockStudyset,
-                        });
-                    }),
-                },
-            },
-        },
-    };
-});
-
-jest.mock('../../StudysetsPopupMenu/StudysetsPopupMenu', () => {
-    return {
-        __esModule: true,
-        default: (props: IStudysetsPopupMenu) => {
-            return (
-                <>
-                    <button
-                        onClick={() => props.onCreateStudyset('test-name', 'test-description')}
-                        data-testid="add-studyset-button"
-                    >
-                        mock add studyset
-                    </button>
-                    <button
-                        onClick={() =>
-                            props.onStudyAddedToStudyset(
-                                props.study,
-                                (props.studysets as StudysetsApiResponse[])[0]
-                            )
-                        }
-                        data-testid="edit-studyset-button"
-                    >
-                        mock edit studyset
-                    </button>
-                    {props.studysets?.map((studyset, index) => (
-                        <span data-testid="child-studyset" key={studyset.id || index}>
-                            child-mock-studyset
-                        </span>
-                    ))}
-                </>
-            );
-        },
-    };
-});
+jest.mock('../../../utils/api');
+jest.mock('../../StudysetsPopupMenu/StudysetsPopupMenu');
 
 describe('StudiesTable Component', () => {
     const historyMock = {
@@ -177,7 +74,73 @@ describe('StudiesTable Component', () => {
         },
     ];
 
+    const mockStudysetsGetPayload: StudysetsApiResponse[] = [
+        {
+            created_at: '2021-12-14T05:05:45.722157+00:00',
+            description: null,
+            doi: null,
+            id: '123',
+            name: 'test-name',
+            pmid: null,
+            publication: '',
+            studies: [],
+            user: 'some-user',
+        },
+    ];
+
+    const mockStudysetsPostResponse: StudysetsApiResponse[] = [
+        {
+            created_at: '2021-12-14T05:05:45.722157+00:00',
+            description: null,
+            doi: null,
+            id: '123',
+            name: 'test-name',
+            pmid: null,
+            publication: '',
+            studies: [],
+            user: 'some-user',
+        },
+    ];
+
+    const mockStudysetsIdPutResponse: StudysetsApiResponse[] = [
+        {
+            created_at: '2021-12-14T05:05:34.722631+00:00',
+            description: null,
+            doi: null,
+            id: 'test-id',
+            name: null,
+            pmid: null,
+            publication: null,
+            studies: ['5LMdXPD3ocgD'],
+            user: 'test-user',
+        },
+    ];
+
     beforeEach(() => {
+        (API.Services.StudySetsService.studysetsGet as any).mockReturnValue(
+            Promise.resolve({
+                data: {
+                    results: mockStudysetsGetPayload,
+                },
+            })
+        );
+
+        (API.Services.StudySetsService.studysetsPost as any).mockReturnValue(
+            Promise.resolve({
+                data: {
+                    results: mockStudysetsPostResponse,
+                },
+            })
+        );
+
+        (API.Services.StudySetsService.studysetsIdPut as any).mockReturnValue(
+            Promise.resolve({
+                data: {
+                    results: mockStudysetsIdPutResponse,
+                },
+            })
+        );
+
         (useAuth0 as any).mockReturnValue({
             isAuthenticated: false,
             getAccessTokenSilently: () => jest.fn(),
@@ -185,6 +148,10 @@ describe('StudiesTable Component', () => {
                 sub: 'test-user-id',
             },
         });
+    });
+
+    afterAll(() => {
+        jest.clearAllMocks();
     });
 
     it('should render', async () => {

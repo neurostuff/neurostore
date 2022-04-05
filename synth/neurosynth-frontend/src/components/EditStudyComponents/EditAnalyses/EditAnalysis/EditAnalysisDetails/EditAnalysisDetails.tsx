@@ -53,21 +53,21 @@ const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = React.memo((props) =
                         sx={[EditAnalysisStyles.analysisButton, { marginRight: '15px' }]}
                         variant="contained"
                         color="success"
-                        onClick={(event) =>
+                        onClick={(_event) =>
                             props.onEditAnalysisButtonPress(
                                 EAnalysisEdit.DETAILS,
-                                EAnalysisEditButtonType.UPDATE
+                                EAnalysisEditButtonType.SAVE
                             )
                         }
                         disabled={!(props.updateEnabled.name || props.updateEnabled.description)}
                     >
-                        Update
+                        Save
                     </Button>
                     <Button
                         sx={[EditAnalysisStyles.analysisButton, { marginRight: '15px' }]}
                         variant="outlined"
                         color="secondary"
-                        onClick={(event) =>
+                        onClick={(_event) =>
                             props.onEditAnalysisButtonPress(
                                 EAnalysisEdit.DETAILS,
                                 EAnalysisEditButtonType.CANCEL
@@ -82,7 +82,7 @@ const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = React.memo((props) =
                     sx={EditAnalysisStyles.analysisButton}
                     color="error"
                     variant="contained"
-                    onClick={(event) =>
+                    onClick={(_event) =>
                         props.onEditAnalysisButtonPress(
                             EAnalysisEdit.DETAILS,
                             EAnalysisEditButtonType.DELETE

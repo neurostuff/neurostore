@@ -15,6 +15,7 @@ import {
     StudiesApiFactory,
     Study,
     UserApiFactory,
+    Image,
 } from '../gen/api';
 
 export type StudyApiResponse = Study & ReadOnly;
@@ -23,6 +24,7 @@ export type PointsApiResponse = Point & ReadOnly;
 export type StudysetsApiResponse = Studyset & ReadOnly;
 export type AnnotationsApiResponse = Annotation & ReadOnly;
 export type ConditionApiResponse = Condition & ReadOnly;
+export type ImageApiResponse = Image & ReadOnly;
 
 const APIDomain = process.env.REACT_APP_API_DOMAIN as string;
 let TOKEN = '';

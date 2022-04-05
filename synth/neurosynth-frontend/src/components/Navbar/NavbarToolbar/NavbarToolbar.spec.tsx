@@ -6,17 +6,9 @@ import { NavOptionsModel } from '..';
 import { MockThemeProvider } from '../../../testing/helpers';
 import NavbarToolbar from './NavbarToolbar';
 
-jest.mock('@auth0/auth0-react');
-
 // already tested child component
-jest.mock('../NavbarPopupMenu/NavbarPopupMenu', () => {
-    return {
-        __esModule: true,
-        default: (props: any) => {
-            return <button>child-menuitem</button>;
-        },
-    };
-});
+jest.mock('../NavbarPopupMenu/NavbarPopupMenu');
+jest.mock('@auth0/auth0-react');
 
 describe('NavbarToolbar Component', () => {
     const mockedUseAuth0 = {

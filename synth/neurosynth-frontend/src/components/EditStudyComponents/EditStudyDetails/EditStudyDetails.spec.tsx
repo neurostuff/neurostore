@@ -1,33 +1,17 @@
-import { act, render, RenderResult, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import EditStudyDetails, { IEditStudyDetails } from './EditStudyDetails';
-import { useAuth0 } from '@auth0/auth0-react';
 import API from '../../../utils/api';
 
-jest.mock('@auth0/auth0-react');
-jest.mock('../../../utils/api', () => {
-    return {
-        __esModule: true,
-        default: {
-            Services: {
-                StudiesService: {
-                    studiesIdPut: jest.fn(() => {
-                        return Promise.resolve();
-                    }),
-                },
-            },
-        },
-    };
-});
+jest.mock('../../../utils/api');
 
 describe('EditStudyDetails Component', () => {
     let mockStudyDetails: IEditStudyDetails;
-    let renderResult: RenderResult;
 
     beforeEach(() => {
-        (useAuth0 as any).mockReturnValue({
-            getAccessTokenSilently: () => {},
-        });
+        (API.Services.StudiesService.studiesIdPut as jest.Mock).mockReturnValue(
+            Promise.resolve({})
+        );
 
         mockStudyDetails = {
             studyId: 'some-test-id',
@@ -36,10 +20,17 @@ describe('EditStudyDetails Component', () => {
             authors: 'some-test-authors',
             doi: 'some-test-doi',
             publication: 'some-test-publication',
-            onEditStudyDetails: jest.fn(),
         };
 
-        renderResult = render(<EditStudyDetails {...mockStudyDetails} />);
+        render(<EditStudyDetails {...mockStudyDetails} />);
+
+        // open accordion
+        const title = screen.getByText('Edit Study Details');
+        userEvent.click(title);
+    });
+
+    afterAll(() => {
+        jest.clearAllMocks();
     });
 
     it('should render', () => {
@@ -47,76 +38,60 @@ describe('EditStudyDetails Component', () => {
         expect(title).toBeInTheDocument();
     });
 
-    it('should call the onEditStudyDetails func with the correct arguments when editing the name textbox', () => {
-        // open accordion
-        const title = screen.getByText('Edit Study Details');
-        userEvent.click(title);
+    describe('inputs', () => {
+        beforeEach(() => {
+            // open accordion
+            const title = screen.getByText('Edit Study Details');
+            userEvent.click(title);
+        });
 
-        const nameTextbox = screen.getByDisplayValue(mockStudyDetails.name);
-        userEvent.type(nameTextbox, 'A');
+        it('should work for name', () => {
+            const nameTextbox = screen.getByDisplayValue(mockStudyDetails.name);
+            userEvent.type(nameTextbox, 'A');
 
-        expect(mockStudyDetails.onEditStudyDetails).toHaveBeenCalledWith({
-            name: mockStudyDetails.name + 'A',
+            expect(screen.getByDisplayValue(mockStudyDetails.name + 'A')).toBeInTheDocument();
+        });
+        it('should work for authors', () => {
+            const authorsTextbox = screen.getByDisplayValue(mockStudyDetails.authors);
+            userEvent.type(authorsTextbox, 'B');
+
+            expect(screen.getByDisplayValue(mockStudyDetails.authors + 'B')).toBeInTheDocument();
+        });
+        it('should work for publication', () => {
+            const publicationTextbox = screen.getByDisplayValue(mockStudyDetails.publication);
+            userEvent.type(publicationTextbox, 'C');
+
+            expect(
+                screen.getByDisplayValue(mockStudyDetails.publication + 'C')
+            ).toBeInTheDocument();
+        });
+        it('should work for DOI', () => {
+            const doiTextbox = screen.getByDisplayValue(mockStudyDetails.doi);
+            userEvent.type(doiTextbox, 'D');
+
+            expect(screen.getByDisplayValue(mockStudyDetails.doi + 'D')).toBeInTheDocument();
+        });
+        it('should work for description', () => {
+            const descriptionTextbox = screen.getByDisplayValue(mockStudyDetails.description);
+            userEvent.type(descriptionTextbox, 'E');
+
+            expect(
+                screen.getByDisplayValue(mockStudyDetails.description + 'E')
+            ).toBeInTheDocument();
         });
     });
 
-    it('should call the onEditStudyDetails func with the correct arguments when editing the authors textbox', () => {
-        // open accordion
-        const title = screen.getByText('Edit Study Details');
-        userEvent.click(title);
-
-        const authorsTextbox = screen.getByDisplayValue(mockStudyDetails.authors);
-        userEvent.type(authorsTextbox, 'B');
-
-        expect(mockStudyDetails.onEditStudyDetails).toHaveBeenCalledWith({
-            authors: mockStudyDetails.authors + 'B',
-        });
+    it('should disable the save button initially', () => {
+        const saveButton = screen.getByRole('button', { name: 'Save' });
+        expect(saveButton).toBeDisabled();
     });
 
-    it('should call the onEditStudyDetails func with the correct arguments when editing the journal (publication) textbox', () => {
-        // open accordion
-        const title = screen.getByText('Edit Study Details');
-        userEvent.click(title);
-
-        const publicationTextbox = screen.getByDisplayValue(mockStudyDetails.publication);
-        userEvent.type(publicationTextbox, 'C');
-
-        expect(mockStudyDetails.onEditStudyDetails).toHaveBeenCalledWith({
-            publication: mockStudyDetails.publication + 'C',
-        });
-    });
-
-    it('should call the onEditStudyDetails func with the correct arguments when editing the DOI textbox', () => {
-        // open accordion
-        const title = screen.getByText('Edit Study Details');
-        userEvent.click(title);
-
-        const doiTextbox = screen.getByDisplayValue(mockStudyDetails.doi);
-        userEvent.type(doiTextbox, 'D');
-
-        expect(mockStudyDetails.onEditStudyDetails).toHaveBeenCalledWith({
-            doi: mockStudyDetails.doi + 'D',
-        });
-    });
-
-    it('should call the onEditStudyDetails func with the correct arguments when editing the description textbox', () => {
-        // open accordion
-        const title = screen.getByText('Edit Study Details');
-        userEvent.click(title);
-
-        const descriptionTextbox = screen.getByDisplayValue(mockStudyDetails.description);
-        userEvent.type(descriptionTextbox, 'E');
-
-        expect(mockStudyDetails.onEditStudyDetails).toHaveBeenCalledWith({
-            description: mockStudyDetails.description + 'E',
-        });
+    it('should disable the cancel button initally', () => {
+        const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+        expect(cancelButton).toBeDisabled();
     });
 
     it('should indicate changes need to be saved when the textboxes are modified', () => {
-        // open accordion
-        const title = screen.getByText('Edit Study Details');
-        userEvent.click(title);
-
         const descriptionTextbox = screen.getByDisplayValue(mockStudyDetails.description);
         userEvent.type(descriptionTextbox, 'E');
 
@@ -124,130 +99,72 @@ describe('EditStudyDetails Component', () => {
         expect(saveChangesText).toBeInTheDocument();
     });
 
-    it('should call the API when the update button is clicked', async () => {
-        // open accordion
-        const title = screen.getByText('Edit Study Details');
-        userEvent.click(title);
-
+    it('should call the API when the save button is clicked', async () => {
         const descriptionTextbox = screen.getByDisplayValue(mockStudyDetails.description);
         userEvent.type(descriptionTextbox, 'E');
 
-        // pretend we are the parent handler function and manually set the new value and trigger a rerender
-        mockStudyDetails.description = mockStudyDetails.description + 'E';
-        renderResult.rerender(<EditStudyDetails {...mockStudyDetails} />);
-
-        let saveChangesText: HTMLElement | null = screen.getByText('unsaved changes');
-        expect(saveChangesText).toBeInTheDocument();
-
-        const updateButton = screen.getByRole('button', { name: 'Update' });
+        const saveButton = screen.getByRole('button', { name: 'Save' });
 
         await act(async () => {
-            userEvent.click(updateButton);
+            userEvent.click(saveButton);
         });
 
         expect(API.Services.StudiesService.studiesIdPut).toHaveBeenCalledWith('some-test-id', {
             name: mockStudyDetails.name,
-            description: mockStudyDetails.description,
+            description: mockStudyDetails.description + 'E',
             authors: mockStudyDetails.authors,
             publication: mockStudyDetails.publication,
             doi: mockStudyDetails.doi,
         });
+    });
 
-        saveChangesText = screen.queryByText('unsaved changes');
-        expect(saveChangesText).not.toBeInTheDocument();
+    it('should revert to the original data when the cancel button is clicked', () => {
+        // mock a type event in order to enable the cancel button and update the state
+        let nameTextbox = screen.getByDisplayValue(mockStudyDetails.name);
+        let descriptionTextbox = screen.getByDisplayValue(mockStudyDetails.description);
+        let doiTextbox = screen.getByDisplayValue(mockStudyDetails.doi);
+        let publicationTextbox = screen.getByDisplayValue(mockStudyDetails.publication);
+        let authorsTextbox = screen.getByDisplayValue(mockStudyDetails.authors);
+        userEvent.type(nameTextbox, 'A');
+        userEvent.type(descriptionTextbox, 'B');
+        userEvent.type(doiTextbox, 'C');
+        userEvent.type(publicationTextbox, 'D');
+        userEvent.type(authorsTextbox, '');
+
+        // cancel button should now be enabled
+        const revertChangesButton = screen.getByRole('button', { name: 'Cancel' });
+        userEvent.click(revertChangesButton);
+
+        expect(screen.getByDisplayValue(mockStudyDetails.name)).toBeInTheDocument();
+        expect(screen.getByDisplayValue(mockStudyDetails.description)).toBeInTheDocument();
+        expect(screen.getByDisplayValue(mockStudyDetails.doi)).toBeInTheDocument();
+        expect(screen.getByDisplayValue(mockStudyDetails.publication)).toBeInTheDocument();
+        expect(screen.getByDisplayValue(mockStudyDetails.authors)).toBeInTheDocument();
     });
 
     it('should not indicate save changes after we call the API and update', async () => {
-        // open accordion
-        const title = screen.getByText('Edit Study Details');
-        userEvent.click(title);
-
         const descriptionTextbox = screen.getByDisplayValue(mockStudyDetails.description);
         userEvent.type(descriptionTextbox, 'E');
 
-        // pretend we are the parent handler function and manually set the new value and trigger a rerender
-        mockStudyDetails.description = mockStudyDetails.description + 'E';
-        renderResult.rerender(<EditStudyDetails {...mockStudyDetails} />);
-
-        let saveChangesText: HTMLElement | null = screen.getByText('unsaved changes');
-        expect(saveChangesText).toBeInTheDocument();
-
-        const updateButton = screen.getByRole('button', { name: 'Update' });
+        const saveButton = screen.getByRole('button', { name: 'Save' });
 
         await act(async () => {
-            userEvent.click(updateButton);
+            userEvent.click(saveButton);
         });
 
-        saveChangesText = screen.queryByText('unsaved changes');
+        const saveChangesText = screen.queryByText('unsaved changes');
         expect(saveChangesText).not.toBeInTheDocument();
     });
 
-    it('should call the onEditStudyDetails func with the original data when the cancel button is clicked', () => {
-        // open accordion
-        const title = screen.getByText('Edit Study Details');
-        userEvent.click(title);
-
-        // we expect the cancel button to be disabled initially
-        let revertChangesButton = screen.getByRole('button', { name: 'Cancel' });
-        expect(revertChangesButton).toBeDisabled();
-
-        // mock a type event in order to enable the cancel button
-        let descriptionTextbox = screen.getByDisplayValue(mockStudyDetails.description);
-        userEvent.type(descriptionTextbox, 'E');
-
-        // pretend we are the parent handler function and manually set the new value and trigger a rerender.
-        mockStudyDetails.description = mockStudyDetails.description + 'E';
-        renderResult.rerender(<EditStudyDetails {...mockStudyDetails} />);
-
-        // expect the updated value to be reflected in the textbox
-        descriptionTextbox = screen.getByDisplayValue(mockStudyDetails.description);
-        expect(descriptionTextbox).toBeInTheDocument();
-
-        // cancel button should now be enabled
-        revertChangesButton = screen.getByRole('button', { name: 'Cancel' });
-        expect(revertChangesButton).not.toBeDisabled();
-
-        userEvent.click(revertChangesButton);
-
-        expect(mockStudyDetails.onEditStudyDetails).toHaveBeenLastCalledWith({
-            studyId: mockStudyDetails.studyId,
-            name: mockStudyDetails.name,
-            doi: mockStudyDetails.doi,
-            description: mockStudyDetails.description.slice(
-                0,
-                mockStudyDetails.description.length - 1
-            ),
-            authors: mockStudyDetails.authors,
-            publication: mockStudyDetails.publication,
-        });
-    });
-
     it('should not indicate unsaved changes when the Cancel button is clicked', () => {
-        // open accordion
-        const title = screen.getByText('Edit Study Details');
-        userEvent.click(title);
-
-        // we expect the cancel button to be disabled initially
-        let revertChangesButton = screen.getByRole('button', { name: 'Cancel' });
-        expect(revertChangesButton).toBeDisabled();
-
         // mock a type event in order to enable the cancel button
         let descriptionTextbox = screen.getByDisplayValue(mockStudyDetails.description);
         userEvent.type(descriptionTextbox, 'E');
 
-        // Cancel button should now be enabled
-        revertChangesButton = screen.getByRole('button', { name: 'Cancel' });
-        expect(revertChangesButton).not.toBeDisabled();
-
+        const revertChangesButton = screen.getByRole('button', { name: 'Cancel' });
         userEvent.click(revertChangesButton);
 
         const unsavedChangesText = screen.queryByText('unsaved changes');
         expect(unsavedChangesText).not.toBeInTheDocument();
-
-        revertChangesButton = screen.getByRole('button', { name: 'Cancel' });
-        expect(revertChangesButton).toBeDisabled();
-
-        const updateButton = screen.getByRole('button', { name: 'Update' });
-        expect(updateButton).toBeDisabled();
     });
 });

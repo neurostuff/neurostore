@@ -7,6 +7,9 @@ import EditAnalysisPoints from './EditAnalysisPoints';
  */
 
 describe('EditAnalysisPoints Component', () => {
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
     const mockAnalysisArg: IEditAnalysisPoints = {
         onAddPoint: jest.fn(),
         onRemovePoint: jest.fn(),

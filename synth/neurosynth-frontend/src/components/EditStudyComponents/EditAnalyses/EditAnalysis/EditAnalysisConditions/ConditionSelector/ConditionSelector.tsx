@@ -1,10 +1,16 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { createFilterOptions, Autocomplete, TextField } from '@mui/material';
+import {
+    createFilterOptions,
+    Autocomplete,
+    TextField,
+    ListItem,
+    ListItemText,
+} from '@mui/material';
 import { SyntheticEvent, useContext, useEffect, useState } from 'react';
 import { GlobalContext, SnackbarType } from '../../../../../../contexts/GlobalContext';
 import useIsMounted from '../../../../../../hooks/useIsMounted';
 import API, { ConditionApiResponse } from '../../../../../../utils/api';
-import CreateDetailsDialog from '../../../../../Dialogs/CreateDetailsDialog/CreateDetailsDialog';
+import { CreateDetailsDialog } from '../../../../../';
 
 interface ConditionOption {
     id: string;
@@ -13,7 +19,12 @@ interface ConditionOption {
     addOptionActualLabel?: string | null;
 }
 
-const filterOptions = createFilterOptions<ConditionOption>();
+const filterOptions = createFilterOptions<ConditionOption>({
+    ignoreAccents: true,
+    ignoreCase: true,
+    matchFrom: 'any',
+    trim: true,
+});
 
 const ConditionSelector: React.FC<{
     onConditionSelected: (condition: ConditionApiResponse) => void;
@@ -115,6 +126,11 @@ const ConditionSelector: React.FC<{
                 value={selectedValue}
                 onChange={handleOnChange}
                 getOptionLabel={(option) => option.label}
+                renderOption={(params, option) => (
+                    <ListItem {...params}>
+                        <ListItemText primary={option.label} secondary={option.description} />
+                    </ListItem>
+                )}
                 renderInput={(params) => (
                     <TextField {...params} placeholder="condition" label="add a new condition" />
                 )}

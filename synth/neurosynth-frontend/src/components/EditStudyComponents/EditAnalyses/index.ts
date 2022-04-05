@@ -9,7 +9,7 @@ export enum EAnalysisEdit {
 }
 
 export enum EAnalysisEditButtonType {
-    UPDATE = 'update',
+    SAVE = 'save',
     CANCEL = 'cancel',
     DELETE = 'delete',
 }
@@ -41,20 +41,12 @@ export interface IUpdateState {
 
 export interface IEditAnalyses {
     analyses: AnalysisApiResponse[] | undefined;
-    onEditAnalysisPoints: (points: PointsApiResponse[]) => void;
-    onEditAnalysisImages: () => void;
-    onEditAnalysisDetails: (
-        idToUpdate: string,
-        field: 'name' | 'description',
-        value: string
-    ) => void;
     onUpdateAnalysis: (analysisId: string, analysis: AnalysisApiResponse) => void;
 }
 
 export interface IEditAnalysis {
     updateState: IUpdateState;
     analysis: AnalysisApiResponse | undefined;
-    onEditAnalysisPoints: (points: PointsApiResponse[]) => void;
     onEditAnalysisDetails: IEditAnalysisDetailsFn;
     onEditAnalysisConditions: IEditAnalysisConditionsFn;
     onEditAnalysisButtonPress: IOnButtonPressFn;

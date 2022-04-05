@@ -4,7 +4,7 @@ import { useHistory, useParams } from 'react-router-dom';
 import { EditAnalyses, EditStudyDetails, NeurosynthLoader } from '../../../components';
 import EditStudyMetadata from '../../../components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import useIsMounted from '../../../hooks/useIsMounted';
-import API, { AnalysisApiResponse, ConditionApiResponse } from '../../../utils/api';
+import API, { AnalysisApiResponse } from '../../../utils/api';
 import EditStudyPageStyles from './EditStudyPage.styles';
 
 interface IStudyEdit {
@@ -55,28 +55,6 @@ const EditStudyPage = () => {
         history.push(`/studies/${params.studyId}`);
     };
 
-    const handleEditAnalysisDetails = useCallback((idToUpdate, field, value) => {
-        setStudy((prevState) => {
-            if (!prevState || !prevState.analyses) return prevState;
-
-            // set new ref to array and object for react to detect
-            const newAnalyses = [...prevState.analyses];
-            const analysisIndexToUpdate = newAnalyses.findIndex(
-                (analysis) => analysis.id === idToUpdate
-            );
-            if (analysisIndexToUpdate < 0) return { ...prevState };
-            newAnalyses[analysisIndexToUpdate] = {
-                ...newAnalyses[analysisIndexToUpdate],
-                [field]: value,
-            };
-
-            return {
-                ...prevState,
-                analyses: newAnalyses,
-            };
-        });
-    }, []);
-
     const handleAnalysisUpdate = (analysisId: string, newAnalysis: AnalysisApiResponse) => {
         setStudy((prevState) => {
             if (!prevState || !prevState.analyses) return prevState;
@@ -108,11 +86,6 @@ const EditStudyPage = () => {
         });
     }, []);
 
-    const handleEditAnalysisImages = useCallback(() => {}, []);
-
-    // idToUpdate: string
-    const handleEditAnalysisPoints = useCallback(() => {}, []);
-
     return (
         <NeurosynthLoader loaded={!!study}>
             <Box sx={EditStudyPageStyles.stickyButtonContainer}>
@@ -130,7 +103,6 @@ const EditStudyPage = () => {
                 <>
                     <Box sx={{ marginBottom: '15px', padding: '0 10px' }}>
                         <EditStudyDetails
-                            // onEditStudyDetails={handleEditStudyDetails}
                             studyId={params.studyId}
                             name={study.name}
                             description={study.description}
@@ -150,9 +122,6 @@ const EditStudyPage = () => {
 
                     <Box sx={{ marginBottom: '15px', padding: '0 10px', marginLeft: '15px' }}>
                         <EditAnalyses
-                            onEditAnalysisDetails={handleEditAnalysisDetails}
-                            onEditAnalysisImages={handleEditAnalysisImages}
-                            onEditAnalysisPoints={handleEditAnalysisPoints}
                             onUpdateAnalysis={handleAnalysisUpdate}
                             analyses={study.analyses}
                         />

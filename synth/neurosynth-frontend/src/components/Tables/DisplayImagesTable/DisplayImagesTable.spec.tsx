@@ -68,6 +68,10 @@ describe('DisplayImagesTable Component', () => {
         ],
     };
 
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
+
     it('should render', () => {
         const mockData: DisplayImagesTableModel = {
             onSelectImage: jest.fn(),

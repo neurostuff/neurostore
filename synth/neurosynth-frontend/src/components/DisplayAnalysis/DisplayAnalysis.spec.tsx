@@ -1,36 +1,17 @@
 import { render, screen } from '@testing-library/react';
-import Visualizer from '../Visualizer/Visualizer';
 import { Analysis, ReadOnly } from '../../gen/api';
 import DisplayAnalysis from './DisplayAnalysis';
+import { AnalysisApiResponse, ImageApiResponse } from '../../utils/api';
 
-jest.mock('../Visualizer/Visualizer', () => {
-    return {
-        __esModule: true,
-        default: jest.fn((props: any) => {
-            return <div>Mocked Visualizer</div>;
-        }),
-    };
-});
-
-jest.mock('../Tables/DisplayValuesTable/DisplayValuesTable', () => {
-    return {
-        __esModule: true,
-        default: (props: any) => {
-            return <div>Mocked Values Table</div>;
-        },
-    };
-});
-
-jest.mock('../Tables/DisplayImagesTable/DisplayImagesTable', () => {
-    return {
-        __esModule: true,
-        default: (props: any) => {
-            return <div>Mocked Images Table</div>;
-        },
-    };
-});
+jest.mock('../Visualizer/Visualizer');
+jest.mock('../Tables/DisplayValuesTable/DisplayValuesTable');
+jest.mock('../Tables/DisplayImagesTable/DisplayImagesTable');
 
 describe('DisplayAnalysis Component', () => {
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
+
     it('should render', () => {
         render(<DisplayAnalysis />);
         const noDataText = screen.getByText('No analysis');
@@ -58,7 +39,7 @@ describe('DisplayAnalysis Component', () => {
     });
 
     it('should pass the correct image in the visualizer when there is only one image', () => {
-        const mockAnalysis: Analysis & ReadOnly = {
+        const mockAnalysis: AnalysisApiResponse = {
             conditions: [],
             created_at: '2021-10-25T10:37:20.237634+00:00',
             description: 'FSL5.0',
@@ -94,24 +75,23 @@ describe('DisplayAnalysis Component', () => {
 
         render(<DisplayAnalysis {...mockAnalysis} />);
 
-        expect(Visualizer).toBeCalledWith(
-            {
-                fileName: 'some_test_file.nii.gz',
-                imageURL: 'some_test_image_url.nii.gz',
-                index: 0,
-                sx: {
-                    height: 'auto',
-                    padding: '0 2px',
-                    width: '100%',
-                },
-                template: 'some_test_template',
-            },
-            {}
-        );
+        const mockImages = mockAnalysis.images as ImageApiResponse[];
+
+        const imageURL = screen.getByTestId('imageURL');
+        const fileName = screen.getByTestId('fileName');
+        const index = screen.getByTestId('index');
+        const styling = screen.getByTestId('styling');
+        const template = screen.getByTestId('template');
+
+        expect(imageURL).toHaveTextContent(mockImages[0].url as string);
+        expect(fileName).toHaveTextContent(mockImages[0].filename as string);
+        expect(index).toHaveTextContent('0');
+        expect(styling).toHaveTextContent('{"width":"100%","height":"auto","padding":"0 2px"}');
+        expect(template).toHaveTextContent((mockImages[0].metadata as any).target_template_image);
     });
 
     it('should select the first image that has a T value type when there are multiple images', () => {
-        const mockAnalysis: Analysis & ReadOnly = {
+        const mockAnalysis: AnalysisApiResponse = {
             conditions: [
                 {
                     created_at: '2021-10-25T10:27:54.741936+00:00',
@@ -174,19 +154,18 @@ describe('DisplayAnalysis Component', () => {
 
         render(<DisplayAnalysis {...mockAnalysis} />);
 
-        expect(Visualizer).toBeCalledWith(
-            {
-                fileName: 'some_test_file.nii.gz',
-                imageURL: 'some_test_image_url.nii.gz',
-                index: 0,
-                sx: {
-                    height: 'auto',
-                    padding: '0 2px',
-                    width: '100%',
-                },
-                template: 'some_test_template',
-            },
-            {}
-        );
+        const mockImages = mockAnalysis.images as ImageApiResponse[];
+
+        const imageURL = screen.getByTestId('imageURL');
+        const fileName = screen.getByTestId('fileName');
+        const index = screen.getByTestId('index');
+        const styling = screen.getByTestId('styling');
+        const template = screen.getByTestId('template');
+
+        expect(imageURL).toHaveTextContent(mockImages[1].url as string);
+        expect(fileName).toHaveTextContent(mockImages[1].filename as string);
+        expect(index).toHaveTextContent('0');
+        expect(styling).toHaveTextContent('{"width":"100%","height":"auto","padding":"0 2px"}');
+        expect(template).toHaveTextContent((mockImages[1].metadata as any).target_template_image);
     });
 });

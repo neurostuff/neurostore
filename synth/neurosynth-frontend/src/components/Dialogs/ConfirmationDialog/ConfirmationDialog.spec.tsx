@@ -4,6 +4,11 @@ import ConfirmationDialog from './ConfirmationDialog';
 
 describe('ConfirmationDialog', () => {
     const mockOnClose = jest.fn();
+
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
+
     it('should render', () => {
         render(
             <ConfirmationDialog

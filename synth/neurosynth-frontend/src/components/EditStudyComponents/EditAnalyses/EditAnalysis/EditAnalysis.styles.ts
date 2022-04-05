@@ -17,6 +17,8 @@ const EditAnalysisStyles: Style = {
     },
     unsavedChanges: {
         backgroundColor: '#ffd892',
+        borderTopLeftRadius: '5px',
+        borderTopRightRadius: '5px',
     },
 };
 

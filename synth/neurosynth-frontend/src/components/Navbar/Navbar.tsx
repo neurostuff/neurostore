@@ -39,7 +39,7 @@ const navItems: NavOptionsModel[] = [
     },
 ];
 
-const Navbar = () => {
+const Navbar: React.FC = (_props) => {
     const { loginWithPopup, getAccessTokenSilently, logout } = useAuth0();
 
     const handleLogin = async () => {

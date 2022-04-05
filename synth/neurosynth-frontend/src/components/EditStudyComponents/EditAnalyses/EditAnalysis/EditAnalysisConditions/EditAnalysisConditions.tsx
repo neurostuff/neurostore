@@ -12,6 +12,7 @@ import { GlobalContext, SnackbarType } from '../../../../../contexts/GlobalConte
 import { ConditionApiResponse } from '../../../../../utils/api';
 import ConditionSelector from './ConditionSelector/ConditionSelector';
 import EditAnalysisStyles from '../EditAnalysis.styles';
+import EditAnalysisConditionsStyles from './EditAnalysisConditions.styles';
 
 const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = React.memo((props) => {
     const context = useContext(GlobalContext);
@@ -115,15 +116,9 @@ const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = React.memo((pr
                     )}
                 </Box>
 
-                {/* we get an error as we are doing display: block. This seems to be harmless */}
                 <DataGrid
                     sx={[
-                        {
-                            '& .readonly': {
-                                color: 'darkgray',
-                                cursor: 'default',
-                            },
-                        },
+                        EditAnalysisConditionsStyles.datagrid,
                         {
                             height: conditionWeightsList.length === 0 ? '112px !important' : 'auto',
                         },
@@ -138,6 +133,7 @@ const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = React.memo((pr
                             field: 'condition',
                             headerName: 'Conditions',
                             flex: 2,
+                            editable: false,
                             cellClassName: 'readonly',
                         },
                         {
@@ -182,11 +178,11 @@ const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = React.memo((pr
                     onClick={() =>
                         props.onEditAnalysisButtonPress(
                             EAnalysisEdit.CONDITIONS,
-                            EAnalysisEditButtonType.UPDATE
+                            EAnalysisEditButtonType.SAVE
                         )
                     }
                 >
-                    Update
+                    Save
                 </Button>
                 <Button
                     sx={EditAnalysisStyles.analysisButton}

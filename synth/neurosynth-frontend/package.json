@@ -51,11 +51,14 @@
             "last 1 safari version"
         ]
     },
+    "//jestComments": {
+        "//resetMocks": "we need to set this flag because of this: https://github.com/facebook/create-react-app/issues/9935"
+    },
     "jest": {
-        "resetMocks": false,
         "moduleNameMapper": {
             "\\.(css|less)$": "<rootDir>/src/testing/stylemock.js"
-        }
+        },
+        "resetMocks": false
     },
     "devDependencies": {
         "@testing-library/dom": "^8.3.0",

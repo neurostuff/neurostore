@@ -6,8 +6,8 @@ import {
     TableHead,
     TableRow,
     Paper,
+    Box,
 } from '@mui/material';
-import { Box } from '@mui/system';
 import { IDisplayValuesTableModel } from '.';
 import DisplayValuesTableRow from './DisplayValuesTableRow/DisplayValuesTableRow';
 

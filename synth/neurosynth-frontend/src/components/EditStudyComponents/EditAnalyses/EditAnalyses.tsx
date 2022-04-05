@@ -19,6 +19,8 @@ import EditAnalysesStyles from './EditAnalyses.styles';
 import EditAnalysis from './EditAnalysis/EditAnalysis';
 
 const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
+    const { onUpdateAnalysis, analyses } = props;
+
     const { getAccessTokenSilently } = useAuth0();
     const { showSnackbar } = useContext(GlobalContext);
     const isMountedRef = useIsMounted();
@@ -30,11 +32,8 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
         analysisIndex: 0,
         analysis: undefined,
     });
-
     const [originalAnalysis, setOriginalAnalysis] = useState<AnalysisApiResponse | undefined>();
-
     const [dialogIsOpen, setDialogIsOpen] = useState(false);
-
     const [updateState, setUpdateState] = useState<IUpdateState>({
         details: {
             name: false,
@@ -43,37 +42,56 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
         conditions: false,
     });
 
+    /**
+     * on first render, sort the analyses and set the current selected analysis to be the first one
+     */
     useEffect(() => {
-        if (props.analyses && props.analyses.length > 0) {
-            const sortedAnalyses = (props.analyses as AnalysisApiResponse[]).sort((a, b) => {
-                const aId = a.id as string;
-                const bId = b.id as string;
-                if (aId < bId) {
-                    return -1;
-                }
-                if (aId > bId) {
-                    return 1;
-                }
-                return 0;
-            });
+        const sortedAnalyses = (analyses as AnalysisApiResponse[]).sort((a, b) => {
+            const aId = a.id as string;
+            const bId = b.id as string;
+            if (aId < bId) {
+                return -1;
+            }
+            if (aId > bId) {
+                return 1;
+            }
+            return 0;
+        });
 
-            setSelectedAnalysis((prevState) => {
-                if (prevState.analysis) {
-                    setOriginalAnalysis(sortedAnalyses[prevState.analysisIndex]);
-                    return {
-                        analysisIndex: prevState.analysisIndex,
-                        analysis: sortedAnalyses[prevState.analysisIndex],
-                    };
-                } else {
-                    setOriginalAnalysis(sortedAnalyses[0]);
-                    return {
-                        analysisIndex: 0,
-                        analysis: sortedAnalyses[0],
-                    };
-                }
-            });
-        }
-    }, [props.analyses]);
+        setSelectedAnalysis((prevState) => {
+            if (prevState.analysis) {
+                return {
+                    analysisIndex: prevState.analysisIndex,
+                    analysis: prevState.analysis,
+                };
+            } else {
+                return {
+                    analysisIndex: 0,
+                    analysis: sortedAnalyses.length === 0 ? undefined : sortedAnalyses[0],
+                };
+            }
+        });
+    }, []);
+
+    /**
+     * every time there is an update to analyses, this means that something has been updated to the DB
+     * and we want to replace our local copy of the original with the new update
+     */
+    useEffect(() => {
+        const sortedAnalyses = (analyses as AnalysisApiResponse[]).sort((a, b) => {
+            const aId = a.id as string;
+            const bId = b.id as string;
+            if (aId < bId) {
+                return -1;
+            }
+            if (aId > bId) {
+                return 1;
+            }
+            return 0;
+        });
+
+        setOriginalAnalysis(sortedAnalyses[selectedAnalysis.analysisIndex]);
+    }, [analyses, selectedAnalysis.analysisIndex]);
 
     const handleUpdateAnalysisDetails: IEditAnalysisDetailsFn = useCallback(
         (field, value) => {
@@ -130,8 +148,10 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
         [selectedAnalysis.analysis?.id]
     );
 
-    const handleUpdate = useCallback(
+    const handleSave = useCallback(
         async (editor: EAnalysisEdit) => {
+            if (!selectedAnalysis.analysis?.id) return;
+
             try {
                 const token = await getAccessTokenSilently();
                 API.UpdateServicesWithToken(token);
@@ -140,15 +160,11 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
                 console.error(exception);
             }
 
-            if (!selectedAnalysis.analysis?.id) return;
-
             const analysis: AnalysisApiResponse = {};
-
             if (editor === EAnalysisEdit.DETAILS || editor === EAnalysisEdit.ALL) {
                 analysis.name = selectedAnalysis.analysis?.name;
                 analysis.description = selectedAnalysis.analysis?.description;
             }
-
             if (editor === EAnalysisEdit.CONDITIONS || editor === EAnalysisEdit.ALL) {
                 analysis.conditions = (
                     selectedAnalysis.analysis?.conditions as ConditionApiResponse[]
@@ -157,13 +173,20 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
             }
 
             API.Services.AnalysesService.analysesIdPut(selectedAnalysis.analysis?.id, analysis)
-                .then((res) => {
+                .then((_res) => {
                     if (isMountedRef.current) {
-                        // we do not use the res.data analysis return object as it is not nested
-                        props.onUpdateAnalysis(
-                            selectedAnalysis.analysis?.id as string,
-                            selectedAnalysis.analysis as AnalysisApiResponse
-                        );
+                        let update = { ...selectedAnalysis.analysis };
+                        if (editor === EAnalysisEdit.DETAILS) {
+                            // propagate the changes, but not for conditions
+                            update.conditions = originalAnalysis?.conditions;
+                            update.weights = originalAnalysis?.weights;
+                        } else if (editor === EAnalysisEdit.CONDITIONS) {
+                            // propagate the changes, but not for details
+                            update.name = originalAnalysis?.name;
+                            update.description = originalAnalysis?.description;
+                        }
+
+                        onUpdateAnalysis(selectedAnalysis.analysis?.id || '', update);
 
                         setUpdateState((prevState) => {
                             if (editor === EAnalysisEdit.ALL) {
@@ -174,14 +197,13 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
                                         description: false,
                                     },
                                 };
-                            } else {
-                                return {
-                                    ...prevState,
-                                    ...(editor === EAnalysisEdit.DETAILS
-                                        ? { details: { name: false, description: false } }
-                                        : { conditions: false }),
-                                };
                             }
+                            return {
+                                ...prevState,
+                                ...(editor === EAnalysisEdit.DETAILS
+                                    ? { details: { name: false, description: false } }
+                                    : { conditions: false }),
+                            };
                         });
                         showSnackbar('analysis successfully updated', SnackbarType.SUCCESS);
                     }
@@ -191,28 +213,34 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
                     console.error(err.message);
                 });
         },
-        [getAccessTokenSilently, isMountedRef, props, selectedAnalysis.analysis, showSnackbar]
+        [
+            getAccessTokenSilently,
+            isMountedRef,
+            originalAnalysis?.conditions,
+            originalAnalysis?.description,
+            originalAnalysis?.name,
+            originalAnalysis?.weights,
+            selectedAnalysis.analysis,
+            onUpdateAnalysis,
+            showSnackbar,
+        ]
     );
 
     const handleCancelEdit = useCallback(
         (editor: EAnalysisEdit) => {
             const analysisUpdates: AnalysisApiResponse = {};
             const updates: any = {};
-
             if (editor === EAnalysisEdit.DETAILS || editor === EAnalysisEdit.ALL) {
                 analysisUpdates.name = originalAnalysis?.name;
                 analysisUpdates.description = originalAnalysis?.description;
-
                 updates.details = {
                     name: false,
                     description: false,
                 };
             }
-
             if (editor === EAnalysisEdit.CONDITIONS || editor === EAnalysisEdit.ALL) {
                 analysisUpdates.conditions = originalAnalysis?.conditions;
                 analysisUpdates.weights = originalAnalysis?.weights;
-
                 updates.conditions = false;
             }
 
@@ -226,7 +254,6 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
                     },
                 };
             });
-
             setUpdateState((prevState) => {
                 if (!prevState) return prevState;
                 return {
@@ -246,8 +273,8 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
     const handleButtonPress: IOnButtonPressFn = useCallback(
         (editor, buttonType) => {
             switch (buttonType) {
-                case EAnalysisEditButtonType.UPDATE:
-                    handleUpdate(editor);
+                case EAnalysisEditButtonType.SAVE:
+                    handleSave(editor);
                     break;
                 case EAnalysisEditButtonType.CANCEL:
                     handleCancelEdit(editor);
@@ -256,21 +283,11 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
                     break;
             }
         },
-        [handleCancelEdit, handleUpdate]
+        [handleCancelEdit, handleSave]
     );
 
     const handleCreateAnalysis = (event: React.MouseEvent) => {
         alert('This has not been implemented yet. Please check back later');
-        // API.Services.AnalysesService.analysesPost({
-        //     name: 'some new name',
-        // }).then(
-        //     (res) => {
-        //         console.log(res);
-        //     },
-        //     (err) => {
-        //         console.error(err);
-        //     }
-        // );
     };
 
     const handleTabChange = (event: SyntheticEvent, newVal: number) => {
@@ -278,17 +295,13 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
             setDialogIsOpen(true);
         } else {
             setSelectedAnalysis({
-                analysis: (props.analyses as AnalysisApiResponse[])[newVal],
+                analysis: (analyses as AnalysisApiResponse[])[newVal],
                 analysisIndex: newVal,
             });
         }
     };
 
-    const handleDeleteAnalysis = (idToDelete: string | undefined) => {
-        alert('This has not been implemented yet. Please check back later.');
-    };
-
-    const hasAnalyses = !!props.analyses && props.analyses.length > 0;
+    const hasAnalyses = !!analyses && analyses.length > 0;
 
     return (
         <>
@@ -302,7 +315,7 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
                     setDialogIsOpen(false);
                     switch (res) {
                         case true:
-                            handleUpdate(EAnalysisEdit.ALL);
+                            handleSave(EAnalysisEdit.ALL);
                             break;
                         case false:
                             handleCancelEdit(EAnalysisEdit.ALL);
@@ -352,18 +365,16 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
                                 orientation="vertical"
                                 variant="scrollable"
                             >
-                                {(props.analyses as AnalysisApiResponse[]).map(
-                                    (analysis, index) => {
-                                        return (
-                                            <Tab
-                                                sx={EditAnalysesStyles.tab}
-                                                key={analysis.id}
-                                                value={index}
-                                                label={analysis.name}
-                                            />
-                                        );
-                                    }
-                                )}
+                                {(analyses as AnalysisApiResponse[]).map((analysis, index) => {
+                                    return (
+                                        <Tab
+                                            sx={EditAnalysesStyles.tab}
+                                            key={analysis.id}
+                                            value={index}
+                                            label={analysis.name}
+                                        />
+                                    );
+                                })}
                             </Tabs>
                         </Box>
                         <Box
@@ -375,7 +386,6 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
                             <EditAnalysis
                                 updateState={updateState}
                                 analysis={selectedAnalysis.analysis}
-                                onEditAnalysisPoints={props.onEditAnalysisPoints}
                                 onEditAnalysisDetails={handleUpdateAnalysisDetails}
                                 onEditAnalysisConditions={handleUpdateAnalysisConditions}
                                 onEditAnalysisButtonPress={handleButtonPress}

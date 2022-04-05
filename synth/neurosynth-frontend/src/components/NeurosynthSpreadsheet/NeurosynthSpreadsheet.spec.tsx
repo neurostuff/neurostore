@@ -1,78 +1,38 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useRef } from 'react';
 import { EPropertyType, NeurosynthSpreadsheet } from '..';
 import { AnnotationNote } from '../../gen/api';
 import HotSettingsBuilder from './HotSettingsBuilder';
 import NeurosynthSpreadsheetHelper from './NeurosynthSpreadsheetHelper';
 import NeurosynthSpreadsheetState from './NeurosynthSpreadsheetState';
 
-jest.mock('react', () => {
-    const originalReact = jest.requireActual('react');
-    return {
-        ...originalReact,
-        useRef: jest.fn(),
-    };
-});
-
 jest.mock('@auth0/auth0-react');
 jest.mock('./NeurosynthSpreadsheetState');
 jest.mock('./HotSettingsBuilder');
 jest.mock('./NeurosynthSpreadsheetHelper');
 
-jest.mock('@handsontable/react', () => {
-    return {
-        __esModule: true,
-        default: () => {
-            return <div data-testid="mock-handsontable">mock-handsontable</div>;
-        },
-    };
-});
-
+/**
+ * we must mock handsontable or else we get an error regarding forwardRef
+ * as we refer to the ref in NeurosynthSpreadsheet
+ */
 jest.mock('@handsontable/react', () => {
     return 'div';
 });
 
+/**
+ * Mock out Link to avoid dealing with NavLink in our test
+ */
 jest.mock('@mui/material/Link', () => {
     return {
         __esModule: true,
-        default: (props: any) => {
-            return <span>mock-link</span>;
+        default: (_props: any) => {
+            return <span>mock link</span>;
         },
     };
 });
 
-jest.mock('@mui/material/Button', () => {
-    return {
-        __esModule: true,
-        default: (props: any) => {
-            return <button {...props}></button>;
-        },
-    };
-});
-
-jest.mock('../EditMetadata/EditMetadataRow/AddMetadataRow', () => {
-    return {
-        __esModule: true,
-        default: (props: any) => {
-            return (
-                <>
-                    <button
-                        data-testid="trigger-add"
-                        onClick={() => {
-                            props.onAddMetadataRow({
-                                metadataKey: 'test-key',
-                                metadataValue: 'test-value',
-                            });
-                        }}
-                    ></button>
-                    <div data-testid="mock-addmetadatarow">mock add metadata row</div>;
-                </>
-            );
-        },
-    };
-});
+jest.mock('../EditMetadata/EditMetadataRow/AddMetadataRow');
 
 const mockAnnotationNotes: AnnotationNote[] = [
     {
@@ -147,11 +107,6 @@ describe('NeurosynthSpreadsheet', () => {
     });
 
     beforeEach(() => {
-        (useRef as jest.Mock).mockReturnValue({
-            current: {
-                hotInstance: jest.fn(),
-            },
-        });
         (useAuth0 as jest.Mock).mockReturnValue({
             isAuthenticated: true,
         });
@@ -195,6 +150,9 @@ describe('NeurosynthSpreadsheet', () => {
                 onSaveAnnotation={mockOnSaveAnnotation}
             />
         );
+
+        const linkText = screen.getByText('mock link');
+        expect(linkText).toBeInTheDocument();
     });
 
     it('should handle undefined annotation note values', () => {

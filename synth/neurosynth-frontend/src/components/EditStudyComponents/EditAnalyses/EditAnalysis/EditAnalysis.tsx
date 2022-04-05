@@ -31,7 +31,7 @@ const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
                             setEditTab(newValue);
                         }}
                     >
-                        <Tab sx={[EditAnalysisStyles.tab]} value={0} label="Coordinates"></Tab>
+                        <Tab sx={[EditAnalysisStyles.tab]} value={0} label="Coordinates" />
                         <Tab
                             sx={[
                                 EditAnalysisStyles.tab,
@@ -41,8 +41,8 @@ const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
                             ]}
                             value={1}
                             label="Conditions"
-                        ></Tab>
-                        <Tab sx={EditAnalysisStyles.tab} value={2} label="Images"></Tab>
+                        />
+                        <Tab sx={EditAnalysisStyles.tab} value={2} label="Images" />
                         <Tab
                             sx={[
                                 EditAnalysisStyles.tab,
@@ -52,8 +52,8 @@ const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
                                     : {},
                             ]}
                             value={3}
-                            label="Details"
-                        ></Tab>
+                            label="General"
+                        />
                     </Tabs>
                     <Box>
                         {editTab === 0 && (

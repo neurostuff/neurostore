@@ -8,7 +8,6 @@ import {
     AccordionSummary,
     Typography,
     Box,
-    TextFieldProps,
 } from '@mui/material';
 import { AxiosError } from 'axios';
 import React, { ChangeEvent, useContext, useState } from 'react';
@@ -17,7 +16,7 @@ import useIsMounted from '../../../hooks/useIsMounted';
 import API from '../../../utils/api';
 import EditStudyDetailsStyles from './EditStudyDetails.styles';
 
-export interface IEditStudyDetailsProperties {
+export interface IEditStudyDetails {
     studyId: string;
     name: string;
     authors: string;
@@ -26,9 +25,11 @@ export interface IEditStudyDetailsProperties {
     description: string;
 }
 
-export interface IEditStudyDetails extends IEditStudyDetailsProperties {
-    // onEditStudyDetails: (update: { [key: string]: string }) => void;
-}
+const textFieldInputProps = {
+    style: {
+        fontSize: 15,
+    },
+};
 
 const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
     const { studyId, name, authors, publication, doi, description } = props;
@@ -38,7 +39,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
     const isMountedRef = useIsMounted();
 
     // save original details for revert behavior
-    const [originalDetails, setOriginalDetails] = useState<IEditStudyDetailsProperties>({
+    const [originalDetails, setOriginalDetails] = useState<IEditStudyDetails>({
         studyId: studyId,
         name: name,
         authors: authors,
@@ -47,7 +48,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
         description: description,
     });
 
-    const [details, setDetails] = useState<IEditStudyDetailsProperties>({
+    const [details, setDetails] = useState<IEditStudyDetails>({
         studyId: studyId,
         name: name,
         authors: authors,
@@ -55,12 +56,6 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
         doi: doi,
         description: description,
     });
-
-    const textFieldInputProps = {
-        style: {
-            fontSize: 15,
-        },
-    };
 
     const handleOnEdit = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
         setDetails((prevState) => ({
@@ -70,7 +65,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
         setUpdateEnabled(true);
     };
 
-    const handleOnUpdate = async (event: React.MouseEvent) => {
+    const handleOnSave = async (_event: React.MouseEvent) => {
         try {
             const token = await getAccessTokenSilently();
             API.UpdateServicesWithToken(token);
@@ -86,7 +81,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
             publication: details.publication,
             doi: details.doi,
         })
-            .then((res) => {
+            .then((_res) => {
                 context.showSnackbar('study successfully updated', SnackbarType.SUCCESS);
                 if (isMountedRef.current) {
                     setUpdateEnabled(false);
@@ -174,12 +169,12 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
                     />
                     <Button
                         disabled={!updatedEnabled}
-                        onClick={handleOnUpdate}
+                        onClick={handleOnSave}
                         color="success"
                         variant="contained"
                         sx={[EditStudyDetailsStyles.button, { marginRight: '15px' }]}
                     >
-                        Update
+                        Save
                     </Button>
                     <Button
                         disabled={!updatedEnabled}
