@@ -18,7 +18,7 @@ import { AnnotationNote } from '../../../gen/api';
 const EditAnnotationsPage: React.FC = (props) => {
     const history = useHistory();
     const { isAuthenticated, getAccessTokenSilently } = useAuth0();
-    const { handleToken, showSnackbar } = useContext(GlobalContext);
+    const { showSnackbar } = useContext(GlobalContext);
 
     const [confirmationIsOpen, setConfirmationIsOpen] = useState(false);
     const [annotation, setAnnotation] = useState<AnnotationsApiResponse>();
@@ -43,7 +43,7 @@ const EditAnnotationsPage: React.FC = (props) => {
     ) => {
         try {
             const token = await getAccessTokenSilently();
-            handleToken(token);
+            API.UpdateServicesWithToken(token);
         } catch (exception) {
             showSnackbar('there was an error', SnackbarType.ERROR);
             console.error(exception);
@@ -51,22 +51,14 @@ const EditAnnotationsPage: React.FC = (props) => {
 
         API.Services.AnnotationsService.annotationsIdPut(params.annotationId, {
             [property]: updatedText,
-            notes: (annotation?.notes || []).map((annotationNote) => {
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                const { study_name, analysis_name, note, analysis, ...everythingElse } =
-                    annotationNote;
-                return {
-                    analysis,
-                    note,
-                };
-            }), // we get a 500 error if we do not include notes
         })
             .then((res) => {
+                const typedRes = res.data as AnnotationsApiResponse;
                 setAnnotation((prevState) => {
                     if (!prevState) return prevState;
                     return {
                         ...prevState,
-                        [property]: res.data[property],
+                        [property]: typedRes[property],
                     };
                 });
                 showSnackbar(`updated the annotation ${property}`, SnackbarType.SUCCESS);
@@ -90,7 +82,7 @@ const EditAnnotationsPage: React.FC = (props) => {
         if (confirm && annotation && annotation.id) {
             try {
                 const token = await getAccessTokenSilently();
-                handleToken(token);
+                API.UpdateServicesWithToken(token);
             } catch (exception) {
                 showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(exception);
@@ -114,7 +106,7 @@ const EditAnnotationsPage: React.FC = (props) => {
         ) => {
             try {
                 const token = await getAccessTokenSilently();
-                handleToken(token);
+                API.UpdateServicesWithToken(token);
             } catch (exception) {
                 showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(exception);
@@ -136,7 +128,7 @@ const EditAnnotationsPage: React.FC = (props) => {
                     console.error(err);
                 });
         },
-        [getAccessTokenSilently, handleToken, params.annotationId, showSnackbar]
+        [getAccessTokenSilently, params.annotationId, showSnackbar]
     );
 
     return (
@@ -193,12 +185,12 @@ const EditAnnotationsPage: React.FC = (props) => {
                 color="error"
                 variant="contained"
                 disabled={!isAuthenticated}
-                sx={{ ...EditStudyPageStyles.button, marginTop: '0.5rem' }}
+                sx={[EditStudyPageStyles.button, { marginTop: '0.5rem' }]}
             >
                 Delete this annotation
             </Button>
             <ConfirmationDialog
-                message="Are you sure you want to delete this annotation?"
+                dialogTitle="Are you sure you want to delete this annotation?"
                 confirmText="Yes"
                 rejectText="No"
                 isOpen={confirmationIsOpen}

@@ -1,14 +1,18 @@
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import App from './App';
-import { MockThemeProvider } from './testing/helpers';
+import { BrowserRouter } from 'react-router-dom';
 
-test('renders learn react link', () => {
+jest.mock('./components/Navbar/Navbar');
+jest.mock('./pages/BaseNavigation/BaseNavigation');
+
+test('renders main app', () => {
     render(
-        <MockThemeProvider>
+        <BrowserRouter>
             <App />
-        </MockThemeProvider>
+        </BrowserRouter>
     );
-    const element = screen.getByText('welcome to neurosynth');
-    expect(element).toBeInTheDocument();
+    const mockNavbar = screen.getByText('mock navbar');
+    const mockNavigation = screen.getByText('mock base navigation');
+    expect(mockNavbar).toBeInTheDocument();
+    expect(mockNavigation).toBeInTheDocument();
 });

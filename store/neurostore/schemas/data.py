@@ -156,7 +156,7 @@ class PointSchema(BaseDataSchema):
 
 class AnalysisConditionSchema(BaseDataSchema):
     weight = fields.Float()
-    condition = fields.Nested(ConditionSchema)
+    condition = StringOrNested(ConditionSchema)
     analysis_id = fields.String(data_key="analysis")
 
 

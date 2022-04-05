@@ -150,12 +150,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
 
     return (
         <Box sx={DisplayAnalysisStyles.analysisContainer}>
-            <Box
-                sx={{
-                    ...DisplayAnalysisStyles.section,
-                    ...DisplayAnalysisStyles.leftSection,
-                }}
-            >
+            <Box sx={[DisplayAnalysisStyles.leftSection, DisplayAnalysisStyles.section]}>
                 <Typography sx={DisplayAnalysisStyles.spaceBelow} variant="h5">
                     {props.name}
                 </Typography>
@@ -163,7 +158,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                     sx={DisplayAnalysisStyles.spaceBelow}
                     text={props.description || ''}
                 />
-                <Box sx={{ ...DisplayAnalysisStyles.spaceBelow, width: '100%' }}>
+                <Box sx={[DisplayAnalysisStyles.spaceBelow, { width: '100%' }]}>
                     <Accordion
                         defaultExpanded={conditionsForTable.rowData.length > 0}
                         elevation={4}
@@ -184,11 +179,11 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                     </Accordion>
                 </Box>
                 <Box
-                    sx={{
-                        ...DisplayAnalysisStyles.spaceBelow,
-                        ...DisplayAnalysisStyles.removeTablePadding,
-                        width: '100%',
-                    }}
+                    sx={[
+                        DisplayAnalysisStyles.spaceBelow,
+                        DisplayAnalysisStyles.removeTablePadding,
+                        { width: '100%' },
+                    ]}
                 >
                     <Accordion
                         defaultExpanded={coordinateDataForTable.rowData.length > 0}
@@ -209,7 +204,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                         </AccordionDetails>
                     </Accordion>
                 </Box>
-                <Box sx={{ ...DisplayAnalysisStyles.spaceBelow }}>
+                <Box sx={DisplayAnalysisStyles.spaceBelow}>
                     <Accordion
                         defaultExpanded={props.images && props.images.length > 0}
                         elevation={4}
@@ -228,12 +223,10 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                 </Box>
             </Box>
             {selectedImage && (
-                <Box
-                    sx={{ ...DisplayAnalysisStyles.section, ...DisplayAnalysisStyles.rightSection }}
-                >
+                <Box sx={[DisplayAnalysisStyles.section, DisplayAnalysisStyles.rightSection]}>
                     <Box sx={DisplayAnalysisStyles.visualizerContainer}>
                         <Visualizer
-                            sx={DisplayAnalysisStyles.visualizer}
+                            styling={DisplayAnalysisStyles.visualizer}
                             imageURL={selectedImage.url || ''}
                             fileName={selectedImage.filename || ''}
                             template={(selectedImage?.metadata as any)?.target_template_image || ''}

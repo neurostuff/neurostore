@@ -9,7 +9,7 @@ import useIsMounted from '../../../hooks/useIsMounted';
 
 const UserStudiesPage: React.FC = (props) => {
     const { getAccessTokenSilently, user } = useAuth0();
-    const { handleToken, showSnackbar } = useContext(GlobalContext);
+    const { showSnackbar } = useContext(GlobalContext);
     const [studies, setStudies] = useState<StudyApiResponse[]>();
     const isMountedRef = useIsMounted();
 
@@ -17,7 +17,7 @@ const UserStudiesPage: React.FC = (props) => {
         const getUserStudies = async () => {
             try {
                 const token = await getAccessTokenSilently();
-                handleToken(token);
+                API.UpdateServicesWithToken(token);
             } catch (exception) {
                 showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(exception);
@@ -43,6 +43,7 @@ const UserStudiesPage: React.FC = (props) => {
                 })
                 .catch((err) => {
                     showSnackbar('there was an error', SnackbarType.ERROR);
+                    setStudies([]);
                     console.error(err);
                 });
         };
@@ -50,7 +51,7 @@ const UserStudiesPage: React.FC = (props) => {
         if (user?.sub) {
             getUserStudies();
         }
-    }, [user?.sub, getAccessTokenSilently, handleToken, showSnackbar, isMountedRef]);
+    }, [user?.sub, getAccessTokenSilently, showSnackbar, isMountedRef]);
 
     return (
         <>

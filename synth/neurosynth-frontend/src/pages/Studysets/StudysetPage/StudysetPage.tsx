@@ -26,7 +26,7 @@ const StudysetsPage: React.FC = (props) => {
     const [annotations, setAnnotations] = useState<AnnotationsApiResponse[] | undefined>();
     const { getAccessTokenSilently, isAuthenticated } = useAuth0();
     const history = useHistory();
-    const { showSnackbar, handleToken } = useContext(GlobalContext);
+    const { showSnackbar } = useContext(GlobalContext);
 
     const [confirmationIsOpen, setConfirmationIsOpen] = useState(false);
     const [createDetailsIsOpen, setCreateDetailsIsOpen] = useState(false);
@@ -45,6 +45,7 @@ const StudysetsPage: React.FC = (props) => {
                 })
                 .catch((err) => {
                     console.error(err);
+                    setStudyset({});
                     showSnackbar('there was an error', SnackbarType.ERROR);
                 });
         };
@@ -62,6 +63,7 @@ const StudysetsPage: React.FC = (props) => {
                 },
                 (err) => {
                     console.error(err);
+                    setAnnotations([]);
                     showSnackbar(
                         'there was an error getting annotations for this studyset',
                         SnackbarType.ERROR
@@ -77,7 +79,7 @@ const StudysetsPage: React.FC = (props) => {
         return async (editedText: string) => {
             try {
                 const token = await getAccessTokenSilently();
-                handleToken(token);
+                API.UpdateServicesWithToken(token);
             } catch (exception) {
                 showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(exception);
@@ -115,7 +117,7 @@ const StudysetsPage: React.FC = (props) => {
         if (studyset?.id && confirm) {
             try {
                 const token = await getAccessTokenSilently();
-                handleToken(token);
+                API.UpdateServicesWithToken(token);
             } catch (exception) {
                 showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(exception);
@@ -136,7 +138,7 @@ const StudysetsPage: React.FC = (props) => {
         if (studyset && studyset?.id) {
             try {
                 const token = await getAccessTokenSilently();
-                handleToken(token);
+                API.UpdateServicesWithToken(token);
             } catch (exception) {
                 showSnackbar('there was an error', SnackbarType.ERROR);
                 console.error(exception);
@@ -177,10 +179,10 @@ const StudysetsPage: React.FC = (props) => {
                         >
                             <Box sx={StudysetPageStyles.displayedText}>
                                 <Typography
-                                    sx={{
-                                        ...StudysetPageStyles.displayedText,
-                                        ...(!studyset.name ? StudysetPageStyles.noData : {}),
-                                    }}
+                                    sx={[
+                                        StudysetPageStyles.displayedText,
+                                        !studyset.name ? StudysetPageStyles.noData : {},
+                                    ]}
                                     variant="h6"
                                 >
                                     {studyset.name || 'No name'}
@@ -211,10 +213,10 @@ const StudysetsPage: React.FC = (props) => {
                         >
                             <Box sx={StudysetPageStyles.displayedText}>
                                 <Typography
-                                    sx={{
-                                        ...StudysetPageStyles.displayedText,
-                                        ...(!studyset.doi ? StudysetPageStyles.noData : {}),
-                                    }}
+                                    sx={[
+                                        StudysetPageStyles.displayedText,
+                                        !studyset.doi ? StudysetPageStyles.noData : {},
+                                    ]}
                                 >
                                     {studyset.doi || 'No DOI'}
                                 </Typography>
@@ -291,7 +293,7 @@ const StudysetsPage: React.FC = (props) => {
                         Delete this studyset
                     </Button>
                     <ConfirmationDialog
-                        message="Are you sure you want to delete the studyset?"
+                        dialogTitle="Are you sure you want to delete the studyset?"
                         confirmText="Yes"
                         rejectText="No"
                         isOpen={confirmationIsOpen}

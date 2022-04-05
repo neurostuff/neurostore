@@ -48,7 +48,7 @@ const StudyPage: React.FC = (props) => {
     const handleCloneStudy = async () => {
         try {
             const token = await getAccessTokenSilently();
-            context?.handleToken(token);
+            API.UpdateServicesWithToken(token);
         } catch (exception) {
             context.showSnackbar('There was an error', SnackbarType.ERROR);
             console.error(exception);
@@ -161,7 +161,7 @@ const StudyPage: React.FC = (props) => {
 
     return (
         <NeurosynthLoader loaded={!!study}>
-            <Box sx={{ ...StudyPageStyles.buttonContainer, ...StudyPageStyles.spaceBelow }}>
+            <Box sx={[StudyPageStyles.buttonContainer, StudyPageStyles.spaceBelow]}>
                 <Tooltip
                     placement="top"
                     title={
@@ -232,11 +232,13 @@ const StudyPage: React.FC = (props) => {
             <Box>
                 <Typography
                     variant="h6"
-                    sx={{
-                        marginLeft: '15px',
-                        fontWeight: 'bold',
-                        ...StudyPageStyles.spaceBelow,
-                    }}
+                    sx={[
+                        {
+                            marginLeft: '15px',
+                            fontWeight: 'bold',
+                        },
+                        StudyPageStyles.spaceBelow,
+                    ]}
                 >
                     Analyses
                 </Typography>

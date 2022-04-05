@@ -2,35 +2,9 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Router } from 'react-router-dom';
 import { StudysetsApiResponse } from '../../../utils/api';
-import { IDisplayValuesTableModel } from '../DisplayValuesTable';
 import StudysetsTable from './StudysetsTable';
 
-jest.mock('../DisplayValuesTable/DisplayValuesTable', () => {
-    return (props: IDisplayValuesTableModel) => {
-        const handleRowClick = () => {
-            if (props.onValueSelected) props.onValueSelected('some-selected-id');
-        };
-
-        return (
-            <>
-                <div>mock table</div>
-                {props.rowData.map((row) => (
-                    <div key={row.uniqueKey}>
-                        <span>{`unique key: ${row.uniqueKey}`}</span>
-                        {props.columnHeaders.map((col, index) => (
-                            <span
-                                key={col.value}
-                            >{`${col.value}: ${row.columnValues[index].value}`}</span>
-                        ))}
-                    </div>
-                ))}
-                <button data-testid="simulate-row-click" onClick={handleRowClick}>
-                    simulate row click
-                </button>
-            </>
-        );
-    };
-});
+jest.mock('../DisplayValuesTable/DisplayValuesTable');
 
 describe('StudysetsTable', () => {
     const mockStudysets: StudysetsApiResponse[] = [
@@ -77,6 +51,10 @@ describe('StudysetsTable', () => {
         location: {},
         listen: jest.fn(),
     };
+
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
 
     it('should render', () => {
         render(

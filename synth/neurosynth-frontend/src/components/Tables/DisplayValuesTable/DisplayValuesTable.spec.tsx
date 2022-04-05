@@ -1,71 +1,15 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { IDisplayValuesTableModel, IDisplayValuesTableRowModel } from '../..';
+import { IDisplayValuesTableModel } from '../..';
 import DisplayValuesTable from './DisplayValuesTable';
 
-jest.mock('@mui/material/TableContainer', () => {
-    return (props: any) => {
-        const type = props.component === 'div' ? 'div' : 'paper';
-        return <div data-testid={'mui-table-container-' + type}>{props.children}</div>;
-    };
-});
-
-jest.mock('@mui/material/Table', () => {
-    return (props: any) => {
-        return <table data-testid="mui-table">{props.children}</table>;
-    };
-});
-
-jest.mock('@mui/material/TableHead', () => {
-    return (props: any) => {
-        return <thead data-testid="mui-table-head">{props.children}</thead>;
-    };
-});
-
-jest.mock('@mui/material/TableBody', () => {
-    return (props: any) => {
-        return <tbody data-testid="mui-table-body">{props.children}</tbody>;
-    };
-});
-
-jest.mock('@mui/material/TableRow', () => {
-    return (props: any) => {
-        return (
-            <tr style={props.sx} data-testid="mui-table-row">
-                {props.children}
-            </tr>
-        );
-    };
-});
-
-jest.mock('@mui/material/TableCell', () => {
-    return (props: any) => {
-        return (
-            <td style={props.sx} data-testid="mui-table-cell">
-                {props.children}
-            </td>
-        );
-    };
-});
-
-jest.mock('./DisplayValuesTableRow/DisplayValuesTableRow', () => {
-    return {
-        __esModule: true,
-        default: (props: IDisplayValuesTableRowModel) => {
-            const clickHandler = () => {
-                props.onSelectRow('id-of-row-selected');
-            };
-
-            return (
-                <tr>
-                    <td onClick={clickHandler}>mock-row</td>
-                </tr>
-            );
-        },
-    };
-});
+jest.mock('./DisplayValuesTableRow/DisplayValuesTableRow');
 
 describe('DisplayValuesTable Component', () => {
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
+
     it('should render', () => {
         render(<DisplayValuesTable columnHeaders={[]} rowData={[]} />);
         const noDataMsg = screen.getByText('No data');
@@ -129,14 +73,14 @@ describe('DisplayValuesTable Component', () => {
         };
         it('should render data with correct rows', () => {
             render(<DisplayValuesTable {...mockTableData} />);
-            const rows = screen.getAllByText('mock-row');
+            const rows = screen.getAllByTestId(/mock-row/);
             expect(rows.length).toBe(mockTableData.rowData.length);
         });
 
         it('should render data with correct columns', () => {
-            // override and set rowData as empty arr a we are just testing columns
-            render(<DisplayValuesTable {...mockTableData} rowData={[]} />);
-            const rows = screen.getAllByRole('cell');
+            // override and set rowData as empty arr as we are just testing columns
+            render(<DisplayValuesTable {...mockTableData} />);
+            const rows = screen.getAllByRole('columnheader');
             expect(rows.length).toBe(mockTableData.columnHeaders.length);
         });
     });
@@ -158,15 +102,17 @@ describe('DisplayValuesTable Component', () => {
             rowData: [],
         };
         it('should render with a div component', () => {
-            render(<DisplayValuesTable columnHeaders={[]} paper={false} rowData={[]} />);
-            const table = screen.queryByTestId('mui-table-container-div');
-            expect(table).toBeTruthy();
+            const { container } = render(
+                <DisplayValuesTable columnHeaders={[]} paper={false} rowData={[]} />
+            );
+            expect(container.getElementsByClassName('MuiPaper-root').length).toBe(0);
         });
 
         it('should render with the paper component', () => {
-            render(<DisplayValuesTable columnHeaders={[]} paper={true} rowData={[]} />);
-            const table = screen.queryByTestId('mui-table-container-paper');
-            expect(table).toBeTruthy();
+            const { container } = render(
+                <DisplayValuesTable columnHeaders={[]} paper={true} rowData={[]} />
+            );
+            expect(container.getElementsByClassName('MuiPaper-root').length).toBe(1);
         });
 
         it('should render with an applied table head color', () => {
@@ -187,14 +133,14 @@ describe('DisplayValuesTable Component', () => {
             render(<DisplayValuesTable {...mockTableData} />);
             const boldedText = screen.getByText('testCol1');
             const textStyles = getComputedStyle(boldedText);
-            expect(textStyles.fontWeight).toBe('bold');
+            expect(textStyles.fontWeight).toBe('700');
         });
 
         it('should render the column header without bold styling', () => {
             render(<DisplayValuesTable {...mockTableData} />);
             const noneBoldedText = screen.getByText('testCol2');
             const textStyles = getComputedStyle(noneBoldedText);
-            expect(textStyles.fontWeight).not.toBe('bold');
+            expect(textStyles.fontWeight).toBe('normal');
         });
 
         it('should render the column header center aligned', () => {
@@ -265,9 +211,9 @@ describe('DisplayValuesTable Component', () => {
                     selectable={true}
                 />
             );
-            const row = screen.getByText('mock-row');
+            const row = screen.getByTestId('mock-row-testUniqueKey1');
             userEvent.click(row);
-            expect(mockOnValueSelected).toHaveBeenCalledWith('id-of-row-selected');
+            expect(mockOnValueSelected).toHaveBeenCalledWith('testUniqueKey1');
         });
 
         it('should not call the handleRowSelect handler if selectable is false', () => {
@@ -279,7 +225,7 @@ describe('DisplayValuesTable Component', () => {
                 />
             );
 
-            const row = screen.getByText('mock-row');
+            const row = screen.getByTestId('mock-row-testUniqueKey1');
             userEvent.click(row);
             expect(mockOnValueSelected).not.toHaveBeenCalled();
         });

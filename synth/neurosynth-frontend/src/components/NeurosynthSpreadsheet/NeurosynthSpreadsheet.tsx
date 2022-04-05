@@ -21,7 +21,7 @@ export interface INeurosynthColumn {
 
 const NeurosynthSpreadsheet: React.FC<{
     annotationNotes: (AnnotationNote & ReadOnly)[] | undefined;
-    annotationNoteKeyTypes: object | undefined;
+    annotationNoteKeyTypes: object | undefined | null;
     onSaveAnnotation: (
         annotationNotes: AnnotationNote[],
         noteKeyTypes: { [key: string]: EPropertyType }
@@ -219,10 +219,7 @@ const NeurosynthSpreadsheet: React.FC<{
                         variant="contained"
                         disabled={!isAuthenticated}
                         onClick={handleOnSaveAnnotationChangeClick}
-                        sx={{
-                            ...EditStudyPageStyles.button,
-                            marginTop: '0.5rem',
-                        }}
+                        sx={[EditStudyPageStyles.button, { marginTop: '0.5rem' }]}
                     >
                         Save Annotation Changes
                     </Button>

@@ -1,12 +1,10 @@
 import IconButton from '@mui/material/IconButton';
-import Snackbar from '@mui/material/Snackbar';
+import Snackbar, { SnackbarCloseReason } from '@mui/material/Snackbar';
 import { Close } from '@mui/icons-material';
 import React, { useCallback, useState } from 'react';
 import MuiAlert from '@mui/material/Alert';
-import API from '../utils/api';
 
 export interface IGlobalContext {
-    handleToken: (token: string) => void;
     showSnackbar: (message: string, snackbarType: SnackbarType) => void;
 }
 
@@ -24,58 +22,52 @@ interface ISnackbar {
 }
 
 const GlobalContext = React.createContext<IGlobalContext>({
-    handleToken: (token: string) => {},
     showSnackbar: (message: string) => {},
 });
 
 const GlobalContextProvider = (props: any) => {
-    const [token, setToken] = useState('');
     const [snackbarState, setSnackbarState] = useState<ISnackbar>({
         openSnackbar: false,
         message: '',
         snackbarType: SnackbarType.INFO,
     });
 
-    const handleTokenFunc = useCallback(
-        (givenToken: string) => {
-            if (givenToken !== token) {
-                API.UpdateServicesWithToken(givenToken);
-                setToken(givenToken);
-            }
-        },
-        [token]
-    );
-
     const handleShowSnackbar = useCallback((message: string, snackbarType: SnackbarType) => {
-        // reset snackbar
-        setSnackbarState((prevState) => ({
-            openSnackbar: false,
-            message: '',
-            snackbarType: prevState.snackbarType,
-        }));
-        setSnackbarState({
-            openSnackbar: true,
-            message: message,
-            snackbarType: snackbarType,
+        setSnackbarState((p) => {
+            console.log('close snackbar');
+            return {
+                openSnackbar: false,
+                message: '',
+                snackbarType: p.snackbarType,
+            };
+        });
+        setSnackbarState((p) => {
+            console.log('set snackbar to true');
+            return {
+                openSnackbar: true,
+                message: message,
+                snackbarType: snackbarType,
+            };
         });
     }, []);
 
-    const handleSnackbarClose = (event?: React.SyntheticEvent, reason?: string) => {
+    const handleSnackbarClose = (event: any, reason?: SnackbarCloseReason) => {
         if (reason === 'clickaway') {
             return;
         }
-
-        setSnackbarState((prevState) => ({
-            openSnackbar: false,
-            message: '',
-            snackbarType: prevState.snackbarType,
-        }));
+        setSnackbarState((prevState) => {
+            console.log('closing snackbar');
+            return {
+                openSnackbar: false,
+                message: '',
+                snackbarType: prevState.snackbarType,
+            };
+        });
     };
 
     // store in state in order to prevent rerenders when snackbar is called
     const [globalContextFuncs, _] = useState({
         showSnackbar: handleShowSnackbar,
-        handleToken: handleTokenFunc,
     });
 
     const action = (

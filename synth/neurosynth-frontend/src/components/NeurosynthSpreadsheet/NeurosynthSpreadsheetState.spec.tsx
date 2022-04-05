@@ -33,6 +33,10 @@ describe('NeurosynthSpreadsheetState', () => {
         STATE = new NeurosynthSpreadsheetState(hotTableRefMock, <></>, true);
     });
 
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
+
     it('should initialize', () => {
         expect(STATE).toBeTruthy();
     });

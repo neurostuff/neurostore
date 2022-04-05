@@ -11,7 +11,7 @@ import StudyPage from '../Studies/StudyPage/StudyPage';
 import UserStudiesPage from '../Studies/UserStudiesPage/UserStudiesPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
 
-const BaseNavigation = () => {
+const BaseNavigation: React.FC = (_props) => {
     return (
         <>
             <Box sx={BaseNavigationStyles.pagesContainer}>

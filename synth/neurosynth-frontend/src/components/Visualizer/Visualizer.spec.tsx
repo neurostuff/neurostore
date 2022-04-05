@@ -13,6 +13,10 @@ describe('Visualizer Component', () => {
         (window as any).papayaContainers = [];
     });
 
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
+
     it('should render', () => {
         render(
             <Visualizer

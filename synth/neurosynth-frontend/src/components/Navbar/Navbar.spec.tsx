@@ -7,33 +7,10 @@ import { Navbar } from '..';
 jest.mock('@auth0/auth0-react');
 
 // mock navbar drawer
-jest.mock('./NavbarDrawer/NavbarDrawer', () => {
-    return {
-        __esModule: true,
-        default: (props: NavbarArgs) => {
-            return <></>;
-        },
-    };
-});
+jest.mock('./NavbarDrawer/NavbarDrawer');
 
 // mock navbar tool bar
-jest.mock('./NavbarToolbar/NavbarToolbar', () => {
-    return {
-        __esModule: true,
-        default: (props: NavbarArgs) => {
-            return (
-                <div>
-                    <button onClick={props.login} data-testid="login">
-                        login
-                    </button>
-                    <button onClick={props.logout} data-testid="logout">
-                        logout
-                    </button>
-                </div>
-            );
-        },
-    };
-});
+jest.mock('./NavbarToolbar/NavbarToolbar');
 
 describe('Navbar', () => {
     const mockLoginWithPopupFunc = jest.fn();
@@ -46,6 +23,10 @@ describe('Navbar', () => {
             loginWithPopup: mockLoginWithPopupFunc,
             logout: mockLogoutFunc,
         });
+    });
+
+    afterAll(() => {
+        jest.clearAllMocks();
     });
 
     it('should render', () => {

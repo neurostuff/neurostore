@@ -52,6 +52,9 @@ class HotSettingsBuilder {
         };
     }
 
+    /**
+     * afterGetColHeader sets a hoverable message in the column header
+     */
     private afterGetColHeader = (column: number, TH: HTMLElement): void => {
         const col = this.state.getColumnObjectAtIndex(column);
         if (!col) return;
@@ -65,12 +68,18 @@ class HotSettingsBuilder {
         }
     };
 
+    /**
+     * afterGetRowHeader sets the left side row header styling
+     */
     private afterGetRowHeader = (row: number, TH: HTMLElement): void => {
         if (this.state.rowIsStudyTitle(row)) {
             TH.setAttribute('style', 'background-color: #ccc; color: black;');
         }
     };
 
+    /**
+     * afterRefreshDimensions rebuilds the study description to account for new dimensions
+     */
     private afterRefreshDimensions = (
         previousDimensions: object,
         currentDimensions: object,
@@ -89,6 +98,9 @@ class HotSettingsBuilder {
         });
     };
 
+    /**
+     * afterOnCellMouseUp handles clicking the delete button
+     */
     private afterOnCellMouseUp = (
         event: MouseEvent,
         coords: CellCoords,
@@ -100,6 +112,9 @@ class HotSettingsBuilder {
         }
     };
 
+    /**
+     * cells sets the row as a special study row with applied styling and HTML handling
+     */
     private cells = (row: number, column: number, prop: string | number): CellMeta => {
         const cellProperties: any = {};
         if (this.state.rowIsStudyTitle(row)) {
@@ -110,11 +125,17 @@ class HotSettingsBuilder {
         return cellProperties;
     };
 
+    /**
+     * beforeOnCellMouseDown prevents the user from selecting the study title rows
+     */
     private beforeOnCellMouseDown = (event: MouseEvent, coords: CellCoords, TH: HTMLElement) => {
         // Prevent study name from being selectable and copyable
         if (this.state.rowIsStudyTitle(coords.row)) event.stopImmediatePropagation();
     };
 
+    /**
+     * afterChange sets the value of boolean columns to be true if "t" is entered
+     */
     private afterChange = (changes: CellChange[] | null, source: ChangeSource) => {
         if (this.state.numColumns <= 0 || !changes || changes.length === 0) return;
         const requiredChanges: [number, number, string | number | boolean | null][] = [];

@@ -6,6 +6,9 @@ import EditAnalysisPointsRow from './EditAnalysisPointsRow';
  */
 
 describe('EditAnalysisPointsRow Component', () => {
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
     it('should render', () => {
         render(<EditAnalysisPointsRow />);
         expect(true).toBe(true);

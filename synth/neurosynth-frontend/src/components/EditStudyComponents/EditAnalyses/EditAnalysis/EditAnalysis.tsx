@@ -1,28 +1,22 @@
 import { Tabs, Tab, Box } from '@mui/material';
-import { SyntheticEvent, useState } from 'react';
+import React, { SyntheticEvent, useState } from 'react';
 import { IEditAnalysis } from '..';
 import EditAnalysisDetails from './EditAnalysisDetails/EditAnalysisDetails';
 import EditAnalysisPoints from './EditAnalysisPoints/EditAnalysisPoints';
 import EditAnalysisStyles from './EditAnalysis.styles';
-import { PointsApiResponse } from '../../../../utils/api';
+import { ConditionApiResponse, PointsApiResponse } from '../../../../utils/api';
 import EditAnalysisConditions from './EditAnalysisConditions/EditAnalysisConditions';
 import EditAnalysisImages from './EditAnalysisImages/EditAnalysisImages';
 
 const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
     const [editTab, setEditTab] = useState(0);
 
-    const handleEditAnalysisDetails = (update: { [key: string]: any }) => {
-        if (props.analysis && props.analysis.id) {
-            props.onEditAnalysisDetails(props.analysis.id as string, update);
-        }
-    };
-
     const handleAddPoint = (pointToAdd: { x: number; y: number; z: number }) => {};
     const handleRemovePoint = (pointId: string) => {};
     const handleUpdatePoint = (pointId: string, update: { x: number; y: number; z: number }) => {};
 
     return (
-        <Box>
+        <>
             {props.analysis && (
                 <>
                     <Tabs
@@ -37,24 +31,32 @@ const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
                             setEditTab(newValue);
                         }}
                     >
-                        <Tab sx={EditAnalysisStyles.tab} value={0} label="Details"></Tab>
-                        <Tab sx={EditAnalysisStyles.tab} value={1} label="Coordinates"></Tab>
-                        <Tab sx={EditAnalysisStyles.tab} value={2} label="Conditions"></Tab>
-                        <Tab sx={EditAnalysisStyles.tab} value={3} label="Images"></Tab>
+                        <Tab sx={[EditAnalysisStyles.tab]} value={0} label="Coordinates" />
+                        <Tab
+                            sx={[
+                                EditAnalysisStyles.tab,
+                                props.updateState.conditions
+                                    ? EditAnalysisStyles.unsavedChanges
+                                    : {},
+                            ]}
+                            value={1}
+                            label="Conditions"
+                        />
+                        <Tab sx={EditAnalysisStyles.tab} value={2} label="Images" />
+                        <Tab
+                            sx={[
+                                EditAnalysisStyles.tab,
+                                props.updateState.details.name ||
+                                props.updateState.details.description
+                                    ? EditAnalysisStyles.unsavedChanges
+                                    : {},
+                            ]}
+                            value={3}
+                            label="General"
+                        />
                     </Tabs>
                     <Box>
                         {editTab === 0 && (
-                            <>
-                                <EditAnalysisDetails
-                                    analysisId={props.analysis.id || ''}
-                                    name={props.analysis.name || ''}
-                                    description={props.analysis.description || ''}
-                                    onEditAnalysisDetails={handleEditAnalysisDetails}
-                                    onDeleteAnalysis={props.onDeleteAnalysis}
-                                />
-                            </>
-                        )}
-                        {editTab === 1 && (
                             <EditAnalysisPoints
                                 onRemovePoint={handleRemovePoint}
                                 onUpdatePoint={handleUpdatePoint}
@@ -62,12 +64,31 @@ const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
                                 points={props.analysis.points as PointsApiResponse[] | undefined}
                             />
                         )}
-                        {editTab === 2 && <EditAnalysisConditions />}
-                        {editTab === 3 && <EditAnalysisImages />}
+                        {editTab === 1 && (
+                            <EditAnalysisConditions
+                                conditions={
+                                    props.analysis.conditions as ConditionApiResponse[] | undefined
+                                }
+                                updateEnabled={props.updateState.conditions}
+                                weights={props.analysis.weights}
+                                onConditionWeightChange={props.onEditAnalysisConditions}
+                                onEditAnalysisButtonPress={props.onEditAnalysisButtonPress}
+                            />
+                        )}
+                        {editTab === 2 && <EditAnalysisImages />}
+                        {editTab === 3 && (
+                            <EditAnalysisDetails
+                                updateEnabled={props.updateState.details}
+                                name={props.analysis.name || ''}
+                                description={props.analysis.description || ''}
+                                onEditAnalysisDetails={props.onEditAnalysisDetails}
+                                onEditAnalysisButtonPress={props.onEditAnalysisButtonPress}
+                            />
+                        )}
                     </Box>
                 </>
             )}
-        </Box>
+        </>
     );
 };
 

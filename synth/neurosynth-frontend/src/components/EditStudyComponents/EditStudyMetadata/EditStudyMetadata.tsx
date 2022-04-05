@@ -51,10 +51,10 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
         metadataToArray(props.metadata)
     );
 
-    const handleOnUpdate = async (event: React.MouseEvent) => {
+    const handleOnSave = async (event: React.MouseEvent) => {
         try {
             const token = await getAccessTokenSilently();
-            context.handleToken(token);
+            API.UpdateServicesWithToken(token);
         } catch (exception) {
             context.showSnackbar('there was an error', SnackbarType.ERROR);
             console.error(exception);
@@ -65,7 +65,7 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
         API.Services.StudiesService.studiesIdPut(props.studyId, {
             metadata: transformedMetadata,
         })
-            .then((res) => {
+            .then((_res) => {
                 context.showSnackbar('study successfully updated', SnackbarType.SUCCESS);
                 props.onUpdateStudyMetadata(transformedMetadata);
                 if (isMountedRef.current) setUpdateEnabled(false);
@@ -156,12 +156,12 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
                 )}
                 <Button
                     disabled={!updatedEnabled}
-                    onClick={handleOnUpdate}
+                    onClick={handleOnSave}
                     color="success"
                     variant="contained"
                     sx={{ ...EditStudyMetadataStyles.button, marginRight: '15px' }}
                 >
-                    Update
+                    Save
                 </Button>
                 <Button
                     disabled={!updatedEnabled}
@@ -170,7 +170,7 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
                     onClick={handleRevertChanges}
                     sx={EditStudyMetadataStyles.button}
                 >
-                    Revert Changes
+                    Cancel
                 </Button>
             </AccordionDetails>
         </Accordion>

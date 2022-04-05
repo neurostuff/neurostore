@@ -5,6 +5,11 @@ import CreateDetailsDialog from './CreateDetailsDialog';
 describe('CreateDetailsDialog', () => {
     const mockOnCreateStudyset = jest.fn();
     const mockOnCloseDialog = jest.fn();
+
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
+
     it('should render', () => {
         render(
             <CreateDetailsDialog
