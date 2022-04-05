@@ -117,7 +117,7 @@ jobs:
     - 
       name: Frontend Configuration and Installation
       run: |
-        cd /neurosynth/neurosynth-frontend && \
+        cd /neurosynth-frontend && \
           cp .env.example .env.dev && \
           npm install
     -
