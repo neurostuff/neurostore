@@ -16,7 +16,7 @@ import {
     Study,
     UserApiFactory,
     Image,
-} from '../gen/api';
+} from '../neurostore-typescript-sdk';
 
 export type StudyApiResponse = Study & ReadOnly;
 export type AnalysisApiResponse = Analysis & ReadOnly;

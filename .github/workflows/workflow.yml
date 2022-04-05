@@ -114,6 +114,16 @@ jobs:
           --rm -w /neurosynth \
           neurosynth \
           python -m pytest neurosynth/tests
+    - 
+      name: Frontend Configuration and Installation
+      run: |
+        cd /neurosynth/neurosynth-frontend && \
+          cp .env.example .env.dev && \
+          npm install
+    -
+      name: Build Frontend
+      run: |
+        npm run build
     -
       name: Frontend Tests
       env:
@@ -139,7 +149,6 @@ jobs:
           --rm -w /neurosynth/neurosynth-frontend \
           neurosynth \
           bash -c "cd /neurosynth/neurosynth-frontend && \
-          npm install && \
           npm run test"
 
   style_check:
