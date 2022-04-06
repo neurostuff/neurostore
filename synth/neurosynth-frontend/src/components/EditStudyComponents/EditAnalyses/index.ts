@@ -1,4 +1,4 @@
-import { AnalysisApiResponse, ConditionApiResponse, PointsApiResponse } from '../../../utils/api';
+import { AnalysisApiResponse, ConditionApiResponse, PointApiResponse } from '../../../utils/api';
 
 export enum EAnalysisEdit {
     ALL = 'all',
@@ -67,7 +67,7 @@ export interface IEditAnalysisPoints {
     onAddPoint: (arg: { x: number; y: number; z: number }) => void;
     onRemovePoint: (pointId: string) => void;
     onUpdatePoint: (pointId: string, update: { x: number; y: number; z: number }) => void;
-    points: PointsApiResponse[] | undefined;
+    points: PointApiResponse[] | undefined;
 }
 
 export interface IEditAnalysisConditions {

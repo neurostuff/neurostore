@@ -1,13 +1,13 @@
-import { ReadOnly, Image } from '../../../gen/api';
+import { ImageApiResponse } from '../../../utils/api';
 
 export interface DisplayImagesTableModel {
-    images: (Image & ReadOnly)[] | undefined;
-    initialSelectedImage: (Image & ReadOnly) | undefined;
-    onSelectImage: (selectedImage: (Image & ReadOnly) | undefined) => void;
+    images: ImageApiResponse[] | undefined;
+    initialSelectedImage: ImageApiResponse | undefined;
+    onSelectImage: (selectedImage: ImageApiResponse | undefined) => void;
 }
 
 export interface DisplayImagesTableRowModel {
-    onRowSelect: (selectedImage: (Image & ReadOnly) | undefined) => void;
-    image: Image & ReadOnly;
+    onRowSelect: (selectedImage: ImageApiResponse | undefined) => void;
+    image: ImageApiResponse;
     active: boolean;
 }

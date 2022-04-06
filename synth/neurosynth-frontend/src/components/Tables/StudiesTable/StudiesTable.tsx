@@ -12,7 +12,6 @@ import { Box } from '@mui/system';
 import React, { useState, useEffect, useContext } from 'react';
 import { useHistory } from 'react-router-dom';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
-import { ReadOnly, Study } from '../../../gen/api';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API, { StudysetsApiResponse, StudyApiResponse } from '../../../utils/api';
 import StudysetsPopupMenu from '../../StudysetsPopupMenu/StudysetsPopupMenu';
@@ -30,7 +29,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     const { showSnackbar } = useContext(GlobalContext);
     const { current } = useIsMounted();
 
-    const handleSelectTableRow = (row: Study & ReadOnly) => {
+    const handleSelectTableRow = (row: StudyApiResponse) => {
         history.push(`/studies/${row.id}`);
     };
 

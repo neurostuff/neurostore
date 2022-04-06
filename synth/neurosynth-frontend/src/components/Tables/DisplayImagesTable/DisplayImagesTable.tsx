@@ -1,20 +1,20 @@
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { Image, ReadOnly } from '../../../gen/api';
 import { Box } from '@mui/system';
 import DisplayImagesTableRow from './DisplayImageTableRow/DisplayImageTableRow';
 import { DisplayImagesTableModel } from '.';
+import { ImageApiResponse } from '../../../utils/api';
 
 const DisplayImagesTable: React.FC<DisplayImagesTableModel> = (props) => {
     const [currentSelectedImage, setCurrentSelectedImage] = useState<
-        (Image & ReadOnly) | undefined
+        ImageApiResponse | undefined
     >();
 
     useEffect(() => {
         setCurrentSelectedImage(props.initialSelectedImage);
     }, [props.initialSelectedImage]);
 
-    const handleRowSelect = (selectedImage: (Image & ReadOnly) | undefined) => {
+    const handleRowSelect = (selectedImage: ImageApiResponse | undefined) => {
         setCurrentSelectedImage(selectedImage);
         props.onSelectImage(selectedImage);
     };
