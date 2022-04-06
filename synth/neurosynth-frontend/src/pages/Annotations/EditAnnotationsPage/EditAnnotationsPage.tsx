@@ -13,7 +13,8 @@ import EditStudyPageStyles from '../../Studies/EditStudyPage/EditStudyPage.style
 import EditAnnotationsPageStyles from './EditAnnotationsPage.styles';
 import { useAuth0 } from '@auth0/auth0-react';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
-import { AnnotationNote } from '../../../gen/api';
+import { AnnotationNote } from '../../../neurostore-typescript-sdk';
+import { AxiosResponse } from 'axios';
 
 const EditAnnotationsPage: React.FC = (props) => {
     const history = useHistory();
@@ -52,13 +53,12 @@ const EditAnnotationsPage: React.FC = (props) => {
         API.Services.AnnotationsService.annotationsIdPut(params.annotationId, {
             [property]: updatedText,
         })
-            .then((res) => {
-                const typedRes = res.data as AnnotationsApiResponse;
+            .then((res: AxiosResponse<AnnotationsApiResponse>) => {
                 setAnnotation((prevState) => {
                     if (!prevState) return prevState;
                     return {
                         ...prevState,
-                        [property]: typedRes[property],
+                        [property]: res.data[property],
                     };
                 });
                 showSnackbar(`updated the annotation ${property}`, SnackbarType.SUCCESS);

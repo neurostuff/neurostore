@@ -23,7 +23,6 @@ import {
     NeurosynthLoader,
 } from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
-import { Analysis, ReadOnly } from '../../../gen/api';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API, { StudyApiResponse, AnalysisApiResponse } from '../../../utils/api';
 import StudyPageStyles from './StudyPage.styles';
@@ -32,7 +31,7 @@ const StudyPage: React.FC = (props) => {
     const [study, setStudy] = useState<StudyApiResponse>();
     const [selectedAnalysis, setSelectedAnalysis] = useState<{
         analysisIndex: number;
-        analysis: (Analysis & ReadOnly) | undefined;
+        analysis: AnalysisApiResponse | undefined;
     }>({
         analysisIndex: 0,
         analysis: undefined,
@@ -71,7 +70,7 @@ const StudyPage: React.FC = (props) => {
     const handleSelectAnalysis = (event: SyntheticEvent, newVal: number) => {
         setSelectedAnalysis({
             analysisIndex: newVal,
-            analysis: (study?.analyses as (Analysis & ReadOnly)[])[newVal],
+            analysis: (study?.analyses as AnalysisApiResponse[])[newVal],
         });
     };
 

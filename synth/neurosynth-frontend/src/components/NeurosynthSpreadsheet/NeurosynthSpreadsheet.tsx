@@ -7,12 +7,12 @@ import { EPropertyType, IMetadataRowModel } from '..';
 import { NavLink } from 'react-router-dom';
 import AddMetadataRow from '../EditMetadata/EditMetadataRow/AddMetadataRow';
 import EditAnnotationsPageStyles from '../../pages/Annotations/EditAnnotationsPage/EditAnnotationsPage.styles';
-import { AnnotationNote, ReadOnly } from '../../gen/api';
 import EditStudyPageStyles from '../../pages/Studies/EditStudyPage/EditStudyPage.styles';
 import { Button, Link, Box } from '@mui/material';
 import HotSettingsBuilder from './HotSettingsBuilder';
 import NeurosynthSpreadsheetState from './NeurosynthSpreadsheetState';
 import NeurosynthSpreadsheetHelper from './NeurosynthSpreadsheetHelper';
+import { AnnotationNote, ReadOnly } from '../../neurostore-typescript-sdk';
 
 export interface INeurosynthColumn {
     value: string;

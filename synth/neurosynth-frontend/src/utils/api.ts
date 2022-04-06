@@ -16,11 +16,11 @@ import {
     Study,
     UserApiFactory,
     Image,
-} from '../gen/api';
+} from '../neurostore-typescript-sdk';
 
 export type StudyApiResponse = Study & ReadOnly;
 export type AnalysisApiResponse = Analysis & ReadOnly;
-export type PointsApiResponse = Point & ReadOnly;
+export type PointApiResponse = Point & ReadOnly;
 export type StudysetsApiResponse = Studyset & ReadOnly;
 export type AnnotationsApiResponse = Annotation & ReadOnly;
 export type ConditionApiResponse = Condition & ReadOnly;

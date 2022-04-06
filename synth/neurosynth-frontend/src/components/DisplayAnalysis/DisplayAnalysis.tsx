@@ -9,15 +9,19 @@ import {
     DisplayImagesTable,
     Visualizer,
 } from '..';
-import { Condition, Point, ReadOnly, Image } from '../../gen/api';
-import { AnalysisApiResponse } from '../../utils/api';
+import {
+    AnalysisApiResponse,
+    ConditionApiResponse,
+    ImageApiResponse,
+    PointApiResponse,
+} from '../../utils/api';
 import DisplayAnalysisStyles from './DisplayAnalysis.styles';
 
 const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
-    const [selectedImage, setSelectedImage] = useState<(Image & ReadOnly) | undefined>(undefined);
+    const [selectedImage, setSelectedImage] = useState<ImageApiResponse | undefined>(undefined);
 
     useEffect(() => {
-        const images = props.images as (Image & ReadOnly)[];
+        const images = props.images as ImageApiResponse[];
         if (!images || images.length === 0) {
             // images does not exist or is empty
             setSelectedImage(undefined);
@@ -75,7 +79,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                 bold: false,
             },
         ],
-        rowData: (props?.points as (Point & ReadOnly)[]).map((point) => ({
+        rowData: (props?.points as PointApiResponse[]).map((point) => ({
             uniqueKey: point.id as string,
             columnValues: [
                 {
@@ -112,7 +116,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
         })),
     };
 
-    const handleSelectImage = (selectedImage: (Image & ReadOnly) | undefined) => {
+    const handleSelectImage = (selectedImage: ImageApiResponse | undefined) => {
         setSelectedImage(selectedImage);
     };
 
@@ -129,7 +133,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                 center: false,
             },
         ],
-        rowData: (props?.conditions as (Condition & ReadOnly)[]).map((condition, index) => ({
+        rowData: (props?.conditions as ConditionApiResponse[]).map((condition, index) => ({
             uniqueKey: condition.id || index.toString(),
             columnValues: [
                 {
@@ -216,7 +220,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                             <DisplayImagesTable
                                 initialSelectedImage={selectedImage}
                                 onSelectImage={handleSelectImage}
-                                images={props.images as (Image & ReadOnly)[]}
+                                images={props.images as ImageApiResponse[]}
                             />
                         </AccordionDetails>
                     </Accordion>

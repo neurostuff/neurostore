@@ -4,7 +4,7 @@ import { IEditAnalysis } from '..';
 import EditAnalysisDetails from './EditAnalysisDetails/EditAnalysisDetails';
 import EditAnalysisPoints from './EditAnalysisPoints/EditAnalysisPoints';
 import EditAnalysisStyles from './EditAnalysis.styles';
-import { ConditionApiResponse, PointsApiResponse } from '../../../../utils/api';
+import { ConditionApiResponse, PointApiResponse } from '../../../../utils/api';
 import EditAnalysisConditions from './EditAnalysisConditions/EditAnalysisConditions';
 import EditAnalysisImages from './EditAnalysisImages/EditAnalysisImages';
 
@@ -61,7 +61,7 @@ const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
                                 onRemovePoint={handleRemovePoint}
                                 onUpdatePoint={handleUpdatePoint}
                                 onAddPoint={handleAddPoint}
-                                points={props.analysis.points as PointsApiResponse[] | undefined}
+                                points={props.analysis.points as PointApiResponse[] | undefined}
                             />
                         )}
                         {editTab === 1 && (

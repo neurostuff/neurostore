@@ -115,6 +115,46 @@ jobs:
           neurosynth \
           python -m pytest neurosynth/tests
     -
+      name: Frontend Configuration
+      run: |
+        cd neurosynth-frontend/ && \
+        cp .env.example .env.dev && \
+        docker-compose run \
+          -e "APP_SETTINGS=neurosynth.config.DockerTestConfig" \
+          -e "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
+          -e "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
+          -e "AUTH0_BASE_URL=${AUTH0_BASE_URL}" \
+          -e "AUTH0_ACCESS_TOKEN_URL=${AUTH0_ACCESS_TOKEN_URL}" \
+          -e "AUTH0_AUTH_URL=${AUTH0_AUTH_URL}" \
+          -e "REACT_APP_AUTH0_DOMAIN=${REACT_APP_AUTH0_DOMAIN}" \
+          -e "REACT_APP_AUTH0_CLIENT_ID=${REACT_APP_AUTH0_CLIENT_ID}" \
+          -e "REACT_APP_AUTH0_AUDIENCE=localhost" \
+          -e "REACT_APP_API_DOMAIN=http://localhost/api" \
+          -e "CI=true" \
+          --rm -w /neurosynth/neurosynth-frontend \
+          neurosynth \
+          bash -c "cd /neurosynth/neurosynth-frontend && \
+          npm install"
+    -
+      name: Build Frontend
+      run: |
+        docker-compose run \
+          -e "APP_SETTINGS=neurosynth.config.DockerTestConfig" \
+          -e "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
+          -e "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
+          -e "AUTH0_BASE_URL=${AUTH0_BASE_URL}" \
+          -e "AUTH0_ACCESS_TOKEN_URL=${AUTH0_ACCESS_TOKEN_URL}" \
+          -e "AUTH0_AUTH_URL=${AUTH0_AUTH_URL}" \
+          -e "REACT_APP_AUTH0_DOMAIN=${REACT_APP_AUTH0_DOMAIN}" \
+          -e "REACT_APP_AUTH0_CLIENT_ID=${REACT_APP_AUTH0_CLIENT_ID}" \
+          -e "REACT_APP_AUTH0_AUDIENCE=localhost" \
+          -e "REACT_APP_API_DOMAIN=http://localhost/api" \
+          --rm -w /neurosynth/neurosynth-frontend \
+          neurosynth \
+          bash -c "cd /neurosynth/neurosynth-frontend && \
+          npm run build:dev"
+
+    -
       name: Frontend Tests
       env:
         AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
@@ -139,7 +179,6 @@ jobs:
           --rm -w /neurosynth/neurosynth-frontend \
           neurosynth \
           bash -c "cd /neurosynth/neurosynth-frontend && \
-          npm install && \
           npm run test"
 
   style_check:

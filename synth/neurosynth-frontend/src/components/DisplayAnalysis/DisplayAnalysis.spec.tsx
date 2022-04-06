@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react';
-import { Analysis, ReadOnly } from '../../gen/api';
 import DisplayAnalysis from './DisplayAnalysis';
 import { AnalysisApiResponse, ImageApiResponse } from '../../utils/api';
 
@@ -19,7 +18,7 @@ describe('DisplayAnalysis Component', () => {
     });
 
     it('should not render with the visualizer when no images are present', () => {
-        const mockAnalysis: Analysis & ReadOnly = {
+        const mockAnalysis: AnalysisApiResponse = {
             conditions: [],
             created_at: '2021-10-25T10:37:20.237634+00:00',
             description: 'FSL5.0',
