@@ -10,6 +10,7 @@ import PublicStudiesPage from '../Studies/PublicStudiesPage/PublicStudiesPage';
 import StudyPage from '../Studies/StudyPage/StudyPage';
 import UserStudiesPage from '../Studies/UserStudiesPage/UserStudiesPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
+import MetaAnalysisBuilderPage from '../MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 
 const BaseNavigation: React.FC = (_props) => {
     return (
@@ -42,6 +43,9 @@ const BaseNavigation: React.FC = (_props) => {
                     </Route>
                     <Route path="/studies/edit/:studyId">
                         <EditStudyPage />
+                    </Route>
+                    <Route path="/meta-analyses" exact={true}>
+                        <MetaAnalysisBuilderPage />
                     </Route>
                     <Route>
                         <div>Page not found</div>

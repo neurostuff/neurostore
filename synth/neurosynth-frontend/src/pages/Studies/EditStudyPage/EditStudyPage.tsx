@@ -90,7 +90,7 @@ const EditStudyPage = () => {
         <NeurosynthLoader loaded={!!study}>
             <Box sx={EditStudyPageStyles.stickyButtonContainer}>
                 <Button
-                    color="error"
+                    color="secondary"
                     onClick={handleOnCancel}
                     sx={EditStudyPageStyles.button}
                     variant="outlined"
