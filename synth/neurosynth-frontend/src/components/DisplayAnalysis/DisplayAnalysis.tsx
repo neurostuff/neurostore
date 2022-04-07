@@ -9,15 +9,19 @@ import {
     DisplayImagesTable,
     Visualizer,
 } from '..';
-import { Condition, Point, ReadOnly, Image } from '../../gen/api';
-import { AnalysisApiResponse } from '../../utils/api';
+import {
+    AnalysisApiResponse,
+    ConditionApiResponse,
+    ImageApiResponse,
+    PointApiResponse,
+} from '../../utils/api';
 import DisplayAnalysisStyles from './DisplayAnalysis.styles';
 
 const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
-    const [selectedImage, setSelectedImage] = useState<(Image & ReadOnly) | undefined>(undefined);
+    const [selectedImage, setSelectedImage] = useState<ImageApiResponse | undefined>(undefined);
 
     useEffect(() => {
-        const images = props.images as (Image & ReadOnly)[];
+        const images = props.images as ImageApiResponse[];
         if (!images || images.length === 0) {
             // images does not exist or is empty
             setSelectedImage(undefined);
@@ -75,7 +79,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                 bold: false,
             },
         ],
-        rowData: (props?.points as (Point & ReadOnly)[]).map((point) => ({
+        rowData: (props?.points as PointApiResponse[]).map((point) => ({
             uniqueKey: point.id as string,
             columnValues: [
                 {
@@ -112,7 +116,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
         })),
     };
 
-    const handleSelectImage = (selectedImage: (Image & ReadOnly) | undefined) => {
+    const handleSelectImage = (selectedImage: ImageApiResponse | undefined) => {
         setSelectedImage(selectedImage);
     };
 
@@ -129,7 +133,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                 center: false,
             },
         ],
-        rowData: (props?.conditions as (Condition & ReadOnly)[]).map((condition, index) => ({
+        rowData: (props?.conditions as ConditionApiResponse[]).map((condition, index) => ({
             uniqueKey: condition.id || index.toString(),
             columnValues: [
                 {
@@ -150,12 +154,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
 
     return (
         <Box sx={DisplayAnalysisStyles.analysisContainer}>
-            <Box
-                sx={{
-                    ...DisplayAnalysisStyles.section,
-                    ...DisplayAnalysisStyles.leftSection,
-                }}
-            >
+            <Box sx={[DisplayAnalysisStyles.leftSection, DisplayAnalysisStyles.section]}>
                 <Typography sx={DisplayAnalysisStyles.spaceBelow} variant="h5">
                     {props.name}
                 </Typography>
@@ -163,7 +162,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                     sx={DisplayAnalysisStyles.spaceBelow}
                     text={props.description || ''}
                 />
-                <Box sx={{ ...DisplayAnalysisStyles.spaceBelow, width: '100%' }}>
+                <Box sx={[DisplayAnalysisStyles.spaceBelow, { width: '100%' }]}>
                     <Accordion
                         defaultExpanded={conditionsForTable.rowData.length > 0}
                         elevation={4}
@@ -184,11 +183,11 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                     </Accordion>
                 </Box>
                 <Box
-                    sx={{
-                        ...DisplayAnalysisStyles.spaceBelow,
-                        ...DisplayAnalysisStyles.removeTablePadding,
-                        width: '100%',
-                    }}
+                    sx={[
+                        DisplayAnalysisStyles.spaceBelow,
+                        DisplayAnalysisStyles.removeTablePadding,
+                        { width: '100%' },
+                    ]}
                 >
                     <Accordion
                         defaultExpanded={coordinateDataForTable.rowData.length > 0}
@@ -209,7 +208,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                         </AccordionDetails>
                     </Accordion>
                 </Box>
-                <Box sx={{ ...DisplayAnalysisStyles.spaceBelow }}>
+                <Box sx={DisplayAnalysisStyles.spaceBelow}>
                     <Accordion
                         defaultExpanded={props.images && props.images.length > 0}
                         elevation={4}
@@ -221,19 +220,17 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                             <DisplayImagesTable
                                 initialSelectedImage={selectedImage}
                                 onSelectImage={handleSelectImage}
-                                images={props.images as (Image & ReadOnly)[]}
+                                images={props.images as ImageApiResponse[]}
                             />
                         </AccordionDetails>
                     </Accordion>
                 </Box>
             </Box>
             {selectedImage && (
-                <Box
-                    sx={{ ...DisplayAnalysisStyles.section, ...DisplayAnalysisStyles.rightSection }}
-                >
+                <Box sx={[DisplayAnalysisStyles.section, DisplayAnalysisStyles.rightSection]}>
                     <Box sx={DisplayAnalysisStyles.visualizerContainer}>
                         <Visualizer
-                            sx={DisplayAnalysisStyles.visualizer}
+                            styling={DisplayAnalysisStyles.visualizer}
                             imageURL={selectedImage.url || ''}
                             fileName={selectedImage.filename || ''}
                             template={(selectedImage?.metadata as any)?.target_template_image || ''}

@@ -1,6 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { MenuItem, Button, Theme, MenuList } from '@mui/material';
-import { SxProps } from '@mui/system';
+import { MenuItem, Button, MenuList } from '@mui/material';
+import { SystemStyleObject } from '@mui/system';
 import { useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { NavOptionsModel, NeurosynthPopper } from '../..';
@@ -9,7 +9,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
 export interface INavbarPopupMenu {
     navOption: NavOptionsModel;
-    sx?: SxProps<Theme>;
+    styling?: SystemStyleObject;
     menuPosition: {
         vertical: 'top' | 'bottom';
         horizontal: 'left' | 'right';
@@ -51,7 +51,7 @@ const NavbarPopupMenu: React.FC<INavbarPopupMenu> = (props) => {
                             <Button
                                 ref={anchorRef}
                                 onClick={() => setOpen(true)}
-                                sx={props.sx}
+                                sx={props.styling}
                                 disabled={props.navOption.disabled}
                             >
                                 {props.navOption.label}
@@ -75,7 +75,7 @@ const NavbarPopupMenu: React.FC<INavbarPopupMenu> = (props) => {
                             to={props.navOption.path}
                             exact
                             component={NavLink}
-                            sx={{ ...NavbarPopupMenuStyles.link, ...props.sx }}
+                            sx={[props.styling || {}, NavbarPopupMenuStyles.link]}
                             // manually add bg color as navlink doesn't have access to mui system
                             activeStyle={{ color: '#ef8a24' }}
                         >

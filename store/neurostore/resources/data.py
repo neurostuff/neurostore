@@ -2,7 +2,7 @@
 from .utils import view_maker
 from .base import BaseView, ObjectView, ListView
 from ..database import db
-from ..models import Studyset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions, User, AnnotationAnalysis, Annotation  # noqa E401
+from ..models import Studyset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions, User, AnnotationAnalysis, Annotation, Entity  # noqa E401
 from ..models.data import StudysetStudy
 
 from ..schemas import (  # noqa E401
@@ -17,6 +17,7 @@ from ..schemas import (  # noqa E401
     AnalysisConditionSchema,
     AnnotationAnalysisSchema,
     StudysetStudySchema,
+    EntitySchema,
 )
 
 
@@ -105,6 +106,7 @@ class ImageView(ObjectView):
 class PointView(ObjectView):
     _nested = {
         "values": "PointValueView",
+        "entities": "EntityResource",
     }
     _parent = {
         "analysis": "AnalysisView",
@@ -251,6 +253,9 @@ class ImageListView(ListView):
     _parent = {
         "analysis": "AnalysisView",
     }
+    _nested = {
+        "entities": "EntityResource",
+    }
     _search_fields = ("filename", "space", "value_type", "analysis_name")
 
 
@@ -297,3 +302,13 @@ class StudysetStudyResource(BaseView):
     }
     _model = StudysetStudy
     _schema = StudysetStudySchema
+
+
+class EntityResource(BaseView):
+    _parent = {
+        'image': "ImageView",
+        'point': "PointView",
+    }
+
+    _model = Entity
+    _schema = EntitySchema

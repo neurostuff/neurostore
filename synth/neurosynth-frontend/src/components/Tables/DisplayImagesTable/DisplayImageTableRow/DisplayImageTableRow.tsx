@@ -45,10 +45,10 @@ const DisplayImagesTableRow: React.FC<DisplayImagesTableRowModel> = (props) => {
                 onClick={() => {
                     props.onRowSelect(props.image);
                 }}
-                sx={{
-                    ...DisplayImageTableRowStyles.root,
-                    ...(props.active ? DisplayImageTableRowStyles.selected : {}),
-                }}
+                sx={[
+                    DisplayImageTableRowStyles.root,
+                    props.active ? DisplayImageTableRowStyles.selected : {},
+                ]}
             >
                 <TableCell>
                     <IconButton

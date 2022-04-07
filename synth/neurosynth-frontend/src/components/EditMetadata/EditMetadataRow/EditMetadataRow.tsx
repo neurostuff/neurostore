@@ -42,17 +42,12 @@ const EditMetadataRow: React.FC<IEditMetadataRowModel> = React.memo((props) => {
         <>
             <Box sx={EditMetadataRowStyles.tableRow}>
                 <ToggleType type={props.metadataValueType} onToggle={handleToggle} />
-                <Box
-                    sx={{
-                        ...EditMetadataRowStyles.tableCell,
-                        ...EditMetadataRowStyles.key,
-                    }}
-                >
+                <Box sx={[EditMetadataRowStyles.tableCell, EditMetadataRowStyles.key]}>
                     <Box component="span">
                         <b>{metadataRow.metadataKey}</b>
                     </Box>
                 </Box>
-                <Box sx={{ ...EditMetadataRowStyles.tableCell, width: '100%' }}>
+                <Box sx={[EditMetadataRowStyles.tableCell, { width: '100%' }]}>
                     <EditMetadataValue
                         onEditMetadataValue={handleEditMetadataValue}
                         value={props.metadataRow.metadataValue}
@@ -70,9 +65,7 @@ const EditMetadataRow: React.FC<IEditMetadataRowModel> = React.memo((props) => {
                 </Box>
             </Box>
             <Box sx={EditMetadataRowStyles.tableRow}>
-                <Box
-                    sx={{ ...EditMetadataRowStyles.tableCell, ...EditMetadataRowStyles.spacer }}
-                ></Box>
+                <Box sx={[EditMetadataRowStyles.tableCell, EditMetadataRowStyles.spacer]}></Box>
             </Box>
         </>
     );

@@ -6,8 +6,8 @@ import {
     TableHead,
     TableRow,
     Paper,
+    Box,
 } from '@mui/material';
-import { Box } from '@mui/system';
 import { IDisplayValuesTableModel } from '.';
 import DisplayValuesTableRow from './DisplayValuesTableRow/DisplayValuesTableRow';
 
@@ -58,7 +58,7 @@ const DisplayValuesTable: React.FC<IDisplayValuesTableModel> = (props) => {
                     ))}
                 </TableBody>
             </Table>
-            {noRowData && <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No data</Box>}
+            {noRowData && <Box sx={{ color: 'warning.dark', padding: '0.5rem 1rem' }}>No data</Box>}
         </TableContainer>
     );
 };

@@ -55,43 +55,26 @@ const EditStudyPage = () => {
         history.push(`/studies/${params.studyId}`);
     };
 
-    const handleEditStudyDetails = useCallback((update: { [key: string]: string }) => {
+    const handleAnalysisUpdate = (analysisId: string, newAnalysis: AnalysisApiResponse) => {
         setStudy((prevState) => {
-            if (!prevState) return undefined;
+            if (!prevState || !prevState.analyses) return prevState;
+            const newAnalyses = [...prevState.analyses];
+            const analysisIndexToUpdate = newAnalyses.findIndex(
+                (analysis) => analysis.id === analysisId
+            );
+
+            if (analysisIndexToUpdate < 0) return { ...prevState };
+            newAnalyses[analysisIndexToUpdate] = {
+                ...newAnalyses[analysisIndexToUpdate],
+                ...newAnalysis,
+            };
 
             return {
                 ...prevState,
-                ...update,
+                analyses: newAnalyses,
             };
         });
-    }, []);
-
-    // idToUpdate: string, update: { key: string, value: string }
-    const handleEditAnalysisDetails = useCallback(
-        (idToUpdate: string | undefined, update: { [key: string]: any }) => {
-            setStudy((prevState) => {
-                if (!prevState) return undefined;
-                else if (prevState.analyses === undefined) return { ...prevState };
-
-                // set new ref to array and object for react to detect
-                const newAnalyses = [...prevState.analyses];
-                const analysisIndexToUpdate = newAnalyses.findIndex(
-                    (analysis) => analysis.id === idToUpdate
-                );
-                if (analysisIndexToUpdate < 0) return { ...prevState };
-                newAnalyses[analysisIndexToUpdate] = {
-                    ...newAnalyses[analysisIndexToUpdate],
-                    ...update,
-                };
-
-                return {
-                    ...prevState,
-                    analyses: newAnalyses,
-                };
-            });
-        },
-        []
-    );
+    };
 
     const handleUpdateStudyMetadata = useCallback((updatedMetadata: any) => {
         setStudy((prevState) => {
@@ -102,11 +85,6 @@ const EditStudyPage = () => {
             };
         });
     }, []);
-
-    const handleEditAnalysisImages = useCallback(() => {}, []);
-
-    // idToUpdate: string
-    const handleEditAnalysisPoints = useCallback(() => {}, []);
 
     return (
         <NeurosynthLoader loaded={!!study}>
@@ -125,7 +103,6 @@ const EditStudyPage = () => {
                 <>
                     <Box sx={{ marginBottom: '15px', padding: '0 10px' }}>
                         <EditStudyDetails
-                            onEditStudyDetails={handleEditStudyDetails}
                             studyId={params.studyId}
                             name={study.name}
                             description={study.description}
@@ -145,9 +122,7 @@ const EditStudyPage = () => {
 
                     <Box sx={{ marginBottom: '15px', padding: '0 10px', marginLeft: '15px' }}>
                         <EditAnalyses
-                            onEditAnalysisDetails={handleEditAnalysisDetails}
-                            onEditAnalysisImages={handleEditAnalysisImages}
-                            onEditAnalysisPoints={handleEditAnalysisPoints}
+                            onUpdateAnalysis={handleAnalysisUpdate}
                             analyses={study.analyses}
                         />
                     </Box>

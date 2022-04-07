@@ -28,6 +28,10 @@ describe('EditMetadata Component', () => {
         },
     ];
 
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
+
     it('should render', () => {
         render(
             <MockThemeProvider>

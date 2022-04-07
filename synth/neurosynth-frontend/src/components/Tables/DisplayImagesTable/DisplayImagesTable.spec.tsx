@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DisplayImagesTableModel } from '.';
-import { Image, ReadOnly } from '../../../gen/api';
+import { ImageApiResponse } from '../../../utils/api';
 import DisplayImagesTable from './DisplayImagesTable';
 
 describe('DisplayImagesTable Component', () => {
@@ -68,6 +68,10 @@ describe('DisplayImagesTable Component', () => {
         ],
     };
 
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
+
     it('should render', () => {
         const mockData: DisplayImagesTableModel = {
             onSelectImage: jest.fn(),
@@ -107,7 +111,7 @@ describe('DisplayImagesTable Component', () => {
 
         userEvent.click(rows[1]);
 
-        expect(mockData.onSelectImage).toBeCalledWith((mockData.images as (Image & ReadOnly)[])[0]);
+        expect(mockData.onSelectImage).toBeCalledWith((mockData.images as ImageApiResponse[])[0]);
 
         firstDataRowStyle = getComputedStyle(rows[1]);
         secondDataRowStyle = getComputedStyle(rows[3]);

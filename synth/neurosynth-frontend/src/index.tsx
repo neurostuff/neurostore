@@ -6,7 +6,7 @@ import reportWebVitals from './reportWebVitals';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Auth0Provider } from '@auth0/auth0-react';
 import { grey } from '@mui/material/colors';
-import { SxProps, Theme } from '@mui/system';
+import { SystemStyleObject } from '@mui/system';
 import { BaseEditor, NumericEditor, registerEditor, TextEditor } from 'handsontable/editors';
 import {
     baseRenderer,
@@ -32,9 +32,7 @@ import {
     registerPlugin,
 } from 'handsontable/plugins';
 
-export interface Style {
-    [key: string]: SxProps<Theme>;
-}
+export type Style = Record<string, SystemStyleObject>;
 
 declare module '@mui/material/styles/createPalette' {
     interface Palette {

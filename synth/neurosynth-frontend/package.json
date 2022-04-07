@@ -4,13 +4,14 @@
     "private": true,
     "dependencies": {
         "@auth0/auth0-react": "^1.6.0",
-        "@emotion/react": "^11.4.1",
-        "@emotion/styled": "^11.3.0",
+        "@emotion/react": "^11.8.2",
+        "@emotion/styled": "^11.8.1",
         "@handsontable/react": "^11.0.1",
         "@mui/icons-material": "^5.0.1",
-        "@mui/material": "^5.0.1",
-        "@mui/styles": "^5.0.1",
-        "@mui/system": "^5.0.3",
+        "@mui/material": "^5.5.1",
+        "@mui/styles": "^5.5.1",
+        "@mui/system": "^5.5.1",
+        "@mui/x-data-grid": "^5.6.1",
         "@types/jest": "^26.0.24",
         "@types/node": "^12.20.15",
         "@types/react": "^17.0.13",
@@ -30,8 +31,6 @@
         "start:staging": "env-cmd -f .env.staging react-scripts start",
         "build:dev": "env-cmd -f .env.dev react-scripts build",
         "build:staging": "env-cmd -f .env.staging react-scripts build",
-        "update-api-windows": "docker run --rm -v \"%cd%:/local\" openapitools/openapi-generator-cli generate -i https://raw.githubusercontent.com/neurostuff/neurostore-spec/main/neurostore-openapi.yml -g typescript-axios -o /local/src/gen/api",
-        "update-api-mac": "docker run --rm -v \"${PWD}:/local\" openapitools/openapi-generator-cli generate -i https://raw.githubusercontent.com/neurostuff/neurostore-spec/main/neurostore-openapi.yml -g typescript-axios -o /local/src/gen/api",
         "test": "react-scripts test",
         "test-with-coverage": "npm run test -- --coverage --watchAll=false",
         "cy:e2e-headless": "cypress run",
@@ -50,11 +49,14 @@
             "last 1 safari version"
         ]
     },
+    "//jestComments": {
+        "//resetMocks": "we need to set this flag because of this: https://github.com/facebook/create-react-app/issues/9935"
+    },
     "jest": {
-        "resetMocks": false,
         "moduleNameMapper": {
             "\\.(css|less)$": "<rootDir>/src/testing/stylemock.js"
-        }
+        },
+        "resetMocks": false
     },
     "devDependencies": {
         "@testing-library/dom": "^8.3.0",

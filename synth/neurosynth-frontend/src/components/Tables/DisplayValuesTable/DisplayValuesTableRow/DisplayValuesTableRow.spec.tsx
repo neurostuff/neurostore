@@ -4,7 +4,7 @@ import { MockThemeProvider } from '../../../../testing/helpers';
 import DisplayValuesTableRow from './DisplayValuesTableRow';
 
 describe('DisplayMetadataTableRow Component', () => {
-    let mockOnSelectRow: any = jest.fn();
+    let mockOnSelectRow = jest.fn();
 
     const testColValues = [
         {
@@ -67,6 +67,10 @@ describe('DisplayMetadataTableRow Component', () => {
 
     beforeEach(() => {
         mockOnSelectRow = jest.fn();
+    });
+
+    afterAll(() => {
+        jest.clearAllMocks();
     });
 
     it('should render', () => {

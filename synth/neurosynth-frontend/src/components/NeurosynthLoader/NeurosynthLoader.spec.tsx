@@ -2,6 +2,9 @@ import { render, screen } from '@testing-library/react';
 import { NeurosynthLoader } from '..';
 
 describe('Neurosynth Loader', () => {
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
     it('should render', () => {
         render(<NeurosynthLoader loaded={false} loadingText="test-loading-text" />);
         const loadingText = screen.getByText('test-loading-text');

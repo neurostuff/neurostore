@@ -11,6 +11,15 @@ const EditAnalysisStyles: Style = {
             color: 'secondary.main',
         },
     },
+    analysisButton: {
+        padding: '8px',
+        width: '200px',
+    },
+    unsavedChanges: {
+        backgroundColor: '#ffd892',
+        borderTopLeftRadius: '5px',
+        borderTopRightRadius: '5px',
+    },
 };
 
 export default EditAnalysisStyles;

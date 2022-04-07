@@ -11,7 +11,7 @@ import API, { StudysetsApiResponse } from '../../../utils/api';
 const UserStudysetsPage: React.FC = (props) => {
     const { user, getAccessTokenSilently } = useAuth0();
     const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
-    const { showSnackbar, handleToken } = useContext(GlobalContext);
+    const { showSnackbar } = useContext(GlobalContext);
     const [createStudysetDialogIsOpen, setCreateStudysetDialogIsOpen] = useState(false);
     const isMountedRef = useIsMounted();
 
@@ -36,6 +36,7 @@ const UserStudysetsPage: React.FC = (props) => {
                     if (isMountedRef.current && res?.data?.results) setStudysets(res.data.results);
                 })
                 .catch((err) => {
+                    setStudysets([]);
                     console.error(err);
                 });
         };
@@ -46,7 +47,7 @@ const UserStudysetsPage: React.FC = (props) => {
     const handleCreateStudyset = async (name: string, description: string) => {
         try {
             const token = await getAccessTokenSilently();
-            handleToken(token);
+            API.UpdateServicesWithToken(token);
         } catch (exception) {
             showSnackbar('there was an error', SnackbarType.ERROR);
             console.error(exception);

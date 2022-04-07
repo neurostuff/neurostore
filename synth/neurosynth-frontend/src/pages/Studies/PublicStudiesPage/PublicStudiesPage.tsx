@@ -3,8 +3,8 @@ import { TablePagination, Typography, Pagination, Box } from '@mui/material';
 import API, { StudyApiResponse } from '../../../utils/api';
 import PublicStudiesPageStyles from './PublicStudiesPage.styles';
 import { StudiesTable, SearchBar, NeurosynthLoader } from '../../../components';
-import { Metadata } from '../../../gen/api';
 import useIsMounted from '../../../hooks/useIsMounted';
+import { Metadata } from '../../../neurostore-typescript-sdk';
 
 export enum Source {
     NEUROSTORE = 'neurostore',
@@ -127,6 +127,7 @@ const PublicStudiesPage = () => {
                     }
                 })
                 .catch((err) => {
+                    setStudies([]);
                     console.error(err);
                 });
         };

@@ -23,7 +23,6 @@ import {
     NeurosynthLoader,
 } from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
-import { Analysis, ReadOnly } from '../../../gen/api';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API, { StudyApiResponse, AnalysisApiResponse } from '../../../utils/api';
 import StudyPageStyles from './StudyPage.styles';
@@ -32,7 +31,7 @@ const StudyPage: React.FC = (props) => {
     const [study, setStudy] = useState<StudyApiResponse>();
     const [selectedAnalysis, setSelectedAnalysis] = useState<{
         analysisIndex: number;
-        analysis: (Analysis & ReadOnly) | undefined;
+        analysis: AnalysisApiResponse | undefined;
     }>({
         analysisIndex: 0,
         analysis: undefined,
@@ -48,7 +47,7 @@ const StudyPage: React.FC = (props) => {
     const handleCloneStudy = async () => {
         try {
             const token = await getAccessTokenSilently();
-            context?.handleToken(token);
+            API.UpdateServicesWithToken(token);
         } catch (exception) {
             context.showSnackbar('There was an error', SnackbarType.ERROR);
             console.error(exception);
@@ -71,7 +70,7 @@ const StudyPage: React.FC = (props) => {
     const handleSelectAnalysis = (event: SyntheticEvent, newVal: number) => {
         setSelectedAnalysis({
             analysisIndex: newVal,
-            analysis: (study?.analyses as (Analysis & ReadOnly)[])[newVal],
+            analysis: (study?.analyses as AnalysisApiResponse[])[newVal],
         });
     };
 
@@ -161,7 +160,7 @@ const StudyPage: React.FC = (props) => {
 
     return (
         <NeurosynthLoader loaded={!!study}>
-            <Box sx={{ ...StudyPageStyles.buttonContainer, ...StudyPageStyles.spaceBelow }}>
+            <Box sx={[StudyPageStyles.buttonContainer, StudyPageStyles.spaceBelow]}>
                 <Tooltip
                     placement="top"
                     title={
@@ -232,11 +231,13 @@ const StudyPage: React.FC = (props) => {
             <Box>
                 <Typography
                     variant="h6"
-                    sx={{
-                        marginLeft: '15px',
-                        fontWeight: 'bold',
-                        ...StudyPageStyles.spaceBelow,
-                    }}
+                    sx={[
+                        {
+                            marginLeft: '15px',
+                            fontWeight: 'bold',
+                        },
+                        StudyPageStyles.spaceBelow,
+                    ]}
                 >
                     Analyses
                 </Typography>

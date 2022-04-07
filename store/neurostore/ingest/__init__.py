@@ -21,6 +21,7 @@ from neurostore.models import (
     Point,
     Study,
     Studyset,
+    Entity,
 )
 from neurostore.models.data import StudysetStudy, _check_type
 
@@ -91,6 +92,7 @@ def ingest_neurovault(verbose=False, limit=20):
                 data=img,
                 filename=op.basename(img["file"]),
                 add_date=parse_date(img["add_date"]),
+                entities=[Entity(level="group", label=analysis.name, analysis=analysis)]
             )
             images.append(image)
 
@@ -118,7 +120,6 @@ def ingest_neurovault(verbose=False, limit=20):
 
 
 def ingest_neurosynth(max_rows=None):
-
     coords_file = (
         Path(__file__).parent.parent / "data" / "data-neurosynth_version-7_coordinates.tsv.gz"
     )
@@ -194,6 +195,7 @@ def ingest_neurosynth(max_rows=None):
                         space=metadata_row.space,
                         kind="unknown",
                         analysis=a,
+                        entities=[Entity(label=a.name, level="group", analysis=a)],
                     )
                     points.append(point)
             to_commit.extend(points)
@@ -284,6 +286,7 @@ def ingest_neuroquery(max_rows=None):
                     space="MNI",
                     kind="unknown",
                     analysis=a,
+                    entities=[Entity(label=a.name, level="group", analysis=a)],
                 )
                 points.append(point)
 

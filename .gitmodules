@@ -5,3 +5,9 @@
 [submodule "synth/neurosynth/openapi"]
 	path = synth/neurosynth/openapi
 	url = https://github.com/neurostuff/neurostore-spec
+[submodule "synth/neurosynth-frontend/src/neurostore-typescript-sdk"]
+	path = synth/neurosynth-frontend/src/neurostore-typescript-sdk
+	url = https://github.com/neurostuff/neurostore-typescript-sdk.git
+[submodule "synth/neurosynth-frontend/src/neurosynth-compose-typescript-sdk"]
+	path = synth/neurosynth-frontend/src/neurosynth-compose-typescript-sdk
+	url = https://github.com/neurostuff/neurosynth-compose-typescript-sdk.git

@@ -89,7 +89,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                     allowNoneType={allowNoneOption}
                 />
             </Box>
-            <Box sx={{ ...EditMetadataRowStyles.tableCell, ...EditMetadataRowStyles.key }}>
+            <Box sx={[EditMetadataRowStyles.tableCell, EditMetadataRowStyles.key]}>
                 <TextField
                     sx={EditMetadataRowStyles.addMetadataTextfield}
                     onChange={handleMetadataKeyChange}
@@ -103,7 +103,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                 {/* This component is added so that the error message doesn't mess up the row alignment */}
                 {isValid && <Box sx={{ height: '22px' }}></Box>}
             </Box>
-            <Box sx={{ ...EditMetadataRowStyles.tableCell, width: '100%' }}>
+            <Box sx={[EditMetadataRowStyles.tableCell, { width: '100%' }]}>
                 <EditMetadataValue
                     placeholderText={valuePlaceholderText}
                     onEditMetadataValue={handleMetadataValueChange}

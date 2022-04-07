@@ -6,6 +6,10 @@ import ToggleType from './ToggleType';
 describe('ToggleType Component', () => {
     const mockOnToggle = jest.fn();
 
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
+
     it('should render a string', () => {
         render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} />);
         const stringOption = screen.getByText('STRING');

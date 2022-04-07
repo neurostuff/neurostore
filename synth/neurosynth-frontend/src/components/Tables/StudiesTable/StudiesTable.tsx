@@ -12,7 +12,6 @@ import { Box } from '@mui/system';
 import React, { useState, useEffect, useContext } from 'react';
 import { useHistory } from 'react-router-dom';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
-import { ReadOnly, Study } from '../../../gen/api';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API, { StudysetsApiResponse, StudyApiResponse } from '../../../utils/api';
 import StudysetsPopupMenu from '../../StudysetsPopupMenu/StudysetsPopupMenu';
@@ -27,10 +26,10 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     const { isAuthenticated, user, getAccessTokenSilently } = useAuth0();
     const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
     const history = useHistory();
-    const { handleToken, showSnackbar } = useContext(GlobalContext);
+    const { showSnackbar } = useContext(GlobalContext);
     const { current } = useIsMounted();
 
-    const handleSelectTableRow = (row: Study & ReadOnly) => {
+    const handleSelectTableRow = (row: StudyApiResponse) => {
         history.push(`/studies/${row.id}`);
     };
 
@@ -71,7 +70,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     const handleStudysetCreated = async (name: string, description: string) => {
         try {
             const token = await getAccessTokenSilently();
-            handleToken(token);
+            API.UpdateServicesWithToken(token);
         } catch (exception) {
             showSnackbar('there was an error', SnackbarType.ERROR);
             console.error(exception);
@@ -104,7 +103,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     ) => {
         try {
             const token = await getAccessTokenSilently();
-            handleToken(token);
+            API.UpdateServicesWithToken(token);
         } catch (exception) {
             showSnackbar('there was an error', SnackbarType.ERROR);
             console.error(exception);
@@ -203,7 +202,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                 </TableBody>
             </Table>
             {props.studies.length === 0 && (
-                <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No data</Box>
+                <Box sx={{ color: 'warning.dark', padding: '0.5rem 1rem' }}>No data</Box>
             )}
         </TableContainer>
     );

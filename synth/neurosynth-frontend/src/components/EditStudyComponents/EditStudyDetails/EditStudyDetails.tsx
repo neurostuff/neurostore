@@ -10,13 +10,13 @@ import {
     Box,
 } from '@mui/material';
 import { AxiosError } from 'axios';
-import React, { ChangeEvent, useContext, useEffect, useState } from 'react';
+import React, { ChangeEvent, useContext, useState } from 'react';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API from '../../../utils/api';
 import EditStudyDetailsStyles from './EditStudyDetails.styles';
 
-export interface IEditStudyDetailsProperties {
+export interface IEditStudyDetails {
     studyId: string;
     name: string;
     authors: string;
@@ -25,9 +25,11 @@ export interface IEditStudyDetailsProperties {
     description: string;
 }
 
-export interface IEditStudyDetails extends IEditStudyDetailsProperties {
-    onEditStudyDetails: (update: { [key: string]: string }) => void;
-}
+const textFieldInputProps = {
+    style: {
+        fontSize: 15,
+    },
+};
 
 const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
     const { studyId, name, authors, publication, doi, description } = props;
@@ -35,7 +37,9 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
     const context = useContext(GlobalContext);
     const [updatedEnabled, setUpdateEnabled] = useState(false);
     const isMountedRef = useIsMounted();
-    const [originalDetails, setOriginalDetails] = useState<IEditStudyDetailsProperties>({
+
+    // save original details for revert behavior
+    const [originalDetails, setOriginalDetails] = useState<IEditStudyDetails>({
         studyId: studyId,
         name: name,
         authors: authors,
@@ -44,61 +48,44 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
         description: description,
     });
 
-    const textFieldInputProps = {
-        style: {
-            fontSize: 15,
-        },
-    };
-
-    // set original details without updating in the future
-    useEffect(() => {
-        setOriginalDetails({
-            studyId: studyId,
-            name: name,
-            authors: authors,
-            publication: publication,
-            doi: doi,
-            description: description,
-        });
-        // we want to set the original details so this can only run once
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    const [details, setDetails] = useState<IEditStudyDetails>({
+        studyId: studyId,
+        name: name,
+        authors: authors,
+        publication: publication,
+        doi: doi,
+        description: description,
+    });
 
     const handleOnEdit = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-        props.onEditStudyDetails({
+        setDetails((prevState) => ({
+            ...prevState,
             [event.target.name]: event.target.value,
-        });
+        }));
         setUpdateEnabled(true);
     };
 
-    const handleOnUpdate = async (event: React.MouseEvent) => {
+    const handleOnSave = async (_event: React.MouseEvent) => {
         try {
             const token = await getAccessTokenSilently();
-            context.handleToken(token);
+            API.UpdateServicesWithToken(token);
         } catch (exception) {
             context.showSnackbar('there was an error', SnackbarType.ERROR);
             console.error(exception);
         }
 
         API.Services.StudiesService.studiesIdPut(props.studyId, {
-            name: props.name,
-            description: props.description,
-            authors: props.authors,
-            publication: props.publication,
-            doi: props.doi,
+            name: details.name,
+            description: details.description,
+            authors: details.authors,
+            publication: details.publication,
+            doi: details.doi,
         })
-            .then((res) => {
+            .then((_res) => {
                 context.showSnackbar('study successfully updated', SnackbarType.SUCCESS);
                 if (isMountedRef.current) {
                     setUpdateEnabled(false);
-                    setOriginalDetails({
-                        studyId: props.studyId,
-                        name: props.name,
-                        description: props.description,
-                        authors: props.authors,
-                        publication: props.publication,
-                        doi: props.doi,
-                    });
+                    setOriginalDetails({ ...details });
                 }
             })
             .catch((err: Error | AxiosError) => {
@@ -108,7 +95,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
     };
 
     const handleRevertChanges = (event: React.MouseEvent) => {
-        props.onEditStudyDetails({ ...originalDetails });
+        setDetails({ ...originalDetails });
         setUpdateEnabled(false);
     };
 
@@ -138,7 +125,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
                         label="Edit Title"
                         variant="outlined"
                         sx={EditStudyDetailsStyles.textfield}
-                        value={props.name}
+                        value={details.name}
                         InputProps={textFieldInputProps}
                         name="name"
                         onChange={handleOnEdit}
@@ -147,7 +134,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
                         label="Edit Authors"
                         sx={EditStudyDetailsStyles.textfield}
                         variant="outlined"
-                        value={props.authors}
+                        value={details.authors}
                         InputProps={textFieldInputProps}
                         name="authors"
                         onChange={handleOnEdit}
@@ -156,7 +143,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
                         label="Edit Journal"
                         variant="outlined"
                         sx={EditStudyDetailsStyles.textfield}
-                        value={props.publication}
+                        value={details.publication}
                         InputProps={textFieldInputProps}
                         name="publication"
                         onChange={handleOnEdit}
@@ -165,7 +152,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
                         label="Edit DOI"
                         variant="outlined"
                         sx={EditStudyDetailsStyles.textfield}
-                        value={props.doi}
+                        value={details.doi}
                         InputProps={textFieldInputProps}
                         name="doi"
                         onChange={handleOnEdit}
@@ -175,19 +162,19 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
                         variant="outlined"
                         sx={EditStudyDetailsStyles.textfield}
                         multiline
-                        value={props.description}
+                        value={details.description}
                         InputProps={textFieldInputProps}
                         name="description"
                         onChange={handleOnEdit}
                     />
                     <Button
                         disabled={!updatedEnabled}
-                        onClick={handleOnUpdate}
+                        onClick={handleOnSave}
                         color="success"
                         variant="contained"
-                        sx={{ ...EditStudyDetailsStyles.button, marginRight: '15px' }}
+                        sx={[EditStudyDetailsStyles.button, { marginRight: '15px' }]}
                     >
-                        Update
+                        Save
                     </Button>
                     <Button
                         disabled={!updatedEnabled}
@@ -196,7 +183,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
                         variant="outlined"
                         sx={EditStudyDetailsStyles.button}
                     >
-                        Revert Changes
+                        Cancel
                     </Button>
                 </AccordionDetails>
             </Accordion>
