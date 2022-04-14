@@ -18,7 +18,7 @@ import StudysetsPopupMenu from '../../StudysetsPopupMenu/StudysetsPopupMenu';
 import StudiesTableStyles from './StudiesTable.styles';
 
 interface StudiesTableModel {
-    studies: StudyApiResponse[];
+    studies: StudyApiResponse[] | undefined;
     showStudyOptions?: boolean;
 }
 
@@ -155,7 +155,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {props.studies.map((row, index) => (
+                    {(props.studies || []).map((row, index) => (
                         <TableRow
                             sx={StudiesTableStyles.tableRow}
                             key={index}
@@ -201,7 +201,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                     ))}
                 </TableBody>
             </Table>
-            {props.studies.length === 0 && (
+            {(props.studies || []).length === 0 && (
                 <Box sx={{ color: 'warning.dark', padding: '0.5rem 1rem' }}>No data</Box>
             )}
         </TableContainer>

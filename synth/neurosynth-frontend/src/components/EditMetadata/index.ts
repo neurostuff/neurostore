@@ -13,6 +13,7 @@ export interface IAddMetadataRowModel {
     allowNoneOption?: boolean;
     errorMessage?: string;
     keyPlaceholderText?: string;
+    showToggleType?: boolean;
     valuePlaceholderText?: string;
     onAddMetadataRow: (row: IMetadataRowModel) => boolean;
 }

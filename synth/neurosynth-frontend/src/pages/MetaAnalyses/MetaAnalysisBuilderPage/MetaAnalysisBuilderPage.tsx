@@ -1,14 +1,18 @@
 import { Box, Button, Step, StepLabel, Stepper, Autocomplete, TextField } from '@mui/material';
 import { useEffect, useState } from 'react';
+import MetaAnalysisAlgorithm from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisAlgorithm/MetaAnalysisAlgorithm';
+import MetaAnalysisData from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisData/MetaAnalysisData';
+import MetaAnalysisFinalize from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/MetaAnalysisFinalize';
+import { ENavigationButton } from '../../../components/NavigationButtons/NavigationButtons';
 import useIsMounted from '../../../hooks/useIsMounted';
-import API from '../../../utils/api';
+import API, { StudysetsApiResponse } from '../../../utils/api';
 
 export enum EAlgorithmType {
     CBMA = 'CBMA',
     IBMA = 'IBMA',
 }
 
-const MetaAnalyticAlgorithms = [
+export const MetaAnalyticAlgorithms = [
     { type: EAlgorithmType.CBMA, label: 'ALE', id: 'ALE' },
     { type: EAlgorithmType.CBMA, label: 'ALESubtraction', id: 'ALESubtraction' },
     { type: EAlgorithmType.CBMA, label: 'SCALE', id: 'SCALE' },
@@ -33,7 +37,7 @@ const MetaAnalyticAlgorithms = [
 
 const MetaAnalysisBuilderPage: React.FC = (props) => {
     const [activeStep, setActiveStep] = useState(0);
-    const [studysets, setStudysets] = useState<{ label: string; id: string }[] | undefined>();
+    const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
     const [metaAnalysisComponents, setMetaAnalysisComponents] = useState<{
         studysetId: string | undefined;
         annotationId: string | undefined;
@@ -64,12 +68,7 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
             )
                 .then((res) => {
                     if (isMountedRef.current) {
-                        const setOptions = (res.data.results || []).map((set) => ({
-                            id: set.id || '',
-                            label: set?.name || '',
-                        }));
-
-                        setStudysets(setOptions);
+                        setStudysets(res.data.results);
                     }
                 })
                 .catch((err) => {
@@ -94,7 +93,7 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
                             },
                         }}
                     >
-                        Studyset
+                        Data
                     </StepLabel>
                 </Step>
                 <Step>
@@ -105,7 +104,7 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
                             },
                         }}
                     >
-                        Specification
+                        Algorithm
                     </StepLabel>
                 </Step>
                 <Step>
@@ -116,48 +115,35 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
                             },
                         }}
                     >
-                        Some third step?
+                        Finalize
                     </StepLabel>
                 </Step>
             </Stepper>
 
             {activeStep === 0 && (
-                <>
-                    <Box sx={{ marginBottom: '1rem' }}>
-                        Select the <b>studyset</b> that you would like to use for your meta analysis
-                    </Box>
-
-                    <Autocomplete
-                        sx={{ width: '50%', marginBottom: '1rem' }}
-                        value={studysets?.find(
-                            (set) => set.id === metaAnalysisComponents?.studysetId
-                        )}
-                        onChange={(_event, value) =>
-                            setMetaAnalysisComponents((prevState) => ({
-                                ...prevState,
-                                studysetId: value?.id || undefined,
-                            }))
-                        }
-                        renderInput={(params) => <TextField {...params} label="studyset" />}
-                        options={studysets || []}
-                    />
-
-                    <Box sx={{ marginBottom: '1rem' }}>
-                        Select the <b>annotation</b> that you would like to use for your meta
-                        analysis
-                    </Box>
-
-                    <Autocomplete
-                        sx={{ width: '50%' }}
-                        renderInput={(params) => <TextField {...params} label="annotation" />}
-                        options={[
-                            { label: 'an annotation', id: '1' },
-                            { label: 'another annotation', id: '2' },
-                        ]}
-                    />
-                </>
+                <MetaAnalysisData
+                    onNext={(button) => {
+                        setActiveStep((prev) =>
+                            button === ENavigationButton.NEXT ? ++prev : --prev
+                        );
+                    }}
+                    studysets={studysets || []}
+                />
             )}
+
             {activeStep === 1 && (
+                <MetaAnalysisAlgorithm
+                    onNext={(button) => {
+                        setActiveStep((prev) =>
+                            button === ENavigationButton.NEXT ? ++prev : --prev
+                        );
+                    }}
+                />
+            )}
+
+            {activeStep === 2 && <MetaAnalysisFinalize />}
+
+            {/* {activeStep === 1 && (
                 <>
                     <Box sx={{ marginBottom: '1rem' }}>
                         Specify the <b>column</b> you would like to use to include/exclude analyses
@@ -184,28 +170,7 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
                         options={MetaAnalyticAlgorithms}
                     />
                 </>
-            )}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
-                <Button
-                    disabled={activeStep === 0}
-                    variant="outlined"
-                    onClick={() =>
-                        setActiveStep((prevStep) => (prevStep >= 1 ? prevStep - 1 : prevStep))
-                    }
-                    sx={{ fontSize: '1rem' }}
-                >
-                    Back
-                </Button>
-                <Button
-                    variant={activeStep === 2 ? 'contained' : 'outlined'}
-                    onClick={() =>
-                        setActiveStep((prevStep) => (prevStep <= 1 ? prevStep + 1 : prevStep))
-                    }
-                    sx={{ fontSize: '1rem' }}
-                >
-                    {activeStep === 2 ? 'RUN META-META ANALYSIS' : 'NEXT'}
-                </Button>
-            </Box>
+            )} */}
         </>
     );
 };

@@ -21,7 +21,7 @@ const EditMetadataRowStyles: Style = {
         fontSize: '12px',
     },
     key: {
-        minWidth: '300px',
+        minWidth: '240px',
     },
     updateButton: {
         width: '60px',

@@ -12,14 +12,14 @@ import useIsMounted from '../../../../../../hooks/useIsMounted';
 import API, { ConditionApiResponse } from '../../../../../../utils/api';
 import { CreateDetailsDialog } from '../../../../../';
 
-interface ConditionOption {
+interface AutoSelectOption {
     id: string;
     label: string;
     description: string;
     addOptionActualLabel?: string | null;
 }
 
-const filterOptions = createFilterOptions<ConditionOption>({
+const filterOptions = createFilterOptions<AutoSelectOption>({
     ignoreAccents: true,
     ignoreCase: true,
     matchFrom: 'any',
@@ -33,7 +33,7 @@ const ConditionSelector: React.FC<{
     const isMountedRef = useIsMounted();
     const { getAccessTokenSilently } = useAuth0();
 
-    const [selectedValue, setSelectedValue] = useState<ConditionOption | null>(null);
+    const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(null);
     const [allConditions, setAllConditions] = useState<ConditionApiResponse[]>([]);
     const [dialog, setDialog] = useState({
         isOpen: false,
@@ -91,7 +91,7 @@ const ConditionSelector: React.FC<{
 
     const handleOnChange = (
         _event: SyntheticEvent,
-        newValue: ConditionOption | null,
+        newValue: AutoSelectOption | null,
         _reason?: 'createOption' | 'selectOption' | 'removeOption' | 'blur' | 'clear'
     ) => {
         if (newValue) {
@@ -110,7 +110,7 @@ const ConditionSelector: React.FC<{
         }
     };
 
-    const conditionOptions: ConditionOption[] = allConditions.map((condition) => ({
+    const conditionOptions: AutoSelectOption[] = allConditions.map((condition) => ({
         id: condition.id || '',
         label: condition.name || '',
         description: condition.description || '',
