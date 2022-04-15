@@ -12,6 +12,8 @@ from marshmallow.decorators import post_load
 from pyld import jsonld
 import pandas as pd
 
+from ..models.data import Metadata, AnnotationMetadata, StudyMetadata, AnalysisMetadata
+
 
 class StringOrNested(fields.Nested):
     """Custom Field that serializes a nested object as either a string
@@ -272,9 +274,7 @@ class AnnotationSchema(BaseDataSchema):
     )
 
     note_keys = fields.Dict()
-    metadata = fields.Dict(attribute="metadata_", dump_only=True)
-    # deserialization
-    metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
+    metadata = fields.Nested(AnnotationMetadata, many=True)
 
     class Meta:
         additional = ("name", "description")
@@ -287,6 +287,10 @@ class AnnotationSchema(BaseDataSchema):
                 note['studyset'] = data['studyset']
 
         return data
+
+    @pre_load
+    def find_metadata(self, data, **kwargs):
+        if data.get('id')
 
     @pre_dump
     def export_annotations(self, data, **kwargs):
@@ -320,6 +324,78 @@ class AnnotationSchema(BaseDataSchema):
         if isinstance(data.get('studyset_id'), str):
             data['studyset'] = {'id': data.pop('studyset_id')}
         return data
+
+
+class Metadata(BaseDataSchema):
+    name = fields.String()
+    description = fields.String()
+    dtype = fields.String()
+
+
+class AnalysisMetadata(BaseDataSchema):
+    analysis_id = fields.String(data_key='analysis', load_only=True)
+    metadata = fields.Nested(Metadata, load_only=True)
+    value = fields.String(load_only=True)
+
+    @pre_dump
+    def make_dict(self, data, **kwargs):
+        dtype = data.metadata.dtype
+        if dtype == "number":
+            value = float(data.value)
+            field = fields.Float()
+        elif dtype == "boolean":
+            value = bool(data.value)
+            field = fields.Boolean()
+        else:
+            value = value
+            field = fields.String()
+
+        self.dump_fields.update({data.metadata.name: field})
+        return {data.metadata.name: value}
+
+
+class AnnotationMetadata(BaseDataSchema):
+    annotation_id = fields.String(data_key='annotation', load_only=True)
+    metadata = fields.Nested(Metadata, load_only=True)
+    value = fields.String(load_only=True)
+
+    @pre_dump
+    def make_dict(self, data, **kwargs):
+        dtype = data.metadata.dtype
+        if dtype == "number":
+            value = float(data.value)
+            field = fields.Float()
+        elif dtype == "boolean":
+            value = bool(data.value)
+            field = fields.Boolean()
+        else:
+            value = value
+            field = fields.String()
+
+        self.dump_fields.update({data.metadata.name: field})
+        return {data.metadata.name: value}
+
+
+class StudyMetadata(BaseDataSchema):
+    study_id = fields.String(data_key='annotation', load_only=True)
+    metadata = fields.Nested(Metadata, load_only=True)
+    value = fields.String(load_only=True)
+
+    @pre_dump
+    def make_dict(self, data, **kwargs):
+        dtype = data.metadata.dtype
+        if dtype == "number":
+            value = float(data.value)
+            field = fields.Float()
+        elif dtype == "boolean":
+            value = bool(data.value)
+            field = fields.Boolean()
+        else:
+            value = value
+            field = fields.String()
+
+        self.dump_fields.update({data.metadata.name: field})
+        return {data.metadata.name: value}
 
 
 class JSONLDBaseSchema(BaseSchema):

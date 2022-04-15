@@ -279,6 +279,38 @@ class PointValue(BaseMixin, db.Model):
     user = relationship("User", backref=backref("point_values"))
 
 
+class Metadata(BaseMixin, db.Model):
+    __tablename__ = "metadata"
+
+    name = db.Column(db.String)
+    description = db.Column(db.String)
+    dtype = db.Column(db.String)
+
+
+class StudyMetadata(db.Model):
+    __tablename__ = "study_metadata"
+
+    study = db.Column(db.Text, db.ForeignKey("studies.id", ondelete='CASCADE'))
+    metadata_ = db.Column(db.Text, db.ForeignKey("metadata.id", ondelete='CASCADE'))
+    value = db.Column(db.String)
+
+
+class AnalysisMetadata(db.Model):
+    __tablename__ = "analysis_metadata"
+
+    analysis = db.Column(db.Text, db.ForeignKey("analysis.id", ondelete='CASCADE'))
+    metadata_ = db.Column(db.Text, db.ForeignKey("metadata.id", ondelete='CASCADE'))
+    value = db.Column(db.String)
+
+
+class AnnotationMetadata(db.Model):
+    __tablename__ = "analysis_metadata"
+
+    annotation = db.Column(db.Text, db.ForeignKey("annotation.id", ondelete='CASCADE'))
+    metadata_ = db.Column(db.Text, db.ForeignKey("metadata.id", ondelete='CASCADE'))
+    value = db.Column(db.String)
+
+
 def check_note_columns(mapper, connection, annotation):
     """ensure note_keys and notes in annotationanalyses are consistent"""
 
