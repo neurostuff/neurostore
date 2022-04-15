@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import { Box, Divider } from '@mui/material';
 import DynamicFormKwargInput from './DynamicFormKwargInput';
 import DynamicFormNumericInput from './DynamicFormNumericInput';
 import DynamicFormSelectInput from './DynamicFormSelectInput';
@@ -31,19 +31,30 @@ const DynamicForm: React.FC<IDynamicForm> = (props) => {
         })
     );
 
-    const getFormComponentBySpec = (spec: IParameter) => {};
+    const getFormComponentBySpec = (spec: IParameter): React.FC<IDynamicFormInput> => {
+        switch (spec.type) {
+            case 'str':
+                return DynamicFormStringInput;
+            case 'int':
+            case 'float':
+                return DynamicFormNumericInput;
+            case null:
+                return DynamicFormKwargInput;
+            default:
+                return DynamicFormSelectInput;
+        }
+    };
 
     return (
         <Box>
-            <DynamicFormKwargInput {...parametersList[0]} />
-            <DynamicFormNumericInput {...parametersList[1]} />
-            <DynamicFormSelectInput {...parametersList[2]} />
-            <DynamicFormStringInput {...parametersList[2]} />
-            {/* {
-            specificationList.map(spec => (
-
-            ))
-        } */}
+            {parametersList.map((parameter) => {
+                const Component = getFormComponentBySpec(parameter.value);
+                return (
+                    <Box key={parameter.parameterName}>
+                        <Component {...parameter} />
+                    </Box>
+                );
+            })}
         </Box>
     );
 };

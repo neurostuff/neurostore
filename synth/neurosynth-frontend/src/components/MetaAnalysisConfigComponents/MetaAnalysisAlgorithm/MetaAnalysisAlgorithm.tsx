@@ -38,7 +38,7 @@ const MetaAnalysisAlgorithm: React.FC<{ onNext: (button: ENavigationButton) => v
                         <ListItemText primary={option.label} secondary={option.description} />
                     </ListItem>
                 )}
-                sx={[{ marginBottom: '2rem' }, MetaAnalysisDataStyles.selectInput]}
+                sx={[{ marginBottom: '2.5rem' }, MetaAnalysisDataStyles.selectInput]}
                 renderInput={(params) => <TextField {...params} label="algorithm" />}
                 value={selectedAlgorithm || null}
                 getOptionLabel={(option) => option?.label || ''}

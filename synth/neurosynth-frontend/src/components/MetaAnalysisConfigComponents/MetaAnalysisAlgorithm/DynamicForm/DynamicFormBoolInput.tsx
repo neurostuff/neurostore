@@ -1,21 +1,17 @@
-import { Box, TextField, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { IDynamicFormInput } from './DynamicForm';
 
-const DynamicFormNumericInput: React.FC<IDynamicFormInput> = (props) => {
+const DynamicFormBoolInput: React.FC<IDynamicFormInput> = (props) => {
     return (
-        <Box sx={{ marginBottom: '2.5rem' }}>
+        <Box>
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                 {props.parameterName}
             </Typography>
             <Typography sx={{ marginBottom: '1rem' }} variant="subtitle2">
                 {props.value.description}
             </Typography>
-
-            <Box sx={{ width: '50%' }}>
-                <TextField label="number" sx={{ width: '100%' }} type="number" />
-            </Box>
         </Box>
     );
 };
 
-export default DynamicFormNumericInput;
+export default DynamicFormBoolInput;
