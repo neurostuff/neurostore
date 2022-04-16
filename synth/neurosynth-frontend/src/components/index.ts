@@ -21,6 +21,7 @@ import ConfirmationDialog from './Dialogs/ConfirmationDialog/ConfirmationDialog'
 import CreateDetailsDialog from './Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import NeurosynthSpreadsheet from './NeurosynthSpreadsheet/NeurosynthSpreadsheet';
 import NavigationButtons from './NavigationButtons/NavigationButtons';
+import NeurosynthAccordion from './NeurosynthAccordion/NeurosynthAccordion';
 
 // models
 export * from './EditMetadata';
@@ -49,4 +50,5 @@ export {
     CreateDetailsDialog,
     NeurosynthSpreadsheet,
     NavigationButtons,
+    NeurosynthAccordion,
 };

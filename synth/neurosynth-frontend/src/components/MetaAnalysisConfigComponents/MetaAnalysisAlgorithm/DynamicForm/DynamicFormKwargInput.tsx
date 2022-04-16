@@ -3,7 +3,9 @@ import { useState } from 'react';
 import { DisplayValuesTable, IDisplayValuesTableModel } from '../../..';
 import { IMetadataRowModel } from '../../../EditMetadata';
 import AddMetadataRow from '../../../EditMetadata/EditMetadataRow/AddMetadataRow';
+import MetaAnalysisAlgorithmStyles from '../MetaAnalysisAlgorithm.styles';
 import { IDynamicFormInput } from './DynamicForm';
+import DynamicFormBaseTitle from './DynamicFormBaseTitle';
 
 const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
     const [kwargList, setKwargList] = useState<{ key: string; value: string }[]>([]);
@@ -60,13 +62,19 @@ const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
     };
 
     return (
-        <Box sx={{ marginBottom: '2.5rem' }}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                {props.parameterName}
-            </Typography>
-            <Typography sx={{ marginBottom: '1rem' }} variant="subtitle2">
-                {props.value.description}
-            </Typography>
+        <Box
+            sx={[
+                MetaAnalysisAlgorithmStyles.input,
+                {
+                    borderRadius: '4px',
+                    backgroundColor: '#e9e9e9b8',
+                },
+            ]}
+        >
+            <DynamicFormBaseTitle
+                name={props.parameterName}
+                description={props.value.description}
+            />
 
             <Box
                 sx={{

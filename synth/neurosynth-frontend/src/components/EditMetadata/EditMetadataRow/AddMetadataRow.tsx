@@ -54,6 +54,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                     metadataKey: '',
                     metadataValue: getStartValFromType(currType),
                 });
+                setIsValid(true);
             } else {
                 setIsValid(false);
             }
@@ -94,6 +95,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
             )}
             <Box sx={[EditMetadataRowStyles.tableCell, EditMetadataRowStyles.key]}>
                 <TextField
+                    size="small"
                     sx={EditMetadataRowStyles.addMetadataTextfield}
                     onChange={handleMetadataKeyChange}
                     variant="outlined"

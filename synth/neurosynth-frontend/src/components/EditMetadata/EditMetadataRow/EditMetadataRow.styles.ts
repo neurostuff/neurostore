@@ -22,16 +22,15 @@ const EditMetadataRowStyles: Style = {
     },
     key: {
         minWidth: '240px',
+        // override tableCell as this input has an error message
+        verticalAlign: 'baseline !important',
     },
     updateButton: {
         width: '60px',
     },
     addMetadataTextfield: {
         width: '100%',
-        '& .MuiOutlinedInput-input': {
-            padding: '10px 14px !important',
-            fontSize: '12px !important',
-        },
+        height: '40px',
     },
 };
 

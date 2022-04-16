@@ -1,4 +1,4 @@
-import { Box, Button, Step, StepLabel, Stepper, Autocomplete, TextField } from '@mui/material';
+import { Button, Step, StepLabel, Stepper } from '@mui/material';
 import { useEffect, useState } from 'react';
 import MetaAnalysisAlgorithm from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisAlgorithm/MetaAnalysisAlgorithm';
 import MetaAnalysisData from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisData/MetaAnalysisData';
@@ -36,7 +36,7 @@ export const MetaAnalyticAlgorithms = [
 ];
 
 const MetaAnalysisBuilderPage: React.FC = (props) => {
-    const [activeStep, setActiveStep] = useState(0);
+    const [activeStep, setActiveStep] = useState(1);
     const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
     const [metaAnalysisComponents, setMetaAnalysisComponents] = useState<{
         studysetId: string | undefined;

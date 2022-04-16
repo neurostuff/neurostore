@@ -24,12 +24,18 @@ export interface IDynamicFormInput {
 const kwargString = '**kwargs';
 
 const DynamicForm: React.FC<IDynamicForm> = (props) => {
-    const parametersList: IDynamicFormInput[] = Object.keys(props.specification).map(
-        (parameter) => ({
-            parameterName: parameter,
-            value: props.specification[parameter],
-        })
-    );
+    const specs = Object.keys(props.specification).sort();
+
+    const kwargStringIndex = specs.findIndex((spec) => spec === kwargString);
+    if (kwargStringIndex >= 0) {
+        specs.splice(kwargStringIndex, 1);
+        specs.push(kwargString);
+    }
+
+    const parametersList: IDynamicFormInput[] = specs.map((parameter) => ({
+        parameterName: parameter,
+        value: props.specification[parameter],
+    }));
 
     const getFormComponentBySpec = (spec: IParameter): React.FC<IDynamicFormInput> => {
         switch (spec.type) {

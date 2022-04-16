@@ -44,6 +44,7 @@ const StudyPageStyles: Style = {
         flex: '1 0 0',
     },
     analysisTab: {
+        wordBreak: 'break-word',
         fontWeight: 'bold',
         fontSize: {
             xs: '0.8rem',

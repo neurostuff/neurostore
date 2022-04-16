@@ -8,6 +8,7 @@ import {
     TextExpansion,
     DisplayImagesTable,
     Visualizer,
+    NeurosynthAccordion,
 } from '..';
 import {
     AnalysisApiResponse,
@@ -163,24 +164,20 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                     text={props.description || ''}
                 />
                 <Box sx={[DisplayAnalysisStyles.spaceBelow, { width: '100%' }]}>
-                    <Accordion
+                    <NeurosynthAccordion
+                        TitleElement={<>Conditions</>}
                         defaultExpanded={conditionsForTable.rowData.length > 0}
                         elevation={4}
                     >
-                        <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                            Conditions
-                        </AccordionSummary>
-                        <AccordionDetails>
-                            {(props?.conditions || []).length > 0 && (
-                                <DisplayValuesTable {...conditionsForTable} />
-                            )}
-                            {(props.conditions || []).length === 0 && (
-                                <Box component="span" sx={{ color: 'warning.dark' }}>
-                                    No conditions
-                                </Box>
-                            )}
-                        </AccordionDetails>
-                    </Accordion>
+                        {(props?.conditions || []).length > 0 && (
+                            <DisplayValuesTable {...conditionsForTable} />
+                        )}
+                        {(props.conditions || []).length === 0 && (
+                            <Box component="span" sx={{ color: 'warning.dark' }}>
+                                No conditions
+                            </Box>
+                        )}
+                    </NeurosynthAccordion>
                 </Box>
                 <Box
                     sx={[
@@ -189,41 +186,33 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                         { width: '100%' },
                     ]}
                 >
-                    <Accordion
+                    <NeurosynthAccordion
+                        TitleElement={<>Coordinates</>}
                         defaultExpanded={coordinateDataForTable.rowData.length > 0}
                         elevation={4}
                     >
-                        <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                            Coordinates
-                        </AccordionSummary>
-                        <AccordionDetails>
-                            {(props?.points || []).length > 0 && (
-                                <DisplayValuesTable {...coordinateDataForTable} />
-                            )}
-                            {(props.points || []).length === 0 && (
-                                <Box component="span" sx={{ color: 'warning.dark' }}>
-                                    No coordinates
-                                </Box>
-                            )}
-                        </AccordionDetails>
-                    </Accordion>
+                        {(props?.points || []).length > 0 && (
+                            <DisplayValuesTable {...coordinateDataForTable} />
+                        )}
+                        {(props.points || []).length === 0 && (
+                            <Box component="span" sx={{ color: 'warning.dark' }}>
+                                No coordinates
+                            </Box>
+                        )}
+                    </NeurosynthAccordion>
                 </Box>
                 <Box sx={DisplayAnalysisStyles.spaceBelow}>
-                    <Accordion
+                    <NeurosynthAccordion
+                        TitleElement={<>Images</>}
                         defaultExpanded={props.images && props.images.length > 0}
                         elevation={4}
                     >
-                        <AccordionSummary expandIcon={<ExpandMoreOutlined />}>
-                            Images
-                        </AccordionSummary>
-                        <AccordionDetails>
-                            <DisplayImagesTable
-                                initialSelectedImage={selectedImage}
-                                onSelectImage={handleSelectImage}
-                                images={props.images as ImageApiResponse[]}
-                            />
-                        </AccordionDetails>
-                    </Accordion>
+                        <DisplayImagesTable
+                            initialSelectedImage={selectedImage}
+                            onSelectImage={handleSelectImage}
+                            images={props.images as ImageApiResponse[]}
+                        />
+                    </NeurosynthAccordion>
                 </Box>
             </Box>
             {selectedImage && (

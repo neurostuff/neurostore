@@ -21,6 +21,7 @@ import {
     TextExpansion,
     DisplayAnalysis,
     NeurosynthLoader,
+    NeurosynthAccordion,
 } from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import useIsMounted from '../../../hooks/useIsMounted';
@@ -211,21 +212,19 @@ const StudyPage: React.FC = (props) => {
                 />
             </Box>
             <Box sx={{ margin: '15px 0' }}>
-                <Accordion elevation={2}>
-                    <AccordionSummary
-                        sx={StudyPageStyles.accordionSummary}
-                        expandIcon={<ExpandMoreOutlined />}
-                    >
+                <NeurosynthAccordion
+                    accordionSummarySx={StudyPageStyles.accordionSummary}
+                    elevation={2}
+                    TitleElement={
                         <Typography variant="h6">
                             <b>Metadata</b>
                         </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        <Box sx={StudyPageStyles.metadataContainer}>
-                            {study && <DisplayValuesTable {...metadataForTable} />}
-                        </Box>
-                    </AccordionDetails>
-                </Accordion>
+                    }
+                >
+                    <Box sx={StudyPageStyles.metadataContainer}>
+                        {study && <DisplayValuesTable {...metadataForTable} />}
+                    </Box>
+                </NeurosynthAccordion>
             </Box>
 
             <Box>

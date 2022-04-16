@@ -1,6 +1,8 @@
-import { Box, MenuItem, Select, Typography } from '@mui/material';
+import { Box, MenuItem, Select } from '@mui/material';
 import { useState } from 'react';
+import MetaAnalysisAlgorithmStyles from '../MetaAnalysisAlgorithm.styles';
 import { IDynamicFormInput } from './DynamicForm';
+import DynamicFormBaseTitle from './DynamicFormBaseTitle';
 
 const DynamicFormSelectInput: React.FC<IDynamicFormInput> = (props) => {
     const [selectedMenuItem, setSelectedMenuItem] = useState<string>(props.value.default as string);
@@ -15,13 +17,11 @@ const DynamicFormSelectInput: React.FC<IDynamicFormInput> = (props) => {
     const menuItems = getMenuItems(props.value.type);
 
     return (
-        <Box sx={{ marginBottom: '2.5rem' }}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                {props.parameterName}
-            </Typography>
-            <Typography sx={{ marginBottom: '1rem' }} variant="subtitle2">
-                {props.value.description}
-            </Typography>
+        <Box sx={MetaAnalysisAlgorithmStyles.input}>
+            <DynamicFormBaseTitle
+                name={props.parameterName}
+                description={props.value.description}
+            />
 
             <Select
                 sx={{ width: '50%' }}

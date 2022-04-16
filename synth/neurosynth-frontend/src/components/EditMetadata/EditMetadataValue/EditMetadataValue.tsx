@@ -8,7 +8,8 @@ const EditMetadataValue: React.FC<IEditMetadataValue> = (props) => {
     const map = {
         [EPropertyType.NUMBER]: (
             <TextField
-                sx={EditMetadataValueStyles.numberfield}
+                size="small"
+                sx={EditMetadataValueStyles.field}
                 onBlur={(event) => {
                     const num = event.target.value;
                     if (num === '' || num === null || num === undefined) {
@@ -55,14 +56,14 @@ const EditMetadataValue: React.FC<IEditMetadataValue> = (props) => {
         ),
         [EPropertyType.STRING]: (
             <TextField
-                multiline
+                size="small"
                 placeholder={props.placeholderText || 'New metadata value'}
                 onChange={(event) => {
                     onEditMetadataValue(event.target.value);
                 }}
                 value={value}
                 variant="outlined"
-                sx={EditMetadataValueStyles.textfield}
+                sx={EditMetadataValueStyles.field}
             />
         ),
         [EPropertyType.NONE]: (

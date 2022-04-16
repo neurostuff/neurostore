@@ -1,15 +1,15 @@
-import { Box, TextField, Typography } from '@mui/material';
+import { Box, TextField } from '@mui/material';
+import MetaAnalysisAlgorithmStyles from '../MetaAnalysisAlgorithm.styles';
 import { IDynamicFormInput } from './DynamicForm';
+import DynamicFormBaseTitle from './DynamicFormBaseTitle';
 
 const DynamicFormNumericInput: React.FC<IDynamicFormInput> = (props) => {
     return (
-        <Box sx={{ marginBottom: '2.5rem' }}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                {props.parameterName}
-            </Typography>
-            <Typography sx={{ marginBottom: '1rem' }} variant="subtitle2">
-                {props.value.description}
-            </Typography>
+        <Box sx={MetaAnalysisAlgorithmStyles.input}>
+            <DynamicFormBaseTitle
+                name={props.parameterName}
+                description={props.value.description}
+            />
 
             <Box sx={{ width: '50%' }}>
                 <TextField label="number" sx={{ width: '100%' }} type="number" />
