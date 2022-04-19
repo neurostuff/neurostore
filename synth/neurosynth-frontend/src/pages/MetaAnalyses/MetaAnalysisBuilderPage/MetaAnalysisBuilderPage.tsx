@@ -12,42 +12,28 @@ export enum EAlgorithmType {
     IBMA = 'IBMA',
 }
 
-export const MetaAnalyticAlgorithms = [
-    { type: EAlgorithmType.CBMA, label: 'ALE', id: 'ALE' },
-    { type: EAlgorithmType.CBMA, label: 'ALESubtraction', id: 'ALESubtraction' },
-    { type: EAlgorithmType.CBMA, label: 'SCALE', id: 'SCALE' },
-    { type: EAlgorithmType.CBMA, label: 'KDA', id: 'KDA' },
-    { type: EAlgorithmType.CBMA, label: 'MKDAChi2', id: 'MKDAChi2' },
-    { type: EAlgorithmType.CBMA, label: 'MKDADensity', id: 'MKDADensity' },
-    { type: EAlgorithmType.CBMA, label: 'SDM', id: 'SDM' },
-    { type: EAlgorithmType.CBMA, label: 'Model Based', id: 'Model Based' },
-    { type: EAlgorithmType.IBMA, label: 'DerSimonianLaird', id: 'DerSimonianLaird' },
-    { type: EAlgorithmType.IBMA, label: 'Fishers', id: 'Fishers' },
-    { type: EAlgorithmType.IBMA, label: 'Hedges', id: 'Hedges' },
-    { type: EAlgorithmType.IBMA, label: 'PermutedOLS', id: 'PermutedOLS' },
-    {
-        type: EAlgorithmType.IBMA,
-        label: 'SampleSizeBasedLikelihood',
-        id: 'SampleSizeBasedLikelihood',
-    },
-    { type: EAlgorithmType.IBMA, label: 'Stouffers', id: 'Stouffers' },
-    { type: EAlgorithmType.IBMA, label: 'VarianceBasedLikelihood', id: 'VarianceBasedLikelihood' },
-    { type: EAlgorithmType.IBMA, label: 'WeightedLeastSquares', id: 'WeightedLeastSquares' },
-];
-
 const MetaAnalysisBuilderPage: React.FC = (props) => {
     const [activeStep, setActiveStep] = useState(0);
     const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
-    const [metaAnalysisComponents, setMetaAnalysisComponents] = useState<{
-        studysetId: string | undefined;
-        annotationId: string | undefined;
-        algorithm: string | undefined;
-    }>({
-        studysetId: undefined,
-        annotationId: undefined,
-        algorithm: undefined,
-    });
-    const isMountedRef = useIsMounted();
+    // const [metaAnalysisComponents, setMetaAnalysisComponents] = useState<{
+    //     data: {
+
+    //     },
+    //     algorithm: {
+
+    //     }
+    //     algorithmType: EAlgorithmType;
+    //     studysetId: string | undefined;
+    //     annotationId: string | undefined;
+    //     algorithm: string | undefined;
+
+    // }>({
+    //     studysetId: undefined,
+    //     annotationId: undefined,
+    //     algorithm: undefined,
+    // });
+
+    const { current } = useIsMounted();
 
     useEffect(() => {
         const getStudySets = async () => {
@@ -67,7 +53,7 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
                 ''
             )
                 .then((res) => {
-                    if (isMountedRef.current) {
+                    if (current) {
                         setStudysets(res.data.results);
                     }
                 })
@@ -77,7 +63,7 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
         };
 
         getStudySets();
-    }, [isMountedRef]);
+    }, [current]);
 
     return (
         <>
