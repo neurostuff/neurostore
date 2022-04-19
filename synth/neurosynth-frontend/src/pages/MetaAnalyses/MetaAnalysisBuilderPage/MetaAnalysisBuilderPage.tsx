@@ -36,7 +36,7 @@ export const MetaAnalyticAlgorithms = [
 ];
 
 const MetaAnalysisBuilderPage: React.FC = (props) => {
-    const [activeStep, setActiveStep] = useState(1);
+    const [activeStep, setActiveStep] = useState(0);
     const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
     const [metaAnalysisComponents, setMetaAnalysisComponents] = useState<{
         studysetId: string | undefined;

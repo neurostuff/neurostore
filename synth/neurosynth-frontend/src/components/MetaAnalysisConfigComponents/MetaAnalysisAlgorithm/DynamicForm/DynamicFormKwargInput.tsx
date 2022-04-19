@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import { useState } from 'react';
 import { DisplayValuesTable, IDisplayValuesTableModel } from '../../..';
 import { IMetadataRowModel } from '../../../EditMetadata';
@@ -9,6 +9,7 @@ import DynamicFormBaseTitle from './DynamicFormBaseTitle';
 
 const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
     const [kwargList, setKwargList] = useState<{ key: string; value: string }[]>([]);
+    const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
 
     const handleActionSelected = (id: string) => {
         setKwargList((prevState) => {
@@ -62,39 +63,40 @@ const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
     };
 
     return (
-        <Box
-            sx={[
-                MetaAnalysisAlgorithmStyles.input,
-                {
-                    borderRadius: '4px',
-                    backgroundColor: '#e9e9e9b8',
-                },
-            ]}
-        >
-            <DynamicFormBaseTitle
-                name={props.parameterName}
-                description={props.value.description}
-            />
-
-            <Box
-                sx={{
-                    display: 'block',
-                    width: '50%',
-                    borderCollapse: 'separate',
-                    borderSpacing: '5px 0',
-                }}
+        <Box sx={MetaAnalysisAlgorithmStyles.input}>
+            <Button
+                onClick={() => setShowAdvancedOptions((prevState) => !prevState)}
+                sx={{ marginBottom: '1rem' }}
+                variant="text"
             >
-                <AddMetadataRow
-                    keyPlaceholderText="new variable"
-                    valuePlaceholderText="new argument"
-                    errorMessage="all variables must be unique"
-                    showToggleType={false}
-                    onAddMetadataRow={handleOnAddMetadataRow}
+                {showAdvancedOptions ? 'hide' : 'show'} Advanced
+            </Button>
+            <Box sx={{ display: showAdvancedOptions ? 'block' : 'none' }}>
+                <DynamicFormBaseTitle
+                    name={props.parameterName}
+                    description={props.value.description}
                 />
-            </Box>
 
-            <Box sx={{ width: '50%' }}>
-                <DisplayValuesTable {...dataForKwargsTable} />
+                <Box
+                    sx={{
+                        display: 'block',
+                        width: '50%',
+                        borderCollapse: 'separate',
+                        borderSpacing: '5px 0',
+                    }}
+                >
+                    <AddMetadataRow
+                        keyPlaceholderText="new variable"
+                        valuePlaceholderText="new argument"
+                        errorMessage="all variables must be unique"
+                        showToggleType={false}
+                        onAddMetadataRow={handleOnAddMetadataRow}
+                    />
+                </Box>
+
+                <Box sx={{ width: '50%' }}>
+                    <DisplayValuesTable {...dataForKwargsTable} />
+                </Box>
             </Box>
         </Box>
     );
