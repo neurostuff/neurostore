@@ -65,6 +65,7 @@ class StudysetSchema(BaseSchema):
 class AnnotationSchema(BaseSchema):
     annotation = fields.Dict()
     neurostore_id = fields.String()
+    studyset_id = fields.String()
 
 
 class MetaAnalysisSchema(BaseSchema):

@@ -5,6 +5,7 @@ import pathlib
 import pytest
 import sqlalchemy as sa
 
+from ..ingest.neurostore import create_meta_analyses
 from ..database import db as _db
 from ..models import (
     User, Specification, Studyset, Annotation, MetaAnalysis
@@ -279,3 +280,8 @@ def user_data(session, mock_add_users):
 
         session.add_all(to_commit)
         session.commit()
+
+
+@pytest.fixture(scope="function")
+def neurostore_data(session, mock_add_users):
+    create_meta_analyses()

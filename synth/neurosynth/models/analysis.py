@@ -41,13 +41,18 @@ class Specification(BaseMixin, db.Model):
     user = relationship("User", backref=backref("specifications"))
 
 
+class StudysetReference(db.Model):
+    __tablename__ = "studyset_references"
+    neurostore_id = db.Column(db.Text, primary_key=True)
+
+
 class Studyset(BaseMixin, db.Model):
     __tablename__ = "studysets"
 
     studyset = db.Column(db.JSON)
     public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
-    neurostore_id = db.Column(db.Text)
+    neurostore_id = db.Column(db.Text, db.ForeignKey("studyset_references.external_id"))
 
     user = relationship("User", backref=backref("studysets"))
 
@@ -58,8 +63,8 @@ class Annotation(BaseMixin, db.Model):
     annotation = db.Column(db.JSON)
     public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
-    neurostore_id = db.Column(db.Text)
-    studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
+    neurostore_id = db.Column(db.Text, primary_key=True)
+    studyset_id = db.Column(db.Text, db.ForeignKey("studysets.neurostore_id"))
 
     user = relationship("User", backref=backref("annotations"))
     studyset = relationship("Studyset", backref=backref("annotations"))
@@ -70,9 +75,9 @@ class MetaAnalysis(BaseMixin, db.Model):
 
     name = db.Column(db.Text)
     description = db.Column(db.Text)
-    specification_id = db.Column(db.Text, db.ForeignKey('specifications.id'), primary_key=True)
-    studyset_id = db.Column(db.Text, db.ForeignKey('studysets.id'), primary_key=True)
-    annotation_id = db.Column(db.Text, db.ForeignKey('annotations.id'), primary_key=True)
+    specification_id = db.Column(db.Text, db.ForeignKey('specifications.id'))
+    studyset_id = db.Column(db.Text, db.ForeignKey('studysets.neurostore_id'))
+    annotation_id = db.Column(db.Text, db.ForeignKey('annotations.neurostore_id'))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
 
     specification = relationship("Specification", backref=backref("meta_analyses"))
