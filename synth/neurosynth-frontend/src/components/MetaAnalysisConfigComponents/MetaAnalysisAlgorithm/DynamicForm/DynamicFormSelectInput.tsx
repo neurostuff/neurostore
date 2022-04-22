@@ -1,32 +1,34 @@
 import { Box, MenuItem, Select } from '@mui/material';
 import { useState } from 'react';
 import MetaAnalysisAlgorithmStyles from '../MetaAnalysisAlgorithm.styles';
-import { IDynamicFormInput } from './DynamicForm';
+import { IDynamicFormInput } from '../..';
 import DynamicFormBaseTitle from './DynamicFormBaseTitle';
 
 const DynamicFormSelectInput: React.FC<IDynamicFormInput> = (props) => {
-    const [selectedMenuItem, setSelectedMenuItem] = useState<string>(props.value.default as string);
-
-    const getMenuItems = (menuItems: string): string[] => {
+    const getMenuItems = (menuItems: string | null): string[] => {
         if (typeof menuItems !== 'string') return [];
 
         const parsedMenuItems = menuItems.replace('{', '[').replace('}', ']');
         return JSON.parse(parsedMenuItems);
     };
 
-    const menuItems = getMenuItems(props.value.type);
+    const menuItems = getMenuItems(props.parameter?.type || null);
 
     return (
         <Box sx={MetaAnalysisAlgorithmStyles.input}>
             <DynamicFormBaseTitle
                 name={props.parameterName}
-                description={props.value.description}
+                description={props.parameter.description}
             />
 
             <Select
                 sx={{ width: '50%' }}
-                value={selectedMenuItem}
-                onChange={(event) => setSelectedMenuItem(event.target.value as string)}
+                value={props.value || null}
+                onChange={(event) =>
+                    props.onUpdate({
+                        [props.parameterName]: event.target.value,
+                    })
+                }
             >
                 {menuItems.map((menuItem) => (
                     <MenuItem key={menuItem} value={menuItem}>

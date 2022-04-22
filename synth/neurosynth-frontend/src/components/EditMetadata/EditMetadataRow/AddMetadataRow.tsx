@@ -109,7 +109,11 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                 {isValid && <Box sx={{ height: '22px' }}></Box>}
             </Box>
             <Box
-                sx={[EditMetadataRowStyles.tableCell, EditMetadataRowStyles.key, { width: '100%' }]}
+                sx={[
+                    EditMetadataRowStyles.tableCell,
+                    EditMetadataRowStyles.key,
+                    { width: '100%', verticalAlign: 'middle !important' },
+                ]}
             >
                 <EditMetadataValue
                     placeholderText={valuePlaceholderText}

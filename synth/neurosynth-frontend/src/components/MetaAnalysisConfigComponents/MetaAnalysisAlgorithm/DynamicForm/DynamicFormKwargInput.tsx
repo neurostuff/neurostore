@@ -1,37 +1,41 @@
-import { Box, Button, Typography } from '@mui/material';
-import { useState } from 'react';
+import { Box, Button, Divider } from '@mui/material';
+import { useEffect, useState } from 'react';
 import { DisplayValuesTable, IDisplayValuesTableModel } from '../../..';
 import { IMetadataRowModel } from '../../../EditMetadata';
 import AddMetadataRow from '../../../EditMetadata/EditMetadataRow/AddMetadataRow';
 import MetaAnalysisAlgorithmStyles from '../MetaAnalysisAlgorithm.styles';
-import { IDynamicFormInput } from './DynamicForm';
+import { IDynamicFormInput } from '../..';
 import DynamicFormBaseTitle from './DynamicFormBaseTitle';
 
+// const objToArray = () => {
+
+// }
+
+// const arrT
+
 const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
-    const [kwargList, setKwargList] = useState<{ key: string; value: string }[]>([]);
+    const kwargList: { key: string; value: string }[] = Object.keys(props.value).map((key) => ({
+        key: key,
+        value: props.value[key],
+    }));
+
     const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
 
     const handleActionSelected = (id: string) => {
-        setKwargList((prevState) => {
-            const newArr = [...prevState];
-            const index = newArr.findIndex((x) => x.key === id);
-            if (index < 0) return prevState;
-
-            newArr.splice(index, 1);
-            return newArr;
+        const newObj = { ...props.value };
+        delete newObj[id];
+        props.onUpdate({
+            [props.parameterName]: newObj,
         });
     };
 
     const handleOnAddMetadataRow = (row: IMetadataRowModel) => {
-        if (kwargList.findIndex((x) => x.key === row.metadataKey) >= 0) return false;
+        if (props.value[row.metadataKey]) return false;
+        const newObj = { ...props.value };
+        newObj[row.metadataKey] = row.metadataValue;
 
-        setKwargList((prevState) => {
-            const newArr = [...prevState];
-            newArr.unshift({
-                key: row.metadataKey,
-                value: row.metadataValue,
-            });
-            return newArr;
+        props.onUpdate({
+            [props.parameterName]: newObj,
         });
         return true;
     };
@@ -72,9 +76,11 @@ const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
                 {showAdvancedOptions ? 'hide' : 'show'} Advanced
             </Button>
             <Box sx={{ display: showAdvancedOptions ? 'block' : 'none' }}>
+                <Divider sx={{ marginBottom: '1rem' }} />
+
                 <DynamicFormBaseTitle
                     name={props.parameterName}
-                    description={props.value.description}
+                    description={props.parameter.description}
                 />
 
                 <Box
@@ -94,7 +100,7 @@ const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
                     />
                 </Box>
 
-                <Box sx={{ width: '50%' }}>
+                <Box sx={{ width: '50%', minWidth: '554px' }}>
                     <DisplayValuesTable {...dataForKwargsTable} />
                 </Box>
             </Box>

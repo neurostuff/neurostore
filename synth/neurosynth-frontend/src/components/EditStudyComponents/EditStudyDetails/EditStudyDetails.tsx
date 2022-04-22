@@ -67,15 +67,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
     };
 
     const handleOnSave = async (_event: React.MouseEvent) => {
-        try {
-            const token = await getAccessTokenSilently();
-            API.UpdateServicesWithToken(token);
-        } catch (exception) {
-            context.showSnackbar('there was an error', SnackbarType.ERROR);
-            console.error(exception);
-        }
-
-        API.Services.StudiesService.studiesIdPut(props.studyId, {
+        API.NeurostoreServices.StudiesService.studiesIdPut(props.studyId, {
             name: details.name,
             description: details.description,
             authors: details.authors,

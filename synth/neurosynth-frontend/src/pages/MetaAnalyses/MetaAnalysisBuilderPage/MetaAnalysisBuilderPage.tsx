@@ -1,43 +1,136 @@
+import { useAuth0 } from '@auth0/auth0-react';
 import { Button, Step, StepLabel, Stepper } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { IDynamicInputType } from '../../../components/MetaAnalysisConfigComponents';
 import MetaAnalysisAlgorithm from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisAlgorithm/MetaAnalysisAlgorithm';
 import MetaAnalysisData from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisData/MetaAnalysisData';
 import MetaAnalysisFinalize from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/MetaAnalysisFinalize';
 import { ENavigationButton } from '../../../components/NavigationButtons/NavigationButtons';
+import { IAutocompleteObject } from '../../../components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import useIsMounted from '../../../hooks/useIsMounted';
-import API, { StudysetsApiResponse } from '../../../utils/api';
+import { Specification } from '../../../neurosynth-compose-typescript-sdk';
+import API, { AnnotationsApiResponse, StudysetsApiResponse } from '../../../utils/api';
 
-export enum EAlgorithmType {
+export enum EAnalysisType {
     CBMA = 'CBMA',
     IBMA = 'IBMA',
+}
+
+export interface IAnalysisComponents {
+    analysisType: EAnalysisType | undefined;
+    algorithm: IAutocompleteObject | undefined | null;
+    estimator: IAutocompleteObject | undefined | null;
+    corrector: IAutocompleteObject | undefined | null;
+    studyset: StudysetsApiResponse | undefined | null;
+    annotation: AnnotationsApiResponse | undefined | null;
+}
+
+export interface IDynamicArgs {
+    estimatorArgs: IDynamicInputType;
+    correctorArgs: IDynamicInputType;
 }
 
 const MetaAnalysisBuilderPage: React.FC = (props) => {
     const [activeStep, setActiveStep] = useState(0);
     const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
-    // const [metaAnalysisComponents, setMetaAnalysisComponents] = useState<{
-    //     data: {
+    const [metaAnalysisComponents, setMetaAnalysisComponents] = useState<IAnalysisComponents>({
+        // data step
+        analysisType: undefined,
+        studyset: undefined,
+        annotation: undefined,
+        // algorithm step
+        algorithm: undefined,
+        estimator: undefined,
+        corrector: undefined,
+    });
+    const [metaAnalysisDynamicArgs, setMetaAnalysisDynamicArgs] = useState<IDynamicArgs>({
+        estimatorArgs: {},
+        correctorArgs: {},
+    });
 
-    //     },
-    //     algorithm: {
+    const { getAccessTokenSilently } = useAuth0();
 
-    //     }
-    //     algorithmType: EAlgorithmType;
-    //     studysetId: string | undefined;
-    //     annotationId: string | undefined;
-    //     algorithm: string | undefined;
+    useEffect(() => {
+        if (!metaAnalysisComponents.algorithm) {
+            setMetaAnalysisDynamicArgs({
+                estimatorArgs: {},
+                correctorArgs: {},
+            });
+        }
+    }, [metaAnalysisComponents.algorithm]);
 
-    // }>({
-    //     studysetId: undefined,
-    //     annotationId: undefined,
-    //     algorithm: undefined,
-    // });
+    useEffect(() => {
+        if (!metaAnalysisComponents.corrector) {
+            setMetaAnalysisDynamicArgs((prevState) => ({
+                ...prevState,
+                correctorArgs: {},
+            }));
+        }
+    }, [metaAnalysisComponents.corrector]);
 
     const { current } = useIsMounted();
 
+    const handleUpdate = (arg: Partial<IAnalysisComponents>) => {
+        setMetaAnalysisComponents((prevStep) => ({
+            ...prevStep,
+            ...arg,
+        }));
+    };
+
+    const handleArgsUpdate = (arg: Partial<IDynamicArgs>) => {
+        setMetaAnalysisDynamicArgs((prevState) => {
+            // only one of correctorArgs or estimatorArgs will be updated at any given time
+            const key = arg.correctorArgs ? 'correctorArgs' : 'estimatorArgs';
+            return {
+                ...prevState,
+                [key]: {
+                    ...prevState[key],
+                    ...arg[key],
+                },
+            };
+        });
+    };
+
+    const handleCreateMetaAnalysis = async () => {
+        console.log('CREATE');
+
+        let corrector = null;
+        if (metaAnalysisComponents.corrector) {
+            corrector = {
+                type: metaAnalysisComponents.corrector?.label,
+                args: {},
+            };
+
+            if (Object.keys(metaAnalysisDynamicArgs.correctorArgs).length > 0) {
+                corrector.args = metaAnalysisDynamicArgs.correctorArgs;
+            }
+        }
+
+        const spec: Specification = {
+            type: metaAnalysisComponents.analysisType,
+            estimator: {
+                type: metaAnalysisComponents.algorithm?.label,
+                args: metaAnalysisDynamicArgs.estimatorArgs,
+            },
+            corrector: metaAnalysisComponents.corrector ? corrector : null,
+        };
+        // API.NeurostoreServices.SpecificationsService.specificationsPost(spec)
+        //     .then((res) => {
+        //         console.log(res);
+        //     })
+        //     .then((res) => {
+        //         const metaAnalysis: MetaAnalysis = {};
+        //         // API.Services.MetaAnalysisService.metaAnalysesPost()
+        //     })
+        //     .catch((err) => {
+        //         console.error(err);
+        //     });
+        // API.Services.SpecificationsService;
+    };
+
     useEffect(() => {
         const getStudySets = async () => {
-            API.Services.StudySetsService.studysetsGet(
+            API.NeurostoreServices.StudySetsService.studysetsGet(
                 undefined,
                 undefined,
                 undefined,
@@ -108,6 +201,10 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
 
             {activeStep === 0 && (
                 <MetaAnalysisData
+                    onUpdate={handleUpdate}
+                    analysisType={metaAnalysisComponents.analysisType}
+                    studyset={metaAnalysisComponents.studyset}
+                    annotation={metaAnalysisComponents.annotation}
                     onNext={(button) => {
                         setActiveStep((prev) =>
                             button === ENavigationButton.NEXT ? ++prev : --prev
@@ -119,6 +216,14 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
 
             {activeStep === 1 && (
                 <MetaAnalysisAlgorithm
+                    analysisType={metaAnalysisComponents.analysisType as EAnalysisType}
+                    algorithm={metaAnalysisComponents.algorithm}
+                    estimator={metaAnalysisComponents.estimator}
+                    estimatorArgs={metaAnalysisDynamicArgs.estimatorArgs}
+                    corrector={metaAnalysisComponents.corrector}
+                    correctorArgs={metaAnalysisDynamicArgs.correctorArgs}
+                    onUpdate={handleUpdate}
+                    onArgsUpdate={handleArgsUpdate}
                     onNext={(button) => {
                         setActiveStep((prev) =>
                             button === ENavigationButton.NEXT ? ++prev : --prev
@@ -127,36 +232,23 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
                 />
             )}
 
-            {activeStep === 2 && <MetaAnalysisFinalize />}
-
-            {/* {activeStep === 1 && (
-                <>
-                    <Box sx={{ marginBottom: '1rem' }}>
-                        Specify the <b>column</b> you would like to use to include/exclude analyses
-                    </Box>
-                    <Autocomplete
-                        sx={{ width: '50%', marginBottom: '1rem' }}
-                        renderInput={(params) => (
-                            <TextField {...params} label="inclusion/exclusion column" />
-                        )}
-                        options={[
-                            { label: 'some column label', id: '12345' },
-                            { label: 'another label', id: '843' },
-                            { label: 'some other label', id: '3892' },
-                        ]}
-                    />
-
-                    <Box sx={{ marginBottom: '1rem' }}>
-                        Specify the <b>algorithm</b> you would like to use to run the meta analysis
-                    </Box>
-                    <Autocomplete
-                        sx={{ width: '50%' }}
-                        renderInput={(params) => <TextField {...params} label="algorithm" />}
-                        groupBy={(option) => option.type}
-                        options={MetaAnalyticAlgorithms}
-                    />
-                </>
-            )} */}
+            {activeStep === 2 && (
+                <MetaAnalysisFinalize
+                    onNext={(button) => {
+                        button === ENavigationButton.NEXT
+                            ? handleCreateMetaAnalysis()
+                            : setActiveStep((prev) => --prev);
+                    }}
+                    analysisType={metaAnalysisComponents.analysisType as EAnalysisType}
+                    algorithm={metaAnalysisComponents.algorithm}
+                    estimator={metaAnalysisComponents.estimator}
+                    estimatorArgs={metaAnalysisDynamicArgs.estimatorArgs}
+                    corrector={metaAnalysisComponents.corrector}
+                    correctorArgs={metaAnalysisDynamicArgs.correctorArgs}
+                    studyset={metaAnalysisComponents.studyset}
+                    annotation={metaAnalysisComponents.annotation}
+                />
+            )}
         </>
     );
 };

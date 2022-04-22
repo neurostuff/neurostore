@@ -42,7 +42,7 @@ const ConditionSelector: React.FC<{
 
     useEffect(() => {
         const getConditions = () => {
-            API.Services.ConditionsService.conditionsGet()
+            API.NeurostoreServices.ConditionsService.conditionsGet()
                 .then((res) => {
                     if (isMountedRef.current && res?.data?.results) {
                         setAllConditions(res.data.results);
@@ -61,16 +61,7 @@ const ConditionSelector: React.FC<{
     }, [context, isMountedRef]);
 
     const handleOnCreate = async (name: string, description: string) => {
-        try {
-            const token = await getAccessTokenSilently();
-            API.UpdateServicesWithToken(token);
-            context.showSnackbar('successfully created new condition', SnackbarType.SUCCESS);
-        } catch (exception) {
-            context.showSnackbar('there was an error', SnackbarType.ERROR);
-            console.error(exception);
-        }
-
-        API.Services.ConditionsService.conditionsPost({
+        API.NeurostoreServices.ConditionsService.conditionsPost({
             name,
             description,
         })

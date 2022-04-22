@@ -41,19 +41,12 @@ const StudyPage: React.FC = (props) => {
     const [editDisabled, setEditDisabled] = useState(false);
     const context = useContext(GlobalContext);
     const history = useHistory();
-    const { isAuthenticated, getAccessTokenSilently, user } = useAuth0();
+    const { isAuthenticated, user } = useAuth0();
     const isMountedRef = useIsMounted();
     const params: { studyId: string } = useParams();
 
     const handleCloneStudy = async () => {
-        try {
-            const token = await getAccessTokenSilently();
-            API.UpdateServicesWithToken(token);
-        } catch (exception) {
-            context.showSnackbar('There was an error', SnackbarType.ERROR);
-            console.error(exception);
-        }
-        API.Services.StudiesService.studiesPost(undefined, params.studyId, {})
+        API.NeurostoreServices.StudiesService.studiesPost(undefined, params.studyId, {})
             .then((res) => {
                 context.showSnackbar('Study successfully cloned', SnackbarType.SUCCESS);
                 history.push(`/studies/${(res.data as StudyApiResponse).id}`);
@@ -65,7 +58,7 @@ const StudyPage: React.FC = (props) => {
     };
 
     const handleEditStudy = (event: React.MouseEvent) => {
-        history.push(`/studies/edit/${params.studyId}`);
+        history.push(`/studies/${params.studyId}/edit`);
     };
 
     const handleSelectAnalysis = (event: SyntheticEvent, newVal: number) => {
@@ -77,7 +70,7 @@ const StudyPage: React.FC = (props) => {
 
     useEffect(() => {
         const getStudy = (id: string) => {
-            API.Services.StudiesService.studiesIdGet(id, true)
+            API.NeurostoreServices.StudiesService.studiesIdGet(id, true)
                 .then((res) => {
                     if (isMountedRef.current) {
                         const resUpdated = res as AxiosResponse<StudyApiResponse>;

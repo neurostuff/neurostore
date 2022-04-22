@@ -52,17 +52,9 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
     );
 
     const handleOnSave = async (event: React.MouseEvent) => {
-        try {
-            const token = await getAccessTokenSilently();
-            API.UpdateServicesWithToken(token);
-        } catch (exception) {
-            context.showSnackbar('there was an error', SnackbarType.ERROR);
-            console.error(exception);
-        }
-
         const transformedMetadata = arrayToMetadata(metadataArr);
 
-        API.Services.StudiesService.studiesIdPut(props.studyId, {
+        API.NeurostoreServices.StudiesService.studiesIdPut(props.studyId, {
             metadata: transformedMetadata,
         })
             .then((_res) => {

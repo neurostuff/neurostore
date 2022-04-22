@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 
-const useInputValidation = <T,>(validationFn: (arg: T | undefined | null) => boolean) => {
+const useInputValidation = <T,>(
+    inputValue: T | undefined | null,
+    validationFn: (arg: T | undefined | null) => boolean
+) => {
     const [touched, setTouched] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
     const [isValid, setIsValid] = useState(true);
-    const [value, setValue] = useState<T | null | undefined>();
+    const [value, setValue] = useState<T | null | undefined>(inputValue);
 
     useEffect(() => {
         if (touched) {

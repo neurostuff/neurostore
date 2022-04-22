@@ -205,7 +205,7 @@
             "parameters": {
                 "method": {
                     "description": "The estimation method to use. Either 'ml' (for maximum-likelihood) or 'reml' (restricted maximum-likelihood). Default is 'ml'.",
-                    "type": "{'ml', 'reml'}",
+                    "type": "{\"ml\", \"reml\"}",
                     "default": "ml"
                 }
             }
@@ -225,7 +225,7 @@
             "parameters": {
                 "method": {
                     "description": "The estimation method to use. Either 'ml' (for maximum-likelihood) or 'reml' (restricted maximum-likelihood). Default is 'ml'.",
-                    "type": "{'ml', 'reml'}",
+                    "type": "{\"ml\", \"reml\"}",
                     "default": "ml"
                 }
             }

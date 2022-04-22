@@ -20,8 +20,6 @@ import EditAnalysis from './EditAnalysis/EditAnalysis';
 
 const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
     const { onUpdateAnalysis, analyses } = props;
-
-    const { getAccessTokenSilently } = useAuth0();
     const { showSnackbar } = useContext(GlobalContext);
     const isMountedRef = useIsMounted();
 
@@ -152,14 +150,6 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
         async (editor: EAnalysisEdit) => {
             if (!selectedAnalysis.analysis?.id) return;
 
-            try {
-                const token = await getAccessTokenSilently();
-                API.UpdateServicesWithToken(token);
-            } catch (exception) {
-                showSnackbar('there was an error', SnackbarType.ERROR);
-                console.error(exception);
-            }
-
             const analysis: AnalysisApiResponse = {};
             if (editor === EAnalysisEdit.DETAILS || editor === EAnalysisEdit.ALL) {
                 analysis.name = selectedAnalysis.analysis?.name;
@@ -172,7 +162,10 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
                 analysis.weights = selectedAnalysis.analysis?.weights;
             }
 
-            API.Services.AnalysesService.analysesIdPut(selectedAnalysis.analysis?.id, analysis)
+            API.NeurostoreServices.AnalysesService.analysesIdPut(
+                selectedAnalysis.analysis?.id,
+                analysis
+            )
                 .then((_res) => {
                     if (isMountedRef.current) {
                         let update = { ...selectedAnalysis.analysis };
@@ -214,7 +207,6 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
                 });
         },
         [
-            getAccessTokenSilently,
             isMountedRef,
             originalAnalysis?.conditions,
             originalAnalysis?.description,

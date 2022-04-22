@@ -27,7 +27,7 @@ const EditStudyPage = () => {
 
     useEffect(() => {
         const getStudy = (id: string) => {
-            API.Services.StudiesService.studiesIdGet(id, true)
+            API.NeurostoreServices.StudiesService.studiesIdGet(id, true)
                 .then((res) => {
                     if (isMountedRef.current) {
                         const studyRes = res.data;

@@ -5,6 +5,10 @@ export enum ENavigationButton {
     NEXT,
 }
 
+export interface INavigationButtonFn {
+    (button: ENavigationButton): void;
+}
+
 export interface INavigationButtons {
     prevButtonDisabled?: boolean;
     prevButtonText?: string;

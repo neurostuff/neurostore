@@ -16,7 +16,7 @@ const navItems: NavOptionsModel[] = [
             { label: 'Public Studies', path: '/studies', children: null },
             {
                 label: 'My Studies',
-                path: '/userclonedstudies',
+                path: '/userstudies',
                 children: null,
                 authenticationRequired: true,
             },
@@ -32,6 +32,21 @@ const navItems: NavOptionsModel[] = [
             {
                 label: 'My Studysets',
                 path: '/userstudysets',
+                children: null,
+                authenticationRequired: true,
+            },
+        ],
+    },
+    {
+        label: 'META-ANALYSES',
+        path: '',
+        disabled: false,
+        authenticationRequired: false,
+        children: [
+            { label: 'Public Meta-Analyses', path: '/meta-analyses', children: null },
+            {
+                label: 'My Meta-Analyses',
+                path: '/usermeta-analyses',
                 children: null,
                 authenticationRequired: true,
             },

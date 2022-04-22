@@ -1,40 +1,25 @@
-import { Box, Divider } from '@mui/material';
+import { Box } from '@mui/material';
+import { IDynamicForm, IDynamicFormInput, IParameter, KWARG_STRING } from '../..';
+import DynamicFormBoolInput from './DynamicFormBoolInput';
 import DynamicFormKwargInput from './DynamicFormKwargInput';
 import DynamicFormNumericInput from './DynamicFormNumericInput';
 import DynamicFormSelectInput from './DynamicFormSelectInput';
 import DynamicFormStringInput from './DynamicFormStringInput';
 
-interface IDynamicForm {
-    specification: {
-        [key: string]: IParameter;
-    };
-}
-
-export interface IParameter {
-    description: string;
-    type: any;
-    default: string | number | null;
-}
-
-export interface IDynamicFormInput {
-    parameterName: string;
-    value: IParameter;
-}
-
-const kwargString = '**kwargs';
-
 const DynamicForm: React.FC<IDynamicForm> = (props) => {
     const specs = Object.keys(props.specification).sort();
 
-    const kwargStringIndex = specs.findIndex((spec) => spec === kwargString);
+    const kwargStringIndex = specs.findIndex((spec) => spec === KWARG_STRING);
     if (kwargStringIndex >= 0) {
         specs.splice(kwargStringIndex, 1);
-        specs.push(kwargString);
+        specs.push(KWARG_STRING);
     }
 
     const parametersList: IDynamicFormInput[] = specs.map((parameter) => ({
         parameterName: parameter,
-        value: props.specification[parameter],
+        parameter: props.specification[parameter],
+        value: props.values[parameter],
+        onUpdate: props.onUpdate,
     }));
 
     const getFormComponentBySpec = (spec: IParameter): React.FC<IDynamicFormInput> => {
@@ -44,6 +29,8 @@ const DynamicForm: React.FC<IDynamicForm> = (props) => {
             case 'int':
             case 'float':
                 return DynamicFormNumericInput;
+            case 'bool':
+                return DynamicFormBoolInput;
             case null:
                 return DynamicFormKwargInput;
             default:
@@ -52,15 +39,27 @@ const DynamicForm: React.FC<IDynamicForm> = (props) => {
     };
 
     return (
-        <Box>
-            {parametersList.map((parameter) => {
-                const Component = getFormComponentBySpec(parameter.value);
-                return (
-                    <Box key={parameter.parameterName}>
-                        <Component {...parameter} />
-                    </Box>
-                );
-            })}
+        <Box
+            sx={{
+                maxHeight: {
+                    xs: '200px',
+                    md: '350px',
+                },
+                overflowY: 'auto',
+            }}
+        >
+            {parametersList.length > 0 &&
+                parametersList.map((parameter) => {
+                    const Component = getFormComponentBySpec(parameter.parameter);
+                    return (
+                        <Box key={parameter.parameterName}>
+                            <Component {...parameter} />
+                        </Box>
+                    );
+                })}
+            {parametersList.length === 0 && (
+                <Box sx={{ color: 'warning.dark' }}>No arguments available</Box>
+            )}
         </Box>
     );
 };

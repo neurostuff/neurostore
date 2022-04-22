@@ -1,22 +1,23 @@
 import {
-    AnalysesApiFactory,
     Analysis,
     Annotation,
-    AnnotationsApiFactory,
     Condition,
-    ConditionsApiFactory,
     Configuration,
     Studyset,
-    StudysetsApiFactory,
-    ImagesApiFactory,
     Point,
-    PointsApiFactory,
     ReadOnly,
-    StudiesApiFactory,
     Study,
-    UserApiFactory,
     Image,
+    StudiesApi,
+    ConditionsApi,
+    StudysetsApi,
+    AnnotationsApi,
+    UserApi,
+    PointsApi,
+    ImagesApi,
+    AnalysesApi,
 } from '../neurostore-typescript-sdk';
+import { BundleApi, MetaAnalysisApi } from '../neurosynth-compose-typescript-sdk';
 
 export type StudyApiResponse = Study & ReadOnly;
 export type AnalysisApiResponse = Analysis & ReadOnly;
@@ -26,49 +27,45 @@ export type AnnotationsApiResponse = Annotation & ReadOnly;
 export type ConditionApiResponse = Condition & ReadOnly;
 export type ImageApiResponse = Image & ReadOnly;
 
-const APIDomain = process.env.REACT_APP_API_DOMAIN as string;
+const NEUROSTORE_API_DOMAIN = process.env.REACT_APP_NEUROSTORE_API_DOMAIN as string;
+const NEUROSYNTH_API_DOMAIN = process.env.REACT_APP_NEUROSYNTH_API_DOMAIN as string;
+
 let TOKEN = '';
-const config: Configuration = new Configuration({
-    basePath: APIDomain,
+const neurostoreConfig: Configuration = new Configuration({
+    basePath: NEUROSTORE_API_DOMAIN,
+    accessToken: TOKEN,
+});
+const neurosynthConfig: Configuration = new Configuration({
+    basePath: NEUROSYNTH_API_DOMAIN,
+    accessToken: TOKEN,
 });
 
-const Services = {
-    StudiesService: StudiesApiFactory(config, undefined, undefined),
-    AnalysesService: AnalysesApiFactory(config, undefined, undefined),
-    ConditionsService: ConditionsApiFactory(config, undefined, undefined),
-    StudySetsService: StudysetsApiFactory(config, undefined, undefined),
-    ImagesService: ImagesApiFactory(config, undefined, undefined),
-    PointsService: PointsApiFactory(config, undefined, undefined),
-    UsersService: UserApiFactory(config, undefined, undefined),
-    AnnotationsService: AnnotationsApiFactory(config, undefined, undefined),
+const NeurostoreServices = {
+    StudiesService: new StudiesApi(neurostoreConfig),
+    AnalysesService: new AnalysesApi(neurostoreConfig),
+    ConditionsService: new ConditionsApi(neurostoreConfig),
+    StudySetsService: new StudysetsApi(neurostoreConfig),
+    ImagesService: new ImagesApi(neurostoreConfig),
+    PointsService: new PointsApi(neurostoreConfig),
+    UsersService: new UserApi(neurostoreConfig),
+    AnnotationsService: new AnnotationsApi(neurostoreConfig),
+};
+
+const NeurosynthServices = {
+    SpecificationsService: new MetaAnalysisApi(neurosynthConfig),
+    MetaAnalysisService: new BundleApi(neurosynthConfig),
 };
 
 const UpdateServicesWithToken = (token: string) => {
-    if (token !== TOKEN) {
-        const config: Configuration = new Configuration({
-            basePath: APIDomain,
-            baseOptions: {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            },
-        });
+    console.log(token);
 
-        Services.StudiesService = StudiesApiFactory(config, undefined, undefined);
-        Services.AnalysesService = AnalysesApiFactory(config, undefined, undefined);
-        Services.ConditionsService = ConditionsApiFactory(config, undefined, undefined);
-        Services.StudySetsService = StudysetsApiFactory(config, undefined, undefined);
-        Services.ImagesService = ImagesApiFactory(config, undefined, undefined);
-        Services.PointsService = PointsApiFactory(config, undefined, undefined);
-        Services.UsersService = UserApiFactory(config, undefined, undefined);
-        Services.AnnotationsService = AnnotationsApiFactory(config, undefined, undefined);
-
-        TOKEN = token;
-    }
+    neurostoreConfig.accessToken = token;
+    neurosynthConfig.accessToken = token;
 };
 
 const API = {
-    Services,
+    NeurostoreServices,
+    NeurosynthServices,
     UpdateServicesWithToken,
 };
 

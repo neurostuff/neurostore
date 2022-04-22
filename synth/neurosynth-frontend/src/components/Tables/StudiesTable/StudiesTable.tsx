@@ -38,7 +38,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     useEffect(() => {
         if (shouldShowStudyOptions) {
             const getStudysets = async () => {
-                API.Services.StudySetsService.studysetsGet(
+                API.NeurostoreServices.StudySetsService.studysetsGet(
                     undefined,
                     undefined,
                     undefined,
@@ -68,14 +68,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     }, [shouldShowStudyOptions, user?.sub, current]);
 
     const handleStudysetCreated = async (name: string, description: string) => {
-        try {
-            const token = await getAccessTokenSilently();
-            API.UpdateServicesWithToken(token);
-        } catch (exception) {
-            showSnackbar('there was an error', SnackbarType.ERROR);
-            console.error(exception);
-        }
-        API.Services.StudySetsService.studysetsPost({
+        API.NeurostoreServices.StudySetsService.studysetsPost({
             name,
             description,
         })
@@ -101,18 +94,10 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
         study: StudyApiResponse,
         studyset: StudysetsApiResponse
     ) => {
-        try {
-            const token = await getAccessTokenSilently();
-            API.UpdateServicesWithToken(token);
-        } catch (exception) {
-            showSnackbar('there was an error', SnackbarType.ERROR);
-            console.error(exception);
-        }
-
         const selectedStudysetStudies = [...(studyset.studies || [])] as string[];
         selectedStudysetStudies.push(study.id as string);
 
-        API.Services.StudySetsService.studysetsIdPut(studyset.id as string, {
+        API.NeurostoreServices.StudySetsService.studysetsIdPut(studyset.id as string, {
             name: studyset.name,
             studies: selectedStudysetStudies as string[],
         })

@@ -2,7 +2,13 @@ import { Autocomplete, TextField, AutocompleteRenderOptionState } from '@mui/mat
 import { SystemStyleObject } from '@mui/system';
 import { useInputValidation } from '../../hooks';
 
+export interface IAutocompleteObject {
+    label: string;
+    description: string;
+}
+
 interface INeurosynthAutocomplete<T> {
+    required?: boolean;
     label: string;
     shouldDisable?: boolean;
     isOptionEqualToValue: (option: T, value: T) => boolean;
@@ -20,9 +26,11 @@ interface INeurosynthAutocomplete<T> {
 
 const NeurosynthAutocomplete = <X,>(props: INeurosynthAutocomplete<X>) => {
     const { handleChange, handleOnBlur, handleOnFocus, isValid } = useInputValidation(
+        props.value,
         (arg: X | undefined | null) => !!arg
     );
     const {
+        required = true,
         label,
         shouldDisable = false,
         renderOption,
@@ -49,8 +57,8 @@ const NeurosynthAutocomplete = <X,>(props: INeurosynthAutocomplete<X>) => {
             sx={sx}
             renderInput={(params) => (
                 <TextField
-                    helperText={isValid ? null : 'this is requird'}
-                    error={!isValid}
+                    helperText={isValid || !required ? null : 'this is requird'}
+                    error={!isValid && required}
                     {...params}
                     label={label}
                 />

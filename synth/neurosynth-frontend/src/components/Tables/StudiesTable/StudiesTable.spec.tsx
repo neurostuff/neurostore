@@ -117,7 +117,7 @@ describe('StudiesTable Component', () => {
     ];
 
     beforeEach(() => {
-        (API.Services.StudySetsService.studysetsGet as any).mockReturnValue(
+        (API.NeurostoreServices.StudySetsService.studysetsGet as any).mockReturnValue(
             Promise.resolve({
                 data: {
                     results: mockStudysetsGetPayload,
@@ -125,7 +125,7 @@ describe('StudiesTable Component', () => {
             })
         );
 
-        (API.Services.StudySetsService.studysetsPost as any).mockReturnValue(
+        (API.NeurostoreServices.StudySetsService.studysetsPost as any).mockReturnValue(
             Promise.resolve({
                 data: {
                     results: mockStudysetsPostResponse,
@@ -133,7 +133,7 @@ describe('StudiesTable Component', () => {
             })
         );
 
-        (API.Services.StudySetsService.studysetsIdPut as any).mockReturnValue(
+        (API.NeurostoreServices.StudySetsService.studysetsIdPut as any).mockReturnValue(
             Promise.resolve({
                 data: {
                     results: mockStudysetsIdPutResponse,
@@ -176,7 +176,7 @@ describe('StudiesTable Component', () => {
 
         // subtract 1 to account for the table header
         expect(rows.length - 1).toEqual(mockStudies.length);
-        expect(API.Services.StudySetsService.studysetsGet).toHaveBeenCalled();
+        expect(API.NeurostoreServices.StudySetsService.studysetsGet).toHaveBeenCalled();
     });
 
     it('should show no data', async () => {
@@ -248,7 +248,7 @@ describe('StudiesTable Component', () => {
             userEvent.click(studysetCreatedButton);
         });
 
-        expect(API.Services.StudySetsService.studysetsPost).toBeCalled();
+        expect(API.NeurostoreServices.StudySetsService.studysetsPost).toBeCalled();
     });
 
     it('should edit the studyset', async () => {
@@ -276,7 +276,7 @@ describe('StudiesTable Component', () => {
             userEvent.click(studysetEditButton);
         });
 
-        expect(API.Services.StudySetsService.studysetsIdPut).toBeCalledWith('123', {
+        expect(API.NeurostoreServices.StudySetsService.studysetsIdPut).toBeCalledWith('123', {
             name: 'test-name',
             studies: ['5LMdXPD3ocgD'],
         });

@@ -106,7 +106,7 @@ const PublicStudiesPage = () => {
     useEffect(() => {
         // const timeout = setTimeout(() => {
         const getStudies = (searchCriteria: SearchCriteria) => {
-            API.Services.StudiesService.studiesGet(
+            API.NeurostoreServices.StudiesService.studiesGet(
                 searchCriteria.genericSearchStr,
                 searchCriteria.sortBy,
                 searchCriteria.pageOfResults,

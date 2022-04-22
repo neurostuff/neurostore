@@ -9,42 +9,31 @@ import {
     FormHelperText,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { IMetaAnalysisData } from '..';
 import { NavigationButtons } from '../..';
 import { useInputValidation } from '../../../hooks';
 import useIsMounted from '../../../hooks/useIsMounted';
-import { EAlgorithmType } from '../../../pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
-import API, { AnnotationsApiResponse, StudysetsApiResponse } from '../../../utils/api';
-import { ENavigationButton } from '../../NavigationButtons/NavigationButtons';
+import { EAnalysisType } from '../../../pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
+import API, { AnnotationsApiResponse } from '../../../utils/api';
 import NeurosynthAutocomplete from '../../NeurosynthAutocomplete/NeurosynthAutocomplete';
 import MetaAnalysisDataStyles from './MetaAnalysisData.styles';
 
-export interface IMetaAnalysisData {
-    studysets: StudysetsApiResponse[];
-    onNext: (button: ENavigationButton) => void;
-}
-const validationFunc = (arg: EAlgorithmType | undefined | null) => !!arg;
+const validationFunc = (arg: EAnalysisType | undefined | null) => !!arg;
 
 const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
-    const [selectedAlgorithmType, setSelectedAlgorithmType] = useState<EAlgorithmType>();
-    const [selectedStudyset, setSelectedStudyset] = useState<StudysetsApiResponse | null>();
-    const [selectedAnnotation, setSelectedAnnotation] = useState<AnnotationsApiResponse | null>();
     const [annotations, setAnnotations] = useState<AnnotationsApiResponse[]>();
 
     const { current } = useIsMounted();
-
-    const { handleChange, handleOnBlur, handleOnFocus, isValid } =
-        useInputValidation(validationFunc);
-
-    const handleNavigationButtonClick = (button: ENavigationButton) => {
-        if (button === ENavigationButton.PREV) return;
-        props.onNext(ENavigationButton.NEXT);
-    };
+    const { handleChange, handleOnBlur, handleOnFocus, isValid } = useInputValidation(
+        props.analysisType,
+        validationFunc
+    );
 
     useEffect(() => {
-        if (!selectedStudyset || !selectedStudyset.id) return;
+        if (!props.studyset || !props.studyset.id) return;
 
         const getAnnotationsForStudyset = (id: string) => {
-            API.Services.AnnotationsService.annotationsGet(id).then((res) => {
+            API.NeurostoreServices.AnnotationsService.annotationsGet(id).then((res) => {
                 if (current && res && res.data && res.data.results) {
                     const typedRes = res.data.results as AnnotationsApiResponse[];
 
@@ -53,8 +42,8 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
             });
         };
 
-        getAnnotationsForStudyset(selectedStudyset.id);
-    }, [current, selectedStudyset]);
+        getAnnotationsForStudyset(props.studyset.id);
+    }, [current, props.studyset]);
 
     return (
         <>
@@ -71,16 +60,18 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                     required
                     labelId="select-label"
                     onChange={(event) => {
-                        const value = event.target.value as EAlgorithmType;
-                        setSelectedAlgorithmType(value);
+                        console.log(event.target.value);
+
+                        const value = event.target.value as EAnalysisType;
+                        props.onUpdate({ analysisType: value, algorithm: null });
                         handleChange(value);
                     }}
                     label="analysis type"
-                    value={selectedAlgorithmType || ''}
+                    value={props.analysisType || ''}
                     sx={[MetaAnalysisDataStyles.selectInput]}
                 >
-                    <MenuItem value={EAlgorithmType.CBMA}>Coordinate Based Meta Analysis</MenuItem>
-                    <MenuItem value={EAlgorithmType.IBMA}>Image Based Meta Analysis</MenuItem>
+                    <MenuItem value={EAnalysisType.CBMA}>Coordinate Based Meta Analysis</MenuItem>
+                    <MenuItem value={EAnalysisType.IBMA}>Image Based Meta Analysis</MenuItem>
                 </Select>
                 {!isValid && (
                     <FormHelperText sx={{ color: 'error.main' }}>this is required</FormHelperText>
@@ -93,9 +84,9 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
 
             <NeurosynthAutocomplete
                 label="studyset"
-                shouldDisable={selectedAlgorithmType === undefined}
+                shouldDisable={props.analysisType === undefined}
                 isOptionEqualToValue={(option, value) => option?.id === value?.id}
-                value={selectedStudyset || null}
+                value={props.studyset || null}
                 renderOption={(params, option) => (
                     <ListItem {...params}>
                         <ListItemText primary={option.name} secondary={option.description} />
@@ -104,8 +95,7 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                 sx={{ ...MetaAnalysisDataStyles.spaceBelow, ...MetaAnalysisDataStyles.selectInput }}
                 getOptionLabel={(option) => option?.name || ''}
                 onChange={(_event, newVal, _reason) => {
-                    setSelectedStudyset(newVal);
-                    setSelectedAnnotation(null);
+                    props.onUpdate({ studyset: newVal, annotation: null });
                 }}
                 options={props.studysets}
             />
@@ -116,9 +106,9 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
 
             <NeurosynthAutocomplete
                 label="annotation"
-                shouldDisable={selectedStudyset === undefined || selectedStudyset === null}
+                shouldDisable={props.studyset === undefined || props.studyset === null}
                 isOptionEqualToValue={(option, value) => option?.id === value?.id}
-                value={selectedAnnotation || null}
+                value={props.annotation || null}
                 renderOption={(params, option) => (
                     <ListItem {...params}>
                         <ListItemText primary={option.name} secondary={option.description} />
@@ -127,18 +117,16 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                 sx={{ ...MetaAnalysisDataStyles.spaceBelow, ...MetaAnalysisDataStyles.selectInput }}
                 getOptionLabel={(option) => option?.name || ''}
                 onChange={(_event, newVal, _reason) => {
-                    setSelectedAnnotation(newVal);
+                    props.onUpdate({ annotation: newVal });
                 }}
                 options={annotations || []}
             />
 
             <NavigationButtons
-                onButtonClick={handleNavigationButtonClick}
+                onButtonClick={props.onNext}
                 prevButtonDisabled={true}
-                nextButtonDisabled={
-                    !selectedAlgorithmType || !selectedStudyset || !selectedAnnotation
-                }
-                nextButtonStyle="contained"
+                nextButtonDisabled={!props.analysisType || !props.studyset || !props.annotation}
+                nextButtonStyle="outlined"
             />
         </>
     );

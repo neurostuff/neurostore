@@ -24,7 +24,7 @@ import StudysetPageStyles from './StudysetPage.styles';
 const StudysetsPage: React.FC = (props) => {
     const [studyset, setStudyset] = useState<StudysetsApiResponse | undefined>();
     const [annotations, setAnnotations] = useState<AnnotationsApiResponse[] | undefined>();
-    const { getAccessTokenSilently, isAuthenticated } = useAuth0();
+    const { isAuthenticated } = useAuth0();
     const history = useHistory();
     const { showSnackbar } = useContext(GlobalContext);
 
@@ -36,7 +36,7 @@ const StudysetsPage: React.FC = (props) => {
 
     useEffect(() => {
         const getStudyset = async (id: string) => {
-            API.Services.StudySetsService.studysetsIdGet(id, true)
+            API.NeurostoreServices.StudySetsService.studysetsIdGet(id, true)
                 .then((res) => {
                     if (current) {
                         const receivedStudyset = res.data;
@@ -55,7 +55,7 @@ const StudysetsPage: React.FC = (props) => {
 
     useEffect(() => {
         const getAnnotations = async (id: string) => {
-            API.Services.AnnotationsService.annotationsGet(id).then(
+            API.NeurostoreServices.AnnotationsService.annotationsGet(id).then(
                 (res) => {
                     if (current && res?.data?.results) {
                         setAnnotations(res.data.results);
@@ -77,17 +77,9 @@ const StudysetsPage: React.FC = (props) => {
 
     const handleSaveTextEdit = (fieldName: 'name' | 'description' | 'publication' | 'doi') => {
         return async (editedText: string) => {
-            try {
-                const token = await getAccessTokenSilently();
-                API.UpdateServicesWithToken(token);
-            } catch (exception) {
-                showSnackbar('there was an error', SnackbarType.ERROR);
-                console.error(exception);
-            }
-
             if (!studyset) return;
 
-            API.Services.StudySetsService.studysetsIdPut(params.studysetId, {
+            API.NeurostoreServices.StudySetsService.studysetsIdPut(params.studysetId, {
                 name: studyset.name,
                 studies: (studyset.studies as StudyApiResponse[]).map((x) => x.id as string),
                 [fieldName]: editedText,
@@ -115,14 +107,7 @@ const StudysetsPage: React.FC = (props) => {
         setConfirmationIsOpen(false);
 
         if (studyset?.id && confirm) {
-            try {
-                const token = await getAccessTokenSilently();
-                API.UpdateServicesWithToken(token);
-            } catch (exception) {
-                showSnackbar('there was an error', SnackbarType.ERROR);
-                console.error(exception);
-            }
-            API.Services.StudySetsService.studysetsIdDelete(studyset.id)
+            API.NeurostoreServices.StudySetsService.studysetsIdDelete(studyset.id)
                 .then((res) => {
                     history.push('/userstudysets');
                     showSnackbar('deleted studyset', SnackbarType.SUCCESS);
@@ -136,15 +121,7 @@ const StudysetsPage: React.FC = (props) => {
 
     const handleCreateAnnotation = async (name: string, description: string) => {
         if (studyset && studyset?.id) {
-            try {
-                const token = await getAccessTokenSilently();
-                API.UpdateServicesWithToken(token);
-            } catch (exception) {
-                showSnackbar('there was an error', SnackbarType.ERROR);
-                console.error(exception);
-            }
-
-            API.Services.AnnotationsService.annotationsPost('neurosynth', undefined, {
+            API.NeurostoreServices.AnnotationsService.annotationsPost('neurosynth', undefined, {
                 name,
                 description,
                 note_keys: {},

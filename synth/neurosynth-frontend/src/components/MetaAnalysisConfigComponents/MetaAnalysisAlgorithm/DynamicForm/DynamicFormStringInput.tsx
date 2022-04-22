@@ -1,6 +1,6 @@
 import { Box, TextField } from '@mui/material';
 import MetaAnalysisAlgorithmStyles from '../MetaAnalysisAlgorithm.styles';
-import { IDynamicFormInput } from './DynamicForm';
+import { IDynamicFormInput } from '../..';
 import DynamicFormBaseTitle from './DynamicFormBaseTitle';
 
 const DynamicFormStringInput: React.FC<IDynamicFormInput> = (props) => {
@@ -8,11 +8,21 @@ const DynamicFormStringInput: React.FC<IDynamicFormInput> = (props) => {
         <Box sx={MetaAnalysisAlgorithmStyles.input}>
             <DynamicFormBaseTitle
                 name={props.parameterName}
-                description={props.value.description}
+                description={props.parameter.description}
             />
 
             <Box sx={{ width: '50%' }}>
-                <TextField label="text" sx={{ width: '100%' }} type="text" />
+                <TextField
+                    value={props.value || ''}
+                    label="text"
+                    sx={{ width: '100%' }}
+                    type="text"
+                    onChange={(event) => {
+                        props.onUpdate({
+                            [props.parameterName]: event.target.value,
+                        });
+                    }}
+                />
             </Box>
         </Box>
     );
