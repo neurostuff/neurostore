@@ -48,8 +48,8 @@ class BaseSchema(Schema):
 class SpecificationSchema(BaseSchema):
     type = fields.String()
     estimator = fields.Dict()
-    contrast = fields.Dict()
-    filter = fields.Dict()
+    contrast = fields.String()
+    filter = fields.String()
     corrector = fields.Dict()
 
     class Meta:
