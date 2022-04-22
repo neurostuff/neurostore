@@ -264,10 +264,7 @@ def user_data(session, mock_add_users):
                     'alpha': 0.05,
                     'method': 'indep',
                 },
-                filter={
-                    'name': 'included analyses',
-                    'columns': ['include'],
-                },
+                filter='include',
                 public=True,
             )
 

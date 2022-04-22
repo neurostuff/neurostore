@@ -64,10 +64,10 @@ def create_workflow(spec):
 
 
 def filter_analyses(specification, annotation):
-    columns = specification['filter']['columns']
+    column = specification['filter']
     keep_ids = []
     for annot in annotation['notes']:
-        if all([annot['note'].get(c) for c in columns]):
+        if annot['note'].get(column):
             keep_ids.append(f"{annot['study']}-{annot['analysis']}")
     return keep_ids
 
