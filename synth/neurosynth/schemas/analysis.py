@@ -69,12 +69,12 @@ class SpecificationSchema(BaseSchema):
 
 
 class StudysetSchema(BaseSchema):
-    studyset = fields.Dict()
+    snapshot = fields.Dict()
     neurostore_id = fields.String()
 
 
 class AnnotationSchema(BaseSchema):
-    annotation = fields.Dict()
+    snapshot = fields.Dict()
     neurostore_id = fields.String()
     studyset = fields.Pluck(StudysetSchema, "neurostore_id")
 

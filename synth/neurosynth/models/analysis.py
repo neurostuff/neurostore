@@ -49,7 +49,7 @@ class StudysetReference(db.Model):
 class Studyset(BaseMixin, db.Model):
     __tablename__ = "studysets"
 
-    studyset = db.Column(db.JSON)
+    snapshot = db.Column(db.JSON)
     public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     neurostore_id = db.Column(
@@ -68,7 +68,7 @@ class AnnotationReference(db.Model):
 class Annotation(BaseMixin, db.Model):
     __tablename__ = "annotations"
 
-    annotation = db.Column(db.JSON)
+    snapshot = db.Column(db.JSON)
     public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     neurostore_id = db.Column(

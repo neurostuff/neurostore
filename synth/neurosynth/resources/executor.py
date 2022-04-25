@@ -73,11 +73,11 @@ def filter_analyses(specification, annotation):
 
 
 def run_nimare(meta_analysis):
-    sset = Dataset(convert_neurostore_to_dict(meta_analysis['studyset']['studyset']))
+    sset = Dataset(convert_neurostore_to_dict(meta_analysis['studyset']['snapshot']))
     wf = create_workflow(meta_analysis['specification'])
     selected_analyses = filter_analyses(
         meta_analysis['specification'],
-        meta_analysis['annotation']['annotation']
+        meta_analysis['annotation']['snapshot']
     )
     filtered_sset = sset.slice(selected_analyses)
     return wf(filtered_sset)

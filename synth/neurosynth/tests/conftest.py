@@ -243,14 +243,14 @@ def user_data(session, mock_add_users):
 
             studyset = Studyset(
                 user=user,
-                studyset=serialized_studyset,
+                snapshot=serialized_studyset,
                 public=True,
                 studyset_reference=ss_ref,
             )
 
             annotation = Annotation(
                 user=user,
-                annotation=serialized_annotation,
+                snapshot=serialized_annotation,
                 public=True,
                 annotation_reference=annot_ref,
                 studyset=studyset,
