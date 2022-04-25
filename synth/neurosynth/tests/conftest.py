@@ -231,7 +231,7 @@ def user_data(session, mock_add_users):
 
     with open(neurostore_dset, 'r') as data_file:
         serialized_studyset = json.load(data_file)
-    
+
     with open(neurostore_annot, 'r') as data_file:
         serialized_annotation = json.load(data_file)
 

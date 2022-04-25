@@ -3,7 +3,9 @@ Ingest studies from Neurostore
 """
 import requests
 
-from ..models import Studyset, Annotation, Specification, MetaAnalysis, StudysetReference, AnnotationReference
+from ..models import (
+    Studyset, Annotation, Specification, MetaAnalysis, StudysetReference, AnnotationReference
+)
 from ..database import db
 
 
@@ -19,7 +21,9 @@ def ingest_neurostore(url="https://neurostore.xyz", n_studysets=None):
             to_commit.append(ss)
             # only ingest annotations for smaller studysets now.
             if len(studyset['studies']) < 1000:
-                annotations = requests.get(f"{url}/api/annotations/?studyset_id={studyset['id']}").json()['results']
+                annotations = requests.get(
+                    f"{url}/api/annotations/?studyset_id={studyset['id']}"
+                ).json()['results']
                 for annot in annotations:
                     to_commit.append(
                         Annotation(
