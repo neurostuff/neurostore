@@ -87,16 +87,14 @@ class MetaAnalysis(BaseMixin, db.Model):
     name = db.Column(db.Text)
     description = db.Column(db.Text)
     specification_id = db.Column(db.Text, db.ForeignKey('specifications.id'))
-    studyset_id = db.Column(db.Text, db.ForeignKey('studyset_references.neurostore_id'))
     internal_studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
-    annotation_id = db.Column(db.Text, db.ForeignKey('annotation_references.neurostore_id'))
     internal_annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
 
     specification = relationship("Specification", backref=backref("meta_analyses"))
-    studyset = relationship("Studyset", backref=backref("meta_analyses"))
+    studyset = relationship("Studyset", backref=backref("meta_analyses"), lazy="joined")
 
-    annotation = relationship("Annotation", backref=backref("meta_analyses"))
+    annotation = relationship("Annotation", backref=backref("meta_analyses"), lazy="joined")
     user = relationship("User", backref=backref("meta_analyses"))
 
 
