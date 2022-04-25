@@ -1,7 +1,9 @@
 from .analysis import (
     MetaAnalysisSchema,
     StudysetSchema,
+    StudysetReferenceSchema,
     AnnotationSchema,
+    AnnotationReferenceSchema,
     SpecificationSchema,
 )
 from .users import (
@@ -12,7 +14,9 @@ from .users import (
 __all__ = [
     "MetaAnalysisSchema",
     "StudysetSchema",
+    "StudysetReferenceSchema",
     "AnnotationSchema",
+    "AnnotationReferenceSchema",
     "SpecificationSchema",
     "UserSchema",
 ]

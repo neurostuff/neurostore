@@ -45,6 +45,14 @@ class BaseSchema(Schema):
     user_id = fields.String(data_key="user")
 
 
+class StudysetReferenceSchema(Schema):
+    neurostore_id = fields.String()
+
+
+class AnnotationReferenceSchema(Schema):
+    neurostore_id = fields.String()
+
+
 class SpecificationSchema(BaseSchema):
     type = fields.String()
     estimator = fields.Dict()
@@ -65,7 +73,7 @@ class StudysetSchema(BaseSchema):
 class AnnotationSchema(BaseSchema):
     annotation = fields.Dict()
     neurostore_id = fields.String()
-    studyset_id = fields.String()
+    studyset = fields.Pluck(StudysetSchema, "neurostore_id")
 
 
 class MetaAnalysisSchema(BaseSchema):
