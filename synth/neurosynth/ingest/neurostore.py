@@ -9,7 +9,7 @@ from ..models import (
 from ..database import db
 
 
-def ingest_neurostore(url="https://neurostore.xyz", n_studysets=None):
+def ingest_neurostore(url="https://neurostore.xyz", n_studysets=None, study_size_limit=1000):
     studysets = requests.get(f"{url}/api/studysets/").json()['results']
     if n_studysets:
         studysets = studysets[:n_studysets]
@@ -20,7 +20,7 @@ def ingest_neurostore(url="https://neurostore.xyz", n_studysets=None):
             ss = Studyset(studyset_reference=StudysetReference(neurostore_id=studyset['id']))
             to_commit.append(ss)
             # only ingest annotations for smaller studysets now.
-            if len(studyset['studies']) < 1000:
+            if len(studyset['studies']) < study_size_limit:
                 annotations = requests.get(
                     f"{url}/api/annotations/?studyset_id={studyset['id']}"
                 ).json()['results']
