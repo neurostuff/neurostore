@@ -8,7 +8,8 @@ import sqlalchemy as sa
 from ..ingest.neurostore import create_meta_analyses
 from ..database import db as _db
 from ..models import (
-    User, Specification, Studyset, Annotation, MetaAnalysis
+    User, Specification, Studyset, Annotation, MetaAnalysis,
+    StudysetReference, AnnotationReference
 )
 from auth0.v3.authentication import GetToken
 
@@ -230,26 +231,29 @@ def user_data(session, mock_add_users):
 
     with open(neurostore_dset, 'r') as data_file:
         serialized_studyset = json.load(data_file)
-
+    
     with open(neurostore_annot, 'r') as data_file:
         serialized_annotation = json.load(data_file)
 
     with session.no_autoflush:
+        ss_ref = StudysetReference(neurostore_id=serialized_studyset['id'])
+        annot_ref = AnnotationReference(neurostore_id=serialized_annotation['id'])
         for user_info in mock_add_users.values():
             user = User.query.filter_by(id=user_info['id']).first()
 
             studyset = Studyset(
                 user=user,
-                neurostore_id=serialized_studyset['id'],
                 studyset=serialized_studyset,
                 public=True,
+                studyset_reference=ss_ref,
             )
 
             annotation = Annotation(
                 user=user,
-                neurostore_id=serialized_annotation['id'],
                 annotation=serialized_annotation,
                 public=True,
+                annotation_reference=annot_ref,
+                studyset=studyset,
             )
 
             specification = Specification(
