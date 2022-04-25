@@ -16,8 +16,13 @@ def ingest_neurostore(url="https://neurostore.xyz", n_studysets=None, study_size
 
     to_commit = []
     with db.session.no_autoflush:
+
         for studyset in studysets:
-            ss = Studyset(studyset_reference=StudysetReference(neurostore_id=studyset['id']))
+            ss_ref = StudysetReference.query.filter_by(
+                neurostore_id=studyset['id']
+                ).one_or_none() \
+                or StudysetReference(neurostore_id=studyset['id'])
+            ss = Studyset(studyset_reference=ss_ref)
             to_commit.append(ss)
             # only ingest annotations for smaller studysets now.
             if len(studyset['studies']) < study_size_limit:
@@ -25,10 +30,14 @@ def ingest_neurostore(url="https://neurostore.xyz", n_studysets=None, study_size
                     f"{url}/api/annotations/?studyset_id={studyset['id']}"
                 ).json()['results']
                 for annot in annotations:
+                    annot_ref = AnnotationReference.query.filter_by(
+                        neurostore_id=annot['id']
+                        ).one_or_none() \
+                        or AnnotationReference(neurostore_id=studyset['id'])
                     to_commit.append(
                         Annotation(
                             studyset=ss,
-                            annotation_reference=AnnotationReference(neurostore_id=annot['id'])
+                            annotation_reference=annot_ref,
                         )
                     )
 
