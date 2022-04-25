@@ -121,12 +121,8 @@ class ObjectView(BaseView):
     def get(self, id):
         record = self._model.query.filter_by(id=id).first_or_404()
         args = parser.parse(self._user_args, request, location="query")
-        if args.get("nested") == 'true':
-            nested = True
-        else:
-            nested = False
 
-        return self.__class__._schema(context={'nested': nested}).dump(record)
+        return self.__class__._schema(context={'nested': args.get("nested")}).dump(record)
 
     def put(self, id):
         request_data = self.insert_data(id, request.json)
