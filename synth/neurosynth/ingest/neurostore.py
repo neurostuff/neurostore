@@ -33,7 +33,7 @@ def ingest_neurostore(url="https://neurostore.xyz", n_studysets=None, study_size
                     annot_ref = AnnotationReference.query.filter_by(
                         neurostore_id=annot['id']
                         ).one_or_none() \
-                        or AnnotationReference(neurostore_id=studyset['id'])
+                        or AnnotationReference(neurostore_id=annot['id'])
                     to_commit.append(
                         Annotation(
                             studyset=ss,
