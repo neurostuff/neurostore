@@ -17,10 +17,13 @@ class StringOrNested(fields.Nested):
         if value is None:
             return None
         nested = self.context.get("nested")
+        nested_attr = self.metadata.get('pluck')
         if nested:
             many = self.schema.many or self.many
-            nested_obj = getattr(obj, self.data_key)
+            nested_obj = getattr(obj, self.data_key or self.name)
             return self.schema.dump(nested_obj, many=many)
+        elif nested_attr:
+            return getattr(value, nested_attr)
         else:
             return utils.ensure_text_type(value)
 
@@ -45,6 +48,14 @@ class BaseSchema(Schema):
     user_id = fields.String(data_key="user")
 
 
+class StudysetReferenceSchema(Schema):
+    neurostore_id = fields.String()
+
+
+class AnnotationReferenceSchema(Schema):
+    neurostore_id = fields.String()
+
+
 class SpecificationSchema(BaseSchema):
     type = fields.String()
     estimator = fields.Dict()
@@ -58,16 +69,17 @@ class SpecificationSchema(BaseSchema):
 
 
 class StudysetSchema(BaseSchema):
-    studyset = fields.Dict()
+    snapshot = fields.Dict()
     neurostore_id = fields.String()
 
 
 class AnnotationSchema(BaseSchema):
-    annotation = fields.Dict()
+    snapshot = fields.Dict()
     neurostore_id = fields.String()
+    studyset = fields.Pluck(StudysetSchema, "neurostore_id")
 
 
 class MetaAnalysisSchema(BaseSchema):
     specification_id = StringOrNested(SpecificationSchema, data_key="specification")
-    studyset_id = StringOrNested(StudysetSchema, data_key="studyset")
-    annotation_id = StringOrNested(AnnotationSchema, data_key="annotation")
+    studyset = StringOrNested(StudysetSchema, metadata={'pluck': 'neurostore_id'})
+    annotation = StringOrNested(AnnotationSchema, metadata={'pluck': 'neurostore_id'})
