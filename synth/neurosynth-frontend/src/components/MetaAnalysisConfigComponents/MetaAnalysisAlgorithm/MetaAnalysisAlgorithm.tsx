@@ -83,8 +83,6 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
                         <Divider sx={{ marginBottom: '1rem' }} />
                         <DynamicForm
                             onUpdate={(arg) => {
-                                console.log(arg);
-
                                 props.onArgsUpdate({
                                     estimatorArgs: { ...arg },
                                 });

@@ -58,13 +58,13 @@ const Navbar: React.FC = (_props) => {
     const { loginWithPopup, getAccessTokenSilently, logout } = useAuth0();
 
     const handleLogin = async () => {
-        try {
-            await loginWithPopup();
-            const token = await getAccessTokenSilently();
-            API.UpdateServicesWithToken(token);
-        } catch (exception) {
-            console.error(exception);
-        }
+        await loginWithPopup();
+        // try {
+        //     const token = await getAccessTokenSilently();
+        //     API.UpdateServicesWithToken(token);
+        // } catch (exception) {
+        //     console.error(exception);
+        // }
     };
 
     const handleLogout = () => logout({ returnTo: window.location.origin });

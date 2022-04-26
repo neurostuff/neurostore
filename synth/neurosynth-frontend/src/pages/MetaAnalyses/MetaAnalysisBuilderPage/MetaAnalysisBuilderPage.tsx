@@ -92,8 +92,6 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
     };
 
     const handleCreateMetaAnalysis = async () => {
-        console.log('CREATE');
-
         let corrector = null;
         if (metaAnalysisComponents.corrector) {
             corrector = {
@@ -112,8 +110,20 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
                 type: metaAnalysisComponents.algorithm?.label,
                 args: metaAnalysisDynamicArgs.estimatorArgs,
             },
+            mask: '',
+            contrast: '',
+            transformer: '',
             corrector: metaAnalysisComponents.corrector ? corrector : null,
         };
+
+        API.NeurosynthServices.SpecificationsService.specificationsPost(spec)
+            .then((res) => {
+                console.log(res);
+            })
+            .catch((err) => {
+                console.log(err);
+            });
+
         // API.NeurostoreServices.SpecificationsService.specificationsPost(spec)
         //     .then((res) => {
         //         console.log(res);
