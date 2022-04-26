@@ -3,6 +3,8 @@ from .analysis import (
     AnnotationsView,
     StudysetsView,
     SpecificationsView,
+    StudysetReferencesResource,
+    AnnotationReferencesResource
 )
 
 from .users import (
@@ -13,6 +15,8 @@ __all__ = [
     "MetaAnalysesView",
     "AnnotationsView",
     "StudysetsView",
+    "StudysetReferencesResource",
+    "AnnotationReferencesResource",
     "SpecificationsView",
     "UsersView",
 ]

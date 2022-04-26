@@ -11,6 +11,7 @@ from webargs import fields
 from ..database import db
 from ..models.analysis import (   # noqa E401
     Studyset, Annotation, MetaAnalysis, Specification,
+    StudysetReference, AnnotationReference
 )
 from ..models.auth import User
 
@@ -19,6 +20,9 @@ from ..schemas import (  # noqa E401
     AnnotationSchema,
     StudysetSchema,
     SpecificationSchema,
+    AnnotationReferenceSchema,
+    StudysetReferenceSchema,
+
 )
 from .singular import singularize
 
@@ -31,7 +35,8 @@ def get_current_user():
 
 
 def view_maker(cls):
-    basename = singularize(cls.__name__.rstrip('View'), custom={"MetaAnalyses": 'MetaAnalysis'})
+    proc_name = cls.__name__.removesuffix('View').removesuffix('Resource')
+    basename = singularize(proc_name, custom={"MetaAnalyses": 'MetaAnalysis'})
 
     class ClassView(cls):
         _model = globals()[basename]
@@ -45,6 +50,7 @@ def view_maker(cls):
 class BaseView(MethodView):
 
     _model = None
+    _nested = {}
 
     @classmethod
     def update_or_create(cls, data, id=None, commit=True):
@@ -115,12 +121,8 @@ class ObjectView(BaseView):
     def get(self, id):
         record = self._model.query.filter_by(id=id).first_or_404()
         args = parser.parse(self._user_args, request, location="query")
-        if args.get("nested") == 'true':
-            nested = True
-        else:
-            nested = False
 
-        return self.__class__._schema(context={'nested': nested}).dump(record)
+        return self.__class__._schema(context={'nested': args.get("nested")}).dump(record)
 
     def put(self, id):
         request_data = self.insert_data(id, request.json)
@@ -269,14 +271,24 @@ class MetaAnalysesView(ObjectView, ListView):
 
 @view_maker
 class AnnotationsView(ObjectView, ListView):
-    pass
+    _nested = {"annotation_reference": "AnnotationReferenceResource"}
 
 
 @view_maker
 class StudysetsView(ObjectView, ListView):
-    pass
+    _nested = {"studyset_reference": "StudysetReferenceResource"}
 
 
 @view_maker
 class SpecificationsView(ObjectView, ListView):
+    pass
+
+
+@view_maker
+class StudysetReferencesResource(ObjectView):
+    pass
+
+
+@view_maker
+class AnnotationReferencesResource(ObjectView):
     pass
