@@ -11,10 +11,6 @@ jest.mock('../NavbarPopupMenu/NavbarPopupMenu');
 jest.mock('@auth0/auth0-react');
 
 describe('NavbarToolbar Component', () => {
-    const mockedUseAuth0 = {
-        isAuthenticated: false,
-    };
-
     const mockNavOptions: NavOptionsModel[] = [
         {
             label: 'testLabel1',
@@ -37,7 +33,7 @@ describe('NavbarToolbar Component', () => {
     const logoutMock = jest.fn();
 
     beforeEach(() => {
-        (useAuth0 as any).mockReturnValue(mockedUseAuth0);
+        useAuth0().isAuthenticated = false;
     });
 
     afterEach(() => {
@@ -80,11 +76,7 @@ describe('NavbarToolbar Component', () => {
     });
 
     it('should logout with logout is clicked', () => {
-        const mockedUseAuth0 = {
-            isAuthenticated: true,
-        };
-
-        (useAuth0 as any).mockReturnValue(mockedUseAuth0);
+        useAuth0().isAuthenticated = true;
 
         render(
             <MockThemeProvider>

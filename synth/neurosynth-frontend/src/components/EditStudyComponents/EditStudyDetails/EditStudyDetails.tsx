@@ -1,14 +1,4 @@
-import { useAuth0 } from '@auth0/auth0-react';
-import { ExpandMoreOutlined } from '@mui/icons-material';
-import {
-    TextField,
-    Button,
-    Accordion,
-    AccordionDetails,
-    AccordionSummary,
-    Typography,
-    Box,
-} from '@mui/material';
+import { TextField, Button, Typography, Box } from '@mui/material';
 import { AxiosError } from 'axios';
 import React, { ChangeEvent, useContext, useState } from 'react';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
@@ -16,6 +6,7 @@ import useIsMounted from '../../../hooks/useIsMounted';
 import API from '../../../utils/api';
 import NeurosynthAccordion from '../../NeurosynthAccordion/NeurosynthAccordion';
 import EditStudyDetailsStyles from './EditStudyDetails.styles';
+import EditStudyMetadataStyles from '../EditStudyMetadata/EditStudyMetadata.styles';
 
 export interface IEditStudyDetails {
     studyId: string;
@@ -34,7 +25,6 @@ const textFieldInputProps = {
 
 const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
     const { studyId, name, authors, publication, doi, description } = props;
-    const { getAccessTokenSilently } = useAuth0();
     const context = useContext(GlobalContext);
     const [updatedEnabled, setUpdateEnabled] = useState(false);
     const isMountedRef = useIsMounted();
@@ -106,6 +96,7 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
                     )}
                 </Box>
             }
+            accordionSummarySx={EditStudyMetadataStyles.accordionSummary}
             sx={updatedEnabled ? EditStudyDetailsStyles.unsavedChanges : {}}
             elevation={1}
         >

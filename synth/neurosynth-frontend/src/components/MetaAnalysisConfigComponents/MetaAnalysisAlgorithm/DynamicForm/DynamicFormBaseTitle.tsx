@@ -1,4 +1,4 @@
-import { Typography, Box } from '@mui/material';
+import { Typography } from '@mui/material';
 
 interface IDynamicFormBaseTitle {
     name: string;

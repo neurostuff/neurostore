@@ -3,7 +3,6 @@ import NavbarDrawer from './NavbarDrawer/NavbarDrawer';
 import NavbarToolbar from './NavbarToolbar/NavbarToolbar';
 import { useAuth0 } from '@auth0/auth0-react';
 import { NavOptionsModel } from '.';
-import API from '../../utils/api';
 
 const navItems: NavOptionsModel[] = [
     { label: 'HOME', path: '/', children: null },
@@ -55,16 +54,10 @@ const navItems: NavOptionsModel[] = [
 ];
 
 const Navbar: React.FC = (_props) => {
-    const { loginWithPopup, getAccessTokenSilently, logout } = useAuth0();
+    const { loginWithPopup, logout } = useAuth0();
 
     const handleLogin = async () => {
         await loginWithPopup();
-        // try {
-        //     const token = await getAccessTokenSilently();
-        //     API.UpdateServicesWithToken(token);
-        // } catch (exception) {
-        //     console.error(exception);
-        // }
     };
 
     const handleLogout = () => logout({ returnTo: window.location.origin });

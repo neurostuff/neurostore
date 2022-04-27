@@ -15,6 +15,7 @@ import { useInputValidation } from '../../../hooks';
 import useIsMounted from '../../../hooks/useIsMounted';
 import { EAnalysisType } from '../../../pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 import API, { AnnotationsApiResponse } from '../../../utils/api';
+import { EPropertyType } from '../../EditMetadata';
 import NeurosynthAutocomplete from '../../NeurosynthAutocomplete/NeurosynthAutocomplete';
 import MetaAnalysisDataStyles from './MetaAnalysisData.styles';
 
@@ -22,6 +23,7 @@ const validationFunc = (arg: EAnalysisType | undefined | null) => !!arg;
 
 const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
     const [annotations, setAnnotations] = useState<AnnotationsApiResponse[]>();
+    const [metadataKeys, setMetadataKeys] = useState<string[]>();
 
     const { current } = useIsMounted();
     const { handleChange, handleOnBlur, handleOnFocus, isValid } = useInputValidation(
@@ -35,15 +37,25 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
         const getAnnotationsForStudyset = (id: string) => {
             API.NeurostoreServices.AnnotationsService.annotationsGet(id).then((res) => {
                 if (current && res && res.data && res.data.results) {
-                    const typedRes = res.data.results as AnnotationsApiResponse[];
+                    console.log(res.data.results);
 
-                    setAnnotations(typedRes);
+                    setAnnotations(res.data.results as AnnotationsApiResponse[]);
                 }
             });
         };
 
         getAnnotationsForStudyset(props.studyset.id);
     }, [current, props.studyset]);
+
+    useEffect(() => {
+        if (!props.annotation || !props.annotation.id) return;
+
+        const keyTypes: string[] = [];
+        for (const [key, value] of Object.entries(props.annotation.note_keys || {})) {
+            if (value === EPropertyType.BOOLEAN) keyTypes.push(key);
+        }
+        setMetadataKeys(keyTypes);
+    }, [current, props.annotation]);
 
     return (
         <>
@@ -60,8 +72,6 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                     required
                     labelId="select-label"
                     onChange={(event) => {
-                        console.log(event.target.value);
-
                         const value = event.target.value as EAnalysisType;
                         props.onUpdate({ analysisType: value, algorithm: null });
                         handleChange(value);
@@ -106,7 +116,7 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
 
             <NeurosynthAutocomplete
                 label="annotation"
-                shouldDisable={props.studyset === undefined || props.studyset === null}
+                shouldDisable={!props.studyset}
                 isOptionEqualToValue={(option, value) => option?.id === value?.id}
                 value={props.annotation || null}
                 renderOption={(params, option) => (
@@ -120,6 +130,23 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                     props.onUpdate({ annotation: newVal });
                 }}
                 options={annotations || []}
+            />
+
+            <Box sx={MetaAnalysisDataStyles.spaceBelow}>
+                Select the <b>inclusion column</b> that you would like to use for your meta analysis
+            </Box>
+
+            <NeurosynthAutocomplete
+                label="Inclusion Column"
+                shouldDisable={!props.annotation}
+                isOptionEqualToValue={(option, value) => option === value}
+                value={props.inclusionColumn}
+                sx={{ ...MetaAnalysisDataStyles.selectInput, ...{ marginBottom: '2rem' } }}
+                getOptionLabel={(option) => option || ''}
+                onChange={(_event, newVal, _reason) => {
+                    props.onUpdate({ inclusionColumn: newVal });
+                }}
+                options={metadataKeys || []}
             />
 
             <NavigationButtons

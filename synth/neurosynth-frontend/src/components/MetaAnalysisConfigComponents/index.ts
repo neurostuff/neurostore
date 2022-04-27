@@ -4,11 +4,15 @@ import {
     IDynamicArgs,
 } from '../../pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 import { AnnotationsApiResponse, StudysetsApiResponse } from '../../utils/api';
-import { INavigationButtonFn } from '../NavigationButtons/NavigationButtons';
+import { INavigationButtonFn } from '../Buttons/NavigationButtons/NavigationButtons';
 import { IAutocompleteObject } from '../NeurosynthAutocomplete/NeurosynthAutocomplete';
 
 export const KWARG_STRING = '**kwargs';
 
+/**
+ * this interface is extremely flexible as we have to account for a number of types including
+ * objects (in the case of kwargs)
+ */
 export interface IDynamicInputType {
     [key: string]: string | boolean | number | null | undefined | { [key: string]: string };
 }
@@ -30,6 +34,7 @@ export interface IMetaAnalysisData {
     analysisType: EAnalysisType | undefined;
     studyset: StudysetsApiResponse | undefined | null;
     annotation: AnnotationsApiResponse | undefined | null;
+    inclusionColumn: string | undefined | null;
 
     studysets: StudysetsApiResponse[];
     onUpdate: (arg: Partial<IAnalysisComponents>) => void;

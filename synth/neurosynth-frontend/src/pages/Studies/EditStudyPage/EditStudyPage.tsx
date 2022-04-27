@@ -1,7 +1,7 @@
 import { Box, Button } from '@mui/material';
 import { useState, useEffect, useCallback } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import { EditAnalyses, EditStudyDetails, NeurosynthLoader } from '../../../components';
+import { BackButton, EditAnalyses, EditStudyDetails, NeurosynthLoader } from '../../../components';
 import EditStudyMetadata from '../../../components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API, { AnalysisApiResponse } from '../../../utils/api';
@@ -51,10 +51,6 @@ const EditStudyPage = () => {
         }
     }, [params.studyId, isMountedRef]);
 
-    const handleOnCancel = (event: React.MouseEvent) => {
-        history.push(`/studies/${params.studyId}`);
-    };
-
     const handleAnalysisUpdate = (analysisId: string, newAnalysis: AnalysisApiResponse) => {
         setStudy((prevState) => {
             if (!prevState || !prevState.analyses) return prevState;
@@ -89,14 +85,11 @@ const EditStudyPage = () => {
     return (
         <NeurosynthLoader loaded={!!study}>
             <Box sx={EditStudyPageStyles.stickyButtonContainer}>
-                <Button
-                    color="secondary"
-                    onClick={handleOnCancel}
+                <BackButton
                     sx={EditStudyPageStyles.button}
-                    variant="outlined"
-                >
-                    Return to Study View
-                </Button>
+                    text="return to study view"
+                    path={`/studies/${params.studyId}`}
+                />
             </Box>
 
             {study && (

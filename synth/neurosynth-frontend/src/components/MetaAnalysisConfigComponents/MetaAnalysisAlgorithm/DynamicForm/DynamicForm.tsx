@@ -6,6 +6,22 @@ import DynamicFormNumericInput from './DynamicFormNumericInput';
 import DynamicFormSelectInput from './DynamicFormSelectInput';
 import DynamicFormStringInput from './DynamicFormStringInput';
 
+const getFormComponentBySpec = (spec: IParameter): React.FC<IDynamicFormInput> => {
+    switch (spec.type) {
+        case 'str':
+            return DynamicFormStringInput;
+        case 'int':
+        case 'float':
+            return DynamicFormNumericInput;
+        case 'bool':
+            return DynamicFormBoolInput;
+        case null:
+            return DynamicFormKwargInput;
+        default:
+            return DynamicFormSelectInput;
+    }
+};
+
 const DynamicForm: React.FC<IDynamicForm> = (props) => {
     const specs = Object.keys(props.specification).sort();
 
@@ -21,22 +37,6 @@ const DynamicForm: React.FC<IDynamicForm> = (props) => {
         value: props.values[parameter],
         onUpdate: props.onUpdate,
     }));
-
-    const getFormComponentBySpec = (spec: IParameter): React.FC<IDynamicFormInput> => {
-        switch (spec.type) {
-            case 'str':
-                return DynamicFormStringInput;
-            case 'int':
-            case 'float':
-                return DynamicFormNumericInput;
-            case 'bool':
-                return DynamicFormBoolInput;
-            case null:
-                return DynamicFormKwargInput;
-            default:
-                return DynamicFormSelectInput;
-        }
-    };
 
     return (
         <Box

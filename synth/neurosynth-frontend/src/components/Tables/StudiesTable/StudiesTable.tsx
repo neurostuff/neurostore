@@ -23,7 +23,7 @@ interface StudiesTableModel {
 }
 
 const StudiesTable: React.FC<StudiesTableModel> = (props) => {
-    const { isAuthenticated, user, getAccessTokenSilently } = useAuth0();
+    const { isAuthenticated, user } = useAuth0();
     const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
     const history = useHistory();
     const { showSnackbar } = useContext(GlobalContext);
@@ -102,9 +102,6 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
             studies: selectedStudysetStudies as string[],
         })
             .then((res) => {
-                // temporary fix. TODO: fix open-api spec
-                const updatedStudyset = res.data as unknown as StudysetsApiResponse;
-
                 showSnackbar(
                     `${study.name} added to ${studyset.name || studyset.id}`,
                     SnackbarType.SUCCESS
@@ -113,10 +110,8 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                     setStudysets((prevState) => {
                         if (!prevState) return prevState;
                         const newArr = [...prevState];
-                        const modifiedStudysetIndex = newArr.findIndex(
-                            (x) => x.id === updatedStudyset.id
-                        );
-                        newArr[modifiedStudysetIndex] = { ...updatedStudyset };
+                        const modifiedStudysetIndex = newArr.findIndex((x) => x.id === res.data.id);
+                        newArr[modifiedStudysetIndex] = { ...res.data };
                         return newArr;
                     });
                 }

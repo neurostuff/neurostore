@@ -22,8 +22,6 @@ const EditMetadataRowStyles: Style = {
     },
     key: {
         minWidth: '240px',
-        // override tableCell as this input has an error message
-        verticalAlign: 'baseline !important',
     },
     updateButton: {
         width: '60px',

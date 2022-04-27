@@ -141,13 +141,7 @@ describe('StudiesTable Component', () => {
             })
         );
 
-        (useAuth0 as any).mockReturnValue({
-            isAuthenticated: false,
-            getAccessTokenSilently: () => jest.fn(),
-            user: {
-                sub: 'test-user-id',
-            },
-        });
+        useAuth0().isAuthenticated = false;
     });
 
     afterAll(() => {
@@ -155,12 +149,7 @@ describe('StudiesTable Component', () => {
     });
 
     it('should render', async () => {
-        (useAuth0 as any).mockReturnValue({
-            isAuthenticated: true,
-            user: {
-                sub: 'test-user-id',
-            },
-        });
+        useAuth0().isAuthenticated = true;
 
         await act(async () => {
             render(
@@ -224,13 +213,7 @@ describe('StudiesTable Component', () => {
     });
 
     it('should create the studyset', async () => {
-        (useAuth0 as any).mockReturnValue({
-            isAuthenticated: true,
-            getAccessTokenSilently: jest.fn(),
-            user: {
-                sub: 'test-user-id',
-            },
-        });
+        useAuth0().isAuthenticated = true;
 
         await act(async () => {
             render(
@@ -252,14 +235,7 @@ describe('StudiesTable Component', () => {
     });
 
     it('should edit the studyset', async () => {
-        (useAuth0 as any).mockReturnValue({
-            isAuthenticated: true,
-            getAccessTokenSilently: jest.fn(),
-            user: {
-                sub: 'test-user-id',
-            },
-        });
-
+        useAuth0().isAuthenticated = true;
         await act(async () => {
             render(
                 <MockThemeProvider>
@@ -283,12 +259,7 @@ describe('StudiesTable Component', () => {
     });
 
     it('should handle the selection when the row is clicked', async () => {
-        (useAuth0 as any).mockReturnValue({
-            isAuthenticated: true,
-            user: {
-                sub: 'test-user-id',
-            },
-        });
+        useAuth0().isAuthenticated = true;
 
         await act(async () => {
             render(
@@ -307,12 +278,7 @@ describe('StudiesTable Component', () => {
     });
 
     it('should show the add icon when showStudyOptions flag is enabled', async () => {
-        (useAuth0 as any).mockReturnValue({
-            isAuthenticated: true,
-            user: {
-                sub: 'test-user-id',
-            },
-        });
+        useAuth0().isAuthenticated = true;
 
         await act(async () => {
             render(
@@ -329,12 +295,8 @@ describe('StudiesTable Component', () => {
     });
 
     it('should hide the add icon when showStudyOptions flag is false', async () => {
-        (useAuth0 as any).mockReturnValue({
-            isAuthenticated: true,
-            user: {
-                sub: 'test-user-id',
-            },
-        });
+        useAuth0().isAuthenticated = true;
+
         await act(async () => {
             render(
                 <MockThemeProvider>

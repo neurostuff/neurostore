@@ -93,7 +93,13 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                     />
                 </Box>
             )}
-            <Box sx={[EditMetadataRowStyles.tableCell, EditMetadataRowStyles.key]}>
+            <Box
+                sx={[
+                    EditMetadataRowStyles.tableCell,
+                    EditMetadataRowStyles.key,
+                    { verticalAlign: 'baseline' },
+                ]}
+            >
                 <TextField
                     size="small"
                     sx={EditMetadataRowStyles.addMetadataTextfield}
@@ -106,14 +112,10 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                     value={metadataRow.metadataKey}
                 />
                 {/* This component is added so that the error message doesn't mess up the row alignment */}
-                {isValid && <Box sx={{ height: '22px' }}></Box>}
+                {/* {isValid && <Box sx={{ height: '22px' }}></Box>} */}
             </Box>
             <Box
-                sx={[
-                    EditMetadataRowStyles.tableCell,
-                    EditMetadataRowStyles.key,
-                    { width: '100%', verticalAlign: 'middle !important' },
-                ]}
+                sx={[EditMetadataRowStyles.tableCell, EditMetadataRowStyles.key, { width: '100%' }]}
             >
                 <EditMetadataValue
                     placeholderText={valuePlaceholderText}
@@ -122,7 +124,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                     type={currType}
                 />
                 {/* This component is added so that the error message doesn't mess up the row alignment */}
-                <Box sx={{ height: '22px' }}></Box>
+                {/* <Box sx={{ height: '22px' }}></Box> */}
             </Box>
             <Box sx={EditMetadataRowStyles.tableCell}>
                 <Button
@@ -135,7 +137,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                     ADD
                 </Button>
                 {/* This component is added so that the error message doesn't mess up the row alignment */}
-                <Box sx={{ height: '22px' }}></Box>
+                {/* <Box sx={{ height: '22px' }}></Box> */}
             </Box>
         </Box>
     );

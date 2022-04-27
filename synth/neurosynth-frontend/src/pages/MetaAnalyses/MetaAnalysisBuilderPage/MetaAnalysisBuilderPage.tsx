@@ -1,15 +1,15 @@
-import { useAuth0 } from '@auth0/auth0-react';
-import { Button, Step, StepLabel, Stepper } from '@mui/material';
+import { Step, StepLabel, Stepper } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { IDynamicInputType } from '../../../components/MetaAnalysisConfigComponents';
 import MetaAnalysisAlgorithm from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisAlgorithm/MetaAnalysisAlgorithm';
 import MetaAnalysisData from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisData/MetaAnalysisData';
 import MetaAnalysisFinalize from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/MetaAnalysisFinalize';
-import { ENavigationButton } from '../../../components/NavigationButtons/NavigationButtons';
+import { ENavigationButton } from '../../../components/Buttons/NavigationButtons/NavigationButtons';
 import { IAutocompleteObject } from '../../../components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import useIsMounted from '../../../hooks/useIsMounted';
 import { Specification } from '../../../neurosynth-compose-typescript-sdk';
 import API, { AnnotationsApiResponse, StudysetsApiResponse } from '../../../utils/api';
+import { BackButton } from '../../../components';
 
 export enum EAnalysisType {
     CBMA = 'CBMA',
@@ -23,6 +23,7 @@ export interface IAnalysisComponents {
     corrector: IAutocompleteObject | undefined | null;
     studyset: StudysetsApiResponse | undefined | null;
     annotation: AnnotationsApiResponse | undefined | null;
+    inclusionColumn: string | undefined | null;
 }
 
 export interface IDynamicArgs {
@@ -42,20 +43,19 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
         algorithm: undefined,
         estimator: undefined,
         corrector: undefined,
+        inclusionColumn: undefined,
     });
     const [metaAnalysisDynamicArgs, setMetaAnalysisDynamicArgs] = useState<IDynamicArgs>({
         estimatorArgs: {},
         correctorArgs: {},
     });
 
-    const { getAccessTokenSilently } = useAuth0();
-
     useEffect(() => {
         if (!metaAnalysisComponents.algorithm) {
-            setMetaAnalysisDynamicArgs({
+            setMetaAnalysisDynamicArgs((prevState) => ({
+                ...prevState,
                 estimatorArgs: {},
-                correctorArgs: {},
-            });
+            }));
         }
     }, [metaAnalysisComponents.algorithm]);
 
@@ -170,9 +170,11 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
 
     return (
         <>
-            <Button sx={{ marginBottom: '1.5rem' }} color="secondary" variant="outlined">
-                Return to my meta-analyses
-            </Button>
+            <BackButton
+                sx={{ marginBottom: '1.5rem' }}
+                text="Return to my meta-analyses"
+                path="/usermeta-analyses"
+            />
             <Stepper sx={{ marginBottom: '1.5rem' }} activeStep={activeStep}>
                 <Step>
                     <StepLabel
@@ -215,6 +217,7 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
                     analysisType={metaAnalysisComponents.analysisType}
                     studyset={metaAnalysisComponents.studyset}
                     annotation={metaAnalysisComponents.annotation}
+                    inclusionColumn={metaAnalysisComponents.inclusionColumn}
                     onNext={(button) => {
                         setActiveStep((prev) =>
                             button === ENavigationButton.NEXT ? ++prev : --prev
@@ -257,6 +260,7 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
                     correctorArgs={metaAnalysisDynamicArgs.correctorArgs}
                     studyset={metaAnalysisComponents.studyset}
                     annotation={metaAnalysisComponents.annotation}
+                    inclusionColumn={metaAnalysisComponents.inclusionColumn}
                 />
             )}
         </>

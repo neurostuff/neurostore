@@ -24,7 +24,7 @@ app.secret_key = app.config["JWT_SECRET_KEY"]
 
 options = {"swagger_ui": True}
 connexion_app.add_api(
-    "analysis-specification.yml",
+    "neurosynth-compose-openapi.yml",
     base_path="/api",
     options=options,
     arguments={"title": "NeuroSynth API"},

@@ -1,17 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { ExpandMoreOutlined } from '@mui/icons-material';
-import {
-    Button,
-    Tooltip,
-    Typography,
-    Tab,
-    Tabs,
-    Box,
-    Accordion,
-    AccordionDetails,
-    AccordionSummary,
-    Divider,
-} from '@mui/material';
+import { Button, Tooltip, Typography, Tab, Tabs, Box, Divider } from '@mui/material';
 import { AxiosError, AxiosResponse } from 'axios';
 import React, { useState, useEffect, useContext, SyntheticEvent } from 'react';
 import { useHistory, useParams } from 'react-router-dom';

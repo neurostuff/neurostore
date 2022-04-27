@@ -1,5 +1,5 @@
 import { ExpandMoreOutlined } from '@mui/icons-material';
-import { Accordion, AccordionDetails, AccordionSummary, Box } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
 
 interface INeurosynthAccordion {

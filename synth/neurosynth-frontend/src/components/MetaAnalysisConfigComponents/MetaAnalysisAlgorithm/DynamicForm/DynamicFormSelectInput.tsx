@@ -1,5 +1,4 @@
 import { Box, MenuItem, Select } from '@mui/material';
-import { useState } from 'react';
 import MetaAnalysisAlgorithmStyles from '../MetaAnalysisAlgorithm.styles';
 import { IDynamicFormInput } from '../..';
 import DynamicFormBaseTitle from './DynamicFormBaseTitle';

@@ -1,5 +1,6 @@
 const MockAPI = {
-    Services: {
+    NeurosynthServices: {},
+    NeurostoreServices: {
         StudiesService: {
             studiesGet: jest.fn(),
             studiesIdGet: jest.fn(),

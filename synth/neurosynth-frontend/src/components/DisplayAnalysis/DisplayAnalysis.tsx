@@ -1,5 +1,4 @@
-import { ExpandMoreOutlined } from '@mui/icons-material';
-import { Accordion, AccordionDetails, AccordionSummary, Typography } from '@mui/material';
+import { Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import { useEffect, useState } from 'react';
 import {

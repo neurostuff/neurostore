@@ -1,17 +1,11 @@
 import { Box, Button, Divider } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { DisplayValuesTable, IDisplayValuesTableModel } from '../../..';
 import { IMetadataRowModel } from '../../../EditMetadata';
 import AddMetadataRow from '../../../EditMetadata/EditMetadataRow/AddMetadataRow';
 import MetaAnalysisAlgorithmStyles from '../MetaAnalysisAlgorithm.styles';
 import { IDynamicFormInput } from '../..';
 import DynamicFormBaseTitle from './DynamicFormBaseTitle';
-
-// const objToArray = () => {
-
-// }
-
-// const arrT
 
 const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
     const kwargList: { key: string; value: string }[] = Object.keys(props.value).map((key) => ({
@@ -30,7 +24,7 @@ const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
     };
 
     const handleOnAddMetadataRow = (row: IMetadataRowModel) => {
-        if (props.value[row.metadataKey]) return false;
+        if (row.metadataKey in props.value) return false;
         const newObj = { ...props.value };
         newObj[row.metadataKey] = row.metadataValue;
 
@@ -89,6 +83,7 @@ const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
                         width: '50%',
                         borderCollapse: 'separate',
                         borderSpacing: '5px 0',
+                        height: '70px',
                     }}
                 >
                     <AddMetadataRow

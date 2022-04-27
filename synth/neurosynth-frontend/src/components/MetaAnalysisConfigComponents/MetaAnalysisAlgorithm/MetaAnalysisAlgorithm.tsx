@@ -45,116 +45,118 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
     };
 
     return (
-        <Box sx={{ marginBottom: '2rem' }}>
-            <Box sx={{ marginBottom: '1rem' }}>
-                Select the <b>algorithm</b> that you would like to use for your meta analysis
-            </Box>
-
-            <NeurosynthAutocomplete
-                sx={{ width: '50%', marginBottom: '1rem' }}
-                label="algorithm"
-                isOptionEqualToValue={(option, value) => option?.label === value?.label}
-                renderOption={(params, option) => (
-                    <ListItem {...params}>
-                        <ListItemText primary={option.label} secondary={option.description} />
-                    </ListItem>
-                )}
-                value={props.algorithm || null}
-                getOptionLabel={(option) => option?.label || ''}
-                onChange={(_event, newVal, _reason) => {
-                    props.onUpdate({ algorithm: newVal });
-                    props.onArgsUpdate({
-                        estimatorArgs: getArgsForKey(props.analysisType, newVal),
-                    });
-                }}
-                options={metaAnalyticAlgorithms}
-            />
-
-            {props.algorithm && (
-                <Box sx={{ margin: '2rem 0' }}>
-                    <NeurosynthAccordion
-                        elevation={2}
-                        TitleElement={
-                            <Typography variant="subtitle1">
-                                Optional algorithm arguments
-                            </Typography>
-                        }
-                    >
-                        <Divider sx={{ marginBottom: '1rem' }} />
-                        <DynamicForm
-                            onUpdate={(arg) => {
-                                props.onArgsUpdate({
-                                    estimatorArgs: { ...arg },
-                                });
-                            }}
-                            values={props.estimatorArgs}
-                            specification={
-                                metaAnalysisSpecification[props.analysisType][props.algorithm.label]
-                                    .parameters
-                            }
-                        />
-                    </NeurosynthAccordion>
+        <>
+            <Box sx={{ marginBottom: '2rem' }}>
+                <Box sx={{ marginBottom: '1rem' }}>
+                    Select the <b>algorithm</b> that you would like to use for your meta analysis
                 </Box>
-            )}
 
-            <Box sx={{ marginBottom: '1rem' }}>
-                Select the <b>corrector</b> that you would like to use for your meta analysis
-            </Box>
+                <NeurosynthAutocomplete
+                    sx={{ width: '50%', marginBottom: '1rem' }}
+                    label="algorithm"
+                    isOptionEqualToValue={(option, value) => option?.label === value?.label}
+                    renderOption={(params, option) => (
+                        <ListItem {...params}>
+                            <ListItemText primary={option.label} secondary={option.description} />
+                        </ListItem>
+                    )}
+                    value={props.algorithm || null}
+                    getOptionLabel={(option) => option?.label || ''}
+                    onChange={(_event, newVal, _reason) => {
+                        props.onUpdate({ algorithm: newVal });
+                        props.onArgsUpdate({
+                            estimatorArgs: getArgsForKey(props.analysisType, newVal),
+                        });
+                    }}
+                    options={metaAnalyticAlgorithms}
+                />
 
-            <NeurosynthAutocomplete
-                sx={{ width: '50%' }}
-                label="corrector (optional)"
-                required={false}
-                isOptionEqualToValue={(option, value) => option?.label === value?.label}
-                renderOption={(params, option) => (
-                    <ListItem {...params}>
-                        <ListItemText primary={option.label} secondary={option.description} />
-                    </ListItem>
-                )}
-                value={props.corrector || null}
-                getOptionLabel={(option) => option?.label || ''}
-                onChange={(_event, newVal, _reason) => {
-                    props.onUpdate({
-                        corrector: newVal,
-                    });
-                    props.onArgsUpdate({ correctorArgs: getArgsForKey('CORRECTOR', newVal) });
-                }}
-                options={correctorOptions}
-            />
-
-            {props.corrector && (
-                <Box sx={{ margin: '2rem 0' }}>
-                    <NeurosynthAccordion
-                        elevation={2}
-                        TitleElement={
-                            <Typography variant="subtitle1">
-                                Optional corrector arguments
-                            </Typography>
-                        }
-                    >
-                        <Divider sx={{ marginBottom: '1rem' }} />
-                        <DynamicForm
-                            onUpdate={(arg) => {
-                                props.onArgsUpdate({
-                                    correctorArgs: { ...arg },
-                                });
-                            }}
-                            values={props.correctorArgs}
-                            specification={
-                                metaAnalysisSpecification.CORRECTOR[props.corrector.label]
-                                    .parameters
+                {props.algorithm && (
+                    <Box sx={{ margin: '2rem 0' }}>
+                        <NeurosynthAccordion
+                            elevation={2}
+                            TitleElement={
+                                <Typography variant="subtitle1">
+                                    Optional algorithm arguments
+                                </Typography>
                             }
-                        />
-                    </NeurosynthAccordion>
-                </Box>
-            )}
+                        >
+                            <Divider sx={{ marginBottom: '1rem' }} />
+                            <DynamicForm
+                                onUpdate={(arg) => {
+                                    props.onArgsUpdate({
+                                        estimatorArgs: { ...arg },
+                                    });
+                                }}
+                                values={props.estimatorArgs}
+                                specification={
+                                    metaAnalysisSpecification[props.analysisType][
+                                        props.algorithm.label
+                                    ].parameters
+                                }
+                            />
+                        </NeurosynthAccordion>
+                    </Box>
+                )}
 
+                <Box sx={{ marginBottom: '1rem' }}>
+                    Select the <b>corrector</b> that you would like to use for your meta analysis
+                </Box>
+
+                <NeurosynthAutocomplete
+                    sx={{ width: '50%' }}
+                    label="corrector (optional)"
+                    required={false}
+                    isOptionEqualToValue={(option, value) => option?.label === value?.label}
+                    renderOption={(params, option) => (
+                        <ListItem {...params}>
+                            <ListItemText primary={option.label} secondary={option.description} />
+                        </ListItem>
+                    )}
+                    value={props.corrector || null}
+                    getOptionLabel={(option) => option?.label || ''}
+                    onChange={(_event, newVal, _reason) => {
+                        props.onUpdate({
+                            corrector: newVal,
+                        });
+                        props.onArgsUpdate({ correctorArgs: getArgsForKey('CORRECTOR', newVal) });
+                    }}
+                    options={correctorOptions}
+                />
+
+                {props.corrector && (
+                    <Box sx={{ margin: '2rem 0' }}>
+                        <NeurosynthAccordion
+                            elevation={2}
+                            TitleElement={
+                                <Typography variant="subtitle1">
+                                    Optional corrector arguments
+                                </Typography>
+                            }
+                        >
+                            <Divider sx={{ marginBottom: '1rem' }} />
+                            <DynamicForm
+                                onUpdate={(arg) => {
+                                    props.onArgsUpdate({
+                                        correctorArgs: { ...arg },
+                                    });
+                                }}
+                                values={props.correctorArgs}
+                                specification={
+                                    metaAnalysisSpecification.CORRECTOR[props.corrector.label]
+                                        .parameters
+                                }
+                            />
+                        </NeurosynthAccordion>
+                    </Box>
+                )}
+            </Box>
             <NavigationButtons
                 nextButtonDisabled={props.algorithm === undefined || props.algorithm === null}
                 onButtonClick={props.onNext}
                 nextButtonStyle="outlined"
             />
-        </Box>
+        </>
     );
 };
 

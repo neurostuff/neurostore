@@ -1,4 +1,3 @@
-import { useAuth0 } from '@auth0/auth0-react';
 import { Typography, Box, Tabs, Tab, Button, Divider } from '@mui/material';
 import { AxiosError } from 'axios';
 import React, { useEffect, useState, SyntheticEvent, useCallback, useContext } from 'react';
@@ -41,7 +40,8 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
     });
 
     /**
-     * on first render, sort the analyses and set the current selected analysis to be the first one
+     * on first render, sort the analyses and set the current selected analysis to be the first one.
+     * we only want this done once
      */
     useEffect(() => {
         const sortedAnalyses = (analyses as AnalysisApiResponse[]).sort((a, b) => {
@@ -69,6 +69,7 @@ const EditAnalyses: React.FC<IEditAnalyses> = React.memo((props) => {
                 };
             }
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     /**

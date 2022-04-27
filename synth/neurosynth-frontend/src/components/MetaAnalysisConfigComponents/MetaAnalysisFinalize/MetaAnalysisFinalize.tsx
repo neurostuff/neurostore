@@ -1,81 +1,90 @@
-import { Box, Typography, Divider } from '@mui/material';
+import { Box, Typography, Divider, Paper } from '@mui/material';
 import { NavigationButtons } from '../..';
 import {
     EAnalysisType,
     IAnalysisComponents,
     IDynamicArgs,
 } from '../../../pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
-import { INavigationButtonFn } from '../../NavigationButtons/NavigationButtons';
+import { INavigationButtonFn } from '../../Buttons/NavigationButtons/NavigationButtons';
 import DynamicInputDisplay from './DynamicInputDisplay/DynamicInputDisplay';
-import FinalizeCardSummary from './FinalizeCardSummary/FinalizeCardSummary';
+import MetaAnalysisSummaryRow from './MetaAnalysisSummaryRow/MetaAnalysisSummaryRow';
+import MetaAnalysisFinalizeStyles from './MetaAnalysisFinalize.styles';
 
 interface IMetaAnalysisFinalize extends IAnalysisComponents, IDynamicArgs {
     onNext: INavigationButtonFn;
 }
 
 const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
+    const hasCorrector = Object.keys(props.correctorArgs).length > 0;
+
     return (
         <Box sx={{ marginBottom: '2em' }}>
-            <Typography variant="h5" sx={{ marginBottom: '2rem' }}>
+            <Typography variant="h5" sx={{ marginBottom: '1rem' }}>
                 Meta analysis summary
             </Typography>
 
-            <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around' }}>
-                <FinalizeCardSummary
-                    cardTitle="analysis type"
-                    sx={{ width: '33%', margin: '10px' }}
-                    label={
-                        props.analysisType === EAnalysisType.CBMA
-                            ? 'Coordinate Based Meta Analysis'
-                            : 'Image Based Meta Analysis'
+            <Paper elevation={3} sx={MetaAnalysisFinalizeStyles.stepContainer}>
+                <Typography variant="h5" sx={MetaAnalysisFinalizeStyles.title}>
+                    Data
+                </Typography>
+
+                <MetaAnalysisSummaryRow
+                    title="analysis type"
+                    value={props.analysisType || ''}
+                    divider={true}
+                    caption={
+                        props.analysisType === EAnalysisType.IBMA
+                            ? 'Image Based Meta-Analysis'
+                            : 'Coordinate Based Meta-Analysis'
                     }
-                    description=""
                 />
 
-                <FinalizeCardSummary
-                    cardTitle="studyset"
-                    sx={{ width: '33%', margin: '10px' }}
-                    label={props.studyset?.name || ''}
-                    description=""
+                <MetaAnalysisSummaryRow
+                    title="studyset"
+                    value={props.studyset?.name || ''}
+                    divider={true}
+                    caption={props.studyset?.description || ''}
                 />
 
-                <FinalizeCardSummary
-                    cardTitle="annotation"
-                    sx={{ width: '33%', margin: '10px' }}
-                    label={props.annotation?.name || ''}
-                    description=""
+                <MetaAnalysisSummaryRow
+                    title="annotation"
+                    value={props.annotation?.name || ''}
+                    divider={true}
+                    caption={props.annotation?.description || ''}
                 />
-            </Box>
 
-            <Divider sx={{ margin: '1rem 0' }} />
+                <MetaAnalysisSummaryRow
+                    title="inclusion column"
+                    value={props.inclusionColumn || ''}
+                    divider={false}
+                />
+            </Paper>
 
-            <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-around' }}>
-                <FinalizeCardSummary
-                    cardTitle="algorithm"
-                    sx={{ width: '33%', margin: '10px' }}
-                    label={props.algorithm?.label || ''}
-                    description={props.algorithm?.description || ''}
+            <Paper elevation={3} sx={MetaAnalysisFinalizeStyles.stepContainer}>
+                <Typography variant="h5" sx={MetaAnalysisFinalizeStyles.title}>
+                    Algorithm
+                </Typography>
+
+                <MetaAnalysisSummaryRow
+                    title="algorithm"
+                    value={props.algorithm?.label || ''}
+                    divider={hasCorrector}
+                    caption={props.algorithm?.description || ''}
                 >
-                    {Object.keys(props.estimatorArgs).length > 0 && (
-                        <DynamicInputDisplay dynamicArg={props.estimatorArgs} />
-                    )}
-                </FinalizeCardSummary>
+                    <DynamicInputDisplay dynamicArg={props.estimatorArgs} />
+                </MetaAnalysisSummaryRow>
 
-                {props.corrector?.label ? (
-                    <FinalizeCardSummary
-                        cardTitle="corrector"
-                        label={props.corrector?.label || ''}
-                        description={props.corrector?.description || ''}
-                        sx={{ width: '33%', margin: '10px' }}
+                {hasCorrector && (
+                    <MetaAnalysisSummaryRow
+                        title="corrector"
+                        value={props.corrector?.label || ''}
+                        divider={false}
+                        caption={props.corrector?.description || ''}
                     >
                         <DynamicInputDisplay dynamicArg={props.correctorArgs} />
-                    </FinalizeCardSummary>
-                ) : (
-                    <Box sx={{ width: '33%', margin: '10px' }}></Box>
+                    </MetaAnalysisSummaryRow>
                 )}
-
-                <Box sx={{ width: '33%', margin: '10px' }}></Box>
-            </Box>
+            </Paper>
 
             <NavigationButtons
                 onButtonClick={props.onNext}

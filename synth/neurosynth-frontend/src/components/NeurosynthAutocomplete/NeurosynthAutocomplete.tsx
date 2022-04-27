@@ -12,7 +12,7 @@ interface INeurosynthAutocomplete<T> {
     label: string;
     shouldDisable?: boolean;
     isOptionEqualToValue: (option: T, value: T) => boolean;
-    renderOption: (
+    renderOption?: (
         props: React.HTMLAttributes<HTMLLIElement>,
         option: any,
         state?: AutocompleteRenderOptionState
@@ -33,7 +33,7 @@ const NeurosynthAutocomplete = <X,>(props: INeurosynthAutocomplete<X>) => {
         required = true,
         label,
         shouldDisable = false,
-        renderOption,
+        renderOption = undefined,
         value,
         getOptionLabel,
         onChange,

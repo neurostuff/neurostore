@@ -1,19 +1,10 @@
-import {
-    Accordion,
-    AccordionDetails,
-    AccordionSummary,
-    Typography,
-    Button,
-    Box,
-} from '@mui/material';
-import { ExpandMoreOutlined } from '@mui/icons-material';
+import { Typography, Button, Box } from '@mui/material';
 import EditStudyMetadataStyles from './EditStudyMetadata.styles';
 import { EditMetadata, IMetadataRowModel, NeurosynthAccordion } from '../..';
 import React, { useState, useContext, useCallback } from 'react';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import { AxiosError } from 'axios';
 import API from '../../../utils/api';
-import { useAuth0 } from '@auth0/auth0-react';
 import useIsMounted from '../../../hooks/useIsMounted';
 
 export interface IEditStudyMetadata {
@@ -43,7 +34,6 @@ export const metadataToArray = (
 
 const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
     const context = useContext(GlobalContext);
-    const { getAccessTokenSilently } = useAuth0();
     const [updatedEnabled, setUpdateEnabled] = useState(false);
     const isMountedRef = useIsMounted();
 
@@ -137,7 +127,6 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
             elevation={2}
             sx={updatedEnabled ? EditStudyMetadataStyles.unsavedChanges : {}}
         >
-            {/* only show this component when metadataArr is not undefined or null */}
             {metadataArr && (
                 <EditMetadata
                     onMetadataRowAdd={handleMetadataRowAdd}

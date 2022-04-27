@@ -32,7 +32,7 @@ const NavigationButtons: React.FC<INavigationButtons> = (props) => {
     } = props;
 
     return (
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
             <Button
                 disabled={prevButtonDisabled}
                 variant={prevButtonStyle}

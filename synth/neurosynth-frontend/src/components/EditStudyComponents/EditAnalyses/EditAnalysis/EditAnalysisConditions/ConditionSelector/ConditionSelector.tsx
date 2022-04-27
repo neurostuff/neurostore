@@ -1,4 +1,3 @@
-import { useAuth0 } from '@auth0/auth0-react';
 import {
     createFilterOptions,
     Autocomplete,
@@ -31,7 +30,6 @@ const ConditionSelector: React.FC<{
 }> = (props) => {
     const context = useContext(GlobalContext);
     const isMountedRef = useIsMounted();
-    const { getAccessTokenSilently } = useAuth0();
 
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(null);
     const [allConditions, setAllConditions] = useState<ConditionApiResponse[]>([]);
