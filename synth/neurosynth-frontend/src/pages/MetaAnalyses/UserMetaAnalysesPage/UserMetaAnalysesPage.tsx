@@ -6,7 +6,7 @@ const UserMetaAnalysesPage: React.FC = (props) => {
 
     return (
         <Button onClick={() => history.push('/meta-analyses/build')} color="primary">
-            Create meta analysis
+            Create meta-analysis
         </Button>
     );
 };

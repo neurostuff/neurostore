@@ -1,7 +1,7 @@
 import {
-    EAnalysisType,
-    IAnalysisComponents,
-    IDynamicArgs,
+    EAnalysisType as EMetaAnalysisType,
+    IMetaAnalysisComponents,
+    IEstimatorCorrectorArgs,
 } from '../../pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 import { AnnotationsApiResponse, StudysetsApiResponse } from '../../utils/api';
 import { INavigationButtonFn } from '../Buttons/NavigationButtons/NavigationButtons';
@@ -9,20 +9,27 @@ import { IAutocompleteObject } from '../NeurosynthAutocomplete/NeurosynthAutocom
 
 export const KWARG_STRING = '**kwargs';
 
-/**
- * this interface is extremely flexible as we have to account for a number of types including
- * objects (in the case of kwargs)
- */
-export interface IDynamicInputType {
-    [key: string]: string | boolean | number | null | undefined | { [key: string]: string };
+interface IMetaAnalysisBuilderStep {
+    onUpdate: (arg: Partial<IMetaAnalysisComponents>) => void;
+    onNext: INavigationButtonFn;
 }
 
-export interface IMetaAnalysisAlgorithm {
-    onNext: INavigationButtonFn;
-    onUpdate: (arg: Partial<IAnalysisComponents>) => void;
-    onArgsUpdate: (arg: Partial<IDynamicArgs>) => void;
+export interface IMetaAnalysisDetails extends IMetaAnalysisBuilderStep {
+    metaAnalysisName: string;
+    metaAnalysisDescription: string;
+}
 
-    analysisType: EAnalysisType;
+export interface IMetaAnalysisData extends IMetaAnalysisBuilderStep {
+    metaAnalysisType: EMetaAnalysisType | undefined;
+    studyset: StudysetsApiResponse | undefined | null;
+    annotation: AnnotationsApiResponse | undefined | null;
+    inclusionColumn: string | undefined | null;
+    studysets: StudysetsApiResponse[];
+}
+
+export interface IMetaAnalysisAlgorithm extends IMetaAnalysisBuilderStep {
+    onArgsUpdate: (arg: Partial<IEstimatorCorrectorArgs>) => void;
+    metaAnalysisType: EMetaAnalysisType;
     algorithm: IAutocompleteObject | undefined | null;
     estimator: IAutocompleteObject | undefined | null;
     corrector: IAutocompleteObject | undefined | null;
@@ -30,15 +37,12 @@ export interface IMetaAnalysisAlgorithm {
     correctorArgs: IDynamicInputType;
 }
 
-export interface IMetaAnalysisData {
-    analysisType: EAnalysisType | undefined;
-    studyset: StudysetsApiResponse | undefined | null;
-    annotation: AnnotationsApiResponse | undefined | null;
-    inclusionColumn: string | undefined | null;
-
-    studysets: StudysetsApiResponse[];
-    onUpdate: (arg: Partial<IAnalysisComponents>) => void;
-    onNext: INavigationButtonFn;
+/**
+ * this interface is extremely flexible as we have to account for a number of types including
+ * objects (in the case of kwargs)
+ */
+export interface IDynamicInputType {
+    [key: string]: string | boolean | number | null | undefined | { [key: string]: string };
 }
 
 export interface IDynamicForm {

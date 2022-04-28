@@ -12,10 +12,10 @@ const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysis
 
 const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
     const metaAnalyticAlgorithms: IAutocompleteObject[] = Object.keys(
-        metaAnalysisSpecification[props.analysisType]
+        metaAnalysisSpecification[props.metaAnalysisType]
     ).map((algoName) => ({
         label: algoName,
-        description: metaAnalysisSpecification[props.analysisType][algoName]?.summary || '',
+        description: metaAnalysisSpecification[props.metaAnalysisType][algoName]?.summary || '',
     }));
 
     const correctorOptions: IAutocompleteObject[] = Object.keys(
@@ -47,9 +47,9 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
     return (
         <>
             <Box sx={{ marginBottom: '2rem' }}>
-                <Box sx={{ marginBottom: '1rem' }}>
-                    Select the <b>algorithm</b> that you would like to use for your meta analysis
-                </Box>
+                <Typography sx={{ marginBottom: '1rem' }}>
+                    Select the <b>algorithm</b> that you would like to use for your meta-analysis
+                </Typography>
 
                 <NeurosynthAutocomplete
                     sx={{ width: '50%', marginBottom: '1rem' }}
@@ -65,7 +65,7 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
                     onChange={(_event, newVal, _reason) => {
                         props.onUpdate({ algorithm: newVal });
                         props.onArgsUpdate({
-                            estimatorArgs: getArgsForKey(props.analysisType, newVal),
+                            estimatorArgs: getArgsForKey(props.metaAnalysisType, newVal),
                         });
                     }}
                     options={metaAnalyticAlgorithms}
@@ -90,7 +90,7 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
                                 }}
                                 values={props.estimatorArgs}
                                 specification={
-                                    metaAnalysisSpecification[props.analysisType][
+                                    metaAnalysisSpecification[props.metaAnalysisType][
                                         props.algorithm.label
                                     ].parameters
                                 }
@@ -99,9 +99,9 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
                     </Box>
                 )}
 
-                <Box sx={{ marginBottom: '1rem' }}>
-                    Select the <b>corrector</b> that you would like to use for your meta analysis
-                </Box>
+                <Typography sx={{ marginBottom: '1rem' }}>
+                    Select the <b>corrector</b> that you would like to use for your meta-analysis
+                </Typography>
 
                 <NeurosynthAutocomplete
                     sx={{ width: '50%' }}

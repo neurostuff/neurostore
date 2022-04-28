@@ -10,14 +10,19 @@ import {
     Image,
     StudiesApi,
     ConditionsApi,
-    StudysetsApi,
-    AnnotationsApi,
+    StudysetsApi as NeurostoreStudysetsApi,
+    AnnotationsApi as NeurostoreAnnotationsApi,
     UserApi,
     PointsApi,
     ImagesApi,
     AnalysesApi,
 } from '../neurostore-typescript-sdk';
-import { BundleApi, MetaAnalysisApi } from '../neurosynth-compose-typescript-sdk';
+import {
+    BundleApi,
+    MetaAnalysisApi,
+    AnnotationApi as NeurosynthAnnotationApi,
+    StudysetApi as NeurosynthStudysetApi,
+} from '../neurosynth-compose-typescript-sdk';
 
 export type StudyApiResponse = Study & ReadOnly;
 export type AnalysisApiResponse = Analysis & ReadOnly;
@@ -44,16 +49,18 @@ const NeurostoreServices = {
     StudiesService: new StudiesApi(neurostoreConfig),
     AnalysesService: new AnalysesApi(neurostoreConfig),
     ConditionsService: new ConditionsApi(neurostoreConfig),
-    StudySetsService: new StudysetsApi(neurostoreConfig),
+    StudySetsService: new NeurostoreStudysetsApi(neurostoreConfig),
     ImagesService: new ImagesApi(neurostoreConfig),
     PointsService: new PointsApi(neurostoreConfig),
     UsersService: new UserApi(neurostoreConfig),
-    AnnotationsService: new AnnotationsApi(neurostoreConfig),
+    AnnotationsService: new NeurostoreAnnotationsApi(neurostoreConfig),
 };
 
 const NeurosynthServices = {
     SpecificationsService: new MetaAnalysisApi(neurosynthConfig),
     MetaAnalysisService: new BundleApi(neurosynthConfig),
+    StudysetsService: new NeurosynthStudysetApi(neurosynthConfig),
+    AnnotationsService: new NeurosynthAnnotationApi(neurostoreConfig),
 };
 
 const UpdateServicesWithToken = (token: string) => {

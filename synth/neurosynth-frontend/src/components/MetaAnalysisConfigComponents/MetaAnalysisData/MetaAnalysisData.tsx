@@ -7,6 +7,7 @@ import {
     ListItemText,
     ListItem,
     FormHelperText,
+    Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { IMetaAnalysisData } from '..';
@@ -27,7 +28,7 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
 
     const { current } = useIsMounted();
     const { handleChange, handleOnBlur, handleOnFocus, isValid } = useInputValidation(
-        props.analysisType,
+        props.metaAnalysisType,
         validationFunc
     );
 
@@ -57,9 +58,9 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
 
     return (
         <>
-            <Box sx={MetaAnalysisDataStyles.spaceBelow}>
-                Select the <b>type</b> that you would like to use for your meta analysis
-            </Box>
+            <Typography sx={MetaAnalysisDataStyles.spaceBelow}>
+                Select the <b>type</b> that you would like to use for your meta-analysis
+            </Typography>
 
             <FormControl sx={MetaAnalysisDataStyles.spaceBelow}>
                 <InputLabel id="select-label">analysis type</InputLabel>
@@ -75,24 +76,24 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                         handleChange(value);
                     }}
                     label="analysis type"
-                    value={props.analysisType || ''}
+                    value={props.metaAnalysisType || ''}
                     sx={[MetaAnalysisDataStyles.selectInput]}
                 >
-                    <MenuItem value={EAnalysisType.CBMA}>Coordinate Based Meta Analysis</MenuItem>
-                    <MenuItem value={EAnalysisType.IBMA}>Image Based Meta Analysis</MenuItem>
+                    <MenuItem value={EAnalysisType.CBMA}>Coordinate Based Meta-Analysis</MenuItem>
+                    <MenuItem value={EAnalysisType.IBMA}>Image Based Meta-Analysis</MenuItem>
                 </Select>
                 {!isValid && (
                     <FormHelperText sx={{ color: 'error.main' }}>this is required</FormHelperText>
                 )}
             </FormControl>
 
-            <Box sx={MetaAnalysisDataStyles.spaceBelow}>
-                Select the <b>studyset</b> that you would like to use for your meta analysis
-            </Box>
+            <Typography sx={MetaAnalysisDataStyles.spaceBelow}>
+                Select the <b>studyset</b> that you would like to use for your meta-analysis
+            </Typography>
 
             <NeurosynthAutocomplete
                 label="studyset"
-                shouldDisable={props.analysisType === undefined}
+                shouldDisable={props.metaAnalysisType === undefined}
                 isOptionEqualToValue={(option, value) => option?.id === value?.id}
                 value={props.studyset || null}
                 renderOption={(params, option) => (
@@ -108,9 +109,9 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                 options={props.studysets}
             />
 
-            <Box sx={MetaAnalysisDataStyles.spaceBelow}>
-                Select the <b>annotation</b> that you would like to use for your meta analysis
-            </Box>
+            <Typography sx={MetaAnalysisDataStyles.spaceBelow}>
+                Select the <b>annotation</b> that you would like to use for your meta-analysis
+            </Typography>
 
             <NeurosynthAutocomplete
                 label="annotation"
@@ -130,9 +131,9 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                 options={annotations || []}
             />
 
-            <Box sx={MetaAnalysisDataStyles.spaceBelow}>
-                Select the <b>inclusion column</b> that you would like to use for your meta analysis
-            </Box>
+            <Typography sx={MetaAnalysisDataStyles.spaceBelow}>
+                Select the <b>inclusion column</b> that you would like to use for your meta-analysis
+            </Typography>
 
             <NeurosynthAutocomplete
                 label="Inclusion Column"
@@ -149,8 +150,7 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
 
             <NavigationButtons
                 onButtonClick={props.onNext}
-                prevButtonDisabled={true}
-                nextButtonDisabled={!props.analysisType || !props.studyset || !props.annotation}
+                nextButtonDisabled={!props.metaAnalysisType || !props.studyset || !props.annotation}
                 nextButtonStyle="outlined"
             />
         </>

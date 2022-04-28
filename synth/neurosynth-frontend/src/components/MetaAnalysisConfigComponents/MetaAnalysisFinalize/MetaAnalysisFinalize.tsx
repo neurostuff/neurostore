@@ -2,15 +2,15 @@ import { Box, Typography, Divider, Paper } from '@mui/material';
 import { NavigationButtons } from '../..';
 import {
     EAnalysisType,
-    IAnalysisComponents,
-    IDynamicArgs,
+    IMetaAnalysisComponents,
+    IEstimatorCorrectorArgs,
 } from '../../../pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 import { INavigationButtonFn } from '../../Buttons/NavigationButtons/NavigationButtons';
 import DynamicInputDisplay from './DynamicInputDisplay/DynamicInputDisplay';
 import MetaAnalysisSummaryRow from './MetaAnalysisSummaryRow/MetaAnalysisSummaryRow';
 import MetaAnalysisFinalizeStyles from './MetaAnalysisFinalize.styles';
 
-interface IMetaAnalysisFinalize extends IAnalysisComponents, IDynamicArgs {
+interface IMetaAnalysisFinalize extends IMetaAnalysisComponents, IEstimatorCorrectorArgs {
     onNext: INavigationButtonFn;
 }
 
@@ -20,8 +20,21 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
     return (
         <Box sx={{ marginBottom: '2em' }}>
             <Typography variant="h5" sx={{ marginBottom: '1rem' }}>
-                Meta analysis summary
+                Meta-Analysis summary
             </Typography>
+
+            <Paper elevation={3} sx={MetaAnalysisFinalizeStyles.stepContainer}>
+                <Typography variant="h5" sx={MetaAnalysisFinalizeStyles.title}>
+                    Details
+                </Typography>
+
+                <MetaAnalysisSummaryRow
+                    title="meta-analysis name"
+                    value={props.metaAnalysisName}
+                    divider={false}
+                    caption={props.metaAnalysisDescription}
+                />
+            </Paper>
 
             <Paper elevation={3} sx={MetaAnalysisFinalizeStyles.stepContainer}>
                 <Typography variant="h5" sx={MetaAnalysisFinalizeStyles.title}>
@@ -89,7 +102,7 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
             <NavigationButtons
                 onButtonClick={props.onNext}
                 nextButtonStyle="contained"
-                nextButtonText="Create meta analysis"
+                nextButtonText="Create Meta-Analysis"
             />
         </Box>
     );
