@@ -80,7 +80,7 @@ class SpecificationSchema(BaseSchema):
 class StudysetSchema(BaseSchema):
     snapshot = fields.Dict()
     neurostore_id = fields.Pluck(
-        StudysetReferenceSchema(),
+        StudysetReferenceSchema,
         "id",
         attribute="studyset_reference"
     )
@@ -88,7 +88,11 @@ class StudysetSchema(BaseSchema):
 
 class AnnotationSchema(BaseSchema):
     snapshot = fields.Dict()
-    neurostore_id = PGSQLString()
+    neurostore_id = fields.Pluck(
+        AnnotationReferenceSchema,
+        "id",
+        attribute="annotation_reference"
+    )
     studyset = fields.Pluck(StudysetSchema, "neurostore_id", dump_only=True)
     internal_studyset_id = fields.Pluck(
         StudysetSchema, "id", load_only=True, attribute="studyset"
