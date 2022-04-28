@@ -50,6 +50,7 @@ const DisplayValuesTable: React.FC<IDisplayValuesTableModel> = (props) => {
                 <TableBody>
                     {props.rowData.map((row) => (
                         <DisplayValuesTableRow
+                            onSelectAction={props.onActionSelected || ((_value) => {})}
                             canSelectRow={!!props.selectable}
                             onSelectRow={handleRowSelect}
                             key={row.uniqueKey}

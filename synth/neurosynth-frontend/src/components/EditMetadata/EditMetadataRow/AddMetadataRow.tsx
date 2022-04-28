@@ -24,6 +24,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
         keyPlaceholderText,
         errorMessage,
         valuePlaceholderText,
+        showToggleType = true,
         allowNoneOption = true,
     } = props;
 
@@ -53,6 +54,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                     metadataKey: '',
                     metadataValue: getStartValFromType(currType),
                 });
+                setIsValid(true);
             } else {
                 setIsValid(false);
             }
@@ -82,15 +84,24 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
 
     return (
         <Box sx={EditMetadataRowStyles.tableRow}>
-            <Box sx={{ display: 'flex' }}>
-                <ToggleType
-                    type={currType}
-                    onToggle={handleToggle}
-                    allowNoneType={allowNoneOption}
-                />
-            </Box>
-            <Box sx={[EditMetadataRowStyles.tableCell, EditMetadataRowStyles.key]}>
+            {showToggleType && (
+                <Box sx={{ display: 'flex' }}>
+                    <ToggleType
+                        type={currType}
+                        onToggle={handleToggle}
+                        allowNoneType={allowNoneOption}
+                    />
+                </Box>
+            )}
+            <Box
+                sx={[
+                    EditMetadataRowStyles.tableCell,
+                    EditMetadataRowStyles.key,
+                    { verticalAlign: 'baseline' },
+                ]}
+            >
                 <TextField
+                    size="small"
                     sx={EditMetadataRowStyles.addMetadataTextfield}
                     onChange={handleMetadataKeyChange}
                     variant="outlined"
@@ -101,9 +112,11 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                     value={metadataRow.metadataKey}
                 />
                 {/* This component is added so that the error message doesn't mess up the row alignment */}
-                {isValid && <Box sx={{ height: '22px' }}></Box>}
+                {/* {isValid && <Box sx={{ height: '22px' }}></Box>} */}
             </Box>
-            <Box sx={[EditMetadataRowStyles.tableCell, { width: '100%' }]}>
+            <Box
+                sx={[EditMetadataRowStyles.tableCell, EditMetadataRowStyles.key, { width: '100%' }]}
+            >
                 <EditMetadataValue
                     placeholderText={valuePlaceholderText}
                     onEditMetadataValue={handleMetadataValueChange}
@@ -111,7 +124,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                     type={currType}
                 />
                 {/* This component is added so that the error message doesn't mess up the row alignment */}
-                <Box sx={{ height: '22px' }}></Box>
+                {/* <Box sx={{ height: '22px' }}></Box> */}
             </Box>
             <Box sx={EditMetadataRowStyles.tableCell}>
                 <Button
@@ -124,7 +137,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                     ADD
                 </Button>
                 {/* This component is added so that the error message doesn't mess up the row alignment */}
-                <Box sx={{ height: '22px' }}></Box>
+                {/* <Box sx={{ height: '22px' }}></Box> */}
             </Box>
         </Box>
     );

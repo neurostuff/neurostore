@@ -9,10 +9,7 @@ describe('TextEdit', () => {
     const mockOnSave = jest.fn();
 
     beforeEach(() => {
-        (useAuth0 as any).mockReturnValue({
-            getAccessTokenSilently: () => {},
-            isAuthenticated: true,
-        });
+        useAuth0().isAuthenticated = true;
     });
 
     afterAll(() => {
@@ -88,10 +85,7 @@ describe('TextEdit', () => {
     });
 
     it('should not show the edit button when not authenticated', () => {
-        (useAuth0 as any).mockReturnValue({
-            getAccessTokenSilently: () => {},
-            isAuthenticated: false,
-        });
+        useAuth0().isAuthenticated = false;
 
         render(
             <TextEdit onSave={mockOnSave} textToEdit="test-text">

@@ -8,22 +8,14 @@ import API, { StudyApiResponse } from '../../../utils/api';
 import useIsMounted from '../../../hooks/useIsMounted';
 
 const UserStudiesPage: React.FC = (props) => {
-    const { getAccessTokenSilently, user } = useAuth0();
+    const { user } = useAuth0();
     const { showSnackbar } = useContext(GlobalContext);
     const [studies, setStudies] = useState<StudyApiResponse[]>();
     const isMountedRef = useIsMounted();
 
     useEffect(() => {
         const getUserStudies = async () => {
-            try {
-                const token = await getAccessTokenSilently();
-                API.UpdateServicesWithToken(token);
-            } catch (exception) {
-                showSnackbar('there was an error', SnackbarType.ERROR);
-                console.error(exception);
-            }
-
-            API.Services.StudiesService.studiesGet(
+            API.NeurostoreServices.StudiesService.studiesGet(
                 undefined,
                 undefined,
                 undefined,
@@ -51,7 +43,7 @@ const UserStudiesPage: React.FC = (props) => {
         if (user?.sub) {
             getUserStudies();
         }
-    }, [user?.sub, getAccessTokenSilently, showSnackbar, isMountedRef]);
+    }, [user?.sub, showSnackbar, isMountedRef]);
 
     return (
         <>

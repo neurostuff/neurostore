@@ -18,7 +18,7 @@ import { AxiosResponse } from 'axios';
 
 const EditAnnotationsPage: React.FC = (props) => {
     const history = useHistory();
-    const { isAuthenticated, getAccessTokenSilently } = useAuth0();
+    const { isAuthenticated } = useAuth0();
     const { showSnackbar } = useContext(GlobalContext);
 
     const [confirmationIsOpen, setConfirmationIsOpen] = useState(false);
@@ -31,9 +31,11 @@ const EditAnnotationsPage: React.FC = (props) => {
 
     useEffect(() => {
         const getAnnotation = () => {
-            API.Services.AnnotationsService.annotationsIdGet(params.annotationId).then((res) => {
-                setAnnotation(res.data);
-            });
+            API.NeurostoreServices.AnnotationsService.annotationsIdGet(params.annotationId).then(
+                (res) => {
+                    setAnnotation(res.data);
+                }
+            );
         };
         getAnnotation();
     }, [params.annotationId]);
@@ -42,15 +44,7 @@ const EditAnnotationsPage: React.FC = (props) => {
         property: 'name' | 'description',
         updatedText: string
     ) => {
-        try {
-            const token = await getAccessTokenSilently();
-            API.UpdateServicesWithToken(token);
-        } catch (exception) {
-            showSnackbar('there was an error', SnackbarType.ERROR);
-            console.error(exception);
-        }
-
-        API.Services.AnnotationsService.annotationsIdPut(params.annotationId, {
+        API.NeurostoreServices.AnnotationsService.annotationsIdPut(params.annotationId, {
             [property]: updatedText,
         })
             .then((res: AxiosResponse<AnnotationsApiResponse>) => {
@@ -80,14 +74,7 @@ const EditAnnotationsPage: React.FC = (props) => {
         setConfirmationIsOpen(false);
 
         if (confirm && annotation && annotation.id) {
-            try {
-                const token = await getAccessTokenSilently();
-                API.UpdateServicesWithToken(token);
-            } catch (exception) {
-                showSnackbar('there was an error', SnackbarType.ERROR);
-                console.error(exception);
-            }
-            API.Services.AnnotationsService.annotationsIdDelete(annotation.id)
+            API.NeurostoreServices.AnnotationsService.annotationsIdDelete(annotation.id)
                 .then(() => {
                     history.push(`/studysets/${params.studysetId}`);
                     showSnackbar('deleted annotation', SnackbarType.SUCCESS);
@@ -104,15 +91,7 @@ const EditAnnotationsPage: React.FC = (props) => {
             annotationNotes: AnnotationNote[],
             noteKeyTypes: { [key: string]: EPropertyType }
         ) => {
-            try {
-                const token = await getAccessTokenSilently();
-                API.UpdateServicesWithToken(token);
-            } catch (exception) {
-                showSnackbar('there was an error', SnackbarType.ERROR);
-                console.error(exception);
-            }
-
-            API.Services.AnnotationsService.annotationsIdPut(params.annotationId, {
+            API.NeurostoreServices.AnnotationsService.annotationsIdPut(params.annotationId, {
                 notes: annotationNotes.map((annotationNote) => ({
                     note: annotationNote.note,
                     analysis: annotationNote.analysis,
@@ -128,14 +107,14 @@ const EditAnnotationsPage: React.FC = (props) => {
                     console.error(err);
                 });
         },
-        [getAccessTokenSilently, params.annotationId, showSnackbar]
+        [params.annotationId, showSnackbar]
     );
 
     return (
         <>
             <Box sx={EditAnnotationsPageStyles.stickyButtonContainer}>
                 <Button
-                    color="error"
+                    color="secondary"
                     onClick={handleOnCancel}
                     sx={EditStudyPageStyles.button}
                     variant="outlined"
