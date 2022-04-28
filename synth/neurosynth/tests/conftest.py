@@ -254,8 +254,8 @@ def user_data(session, mock_add_users):
         serialized_annotation = json.load(data_file)
 
     with session.no_autoflush:
-        ss_ref = StudysetReference(neurostore_id=serialized_studyset['id'])
-        annot_ref = AnnotationReference(neurostore_id=serialized_annotation['id'])
+        ss_ref = StudysetReference(id=serialized_studyset['id'])
+        annot_ref = AnnotationReference(id=serialized_annotation['id'])
         for user_info in mock_add_users.values():
             user = User.query.filter_by(id=user_info['id']).first()
 
