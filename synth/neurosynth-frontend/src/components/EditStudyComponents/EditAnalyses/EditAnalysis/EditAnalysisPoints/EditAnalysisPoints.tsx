@@ -1,99 +1,191 @@
-import { Button, TextField, Divider } from '@mui/material';
-import { Box } from '@mui/system';
-import React, { ChangeEvent, useState } from 'react';
+import { Box, Typography, Button } from '@mui/material';
+import { DataGrid, GridCallbackDetails, GridSelectionModel } from '@mui/x-data-grid';
+import React, { useRef, useState } from 'react';
 import { IEditAnalysisPoints } from '../..';
-import EditAnalysisPointsStyles from './EditAnalysisPoints.styles';
-import EditAnalysisPointsRow from './EditAnalysisPointsRow/EditAnalysisPointsRow';
+import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import { NeurosynthPopper } from '../../../..';
 
-const EditAnalysisPoints: React.FC<IEditAnalysisPoints> = (props) => {
-    const [editCoordinates, setEditCoordinates] = useState({
-        x: 0,
-        y: 0,
-        z: 0,
-    });
+const NeurosynthDataGridHeader: React.FC<{ selectedPoints: GridSelectionModel }> = (props) => {
+    const [popperIsOpen, setPopperIsOpen] = useState(false);
+    const buttonRef = useRef<HTMLButtonElement>(null);
 
-    const handleOnChange = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-        const newValue = parseInt(event.target.value);
-        if (!isNaN(newValue)) {
-            setEditCoordinates((prevState) => ({
-                ...prevState,
-                [event.target.name]: newValue,
-            }));
-        }
+    const handleClickClose = () => {
+        setPopperIsOpen(false);
     };
-
-    const handleOnAdd = (event: React.MouseEvent) => {
-        props.onAddPoint(editCoordinates);
-    };
-
-    const hasPoints = props.points && props.points.length > 0;
 
     return (
-        <Box>This has not yet been implemented yet. Please check back later</Box>
-        // <Box
-        //     component="div"
-        //     sx={{
-        //         display: 'flex',
-        //         flexDirection: 'column',
-        //         alignItems: 'center',
-        //         width: '100%',
-        //         maxHeight: {
-        //             xs: '200px',
-        //             md: '350px',
-        //         },
-        //         overflow: 'auto',
-        //         marginBottom: '15px',
-        //     }}
-        // >
-        //     <Box sx={{ width: '60%' }}>
-        //         <Box
-        //             sx={{
-        //                 width: '100%',
-        //                 display: 'flex',
-        //                 marginTop: '5px',
-        //                 justifyContent: 'space-evenly',
-        //             }}
-        //         >
-        //             <TextField
-        //                 type="number"
-        //                 value={editCoordinates.x}
-        //                 onChange={handleOnChange}
-        //                 sx={EditAnalysisPointsStyles.textfield}
-        //                 name="x"
-        //                 label="X Coordinate"
-        //             />
-        //             <TextField
-        //                 type="number"
-        //                 value={editCoordinates.y}
-        //                 onChange={handleOnChange}
-        //                 sx={EditAnalysisPointsStyles.textfield}
-        //                 name="y"
-        //                 label="Y Coordinate"
-        //             />
-        //             <TextField
-        //                 type="number"
-        //                 value={editCoordinates.z}
-        //                 onChange={handleOnChange}
-        //                 sx={EditAnalysisPointsStyles.textfield}
-        //                 name="z"
-        //                 label="Z Coordinate"
-        //             />
-        //             <Button onClick={handleOnAdd} color="primary">
-        //                 Add
-        //             </Button>
-        //         </Box>
-        //         <Divider sx={{ margin: '20px 0' }} />
-        //         <Box>
-        //             {!hasPoints && (
-        //                 <Box component="span" sx={{ color: 'warning.dark' }}>
-        //                     No coordinates
-        //                 </Box>
-        //             )}
-        //             {hasPoints &&
-        //                 props.points?.map((point) => <EditAnalysisPointsRow {...point} />)}
-        //         </Box>
-        //     </Box>
-        // </Box>
+        <>
+            {props.selectedPoints.length === 0 && <></>}
+            {props.selectedPoints.length > 0 && (
+                <Box
+                    sx={{
+                        height: '60px',
+                        borderBottom: '1px solid lightgray',
+                        justifyContent: 'space-between',
+                        display: 'flex',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography sx={{ margin: '0 1rem', color: 'primary.main' }} variant="h6">
+                            {props.selectedPoints.length} point(s) selected
+                        </Typography>
+
+                        <Button
+                            onClick={() => setPopperIsOpen(true)}
+                            ref={buttonRef}
+                            sx={{ margin: '0 1rem' }}
+                            variant="outlined"
+                            startIcon={<CompareArrowsIcon />}
+                        >
+                            Move points to another analysis
+                        </Button>
+                        <NeurosynthPopper
+                            onClickAway={handleClickClose}
+                            anchorElement={buttonRef.current}
+                            open={popperIsOpen}
+                        >
+                            <Box>hello hello hello</Box>
+                        </NeurosynthPopper>
+                    </Box>
+                    <Button
+                        sx={{ margin: '0 1rem' }}
+                        variant="outlined"
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                    >
+                        Delete selected points
+                    </Button>
+                </Box>
+            )}
+        </>
+    );
+};
+
+const EditAnalysisPoints: React.FC<IEditAnalysisPoints> = (props) => {
+    const [selectedPoints, setSelectedPoints] = useState<GridSelectionModel>([]);
+
+    const handleSelection = (selected: GridSelectionModel, _details: GridCallbackDetails) => {
+        setSelectedPoints(selected);
+    };
+
+    return (
+        <>
+            <Button sx={{ marginBottom: '1rem' }} endIcon={<AddIcon />} variant="outlined">
+                Add points to analysis
+            </Button>
+            <Box sx={{ height: '500px', overflow: 'auto' }}>
+                <DataGrid
+                    hideFooter
+                    onSelectionModelChange={handleSelection}
+                    checkboxSelection
+                    components={{
+                        Toolbar: NeurosynthDataGridHeader,
+                    }}
+                    componentsProps={{
+                        toolbar: {
+                            selectedPoints: selectedPoints,
+                        },
+                    }}
+                    rows={[
+                        {
+                            id: '1',
+                            x: 2,
+                            y: 1,
+                            z: 2,
+                        },
+                        {
+                            id: '2',
+                            x: 2,
+                            y: 1,
+                            z: 2,
+                        },
+                        {
+                            id: '3',
+                            x: 2,
+                            y: 1,
+                            z: 2,
+                        },
+                        {
+                            id: '4',
+                            x: 2,
+                            y: 1,
+                            z: 2,
+                        },
+                        {
+                            id: '5',
+                            x: 2,
+                            y: 1,
+                            z: 2,
+                        },
+                        {
+                            id: '6',
+                            x: 2,
+                            y: 1,
+                            z: 2,
+                        },
+                        {
+                            id: '7',
+                            x: 2,
+                            y: 1,
+                            z: 2,
+                        },
+                        {
+                            id: '8',
+                            x: 2,
+                            y: 1,
+                            z: 2,
+                        },
+                        {
+                            id: '9',
+                            x: 2,
+                            y: 1,
+                            z: 2,
+                        },
+                        {
+                            id: '10',
+                            x: 2,
+                            y: 1,
+                            z: 2,
+                        },
+                    ]}
+                    columns={[
+                        {
+                            field: 'x',
+                            headerName: 'X Coordinate',
+                            editable: true,
+                            flex: 1,
+                        },
+                        {
+                            field: 'y',
+                            headerName: 'Y Coordinate',
+                            editable: true,
+                            flex: 1,
+                        },
+                        {
+                            field: 'z',
+                            headerName: 'Z Coordinate',
+                            editable: true,
+                            flex: 1,
+                        },
+                        {
+                            field: 'kind',
+                            headerName: 'kind',
+                            editable: true,
+                            flex: 1.5,
+                        },
+                        {
+                            field: 'space',
+                            headerName: 'space',
+                            editable: true,
+                            flex: 1.5,
+                        },
+                    ]}
+                />
+            </Box>
+        </>
     );
 };
 
