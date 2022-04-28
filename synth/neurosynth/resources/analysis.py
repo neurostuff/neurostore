@@ -119,12 +119,14 @@ class BaseView(MethodView):
 
 class ObjectView(BaseView):
     def get(self, id):
+        id = id.replace("\x00", "\uFFFD")
         record = self._model.query.filter_by(id=id).first_or_404()
         args = parser.parse(self._user_args, request, location="query")
 
         return self.__class__._schema(context={'nested': args.get("nested")}).dump(record)
 
     def put(self, id):
+        id = id.replace("\x00", "\uFFFD")
         request_data = self.insert_data(id, request.json)
         data = self.__class__._schema().load(request_data)
 
@@ -134,6 +136,7 @@ class ObjectView(BaseView):
         return self.__class__._schema().dump(record)
 
     def delete(self, id):
+        id = id.replace("\x00", "\uFFFD")
         record = self.__class__._model.query.filter_by(id=id).first()
 
         current_user = get_current_user()
@@ -267,16 +270,23 @@ class ListView(BaseView):
 @view_maker
 class MetaAnalysesView(ObjectView, ListView):
     _search_fields = ("name", "description")
+    _nested = {
+        "studyset": "StudysetsView",
+        "annotation": "AnnotationsView",
+    }
 
 
 @view_maker
 class AnnotationsView(ObjectView, ListView):
-    _nested = {"annotation_reference": "AnnotationReferenceResource"}
+    _nested = {
+        "annotation_reference": "AnnotationReferencesResource",
+        "studyset": "StudysetsView",
+    }
 
 
 @view_maker
 class StudysetsView(ObjectView, ListView):
-    _nested = {"studyset_reference": "StudysetReferenceResource"}
+    _nested = {"studyset_reference": "StudysetReferencesResource"}
 
 
 @view_maker
