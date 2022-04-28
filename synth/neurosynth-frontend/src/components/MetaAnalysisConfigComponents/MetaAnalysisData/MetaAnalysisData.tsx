@@ -37,8 +37,6 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
         const getAnnotationsForStudyset = (id: string) => {
             API.NeurostoreServices.AnnotationsService.annotationsGet(id).then((res) => {
                 if (current && res && res.data && res.data.results) {
-                    console.log(res.data.results);
-
                     setAnnotations(res.data.results as AnnotationsApiResponse[]);
                 }
             });

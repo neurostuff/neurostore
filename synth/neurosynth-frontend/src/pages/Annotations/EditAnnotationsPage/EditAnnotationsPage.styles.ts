@@ -10,6 +10,7 @@ const EditAnnotationsPageStyles: Style = {
         width: '100%',
         borderCollapse: 'separate',
         borderSpacing: '15px 0',
+        height: '70px',
     },
     unsavedChanges: {
         border: '2px solid orange',

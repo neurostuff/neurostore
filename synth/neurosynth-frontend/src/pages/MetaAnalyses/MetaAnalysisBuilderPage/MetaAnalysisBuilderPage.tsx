@@ -113,7 +113,11 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
             mask: '',
             contrast: '',
             transformer: '',
-            corrector: metaAnalysisComponents.corrector ? corrector : null,
+            corrector: {
+                type: metaAnalysisComponents.corrector?.label,
+                args: metaAnalysisDynamicArgs.correctorArgs,
+            },
+            filter: metaAnalysisComponents.inclusionColumn,
         };
 
         API.NeurosynthServices.SpecificationsService.specificationsPost(spec)
