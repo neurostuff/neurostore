@@ -3,6 +3,7 @@ from flask import abort, request, jsonify
 from flask.views import MethodView
 
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
+from marshmallow.exceptions import ValidationError
 import sqlalchemy.sql.expression as sae
 from sqlalchemy import func
 from webargs.flaskparser import parser
@@ -74,9 +75,13 @@ class BaseView(MethodView):
             record.user = current_user
         else:
             record = cls._model.query.filter_by(id=id).first()
-            if record is None:
+            if record is None and \
+                    cls._model in (StudysetReference, AnnotationReference):
+                record = cls._model(id=id)
+                to_commit.append(record)
+            elif record is None:
                 abort(422)
-            elif record.user_id != current_user.external_id and not only_ids:
+            elif not only_ids and record.user_id != current_user.external_id:
                 abort(403)
             elif only_ids:
                 to_commit.append(record)
@@ -128,7 +133,10 @@ class ObjectView(BaseView):
     def put(self, id):
         id = id.replace("\x00", "\uFFFD")
         request_data = self.insert_data(id, request.json)
-        data = self.__class__._schema().load(request_data)
+        try:
+            data = self.__class__._schema().load(request_data)
+        except ValidationError as e:
+            abort(422, description=f"input does not conform to specification: {str(e)}")
 
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data, id)
@@ -141,7 +149,13 @@ class ObjectView(BaseView):
 
         current_user = get_current_user()
         if record.user_id != current_user.external_id:
-            abort(403)
+            abort(
+                403,
+                description=(
+                    f"user {current_user.external_id} cannot change "
+                    f"record owned by {record.user_id}."
+                )
+            )
         else:
             db.session.delete(record)
 
@@ -257,7 +271,10 @@ class ListView(BaseView):
         # Parse arguments using webargs
         # args = parser.parse(self._user_args, request, location="query")
 
-        data = parser.parse(self.__class__._schema, request)
+        try:
+            data = parser.parse(self.__class__._schema, request)
+        except ValidationError as e:
+            abort(422, description=f"input does not conform to specification: {str(e)}")
 
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
