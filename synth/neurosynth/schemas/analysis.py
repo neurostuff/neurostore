@@ -67,6 +67,8 @@ class AnnotationReferenceSchema(Schema):
 
 class SpecificationSchema(BaseSchema):
     type = PGSQLString()
+    mask = PGSQLString(allow_none=True)
+    transformer = PGSQLString(allow_none=True)
     estimator = fields.Dict()
     contrast = PGSQLString(allow_none=True)
     filter = PGSQLString(allow_none=True)
