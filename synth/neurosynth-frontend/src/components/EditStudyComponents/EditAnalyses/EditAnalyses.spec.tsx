@@ -1,525 +1,301 @@
-import { render, screen } from '@testing-library/react';
-import { IEditAnalyses, IEditAnalysis } from '.';
+import { render, RenderResult, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { act } from 'react-dom/test-utils';
+import { mockAnalyses, mockConditions, mockWeights } from '../../../testing/mockData';
+import API, { AnalysisApiResponse } from '../../../utils/api';
 import EditAnalyses from './EditAnalyses';
+import EditAnalysis from './EditAnalysis/EditAnalysis';
 
 // already tested child component
-jest.mock('./EditAnalysis/EditAnalysis', () => {
-    return {
-        __esModule: true,
-        default: (props: IEditAnalysis) => {
-            return (
-                <div>
-                    <input
-                        onChange={() => {
-                            props.onEditAnalysisDetails('some-id', {
-                                keyToUpdate: 'valueToUpdate',
-                            });
-                        }}
-                        data-testid="edit"
-                    />
-                    <button
-                        onClick={() => {
-                            props.onDeleteAnalysis('id-to-delete');
-                        }}
-                        data-testid="delete"
-                    />
-                </div>
-            );
-        },
-    };
-});
+jest.mock('./EditAnalysis/EditAnalysis');
+jest.mock('../../Dialogs/ConfirmationDialog/ConfirmationDialog');
+jest.mock('@auth0/auth0-react');
+jest.mock('../../../utils/api');
+
+// we do a mock of the edit analysis component here because we want more fine grained access
+// in order to spy on the arguments passed to it
+jest.mock('./EditAnalysis/EditAnalysis');
 
 describe('DisplayMetadataTableRow Component', () => {
-    let mockEditAnalyses: IEditAnalyses;
+    const mockOnUpdateAnalysis = jest.fn();
+    let analyses: AnalysisApiResponse[] = [];
+    let renderResult: RenderResult;
 
     beforeEach(() => {
-        mockEditAnalyses = {
-            analyses: [
-                {
-                    conditions: [],
-                    created_at: '2021-11-10T19:46:43.510565+00:00',
-                    description: null,
-                    id: '3MXg8tfRq2sh',
-                    images: [],
-                    name: '41544',
-                    points: [
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [12.0, -18.0, 22.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '7vVqmHtGtnkQ',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [-40.0, -68.0, -20.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '3fZJuzbqti5v',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [-10.0, -60.0, 18.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '47aqyStcBEsC',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [-6.0, -34.0, 34.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '6Wm3t8jE5fGg',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [-14.0, -56.0, 70.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '7JpPtneWhZFU',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [20.0, -62.0, 46.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '3S6Vkfg6E9dz',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [-28.0, -26.0, 14.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '7m5xNnS7HiLu',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [-32.0, 0.0, -12.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '3cXiokRagkT9',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [32.0, -4.0, -4.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: 'x2uBSnaKc3Nj',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [-14.0, 58.0, 20.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '63J2v5nsZfP4',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [0.0, -46.0, 56.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '3G3i3oyqHE4V',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [-8.0, 48.0, 26.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '5oBfPniD2B6X',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [-22.0, -60.0, 6.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '5WgpoouhBaPe',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [-30.0, -80.0, 36.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '4tnbzkhP2MWc',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [-16.0, -86.0, 40.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '8K8xrwe6ppiA',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [32.0, -24.0, 48.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '6pBTQmiuiSVN',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [0.0, -32.0, 60.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '7yC2Mzs3BjCg',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [10.0, -82.0, -20.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: 'ph92Dz76t9pU',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '3MXg8tfRq2sh',
-                            coordinates: [-26.0, 40.0, 44.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '5RFazo3Kmado',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                    ],
-                    study: '4nz6aH7M59k2',
-                    user: 'some-user',
-                    weights: [],
-                },
-                {
-                    conditions: [],
-                    created_at: '2021-11-10T19:46:43.510565+00:00',
-                    description: null,
-                    id: '6iaKVRHx8F9i',
-                    images: [],
-                    name: '41545',
-                    points: [
-                        {
-                            analysis: '6iaKVRHx8F9i',
-                            coordinates: [8.0, -38.0, 32.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '7D5DpoLzp8k8',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '6iaKVRHx8F9i',
-                            coordinates: [30.0, -76.0, 22.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '4fSWZbFL2gKg',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '6iaKVRHx8F9i',
-                            coordinates: [26.0, -58.0, 8.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: 'XrYVkxEsSxNe',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '6iaKVRHx8F9i',
-                            coordinates: [-22.0, -52.0, 10.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '6qj3Z8wbPtX9',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '6iaKVRHx8F9i',
-                            coordinates: [26.0, -34.0, 72.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '4nxKYYJ7VJYh',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '6iaKVRHx8F9i',
-                            coordinates: [20.0, 16.0, 20.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '4fr96Y4y3bnX',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '6iaKVRHx8F9i',
-                            coordinates: [18.0, -54.0, 48.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: 'kyVrP2Px3o2n',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '6iaKVRHx8F9i',
-                            coordinates: [-20.0, 26.0, 60.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: 'Zh79NTx6M37t',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                    ],
-                    study: '4nz6aH7M59k2',
-                    user: 'some-user',
-                    weights: [],
-                },
-                {
-                    conditions: [],
-                    created_at: '2021-11-10T19:46:43.510565+00:00',
-                    description: 'Some description I am putting here',
-                    id: '33qzmEbxfTjs',
-                    images: [],
-                    name: '41546',
-                    points: [
-                        {
-                            analysis: '33qzmEbxfTjs',
-                            coordinates: [36.0, -68.0, -20.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '7ioUKxEDeZ9M',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '33qzmEbxfTjs',
-                            coordinates: [20.0, 30.0, 54.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '6nGWqacG26hU',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '33qzmEbxfTjs',
-                            coordinates: [14.0, 10.0, 62.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '5M4Lhk6ACVnd',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '33qzmEbxfTjs',
-                            coordinates: [12.0, 58.0, 18.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '7RgVpKCdxuBQ',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '33qzmEbxfTjs',
-                            coordinates: [-44.0, -28.0, 42.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '43pgKpr7peD3',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '33qzmEbxfTjs',
-                            coordinates: [46.0, -42.0, 50.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '5RGJMDqvBrqT',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '33qzmEbxfTjs',
-                            coordinates: [20.0, -76.0, -12.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '68E9A7PRqCPD',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '33qzmEbxfTjs',
-                            coordinates: [4.0, -56.0, -2.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '8PKo7afd4r6U',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                        {
-                            analysis: '33qzmEbxfTjs',
-                            coordinates: [4.0, 44.0, 8.0],
-                            created_at: '2021-11-10T19:46:43.510565+00:00',
-                            id: '3YgctaqLWzBu',
-                            image: null,
-                            kind: 'unknown',
-                            label_id: null,
-                            space: 'MNI',
-                            user: 'some-user',
-                            value: [],
-                        },
-                    ],
-                    study: '4nz6aH7M59k2',
-                    user: 'some-user',
-                    weights: [],
-                },
-            ],
-            onEditAnalysisPoints: jest.fn(),
-            onEditAnalysisDetails: jest.fn(),
-            onEditAnalysisImages: jest.fn(),
-        };
+        analyses = mockAnalyses();
+        renderResult = render(
+            <EditAnalyses analyses={analyses} onUpdateAnalysis={mockOnUpdateAnalysis} />
+        );
+    });
 
-        render(<EditAnalyses {...mockEditAnalyses} />);
+    afterAll(() => {
+        jest.clearAllMocks();
     });
 
     it('should render', () => {
-        const createAnalysisButton = screen.getByRole('button', { name: 'Create new analysis' });
-        expect(createAnalysisButton).toBeInTheDocument();
+        const title = screen.getByText('Edit Analyses');
+        expect(title).toBeInTheDocument();
+    });
 
+    it('should show a no analyses message if there are no analyses', () => {
+        renderResult.rerender(
+            <EditAnalyses analyses={[]} onUpdateAnalysis={mockOnUpdateAnalysis} />
+        );
+
+        expect(screen.getByText('No analyses for this study')).toBeInTheDocument();
+    });
+
+    it('should show the correct number of tabs for the given analyses', () => {
         const tabs = screen.getAllByRole('tab');
-        expect(tabs.length).toBe(mockEditAnalyses.analyses?.length);
+        expect(tabs.length).toEqual(analyses.length);
+    });
+
+    it('should default to the first tab being selected', () => {
+        // can use aria-selected
+        const firstTab = screen.getAllByRole('tab')[0];
+        expect(firstTab).toHaveClass('Mui-selected');
+    });
+
+    it('should update the analysis with the new details when an update is provided', () => {
+        const mockDetailsUpdate = screen.getByTestId('mock-edit-analysis-details');
+        userEvent.click(mockDetailsUpdate);
+
+        /**
+         * calls are stored as an array of arrays in this format:
+         * [
+         *     [
+         *         { id: ..., name: ... },
+         *         {}
+         *     ],
+         *     [
+         *         { id: ..., name: ... },
+         *         {}
+         *     ],
+         *     ...etc
+         * ]
+         */
+        const mockCalls = (EditAnalysis as jest.Mock).mock.calls;
+        const lastCall = (EditAnalysis as jest.Mock).mock.calls[mockCalls.length - 1][0];
+        expect(lastCall.analysis.name).toEqual('new name');
+        expect(lastCall.updateState.details.name).toBeTruthy();
+    });
+
+    it('should update the analysis with the new conditions/weights when an update is provided', () => {
+        const mockDetailsUpdate = screen.getByTestId('mock-edit-analysis-conditions');
+        const weights = mockWeights();
+        const conditions = mockConditions();
+        userEvent.click(mockDetailsUpdate);
+
+        /**
+         * calls are stored as an array of arrays in this format:
+         * [
+         *     [
+         *         { id: ..., name: ... },
+         *         {}
+         *     ],
+         *     [
+         *         { id: ..., name: ... },
+         *         {}
+         *     ],
+         *     ...etc
+         * ]
+         */
+        const mockCalls = (EditAnalysis as jest.Mock).mock.calls;
+        const lastCall = (EditAnalysis as jest.Mock).mock.calls[mockCalls.length - 1][0];
+        expect(lastCall.analysis.conditions).toEqual(conditions);
+        expect(lastCall.analysis.weights).toEqual(weights);
+        expect(lastCall.updateState.conditions).toBeTruthy();
+    });
+
+    describe('on save', () => {
+        beforeEach(() => {
+            // in the component itself, we disregard the actual response so we do not need to mock it here
+            (API.Services.AnalysesService.analysesIdPut as jest.Mock).mockReturnValue(
+                Promise.resolve({
+                    data: {},
+                })
+            );
+        });
+
+        it('should save and update the state appropriately for details', async () => {
+            // mock an update to details
+            const mockDetailsUpdate = screen.getByTestId('mock-edit-analysis-details');
+            userEvent.click(mockDetailsUpdate);
+
+            const mockSaveButton = screen.getByTestId('mock-edit-analysis-save-button-details');
+            await act(async () => {
+                userEvent.click(mockSaveButton);
+            });
+
+            expect(API.Services.AnalysesService.analysesIdPut).toBeCalledWith(analyses[0].id, {
+                name: 'new name',
+                description: 'Some description I am putting here',
+            });
+            expect(mockOnUpdateAnalysis).toBeCalledWith(analyses[0].id, {
+                ...analyses[0],
+                name: 'new name',
+            });
+        });
+
+        it('should save and update the state appropriately just for conditions/weights', async () => {
+            const conditions = mockConditions();
+            const weights = mockWeights();
+
+            // mock an update to conditions
+            const mockConditionsUpdate = screen.getByTestId('mock-edit-analysis-conditions');
+            userEvent.click(mockConditionsUpdate);
+
+            const mockSaveButton = screen.getByTestId('mock-edit-analysis-save-button-conditions');
+            await act(async () => {
+                userEvent.click(mockSaveButton);
+            });
+
+            expect(API.Services.AnalysesService.analysesIdPut).toBeCalledWith(analyses[0].id, {
+                conditions: conditions.map((x) => x.id),
+                weights: weights,
+            });
+            expect(mockOnUpdateAnalysis).toBeCalledWith(analyses[0].id, {
+                ...analyses[0],
+                conditions: conditions,
+                weights: weights,
+            });
+        });
+
+        it('should update the original details when something is saved', async () => {
+            const mockSaveButton = screen.getByTestId('mock-edit-analysis-save-button-details');
+            await act(async () => {
+                userEvent.click(mockSaveButton);
+            });
+
+            const newMockAnalyses = [...analyses];
+            analyses[0].name = 'some new updated special name';
+
+            await act(async () => {
+                renderResult.rerender(
+                    <EditAnalyses
+                        analyses={newMockAnalyses}
+                        onUpdateAnalysis={mockOnUpdateAnalysis}
+                    />
+                );
+            });
+
+            const cancelButton = screen.getByTestId('mock-edit-analysis-cancel-button-details');
+            userEvent.click(cancelButton);
+
+            const mockCalls = (EditAnalysis as jest.Mock).mock.calls;
+            const lastCall = (EditAnalysis as jest.Mock).mock.calls[mockCalls.length - 1][0];
+            expect(lastCall.analysis.name).toEqual('some new updated special name');
+            expect(lastCall.updateState.details.name).toBeFalsy();
+        });
+    });
+
+    describe('on cancel', () => {
+        it('should cancel the changes for details', () => {
+            // mock an update to details
+            const mockDetailsUpdate = screen.getByTestId('mock-edit-analysis-details');
+            userEvent.click(mockDetailsUpdate);
+
+            const cancelButton = screen.getByTestId('mock-edit-analysis-cancel-button-details');
+            userEvent.click(cancelButton);
+
+            const mockCalls = (EditAnalysis as jest.Mock).mock.calls;
+            const lastCall = (EditAnalysis as jest.Mock).mock.calls[mockCalls.length - 1][0];
+            expect(lastCall.analysis.name).toEqual(analyses[0].name);
+            expect(lastCall.updateState.details.name).toBeFalsy();
+        });
+
+        it('should cancel the changes for conditions/weights', () => {
+            // mock an update to conditions/weights
+            const mockConditionsUpdate = screen.getByTestId('mock-edit-analysis-conditions');
+            userEvent.click(mockConditionsUpdate);
+
+            const cancelButton = screen.getByTestId('mock-edit-analysis-cancel-button-conditions');
+            userEvent.click(cancelButton);
+
+            const mockCalls = (EditAnalysis as jest.Mock).mock.calls;
+            const lastCall = (EditAnalysis as jest.Mock).mock.calls[mockCalls.length - 1][0];
+            expect(lastCall.analysis.conditions).toEqual(analyses[0].conditions);
+            expect(lastCall.analysis.weights).toEqual(analyses[0].weights);
+            expect(lastCall.updateState.conditions).toBeFalsy();
+        });
+    });
+
+    describe('on tab change', () => {
+        it('should change the tab correctly', () => {
+            const secondTab = screen.getAllByRole('tab')[1];
+            userEvent.click(secondTab);
+
+            const mockCalls = (EditAnalysis as jest.Mock).mock.calls;
+            const lastCall = (EditAnalysis as jest.Mock).mock.calls[mockCalls.length - 1][0];
+            expect(lastCall.analysis).toEqual(analyses[1]);
+            expect(lastCall.updateState).toEqual({
+                details: {
+                    name: false,
+                    description: false,
+                },
+                conditions: false,
+            });
+        });
+
+        it('should show a dialog if there are unsaved changes', () => {
+            // mock an update to details
+            const mockDetailsUpdate = screen.getByTestId('mock-edit-analysis-details');
+            userEvent.click(mockDetailsUpdate);
+
+            const secondTab = screen.getAllByRole('tab')[1];
+            userEvent.click(secondTab);
+
+            const dialog = screen.getByTestId('mock-confirmation-dialog');
+            expect(dialog).toBeInTheDocument();
+        });
+
+        it('should save all the changes if that option is selected in the dialog', async () => {
+            // in the component itself, we disregard the actual response so we do not need to mock it here
+            (API.Services.AnalysesService.analysesIdPut as jest.Mock).mockReturnValue(
+                Promise.resolve({
+                    data: {},
+                })
+            );
+
+            // mock an update to details
+            const mockDetailsUpdate = screen.getByTestId('mock-edit-analysis-details');
+            userEvent.click(mockDetailsUpdate);
+
+            const secondTab = screen.getAllByRole('tab')[1];
+            userEvent.click(secondTab);
+
+            const dialogButton = screen.getByTestId('accept-close-confirmation');
+            await act(async () => {
+                userEvent.click(dialogButton);
+            });
+
+            expect(API.Services.AnalysesService.analysesIdPut).toBeCalled();
+            expect(mockOnUpdateAnalysis).toBeCalled();
+        });
+
+        it('should discard all the changes if that option is selected in the dialog', async () => {
+            // mock an update to details
+            const mockDetailsUpdate = screen.getByTestId('mock-edit-analysis-details');
+            userEvent.click(mockDetailsUpdate);
+
+            const secondTab = screen.getAllByRole('tab')[1];
+            userEvent.click(secondTab);
+
+            const dialogButton = screen.getByTestId('deny-close-confirmation');
+            await act(async () => {
+                userEvent.click(dialogButton);
+            });
+
+            const mockCalls = (EditAnalysis as jest.Mock).mock.calls;
+            const lastCall = (EditAnalysis as jest.Mock).mock.calls[mockCalls.length - 1][0];
+            expect(lastCall.analysis).toEqual(analyses[0]);
+            expect(lastCall.updateState).toEqual({
+                details: {
+                    name: false,
+                    description: false,
+                },
+                conditions: false,
+            });
+        });
     });
 });

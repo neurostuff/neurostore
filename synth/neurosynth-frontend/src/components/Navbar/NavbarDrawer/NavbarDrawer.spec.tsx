@@ -5,17 +5,9 @@ import { BrowserRouter } from 'react-router-dom';
 import { NavOptionsModel } from '..';
 import NavbarDrawer from './NavbarDrawer';
 
-jest.mock('@auth0/auth0-react');
-
 // already tested child component
-jest.mock('../NavbarPopupMenu/NavbarPopupMenu', () => {
-    return {
-        __esModule: true,
-        default: (props: any) => {
-            return <button>child-menuitem</button>;
-        },
-    };
-});
+jest.mock('../NavbarPopupMenu/NavbarPopupMenu');
+jest.mock('@auth0/auth0-react');
 
 describe('NavbarDrawer Component', () => {
     const mockedUseAuth0 = {

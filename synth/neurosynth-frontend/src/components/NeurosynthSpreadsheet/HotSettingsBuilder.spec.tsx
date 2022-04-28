@@ -4,7 +4,7 @@ import NeurosynthSpreadsheetState from './NeurosynthSpreadsheetState';
 
 jest.mock('./NeurosynthSpreadsheetState');
 
-describe('HotSettingsHelper', () => {
+describe('HotSettingsBuilder', () => {
     let mockNeurosynthSpreadsheetState: NeurosynthSpreadsheetState;
     let hotSettingsHelperInstance: HotSettingsBuilder;
     let mockNumColumns = 0;

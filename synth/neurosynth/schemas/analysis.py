@@ -5,6 +5,15 @@ from marshmallow import (
 )
 
 
+class PGSQLString(fields.String):
+    # https://www.commandprompt.com/blog/null-characters-workarounds-arent-good-enough/
+    # null character workarounds are good enough for me
+    def _deserialize(self, value, attr, data, **kwargs):
+        result = super()._deserialize(value, attr, data, **kwargs)
+        if result is not None:
+            return result.replace("\x00", "\uFFFD")
+
+
 class StringOrNested(fields.Nested):
 
     #: Default error messages.
@@ -17,10 +26,13 @@ class StringOrNested(fields.Nested):
         if value is None:
             return None
         nested = self.context.get("nested")
+        nested_attr = self.metadata.get('pluck')
         if nested:
             many = self.schema.many or self.many
-            nested_obj = getattr(obj, self.data_key)
+            nested_obj = getattr(obj, self.data_key or self.name)
             return self.schema.dump(nested_obj, many=many)
+        elif nested_attr:
+            return getattr(value, nested_attr)
         else:
             return utils.ensure_text_type(value)
 
@@ -33,24 +45,32 @@ class StringOrNested(fields.Nested):
             if not isinstance(value, (str, bytes)):
                 raise self.make_error("invalid")
             try:
-                return utils.ensure_text_type(value)
+                return utils.ensure_text_type(value).replace("\x00", "\uFFFD")
             except UnicodeDecodeError as error:
                 raise self.make_error("invalid_utf8") from error
 
 
 class BaseSchema(Schema):
-    id = fields.String()
+    id = PGSQLString()
     created_at = fields.DateTime()
-    updated_at = fields.DateTime()
+    updated_at = fields.DateTime(allow_none=True)
     user_id = fields.String(data_key="user")
 
 
+class StudysetReferenceSchema(Schema):
+    neurostore_id = PGSQLString()
+
+
+class AnnotationReferenceSchema(Schema):
+    neurostore_id = PGSQLString()
+
+
 class SpecificationSchema(BaseSchema):
-    type = fields.String()
+    type = PGSQLString()
     estimator = fields.Dict()
-    contrast = fields.Dict()
-    filter = fields.Dict()
-    corrector = fields.Dict()
+    contrast = PGSQLString(allow_none=True)
+    filter = PGSQLString(allow_none=True)
+    corrector = fields.Dict(allow_none=True)
 
     class Meta:
         additional = ("name", "description")
@@ -58,16 +78,30 @@ class SpecificationSchema(BaseSchema):
 
 
 class StudysetSchema(BaseSchema):
-    studyset = fields.Dict()
-    neurostore_id = fields.String()
+    snapshot = fields.Dict()
+    neurostore_id = PGSQLString()
 
 
 class AnnotationSchema(BaseSchema):
-    annotation = fields.Dict()
-    neurostore_id = fields.String()
+    snapshot = fields.Dict()
+    neurostore_id = PGSQLString()
+    studyset = fields.Pluck(StudysetSchema, "neurostore_id", dump_only=True)
+    internal_studyset_id = fields.Pluck(
+        StudysetSchema, "id", load_only=True, attribute="studyset"
+    )
 
 
 class MetaAnalysisSchema(BaseSchema):
+    name = fields.String(allow_none=True)
+    description = fields.String(allow_none=True)
     specification_id = StringOrNested(SpecificationSchema, data_key="specification")
-    studyset_id = StringOrNested(StudysetSchema, data_key="studyset")
-    annotation_id = StringOrNested(AnnotationSchema, data_key="annotation")
+    studyset = StringOrNested(StudysetSchema, metadata={'pluck': 'neurostore_id'}, dump_only=True)
+    annotation = StringOrNested(
+        AnnotationSchema, metadata={'pluck': 'neurostore_id'}, dump_only=True
+    )
+    internal_studyset_id = fields.Pluck(
+        StudysetSchema, "id", load_only=True, attribute="studyset"
+    )
+    internal_annotation_id = fields.Pluck(
+        AnnotationSchema, "id", load_only=True, attribute="annotation"
+    )

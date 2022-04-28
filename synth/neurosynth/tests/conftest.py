@@ -2,16 +2,36 @@ import json
 from os import environ
 import pathlib
 
+import schemathesis
 import pytest
 import sqlalchemy as sa
 
+from ..ingest.neurostore import create_meta_analyses
 from ..database import db as _db
 from ..models import (
-    User, Specification, Studyset, Annotation, MetaAnalysis
+    User, Specification, Studyset, Annotation, MetaAnalysis,
+    StudysetReference, AnnotationReference
 )
 from auth0.v3.authentication import GetToken
 
 DATA_PATH = f_path = pathlib.Path(__file__).parent.resolve() / "data"
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--schemathesis",
+        action="store_true",
+        default=False,
+        help="Run schemathesis tests",
+    )
+
+
+schemathesis_test = pytest.mark.skipif(
+    "not config.getoption('--schemathesis')",
+    reason="Only run when --schemathesis is given",
+)
+
+
 """
 Test fixtures for bypassing authentication
 """
@@ -234,21 +254,24 @@ def user_data(session, mock_add_users):
         serialized_annotation = json.load(data_file)
 
     with session.no_autoflush:
+        ss_ref = StudysetReference(neurostore_id=serialized_studyset['id'])
+        annot_ref = AnnotationReference(neurostore_id=serialized_annotation['id'])
         for user_info in mock_add_users.values():
             user = User.query.filter_by(id=user_info['id']).first()
 
             studyset = Studyset(
                 user=user,
-                neurostore_id=serialized_studyset['id'],
-                studyset=serialized_studyset,
+                snapshot=serialized_studyset,
                 public=True,
+                studyset_reference=ss_ref,
             )
 
             annotation = Annotation(
                 user=user,
-                neurostore_id=serialized_annotation['id'],
-                annotation=serialized_annotation,
+                snapshot=serialized_annotation,
                 public=True,
+                annotation_reference=annot_ref,
+                studyset=studyset,
             )
 
             specification = Specification(
@@ -264,15 +287,13 @@ def user_data(session, mock_add_users):
                     'alpha': 0.05,
                     'method': 'indep',
                 },
-                filter={
-                    'name': 'included analyses',
-                    'columns': ['include'],
-                },
+                filter='include',
                 public=True,
             )
 
             meta_analysis = MetaAnalysis(
                 name=user.id + "'s meta analysis",
+                user=user,
                 specification=specification,
                 studyset=studyset,
                 annotation=annotation,
@@ -282,3 +303,13 @@ def user_data(session, mock_add_users):
 
         session.add_all(to_commit)
         session.commit()
+
+
+@pytest.fixture(scope="function")
+def neurostore_data(session, mock_add_users):
+    create_meta_analyses()
+
+
+@pytest.fixture()
+def app_schema(app):
+    return schemathesis.from_wsgi('/api/openapi.json', app)

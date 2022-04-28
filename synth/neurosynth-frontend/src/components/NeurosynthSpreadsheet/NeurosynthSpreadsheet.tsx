@@ -7,12 +7,12 @@ import { EPropertyType, IMetadataRowModel } from '..';
 import { NavLink } from 'react-router-dom';
 import AddMetadataRow from '../EditMetadata/EditMetadataRow/AddMetadataRow';
 import EditAnnotationsPageStyles from '../../pages/Annotations/EditAnnotationsPage/EditAnnotationsPage.styles';
-import { AnnotationNote, ReadOnly } from '../../gen/api';
 import EditStudyPageStyles from '../../pages/Studies/EditStudyPage/EditStudyPage.styles';
 import { Button, Link, Box } from '@mui/material';
 import HotSettingsBuilder from './HotSettingsBuilder';
 import NeurosynthSpreadsheetState from './NeurosynthSpreadsheetState';
 import NeurosynthSpreadsheetHelper from './NeurosynthSpreadsheetHelper';
+import { AnnotationNote, ReadOnly } from '../../neurostore-typescript-sdk';
 
 export interface INeurosynthColumn {
     value: string;
@@ -21,7 +21,7 @@ export interface INeurosynthColumn {
 
 const NeurosynthSpreadsheet: React.FC<{
     annotationNotes: (AnnotationNote & ReadOnly)[] | undefined;
-    annotationNoteKeyTypes: object | undefined;
+    annotationNoteKeyTypes: object | undefined | null;
     onSaveAnnotation: (
         annotationNotes: AnnotationNote[],
         noteKeyTypes: { [key: string]: EPropertyType }
@@ -219,10 +219,7 @@ const NeurosynthSpreadsheet: React.FC<{
                         variant="contained"
                         disabled={!isAuthenticated}
                         onClick={handleOnSaveAnnotationChangeClick}
-                        sx={{
-                            ...EditStudyPageStyles.button,
-                            marginTop: '0.5rem',
-                        }}
+                        sx={[EditStudyPageStyles.button, { marginTop: '0.5rem' }]}
                     >
                         Save Annotation Changes
                     </Button>

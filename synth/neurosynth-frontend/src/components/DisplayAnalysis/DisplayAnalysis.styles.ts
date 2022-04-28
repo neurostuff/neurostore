@@ -22,7 +22,7 @@ const DisplayAnalysisStyles: Style = {
     visualizer: {
         width: '100%',
         height: 'auto',
-        padding: '0 2px', // papaya gives an 8px border already so we padd it to match
+        padding: '0 2px', // papaya gives an 8px border already so we pad it to match
     },
     visualizerContainer: {
         width: '100%',

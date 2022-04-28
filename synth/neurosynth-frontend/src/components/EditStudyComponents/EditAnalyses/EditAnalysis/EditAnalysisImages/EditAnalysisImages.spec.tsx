@@ -6,6 +6,9 @@ import EditAnalysisImages from './EditAnalysisImages';
  */
 
 describe('EditAnalysisImages Component', () => {
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
     it('should render', () => {
         render(<EditAnalysisImages />);
         expect(true).toBe(true);

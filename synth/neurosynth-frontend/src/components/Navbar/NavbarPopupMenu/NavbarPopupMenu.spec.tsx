@@ -3,29 +3,10 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import { NavOptionsModel } from '..';
-import { INeurosynthPopper } from '../../NeurosynthPopper/NeurosynthPopper';
 import NavbarPopupMenu from './NavbarPopupMenu';
 
 jest.mock('@auth0/auth0-react');
-
-// already tested child component
-jest.mock('../../NeurosynthPopper/NeurosynthPopper', () => {
-    return {
-        __esModule: true,
-        default: (props: INeurosynthPopper) => {
-            return (
-                <>
-                    <button onClick={props.onClickAway as any} data-testid="trigger-click-away">
-                        trigger click away
-                    </button>
-                    <div data-testid={props.open ? 'mock-popper-open' : 'mock-popper-closed'}>
-                        {(props as any).children}
-                    </div>
-                </>
-            );
-        },
-    };
-});
+jest.mock('../../NeurosynthPopper/NeurosynthPopper');
 
 describe('NavbarPopupMenu', () => {
     const mockgetAccessTokenSilently = jest.fn();
@@ -64,6 +45,10 @@ describe('NavbarPopupMenu', () => {
             getAccessTokenSilently: mockgetAccessTokenSilently,
             isAuthenticated: false,
         });
+    });
+
+    afterAll(() => {
+        jest.clearAllMocks();
     });
 
     it('should render', () => {

@@ -1,12 +1,12 @@
-import { IconButton, TextField, Theme, Button } from '@mui/material';
-import { Box, SxProps } from '@mui/system';
+import { IconButton, TextField, Button } from '@mui/material';
+import { Box, SystemStyleObject } from '@mui/system';
 import React, { useEffect, useState } from 'react';
 import EditIcon from '@mui/icons-material/Edit';
 import { useAuth0 } from '@auth0/auth0-react';
 
 export interface ITextEdit {
     textToEdit: string;
-    sx?: SxProps<Theme>;
+    sx?: SystemStyleObject;
     multiline?: boolean;
     placeholder?: string;
     label?: string;

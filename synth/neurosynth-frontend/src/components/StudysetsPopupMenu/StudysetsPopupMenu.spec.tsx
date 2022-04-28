@@ -2,36 +2,9 @@ import { act, render, screen } from '@testing-library/react';
 import { StudysetsApiResponse, StudyApiResponse } from '../../utils/api';
 import StudysetsPopupMenu from './StudysetsPopupMenu';
 import userEvent from '@testing-library/user-event';
-import { INeurosynthPopper } from '../NeurosynthPopper/NeurosynthPopper';
 
-// already tested child component
-jest.mock('../NeurosynthPopper/NeurosynthPopper', () => {
-    return {
-        __esModule: true,
-        default: (props: INeurosynthPopper) => {
-            return (
-                <>
-                    <button onClick={props.onClickAway as any} data-testid="trigger-click-away">
-                        trigger click away
-                    </button>
-                    <div data-testid={props.open ? 'mock-popper-open' : 'mock-popper-closed'}>
-                        {(props as any).children}
-                    </div>
-                </>
-            );
-        },
-    };
-});
-
-// already tested child component
-jest.mock('../NeurosynthLoader/NeurosynthLoader', () => {
-    return {
-        __esModule: true,
-        default: (props: any) => {
-            return <div>{props.children}</div>;
-        },
-    };
-});
+jest.mock('../NeurosynthPopper/NeurosynthPopper');
+jest.mock('../NeurosynthLoader/NeurosynthLoader');
 
 const mockStudy: StudyApiResponse = {
     analyses: ['5CgFrbqVsKsH', '4TType6JzACT', '3qgrMH6Etutw'],
@@ -202,6 +175,10 @@ const mockStudysets: StudysetsApiResponse[] = [
 describe('StudysetsPopupMenu', () => {
     const mockHandleStudysetCreated = jest.fn();
     const mockHandleStudyAddedToStudyset = jest.fn();
+
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
 
     it('should render', () => {
         render(

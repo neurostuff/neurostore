@@ -10,6 +10,10 @@ describe('EditMetadataRow Component', () => {
 
     let mockMetadataRow: IMetadataRowModel;
 
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
+
     beforeEach(() => {
         mockMetadataRow = {
             metadataKey: 'test key',

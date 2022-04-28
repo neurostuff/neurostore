@@ -4,11 +4,11 @@ import { CellValue } from 'handsontable/common';
 import { numericValidator } from 'handsontable/validators';
 import React from 'react';
 import { EPropertyType, getType, IMetadataRowModel, INeurosynthColumn } from '..';
-import { AnnotationNote } from '../../gen/api';
 import NeurosynthSpreadsheetHelper from './NeurosynthSpreadsheetHelper';
 import styles from './NeurosynthSpreadsheet.module.css';
 import { numericRenderer, textRenderer } from 'handsontable/renderers';
 import { renderToString } from 'react-dom/server';
+import { AnnotationNote } from '../../neurostore-typescript-sdk';
 
 interface IStudyTitleRow {
     publication: string;

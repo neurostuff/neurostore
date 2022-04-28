@@ -1,4 +1,4 @@
-import { Box, SxProps, Theme } from '@mui/system';
+import { Box, SystemStyleObject } from '@mui/system';
 import { useEffect } from 'react';
 import VisualizerStyles from './Visualizer.styles';
 
@@ -7,7 +7,7 @@ export interface VisualizerModel {
     fileName: string;
     index: number; // the ith papaya container (set this to 0 if you have 1 papaya viewer)
     template: string; // template image that we use to display the given image
-    sx?: SxProps<Theme>;
+    styling?: SystemStyleObject;
 }
 
 const Visualizer: React.FC<VisualizerModel> = (props) => {
@@ -81,7 +81,7 @@ const Visualizer: React.FC<VisualizerModel> = (props) => {
     }, []);
 
     return (
-        <Box sx={{ ...VisualizerStyles.container, ...props.sx }}>
+        <Box sx={[VisualizerStyles.container, props.styling || {}]}>
             <div className="papaya"></div>
         </Box>
     );

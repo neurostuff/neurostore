@@ -1,9 +1,9 @@
 import { Box, TextField, Button } from '@mui/material';
 import React, { useState } from 'react';
-import { PointsApiResponse } from '../../../../../../utils/api';
+import { PointApiResponse } from '../../../../../../utils/api';
 import EditAnalysisPointsRowStyles from './EditAnalysisPointsRow.styles';
 
-const EditAnalysisPointsRow: React.FC<PointsApiResponse> = (props) => {
+const EditAnalysisPointsRow: React.FC<PointApiResponse> = (props) => {
     const [enableUpdate, setEnableUpdate] = useState(false);
     const handleDelete = (event: React.MouseEvent) => {};
 

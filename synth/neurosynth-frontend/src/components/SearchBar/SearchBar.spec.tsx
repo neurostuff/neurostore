@@ -6,6 +6,10 @@ import SearchBar from './SearchBar';
 describe('SearchBar Component', () => {
     const onSearchMock = jest.fn();
 
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
+
     it('should render', () => {
         render(<SearchBar onSearch={onSearchMock} />);
 

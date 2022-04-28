@@ -6,6 +6,8 @@ import TextEdit from './TextEdit';
 jest.mock('@auth0/auth0-react');
 
 describe('TextEdit', () => {
+    const mockOnSave = jest.fn();
+
     beforeEach(() => {
         (useAuth0 as any).mockReturnValue({
             getAccessTokenSilently: () => {},
@@ -13,7 +15,10 @@ describe('TextEdit', () => {
         });
     });
 
-    const mockOnSave = jest.fn();
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
+
     it('should render', () => {
         render(
             <TextEdit onSave={mockOnSave} textToEdit="test-text">

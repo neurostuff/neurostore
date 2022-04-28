@@ -11,6 +11,7 @@ from webargs import fields
 from ..database import db
 from ..models.analysis import (   # noqa E401
     Studyset, Annotation, MetaAnalysis, Specification,
+    StudysetReference, AnnotationReference
 )
 from ..models.auth import User
 
@@ -19,6 +20,9 @@ from ..schemas import (  # noqa E401
     AnnotationSchema,
     StudysetSchema,
     SpecificationSchema,
+    AnnotationReferenceSchema,
+    StudysetReferenceSchema,
+
 )
 from .singular import singularize
 
@@ -31,7 +35,8 @@ def get_current_user():
 
 
 def view_maker(cls):
-    basename = singularize(cls.__name__.rstrip('View'), custom={"MetaAnalyses": 'MetaAnalysis'})
+    proc_name = cls.__name__.removesuffix('View').removesuffix('Resource')
+    basename = singularize(proc_name, custom={"MetaAnalyses": 'MetaAnalysis'})
 
     class ClassView(cls):
         _model = globals()[basename]
@@ -45,6 +50,7 @@ def view_maker(cls):
 class BaseView(MethodView):
 
     _model = None
+    _nested = {}
 
     @classmethod
     def update_or_create(cls, data, id=None, commit=True):
@@ -113,16 +119,14 @@ class BaseView(MethodView):
 
 class ObjectView(BaseView):
     def get(self, id):
+        id = id.replace("\x00", "\uFFFD")
         record = self._model.query.filter_by(id=id).first_or_404()
         args = parser.parse(self._user_args, request, location="query")
-        if args.get("nested") == 'true':
-            nested = True
-        else:
-            nested = False
 
-        return self.__class__._schema(context={'nested': nested}).dump(record)
+        return self.__class__._schema(context={'nested': args.get("nested")}).dump(record)
 
     def put(self, id):
+        id = id.replace("\x00", "\uFFFD")
         request_data = self.insert_data(id, request.json)
         data = self.__class__._schema().load(request_data)
 
@@ -132,6 +136,7 @@ class ObjectView(BaseView):
         return self.__class__._schema().dump(record)
 
     def delete(self, id):
+        id = id.replace("\x00", "\uFFFD")
         record = self.__class__._model.query.filter_by(id=id).first()
 
         current_user = get_current_user()
@@ -265,18 +270,35 @@ class ListView(BaseView):
 @view_maker
 class MetaAnalysesView(ObjectView, ListView):
     _search_fields = ("name", "description")
+    _nested = {
+        "studyset": "StudysetsView",
+        "annotation": "AnnotationsView",
+    }
 
 
 @view_maker
 class AnnotationsView(ObjectView, ListView):
-    pass
+    _nested = {
+        "annotation_reference": "AnnotationReferencesResource",
+        "studyset": "StudysetsView",
+    }
 
 
 @view_maker
 class StudysetsView(ObjectView, ListView):
-    pass
+    _nested = {"studyset_reference": "StudysetReferencesResource"}
 
 
 @view_maker
 class SpecificationsView(ObjectView, ListView):
+    pass
+
+
+@view_maker
+class StudysetReferencesResource(ObjectView):
+    pass
+
+
+@view_maker
+class AnnotationReferencesResource(ObjectView):
     pass

@@ -26,6 +26,8 @@ describe('TextExpansion Component', () => {
             'offsetWidth',
             originalOffsetWidth as PropertyDescriptor
         );
+
+        jest.clearAllMocks();
     });
 
     it('should render', () => {
