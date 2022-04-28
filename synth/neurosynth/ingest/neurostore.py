@@ -19,9 +19,9 @@ def ingest_neurostore(url="https://neurostore.xyz", n_studysets=None, study_size
 
         for studyset in studysets:
             ss_ref = StudysetReference.query.filter_by(
-                neurostore_id=studyset['id']
+                id=studyset['id']
                 ).one_or_none() \
-                or StudysetReference(neurostore_id=studyset['id'])
+                or StudysetReference(id=studyset['id'])
             ss = Studyset(studyset_reference=ss_ref)
             to_commit.append(ss)
             # only ingest annotations for smaller studysets now.
@@ -31,9 +31,9 @@ def ingest_neurostore(url="https://neurostore.xyz", n_studysets=None, study_size
                 ).json()['results']
                 for annot in annotations:
                     annot_ref = AnnotationReference.query.filter_by(
-                        neurostore_id=annot['id']
+                        id=annot['id']
                         ).one_or_none() \
-                        or AnnotationReference(neurostore_id=annot['id'])
+                        or AnnotationReference(id=annot['id'])
                     to_commit.append(
                         Annotation(
                             studyset=ss,
