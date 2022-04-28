@@ -23,41 +23,30 @@ const NeurosynthDataGridHeader: React.FC<{ selectedPoints: GridSelectionModel }>
                     sx={{
                         height: '60px',
                         borderBottom: '1px solid lightgray',
-                        justifyContent: 'space-between',
                         display: 'flex',
                         alignItems: 'center',
                     }}
                 >
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Typography sx={{ margin: '0 1rem', color: 'primary.main' }} variant="h6">
-                            {props.selectedPoints.length} point(s) selected
-                        </Typography>
+                    <Typography sx={{ margin: '0 1rem' }} variant="h6">
+                        {props.selectedPoints.length} point(s) selected
+                    </Typography>
 
-                        <Button
-                            onClick={() => setPopperIsOpen(true)}
-                            ref={buttonRef}
-                            sx={{ margin: '0 1rem' }}
-                            variant="outlined"
-                            startIcon={<CompareArrowsIcon />}
-                        >
-                            Move points to another analysis
-                        </Button>
-                        <NeurosynthPopper
-                            onClickAway={handleClickClose}
-                            anchorElement={buttonRef.current}
-                            open={popperIsOpen}
-                        >
-                            <Box>hello hello hello</Box>
-                        </NeurosynthPopper>
-                    </Box>
                     <Button
+                        onClick={() => setPopperIsOpen(true)}
+                        ref={buttonRef}
                         sx={{ margin: '0 1rem' }}
                         variant="outlined"
-                        color="error"
-                        startIcon={<DeleteIcon />}
+                        startIcon={<CompareArrowsIcon />}
                     >
-                        Delete selected points
+                        Move points to another analysis
                     </Button>
+                    <NeurosynthPopper
+                        onClickAway={handleClickClose}
+                        anchorElement={buttonRef.current}
+                        open={popperIsOpen}
+                    >
+                        <Box>hello hello hello</Box>
+                    </NeurosynthPopper>
                 </Box>
             )}
         </>
@@ -73,7 +62,7 @@ const EditAnalysisPoints: React.FC<IEditAnalysisPoints> = (props) => {
 
     return (
         <>
-            <Button sx={{ marginBottom: '1rem' }} endIcon={<AddIcon />} variant="outlined">
+            <Button sx={{ margin: '2rem 0' }} endIcon={<AddIcon />} variant="outlined">
                 Add points to analysis
             </Button>
             <Box sx={{ height: '500px', overflow: 'auto' }}>
@@ -181,6 +170,19 @@ const EditAnalysisPoints: React.FC<IEditAnalysisPoints> = (props) => {
                             headerName: 'space',
                             editable: true,
                             flex: 1.5,
+                        },
+                        {
+                            field: 'delete',
+                            headerName: '',
+                            editable: false,
+                            width: 100,
+                            renderCell: (params) => {
+                                return (
+                                    <Button color="error" onClick={(_event) => {}}>
+                                        Delete
+                                    </Button>
+                                );
+                            },
                         },
                     ]}
                 />
