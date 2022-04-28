@@ -93,7 +93,6 @@ class MetaAnalysis(BaseMixin, db.Model):
 
     specification = relationship("Specification", backref=backref("meta_analyses"))
     studyset = relationship("Studyset", backref=backref("meta_analyses"), lazy="joined")
-
     annotation = relationship("Annotation", backref=backref("meta_analyses"), lazy="joined")
     user = relationship("User", backref=backref("meta_analyses"))
 
