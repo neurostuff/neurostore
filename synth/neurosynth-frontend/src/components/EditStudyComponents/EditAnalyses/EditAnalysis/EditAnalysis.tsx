@@ -55,7 +55,7 @@ const EditAnalysis: React.FC<IEditAnalysis> = (props) => {
                             label="General"
                         />
                     </Tabs>
-                    <Box>
+                    <Box sx={{ padding: '0 1rem' }}>
                         {editTab === 0 && (
                             <EditAnalysisPoints
                                 onRemovePoint={handleRemovePoint}

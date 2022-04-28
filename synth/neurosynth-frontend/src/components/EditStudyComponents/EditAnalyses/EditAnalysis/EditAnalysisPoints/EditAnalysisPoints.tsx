@@ -1,9 +1,8 @@
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Typography, Button, MenuItem, MenuList } from '@mui/material';
 import { DataGrid, GridCallbackDetails, GridSelectionModel } from '@mui/x-data-grid';
 import React, { useRef, useState } from 'react';
 import { IEditAnalysisPoints } from '../..';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
-import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { NeurosynthPopper } from '../../../..';
 
@@ -45,7 +44,10 @@ const NeurosynthDataGridHeader: React.FC<{ selectedPoints: GridSelectionModel }>
                         anchorElement={buttonRef.current}
                         open={popperIsOpen}
                     >
-                        <Box>hello hello hello</Box>
+                        <MenuList>
+                            <MenuItem>14646</MenuItem>
+                            <MenuItem>14644</MenuItem>
+                        </MenuList>
                     </NeurosynthPopper>
                 </Box>
             )}
@@ -60,9 +62,11 @@ const EditAnalysisPoints: React.FC<IEditAnalysisPoints> = (props) => {
         setSelectedPoints(selected);
     };
 
+    const handleDelete = () => {};
+
     return (
         <>
-            <Button sx={{ margin: '2rem 0' }} endIcon={<AddIcon />} variant="outlined">
+            <Button sx={{ marginBottom: '1rem' }} endIcon={<AddIcon />} variant="outlined">
                 Add points to analysis
             </Button>
             <Box sx={{ height: '500px', overflow: 'auto' }}>
@@ -177,6 +181,8 @@ const EditAnalysisPoints: React.FC<IEditAnalysisPoints> = (props) => {
                             editable: false,
                             width: 100,
                             renderCell: (params) => {
+                                console.log(params);
+
                                 return (
                                     <Button color="error" onClick={(_event) => {}}>
                                         Delete
