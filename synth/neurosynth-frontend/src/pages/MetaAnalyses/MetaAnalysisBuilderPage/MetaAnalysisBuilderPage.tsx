@@ -1,5 +1,5 @@
 import { Step, StepLabel, Stepper } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { IDynamicInputType } from '../../../components/MetaAnalysisConfigComponents';
 import MetaAnalysisAlgorithm from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisAlgorithm/MetaAnalysisAlgorithm';
 import MetaAnalysisData from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisData/MetaAnalysisData';
@@ -14,6 +14,7 @@ import MetaAnalysisBuilderPageStyles from './MetaAnalysisBuilderPage.styles';
 import useCreateMetaAnalysis from '../../../hooks/requests/useCreateMetaAnalysis';
 import { AxiosError } from 'axios';
 import { useHistory } from 'react-router-dom';
+import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 
 export enum EAnalysisType {
     CBMA = 'CBMA',
@@ -38,6 +39,7 @@ export interface IEstimatorCorrectorArgs {
 
 const MetaAnalysisBuilderPage: React.FC = (props) => {
     const { createMetaAnalysis, isError, isLoading } = useCreateMetaAnalysis();
+    const { showSnackbar } = useContext(GlobalContext);
     const history = useHistory();
     const { current } = useIsMounted();
     const [activeStep, setActiveStep] = useState(0);
@@ -150,6 +152,7 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
 
         createMetaAnalysis(metaAnalysisComponents, estimatorCorrectorArgs)
             .then((res) => {
+                showSnackbar('new meta-analysis successfully created', SnackbarType.SUCCESS);
                 history.push('/usermeta-analyses');
             })
             .catch((err: AxiosError) => {
