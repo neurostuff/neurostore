@@ -1,16 +1,15 @@
-import { Box, Typography, Divider } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import MetaAnalysisSummaryRowStyles from './MetaAnalysisSummaryRow.styles';
 
 interface IMetaAnalysisSummaryRow {
     title: string;
     value: string;
     caption?: string;
-    divider: boolean;
 }
 
 const MetaAnalysisSummaryRow: React.FC<IMetaAnalysisSummaryRow> = (props) => {
     return (
-        <>
+        <Box sx={{ marginBottom: '1.5rem' }}>
             <Box sx={{ display: 'flex' }}>
                 <Box sx={MetaAnalysisSummaryRowStyles.titleColWidth}>
                     <Typography sx={{ color: 'primary.main' }} variant="h6">
@@ -25,8 +24,7 @@ const MetaAnalysisSummaryRow: React.FC<IMetaAnalysisSummaryRow> = (props) => {
                 </Box>
             </Box>
             <Box sx={MetaAnalysisSummaryRowStyles.dynamicInput}>{props.children}</Box>
-            {props.divider && <Divider sx={MetaAnalysisSummaryRowStyles.divider} />}
-        </>
+        </Box>
     );
 };
 

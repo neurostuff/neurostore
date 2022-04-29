@@ -1,4 +1,4 @@
-import { Box, Typography, Divider, Paper } from '@mui/material';
+import { Box, Typography, Paper } from '@mui/material';
 import { NavigationButtons } from '../..';
 import {
     EAnalysisType,
@@ -23,7 +23,7 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
                 Meta-Analysis summary
             </Typography>
 
-            <Paper elevation={3} sx={MetaAnalysisFinalizeStyles.stepContainer}>
+            <Paper elevation={2} sx={MetaAnalysisFinalizeStyles.stepContainer}>
                 <Typography variant="h5" sx={MetaAnalysisFinalizeStyles.title}>
                     Details
                 </Typography>
@@ -31,12 +31,11 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
                 <MetaAnalysisSummaryRow
                     title="meta-analysis name"
                     value={props.metaAnalysisName}
-                    divider={false}
                     caption={props.metaAnalysisDescription}
                 />
             </Paper>
 
-            <Paper elevation={3} sx={MetaAnalysisFinalizeStyles.stepContainer}>
+            <Paper elevation={2} sx={MetaAnalysisFinalizeStyles.stepContainer}>
                 <Typography variant="h5" sx={MetaAnalysisFinalizeStyles.title}>
                     Data
                 </Typography>
@@ -44,7 +43,6 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
                 <MetaAnalysisSummaryRow
                     title="analysis type"
                     value={props.analysisType || ''}
-                    divider={true}
                     caption={
                         props.analysisType === EAnalysisType.IBMA
                             ? 'Image Based Meta-Analysis'
@@ -55,34 +53,30 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
                 <MetaAnalysisSummaryRow
                     title="studyset"
                     value={props.studyset?.name || ''}
-                    divider={true}
                     caption={props.studyset?.description || ''}
                 />
 
                 <MetaAnalysisSummaryRow
                     title="annotation"
                     value={props.annotation?.name || ''}
-                    divider={true}
                     caption={props.annotation?.description || ''}
                 />
 
                 <MetaAnalysisSummaryRow
                     title="inclusion column"
                     value={props.inclusionColumn || ''}
-                    divider={false}
                 />
             </Paper>
 
-            <Paper elevation={3} sx={MetaAnalysisFinalizeStyles.stepContainer}>
+            <Paper elevation={2} sx={MetaAnalysisFinalizeStyles.stepContainer}>
                 <Typography variant="h5" sx={MetaAnalysisFinalizeStyles.title}>
                     Algorithm
                 </Typography>
 
                 <MetaAnalysisSummaryRow
                     title="algorithm"
-                    value={props.algorithm?.label || ''}
-                    divider={hasCorrector}
-                    caption={props.algorithm?.description || ''}
+                    value={props.estimator?.label || ''}
+                    caption={props.estimator?.description || ''}
                 >
                     <DynamicInputDisplay dynamicArg={props.estimatorArgs} />
                 </MetaAnalysisSummaryRow>
@@ -91,7 +85,6 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
                     <MetaAnalysisSummaryRow
                         title="corrector"
                         value={props.corrector?.label || ''}
-                        divider={false}
                         caption={props.corrector?.description || ''}
                     >
                         <DynamicInputDisplay dynamicArg={props.correctorArgs} />

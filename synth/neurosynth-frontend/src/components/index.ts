@@ -24,11 +24,13 @@ import NavigationButtons from './Buttons/NavigationButtons/NavigationButtons';
 import NeurosynthAccordion from './NeurosynthAccordion/NeurosynthAccordion';
 import BackButton from './Buttons/BackButton/BackButton';
 
+import * as Tables from './Tables';
+
 // models
-export * from './EditMetadata';
-export * from './Navbar';
 export * from './Tables/DisplayValuesTable';
 export * from './Tables/DisplayImagesTable';
+export * from './EditMetadata';
+export * from './Navbar';
 export * from './NeurosynthSpreadsheet/NeurosynthSpreadsheet';
 
 // export components
@@ -53,4 +55,5 @@ export {
     NavigationButtons,
     NeurosynthAccordion,
     BackButton,
+    Tables,
 };

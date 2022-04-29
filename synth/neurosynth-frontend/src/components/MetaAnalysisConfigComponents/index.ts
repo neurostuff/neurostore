@@ -30,7 +30,6 @@ export interface IMetaAnalysisData extends IMetaAnalysisBuilderStep {
 export interface IMetaAnalysisAlgorithm extends IMetaAnalysisBuilderStep {
     onArgsUpdate: (arg: Partial<IEstimatorCorrectorArgs>) => void;
     metaAnalysisType: EMetaAnalysisType;
-    algorithm: IAutocompleteObject | undefined | null;
     estimator: IAutocompleteObject | undefined | null;
     corrector: IAutocompleteObject | undefined | null;
     estimatorArgs: IDynamicInputType;

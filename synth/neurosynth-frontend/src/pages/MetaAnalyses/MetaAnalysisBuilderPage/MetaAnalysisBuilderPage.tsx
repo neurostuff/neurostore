@@ -7,11 +7,13 @@ import MetaAnalysisFinalize from '../../../components/MetaAnalysisConfigComponen
 import { ENavigationButton } from '../../../components/Buttons/NavigationButtons/NavigationButtons';
 import { IAutocompleteObject } from '../../../components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import useIsMounted from '../../../hooks/useIsMounted';
-import { MetaAnalysis, Specification } from '../../../neurosynth-compose-typescript-sdk';
 import API, { AnnotationsApiResponse, StudysetsApiResponse } from '../../../utils/api';
 import { BackButton } from '../../../components';
 import MetaAnalysisDetails from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisDetails/MetaAnalysisDetails';
 import MetaAnalysisBuilderPageStyles from './MetaAnalysisBuilderPage.styles';
+import useCreateMetaAnalysis from '../../../hooks/requests/useCreateMetaAnalysis';
+import { AxiosError } from 'axios';
+import { useHistory } from 'react-router-dom';
 
 export enum EAnalysisType {
     CBMA = 'CBMA',
@@ -20,7 +22,6 @@ export enum EAnalysisType {
 
 export interface IMetaAnalysisComponents {
     analysisType: EAnalysisType | undefined;
-    algorithm: IAutocompleteObject | undefined | null;
     estimator: IAutocompleteObject | undefined | null;
     corrector: IAutocompleteObject | undefined | null;
     studyset: StudysetsApiResponse | undefined | null;
@@ -36,6 +37,8 @@ export interface IEstimatorCorrectorArgs {
 }
 
 const MetaAnalysisBuilderPage: React.FC = (props) => {
+    const { createMetaAnalysis, isError, isLoading } = useCreateMetaAnalysis();
+    const history = useHistory();
     const { current } = useIsMounted();
     const [activeStep, setActiveStep] = useState(0);
     const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
@@ -47,7 +50,6 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
         studyset: undefined,
         annotation: undefined,
         // algorithm step
-        algorithm: undefined,
         estimator: undefined,
         corrector: undefined,
         inclusionColumn: undefined,
@@ -65,13 +67,13 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
      * reset estimator args when estimator is null
      */
     useEffect(() => {
-        if (!metaAnalysisComponents.algorithm) {
+        if (!metaAnalysisComponents.estimator) {
             setEstimatorCorrectorArgs((prevState) => ({
                 ...prevState,
                 estimatorArgs: {},
             }));
         }
-    }, [metaAnalysisComponents.algorithm]);
+    }, [metaAnalysisComponents.estimator]);
 
     /**
      * reset corrector args when corrector is null
@@ -146,56 +148,22 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
             tempCorrector.args = estimatorCorrectorArgs.correctorArgs;
         }
 
-        const spec: Specification = {
-            type: metaAnalysisComponents.analysisType,
-            estimator: {
-                type: metaAnalysisComponents.algorithm?.label,
-                args: estimatorCorrectorArgs.estimatorArgs,
-            },
-            mask: '', // TODO: handle these cases
-            contrast: '', // TODO: handle these cases
-            transformer: '', // TODO: handle these cases
-            corrector: tempCorrector,
-            filter: metaAnalysisComponents.inclusionColumn,
-        };
-
-        API.NeurosynthServices.SpecificationsService.specificationsPost(spec)
+        createMetaAnalysis(metaAnalysisComponents, estimatorCorrectorArgs)
             .then((res) => {
-                const metaAnalysis: MetaAnalysis = {
-                    specification: res.data.id,
-                    name: metaAnalysisComponents.metaAnalysisName,
-                    description: metaAnalysisComponents.metaAnalysisDescription,
-                    annotation: metaAnalysisComponents.annotation?.id,
-                    studyset: metaAnalysisComponents.studyset?.id,
-                };
-
-                return API.NeurosynthServices.MetaAnalysisService.metaAnalysesPost(metaAnalysis);
+                history.push('/usermeta-analyses');
             })
-            .then((res) => {
-                console.log();
-            })
-            .catch((err) => {
-                console.log(err);
+            .catch((err: AxiosError) => {
+                console.log(err.toJSON());
             });
-
-        // API.NeurostoreServices.SpecificationsService.specificationsPost(spec)
-        //     .then((res) => {
-        //         console.log(res);
-        //     })
-        //     .then((res) => {
-        //         const metaAnalysis: MetaAnalysis = {};
-        //         // API.Services.MetaAnalysisService.metaAnalysesPost()
-        //     })
-        //     .catch((err) => {
-        //         console.error(err);
-        //     });
-        // API.Services.SpecificationsService;
     };
 
     const handleNavigation = (button: ENavigationButton) => {
         setActiveStep((prev) => (button === ENavigationButton.NEXT ? ++prev : --prev));
     };
 
+    if (isLoading) {
+        return <>...loading</>;
+    }
     return (
         <>
             <BackButton
@@ -242,7 +210,6 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
             {activeStep === 2 && (
                 <MetaAnalysisAlgorithm
                     metaAnalysisType={metaAnalysisComponents.analysisType as EAnalysisType}
-                    algorithm={metaAnalysisComponents.algorithm}
                     estimator={metaAnalysisComponents.estimator}
                     estimatorArgs={estimatorCorrectorArgs.estimatorArgs}
                     corrector={metaAnalysisComponents.corrector}

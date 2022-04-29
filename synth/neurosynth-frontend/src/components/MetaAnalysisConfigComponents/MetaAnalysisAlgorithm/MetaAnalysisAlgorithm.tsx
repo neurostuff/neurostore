@@ -60,10 +60,10 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
                             <ListItemText primary={option.label} secondary={option.description} />
                         </ListItem>
                     )}
-                    value={props.algorithm || null}
+                    value={props.estimator || null}
                     getOptionLabel={(option) => option?.label || ''}
                     onChange={(_event, newVal, _reason) => {
-                        props.onUpdate({ algorithm: newVal });
+                        props.onUpdate({ estimator: newVal });
                         props.onArgsUpdate({
                             estimatorArgs: getArgsForKey(props.metaAnalysisType, newVal),
                         });
@@ -71,7 +71,7 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
                     options={metaAnalyticAlgorithms}
                 />
 
-                {props.algorithm && (
+                {props.estimator && (
                     <Box sx={{ margin: '2rem 0' }}>
                         <NeurosynthAccordion
                             elevation={2}
@@ -91,7 +91,7 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
                                 values={props.estimatorArgs}
                                 specification={
                                     metaAnalysisSpecification[props.metaAnalysisType][
-                                        props.algorithm.label
+                                        props.estimator.label
                                     ].parameters
                                 }
                             />
@@ -152,7 +152,7 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
                 )}
             </Box>
             <NavigationButtons
-                nextButtonDisabled={props.algorithm === undefined || props.algorithm === null}
+                nextButtonDisabled={props.estimator === undefined || props.estimator === null}
                 onButtonClick={props.onNext}
                 nextButtonStyle="outlined"
             />

@@ -18,7 +18,7 @@ import {
     AnalysesApi,
 } from '../neurostore-typescript-sdk';
 import {
-    BundleApi,
+    SpecificationApi,
     MetaAnalysisApi,
     AnnotationApi as NeurosynthAnnotationApi,
     StudysetApi as NeurosynthStudysetApi,
@@ -57,10 +57,10 @@ const NeurostoreServices = {
 };
 
 const NeurosynthServices = {
-    SpecificationsService: new MetaAnalysisApi(neurosynthConfig),
-    MetaAnalysisService: new BundleApi(neurosynthConfig),
+    MetaAnalysisService: new MetaAnalysisApi(neurosynthConfig),
+    SpecificationsService: new SpecificationApi(neurosynthConfig),
     StudysetsService: new NeurosynthStudysetApi(neurosynthConfig),
-    AnnotationsService: new NeurosynthAnnotationApi(neurostoreConfig),
+    AnnotationsService: new NeurosynthAnnotationApi(neurosynthConfig),
 };
 
 const UpdateServicesWithToken = (token: string) => {

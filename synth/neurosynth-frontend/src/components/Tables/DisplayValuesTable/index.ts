@@ -25,6 +25,7 @@ export interface IDisplayValuesTableRowModel extends IDisplayValuesTableRowArgs 
 }
 
 export interface IDisplayValuesTableModel {
+    isLoading?: boolean;
     columnHeaders: {
         value: string;
         center?: boolean;

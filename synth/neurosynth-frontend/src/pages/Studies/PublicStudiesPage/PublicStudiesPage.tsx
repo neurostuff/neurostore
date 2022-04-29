@@ -102,42 +102,43 @@ const PublicStudiesPage = () => {
         });
     };
 
-    // runs for any change in study query
+    // runs for any change in study query including rows per page change, page change, etc
     useEffect(() => {
-        // const timeout = setTimeout(() => {
-        const getStudies = (searchCriteria: SearchCriteria) => {
-            API.NeurostoreServices.StudiesService.studiesGet(
-                searchCriteria.genericSearchStr,
-                searchCriteria.sortBy,
-                searchCriteria.pageOfResults,
-                searchCriteria.descOrder,
-                searchCriteria.pageSize,
-                searchCriteria.isNested,
-                searchCriteria.nameSearch,
-                searchCriteria.descriptionSearch,
-                undefined,
-                searchCriteria.showUnique,
-                searchCriteria.source,
-                searchCriteria.authorSearch
-            )
-                .then((res) => {
-                    if (isMountedRef.current && res?.data?.results) {
-                        setSearchMetadata(res.data.metadata);
-                        setStudies(res.data.results);
-                    }
-                })
-                .catch((err) => {
-                    setStudies([]);
-                    console.error(err);
-                });
+        // implement debounce
+        const timeout = setTimeout(() => {
+            const getStudies = (searchCriteria: SearchCriteria) => {
+                API.NeurostoreServices.StudiesService.studiesGet(
+                    searchCriteria.genericSearchStr,
+                    searchCriteria.sortBy,
+                    searchCriteria.pageOfResults,
+                    searchCriteria.descOrder,
+                    searchCriteria.pageSize,
+                    searchCriteria.isNested,
+                    searchCriteria.nameSearch,
+                    searchCriteria.descriptionSearch,
+                    undefined,
+                    searchCriteria.showUnique,
+                    searchCriteria.source,
+                    searchCriteria.authorSearch
+                )
+                    .then((res) => {
+                        if (isMountedRef.current && res?.data?.results) {
+                            setSearchMetadata(res.data.metadata);
+                            setStudies(res.data.results);
+                        }
+                    })
+                    .catch((err) => {
+                        setStudies([]);
+                        console.error(err);
+                    });
+            };
+
+            getStudies(searchCriteria);
+        }, 500);
+
+        return () => {
+            clearTimeout(timeout);
         };
-
-        getStudies(searchCriteria);
-        // }, 700);
-
-        // return () => {
-        //     clearTimeout(timeout);
-        // };
     }, [searchCriteria, isMountedRef]);
 
     return (
