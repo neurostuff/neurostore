@@ -1,3 +1,5 @@
+import { mockAnnotations, mockStudysets } from '../../testing/mockData';
+
 const MockAPI = {
     NeurosynthServices: {},
     NeurostoreServices: {
@@ -23,7 +25,14 @@ const MockAPI = {
             conditionsIdDelete: jest.fn(),
         },
         StudySetsService: {
-            studysetsGet: jest.fn(),
+            studysetsGet: jest.fn().mockReturnValue(
+                Promise.resolve({
+                    data: {
+                        metadata: {},
+                        results: mockStudysets(),
+                    },
+                })
+            ),
             studysetsIdGet: jest.fn(),
             studysetsIdPut: jest.fn(),
             studysetsPost: jest.fn(),
@@ -50,7 +59,14 @@ const MockAPI = {
             usersPost: jest.fn(),
         },
         AnnotationsService: {
-            annotationsGet: jest.fn(),
+            annotationsGet: jest.fn().mockReturnValue(
+                Promise.resolve({
+                    data: {
+                        metadata: {},
+                        results: mockAnnotations(),
+                    },
+                })
+            ),
             annotationsIdGet: jest.fn(),
             annotationsIdPut: jest.fn(),
             annotationsPost: jest.fn(),

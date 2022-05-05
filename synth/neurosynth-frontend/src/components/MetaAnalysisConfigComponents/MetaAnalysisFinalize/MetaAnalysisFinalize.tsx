@@ -15,7 +15,7 @@ interface IMetaAnalysisFinalize extends IMetaAnalysisComponents, IEstimatorCorre
 }
 
 const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
-    const hasCorrector = Object.keys(props.correctorArgs).length > 0;
+    const hasCorrector = !!props.corrector;
 
     return (
         <Box sx={{ marginBottom: '2em' }}>
@@ -30,8 +30,8 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
 
                 <MetaAnalysisSummaryRow
                     title="meta-analysis name"
-                    value={props.metaAnalysisName}
-                    caption={props.metaAnalysisDescription}
+                    value={props.metaAnalysisName || ''}
+                    caption={props.metaAnalysisDescription || ''}
                 />
             </Paper>
 

@@ -41,14 +41,12 @@ const DisplayValuesTable: React.FC<IDisplayValuesTableModel> = (props) => {
             </Box>
         );
     } else if (noRowData) {
-        TableInfoComponent = (
-            <Box sx={{ color: 'warning.dark', padding: '0.5rem 1rem' }}>No data</Box>
-        );
+        TableInfoComponent = <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No data</Box>;
     }
 
     return (
         <TableContainer component={paper ? Paper : 'div'}>
-            <Table size="small">
+            <Table>
                 <TableHead>
                     <TableRow
                         sx={{

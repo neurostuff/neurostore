@@ -4,6 +4,9 @@ import useGetToken from './useGetToken';
 import useGetStudyById from './requests/useGetStudyById';
 import useCreateMetaAnalysis from './requests/useCreateMetaAnalysis';
 import useGetMetaAnalyses from './requests/useGetMetaAnalyses';
+import useGetMetaAnalysisById from './requests/useGetMetaAnalysisById';
+import useGetStudysets from './requests/useGetStudysets';
+import useGetAnnotationsByStudysetId from './requests/useGetAnnotationsByStudysetId';
 
 export {
     useIsMounted,
@@ -12,4 +15,7 @@ export {
     useCreateMetaAnalysis,
     useGetToken,
     useGetMetaAnalyses,
+    useGetMetaAnalysisById,
+    useGetStudysets,
+    useGetAnnotationsByStudysetId,
 };

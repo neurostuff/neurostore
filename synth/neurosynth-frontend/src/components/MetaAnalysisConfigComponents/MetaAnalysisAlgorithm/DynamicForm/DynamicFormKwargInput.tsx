@@ -8,10 +8,12 @@ import { IDynamicFormInput } from '../..';
 import DynamicFormBaseTitle from './DynamicFormBaseTitle';
 
 const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
-    const kwargList: { key: string; value: string }[] = Object.keys(props.value).map((key) => ({
-        key: key,
-        value: props.value[key],
-    }));
+    const kwargList: { key: string; value: string }[] = Object.keys(props.value || {}).map(
+        (key) => ({
+            key: key,
+            value: props.value[key],
+        })
+    );
 
     const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
 

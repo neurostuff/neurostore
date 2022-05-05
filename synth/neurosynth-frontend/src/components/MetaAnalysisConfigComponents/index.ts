@@ -15,8 +15,8 @@ interface IMetaAnalysisBuilderStep {
 }
 
 export interface IMetaAnalysisDetails extends IMetaAnalysisBuilderStep {
-    metaAnalysisName: string;
-    metaAnalysisDescription: string;
+    metaAnalysisName: string | undefined;
+    metaAnalysisDescription: string | undefined;
 }
 
 export interface IMetaAnalysisData extends IMetaAnalysisBuilderStep {
@@ -24,7 +24,6 @@ export interface IMetaAnalysisData extends IMetaAnalysisBuilderStep {
     studyset: StudysetsApiResponse | undefined | null;
     annotation: AnnotationsApiResponse | undefined | null;
     inclusionColumn: string | undefined | null;
-    studysets: StudysetsApiResponse[];
 }
 
 export interface IMetaAnalysisAlgorithm extends IMetaAnalysisBuilderStep {

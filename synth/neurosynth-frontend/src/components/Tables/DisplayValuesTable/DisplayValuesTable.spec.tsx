@@ -230,4 +230,9 @@ describe('DisplayValuesTable Component', () => {
             expect(mockOnValueSelected).not.toHaveBeenCalled();
         });
     });
+
+    it('should run the action', () => {
+        // TODO implement this test
+        expect(true).toBeFalsy();
+    });
 });

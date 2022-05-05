@@ -7,17 +7,21 @@ const useInputValidation = <T,>(
     const [touched, setTouched] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
     const [isValid, setIsValid] = useState(true);
+
     const [value, setValue] = useState<T | null | undefined>(inputValue);
 
     useEffect(() => {
-        if (touched) {
-            if ((value !== undefined && value !== null) || !isFocused) {
-                // we validate if value exists or if we focus out
-                const isValidValue = validationFn(value);
-                setIsValid(isValidValue);
-            }
+        const hasValue = value !== undefined && value !== null;
+        if (touched && (hasValue || !isFocused)) {
+            // we validate if value exists or if we focus out
+            const isValidValue = validationFn(value);
+            setIsValid(isValidValue);
         }
     }, [value, isFocused, touched, validationFn]);
+
+    useEffect(() => {
+        setValue(inputValue);
+    }, [inputValue]);
 
     const handleChange = (change: T | null | undefined) => {
         setTouched(true);

@@ -28,8 +28,8 @@ export interface IMetaAnalysisComponents {
     studyset: StudysetsApiResponse | undefined | null;
     annotation: AnnotationsApiResponse | undefined | null;
     inclusionColumn: string | undefined | null;
-    metaAnalysisName: string;
-    metaAnalysisDescription: string;
+    metaAnalysisName: string | undefined;
+    metaAnalysisDescription: string | undefined;
 }
 
 export interface IEstimatorCorrectorArgs {
@@ -41,12 +41,10 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
     const { createMetaAnalysis, isError, isLoading } = useCreateMetaAnalysis();
     const { showSnackbar } = useContext(GlobalContext);
     const history = useHistory();
-    const { current } = useIsMounted();
     const [activeStep, setActiveStep] = useState(0);
-    const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
     const [metaAnalysisComponents, setMetaAnalysisComponents] = useState<IMetaAnalysisComponents>({
-        metaAnalysisName: '',
-        metaAnalysisDescription: '',
+        metaAnalysisName: undefined,
+        metaAnalysisDescription: undefined,
         // data step
         analysisType: undefined,
         studyset: undefined,
@@ -88,36 +86,6 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
             }));
         }
     }, [metaAnalysisComponents.corrector]);
-
-    useEffect(() => {
-        const getStudySets = async () => {
-            API.NeurostoreServices.StudySetsService.studysetsGet(
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                false,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                ''
-            )
-                .then((res) => {
-                    if (current) {
-                        setStudysets(res.data.results);
-                    }
-                })
-                .catch((err) => {
-                    console.error(err);
-                });
-        };
-
-        getStudySets();
-    }, [current]);
 
     const handleUpdate = (arg: Partial<IMetaAnalysisComponents>) => {
         setMetaAnalysisComponents((prevStep) => ({
@@ -206,7 +174,6 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
                     annotation={metaAnalysisComponents.annotation}
                     inclusionColumn={metaAnalysisComponents.inclusionColumn}
                     onNext={handleNavigation}
-                    studysets={studysets || []}
                 />
             )}
 

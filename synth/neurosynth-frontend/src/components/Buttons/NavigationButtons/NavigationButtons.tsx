@@ -1,8 +1,8 @@
 import { Box, Button } from '@mui/material';
 
 export enum ENavigationButton {
-    PREV,
-    NEXT,
+    PREV = 'PREV',
+    NEXT = 'NEXT',
 }
 
 export interface INavigationButtonFn {
@@ -17,7 +17,7 @@ export interface INavigationButtons {
     prevButtonStyle?: 'contained' | 'outlined' | 'text';
     nextButtonStyle?: 'contained' | 'outlined' | 'text';
 
-    onButtonClick: (button: ENavigationButton) => void;
+    onButtonClick: INavigationButtonFn;
 }
 
 const NavigationButtons: React.FC<INavigationButtons> = (props) => {

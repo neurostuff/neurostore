@@ -23,6 +23,8 @@ import NeurosynthSpreadsheet from './NeurosynthSpreadsheet/NeurosynthSpreadsheet
 import NavigationButtons from './Buttons/NavigationButtons/NavigationButtons';
 import NeurosynthAccordion from './NeurosynthAccordion/NeurosynthAccordion';
 import BackButton from './Buttons/BackButton/BackButton';
+import StateHandlerComponent from './StateHandlerComponent/StateHandlerComponent';
+import CodeSnippet from './CodeSnippet/CodeSnippet';
 
 import * as Tables from './Tables';
 
@@ -56,4 +58,6 @@ export {
     NeurosynthAccordion,
     BackButton,
     Tables,
+    StateHandlerComponent,
+    CodeSnippet,
 };

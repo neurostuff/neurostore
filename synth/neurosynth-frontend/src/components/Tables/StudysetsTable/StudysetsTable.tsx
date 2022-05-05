@@ -41,7 +41,7 @@ const StudysetsTable: React.FC<IStudysetsTable> = (props) => {
             uniqueKey: studyset.id || index,
             columnValues: [
                 {
-                    value: studyset.name ?? 'No name',
+                    value: studyset.name ? studyset.name : 'No name',
                     shouldHighlightNoData: !studyset.name,
                 },
                 {
@@ -49,7 +49,7 @@ const StudysetsTable: React.FC<IStudysetsTable> = (props) => {
                     shouldHighlightNoData: getNumStudiesString(studyset.studies) === '0 studies',
                 },
                 {
-                    value: studyset.description ?? 'No description',
+                    value: studyset.description ? studyset.description : 'No description',
                     shouldHighlightNoData: !studyset.description,
                 },
             ],

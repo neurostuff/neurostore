@@ -128,4 +128,9 @@ describe('TextEdit', () => {
 
         expect(mockOnSave).toBeCalledWith('test-textA');
     });
+
+    it('should load when waiting on an update', () => {
+        // TODO: do this test case
+        expect(true).toBeFalsy();
+    });
 });

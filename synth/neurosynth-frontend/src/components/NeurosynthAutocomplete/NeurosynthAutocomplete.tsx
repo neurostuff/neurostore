@@ -1,4 +1,11 @@
-import { Autocomplete, TextField, AutocompleteRenderOptionState } from '@mui/material';
+import {
+    Autocomplete,
+    TextField,
+    AutocompleteRenderOptionState,
+    CircularProgress,
+    Box,
+} from '@mui/material';
+import ErrorIcon from '@mui/icons-material/Error';
 import { SystemStyleObject } from '@mui/system';
 import { useInputValidation } from '../../hooks';
 
@@ -22,6 +29,8 @@ interface INeurosynthAutocomplete<T> {
     onChange: (_event: any, newVal: T | null, _reason: any) => void;
     options: T[];
     sx?: SystemStyleObject;
+    isLoading?: boolean;
+    isError?: boolean;
 }
 
 const NeurosynthAutocomplete = <X,>(props: INeurosynthAutocomplete<X>) => {
@@ -40,6 +49,8 @@ const NeurosynthAutocomplete = <X,>(props: INeurosynthAutocomplete<X>) => {
         options,
         isOptionEqualToValue,
         sx = {},
+        isLoading = false,
+        isError = false,
     } = props;
 
     const handleOnChange = (_event: any, newVal: X | null, _reason: any) => {
@@ -49,6 +60,8 @@ const NeurosynthAutocomplete = <X,>(props: INeurosynthAutocomplete<X>) => {
 
     return (
         <Autocomplete
+            loading={isLoading}
+            loadingText="Loading..."
             onFocus={handleOnFocus}
             onBlur={handleOnBlur}
             disabled={shouldDisable}
@@ -57,9 +70,24 @@ const NeurosynthAutocomplete = <X,>(props: INeurosynthAutocomplete<X>) => {
             sx={sx}
             renderInput={(params) => (
                 <TextField
-                    helperText={isValid || !required ? null : 'this is requird'}
-                    error={!isValid && required}
                     {...params}
+                    helperText={isValid || !required ? null : 'this is required'}
+                    error={!isValid && required}
+                    InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                            <>
+                                {isError && (
+                                    <Box sx={{ color: 'error.main', display: 'flex' }}>
+                                        There was an error
+                                        <ErrorIcon sx={{ marginLeft: '5px' }} />
+                                    </Box>
+                                )}
+                                {isLoading ? <CircularProgress size={20} /> : null}
+                                {params.InputProps.endAdornment}
+                            </>
+                        ),
+                    }}
                     label={label}
                 />
             )}
