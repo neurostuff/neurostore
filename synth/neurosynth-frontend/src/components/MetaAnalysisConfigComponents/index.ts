@@ -48,6 +48,8 @@ export interface IDynamicForm {
     specification: {
         [key: string]: IParameter;
     };
+    // values is an object of kvps that associate a dynamic parameter with its value. This is
+    // initialized/populated by defaults when the user selects the given corrector/estimator
     values: { [key: string]: any };
 }
 

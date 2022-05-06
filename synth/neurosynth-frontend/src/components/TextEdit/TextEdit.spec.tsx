@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TextEdit from './TextEdit';
 
@@ -108,9 +108,9 @@ describe('TextEdit', () => {
         expect(button).toBeInTheDocument();
     });
 
-    it('should call onSave when the save button is clicked', () => {
+    it('should call onSave when the save button is clicked', async () => {
         render(
-            <TextEdit onSave={mockOnSave} textToEdit="test-text">
+            <TextEdit onSave={mockOnSave} label="some-label" textToEdit="test-text">
                 <span>test-text</span>
             </TextEdit>
         );
@@ -124,13 +124,10 @@ describe('TextEdit', () => {
         userEvent.type(textField, 'A');
 
         const saveButton = screen.getByText('Save');
-        userEvent.click(saveButton);
+        await act(async () => {
+            userEvent.click(saveButton);
+        });
 
-        expect(mockOnSave).toBeCalledWith('test-textA');
-    });
-
-    it('should load when waiting on an update', () => {
-        // TODO: do this test case
-        expect(true).toBeFalsy();
+        expect(mockOnSave).toBeCalledWith('test-textA', 'some-label');
     });
 });

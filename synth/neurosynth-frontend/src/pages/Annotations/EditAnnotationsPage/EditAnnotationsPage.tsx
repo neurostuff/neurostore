@@ -40,10 +40,7 @@ const EditAnnotationsPage: React.FC = (props) => {
         getAnnotation();
     }, [params.annotationId]);
 
-    const updateAnnotationDetails = async (
-        property: 'name' | 'description',
-        updatedText: string
-    ) => {
+    const updateAnnotationDetails = async (property: string, updatedText: string) => {
         API.NeurostoreServices.AnnotationsService.annotationsIdPut(params.annotationId, {
             [property]: updatedText,
         })
@@ -52,7 +49,7 @@ const EditAnnotationsPage: React.FC = (props) => {
                     if (!prevState) return prevState;
                     return {
                         ...prevState,
-                        [property]: res.data[property],
+                        [property]: res.data[property as 'name' | 'description'],
                     };
                 });
                 showSnackbar(`updated the annotation ${property}`, SnackbarType.SUCCESS);
@@ -125,8 +122,9 @@ const EditAnnotationsPage: React.FC = (props) => {
 
             <Box sx={{ marginBottom: '0.5rem' }}>
                 <TextEdit
-                    onSave={(updatedText) => updateAnnotationDetails('name', updatedText)}
+                    onSave={(updatedText, label) => updateAnnotationDetails(label, updatedText)}
                     textToEdit={annotation?.name || ''}
+                    label="name"
                     sx={{ fontSize: '1.5rem' }}
                 >
                     <Typography variant="h5">
@@ -138,7 +136,8 @@ const EditAnnotationsPage: React.FC = (props) => {
                     </Typography>
                 </TextEdit>
                 <TextEdit
-                    onSave={(updatedText) => updateAnnotationDetails('description', updatedText)}
+                    label="description"
+                    onSave={(updatedText, label) => updateAnnotationDetails(label, updatedText)}
                     textToEdit={annotation?.description || ''}
                 >
                     <Typography>

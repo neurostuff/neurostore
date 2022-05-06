@@ -11,14 +11,14 @@ import DynamicForm from './DynamicForm/DynamicForm';
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 
 const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
-    const metaAnalyticAlgorithms: IAutocompleteObject[] = Object.keys(
+    const getMetaAnalyticAlgorithms: IAutocompleteObject[] = Object.keys(
         metaAnalysisSpecification[props.metaAnalysisType]
     ).map((algoName) => ({
         label: algoName,
         description: metaAnalysisSpecification[props.metaAnalysisType][algoName]?.summary || '',
     }));
 
-    const correctorOptions: IAutocompleteObject[] = Object.keys(
+    const getCorrectorOptions: IAutocompleteObject[] = Object.keys(
         metaAnalysisSpecification.CORRECTOR
     ).map((corrector) => ({
         label: corrector,
@@ -26,7 +26,8 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
     }));
 
     /**
-     * Helper function that gets the inputs for the selected algorithm
+     * Helper function that gets the inputs for the selected algorithm and sets their default values
+     * based on the meta_analysis_params file
      */
     const getArgsForKey = (
         type: EAnalysisType | 'CORRECTOR',
@@ -68,7 +69,7 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
                             estimatorArgs: getArgsForKey(props.metaAnalysisType, newVal),
                         });
                     }}
-                    options={metaAnalyticAlgorithms}
+                    options={getMetaAnalyticAlgorithms}
                 />
 
                 {props.estimator && (
@@ -121,7 +122,7 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
                         });
                         props.onArgsUpdate({ correctorArgs: getArgsForKey('CORRECTOR', newVal) });
                     }}
-                    options={correctorOptions}
+                    options={getCorrectorOptions}
                 />
 
                 {props.corrector && (

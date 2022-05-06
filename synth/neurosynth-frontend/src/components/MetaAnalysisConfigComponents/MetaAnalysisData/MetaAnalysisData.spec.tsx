@@ -71,6 +71,7 @@ describe('MetaAnalysisData component', () => {
 
             expect(mockOnUpdate).toHaveBeenCalledWith({
                 analysisType: 'CBMA',
+                estimator: null,
             });
         });
 

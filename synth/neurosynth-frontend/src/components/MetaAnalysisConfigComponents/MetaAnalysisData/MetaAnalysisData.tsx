@@ -62,7 +62,7 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                     labelId="select-label"
                     onChange={(event) => {
                         const value = event.target.value as EAnalysisType;
-                        props.onUpdate({ analysisType: value });
+                        props.onUpdate({ analysisType: value, estimator: null });
                         handleChange(value);
                     }}
                     label="analysis type"

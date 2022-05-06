@@ -18,6 +18,10 @@ export interface IDisplayValuesTableRowArgs {
     }[];
 }
 
+/**
+ * these properties should not be present when setting the rowData in external components.
+ * They should be set once in the IDisplayValuesTableModel and then propagated to the rows
+ */
 export interface IDisplayValuesTableRowModel extends IDisplayValuesTableRowArgs {
     canSelectRow: boolean;
     onSelectRow: (selected: string | number) => void;

@@ -69,8 +69,8 @@ const LandingPageStyles: Style = {
             md: '1.5rem',
         },
         margin: {
-            xs: '6% 0',
-            md: '2% 0 0 0',
+            xs: '30% 0',
+            md: '4% 0',
         },
         width: {
             xs: '100%',

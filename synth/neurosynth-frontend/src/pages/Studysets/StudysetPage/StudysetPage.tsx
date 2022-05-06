@@ -75,32 +75,30 @@ const StudysetsPage: React.FC = (props) => {
         if (params.studysetId) getAnnotations(params.studysetId);
     }, [params.studysetId, showSnackbar, current]);
 
-    const handleSaveTextEdit = (fieldName: 'name' | 'description' | 'publication' | 'doi') => {
-        return async (editedText: string) => {
-            if (!studyset) return;
+    const handleSaveTextEdit = (editedText: string, fieldName: string) => {
+        if (!studyset) return;
 
-            API.NeurostoreServices.StudySetsService.studysetsIdPut(params.studysetId, {
-                name: studyset.name,
-                studies: (studyset.studies as StudyApiResponse[]).map((x) => x.id as string),
-                [fieldName]: editedText,
+        API.NeurostoreServices.StudySetsService.studysetsIdPut(params.studysetId, {
+            name: studyset.name,
+            studies: (studyset.studies as StudyApiResponse[]).map((x) => x.id as string),
+            [fieldName]: editedText,
+        })
+            .then(() => {
+                showSnackbar('analysis successfully updated', SnackbarType.SUCCESS);
+                if (current) {
+                    setStudyset((prevState) => {
+                        if (!prevState) return prevState;
+                        return {
+                            ...prevState,
+                            [fieldName]: editedText,
+                        };
+                    });
+                }
             })
-                .then(() => {
-                    showSnackbar('analysis successfully updated', SnackbarType.SUCCESS);
-                    if (current) {
-                        setStudyset((prevState) => {
-                            if (!prevState) return prevState;
-                            return {
-                                ...prevState,
-                                [fieldName]: editedText,
-                            };
-                        });
-                    }
-                })
-                .catch((err) => {
-                    showSnackbar('there was an error updating the studyset', SnackbarType.ERROR);
-                    console.error(err);
-                });
-        };
+            .catch((err) => {
+                showSnackbar('there was an error updating the studyset', SnackbarType.ERROR);
+                console.error(err);
+            });
     };
 
     const handleCloseDialog = async (confirm: boolean | undefined) => {
@@ -149,9 +147,9 @@ const StudysetsPage: React.FC = (props) => {
                 <>
                     <Box sx={{ marginBottom: '1rem' }}>
                         <TextEdit
-                            onSave={handleSaveTextEdit('name')}
+                            onSave={handleSaveTextEdit}
                             sx={{ fontSize: '1.25rem' }}
-                            label="Name"
+                            label="name"
                             textToEdit={studyset.name || ''}
                         >
                             <Box sx={StudysetPageStyles.displayedText}>
@@ -168,8 +166,8 @@ const StudysetsPage: React.FC = (props) => {
                         </TextEdit>
 
                         <TextEdit
-                            onSave={handleSaveTextEdit('publication')}
-                            label="Publication"
+                            onSave={handleSaveTextEdit}
+                            label="publication"
                             textToEdit={studyset.publication || ''}
                         >
                             <Box sx={StudysetPageStyles.displayedText}>
@@ -184,8 +182,8 @@ const StudysetsPage: React.FC = (props) => {
                             </Box>
                         </TextEdit>
                         <TextEdit
-                            label="DOI"
-                            onSave={handleSaveTextEdit('doi')}
+                            label="doi"
+                            onSave={handleSaveTextEdit}
                             textToEdit={studyset.doi || ''}
                         >
                             <Box sx={StudysetPageStyles.displayedText}>
@@ -200,8 +198,8 @@ const StudysetsPage: React.FC = (props) => {
                             </Box>
                         </TextEdit>
                         <TextEdit
-                            onSave={handleSaveTextEdit('description')}
-                            label="Description"
+                            onSave={handleSaveTextEdit}
+                            label="description"
                             textToEdit={studyset.description || ''}
                             multiline
                         >

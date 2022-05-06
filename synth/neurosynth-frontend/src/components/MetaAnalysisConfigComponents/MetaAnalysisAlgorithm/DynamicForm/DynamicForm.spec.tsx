@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { IParameter } from '../..';
 import DynamicForm from './DynamicForm';
 
@@ -50,9 +50,29 @@ describe('DynamicForm', () => {
         );
     });
 
-    it('should move the kwarg argument to the end', () => {});
+    it('should move the kwarg argument to the end', () => {
+        render(
+            <DynamicForm onUpdate={mockOnUpdate} specification={mockSpecification} values={{}} />
+        );
 
-    it('should render the correct inputs based on the specification', () => {});
+        const inputs = screen.getAllByTestId('dynamic-form-input');
+        expect(inputs[inputs.length - 1].innerHTML).toEqual('kwarg');
+    });
 
-    it('should show a message if there are no inputs to be rendered', () => {});
+    it('should render the correct inputs based on the specification', () => {
+        render(
+            <DynamicForm onUpdate={mockOnUpdate} specification={mockSpecification} values={{}} />
+        );
+
+        expect(screen.getByText('bool')).toBeInTheDocument();
+        expect(screen.getByText('kwarg')).toBeInTheDocument();
+        expect(screen.getAllByText('numeric').length).toEqual(2);
+        expect(screen.getByText('select')).toBeInTheDocument();
+        expect(screen.getByText('string')).toBeInTheDocument();
+    });
+
+    it('should show a message if there are no inputs to be rendered', () => {
+        render(<DynamicForm onUpdate={mockOnUpdate} specification={{}} values={{}} />);
+        expect(screen.getByText('No arguments available')).toBeInTheDocument();
+    });
 });

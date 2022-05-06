@@ -22,7 +22,7 @@ describe('EditStudyMetadata Component', () => {
             Promise.resolve({})
         );
 
-        render(
+        const { debug } = render(
             <EditStudyMetadata
                 studyId={'some-test-id'}
                 metadata={mockMetadata}
@@ -95,10 +95,10 @@ describe('EditStudyMetadata Component', () => {
     });
 
     it('should save successfully and call the API with the correct arguments', async () => {
-        const firstRowElement = screen.getByText('some value');
+        const firstRowElement = screen.getByDisplayValue('some value');
         userEvent.type(firstRowElement, ' and more text');
 
-        const update = screen.getByText('some value and more text');
+        const update = screen.getByDisplayValue('some value and more text');
         expect(update).toBeInTheDocument();
 
         const saveButton = screen.getByRole('button', { name: 'Save' });
@@ -213,7 +213,7 @@ describe('EditStudyMetadata Component', () => {
         });
 
         it('should show when an item has been modified', () => {
-            const firstRowElement = screen.getByText('some value');
+            const firstRowElement = screen.getByDisplayValue('some value');
             userEvent.type(firstRowElement, ' and more text');
 
             const unsavedChangesText = screen.getByText('unsaved changes');

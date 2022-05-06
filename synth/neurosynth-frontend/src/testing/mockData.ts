@@ -1,3 +1,4 @@
+import { IMetaAnalysisParamsSpecification } from '../components/MetaAnalysisConfigComponents';
 import { StudysetReturn } from '../neurostore-typescript-sdk';
 import { AnalysisApiResponse, AnnotationsApiResponse, ConditionApiResponse } from '../utils/api';
 

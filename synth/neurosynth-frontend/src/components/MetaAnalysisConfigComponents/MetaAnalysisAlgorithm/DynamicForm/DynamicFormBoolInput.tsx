@@ -1,4 +1,4 @@
-import { Box, Typography, Switch, Stack } from '@mui/material';
+import { Box, Typography, Switch, Stack, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import { IDynamicFormInput } from '../..';
 import MetaAnalysisAlgorithmStyles from '../MetaAnalysisAlgorithm.styles';
 
@@ -12,18 +12,20 @@ const DynamicFormBoolInput: React.FC<IDynamicFormInput> = (props) => {
                 {props.parameter.description}
             </Typography>
 
-            <Stack direction="row" spacing={1} alignItems="center">
-                <Typography>false</Typography>
-                <Switch
-                    onChange={(event) => {
+            <ToggleButtonGroup
+                exclusive
+                color={!!props.value ? 'primary' : 'secondary'}
+                value={props.value || false}
+                onChange={(_event, newVal: boolean) => {
+                    if (newVal !== null && newVal !== undefined)
                         props.onUpdate({
-                            [props.parameterName]: event.target.value,
+                            [props.parameterName]: newVal,
                         });
-                    }}
-                    value={props.value || false}
-                />
-                <Typography>true</Typography>
-            </Stack>
+                }}
+            >
+                <ToggleButton value={true}>true</ToggleButton>
+                <ToggleButton value={false}>false</ToggleButton>
+            </ToggleButtonGroup>
         </Box>
     );
 };

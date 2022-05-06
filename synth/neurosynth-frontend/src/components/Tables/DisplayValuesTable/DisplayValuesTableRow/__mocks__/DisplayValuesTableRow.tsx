@@ -1,6 +1,6 @@
 import { IDisplayValuesTableRowModel } from '../..';
 
-const mockDisplayValuesTableRow: React.FC<IDisplayValuesTableRowModel> = (props) => {
+const MockDisplayValuesTableRow: React.FC<IDisplayValuesTableRowModel> = (props) => {
     return (
         <tr
             data-testid={'mock-row-' + props.uniqueKey}
@@ -9,7 +9,13 @@ const mockDisplayValuesTableRow: React.FC<IDisplayValuesTableRowModel> = (props)
             {props.columnValues.map((col, index) => {
                 return (
                     <td data-testid={'mock-col-' + index} key={index}>
-                        <span>{col.value?.toString()}</span>
+                        {col.isAction ? (
+                            <button onClick={() => props.onSelectAction('some-selected-id')}>
+                                <span>{col.value?.toString()}</span>
+                            </button>
+                        ) : (
+                            <span>{col.value?.toString()}</span>
+                        )}
                     </td>
                 );
             })}
@@ -17,4 +23,4 @@ const mockDisplayValuesTableRow: React.FC<IDisplayValuesTableRowModel> = (props)
     );
 };
 
-export default mockDisplayValuesTableRow;
+export default MockDisplayValuesTableRow;

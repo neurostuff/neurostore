@@ -69,7 +69,7 @@ const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
                 sx={{ marginBottom: '1rem' }}
                 variant="text"
             >
-                {showAdvancedOptions ? 'hide' : 'show'} Advanced
+                {showAdvancedOptions ? 'hide' : 'show'} advanced
             </Button>
             <Box sx={{ display: showAdvancedOptions ? 'block' : 'none' }}>
                 <Divider sx={{ marginBottom: '1rem' }} />
@@ -81,24 +81,31 @@ const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
 
                 <Box
                     sx={{
-                        display: 'block',
-                        width: '50%',
-                        borderCollapse: 'separate',
-                        borderSpacing: '5px 0',
-                        height: '70px',
+                        width: {
+                            xl: '50%',
+                            lg: '100%',
+                        },
                     }}
                 >
-                    <AddMetadataRow
-                        keyPlaceholderText="new variable"
-                        valuePlaceholderText="new argument"
-                        errorMessage="all variables must be unique"
-                        showToggleType={false}
-                        onAddMetadataRow={handleOnAddMetadataRow}
-                    />
-                </Box>
-
-                <Box sx={{ width: '50%', minWidth: '554px' }}>
-                    <DisplayValuesTable {...dataForKwargsTable} />
+                    <Box
+                        sx={{
+                            display: 'block',
+                            borderCollapse: 'separate',
+                            borderSpacing: '5px 0',
+                            height: '70px',
+                        }}
+                    >
+                        <AddMetadataRow
+                            keyPlaceholderText="new variable"
+                            valuePlaceholderText="new argument"
+                            errorMessage="all variables must be unique"
+                            showToggleType={false}
+                            onAddMetadataRow={handleOnAddMetadataRow}
+                        />
+                    </Box>
+                    <Box sx={{ width: '100%' }}>
+                        <DisplayValuesTable {...dataForKwargsTable} />
+                    </Box>
                 </Box>
             </Box>
         </Box>
