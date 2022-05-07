@@ -22,7 +22,7 @@ describe('EditStudyMetadata Component', () => {
             Promise.resolve({})
         );
 
-        const { debug } = render(
+        render(
             <EditStudyMetadata
                 studyId={'some-test-id'}
                 metadata={mockMetadata}
