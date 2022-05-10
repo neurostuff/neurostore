@@ -5,6 +5,7 @@ import DisplayValuesTableRow from './DisplayValuesTableRow';
 
 describe('DisplayMetadataTableRow Component', () => {
     let mockOnSelectRow = jest.fn();
+    let mockOnSelectAction = jest.fn();
 
     const testColValues = [
         {
@@ -67,6 +68,7 @@ describe('DisplayMetadataTableRow Component', () => {
 
     beforeEach(() => {
         mockOnSelectRow = jest.fn();
+        mockOnSelectAction = jest.fn();
     });
 
     afterAll(() => {
@@ -76,6 +78,7 @@ describe('DisplayMetadataTableRow Component', () => {
     it('should render', () => {
         render(
             <DisplayValuesTableRow
+                onSelectAction={mockOnSelectAction}
                 onSelectRow={mockOnSelectRow}
                 canSelectRow={false}
                 uniqueKey={'test12345'}
@@ -94,6 +97,7 @@ describe('DisplayMetadataTableRow Component', () => {
         it('should render the cell with no styling', () => {
             render(
                 <DisplayValuesTableRow
+                    onSelectAction={mockOnSelectAction}
                     onSelectRow={mockOnSelectRow}
                     canSelectRow={false}
                     uniqueKey={'test12345'}
@@ -116,6 +120,7 @@ describe('DisplayMetadataTableRow Component', () => {
         it('should render the number cell with styling', () => {
             render(
                 <DisplayValuesTableRow
+                    onSelectAction={mockOnSelectAction}
                     onSelectRow={mockOnSelectRow}
                     canSelectRow={false}
                     uniqueKey={'test12345'}
@@ -134,6 +139,7 @@ describe('DisplayMetadataTableRow Component', () => {
         it('should render the string cell with styling', () => {
             render(
                 <DisplayValuesTableRow
+                    onSelectAction={mockOnSelectAction}
                     onSelectRow={mockOnSelectRow}
                     canSelectRow={false}
                     uniqueKey={'test12345'}
@@ -152,6 +158,7 @@ describe('DisplayMetadataTableRow Component', () => {
         it('should render the boolean cell with styling', () => {
             render(
                 <DisplayValuesTableRow
+                    onSelectAction={mockOnSelectAction}
                     onSelectRow={mockOnSelectRow}
                     canSelectRow={false}
                     uniqueKey={'test12345'}
@@ -170,6 +177,7 @@ describe('DisplayMetadataTableRow Component', () => {
         it('should render the undefined cell with styling', () => {
             render(
                 <DisplayValuesTableRow
+                    onSelectAction={mockOnSelectAction}
                     onSelectRow={mockOnSelectRow}
                     canSelectRow={false}
                     uniqueKey={'test12345'}
@@ -188,6 +196,7 @@ describe('DisplayMetadataTableRow Component', () => {
         it('should render the null cell with styling', () => {
             render(
                 <DisplayValuesTableRow
+                    onSelectAction={mockOnSelectAction}
                     onSelectRow={mockOnSelectRow}
                     canSelectRow={false}
                     uniqueKey={'test12345'}
@@ -206,6 +215,7 @@ describe('DisplayMetadataTableRow Component', () => {
         it('should render the cell with no bold styling', () => {
             render(
                 <DisplayValuesTableRow
+                    onSelectAction={mockOnSelectAction}
                     onSelectRow={mockOnSelectRow}
                     canSelectRow={false}
                     uniqueKey={'test12345'}
@@ -224,6 +234,7 @@ describe('DisplayMetadataTableRow Component', () => {
         it('should render the cell with bold styling', () => {
             render(
                 <DisplayValuesTableRow
+                    onSelectAction={mockOnSelectAction}
                     onSelectRow={mockOnSelectRow}
                     canSelectRow={false}
                     uniqueKey={'test12345'}
@@ -236,12 +247,13 @@ describe('DisplayMetadataTableRow Component', () => {
 
             const secondCell = screen.getByText(6789);
             const secondCellStyles = getComputedStyle(secondCell);
-            expect(secondCellStyles.fontWeight).toBe('bold');
+            expect(secondCellStyles.fontWeight).toBe('700');
         });
 
         it('should keep the text left aligned', () => {
             render(
                 <DisplayValuesTableRow
+                    onSelectAction={mockOnSelectAction}
                     onSelectRow={mockOnSelectRow}
                     canSelectRow={false}
                     uniqueKey={'test12345'}
@@ -260,6 +272,7 @@ describe('DisplayMetadataTableRow Component', () => {
         it('should keep the text center aligned', () => {
             render(
                 <DisplayValuesTableRow
+                    onSelectAction={mockOnSelectAction}
                     onSelectRow={mockOnSelectRow}
                     canSelectRow={false}
                     uniqueKey={'test12345'}
@@ -278,6 +291,7 @@ describe('DisplayMetadataTableRow Component', () => {
         it('should not highlight data', () => {
             render(
                 <DisplayValuesTableRow
+                    onSelectAction={mockOnSelectAction}
                     onSelectRow={mockOnSelectRow}
                     canSelectRow={false}
                     uniqueKey={'test12345'}
@@ -297,6 +311,7 @@ describe('DisplayMetadataTableRow Component', () => {
             render(
                 <MockThemeProvider>
                     <DisplayValuesTableRow
+                        onSelectAction={mockOnSelectAction}
                         onSelectRow={mockOnSelectRow}
                         canSelectRow={false}
                         uniqueKey={'test12345'}
@@ -319,6 +334,7 @@ describe('DisplayMetadataTableRow Component', () => {
         it('should call the handler when the canSelectRow flag is enabled and the row is clicked', async () => {
             render(
                 <DisplayValuesTableRow
+                    onSelectAction={mockOnSelectAction}
                     onSelectRow={mockOnSelectRow}
                     canSelectRow={true}
                     uniqueKey={'test12345'}
@@ -337,6 +353,7 @@ describe('DisplayMetadataTableRow Component', () => {
         it('should not call the handler when the canSelectRow flag is disabled and the row is clicked', async () => {
             render(
                 <DisplayValuesTableRow
+                    onSelectAction={mockOnSelectAction}
                     onSelectRow={mockOnSelectRow}
                     canSelectRow={false}
                     uniqueKey={'test12345'}
@@ -350,6 +367,34 @@ describe('DisplayMetadataTableRow Component', () => {
             const row = screen.getByText('1234').closest('tr') as HTMLTableRowElement;
             userEvent.click(row);
             expect(mockOnSelectRow).not.toHaveBeenCalled();
+        });
+
+        it('should call the action', () => {
+            render(
+                <DisplayValuesTableRow
+                    onSelectAction={mockOnSelectAction}
+                    onSelectRow={mockOnSelectRow}
+                    canSelectRow={false}
+                    uniqueKey={'test12345'}
+                    columnValues={[
+                        {
+                            value: 'test-highlight-value-2',
+                            isAction: true,
+                            colorByType: false,
+                            bold: false,
+                            center: false,
+                            shouldHighlightNoData: true,
+                        },
+                    ]}
+                />,
+                {
+                    container: document.body.appendChild(document.createElement('tbody')),
+                }
+            );
+
+            userEvent.click(screen.getByText('test-highlight-value-2'));
+
+            expect(mockOnSelectAction).toHaveBeenCalledWith('test12345');
         });
     });
 });

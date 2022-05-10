@@ -7,19 +7,9 @@ const EditMetadataValueStyles: Style = {
     checkedFalse: {
         color: 'secondary.main',
     },
-    textfield: {
+    field: {
         width: '100%',
-        '& .MuiOutlinedInput-root': {
-            padding: '10px 14px !important',
-            fontSize: '12px !important',
-        },
-    },
-    numberfield: {
-        width: '100%',
-        '& .MuiOutlinedInput-input': {
-            padding: '10px 14px !important',
-            fontSize: '12px !important',
-        },
+        height: '40px',
     },
 };
 

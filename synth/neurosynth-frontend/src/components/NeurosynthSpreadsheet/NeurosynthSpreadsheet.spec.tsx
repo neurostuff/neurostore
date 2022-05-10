@@ -107,9 +107,7 @@ describe('NeurosynthSpreadsheet', () => {
     });
 
     beforeEach(() => {
-        (useAuth0 as jest.Mock).mockReturnValue({
-            isAuthenticated: true,
-        });
+        useAuth0().isAuthenticated = true;
         (NeurosynthSpreadsheetState as jest.Mock).mockImplementation(() => {
             return {
                 getColumnObjectAtIndex: mockGetColumnObjectAtIndex,
@@ -223,9 +221,7 @@ describe('NeurosynthSpreadsheet', () => {
 
     describe('when unauthenticated', () => {
         beforeEach(() => {
-            (useAuth0 as jest.Mock).mockReturnValue({
-                isAuthenticated: false,
-            });
+            useAuth0().isAuthenticated = false;
         });
         it('should disable the save annotation button', () => {
             render(

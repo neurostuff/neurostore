@@ -18,12 +18,12 @@ import StudysetsPopupMenu from '../../StudysetsPopupMenu/StudysetsPopupMenu';
 import StudiesTableStyles from './StudiesTable.styles';
 
 interface StudiesTableModel {
-    studies: StudyApiResponse[];
+    studies: StudyApiResponse[] | undefined;
     showStudyOptions?: boolean;
 }
 
 const StudiesTable: React.FC<StudiesTableModel> = (props) => {
-    const { isAuthenticated, user, getAccessTokenSilently } = useAuth0();
+    const { isAuthenticated, user } = useAuth0();
     const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
     const history = useHistory();
     const { showSnackbar } = useContext(GlobalContext);
@@ -38,7 +38,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     useEffect(() => {
         if (shouldShowStudyOptions) {
             const getStudysets = async () => {
-                API.Services.StudySetsService.studysetsGet(
+                API.NeurostoreServices.StudySetsService.studysetsGet(
                     undefined,
                     undefined,
                     undefined,
@@ -68,14 +68,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     }, [shouldShowStudyOptions, user?.sub, current]);
 
     const handleStudysetCreated = async (name: string, description: string) => {
-        try {
-            const token = await getAccessTokenSilently();
-            API.UpdateServicesWithToken(token);
-        } catch (exception) {
-            showSnackbar('there was an error', SnackbarType.ERROR);
-            console.error(exception);
-        }
-        API.Services.StudySetsService.studysetsPost({
+        API.NeurostoreServices.StudySetsService.studysetsPost({
             name,
             description,
         })
@@ -101,25 +94,14 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
         study: StudyApiResponse,
         studyset: StudysetsApiResponse
     ) => {
-        try {
-            const token = await getAccessTokenSilently();
-            API.UpdateServicesWithToken(token);
-        } catch (exception) {
-            showSnackbar('there was an error', SnackbarType.ERROR);
-            console.error(exception);
-        }
-
         const selectedStudysetStudies = [...(studyset.studies || [])] as string[];
         selectedStudysetStudies.push(study.id as string);
 
-        API.Services.StudySetsService.studysetsIdPut(studyset.id as string, {
+        API.NeurostoreServices.StudySetsService.studysetsIdPut(studyset.id as string, {
             name: studyset.name,
             studies: selectedStudysetStudies as string[],
         })
             .then((res) => {
-                // temporary fix. TODO: fix open-api spec
-                const updatedStudyset = res.data as unknown as StudysetsApiResponse;
-
                 showSnackbar(
                     `${study.name} added to ${studyset.name || studyset.id}`,
                     SnackbarType.SUCCESS
@@ -128,10 +110,8 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                     setStudysets((prevState) => {
                         if (!prevState) return prevState;
                         const newArr = [...prevState];
-                        const modifiedStudysetIndex = newArr.findIndex(
-                            (x) => x.id === updatedStudyset.id
-                        );
-                        newArr[modifiedStudysetIndex] = { ...updatedStudyset };
+                        const modifiedStudysetIndex = newArr.findIndex((x) => x.id === res.data.id);
+                        newArr[modifiedStudysetIndex] = { ...res.data };
                         return newArr;
                     });
                 }
@@ -155,7 +135,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {props.studies.map((row, index) => (
+                    {(props.studies || []).map((row, index) => (
                         <TableRow
                             sx={StudiesTableStyles.tableRow}
                             key={index}
@@ -201,7 +181,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                     ))}
                 </TableBody>
             </Table>
-            {props.studies.length === 0 && (
+            {(props.studies || []).length === 0 && (
                 <Box sx={{ color: 'warning.dark', padding: '0.5rem 1rem' }}>No data</Box>
             )}
         </TableContainer>

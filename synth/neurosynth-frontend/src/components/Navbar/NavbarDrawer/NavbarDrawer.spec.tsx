@@ -10,10 +10,6 @@ jest.mock('../NavbarPopupMenu/NavbarPopupMenu');
 jest.mock('@auth0/auth0-react');
 
 describe('NavbarDrawer Component', () => {
-    const mockedUseAuth0 = {
-        isAuthenticated: true,
-    };
-
     const mockNavOptions: NavOptionsModel[] = [
         {
             label: 'testLabel1',
@@ -42,7 +38,7 @@ describe('NavbarDrawer Component', () => {
     const logoutMock = jest.fn();
 
     beforeEach(() => {
-        (useAuth0 as any).mockReturnValue(mockedUseAuth0);
+        useAuth0().isAuthenticated = true;
 
         render(
             <BrowserRouter>
@@ -74,11 +70,7 @@ describe('NavbarDrawer Component', () => {
     });
 
     it('should show login if not authenticated and login on click', () => {
-        const mockedAuth0 = {
-            isAuthenticated: false,
-        };
-
-        (useAuth0 as any).mockReturnValue(mockedAuth0);
+        useAuth0().isAuthenticated = false;
 
         // ignore the neuroscience button and grab the drawer button to open the drawer
         const button = screen.getAllByRole('button')[1];

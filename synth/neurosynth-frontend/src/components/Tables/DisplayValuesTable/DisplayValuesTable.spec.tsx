@@ -173,6 +173,9 @@ describe('DisplayValuesTable Component', () => {
                     center: false,
                     bold: false,
                 },
+                {
+                    value: '',
+                },
             ],
             rowData: [
                 {
@@ -185,22 +188,20 @@ describe('DisplayValuesTable Component', () => {
                             center: false,
                             shouldHighlightNoData: false,
                         },
+                        {
+                            isAction: true,
+                            value: 'my-action',
+                        },
                     ],
                 },
             ],
         };
         let mockOnValueSelected = jest.fn();
+        let mockOnActionSelected = jest.fn();
 
         beforeEach(() => {
             mockOnValueSelected = jest.fn();
-        });
-
-        it('should throw an error if selectable but no handler defined', () => {
-            // prevent jest from logging error to console
-            jest.spyOn(console, 'error').mockImplementation(() => {});
-            expect(() =>
-                render(<DisplayValuesTable {...mockTableData} selectable={true} />)
-            ).toThrow('table is selectable but handler is not defined');
+            mockOnActionSelected = jest.fn();
         });
 
         it('should call the handleRowSelect handler when the row is clicked', () => {
@@ -228,6 +229,21 @@ describe('DisplayValuesTable Component', () => {
             const row = screen.getByTestId('mock-row-testUniqueKey1');
             userEvent.click(row);
             expect(mockOnValueSelected).not.toHaveBeenCalled();
+        });
+
+        it('should run the action', () => {
+            render(
+                <DisplayValuesTable
+                    {...mockTableData}
+                    onValueSelected={mockOnValueSelected}
+                    onActionSelected={mockOnActionSelected}
+                    selectable={false}
+                />
+            );
+
+            userEvent.click(screen.getByText('my-action'));
+
+            expect(mockOnActionSelected).toHaveBeenCalledWith('some-selected-id');
         });
     });
 });

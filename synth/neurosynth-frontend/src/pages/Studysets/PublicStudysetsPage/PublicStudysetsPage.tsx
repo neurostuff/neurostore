@@ -13,7 +13,7 @@ const PublicStudysetsPage: React.FC = (props) => {
 
     useEffect(() => {
         const getStudysets = async () => {
-            API.Services.StudySetsService.studysetsGet(
+            API.NeurostoreServices.StudySetsService.studysetsGet(
                 undefined,
                 undefined,
                 undefined,

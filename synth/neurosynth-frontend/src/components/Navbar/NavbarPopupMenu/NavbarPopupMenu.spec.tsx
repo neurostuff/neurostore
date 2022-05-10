@@ -9,8 +9,6 @@ jest.mock('@auth0/auth0-react');
 jest.mock('../../NeurosynthPopper/NeurosynthPopper');
 
 describe('NavbarPopupMenu', () => {
-    const mockgetAccessTokenSilently = jest.fn();
-
     const mockNavOptions: NavOptionsModel = {
         label: 'test-label',
         path: '/test-path',
@@ -41,10 +39,7 @@ describe('NavbarPopupMenu', () => {
     };
 
     beforeEach(() => {
-        (useAuth0 as any).mockReturnValue({
-            getAccessTokenSilently: mockgetAccessTokenSilently,
-            isAuthenticated: false,
-        });
+        useAuth0().isAuthenticated = false;
     });
 
     afterAll(() => {
@@ -85,11 +80,6 @@ describe('NavbarPopupMenu', () => {
             authenticationRequired: true,
         };
 
-        (useAuth0 as any).mockReturnValue({
-            getAccessTokenSilently: mockgetAccessTokenSilently,
-            isAuthenticated: false,
-        });
-
         render(
             <BrowserRouter>
                 <NavbarPopupMenu navOption={mockNavOptions} menuPosition={mockMenuPosition} />
@@ -124,10 +114,7 @@ describe('NavbarPopupMenu', () => {
             authenticationRequired: true,
         };
 
-        (useAuth0 as any).mockReturnValue({
-            getAccessTokenSilently: mockgetAccessTokenSilently,
-            isAuthenticated: true,
-        });
+        useAuth0().isAuthenticated = true;
 
         render(
             <BrowserRouter>
@@ -162,11 +149,6 @@ describe('NavbarPopupMenu', () => {
             disabled: true,
             authenticationRequired: false,
         };
-
-        (useAuth0 as any).mockReturnValue({
-            getAccessTokenSilently: mockgetAccessTokenSilently,
-            isAuthenticated: false,
-        });
 
         render(
             <BrowserRouter>
@@ -270,10 +252,7 @@ describe('NavbarPopupMenu', () => {
             authenticationRequired: false,
         };
 
-        (useAuth0 as any).mockReturnValue({
-            getAccessTokenSilently: mockgetAccessTokenSilently,
-            isAuthenticated: true,
-        });
+        useAuth0().isAuthenticated = true;
 
         render(
             <BrowserRouter>
@@ -309,11 +288,6 @@ describe('NavbarPopupMenu', () => {
             authenticationRequired: false,
         };
 
-        (useAuth0 as any).mockReturnValue({
-            getAccessTokenSilently: mockgetAccessTokenSilently,
-            isAuthenticated: false,
-        });
-
         render(
             <BrowserRouter>
                 <NavbarPopupMenu navOption={mockNavOptions} menuPosition={mockMenuPosition} />
@@ -325,11 +299,6 @@ describe('NavbarPopupMenu', () => {
     });
 
     it('should open the popup when main button is clicked', () => {
-        (useAuth0 as any).mockReturnValue({
-            getAccessTokenSilently: mockgetAccessTokenSilently,
-            isAuthenticated: true,
-        });
-
         render(
             <BrowserRouter>
                 <NavbarPopupMenu
@@ -347,10 +316,7 @@ describe('NavbarPopupMenu', () => {
     });
 
     it('should close the popup when click away is triggered', () => {
-        (useAuth0 as any).mockReturnValue({
-            getAccessTokenSilently: mockgetAccessTokenSilently,
-            isAuthenticated: true,
-        });
+        useAuth0().isAuthenticated = true;
 
         render(
             <BrowserRouter>
@@ -374,10 +340,7 @@ describe('NavbarPopupMenu', () => {
     });
 
     it('should close the popup when a child menuitem is clicked', () => {
-        (useAuth0 as any).mockReturnValue({
-            getAccessTokenSilently: mockgetAccessTokenSilently,
-            isAuthenticated: true,
-        });
+        useAuth0().isAuthenticated = true;
 
         render(
             <BrowserRouter>
