@@ -83,41 +83,16 @@ const MetaAnalysisPage: React.FC = (props) => {
                 </TextEdit>
             </Box>
             <Box>
-                <Typography sx={{ marginBottom: '2rem', color: 'warning.dark' }}>
+                <Typography variant="h6" sx={{ marginBottom: '2rem', fontWeight: 'bold' }}>
                     This meta-analysis has not been run yet. Run your meta-analysis using one of the
                     following methods:
                 </Typography>
-                <Paper sx={{ padding: '1rem', marginBottom: '1rem' }}>
-                    <Typography sx={{ fontWeight: 'bold', marginBottom: '2rem' }}>
-                        run your meta-analysis via docker
-                    </Typography>
-                    <CodeSnippet
-                        linesOfCode={[
-                            'sudo bash exec ./some-file-nam',
-                            'sudo bash exec some-other-command',
-                            'docker-compose up made-up-service',
-                        ]}
-                    />
-                </Paper>
 
-                <Paper sx={{ padding: '1rem', marginBottom: '1rem' }}>
-                    <Typography sx={{ fontWeight: 'bold', marginBottom: '2rem' }}>
-                        run your meta-analysis using NiMARE and your own environment
-                    </Typography>
-                    <CodeSnippet
-                        linesOfCode={[
-                            'python some sort of python command here',
-                            'python more python commands',
-                            'bash maybe mix in some bash commands?',
-                        ]}
-                    />
-                </Paper>
-
-                <Paper sx={{ padding: '1rem', marginBottom: '1rem' }}>
-                    <Typography sx={{ fontWeight: 'bold', marginBottom: '2rem' }}>
+                <Paper sx={{ padding: '1rem', marginBottom: '2rem' }}>
+                    <Typography sx={{ fontWeight: 'bold', marginBottom: '1rem' }}>
                         run your meta-analysis via google colab
                     </Typography>
-                    <CodeSnippet linesOfCode={[`${data?.id}`]}></CodeSnippet>
+                    <CodeSnippet linesOfCode={[`${data?.id}`]} />
                     <Button
                         sx={{ marginTop: '1rem' }}
                         onClick={() =>
@@ -128,6 +103,32 @@ const MetaAnalysisPage: React.FC = (props) => {
                         open google colab
                     </Button>
                 </Paper>
+
+                <Paper sx={{ padding: '1rem', marginBottom: '2rem' }}>
+                    <Typography sx={{ fontWeight: 'bold', marginBottom: '1rem' }}>
+                        run your meta-analysis via docker
+                    </Typography>
+                    <CodeSnippet
+                        linesOfCode={[
+                            'sudo bash exec ./some-file-name',
+                            'sudo bash exec some-other-command',
+                            'docker-compose up made-up-service',
+                        ]}
+                    />
+                </Paper>
+
+                {/* <Paper sx={{ padding: '1rem', marginBottom: '1rem' }}>
+                    <Typography sx={{ fontWeight: 'bold', marginBottom: '2rem' }}>
+                        run your meta-analysis using NiMARE and your own environment
+                    </Typography>
+                    <CodeSnippet
+                        linesOfCode={[
+                            'python some sort of python command here',
+                            'python more python commands',
+                            'bash maybe mix in some bash commands?',
+                        ]}
+                    />
+                </Paper> */}
             </Box>
         </StateHandlerComponent>
     );
