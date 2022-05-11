@@ -1,15 +1,13 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Typography, Button } from '@mui/material';
 import { useContext, useEffect, useState } from 'react';
-import { NeurosynthLoader } from '../../../components';
-import CreateDetailsDialog from '../../../components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
-import StudysetsTable from '../../../components/Tables/StudysetsTable/StudysetsTable';
+import { NeurosynthLoader, CreateDetailsDialog, Tables } from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API, { StudysetsApiResponse } from '../../../utils/api';
 
 const UserStudysetsPage: React.FC = (props) => {
-    const { user, getAccessTokenSilently } = useAuth0();
+    const { user } = useAuth0();
     const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
     const { showSnackbar } = useContext(GlobalContext);
     const [createStudysetDialogIsOpen, setCreateStudysetDialogIsOpen] = useState(false);
@@ -17,7 +15,7 @@ const UserStudysetsPage: React.FC = (props) => {
 
     useEffect(() => {
         const getStudysets = async () => {
-            API.Services.StudySetsService.studysetsGet(
+            API.NeurostoreServices.StudySetsService.studysetsGet(
                 undefined,
                 undefined,
                 undefined,
@@ -45,15 +43,7 @@ const UserStudysetsPage: React.FC = (props) => {
     }, [user?.sub, isMountedRef]);
 
     const handleCreateStudyset = async (name: string, description: string) => {
-        try {
-            const token = await getAccessTokenSilently();
-            API.UpdateServicesWithToken(token);
-        } catch (exception) {
-            showSnackbar('there was an error', SnackbarType.ERROR);
-            console.error(exception);
-        }
-
-        API.Services.StudySetsService.studysetsPost({
+        API.NeurostoreServices.StudySetsService.studysetsPost({
             name,
             description,
         })
@@ -101,7 +91,7 @@ const UserStudysetsPage: React.FC = (props) => {
                 isOpen={createStudysetDialogIsOpen}
             />
 
-            <StudysetsTable studysets={studysets || []} />
+            <Tables.StudysetsTable studysets={studysets || []} />
         </NeurosynthLoader>
     );
 };

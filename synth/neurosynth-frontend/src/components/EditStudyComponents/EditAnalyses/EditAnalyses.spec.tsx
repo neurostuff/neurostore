@@ -110,7 +110,7 @@ describe('DisplayMetadataTableRow Component', () => {
     describe('on save', () => {
         beforeEach(() => {
             // in the component itself, we disregard the actual response so we do not need to mock it here
-            (API.Services.AnalysesService.analysesIdPut as jest.Mock).mockReturnValue(
+            (API.NeurostoreServices.AnalysesService.analysesIdPut as jest.Mock).mockReturnValue(
                 Promise.resolve({
                     data: {},
                 })
@@ -127,10 +127,13 @@ describe('DisplayMetadataTableRow Component', () => {
                 userEvent.click(mockSaveButton);
             });
 
-            expect(API.Services.AnalysesService.analysesIdPut).toBeCalledWith(analyses[0].id, {
-                name: 'new name',
-                description: 'Some description I am putting here',
-            });
+            expect(API.NeurostoreServices.AnalysesService.analysesIdPut).toBeCalledWith(
+                analyses[0].id,
+                {
+                    name: 'new name',
+                    description: 'Some description I am putting here',
+                }
+            );
             expect(mockOnUpdateAnalysis).toBeCalledWith(analyses[0].id, {
                 ...analyses[0],
                 name: 'new name',
@@ -150,10 +153,13 @@ describe('DisplayMetadataTableRow Component', () => {
                 userEvent.click(mockSaveButton);
             });
 
-            expect(API.Services.AnalysesService.analysesIdPut).toBeCalledWith(analyses[0].id, {
-                conditions: conditions.map((x) => x.id),
-                weights: weights,
-            });
+            expect(API.NeurostoreServices.AnalysesService.analysesIdPut).toBeCalledWith(
+                analyses[0].id,
+                {
+                    conditions: conditions.map((x) => x.id),
+                    weights: weights,
+                }
+            );
             expect(mockOnUpdateAnalysis).toBeCalledWith(analyses[0].id, {
                 ...analyses[0],
                 conditions: conditions,
@@ -251,7 +257,7 @@ describe('DisplayMetadataTableRow Component', () => {
 
         it('should save all the changes if that option is selected in the dialog', async () => {
             // in the component itself, we disregard the actual response so we do not need to mock it here
-            (API.Services.AnalysesService.analysesIdPut as jest.Mock).mockReturnValue(
+            (API.NeurostoreServices.AnalysesService.analysesIdPut as jest.Mock).mockReturnValue(
                 Promise.resolve({
                     data: {},
                 })
@@ -269,7 +275,7 @@ describe('DisplayMetadataTableRow Component', () => {
                 userEvent.click(dialogButton);
             });
 
-            expect(API.Services.AnalysesService.analysesIdPut).toBeCalled();
+            expect(API.NeurostoreServices.AnalysesService.analysesIdPut).toBeCalled();
             expect(mockOnUpdateAnalysis).toBeCalled();
         });
 

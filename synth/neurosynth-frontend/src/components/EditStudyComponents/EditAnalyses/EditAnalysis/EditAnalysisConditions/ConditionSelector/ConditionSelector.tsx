@@ -1,4 +1,3 @@
-import { useAuth0 } from '@auth0/auth0-react';
 import {
     createFilterOptions,
     Autocomplete,
@@ -12,14 +11,14 @@ import useIsMounted from '../../../../../../hooks/useIsMounted';
 import API, { ConditionApiResponse } from '../../../../../../utils/api';
 import { CreateDetailsDialog } from '../../../../../';
 
-interface ConditionOption {
+interface AutoSelectOption {
     id: string;
     label: string;
     description: string;
     addOptionActualLabel?: string | null;
 }
 
-const filterOptions = createFilterOptions<ConditionOption>({
+const filterOptions = createFilterOptions<AutoSelectOption>({
     ignoreAccents: true,
     ignoreCase: true,
     matchFrom: 'any',
@@ -31,9 +30,8 @@ const ConditionSelector: React.FC<{
 }> = (props) => {
     const context = useContext(GlobalContext);
     const isMountedRef = useIsMounted();
-    const { getAccessTokenSilently } = useAuth0();
 
-    const [selectedValue, setSelectedValue] = useState<ConditionOption | null>(null);
+    const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(null);
     const [allConditions, setAllConditions] = useState<ConditionApiResponse[]>([]);
     const [dialog, setDialog] = useState({
         isOpen: false,
@@ -42,7 +40,7 @@ const ConditionSelector: React.FC<{
 
     useEffect(() => {
         const getConditions = () => {
-            API.Services.ConditionsService.conditionsGet()
+            API.NeurostoreServices.ConditionsService.conditionsGet()
                 .then((res) => {
                     if (isMountedRef.current && res?.data?.results) {
                         setAllConditions(res.data.results);
@@ -61,16 +59,7 @@ const ConditionSelector: React.FC<{
     }, [context, isMountedRef]);
 
     const handleOnCreate = async (name: string, description: string) => {
-        try {
-            const token = await getAccessTokenSilently();
-            API.UpdateServicesWithToken(token);
-            context.showSnackbar('successfully created new condition', SnackbarType.SUCCESS);
-        } catch (exception) {
-            context.showSnackbar('there was an error', SnackbarType.ERROR);
-            console.error(exception);
-        }
-
-        API.Services.ConditionsService.conditionsPost({
+        API.NeurostoreServices.ConditionsService.conditionsPost({
             name,
             description,
         })
@@ -91,7 +80,7 @@ const ConditionSelector: React.FC<{
 
     const handleOnChange = (
         _event: SyntheticEvent,
-        newValue: ConditionOption | null,
+        newValue: AutoSelectOption | null,
         _reason?: 'createOption' | 'selectOption' | 'removeOption' | 'blur' | 'clear'
     ) => {
         if (newValue) {
@@ -110,7 +99,7 @@ const ConditionSelector: React.FC<{
         }
     };
 
-    const conditionOptions: ConditionOption[] = allConditions.map((condition) => ({
+    const conditionOptions: AutoSelectOption[] = allConditions.map((condition) => ({
         id: condition.id || '',
         label: condition.name || '',
         description: condition.description || '',

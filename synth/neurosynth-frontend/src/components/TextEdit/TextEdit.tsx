@@ -1,4 +1,4 @@
-import { IconButton, TextField, Button } from '@mui/material';
+import { IconButton, TextField, Button, CircularProgress } from '@mui/material';
 import { Box, SystemStyleObject } from '@mui/system';
 import React, { useEffect, useState } from 'react';
 import EditIcon from '@mui/icons-material/Edit';
@@ -11,7 +11,7 @@ export interface ITextEdit {
     placeholder?: string;
     label?: string;
     display?: 'row' | 'column-reverse';
-    onSave: (updatedText: string) => void;
+    onSave: (updatedText: string, label: string) => Promise<any> | void;
 }
 
 const TextEdit: React.FC<ITextEdit> = (props) => {
@@ -24,12 +24,13 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
         placeholder = '',
         label = '',
         display = 'row',
-        onSave = (updatedText: any) => {},
+        onSave = (updatedText: string, label: string) => Promise.resolve(),
         children,
     } = props;
 
     const [editMode, setEditMode] = useState(false);
     const [editedValue, setEditedValue] = useState(textToEdit);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         setEditedValue(textToEdit);
@@ -56,9 +57,11 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                     />
                     <Box>
                         <Button
-                            onClick={() => {
-                                onSave(editedValue);
+                            onClick={async () => {
                                 setEditMode(false);
+                                setIsLoading(true);
+                                await onSave(editedValue, label);
+                                setIsLoading(false);
                             }}
                         >
                             Save
@@ -78,21 +81,31 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                 <Box sx={{ display: 'flex', flexDirection: display, alignItems: 'center' }}>
                     {children}
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <IconButton
-                            sx={{
-                                width: '32px',
-                                height: '32px',
-                                padding: '4px',
-                                marginLeft: display === 'row' ? '5px' : '0px',
-                                display: isAuthenticated ? 'inline' : 'none',
-                            }}
-                            disabled={!isAuthenticated}
-                            onClick={() => {
-                                setEditMode(true);
-                            }}
-                        >
-                            <EditIcon sx={{ fontSize: '20px' }} color="primary" />
-                        </IconButton>
+                        {isLoading ? (
+                            <CircularProgress
+                                sx={{
+                                    marginLeft: '5px',
+                                    width: '20px !important',
+                                    height: '20px !important',
+                                }}
+                            />
+                        ) : (
+                            <IconButton
+                                sx={{
+                                    width: '32px',
+                                    height: '32px',
+                                    padding: '4px',
+                                    marginLeft: display === 'row' ? '5px' : '0px',
+                                    display: isAuthenticated ? 'inline' : 'none',
+                                }}
+                                disabled={!isAuthenticated}
+                                onClick={() => {
+                                    setEditMode(true);
+                                }}
+                            >
+                                <EditIcon sx={{ fontSize: '20px' }} color="primary" />
+                            </IconButton>
+                        )}
                     </Box>
                 </Box>
             )}

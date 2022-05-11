@@ -43,7 +43,7 @@ class Specification(BaseMixin, db.Model):
 
 class StudysetReference(db.Model):
     __tablename__ = "studyset_references"
-    neurostore_id = db.Column(db.Text, primary_key=True)
+    id = db.Column(db.Text, primary_key=True)
 
 
 class Studyset(BaseMixin, db.Model):
@@ -53,7 +53,7 @@ class Studyset(BaseMixin, db.Model):
     public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     neurostore_id = db.Column(
-        db.Text, db.ForeignKey("studyset_references.neurostore_id")
+        db.Text, db.ForeignKey("studyset_references.id")
     )
 
     studyset_reference = relationship("StudysetReference", backref=backref("studysets"))
@@ -62,7 +62,7 @@ class Studyset(BaseMixin, db.Model):
 
 class AnnotationReference(db.Model):
     __tablename__ = "annotation_references"
-    neurostore_id = db.Column(db.Text, primary_key=True)
+    id = db.Column(db.Text, primary_key=True)
 
 
 class Annotation(BaseMixin, db.Model):
@@ -72,7 +72,7 @@ class Annotation(BaseMixin, db.Model):
     public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     neurostore_id = db.Column(
-        db.Text, db.ForeignKey("annotation_references.neurostore_id")
+        db.Text, db.ForeignKey("annotation_references.id")
     )
     internal_studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
 
@@ -93,7 +93,6 @@ class MetaAnalysis(BaseMixin, db.Model):
 
     specification = relationship("Specification", backref=backref("meta_analyses"))
     studyset = relationship("Studyset", backref=backref("meta_analyses"), lazy="joined")
-
     annotation = relationship("Annotation", backref=backref("meta_analyses"), lazy="joined")
     user = relationship("User", backref=backref("meta_analyses"))
 

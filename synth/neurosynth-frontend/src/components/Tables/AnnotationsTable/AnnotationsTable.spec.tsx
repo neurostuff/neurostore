@@ -53,14 +53,6 @@ describe('AnnotationsTable component', () => {
         listen: jest.fn(),
     };
 
-    beforeEach(() => {
-        (useAuth0 as any).mockReturnValue({
-            user: {
-                sub: 'some-github-user',
-            },
-        });
-    });
-
     afterAll(() => {
         jest.clearAllMocks();
     });

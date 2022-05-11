@@ -1,17 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { ExpandMoreOutlined } from '@mui/icons-material';
-import {
-    Button,
-    Tooltip,
-    Typography,
-    Tab,
-    Tabs,
-    Box,
-    Accordion,
-    AccordionDetails,
-    AccordionSummary,
-    Divider,
-} from '@mui/material';
+import { Button, Tooltip, Typography, Tab, Tabs, Box, Divider } from '@mui/material';
 import { AxiosError, AxiosResponse } from 'axios';
 import React, { useState, useEffect, useContext, SyntheticEvent } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
@@ -21,6 +9,7 @@ import {
     TextExpansion,
     DisplayAnalysis,
     NeurosynthLoader,
+    NeurosynthAccordion,
 } from '../../../components';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import useIsMounted from '../../../hooks/useIsMounted';
@@ -40,19 +29,12 @@ const StudyPage: React.FC = (props) => {
     const [editDisabled, setEditDisabled] = useState(false);
     const context = useContext(GlobalContext);
     const history = useHistory();
-    const { isAuthenticated, getAccessTokenSilently, user } = useAuth0();
+    const { isAuthenticated, user } = useAuth0();
     const isMountedRef = useIsMounted();
     const params: { studyId: string } = useParams();
 
     const handleCloneStudy = async () => {
-        try {
-            const token = await getAccessTokenSilently();
-            API.UpdateServicesWithToken(token);
-        } catch (exception) {
-            context.showSnackbar('There was an error', SnackbarType.ERROR);
-            console.error(exception);
-        }
-        API.Services.StudiesService.studiesPost(undefined, params.studyId, {})
+        API.NeurostoreServices.StudiesService.studiesPost(undefined, params.studyId, {})
             .then((res) => {
                 context.showSnackbar('Study successfully cloned', SnackbarType.SUCCESS);
                 history.push(`/studies/${(res.data as StudyApiResponse).id}`);
@@ -64,7 +46,7 @@ const StudyPage: React.FC = (props) => {
     };
 
     const handleEditStudy = (event: React.MouseEvent) => {
-        history.push(`/studies/edit/${params.studyId}`);
+        history.push(`/studies/${params.studyId}/edit`);
     };
 
     const handleSelectAnalysis = (event: SyntheticEvent, newVal: number) => {
@@ -76,7 +58,7 @@ const StudyPage: React.FC = (props) => {
 
     useEffect(() => {
         const getStudy = (id: string) => {
-            API.Services.StudiesService.studiesIdGet(id, true)
+            API.NeurostoreServices.StudiesService.studiesIdGet(id, true)
                 .then((res) => {
                     if (isMountedRef.current) {
                         const resUpdated = res as AxiosResponse<StudyApiResponse>;
@@ -211,21 +193,19 @@ const StudyPage: React.FC = (props) => {
                 />
             </Box>
             <Box sx={{ margin: '15px 0' }}>
-                <Accordion elevation={2}>
-                    <AccordionSummary
-                        sx={StudyPageStyles.accordionSummary}
-                        expandIcon={<ExpandMoreOutlined />}
-                    >
+                <NeurosynthAccordion
+                    accordionSummarySx={StudyPageStyles.accordionSummary}
+                    elevation={2}
+                    TitleElement={
                         <Typography variant="h6">
                             <b>Metadata</b>
                         </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        <Box sx={StudyPageStyles.metadataContainer}>
-                            {study && <DisplayValuesTable {...metadataForTable} />}
-                        </Box>
-                    </AccordionDetails>
-                </Accordion>
+                    }
+                >
+                    <Box sx={StudyPageStyles.metadataContainer}>
+                        {study && <DisplayValuesTable {...metadataForTable} />}
+                    </Box>
+                </NeurosynthAccordion>
             </Box>
 
             <Box>

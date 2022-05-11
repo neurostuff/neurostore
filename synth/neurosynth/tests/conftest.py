@@ -2,6 +2,7 @@ import json
 from os import environ
 import pathlib
 
+import schemathesis
 import pytest
 import sqlalchemy as sa
 
@@ -14,6 +15,23 @@ from ..models import (
 from auth0.v3.authentication import GetToken
 
 DATA_PATH = f_path = pathlib.Path(__file__).parent.resolve() / "data"
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--schemathesis",
+        action="store_true",
+        default=False,
+        help="Run schemathesis tests",
+    )
+
+
+schemathesis_test = pytest.mark.skipif(
+    "not config.getoption('--schemathesis')",
+    reason="Only run when --schemathesis is given",
+)
+
+
 """
 Test fixtures for bypassing authentication
 """
@@ -236,8 +254,8 @@ def user_data(session, mock_add_users):
         serialized_annotation = json.load(data_file)
 
     with session.no_autoflush:
-        ss_ref = StudysetReference(neurostore_id=serialized_studyset['id'])
-        annot_ref = AnnotationReference(neurostore_id=serialized_annotation['id'])
+        ss_ref = StudysetReference(id=serialized_studyset['id'])
+        annot_ref = AnnotationReference(id=serialized_annotation['id'])
         for user_info in mock_add_users.values():
             user = User.query.filter_by(id=user_info['id']).first()
 
@@ -275,6 +293,7 @@ def user_data(session, mock_add_users):
 
             meta_analysis = MetaAnalysis(
                 name=user.id + "'s meta analysis",
+                user=user,
                 specification=specification,
                 studyset=studyset,
                 annotation=annotation,
@@ -289,3 +308,8 @@ def user_data(session, mock_add_users):
 @pytest.fixture(scope="function")
 def neurostore_data(session, mock_add_users):
     create_meta_analyses()
+
+
+@pytest.fixture()
+def app_schema(app):
+    return schemathesis.from_wsgi('/api/openapi.json', app)

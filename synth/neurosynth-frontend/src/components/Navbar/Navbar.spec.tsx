@@ -1,7 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { NavbarArgs } from '.';
 import { Navbar } from '..';
 
 jest.mock('@auth0/auth0-react');
@@ -13,18 +12,6 @@ jest.mock('./NavbarDrawer/NavbarDrawer');
 jest.mock('./NavbarToolbar/NavbarToolbar');
 
 describe('Navbar', () => {
-    const mockLoginWithPopupFunc = jest.fn();
-    const mockLogoutFunc = jest.fn();
-    const mockGetAccessTokenSilently = jest.fn();
-
-    beforeEach(() => {
-        (useAuth0 as any).mockReturnValue({
-            getAccessTokenSilently: mockGetAccessTokenSilently,
-            loginWithPopup: mockLoginWithPopupFunc,
-            logout: mockLogoutFunc,
-        });
-    });
-
     afterAll(() => {
         jest.clearAllMocks();
     });
@@ -44,7 +31,7 @@ describe('Navbar', () => {
         const loginButton = screen.getByTestId('login');
         userEvent.click(loginButton);
 
-        expect(mockLoginWithPopupFunc).toBeCalled();
+        expect(useAuth0().loginWithPopup).toBeCalled();
     });
 
     it('should call the auth0 login method when logging in', () => {
@@ -53,6 +40,6 @@ describe('Navbar', () => {
         const logoutButton = screen.getByTestId('logout');
         userEvent.click(logoutButton);
 
-        expect(mockLogoutFunc).toBeCalled();
+        expect(useAuth0().logout).toBeCalled();
     });
 });
