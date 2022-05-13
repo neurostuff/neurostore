@@ -31,6 +31,7 @@ import {
     UndoRedo,
     registerPlugin,
 } from 'handsontable/plugins';
+import { QueryClient, QueryClientProvider } from 'react-query';
 
 export type Style = Record<string, SystemStyleObject>;
 
@@ -102,6 +103,8 @@ registerPlugin(MultipleSelectionHandles);
 registerPlugin(UndoRedo);
 registerPlugin(BasePlugin);
 
+const queryClient = new QueryClient();
+
 ReactDOM.render(
     <React.StrictMode>
         <Auth0Provider
@@ -111,7 +114,9 @@ ReactDOM.render(
             audience={audience}
         >
             <ThemeProvider theme={theme}>
-                <App />
+                <QueryClientProvider client={queryClient}>
+                    <App />
+                </QueryClientProvider>
             </ThemeProvider>
         </Auth0Provider>
     </React.StrictMode>,

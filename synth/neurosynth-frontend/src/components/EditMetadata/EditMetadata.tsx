@@ -10,7 +10,7 @@ const EditMetadata: React.FC<IEditMetadataModel> = React.memo((props) => {
 
     return (
         <>
-            <Box sx={[EditMetadataStyles.table, { marginTop: '7px' }]}>
+            <Box sx={[EditMetadataStyles.table, { height: '70px' }]}>
                 <AddMetadataRow onAddMetadataRow={onMetadataRowAdd} />
             </Box>
             <Divider sx={EditMetadataStyles.hr} />
@@ -19,7 +19,7 @@ const EditMetadata: React.FC<IEditMetadataModel> = React.memo((props) => {
                     No Metadata
                 </Box>
             )}
-            <Box sx={EditMetadataStyles.table}>
+            <Box sx={[EditMetadataStyles.table, EditMetadataStyles.tableOverflow]}>
                 {metadata.map((metadataRow) => (
                     <EditMetadataRow
                         key={metadataRow.metadataKey}

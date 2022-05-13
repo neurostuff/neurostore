@@ -18,7 +18,7 @@ describe('EditStudyMetadata Component', () => {
     };
 
     beforeEach(() => {
-        (API.Services.StudiesService.studiesIdPut as jest.Mock).mockReturnValue(
+        (API.NeurostoreServices.StudiesService.studiesIdPut as jest.Mock).mockReturnValue(
             Promise.resolve({})
         );
 
@@ -69,15 +69,18 @@ describe('EditStudyMetadata Component', () => {
             userEvent.click(saveButton);
         });
 
-        expect(API.Services.StudiesService.studiesIdPut).toHaveBeenCalledWith('some-test-id', {
-            metadata: {
-                X: '',
-                firstTestKey: 'some value',
-                secondTestKey: 12345,
-                thirdTestKey: false,
-                fourthTestKey: null,
-            },
-        });
+        expect(API.NeurostoreServices.StudiesService.studiesIdPut).toHaveBeenCalledWith(
+            'some-test-id',
+            {
+                metadata: {
+                    X: '',
+                    firstTestKey: 'some value',
+                    secondTestKey: 12345,
+                    thirdTestKey: false,
+                    fourthTestKey: null,
+                },
+            }
+        );
     });
 
     it('should not add a new row with an existing key', () => {
@@ -92,10 +95,10 @@ describe('EditStudyMetadata Component', () => {
     });
 
     it('should save successfully and call the API with the correct arguments', async () => {
-        const firstRowElement = screen.getByText('some value');
+        const firstRowElement = screen.getByDisplayValue('some value');
         userEvent.type(firstRowElement, ' and more text');
 
-        const update = screen.getByText('some value and more text');
+        const update = screen.getByDisplayValue('some value and more text');
         expect(update).toBeInTheDocument();
 
         const saveButton = screen.getByRole('button', { name: 'Save' });
@@ -105,14 +108,17 @@ describe('EditStudyMetadata Component', () => {
             userEvent.click(saveButton);
         });
 
-        expect(API.Services.StudiesService.studiesIdPut).toHaveBeenCalledWith('some-test-id', {
-            metadata: {
-                firstTestKey: 'some value and more text',
-                secondTestKey: 12345,
-                thirdTestKey: false,
-                fourthTestKey: null,
-            },
-        });
+        expect(API.NeurostoreServices.StudiesService.studiesIdPut).toHaveBeenCalledWith(
+            'some-test-id',
+            {
+                metadata: {
+                    firstTestKey: 'some value and more text',
+                    secondTestKey: 12345,
+                    thirdTestKey: false,
+                    fourthTestKey: null,
+                },
+            }
+        );
     });
 
     it('should delete successfully and call the API with the correct arguments', async () => {
@@ -129,13 +135,16 @@ describe('EditStudyMetadata Component', () => {
             userEvent.click(saveButton);
         });
 
-        expect(API.Services.StudiesService.studiesIdPut).toHaveBeenCalledWith('some-test-id', {
-            metadata: {
-                secondTestKey: 12345,
-                thirdTestKey: false,
-                fourthTestKey: null,
-            },
-        });
+        expect(API.NeurostoreServices.StudiesService.studiesIdPut).toHaveBeenCalledWith(
+            'some-test-id',
+            {
+                metadata: {
+                    secondTestKey: 12345,
+                    thirdTestKey: false,
+                    fourthTestKey: null,
+                },
+            }
+        );
     });
 
     it('should call the handleUpdateStudyMetadata on successful API calls', async () => {
@@ -204,7 +213,7 @@ describe('EditStudyMetadata Component', () => {
         });
 
         it('should show when an item has been modified', () => {
-            const firstRowElement = screen.getByText('some value');
+            const firstRowElement = screen.getByDisplayValue('some value');
             userEvent.type(firstRowElement, ' and more text');
 
             const unsavedChangesText = screen.getByText('unsaved changes');

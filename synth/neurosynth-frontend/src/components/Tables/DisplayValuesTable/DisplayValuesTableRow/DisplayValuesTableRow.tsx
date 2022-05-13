@@ -1,5 +1,4 @@
-import { TableCell, TableRow } from '@mui/material';
-import { Box } from '@mui/system';
+import { TableCell, TableRow, Button, Box } from '@mui/material';
 import React from 'react';
 import { IDisplayValuesTableRowModel } from '..';
 import { getType } from '../../..';
@@ -37,16 +36,25 @@ const DisplayMetadataTableRow: React.FC<IDisplayValuesTableRowModel> = (props) =
 
                 return (
                     <TableCell key={index} sx={{ textAlign: col.center ? 'center' : 'left' }}>
-                        <Box
-                            component="span"
-                            sx={[
-                                { fontWeight: col.bold ? 'bold' : 'normal' },
-                                DisplayValuesTableRowStyles.root,
-                                typedStyles,
-                            ]}
-                        >
-                            {getValue(col.value)}
-                        </Box>
+                        {col.isAction ? (
+                            <Button
+                                onClick={() => props.onSelectAction(`${props.uniqueKey}`)}
+                                color={col.actionStyling}
+                            >
+                                {getValue(col.value)}
+                            </Button>
+                        ) : (
+                            <Box
+                                component="span"
+                                sx={[
+                                    { fontWeight: col.bold ? 'bold' : 'normal' },
+                                    DisplayValuesTableRowStyles.root,
+                                    typedStyles,
+                                ]}
+                            >
+                                {getValue(col.value)}
+                            </Box>
+                        )}
                     </TableCell>
                 );
             })}

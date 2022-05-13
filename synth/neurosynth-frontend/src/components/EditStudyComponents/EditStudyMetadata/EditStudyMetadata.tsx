@@ -1,19 +1,10 @@
-import {
-    Accordion,
-    AccordionDetails,
-    AccordionSummary,
-    Typography,
-    Button,
-    Box,
-} from '@mui/material';
-import { ExpandMoreOutlined } from '@mui/icons-material';
+import { Typography, Button, Box } from '@mui/material';
 import EditStudyMetadataStyles from './EditStudyMetadata.styles';
-import { EditMetadata, IMetadataRowModel } from '../..';
+import { EditMetadata, IMetadataRowModel, NeurosynthAccordion } from '../..';
 import React, { useState, useContext, useCallback } from 'react';
 import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import { AxiosError } from 'axios';
 import API from '../../../utils/api';
-import { useAuth0 } from '@auth0/auth0-react';
 import useIsMounted from '../../../hooks/useIsMounted';
 
 export interface IEditStudyMetadata {
@@ -43,7 +34,6 @@ export const metadataToArray = (
 
 const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
     const context = useContext(GlobalContext);
-    const { getAccessTokenSilently } = useAuth0();
     const [updatedEnabled, setUpdateEnabled] = useState(false);
     const isMountedRef = useIsMounted();
 
@@ -52,17 +42,9 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
     );
 
     const handleOnSave = async (event: React.MouseEvent) => {
-        try {
-            const token = await getAccessTokenSilently();
-            API.UpdateServicesWithToken(token);
-        } catch (exception) {
-            context.showSnackbar('there was an error', SnackbarType.ERROR);
-            console.error(exception);
-        }
-
         const transformedMetadata = arrayToMetadata(metadataArr);
 
-        API.Services.StudiesService.studiesIdPut(props.studyId, {
+        API.NeurostoreServices.StudiesService.studiesIdPut(props.studyId, {
             metadata: transformedMetadata,
         })
             .then((_res) => {
@@ -128,11 +110,8 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
     };
 
     return (
-        <Accordion elevation={2} sx={updatedEnabled ? EditStudyMetadataStyles.unsavedChanges : {}}>
-            <AccordionSummary
-                sx={EditStudyMetadataStyles.accordionSummary}
-                expandIcon={<ExpandMoreOutlined />}
-            >
+        <NeurosynthAccordion
+            TitleElement={
                 <Box sx={EditStudyMetadataStyles.accordionTitleContainer}>
                     <Typography variant="h6">
                         <b>Edit Study Metadata</b>
@@ -143,37 +122,38 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
                         </Typography>
                     )}
                 </Box>
-            </AccordionSummary>
-            <AccordionDetails>
-                {/* only show this component when metadataArr is not undefined or null */}
-                {metadataArr && (
-                    <EditMetadata
-                        onMetadataRowAdd={handleMetadataRowAdd}
-                        onMetadataRowEdit={handleMetadataRowEdit}
-                        onMetadataRowDelete={handleMetadataRowDelete}
-                        metadata={metadataArr}
-                    />
-                )}
-                <Button
-                    disabled={!updatedEnabled}
-                    onClick={handleOnSave}
-                    color="success"
-                    variant="contained"
-                    sx={{ ...EditStudyMetadataStyles.button, marginRight: '15px' }}
-                >
-                    Save
-                </Button>
-                <Button
-                    disabled={!updatedEnabled}
-                    color="secondary"
-                    variant="outlined"
-                    onClick={handleRevertChanges}
-                    sx={EditStudyMetadataStyles.button}
-                >
-                    Cancel
-                </Button>
-            </AccordionDetails>
-        </Accordion>
+            }
+            accordionSummarySx={EditStudyMetadataStyles.accordionSummary}
+            elevation={2}
+            sx={updatedEnabled ? EditStudyMetadataStyles.unsavedChanges : {}}
+        >
+            {metadataArr && (
+                <EditMetadata
+                    onMetadataRowAdd={handleMetadataRowAdd}
+                    onMetadataRowEdit={handleMetadataRowEdit}
+                    onMetadataRowDelete={handleMetadataRowDelete}
+                    metadata={metadataArr}
+                />
+            )}
+            <Button
+                disabled={!updatedEnabled}
+                onClick={handleOnSave}
+                color="success"
+                variant="contained"
+                sx={{ ...EditStudyMetadataStyles.button, marginRight: '15px' }}
+            >
+                Save
+            </Button>
+            <Button
+                disabled={!updatedEnabled}
+                color="secondary"
+                variant="outlined"
+                onClick={handleRevertChanges}
+                sx={EditStudyMetadataStyles.button}
+            >
+                Cancel
+            </Button>
+        </NeurosynthAccordion>
     );
 };
 

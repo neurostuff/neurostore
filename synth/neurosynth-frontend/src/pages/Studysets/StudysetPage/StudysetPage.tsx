@@ -24,7 +24,7 @@ import StudysetPageStyles from './StudysetPage.styles';
 const StudysetsPage: React.FC = (props) => {
     const [studyset, setStudyset] = useState<StudysetsApiResponse | undefined>();
     const [annotations, setAnnotations] = useState<AnnotationsApiResponse[] | undefined>();
-    const { getAccessTokenSilently, isAuthenticated } = useAuth0();
+    const { isAuthenticated } = useAuth0();
     const history = useHistory();
     const { showSnackbar } = useContext(GlobalContext);
 
@@ -36,7 +36,7 @@ const StudysetsPage: React.FC = (props) => {
 
     useEffect(() => {
         const getStudyset = async (id: string) => {
-            API.Services.StudySetsService.studysetsIdGet(id, true)
+            API.NeurostoreServices.StudySetsService.studysetsIdGet(id, true)
                 .then((res) => {
                     if (current) {
                         const receivedStudyset = res.data;
@@ -55,7 +55,7 @@ const StudysetsPage: React.FC = (props) => {
 
     useEffect(() => {
         const getAnnotations = async (id: string) => {
-            API.Services.AnnotationsService.annotationsGet(id).then(
+            API.NeurostoreServices.AnnotationsService.annotationsGet(id).then(
                 (res) => {
                     if (current && res?.data?.results) {
                         setAnnotations(res.data.results);
@@ -75,54 +75,37 @@ const StudysetsPage: React.FC = (props) => {
         if (params.studysetId) getAnnotations(params.studysetId);
     }, [params.studysetId, showSnackbar, current]);
 
-    const handleSaveTextEdit = (fieldName: 'name' | 'description' | 'publication' | 'doi') => {
-        return async (editedText: string) => {
-            try {
-                const token = await getAccessTokenSilently();
-                API.UpdateServicesWithToken(token);
-            } catch (exception) {
-                showSnackbar('there was an error', SnackbarType.ERROR);
-                console.error(exception);
-            }
+    const handleSaveTextEdit = (editedText: string, fieldName: string) => {
+        if (!studyset) return;
 
-            if (!studyset) return;
-
-            API.Services.StudySetsService.studysetsIdPut(params.studysetId, {
-                name: studyset.name,
-                studies: (studyset.studies as StudyApiResponse[]).map((x) => x.id as string),
-                [fieldName]: editedText,
+        API.NeurostoreServices.StudySetsService.studysetsIdPut(params.studysetId, {
+            name: studyset.name,
+            studies: (studyset.studies as StudyApiResponse[]).map((x) => x.id as string),
+            [fieldName]: editedText,
+        })
+            .then(() => {
+                showSnackbar('analysis successfully updated', SnackbarType.SUCCESS);
+                if (current) {
+                    setStudyset((prevState) => {
+                        if (!prevState) return prevState;
+                        return {
+                            ...prevState,
+                            [fieldName]: editedText,
+                        };
+                    });
+                }
             })
-                .then(() => {
-                    showSnackbar('analysis successfully updated', SnackbarType.SUCCESS);
-                    if (current) {
-                        setStudyset((prevState) => {
-                            if (!prevState) return prevState;
-                            return {
-                                ...prevState,
-                                [fieldName]: editedText,
-                            };
-                        });
-                    }
-                })
-                .catch((err) => {
-                    showSnackbar('there was an error updating the studyset', SnackbarType.ERROR);
-                    console.error(err);
-                });
-        };
+            .catch((err) => {
+                showSnackbar('there was an error updating the studyset', SnackbarType.ERROR);
+                console.error(err);
+            });
     };
 
     const handleCloseDialog = async (confirm: boolean | undefined) => {
         setConfirmationIsOpen(false);
 
         if (studyset?.id && confirm) {
-            try {
-                const token = await getAccessTokenSilently();
-                API.UpdateServicesWithToken(token);
-            } catch (exception) {
-                showSnackbar('there was an error', SnackbarType.ERROR);
-                console.error(exception);
-            }
-            API.Services.StudySetsService.studysetsIdDelete(studyset.id)
+            API.NeurostoreServices.StudySetsService.studysetsIdDelete(studyset.id)
                 .then((res) => {
                     history.push('/userstudysets');
                     showSnackbar('deleted studyset', SnackbarType.SUCCESS);
@@ -136,15 +119,7 @@ const StudysetsPage: React.FC = (props) => {
 
     const handleCreateAnnotation = async (name: string, description: string) => {
         if (studyset && studyset?.id) {
-            try {
-                const token = await getAccessTokenSilently();
-                API.UpdateServicesWithToken(token);
-            } catch (exception) {
-                showSnackbar('there was an error', SnackbarType.ERROR);
-                console.error(exception);
-            }
-
-            API.Services.AnnotationsService.annotationsPost('neurosynth', undefined, {
+            API.NeurostoreServices.AnnotationsService.annotationsPost('neurosynth', undefined, {
                 name,
                 description,
                 note_keys: {},
@@ -172,9 +147,9 @@ const StudysetsPage: React.FC = (props) => {
                 <>
                     <Box sx={{ marginBottom: '1rem' }}>
                         <TextEdit
-                            onSave={handleSaveTextEdit('name')}
+                            onSave={handleSaveTextEdit}
                             sx={{ fontSize: '1.25rem' }}
-                            label="Name"
+                            label="name"
                             textToEdit={studyset.name || ''}
                         >
                             <Box sx={StudysetPageStyles.displayedText}>
@@ -191,8 +166,8 @@ const StudysetsPage: React.FC = (props) => {
                         </TextEdit>
 
                         <TextEdit
-                            onSave={handleSaveTextEdit('publication')}
-                            label="Publication"
+                            onSave={handleSaveTextEdit}
+                            label="publication"
                             textToEdit={studyset.publication || ''}
                         >
                             <Box sx={StudysetPageStyles.displayedText}>
@@ -207,8 +182,8 @@ const StudysetsPage: React.FC = (props) => {
                             </Box>
                         </TextEdit>
                         <TextEdit
-                            label="DOI"
-                            onSave={handleSaveTextEdit('doi')}
+                            label="doi"
+                            onSave={handleSaveTextEdit}
                             textToEdit={studyset.doi || ''}
                         >
                             <Box sx={StudysetPageStyles.displayedText}>
@@ -223,8 +198,8 @@ const StudysetsPage: React.FC = (props) => {
                             </Box>
                         </TextEdit>
                         <TextEdit
-                            onSave={handleSaveTextEdit('description')}
-                            label="Description"
+                            onSave={handleSaveTextEdit}
+                            label="description"
                             textToEdit={studyset.description || ''}
                             multiline
                         >

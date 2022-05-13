@@ -35,7 +35,7 @@ describe('ConditionSelector', () => {
     ];
 
     beforeEach(() => {
-        (API.Services.ConditionsService.conditionsGet as jest.Mock).mockReturnValue(
+        (API.NeurostoreServices.ConditionsService.conditionsGet as jest.Mock).mockReturnValue(
             Promise.resolve({
                 data: {
                     results: mockConditions,
@@ -111,7 +111,7 @@ describe('ConditionSelector', () => {
     });
 
     it('should open the dialog and create a new condition and display that condition', async () => {
-        (API.Services.ConditionsService.conditionsPost as jest.Mock).mockReturnValue(
+        (API.NeurostoreServices.ConditionsService.conditionsPost as jest.Mock).mockReturnValue(
             Promise.resolve({
                 data: {
                     name: 'test-name',
@@ -140,7 +140,7 @@ describe('ConditionSelector', () => {
             userEvent.click(createButton);
         });
 
-        expect(API.Services.ConditionsService.conditionsPost).toHaveBeenCalled();
+        expect(API.NeurostoreServices.ConditionsService.conditionsPost).toHaveBeenCalled();
         userEvent.click(autocomplete);
         expect(screen.getAllByRole('option').length).toBe(mockConditions.length + 1);
     });

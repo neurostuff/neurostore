@@ -39,9 +39,7 @@ const ToggleTypeStyles: Style = {
     },
     toggle_item: {
         minWidth: '118px',
-        '& .MuiOutlinedInput-input': {
-            padding: '7px 14px !important',
-        },
+        height: '40px',
     },
     toggleItemContainer: {
         height: '100%',

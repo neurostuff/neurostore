@@ -10,6 +10,10 @@ import PublicStudiesPage from '../Studies/PublicStudiesPage/PublicStudiesPage';
 import StudyPage from '../Studies/StudyPage/StudyPage';
 import UserStudiesPage from '../Studies/UserStudiesPage/UserStudiesPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
+import MetaAnalysisBuilderPage from '../MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
+import UserMetaAnalysesPage from '../MetaAnalyses/UserMetaAnalysesPage/UserMetaAnalysesPage';
+import PublicMetaAnalysesPage from '../MetaAnalyses/PublicMetaAnalysesPage/PublicMetaAnalysesPage';
+import MetaAnalysisPage from '../MetaAnalyses/MetaAnalysisPage/MetaAnalysisPage';
 
 const BaseNavigation: React.FC = (_props) => {
     return (
@@ -34,14 +38,26 @@ const BaseNavigation: React.FC = (_props) => {
                     <Route path="/studies" exact={true}>
                         <PublicStudiesPage />
                     </Route>
-                    <Route path="/userclonedstudies" exact={true}>
+                    <Route path="/userstudies" exact={true}>
                         <UserStudiesPage />
+                    </Route>
+                    <Route path="/meta-analyses/build" exact={true}>
+                        <MetaAnalysisBuilderPage />
                     </Route>
                     <Route path="/studies/:studyId" exact={true}>
                         <StudyPage />
                     </Route>
-                    <Route path="/studies/edit/:studyId">
+                    <Route path="/studies/:studyId/edit">
                         <EditStudyPage />
+                    </Route>
+                    <Route path="/meta-analyses" exact={true}>
+                        <PublicMetaAnalysesPage />
+                    </Route>
+                    <Route path="/meta-analyses/:metaAnalysisId" exact={true}>
+                        <MetaAnalysisPage />
+                    </Route>
+                    <Route path="/usermeta-analyses" exact={true}>
+                        <UserMetaAnalysesPage />
                     </Route>
                     <Route>
                         <div>Page not found</div>

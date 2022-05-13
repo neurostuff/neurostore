@@ -117,7 +117,7 @@ describe('StudiesTable Component', () => {
     ];
 
     beforeEach(() => {
-        (API.Services.StudySetsService.studysetsGet as any).mockReturnValue(
+        (API.NeurostoreServices.StudySetsService.studysetsGet as any).mockReturnValue(
             Promise.resolve({
                 data: {
                     results: mockStudysetsGetPayload,
@@ -125,7 +125,7 @@ describe('StudiesTable Component', () => {
             })
         );
 
-        (API.Services.StudySetsService.studysetsPost as any).mockReturnValue(
+        (API.NeurostoreServices.StudySetsService.studysetsPost as any).mockReturnValue(
             Promise.resolve({
                 data: {
                     results: mockStudysetsPostResponse,
@@ -133,7 +133,7 @@ describe('StudiesTable Component', () => {
             })
         );
 
-        (API.Services.StudySetsService.studysetsIdPut as any).mockReturnValue(
+        (API.NeurostoreServices.StudySetsService.studysetsIdPut as any).mockReturnValue(
             Promise.resolve({
                 data: {
                     results: mockStudysetsIdPutResponse,
@@ -141,13 +141,7 @@ describe('StudiesTable Component', () => {
             })
         );
 
-        (useAuth0 as any).mockReturnValue({
-            isAuthenticated: false,
-            getAccessTokenSilently: () => jest.fn(),
-            user: {
-                sub: 'test-user-id',
-            },
-        });
+        useAuth0().isAuthenticated = false;
     });
 
     afterAll(() => {
@@ -155,12 +149,7 @@ describe('StudiesTable Component', () => {
     });
 
     it('should render', async () => {
-        (useAuth0 as any).mockReturnValue({
-            isAuthenticated: true,
-            user: {
-                sub: 'test-user-id',
-            },
-        });
+        useAuth0().isAuthenticated = true;
 
         await act(async () => {
             render(
@@ -176,7 +165,7 @@ describe('StudiesTable Component', () => {
 
         // subtract 1 to account for the table header
         expect(rows.length - 1).toEqual(mockStudies.length);
-        expect(API.Services.StudySetsService.studysetsGet).toHaveBeenCalled();
+        expect(API.NeurostoreServices.StudySetsService.studysetsGet).toHaveBeenCalled();
     });
 
     it('should show no data', async () => {
@@ -224,13 +213,7 @@ describe('StudiesTable Component', () => {
     });
 
     it('should create the studyset', async () => {
-        (useAuth0 as any).mockReturnValue({
-            isAuthenticated: true,
-            getAccessTokenSilently: jest.fn(),
-            user: {
-                sub: 'test-user-id',
-            },
-        });
+        useAuth0().isAuthenticated = true;
 
         await act(async () => {
             render(
@@ -248,18 +231,11 @@ describe('StudiesTable Component', () => {
             userEvent.click(studysetCreatedButton);
         });
 
-        expect(API.Services.StudySetsService.studysetsPost).toBeCalled();
+        expect(API.NeurostoreServices.StudySetsService.studysetsPost).toBeCalled();
     });
 
     it('should edit the studyset', async () => {
-        (useAuth0 as any).mockReturnValue({
-            isAuthenticated: true,
-            getAccessTokenSilently: jest.fn(),
-            user: {
-                sub: 'test-user-id',
-            },
-        });
-
+        useAuth0().isAuthenticated = true;
         await act(async () => {
             render(
                 <MockThemeProvider>
@@ -276,19 +252,14 @@ describe('StudiesTable Component', () => {
             userEvent.click(studysetEditButton);
         });
 
-        expect(API.Services.StudySetsService.studysetsIdPut).toBeCalledWith('123', {
+        expect(API.NeurostoreServices.StudySetsService.studysetsIdPut).toBeCalledWith('123', {
             name: 'test-name',
             studies: ['5LMdXPD3ocgD'],
         });
     });
 
     it('should handle the selection when the row is clicked', async () => {
-        (useAuth0 as any).mockReturnValue({
-            isAuthenticated: true,
-            user: {
-                sub: 'test-user-id',
-            },
-        });
+        useAuth0().isAuthenticated = true;
 
         await act(async () => {
             render(
@@ -307,12 +278,7 @@ describe('StudiesTable Component', () => {
     });
 
     it('should show the add icon when showStudyOptions flag is enabled', async () => {
-        (useAuth0 as any).mockReturnValue({
-            isAuthenticated: true,
-            user: {
-                sub: 'test-user-id',
-            },
-        });
+        useAuth0().isAuthenticated = true;
 
         await act(async () => {
             render(
@@ -329,12 +295,8 @@ describe('StudiesTable Component', () => {
     });
 
     it('should hide the add icon when showStudyOptions flag is false', async () => {
-        (useAuth0 as any).mockReturnValue({
-            isAuthenticated: true,
-            user: {
-                sub: 'test-user-id',
-            },
-        });
+        useAuth0().isAuthenticated = true;
+
         await act(async () => {
             render(
                 <MockThemeProvider>

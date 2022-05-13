@@ -9,7 +9,7 @@ describe('EditStudyDetails Component', () => {
     let mockStudyDetails: IEditStudyDetails;
 
     beforeEach(() => {
-        (API.Services.StudiesService.studiesIdPut as jest.Mock).mockReturnValue(
+        (API.NeurostoreServices.StudiesService.studiesIdPut as jest.Mock).mockReturnValue(
             Promise.resolve({})
         );
 
@@ -109,13 +109,16 @@ describe('EditStudyDetails Component', () => {
             userEvent.click(saveButton);
         });
 
-        expect(API.Services.StudiesService.studiesIdPut).toHaveBeenCalledWith('some-test-id', {
-            name: mockStudyDetails.name,
-            description: mockStudyDetails.description + 'E',
-            authors: mockStudyDetails.authors,
-            publication: mockStudyDetails.publication,
-            doi: mockStudyDetails.doi,
-        });
+        expect(API.NeurostoreServices.StudiesService.studiesIdPut).toHaveBeenCalledWith(
+            'some-test-id',
+            {
+                name: mockStudyDetails.name,
+                description: mockStudyDetails.description + 'E',
+                authors: mockStudyDetails.authors,
+                publication: mockStudyDetails.publication,
+                doi: mockStudyDetails.doi,
+            }
+        );
     });
 
     it('should revert to the original data when the cancel button is clicked', () => {

@@ -3,7 +3,6 @@ import NavbarDrawer from './NavbarDrawer/NavbarDrawer';
 import NavbarToolbar from './NavbarToolbar/NavbarToolbar';
 import { useAuth0 } from '@auth0/auth0-react';
 import { NavOptionsModel } from '.';
-import API from '../../utils/api';
 
 const navItems: NavOptionsModel[] = [
     { label: 'HOME', path: '/', children: null },
@@ -16,7 +15,7 @@ const navItems: NavOptionsModel[] = [
             { label: 'Public Studies', path: '/studies', children: null },
             {
                 label: 'My Studies',
-                path: '/userclonedstudies',
+                path: '/userstudies',
                 children: null,
                 authenticationRequired: true,
             },
@@ -37,19 +36,28 @@ const navItems: NavOptionsModel[] = [
             },
         ],
     },
+    {
+        label: 'META-ANALYSES',
+        path: '',
+        disabled: false,
+        authenticationRequired: false,
+        children: [
+            { label: 'Public Meta-Analyses', path: '/meta-analyses', children: null },
+            {
+                label: 'My Meta-Analyses',
+                path: '/usermeta-analyses',
+                children: null,
+                authenticationRequired: true,
+            },
+        ],
+    },
 ];
 
 const Navbar: React.FC = (_props) => {
-    const { loginWithPopup, getAccessTokenSilently, logout } = useAuth0();
+    const { loginWithPopup, logout } = useAuth0();
 
     const handleLogin = async () => {
-        try {
-            await loginWithPopup();
-            const token = await getAccessTokenSilently();
-            API.UpdateServicesWithToken(token);
-        } catch (exception) {
-            console.error(exception);
-        }
+        await loginWithPopup();
     };
 
     const handleLogout = () => logout({ returnTo: window.location.origin });

@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import TextEdit from './TextEdit';
 
@@ -9,10 +9,7 @@ describe('TextEdit', () => {
     const mockOnSave = jest.fn();
 
     beforeEach(() => {
-        (useAuth0 as any).mockReturnValue({
-            getAccessTokenSilently: () => {},
-            isAuthenticated: true,
-        });
+        useAuth0().isAuthenticated = true;
     });
 
     afterAll(() => {
@@ -88,10 +85,7 @@ describe('TextEdit', () => {
     });
 
     it('should not show the edit button when not authenticated', () => {
-        (useAuth0 as any).mockReturnValue({
-            getAccessTokenSilently: () => {},
-            isAuthenticated: false,
-        });
+        useAuth0().isAuthenticated = false;
 
         render(
             <TextEdit onSave={mockOnSave} textToEdit="test-text">
@@ -114,9 +108,9 @@ describe('TextEdit', () => {
         expect(button).toBeInTheDocument();
     });
 
-    it('should call onSave when the save button is clicked', () => {
+    it('should call onSave when the save button is clicked', async () => {
         render(
-            <TextEdit onSave={mockOnSave} textToEdit="test-text">
+            <TextEdit onSave={mockOnSave} label="some-label" textToEdit="test-text">
                 <span>test-text</span>
             </TextEdit>
         );
@@ -130,8 +124,10 @@ describe('TextEdit', () => {
         userEvent.type(textField, 'A');
 
         const saveButton = screen.getByText('Save');
-        userEvent.click(saveButton);
+        await act(async () => {
+            userEvent.click(saveButton);
+        });
 
-        expect(mockOnSave).toBeCalledWith('test-textA');
+        expect(mockOnSave).toBeCalledWith('test-textA', 'some-label');
     });
 });

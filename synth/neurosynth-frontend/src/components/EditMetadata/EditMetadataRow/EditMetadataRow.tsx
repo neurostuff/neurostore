@@ -34,7 +34,7 @@ const EditMetadataRow: React.FC<IEditMetadataRowModel> = React.memo((props) => {
         [onMetadataRowEdit, metadataRow]
     );
 
-    const handleDelete = (event: React.MouseEvent) => {
+    const handleDelete = (_event: React.MouseEvent) => {
         onMetadataRowDelete(metadataRow);
     };
 
@@ -42,7 +42,13 @@ const EditMetadataRow: React.FC<IEditMetadataRowModel> = React.memo((props) => {
         <>
             <Box sx={EditMetadataRowStyles.tableRow}>
                 <ToggleType type={props.metadataValueType} onToggle={handleToggle} />
-                <Box sx={[EditMetadataRowStyles.tableCell, EditMetadataRowStyles.key]}>
+                <Box
+                    sx={[
+                        EditMetadataRowStyles.tableCell,
+                        EditMetadataRowStyles.key,
+                        { verticalAlign: 'middle !important' },
+                    ]}
+                >
                     <Box component="span">
                         <b>{metadataRow.metadataKey}</b>
                     </Box>

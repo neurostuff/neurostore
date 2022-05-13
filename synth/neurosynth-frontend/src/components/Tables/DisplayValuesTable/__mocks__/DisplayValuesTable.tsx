@@ -5,9 +5,13 @@ const MockDisplayValuesTable: React.FC<IDisplayValuesTableModel> = (props) => {
         if (props.onValueSelected) props.onValueSelected('some-selected-id');
     };
 
+    const handleTriggerAction = () => {
+        if (props.onActionSelected) props.onActionSelected('some-selected-id');
+    };
+
     return (
         <>
-            <div>mock table</div>
+            <div data-testid="mock-table">mock table</div>
             {props.rowData.map((row) => (
                 <div key={row.uniqueKey}>
                     <span>{`unique key: ${row.uniqueKey}`}</span>
@@ -18,6 +22,9 @@ const MockDisplayValuesTable: React.FC<IDisplayValuesTableModel> = (props) => {
                     ))}
                 </div>
             ))}
+            <button data-testid="simulate-trigger-action" onClick={handleTriggerAction}>
+                simulate trigger action
+            </button>
             <button data-testid="simulate-row-click" onClick={handleRowClick}>
                 simulate row click
             </button>

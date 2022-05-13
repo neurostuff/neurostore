@@ -49,8 +49,8 @@ const LandingPage = () => {
                 <Typography sx={LandingPageStyles.title}>welcome to neurosynth</Typography>
             </Box>
             <Box sx={LandingPageStyles.descriptor}>
-                neurosynth is a platform for large-scale, automated synthesis of functional magnetic
-                resonance imaging (fMRI) data.
+                neurosynth is a platform designed to ease the process of developing, running, and
+                reproducing meta-analyses for functional magnetic resonance imaging (fMRI) data.
             </Box>
             <Divider sx={LandingPageStyles.divider} />
             <Box sx={LandingPageStyles.sponsorContainer}>
