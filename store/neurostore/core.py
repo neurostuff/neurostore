@@ -1,12 +1,27 @@
 import os
 from flask_cors import CORS
+from pathlib import Path
+from typing import Any, Dict
 
 from authlib.integrations.flask_client import OAuth
 import connexion
+import prance
 
 from .or_json import ORJSONDecoder, ORJSONEncoder
 from .resolver import MethodListViewResolver
 from .database import init_db
+
+
+def custom_resolver(*args, **kwargs):
+    pass
+
+
+def get_bundled_specs(main_file: Path) -> Dict[str, Any]:
+    parser = prance._TranslatingParser(str(main_file.absolute()),
+                                       lazy=True, backend='openapi-spec-validator',
+                                       recursion_limit=50)
+    parser.parse()
+    return parser.specification
 
 
 connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/", debug=True)
@@ -23,7 +38,7 @@ app.secret_key = app.config["JWT_SECRET_KEY"]
 
 options = {"swagger_ui": True}
 connexion_app.add_api(
-    "neurostore-openapi.yml",
+    get_bundled_specs(Path(os.path.dirname(__file__) + "/openapi/neurostore-openapi.yml")),
     base_path="/api",
     options=options,
     arguments={"title": "NeuroStore API"},
