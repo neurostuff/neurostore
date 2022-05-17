@@ -24,6 +24,7 @@ webargs>=7.0.1
 wheel>=0.36.2
 wrapt>=1.12.1
 prance>=0.21.2
+openapi-spec-validator>=0.3.3
 scipy
 pytest
 orjson
