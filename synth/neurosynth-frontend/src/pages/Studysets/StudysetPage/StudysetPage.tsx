@@ -3,6 +3,7 @@ import { Typography, Box, Button } from '@mui/material';
 import { useContext, useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { useHistory } from 'react-router';
+import AddIcon from '@mui/icons-material/Add';
 import {
     TextExpansion,
     StudiesTable,
@@ -233,11 +234,12 @@ const StudysetsPage: React.FC = (props) => {
                             </Typography>
                             <Button
                                 onClick={() => setCreateDetailsIsOpen(true)}
-                                color="primary"
                                 variant="contained"
+                                sx={{ width: '200px' }}
+                                startIcon={<AddIcon />}
                                 disabled={!isAuthenticated}
                             >
-                                Create new Annotation
+                                new Annotation
                             </Button>
                             <CreateDetailsDialog
                                 titleText="Create new Annotation"
@@ -258,22 +260,25 @@ const StudysetsPage: React.FC = (props) => {
                         </Typography>
                     </Box>
                     <StudiesTable studies={studyset.studies as StudyApiResponse[]} />
-                    <Button
-                        onClick={() => setConfirmationIsOpen(true)}
-                        variant="contained"
-                        color="error"
-                        sx={{ marginTop: '1rem' }}
-                        disabled={!isAuthenticated}
-                    >
-                        Delete this studyset
-                    </Button>
-                    <ConfirmationDialog
-                        dialogTitle="Are you sure you want to delete the studyset?"
-                        confirmText="Yes"
-                        rejectText="No"
-                        isOpen={confirmationIsOpen}
-                        onCloseDialog={handleCloseDialog}
-                    />
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                        <ConfirmationDialog
+                            dialogTitle="Are you sure you want to delete the studyset?"
+                            dialogMessage="You will not be able to undo this action"
+                            confirmText="Yes"
+                            rejectText="No"
+                            isOpen={confirmationIsOpen}
+                            onCloseDialog={handleCloseDialog}
+                        />
+                        <Button
+                            onClick={() => setConfirmationIsOpen(true)}
+                            variant="contained"
+                            sx={{ width: '200px' }}
+                            color="error"
+                            disabled={!isAuthenticated}
+                        >
+                            Delete studyset
+                        </Button>
+                    </Box>
                 </>
             )}
         </NeurosynthLoader>

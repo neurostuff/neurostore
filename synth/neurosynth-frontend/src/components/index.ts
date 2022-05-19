@@ -3,37 +3,39 @@
  */
 
 // components
-import Navbar from './Navbar/Navbar';
-import SearchBar from './SearchBar/SearchBar';
-import StudiesTable from './Tables/StudiesTable/StudiesTable';
-import EditMetadata from './EditMetadata/EditMetadata';
-import DisplayAnalysis from './DisplayAnalysis/DisplayAnalysis';
-import DisplayValuesTable from './Tables/DisplayValuesTable/DisplayValuesTable';
-import DisplayImagesTable from './Tables/DisplayImagesTable/DisplayImagesTable';
-import TextExpansion from './TextExpansion/TextExpansion';
-import Visualizer from './Visualizer/Visualizer';
-import EditAnalyses from './EditStudyComponents/EditAnalyses/EditAnalyses';
-import EditStudyDetails from './EditStudyComponents/EditStudyDetails/EditStudyDetails';
-import TextEdit from './TextEdit/TextEdit';
-import NeurosynthPopper from './NeurosynthPopper/NeurosynthPopper';
-import NeurosynthLoader from './NeurosynthLoader/NeurosynthLoader';
-import ConfirmationDialog from './Dialogs/ConfirmationDialog/ConfirmationDialog';
-import CreateDetailsDialog from './Dialogs/CreateDetailsDialog/CreateDetailsDialog';
-import NeurosynthSpreadsheet from './NeurosynthSpreadsheet/NeurosynthSpreadsheet';
-import NavigationButtons from './Buttons/NavigationButtons/NavigationButtons';
-import NeurosynthAccordion from './NeurosynthAccordion/NeurosynthAccordion';
-import BackButton from './Buttons/BackButton/BackButton';
-import StateHandlerComponent from './StateHandlerComponent/StateHandlerComponent';
-import CodeSnippet from './CodeSnippet/CodeSnippet';
+import Navbar from 'components/Navbar/Navbar';
+import SearchBar from 'components/SearchBar/SearchBar';
+import StudiesTable from 'components/Tables/StudiesTable/StudiesTable';
+import EditMetadata from 'components/EditMetadata/EditMetadata';
+import DisplayAnalysis from 'components/DisplayAnalysis/DisplayAnalysis';
+import DisplayValuesTable from 'components/Tables/DisplayValuesTable/DisplayValuesTable';
+import DisplayImagesTable from 'components/Tables/DisplayImagesTable/DisplayImagesTable';
+import TextExpansion from 'components/TextExpansion/TextExpansion';
+import Visualizer from 'components/Visualizer/Visualizer';
+import EditAnalyses from 'components/EditStudyComponents/EditAnalyses/EditAnalyses';
+import EditStudyDetails from 'components/EditStudyComponents/EditStudyDetails/EditStudyDetails';
+import TextEdit from 'components/TextEdit/TextEdit';
+import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
+import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
+import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
+import NeurosynthSpreadsheet from 'components/NeurosynthSpreadsheet/NeurosynthSpreadsheet';
+import NavigationButtons from 'components/Buttons/NavigationButtons/NavigationButtons';
+import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
+import BackButton from 'components/Buttons/BackButton/BackButton';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 
-import * as Tables from './Tables';
+import * as Tables from 'components/Tables';
 
 // models
-export * from './Tables/DisplayValuesTable';
-export * from './Tables/DisplayImagesTable';
-export * from './EditMetadata';
-export * from './Navbar';
-export * from './NeurosynthSpreadsheet/NeurosynthSpreadsheet';
+export * from 'components/Tables/DisplayValuesTable';
+export * from 'components/Tables/DisplayImagesTable';
+export * from 'components/EditMetadata';
+export * from 'components/Navbar';
+export * from 'components/NeurosynthSpreadsheet/NeurosynthSpreadsheet';
 
 // export components
 export {
@@ -60,4 +62,6 @@ export {
     Tables,
     StateHandlerComponent,
     CodeSnippet,
+    LoadingButton,
+    NeurosynthAutocomplete,
 };

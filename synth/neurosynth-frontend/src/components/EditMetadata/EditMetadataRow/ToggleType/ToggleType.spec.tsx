@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { EPropertyType } from '../..';
+import { EPropertyType } from 'components';
 import ToggleType from './ToggleType';
 
 describe('ToggleType Component', () => {

@@ -31,6 +31,7 @@ const StudysetsTable: React.FC<IStudysetsTable> = (props) => {
             { value: 'Name', bold: true },
             { value: '# of Studies', bold: true },
             { value: 'Description', bold: true },
+            { value: 'User', bold: true },
         ],
         tableHeadRowColor: '#42ab55',
         selectable: true,
@@ -51,6 +52,10 @@ const StudysetsTable: React.FC<IStudysetsTable> = (props) => {
                 {
                     value: studyset.description ? studyset.description : 'No description',
                     shouldHighlightNoData: !studyset.description,
+                },
+                {
+                    value: studyset.user ? studyset.user : 'No user',
+                    shouldHighlightNoData: !studyset.user,
                 },
             ],
         })),

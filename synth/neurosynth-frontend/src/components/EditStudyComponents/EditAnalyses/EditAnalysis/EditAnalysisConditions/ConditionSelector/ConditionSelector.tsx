@@ -1,15 +1,9 @@
-import {
-    createFilterOptions,
-    Autocomplete,
-    TextField,
-    ListItem,
-    ListItemText,
-} from '@mui/material';
-import { SyntheticEvent, useContext, useEffect, useState } from 'react';
-import { GlobalContext, SnackbarType } from '../../../../../../contexts/GlobalContext';
-import useIsMounted from '../../../../../../hooks/useIsMounted';
-import API, { ConditionApiResponse } from '../../../../../../utils/api';
-import { CreateDetailsDialog } from '../../../../../';
+import { createFilterOptions, ListItem, ListItemText } from '@mui/material';
+import { useContext, useState } from 'react';
+import { GlobalContext, SnackbarType } from 'contexts/GlobalContext';
+import { useCreateCondition, useGetConditions } from 'hooks';
+import { CreateDetailsDialog, NeurosynthAutocomplete } from 'components';
+import { ConditionReturn } from 'neurostore-typescript-sdk';
 
 interface AutoSelectOption {
     id: string;
@@ -18,7 +12,7 @@ interface AutoSelectOption {
     addOptionActualLabel?: string | null;
 }
 
-const filterOptions = createFilterOptions<AutoSelectOption>({
+const filterOptions = createFilterOptions<AutoSelectOption | undefined>({
     ignoreAccents: true,
     ignoreCase: true,
     matchFrom: 'any',
@@ -26,102 +20,81 @@ const filterOptions = createFilterOptions<AutoSelectOption>({
 });
 
 const ConditionSelector: React.FC<{
-    onConditionSelected: (condition: ConditionApiResponse) => void;
+    onConditionSelected: (condition: ConditionReturn) => void;
 }> = (props) => {
-    const context = useContext(GlobalContext);
-    const isMountedRef = useIsMounted();
+    const {
+        isLoading: getConditionsIsLoading,
+        data: conditions,
+        isError: getConditionsIsError,
+    } = useGetConditions();
+    const { mutate, isLoading: createConditionIsLoading } = useCreateCondition();
 
-    const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(null);
-    const [allConditions, setAllConditions] = useState<ConditionApiResponse[]>([]);
+    const { showSnackbar } = useContext(GlobalContext);
+
+    const [selectedValue, setSelectedValue] = useState<AutoSelectOption>();
     const [dialog, setDialog] = useState({
         isOpen: false,
         initName: '',
     });
 
-    useEffect(() => {
-        const getConditions = () => {
-            API.NeurostoreServices.ConditionsService.conditionsGet()
-                .then((res) => {
-                    if (isMountedRef.current && res?.data?.results) {
-                        setAllConditions(res.data.results);
-                    }
-                })
-                .catch((err) => {
-                    context.showSnackbar(
-                        'there was an error fetching conditions',
-                        SnackbarType.ERROR
-                    );
-                    console.error(err);
-                });
-        };
-
-        getConditions();
-    }, [context, isMountedRef]);
-
     const handleOnCreate = async (name: string, description: string) => {
-        API.NeurostoreServices.ConditionsService.conditionsPost({
-            name,
-            description,
-        })
-            .then((res) => {
-                if (isMountedRef.current && res.data) {
-                    setAllConditions((prevState) => {
-                        const newState = [...prevState];
-                        newState.unshift(res.data);
-                        return newState;
-                    });
-                }
-            })
-            .catch((exception) => {
-                context.showSnackbar('there was an error', SnackbarType.ERROR);
-                console.error(exception);
-            });
+        mutate(
+            {
+                name,
+                description,
+            },
+            {
+                onSuccess: (_data, _variables, _context) => {
+                    showSnackbar('created condition ' + name, SnackbarType.SUCCESS);
+                },
+                onError: (data, _variables, _context) => {
+                    showSnackbar('there was an error', SnackbarType.ERROR);
+                },
+            }
+        );
     };
 
-    const handleOnChange = (
-        _event: SyntheticEvent,
-        newValue: AutoSelectOption | null,
-        _reason?: 'createOption' | 'selectOption' | 'removeOption' | 'blur' | 'clear'
-    ) => {
-        if (newValue) {
-            if (newValue.addOptionActualLabel) {
-                setDialog({ isOpen: true, initName: newValue.addOptionActualLabel });
-                return;
-            }
-
-            const selectedCondition = (allConditions || [])?.find(
-                (condition) => condition.id === newValue?.id
-            );
-            if (selectedCondition) {
-                setSelectedValue(newValue);
-                props.onConditionSelected(selectedCondition);
-            }
-        }
-    };
-
-    const conditionOptions: AutoSelectOption[] = allConditions.map((condition) => ({
+    const conditionOptions: AutoSelectOption[] = (conditions || []).map((condition) => ({
         id: condition.id || '',
         label: condition.name || '',
         description: condition.description || '',
-        isAddOption: null,
+        addOptionActualLabel: null,
     }));
 
     return (
         <>
-            <Autocomplete
-                sx={{ margin: '1rem 0rem' }}
-                options={conditionOptions || []}
-                isOptionEqualToValue={(option, value) => option.id === value.id}
+            <NeurosynthAutocomplete
+                isLoading={getConditionsIsLoading || createConditionIsLoading}
+                isError={getConditionsIsError}
                 value={selectedValue}
-                onChange={handleOnChange}
-                getOptionLabel={(option) => option.label}
+                required={false}
+                label="add a new condition"
+                options={conditionOptions}
+                isOptionEqualToValue={(option, value) => option?.id === value?.id}
+                getOptionLabel={(option) => option?.label || ''}
+                onChange={(_event, newValue, _reason) => {
+                    if (newValue) {
+                        if (newValue.addOptionActualLabel) {
+                            setDialog({ isOpen: true, initName: newValue.addOptionActualLabel });
+                            return;
+                        }
+
+                        const selectedCondition = (conditions || [])?.find(
+                            (condition) => condition.id === newValue?.id
+                        );
+                        if (selectedCondition) {
+                            setSelectedValue(newValue);
+                            props.onConditionSelected(selectedCondition);
+                        }
+                    }
+                }}
                 renderOption={(params, option) => (
                     <ListItem {...params}>
-                        <ListItemText primary={option.label} secondary={option.description} />
+                        <ListItemText
+                            primary={option?.label || ''}
+                            secondary={option?.description || ''}
+                        />
                     </ListItem>
-                )}
-                renderInput={(params) => (
-                    <TextField {...params} placeholder="condition" label="add a new condition" />
                 )}
                 filterOptions={(options, params) => {
                     const filteredValues = filterOptions(options, params);
@@ -129,7 +102,7 @@ const ConditionSelector: React.FC<{
                     const optionExists = options.some(
                         (option) =>
                             params.inputValue.toLocaleLowerCase() ===
-                            option.label.toLocaleLowerCase()
+                            (option?.label || '').toLocaleLowerCase()
                     );
 
                     if (params.inputValue !== '' && !optionExists) {
@@ -143,6 +116,7 @@ const ConditionSelector: React.FC<{
                     return filteredValues;
                 }}
             />
+
             <CreateDetailsDialog
                 isOpen={dialog.isOpen}
                 onCreate={handleOnCreate}

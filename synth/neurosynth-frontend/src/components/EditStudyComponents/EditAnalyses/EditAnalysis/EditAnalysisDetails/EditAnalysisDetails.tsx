@@ -1,96 +1,114 @@
-import { Box, Button, TextField } from '@mui/material';
-import React, { ChangeEvent } from 'react';
-import { EAnalysisEdit, EAnalysisEditButtonType, IEditAnalysisDetails } from '../..';
+import { Box, TextField } from '@mui/material';
+import React, { useEffect, useState, useContext } from 'react';
+import { IEditAnalysisDetails } from '../..';
 import EditAnalysisDetailsStyles from './EditAnalysisDetails.styles';
 import EditAnalysisStyles from '../EditAnalysis.styles';
+import { useUpdateAnalysis, useDeleteAnalysis } from 'hooks';
+import { GlobalContext, SnackbarType } from 'contexts/GlobalContext';
+import { ConfirmationDialog, LoadingButton } from 'components';
+
+const textFieldInputProps = {
+    style: {
+        fontSize: 15,
+    },
+};
 
 const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = React.memo((props) => {
-    const textFieldInputProps = {
-        style: {
-            fontSize: 15,
-        },
+    const { showSnackbar } = useContext(GlobalContext);
+    const { isLoading: updateAnalysisIsLoading, mutate: updateAnalysis } = useUpdateAnalysis();
+    const { isLoading: deleteAnalysisIsLoading, mutate: deleteAnalysis } = useDeleteAnalysis();
+    const [name, setName] = useState(props.name);
+    const [description, setDescription] = useState(props.description);
+    const [dialogIsOpen, setDialogIsOpen] = useState(false);
+
+    useEffect(() => {
+        setName(props.name);
+        setDescription(props.description);
+    }, [props.name, props.description]);
+
+    const [saveDisabled, setSaveDisabled] = useState(true);
+
+    const handleSavePressed = () => {
+        updateAnalysis(
+            {
+                analysisId: props.analysisId,
+                analysis: {
+                    name,
+                    description,
+                },
+            },
+            {
+                onSuccess: () => {
+                    showSnackbar('updated analysis', SnackbarType.SUCCESS);
+                    setSaveDisabled(true);
+                },
+                onError: () => {
+                    showSnackbar('there was an error updating the analysis', SnackbarType.ERROR);
+                },
+            }
+        );
     };
 
-    const handleChange = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-        props.onEditAnalysisDetails(
-            event.target.name as 'name' | 'description',
-            event.target.value
-        );
+    const handleDeleteAnalysis = (analysisId: string | undefined) => {
+        if (analysisId) deleteAnalysis(analysisId);
     };
 
     return (
         <Box>
-            <TextField
-                sx={[
-                    EditAnalysisDetailsStyles.textfield,
-                    props.updateEnabled.name ? EditAnalysisDetailsStyles.unsavedChanges : {},
-                ]}
-                variant="outlined"
-                label="Edit Analysis Name"
-                value={props.name || ''}
-                InputProps={textFieldInputProps}
-                name="name"
-                onChange={handleChange}
+            <ConfirmationDialog
+                dialogTitle="Are you sure you want to delete this analysis?"
+                isOpen={dialogIsOpen}
+                confirmText="Yes"
+                rejectText="No"
+                onCloseDialog={(confirmed) => {
+                    if (confirmed) handleDeleteAnalysis(props.analysisId);
+                    setDialogIsOpen(false);
+                }}
             />
             <TextField
-                sx={{
-                    ...EditAnalysisDetailsStyles.textfield,
-                    ...(props.updateEnabled.description
-                        ? EditAnalysisDetailsStyles.unsavedChanges
-                        : {}),
+                sx={[EditAnalysisDetailsStyles.textfield]}
+                variant="outlined"
+                label="Edit Analysis Name"
+                value={name}
+                InputProps={textFieldInputProps}
+                name="name"
+                onChange={(e) => {
+                    setSaveDisabled(false);
+                    setName(e.target.value);
                 }}
+            />
+            <TextField
+                sx={[EditAnalysisDetailsStyles.textfield]}
                 variant="outlined"
                 label="Edit Analysis Description"
-                value={props.description || ''}
+                value={description}
                 InputProps={textFieldInputProps}
                 name="description"
                 multiline
-                onChange={handleChange}
+                onChange={(e) => {
+                    setSaveDisabled(false);
+                    setDescription(e.target.value);
+                }}
             />
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Box>
-                    <Button
-                        sx={[EditAnalysisStyles.analysisButton, { marginRight: '15px' }]}
-                        variant="contained"
-                        color="success"
-                        onClick={(_event) =>
-                            props.onEditAnalysisButtonPress(
-                                EAnalysisEdit.DETAILS,
-                                EAnalysisEditButtonType.SAVE
-                            )
-                        }
-                        disabled={!(props.updateEnabled.name || props.updateEnabled.description)}
-                    >
-                        Save
-                    </Button>
-                    <Button
-                        sx={[EditAnalysisStyles.analysisButton, { marginRight: '15px' }]}
-                        variant="outlined"
-                        color="secondary"
-                        onClick={(_event) =>
-                            props.onEditAnalysisButtonPress(
-                                EAnalysisEdit.DETAILS,
-                                EAnalysisEditButtonType.CANCEL
-                            )
-                        }
-                        disabled={!(props.updateEnabled.name || props.updateEnabled.description)}
-                    >
-                        Cancel
-                    </Button>
-                </Box>
-                <Button
+                <LoadingButton
+                    isLoading={updateAnalysisIsLoading}
+                    text="save"
+                    variant="contained"
+                    color="success"
+                    sx={EditAnalysisDetailsStyles.button}
+                    onClick={handleSavePressed}
+                    disabled={saveDisabled}
+                    loaderColor="secondary"
+                />
+                <LoadingButton
+                    isLoading={deleteAnalysisIsLoading}
                     sx={EditAnalysisStyles.analysisButton}
                     color="error"
                     variant="contained"
-                    onClick={(_event) =>
-                        props.onEditAnalysisButtonPress(
-                            EAnalysisEdit.DETAILS,
-                            EAnalysisEditButtonType.DELETE
-                        )
-                    }
-                >
-                    Delete this analysis
-                </Button>
+                    onClick={() => setDialogIsOpen(true)}
+                    text="delete analysis"
+                />
             </Box>
         </Box>
     );

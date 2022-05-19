@@ -1,3 +1,4 @@
+import { Analysis, ConditionReturn } from '../../../neurostore-typescript-sdk';
 import { AnalysisApiResponse, ConditionApiResponse, PointApiResponse } from '../../../utils/api';
 
 export enum EAnalysisEdit {
@@ -15,7 +16,7 @@ export enum EAnalysisEditButtonType {
 }
 
 export interface IEditAnalysisDetailsFn {
-    (field: 'name' | 'description', value: string): void;
+    (analysis: Analysis): void;
 }
 
 export interface IEditAnalysisConditionsFn {
@@ -39,41 +40,25 @@ export interface IUpdateState {
     conditions: boolean;
 }
 
-export interface IEditAnalyses {
-    analyses: AnalysisApiResponse[] | undefined;
-    onUpdateAnalysis: (analysisId: string, analysis: AnalysisApiResponse) => void;
-}
-
-export interface IEditAnalysis {
-    updateState: IUpdateState;
-    analysis: AnalysisApiResponse | undefined;
-    onEditAnalysisDetails: IEditAnalysisDetailsFn;
-    onEditAnalysisConditions: IEditAnalysisConditionsFn;
-    onEditAnalysisButtonPress: IOnButtonPressFn;
-}
-
 export interface IEditAnalysisDetails {
+    studyId: string;
     name: string;
     description: string;
-    updateEnabled: {
-        name: boolean;
-        description: boolean;
-    };
-    onEditAnalysisDetails: IEditAnalysisDetailsFn;
-    onEditAnalysisButtonPress: IOnButtonPressFn;
+    analysisId: string;
 }
 
 export interface IEditAnalysisPoints {
-    onAddPoint: (arg: { x: number; y: number; z: number }) => void;
-    onRemovePoint: (pointId: string) => void;
-    onUpdatePoint: (pointId: string, update: { x: number; y: number; z: number }) => void;
+    // onAddPoint: (arg: { x: number; y: number; z: number }) => void;
+    // onRemovePoint: (pointId: string) => void;
+    // onUpdatePoint: (pointId: string, update: { x: number; y: number; z: number }) => void;
     points: PointApiResponse[] | undefined;
+    studyId: string | undefined;
+    analysisId: string | undefined;
 }
 
 export interface IEditAnalysisConditions {
-    conditions: ConditionApiResponse[] | undefined;
+    studyId: string | undefined;
+    analysisId: string;
+    conditions: ConditionReturn[] | undefined;
     weights: number[] | undefined;
-    updateEnabled: boolean;
-    onConditionWeightChange: IEditAnalysisConditionsFn;
-    onEditAnalysisButtonPress: IOnButtonPressFn;
 }

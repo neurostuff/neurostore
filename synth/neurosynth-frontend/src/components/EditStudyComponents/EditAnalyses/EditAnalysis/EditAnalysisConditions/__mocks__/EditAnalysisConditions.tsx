@@ -6,15 +6,16 @@ const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = (props) => {
             <h1>mock edit analysis conditions</h1>
             <button
                 data-testid="mock-on-edit-analysis-conditions"
-                onClick={(_event) => props.onConditionWeightChange([], [])}
+                // onClick={(_event) => props.onConditionWeightChange([], [])}
             ></button>
             <button
                 data-testid="mock-on-edit-analysis-conditions-button-press"
-                onClick={(_event) =>
-                    props.onEditAnalysisButtonPress(
-                        EAnalysisEdit.CONDITIONS,
-                        EAnalysisEditButtonType.SAVE
-                    )
+                onClick={
+                    (_event) => {}
+                    // props.onEditAnalysisButtonPress(
+                    //     EAnalysisEdit.CONDITIONS,
+                    //     EAnalysisEditButtonType.SAVE
+                    // )
                 }
             ></button>
         </>

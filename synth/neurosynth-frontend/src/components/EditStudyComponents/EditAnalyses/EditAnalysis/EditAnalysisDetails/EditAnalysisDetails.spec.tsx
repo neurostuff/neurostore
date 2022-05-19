@@ -1,7 +1,12 @@
 import { render, RenderResult, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { EAnalysisEdit, EAnalysisEditButtonType, IEditAnalysisDetails } from '../..';
+import { useDeleteAnalysis, useUpdateAnalysis } from 'hooks';
+import { IEditAnalysisDetails } from '../..';
 import EditAnalysisDetails from './EditAnalysisDetails';
+
+jest.mock('react-query');
+jest.mock('components/Dialogs/ConfirmationDialog/ConfirmationDialog');
+jest.mock('hooks');
 
 describe('EditAnalysisDetails Component', () => {
     let mockAnalysisDetails: IEditAnalysisDetails;
@@ -11,14 +16,9 @@ describe('EditAnalysisDetails Component', () => {
         mockAnalysisDetails = {
             name: 'test-name',
             description: 'test-description',
-            updateEnabled: {
-                name: false,
-                description: false,
-            },
-            onEditAnalysisDetails: jest.fn(),
-            onEditAnalysisButtonPress: jest.fn(),
+            studyId: 'test-studyid',
+            analysisId: 'test-analyisId',
         };
-
         renderResult = render(<EditAnalysisDetails {...mockAnalysisDetails} />);
     });
 
@@ -36,126 +36,53 @@ describe('EditAnalysisDetails Component', () => {
 
     describe('buttons', () => {
         it('should initially disable the save button', () => {
-            const saveButton = screen.getByRole('button', { name: 'Save' });
+            const saveButton = screen.getByRole('button', { name: 'save' });
             expect(saveButton).toBeDisabled();
         });
-        it('should initially disable the cancel button', () => {
-            const cancelButton = screen.getByRole('button', { name: 'Cancel' });
-            expect(cancelButton).toBeDisabled();
-        });
         it('should enable the save button when the state is updated', () => {
-            mockAnalysisDetails = {
-                name: 'test-name',
-                description: 'test-description',
-                updateEnabled: {
-                    name: true,
-                    description: false,
-                },
-                onEditAnalysisDetails: jest.fn(),
-                onEditAnalysisButtonPress: jest.fn(),
-            };
-
             renderResult.rerender(<EditAnalysisDetails {...mockAnalysisDetails} />);
-
-            const saveButton = screen.getByRole('button', { name: 'Save' });
-            expect(saveButton).toBeEnabled();
-        });
-
-        it('should enable the cancel button when the state is updated', () => {
-            mockAnalysisDetails = {
-                name: 'test-name',
-                description: 'test-description',
-                updateEnabled: {
-                    name: false,
-                    description: true,
-                },
-                onEditAnalysisDetails: jest.fn(),
-                onEditAnalysisButtonPress: jest.fn(),
-            };
-
-            renderResult.rerender(<EditAnalysisDetails {...mockAnalysisDetails} />);
-
-            const cancelButton = screen.getByRole('button', { name: 'Cancel' });
-            expect(cancelButton).toBeEnabled();
+            userEvent.type(screen.getByLabelText('Edit Analysis Name'), 'abc');
+            expect(screen.getByRole('button', { name: 'save' })).toBeEnabled();
         });
 
         it('should call the function when the save button is pressed', () => {
-            mockAnalysisDetails = {
-                name: 'test-name',
-                description: 'test-description',
-                updateEnabled: {
-                    name: true,
-                    description: true,
+            userEvent.type(screen.getByLabelText('Edit Analysis Name'), 'abc');
+            const saveButton = screen.getByRole('button', { name: 'save' });
+            userEvent.click(saveButton);
+
+            const call = (useUpdateAnalysis().mutate as jest.Mock).mock.calls[0][0];
+            expect(call).toEqual({
+                analysisId: mockAnalysisDetails.analysisId,
+                analysis: {
+                    name: mockAnalysisDetails.name + 'abc',
+                    description: mockAnalysisDetails.description,
                 },
-                onEditAnalysisDetails: jest.fn(),
-                onEditAnalysisButtonPress: jest.fn(),
-            };
-            renderResult.rerender(<EditAnalysisDetails {...mockAnalysisDetails} />);
-
-            const analysisNameDescription = screen.getByDisplayValue(
-                mockAnalysisDetails.description
-            );
-            userEvent.type(analysisNameDescription, 'A');
-
-            const updateButton = screen.getByRole('button', { name: 'Save' });
-            userEvent.click(updateButton);
-
-            expect(mockAnalysisDetails.onEditAnalysisButtonPress).toBeCalledWith(
-                EAnalysisEdit.DETAILS,
-                EAnalysisEditButtonType.SAVE
-            );
-        });
-
-        it('should call the function when the cancel button is pressed', () => {
-            mockAnalysisDetails = {
-                name: 'test-name',
-                description: 'test-description',
-                updateEnabled: {
-                    name: true,
-                    description: true,
-                },
-                onEditAnalysisDetails: jest.fn(),
-                onEditAnalysisButtonPress: jest.fn(),
-            };
-            renderResult.rerender(<EditAnalysisDetails {...mockAnalysisDetails} />);
-
-            let analysisNameDescription = screen.getByDisplayValue(mockAnalysisDetails.description);
-            userEvent.type(analysisNameDescription, 'A');
-
-            const updateButton = screen.getByRole('button', { name: 'Cancel' });
-            userEvent.click(updateButton);
-
-            expect(mockAnalysisDetails.onEditAnalysisButtonPress).toBeCalledWith(
-                EAnalysisEdit.DETAILS,
-                EAnalysisEditButtonType.CANCEL
-            );
+            });
         });
     });
 
-    it('should call onEditAnalysisDetails when analysis name is edited', () => {
+    it('should update the textfield when name is edited', () => {
         const analysisNameTextbox = screen.getByDisplayValue(mockAnalysisDetails.name);
-        userEvent.type(analysisNameTextbox, 'A');
-        expect(mockAnalysisDetails.onEditAnalysisDetails).toBeCalledWith(
-            'name',
-            mockAnalysisDetails.name + 'A'
-        );
+        userEvent.type(analysisNameTextbox, 'abc');
+        expect(screen.getByDisplayValue(mockAnalysisDetails.name + 'abc')).toBeInTheDocument();
     });
 
-    it('should call onEditAnalysisDetails when analysis description is edited', () => {
-        const analysisNameDescription = screen.getByDisplayValue(mockAnalysisDetails.description);
-        userEvent.type(analysisNameDescription, 'A');
-        expect(mockAnalysisDetails.onEditAnalysisDetails).toBeCalledWith(
-            'description',
-            mockAnalysisDetails.description + 'A'
+    it('should update the textfield when description is edited', () => {
+        const analysisDescriptionTextbox = screen.getByDisplayValue(
+            mockAnalysisDetails.description
         );
+        userEvent.type(analysisDescriptionTextbox, 'abc');
+        expect(
+            screen.getByDisplayValue(mockAnalysisDetails.description + 'abc')
+        ).toBeInTheDocument();
     });
 
     it('should call the function when the delete button is clicked', () => {
-        const deleteAnalysisButton = screen.getByRole('button', { name: 'Delete this analysis' });
+        const deleteAnalysisButton = screen.getByRole('button', { name: 'delete analysis' });
         userEvent.click(deleteAnalysisButton);
-        expect(mockAnalysisDetails.onEditAnalysisButtonPress).toBeCalledWith(
-            EAnalysisEdit.DETAILS,
-            EAnalysisEditButtonType.DELETE
-        );
+
+        userEvent.click(screen.getByTestId('accept-close-confirmation'));
+
+        expect(useDeleteAnalysis().mutate).toHaveBeenCalledWith(mockAnalysisDetails.analysisId);
     });
 });

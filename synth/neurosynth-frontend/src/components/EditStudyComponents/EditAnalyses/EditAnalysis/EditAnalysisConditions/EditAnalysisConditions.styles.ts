@@ -3,11 +3,9 @@ import { Style } from '../../../../..';
 const EditAnalysisConditionsStyles: Style = {
     datagrid: {
         '& .readonly': {
-            color: 'darkgray',
+            color: 'gray',
             cursor: 'default',
-        },
-        '& .MuiDataGrid-overlay': {
-            color: 'secondary.main',
+            outline: 'none !important',
         },
     },
 };

@@ -1,4 +1,14 @@
-import { Box, Button, Dialog, DialogContent, DialogTitle, TextField } from '@mui/material';
+import {
+    Box,
+    Button,
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    TextField,
+    Typography,
+    IconButton,
+} from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import { ChangeEvent, useEffect, useState } from 'react';
 
 export interface ICreateDetailsDialog {
@@ -43,7 +53,16 @@ const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
 
     return (
         <Dialog open={props.isOpen} onClose={handleOnClose}>
-            <DialogTitle>{props.titleText}</DialogTitle>
+            <DialogTitle sx={{ display: 'flex' }}>
+                <Box sx={{ display: 'flex', flexGrow: 1, alignItems: 'center' }}>
+                    <Typography variant="h6">{props.titleText}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex' }}>
+                    <IconButton onClick={() => handleOnClose()}>
+                        <CloseIcon sx={{ fontSize: '2rem' }} />
+                    </IconButton>
+                </Box>
+            </DialogTitle>
             <DialogContent>
                 <TextField
                     label="Name"

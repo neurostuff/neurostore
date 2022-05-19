@@ -1,5 +1,5 @@
-import { IconButton, TextField, Button, CircularProgress } from '@mui/material';
-import { Box, SystemStyleObject } from '@mui/system';
+import { Box, IconButton, TextField, Button, CircularProgress } from '@mui/material';
+import { SystemStyleObject } from '@mui/system';
 import React, { useEffect, useState } from 'react';
 import EditIcon from '@mui/icons-material/Edit';
 import { useAuth0 } from '@auth0/auth0-react';

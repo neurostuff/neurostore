@@ -1,47 +1,36 @@
 import { act, render, RenderResult, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { EAnalysisEdit, EAnalysisEditButtonType } from '../..';
-import { ConditionApiResponse } from '../../../../../utils/api';
+import { IEditAnalysisConditions } from '../..';
 import EditAnalysisConditions from './EditAnalysisConditions';
+import { mockConditions, mockWeights } from 'testing/mockData';
+import { useUpdateAnalysis } from 'hooks';
+import { MockConditionSelected } from 'components/EditStudyComponents/EditAnalyses/EditAnalysis/EditAnalysisConditions/ConditionSelector/__mocks__/ConditionSelector';
 
+jest.mock('react-query');
 jest.mock('./ConditionSelector/ConditionSelector');
+jest.mock('hooks');
 
 describe('EditAnalysisConditions Component', () => {
     let renderResult: RenderResult;
-    const mockOnConditionWeightChange = jest.fn();
-    const mockOnEditAnalysisButtonPress = jest.fn();
+    let conditionsDetails: IEditAnalysisConditions;
 
     afterAll(() => {
         jest.clearAllMocks();
     });
 
-    const mockConditions: ConditionApiResponse[] = [
-        {
-            name: 'name-condition-1',
-            description: 'description-condition-1',
-            id: 'id-condition-1',
-            created_at: '',
-            user: 'github|user-1',
-        },
-    ];
-
-    const mockWeights: number[] = [1];
-
-    beforeEach(() => {
-        renderResult = render(
-            <EditAnalysisConditions
-                updateEnabled={false}
-                onConditionWeightChange={mockOnConditionWeightChange}
-                onEditAnalysisButtonPress={mockOnEditAnalysisButtonPress}
-                conditions={mockConditions}
-                weights={mockWeights}
-            />
-        );
+    afterEach(() => {
+        (useUpdateAnalysis().mutate as jest.Mock).mockClear();
     });
 
-    afterEach(() => {
-        mockOnConditionWeightChange.mockClear();
-        mockOnEditAnalysisButtonPress.mockClear();
+    beforeEach(() => {
+        conditionsDetails = {
+            studyId: 'test-studyId',
+            analysisId: 'test-analysisId',
+            conditions: mockConditions(),
+            weights: mockWeights(),
+        };
+
+        renderResult = render(<EditAnalysisConditions {...conditionsDetails} />);
     });
 
     it('should render', () => {
@@ -49,63 +38,17 @@ describe('EditAnalysisConditions Component', () => {
         expect(titleText).toBeInTheDocument();
     });
 
-    describe('buttons', () => {
-        it('should initally have the save button be disabled', () => {
-            const saveButton = screen.getByRole('button', { name: 'Save' });
-            expect(saveButton).toBeDisabled();
-        });
-
-        it('should initially have the cancel button be disabled', () => {
-            const cancelButton = screen.getByRole('button', { name: 'Cancel' });
-            expect(cancelButton).toBeDisabled();
-        });
-
-        it('should enable the save button when update flag is enabled', async () => {
-            renderResult.rerender(
-                <EditAnalysisConditions
-                    updateEnabled={true}
-                    onConditionWeightChange={mockOnConditionWeightChange}
-                    onEditAnalysisButtonPress={mockOnEditAnalysisButtonPress}
-                    conditions={mockConditions}
-                    weights={mockWeights}
-                />
-            );
-            const saveButton = screen.getByRole('button', { name: 'Save' });
-            expect(saveButton).toBeEnabled();
-        });
-
-        it('should enable the cancel button when update flag is enabled', () => {
-            renderResult.rerender(
-                <EditAnalysisConditions
-                    updateEnabled={true}
-                    onConditionWeightChange={mockOnConditionWeightChange}
-                    onEditAnalysisButtonPress={mockOnEditAnalysisButtonPress}
-                    conditions={mockConditions}
-                    weights={mockWeights}
-                />
-            );
-            const cancelButton = screen.getByRole('button', { name: 'Cancel' });
-            expect(cancelButton).toBeEnabled();
-        });
-    });
-
     it('should call the function when a new condition is selected', () => {
         const addConditionButton = screen.getByTestId('mock-condition-selector');
         userEvent.click(addConditionButton);
 
-        expect(mockOnConditionWeightChange).toBeCalledWith(
-            [
-                ...mockConditions,
-                {
-                    name: 'mock-selected-condition-name',
-                    description: 'mock-selected-condition-description',
-                    id: 'mock-id-1',
-                    created_at: '',
-                    user: 'github|user-1',
-                },
-            ],
-            [1, 1]
-        );
+        expect(useUpdateAnalysis().mutate).toHaveBeenCalledWith({
+            analysisId: conditionsDetails.analysisId,
+            analysis: {
+                conditions: [...mockConditions().map((x) => x?.id || ''), MockConditionSelected.id],
+                weights: [...mockWeights(), 1],
+            },
+        });
     });
 
     it('should disable the first cell', () => {
@@ -124,95 +67,54 @@ describe('EditAnalysisConditions Component', () => {
         await act(async () => {
             userEvent.type(input, '{enter}');
         });
-        expect(mockOnConditionWeightChange).toBeCalledWith(mockConditions, [0.5]);
+
+        const expectedWeights = conditionsDetails.weights as number[];
+        expectedWeights[0] = 0.5;
+
+        expect(useUpdateAnalysis().mutate).toHaveBeenCalledWith({
+            analysisId: conditionsDetails.analysisId,
+            analysis: {
+                conditions: (conditionsDetails?.conditions || []).map((x) => x?.id || ''),
+                weights: expectedWeights,
+            },
+        });
     });
 
     it('should not update the table if the condition already exists', () => {
-        const newMockConditions = [
-            {
-                name: 'mock-selected-condition-name',
-                description: 'mock-selected-condition-description',
-                id: 'mock-id-1',
-                created_at: '',
-                user: 'github|user-1',
-            },
-        ];
+        conditionsDetails = {
+            ...conditionsDetails,
+            conditions: [{ ...MockConditionSelected }],
+            weights: [1],
+        };
 
-        renderResult.rerender(
-            <EditAnalysisConditions
-                updateEnabled={false}
-                onConditionWeightChange={mockOnConditionWeightChange}
-                onEditAnalysisButtonPress={mockOnEditAnalysisButtonPress}
-                conditions={newMockConditions}
-                weights={mockWeights}
-            />
-        );
+        renderResult.rerender(<EditAnalysisConditions {...conditionsDetails} />);
 
         const addConditionButton = screen.getByTestId('mock-condition-selector');
         userEvent.click(addConditionButton);
 
-        expect(mockOnConditionWeightChange).not.toBeCalled();
+        expect(useUpdateAnalysis().mutate).not.toHaveBeenCalled();
     });
 
     it('should call the function when the delete button is clicked', async () => {
-        const deleteButton = screen.getByRole('button', { name: 'Delete' });
+        conditionsDetails = {
+            ...conditionsDetails,
+            conditions: [{ ...MockConditionSelected }],
+            weights: [1],
+        };
+
+        renderResult.rerender(<EditAnalysisConditions {...conditionsDetails} />);
+
+        const deleteButton = screen.getByRole('button', { name: 'delete' });
         await act(async () => {
             userEvent.click(deleteButton);
         });
 
-        expect(mockOnConditionWeightChange).toBeCalledWith([], []);
-    });
-
-    it('should save the state when the save button is clicked', () => {
-        renderResult.rerender(
-            <EditAnalysisConditions
-                updateEnabled={true}
-                onConditionWeightChange={mockOnConditionWeightChange}
-                onEditAnalysisButtonPress={mockOnEditAnalysisButtonPress}
-                conditions={mockConditions}
-                weights={mockWeights}
-            />
-        );
-
-        const saveButton = screen.getByRole('button', { name: 'Save' });
-        userEvent.click(saveButton);
-        expect(mockOnEditAnalysisButtonPress).toBeCalledWith(
-            EAnalysisEdit.CONDITIONS,
-            EAnalysisEditButtonType.SAVE
-        );
-    });
-
-    it('should cancel the changes when the cancel button is clicked', () => {
-        renderResult.rerender(
-            <EditAnalysisConditions
-                updateEnabled={true}
-                onConditionWeightChange={mockOnConditionWeightChange}
-                onEditAnalysisButtonPress={mockOnEditAnalysisButtonPress}
-                conditions={mockConditions}
-                weights={mockWeights}
-            />
-        );
-
-        const saveButton = screen.getByRole('button', { name: 'Cancel' });
-        userEvent.click(saveButton);
-        expect(mockOnEditAnalysisButtonPress).toBeCalledWith(
-            EAnalysisEdit.CONDITIONS,
-            EAnalysisEditButtonType.CANCEL
-        );
-    });
-
-    it('should show the unsaved changes text when there are unsaved changes', () => {
-        renderResult.rerender(
-            <EditAnalysisConditions
-                updateEnabled={true}
-                onConditionWeightChange={mockOnConditionWeightChange}
-                onEditAnalysisButtonPress={mockOnEditAnalysisButtonPress}
-                conditions={mockConditions}
-                weights={mockWeights}
-            />
-        );
-
-        const unsavedChangesText = screen.getByText('unsaved changes');
-        expect(unsavedChangesText).toBeInTheDocument();
+        expect(useUpdateAnalysis().mutate).toBeCalledWith({
+            analysisId: conditionsDetails.analysisId,
+            analysis: {
+                conditions: [],
+                weights: [],
+            },
+        });
     });
 });

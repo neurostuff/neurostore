@@ -1,5 +1,4 @@
-import { Typography } from '@mui/material';
-import { Box } from '@mui/system';
+import { Typography, Box } from '@mui/material';
 import { useEffect, useState } from 'react';
 import {
     DisplayValuesTable,
@@ -8,20 +7,20 @@ import {
     DisplayImagesTable,
     Visualizer,
     NeurosynthAccordion,
-} from '..';
+} from 'components';
 import {
     AnalysisApiResponse,
     ConditionApiResponse,
     ImageApiResponse,
     PointApiResponse,
-} from '../../utils/api';
+} from 'utils/api';
 import DisplayAnalysisStyles from './DisplayAnalysis.styles';
 
 const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
     const [selectedImage, setSelectedImage] = useState<ImageApiResponse | undefined>(undefined);
 
     useEffect(() => {
-        const images = props.images as ImageApiResponse[];
+        const images = props?.images as ImageApiResponse[];
         if (!images || images.length === 0) {
             // images does not exist or is empty
             setSelectedImage(undefined);
@@ -41,14 +40,10 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
             }
             setSelectedImage(currentImage);
         }
-    }, [props.images]);
+    }, [props?.images]);
 
     if (!props || Object.keys(props).length === 0) {
-        return (
-            <Box component="span" sx={{ color: 'warning.dark' }}>
-                No analysis
-            </Box>
-        );
+        return <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No analysis</Box>;
     }
 
     const coordinateDataForTable: IDisplayValuesTableModel = {
@@ -84,7 +79,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
             columnValues: [
                 {
                     value: point.coordinates ? point?.coordinates[0] : undefined,
-                    colorByType: false,
+                    colorByType: true,
                     center: false,
                     bold: false,
                 },
@@ -164,46 +159,26 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                 />
                 <Box sx={[DisplayAnalysisStyles.spaceBelow, { width: '100%' }]}>
                     <NeurosynthAccordion
-                        TitleElement={<>Conditions</>}
+                        TitleElement={<Typography>Conditions</Typography>}
                         defaultExpanded={conditionsForTable.rowData.length > 0}
                         elevation={4}
                     >
-                        {(props?.conditions || []).length > 0 && (
-                            <DisplayValuesTable {...conditionsForTable} />
-                        )}
-                        {(props.conditions || []).length === 0 && (
-                            <Box component="span" sx={{ color: 'warning.dark' }}>
-                                No conditions
-                            </Box>
-                        )}
+                        <DisplayValuesTable {...conditionsForTable} />
                     </NeurosynthAccordion>
                 </Box>
-                <Box
-                    sx={[
-                        DisplayAnalysisStyles.spaceBelow,
-                        DisplayAnalysisStyles.removeTablePadding,
-                        { width: '100%' },
-                    ]}
-                >
+                <Box sx={[DisplayAnalysisStyles.spaceBelow, { width: '100%' }]}>
                     <NeurosynthAccordion
-                        TitleElement={<>Coordinates</>}
+                        TitleElement={<Typography>Coordinates</Typography>}
                         defaultExpanded={coordinateDataForTable.rowData.length > 0}
                         elevation={4}
                     >
-                        {(props?.points || []).length > 0 && (
-                            <DisplayValuesTable {...coordinateDataForTable} />
-                        )}
-                        {(props.points || []).length === 0 && (
-                            <Box component="span" sx={{ color: 'warning.dark' }}>
-                                No coordinates
-                            </Box>
-                        )}
+                        <DisplayValuesTable {...coordinateDataForTable} />
                     </NeurosynthAccordion>
                 </Box>
                 <Box sx={DisplayAnalysisStyles.spaceBelow}>
                     <NeurosynthAccordion
-                        TitleElement={<>Images</>}
-                        defaultExpanded={props.images && props.images.length > 0}
+                        TitleElement={<Typography>Images</Typography>}
+                        defaultExpanded={(props?.images || []).length > 0}
                         elevation={4}
                     >
                         <DisplayImagesTable

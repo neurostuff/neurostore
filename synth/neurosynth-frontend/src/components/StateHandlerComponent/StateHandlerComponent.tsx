@@ -1,4 +1,4 @@
-import { CircularProgress, Typography } from '@mui/material';
+import { CircularProgress, Typography, Box } from '@mui/material';
 
 export interface IStateHandlerComponent {
     isError: boolean;
@@ -18,10 +18,10 @@ const StateHandlerComponent: React.FC<IStateHandlerComponent> = (props) => {
 
     if (props.isLoading) {
         return (
-            <>
+            <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
                 <CircularProgress />
                 <Typography>{props.loadingText || ''}</Typography>
-            </>
+            </Box>
         );
     }
 

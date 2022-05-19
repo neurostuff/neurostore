@@ -108,4 +108,12 @@ describe('CreateDetailsDialog', () => {
 
         expect(mockOnCreateStudyset).toBeCalledWith('ABC', '');
     });
+
+    it('should close when clicked away', () => {
+        expect(true).toBeFalsy();
+    });
+
+    it('should close when the close icon button is clicked', () => {
+        expect(true).toBeFalsy();
+    });
 });

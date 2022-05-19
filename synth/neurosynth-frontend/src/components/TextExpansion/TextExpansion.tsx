@@ -1,5 +1,5 @@
-import { Button, Typography } from '@mui/material';
-import { Box, SxProps, Theme } from '@mui/system';
+import { Box, Button, Typography } from '@mui/material';
+import { SxProps, Theme } from '@mui/system';
 import React, { useEffect, useRef, useState } from 'react';
 import TextExpansionStyles from './TextExpansion.styles';
 

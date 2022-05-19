@@ -1,5 +1,4 @@
-import { IMetaAnalysisParamsSpecification } from '../components/MetaAnalysisConfigComponents';
-import { StudysetReturn } from '../neurostore-typescript-sdk';
+import { StudysetReturn, StudyReturn } from '../neurostore-typescript-sdk';
 import { AnalysisApiResponse, AnnotationsApiResponse, ConditionApiResponse } from '../utils/api';
 
 const mockConditions: () => ConditionApiResponse[] = () => [
@@ -625,4 +624,95 @@ const mockAnnotations: () => AnnotationsApiResponse[] = () => [
         ],
     },
 ];
-export { mockConditions, mockWeights, mockAnalyses, mockStudysets, mockAnnotations };
+
+const mockStudy: () => StudyReturn = () => ({
+    source: 'neurostore',
+    source_id: '7f66YLxzjPKk',
+    doi: 'NaN',
+    name: 'Amygdala-hippocampal involvement in human aversive trace conditioning revealed through event-related functional magnetic resonance imaging.',
+    authors: 'Buchel C, Dolan RJ, Armony JL, Friston KJ',
+    id: '4ZhkLTH8k2P6',
+    user: 'github|26612023',
+    updated_at: null,
+    source_updated_at: '2022-04-28T16:23:11.548030+00:00',
+    publication:
+        'The Journal of neuroscience : the official journal of the Society for Neuroscience',
+    created_at: '2022-05-18T19:38:15.262996+00:00',
+    analyses: [
+        {
+            description: null,
+            weights: [1],
+            name: '27022',
+            id: '3HQ2ikWZS9AQ',
+            user: 'github|26612023',
+            updated_at: null,
+            created_at: '2022-05-18T19:38:15.262996+00:00',
+            study: '4ZhkLTH8k2P6',
+            points: [
+                {
+                    values: [],
+                    entities: [
+                        {
+                            id: '3bchqggmCasN',
+                            updated_at: null,
+                            label: '27022',
+                            created_at: '2022-05-18T19:38:15.262996+00:00',
+                            level: 'group',
+                            analysis: '4YemgCnVZ6Jy',
+                        },
+                    ],
+                    label_id: null,
+                    kind: 'unknown',
+                    id: '5GukSAJYMECY',
+                    coordinates: [-24, -15, -24],
+                    user: 'github|26612023',
+                    updated_at: null,
+                    analysis: '3HQ2ikWZS9AQ',
+                    image: null,
+                    created_at: '2022-05-18T19:38:15.262996+00:00',
+                    space: 'MNI',
+                },
+                {
+                    values: [],
+                    entities: [
+                        {
+                            id: '5pxLd3s6jbxn',
+                            updated_at: null,
+                            label: '27022',
+                            created_at: '2022-05-18T19:38:15.262996+00:00',
+                            level: 'group',
+                            analysis: '4YemgCnVZ6Jy',
+                        },
+                    ],
+                    label_id: null,
+                    kind: 'unknown',
+                    id: '7pbfsGutVEdy',
+                    coordinates: [-21, -6, -24],
+                    user: 'github|26612023',
+                    updated_at: null,
+                    analysis: '3HQ2ikWZS9AQ',
+                    image: null,
+                    created_at: '2022-05-18T19:38:15.262996+00:00',
+                    space: 'MNI',
+                },
+            ],
+            images: [],
+            conditions: [
+                {
+                    name: 'atharth',
+                    id: 'oR6G6HzvPdiK',
+                    user: 'github|26612023',
+                    updated_at: null,
+                    created_at: '2022-05-13T21:55:17.388650+00:00',
+                    description: 'arhtartharth',
+                },
+            ],
+        },
+    ],
+    description: null,
+    year: 1999,
+    metadata: null,
+    pmid: '10594068',
+});
+
+export { mockConditions, mockWeights, mockAnalyses, mockStudysets, mockAnnotations, mockStudy };

@@ -58,7 +58,10 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
                     isOptionEqualToValue={(option, value) => option?.label === value?.label}
                     renderOption={(params, option) => (
                         <ListItem {...params}>
-                            <ListItemText primary={option.label} secondary={option.description} />
+                            <ListItemText
+                                primary={option?.label || ''}
+                                secondary={option?.description || ''}
+                            />
                         </ListItem>
                     )}
                     value={props.estimator || null}
@@ -111,7 +114,10 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
                     isOptionEqualToValue={(option, value) => option?.label === value?.label}
                     renderOption={(params, option) => (
                         <ListItem {...params}>
-                            <ListItemText primary={option.label} secondary={option.description} />
+                            <ListItemText
+                                primary={option?.label || ''}
+                                secondary={option?.description || ''}
+                            />
                         </ListItem>
                     )}
                     value={props.corrector || null}

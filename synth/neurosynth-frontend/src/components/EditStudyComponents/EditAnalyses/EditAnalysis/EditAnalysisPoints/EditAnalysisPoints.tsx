@@ -1,199 +1,208 @@
-import { Box, Typography, Button, MenuItem, MenuList } from '@mui/material';
-import { DataGrid, GridCallbackDetails, GridSelectionModel } from '@mui/x-data-grid';
-import React, { useRef, useState } from 'react';
+import { Box, Button } from '@mui/material';
+import {
+    DataGrid,
+    GridColumns,
+    GridCellEditCommitParams,
+    MuiEvent,
+    MuiBaseEvent,
+    GridCallbackDetails,
+} from '@mui/x-data-grid';
+import React, { useCallback, useState } from 'react';
+import { useIsFetching } from 'react-query';
 import { IEditAnalysisPoints } from '../..';
-import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
-import AddIcon from '@mui/icons-material/Add';
-import { NeurosynthPopper } from '../../../..';
+import { useCreatePoint, useDeletePoint, useUpdatePoint, useUpdateAnalysis } from 'hooks';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
+import AnalysisPointsHeader from './AnalysisPointsHeader';
 
-const NeurosynthDataGridHeader: React.FC<{ selectedPoints: GridSelectionModel }> = (props) => {
-    const [popperIsOpen, setPopperIsOpen] = useState(false);
-    const buttonRef = useRef<HTMLButtonElement>(null);
-
-    const handleClickClose = () => {
-        setPopperIsOpen(false);
-    };
+const AnalysisPointsDeleteButton: React.FC<{
+    pointId: string;
+    onDeletePoint: (pointId: string) => void;
+}> = (props) => {
+    const [dialogIsOpen, setDialogIsOpen] = useState(false);
 
     return (
         <>
-            {props.selectedPoints.length === 0 && <></>}
-            {props.selectedPoints.length > 0 && (
-                <Box
-                    sx={{
-                        height: '60px',
-                        borderBottom: '1px solid lightgray',
-                        display: 'flex',
-                        alignItems: 'center',
-                    }}
-                >
-                    <Typography sx={{ margin: '0 1rem' }} variant="h6">
-                        {props.selectedPoints.length} point(s) selected
-                    </Typography>
-
-                    <Button
-                        onClick={() => setPopperIsOpen(true)}
-                        ref={buttonRef}
-                        sx={{ margin: '0 1rem' }}
-                        variant="outlined"
-                        startIcon={<CompareArrowsIcon />}
-                    >
-                        Move points to another analysis
-                    </Button>
-                    <NeurosynthPopper
-                        onClickAway={handleClickClose}
-                        anchorElement={buttonRef.current}
-                        open={popperIsOpen}
-                    >
-                        <MenuList>
-                            <MenuItem>14646</MenuItem>
-                            <MenuItem>14644</MenuItem>
-                        </MenuList>
-                    </NeurosynthPopper>
-                </Box>
-            )}
+            <ConfirmationDialog
+                isOpen={dialogIsOpen}
+                confirmText="yes"
+                rejectText="no"
+                dialogTitle="Are you sure you want to delete this point?"
+                onCloseDialog={(confirmed) => {
+                    if (confirmed) props.onDeletePoint(props.pointId);
+                    setDialogIsOpen(false);
+                }}
+            />
+            <Button color="error" variant="text" onClick={() => setDialogIsOpen(true)}>
+                delete
+            </Button>
         </>
     );
 };
 
-const EditAnalysisPoints: React.FC<IEditAnalysisPoints> = (props) => {
-    const [selectedPoints, setSelectedPoints] = useState<GridSelectionModel>([]);
+const ROW_HEIGHT = 52;
 
-    const handleSelection = (selected: GridSelectionModel, _details: GridCallbackDetails) => {
-        setSelectedPoints(selected);
+const EditAnalysisPoints: React.FC<IEditAnalysisPoints> = (props) => {
+    const { isLoading: createPointIsLoading, mutate: createPoint } = useCreatePoint();
+    const { isLoading: updatePointIsLoading, mutate: updatePoint } = useUpdatePoint();
+    const { isLoading: deletePointIsLoading, mutate: deletePoint } = useDeletePoint();
+    const { isLoading: updateAnalysisIsLoading, mutate: updateAnalysis } = useUpdateAnalysis();
+    const isFetching = useIsFetching(['studies', props.studyId]);
+
+    const handleOnDelete = useCallback(
+        (pointId: string) => {
+            deletePoint(pointId);
+        },
+        [deletePoint]
+    );
+
+    const tableColumns: GridColumns = [
+        {
+            field: 'x',
+            headerAlign: 'left',
+            align: 'left',
+            headerName: 'X Coordinate',
+            editable: true,
+            flex: 1,
+            type: 'number',
+        },
+        {
+            field: 'y',
+            headerAlign: 'left',
+            align: 'left',
+            headerName: 'Y Coordinate',
+            editable: true,
+            flex: 1,
+            type: 'number',
+        },
+        {
+            field: 'z',
+            headerAlign: 'left',
+            align: 'left',
+            headerName: 'Z Coordinate',
+            editable: true,
+            flex: 1,
+            type: 'number',
+        },
+        {
+            field: 'kind',
+            headerName: 'kind',
+            editable: true,
+            flex: 1.5,
+            type: 'string',
+            align: 'left',
+            headerAlign: 'left',
+        },
+        {
+            field: 'space',
+            headerName: 'space',
+            editable: true,
+            flex: 1.5,
+            type: 'string',
+            align: 'left',
+            headerAlign: 'left',
+        },
+        {
+            field: 'delete',
+            headerName: 'Actions',
+            headerAlign: 'left',
+            align: 'left',
+            editable: false,
+            width: 90,
+            renderCell: (params) => (
+                <AnalysisPointsDeleteButton
+                    pointId={params.id as string}
+                    onDeletePoint={handleOnDelete}
+                />
+            ),
+        },
+    ];
+
+    const handleCellEditCommit = (
+        params: GridCellEditCommitParams,
+        _event: MuiEvent<MuiBaseEvent>,
+        _details: GridCallbackDetails
+    ) => {
+        updatePoint({
+            pointId: params.id as string,
+            point: {
+                [params.field]: params.value,
+            },
+        });
     };
 
-    const handleDelete = () => {};
+    const handleCreatePoint = () => {
+        createPoint(props.analysisId || '');
+    };
+
+    const handleMovePoints = (pointsToAnalysisId: string, pointIdsToMove: string[]) => {
+        updateAnalysis({
+            analysisId: pointsToAnalysisId,
+            analysis: {
+                points: pointIdsToMove,
+            },
+        });
+    };
+
+    const rows = (props.points || [])
+        .sort((a, b) => {
+            const dateA = Date.parse(a.created_at || '');
+            const dateB = Date.parse(b.created_at || '');
+            if (isNaN(dateA) || isNaN(dateB)) {
+                return 0;
+            }
+
+            return dateB - dateA;
+        })
+        .map((point, index) => ({
+            id: point.id || index,
+            x: (point?.coordinates || [])[0] || 0,
+            y: (point?.coordinates || [])[1] || 0,
+            z: (point?.coordinates || [])[2] || 0,
+            kind: point.kind,
+            space: point.space,
+        }));
+
+    // 70 is the height of the AnalysisPointsHeader
+    // add one for the column header
+    const totalTableHeight = 70 + (rows.length + 1) * ROW_HEIGHT;
 
     return (
-        <>
-            <Button sx={{ marginBottom: '1rem' }} endIcon={<AddIcon />} variant="outlined">
-                Add points to analysis
-            </Button>
-            <Box sx={{ height: '500px', overflow: 'auto' }}>
-                <DataGrid
-                    hideFooter
-                    onSelectionModelChange={handleSelection}
-                    checkboxSelection
-                    components={{
-                        Toolbar: NeurosynthDataGridHeader,
-                    }}
-                    componentsProps={{
-                        toolbar: {
-                            selectedPoints: selectedPoints,
-                        },
-                    }}
-                    rows={[
-                        {
-                            id: '1',
-                            x: 2,
-                            y: 1,
-                            z: 2,
-                        },
-                        {
-                            id: '2',
-                            x: 2,
-                            y: 1,
-                            z: 2,
-                        },
-                        {
-                            id: '3',
-                            x: 2,
-                            y: 1,
-                            z: 2,
-                        },
-                        {
-                            id: '4',
-                            x: 2,
-                            y: 1,
-                            z: 2,
-                        },
-                        {
-                            id: '5',
-                            x: 2,
-                            y: 1,
-                            z: 2,
-                        },
-                        {
-                            id: '6',
-                            x: 2,
-                            y: 1,
-                            z: 2,
-                        },
-                        {
-                            id: '7',
-                            x: 2,
-                            y: 1,
-                            z: 2,
-                        },
-                        {
-                            id: '8',
-                            x: 2,
-                            y: 1,
-                            z: 2,
-                        },
-                        {
-                            id: '9',
-                            x: 2,
-                            y: 1,
-                            z: 2,
-                        },
-                        {
-                            id: '10',
-                            x: 2,
-                            y: 1,
-                            z: 2,
-                        },
-                    ]}
-                    columns={[
-                        {
-                            field: 'x',
-                            headerName: 'X Coordinate',
-                            editable: true,
-                            flex: 1,
-                        },
-                        {
-                            field: 'y',
-                            headerName: 'Y Coordinate',
-                            editable: true,
-                            flex: 1,
-                        },
-                        {
-                            field: 'z',
-                            headerName: 'Z Coordinate',
-                            editable: true,
-                            flex: 1,
-                        },
-                        {
-                            field: 'kind',
-                            headerName: 'kind',
-                            editable: true,
-                            flex: 1.5,
-                        },
-                        {
-                            field: 'space',
-                            headerName: 'space',
-                            editable: true,
-                            flex: 1.5,
-                        },
-                        {
-                            field: 'delete',
-                            headerName: '',
-                            editable: false,
-                            width: 100,
-                            renderCell: (params) => {
-                                console.log(params);
-
-                                return (
-                                    <Button color="error" onClick={(_event) => {}}>
-                                        Delete
-                                    </Button>
-                                );
-                            },
-                        },
-                    ]}
-                />
-            </Box>
-        </>
+        <Box sx={{ height: totalTableHeight < 600 ? `${totalTableHeight}px` : '600px' }}>
+            <DataGrid
+                sx={{
+                    '.MuiDataGrid-columnSeparator': {
+                        display: 'none',
+                    },
+                }}
+                loading={
+                    createPointIsLoading ||
+                    deletePointIsLoading ||
+                    updatePointIsLoading ||
+                    updateAnalysisIsLoading ||
+                    isFetching > 0
+                }
+                autoHeight={totalTableHeight < 600}
+                showCellRightBorder
+                onCellEditCommit={handleCellEditCommit}
+                disableSelectionOnClick
+                hideFooter
+                rowHeight={ROW_HEIGHT}
+                checkboxSelection
+                components={{
+                    Toolbar: AnalysisPointsHeader,
+                }}
+                componentsProps={{
+                    toolbar: {
+                        studyId: props.studyId,
+                        analysisId: props.analysisId,
+                        onCreatePoint: handleCreatePoint,
+                        onMovePoints: handleMovePoints,
+                    },
+                }}
+                rows={rows}
+                columns={tableColumns}
+            />
+        </Box>
     );
 };
 

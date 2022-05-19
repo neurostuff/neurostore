@@ -2,10 +2,6 @@ import { render } from '@testing-library/react';
 import { IEditAnalysisPoints } from '../..';
 import EditAnalysisPoints from './EditAnalysisPoints';
 
-/**
- * Placeholder test
- */
-
 describe('EditAnalysisPoints Component', () => {
     afterAll(() => {
         jest.clearAllMocks();

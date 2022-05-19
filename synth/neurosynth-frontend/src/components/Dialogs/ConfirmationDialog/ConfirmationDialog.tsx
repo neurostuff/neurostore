@@ -5,6 +5,7 @@ import {
     DialogContent,
     DialogContentText,
     DialogTitle,
+    Typography,
     IconButton,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -21,12 +22,16 @@ export interface IConfirmationDialog {
 const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
     return (
         <Dialog open={props.isOpen} onClose={() => props.onCloseDialog(undefined)}>
-            <Box sx={{ marginLeft: 'auto' }}>
-                <IconButton onClick={() => props.onCloseDialog(undefined)}>
-                    <CloseIcon sx={{ fontSize: '2rem' }} />
-                </IconButton>
-            </Box>
-            <DialogTitle sx={{ paddingTop: 0 }}>{props.dialogTitle}</DialogTitle>
+            <DialogTitle sx={{ display: 'flex' }}>
+                <Box sx={{ display: 'flex', flexGrow: 1, alignItems: 'center' }}>
+                    <Typography variant="h6">{props.dialogTitle}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex' }}>
+                    <IconButton onClick={() => props.onCloseDialog(undefined)}>
+                        <CloseIcon sx={{ fontSize: '2rem' }} />
+                    </IconButton>
+                </Box>
+            </DialogTitle>
             <DialogContent>
                 {props.dialogMessage && (
                     <DialogContentText sx={{ marginBottom: '1rem' }}>

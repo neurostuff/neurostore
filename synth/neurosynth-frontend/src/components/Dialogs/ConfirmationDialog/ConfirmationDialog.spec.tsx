@@ -78,4 +78,8 @@ describe('ConfirmationDialog', () => {
         userEvent.type(button, '{esc}');
         expect(mockOnClose).toBeCalledWith(undefined);
     });
+
+    it('should close when close icon button is clicked', () => {
+        expect(true).toBeFalsy();
+    });
 });

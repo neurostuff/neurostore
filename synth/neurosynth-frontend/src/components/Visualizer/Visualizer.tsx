@@ -1,5 +1,6 @@
-import { Box, SystemStyleObject } from '@mui/system';
+import { SystemStyleObject } from '@mui/system';
 import { useEffect } from 'react';
+import { Box } from '@mui/material';
 import VisualizerStyles from './Visualizer.styles';
 
 export interface VisualizerModel {

@@ -7,9 +7,8 @@ import oxfordLogo from '../../assets/images/oxfordlogo.png';
 import stanfordLogo from '../../assets/images/stanfordlogo.png';
 import origamiLogo from '../../assets/images/origamilogo.png';
 
-import { Divider, Typography } from '@mui/material';
+import { Divider, Typography, Box } from '@mui/material';
 import LandingPageStyles from './LandingPage.styles';
-import { Box } from '@mui/system';
 
 const LandingPage = () => {
     const logos: { logo: string; alt: string }[] = [

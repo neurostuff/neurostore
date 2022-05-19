@@ -1,8 +1,8 @@
-import { Box, Typography, Paper, Button } from '@mui/material';
+import { Box, Typography, Paper, Button, Link } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import { CodeSnippet, StateHandlerComponent, TextEdit } from '../../../components';
 import { useGetMetaAnalysisById } from '../../../hooks';
-import useUpdateMetaAnalysisById from '../../../hooks/requests/useUpdateMetaAnalysisById';
+import useUpdateMetaAnalysis from '../../../hooks/requests/useUpdateMetaAnalysis';
 import {
     AnnotationReturn,
     SpecificationReturn,
@@ -17,7 +17,7 @@ const MetaAnalysisPage: React.FC = (props) => {
         isError: getMetaAnalysisIsError,
         isLoading: getMetaAnalysisIsLoading,
     } = useGetMetaAnalysisById(metaAnalysisId);
-    const { mutateAsync } = useUpdateMetaAnalysisById();
+    const { mutateAsync } = useUpdateMetaAnalysis();
 
     // get request is set to nested: true so below casting is safe
     const specification = data?.specification as SpecificationReturn;
@@ -83,7 +83,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                 </TextEdit>
             </Box>
             <Box>
-                <Typography variant="h6" sx={{ marginBottom: '2rem', fontWeight: 'bold' }}>
+                <Typography variant="h6" sx={{ marginBottom: '2rem' }}>
                     This meta-analysis has not been run yet. Run your meta-analysis using one of the
                     following methods:
                 </Typography>
@@ -92,15 +92,20 @@ const MetaAnalysisPage: React.FC = (props) => {
                     <Typography sx={{ fontWeight: 'bold', marginBottom: '1rem' }}>
                         run your meta-analysis via google colab
                     </Typography>
+                    <Typography sx={{ marginBottom: '0.5rem' }}>
+                        copy the meta-analysis id below and then click the button to open google
+                        collab
+                    </Typography>
                     <CodeSnippet linesOfCode={[`${data?.id}`]} />
                     <Button
                         sx={{ marginTop: '1rem' }}
-                        onClick={() =>
-                            alert('this has not been implemented yet. Please check again later')
-                        }
                         variant="contained"
+                        component={Link}
+                        target="_blank"
+                        rel="noopener"
+                        href="https://githubtocolab.com/neurostuff/neurosynth-compose-notebook/blob/main/run_and_explore.ipynb"
                     >
-                        open google colab
+                        open google collab
                     </Button>
                 </Paper>
 
