@@ -12,10 +12,6 @@ from .resolver import MethodListViewResolver
 from .database import init_db
 
 
-def custom_resolver(*args, **kwargs):
-    pass
-
-
 def get_bundled_specs(main_file: Path) -> Dict[str, Any]:
     parser = prance._TranslatingParser(str(main_file.absolute()),
                                        lazy=True, backend='openapi-spec-validator',
