@@ -1,14 +1,11 @@
 import { Box, Typography, Paper, Button } from '@mui/material';
-import { NavigationButtons, LoadingButton } from '../..';
+import { LoadingButton } from 'components';
 import {
     EAnalysisType,
     IMetaAnalysisComponents,
     IEstimatorCorrectorArgs,
 } from 'pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
-import {
-    ENavigationButton,
-    INavigationButtonFn,
-} from '../../Buttons/NavigationButtons/NavigationButtons';
+import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import DynamicInputDisplay from './DynamicInputDisplay/DynamicInputDisplay';
 import MetaAnalysisSummaryRow from './MetaAnalysisSummaryRow/MetaAnalysisSummaryRow';
 import MetaAnalysisFinalizeStyles from './MetaAnalysisFinalize.styles';
@@ -19,7 +16,7 @@ import { useContext } from 'react';
 import { GlobalContext, SnackbarType } from 'contexts/GlobalContext';
 
 interface IMetaAnalysisFinalize extends IMetaAnalysisComponents, IEstimatorCorrectorArgs {
-    onNext: INavigationButtonFn;
+    onNavigate: (button: ENavigationButton) => void;
 }
 
 const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
@@ -52,6 +49,10 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
             .catch((err) => {
                 showSnackbar('there was an error', SnackbarType.ERROR);
             });
+    };
+
+    const handleNavigation = (_event: React.MouseEvent) => {
+        props.onNavigate(ENavigationButton.PREV);
     };
 
     return (
@@ -130,11 +131,7 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
             </Paper>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Button
-                    sx={{ fontSize: '1rem' }}
-                    onClick={() => props.onNext(ENavigationButton.PREV)}
-                    variant="outlined"
-                >
+                <Button sx={{ fontSize: '1rem' }} onClick={handleNavigation} variant="outlined">
                     back
                 </Button>
                 <LoadingButton

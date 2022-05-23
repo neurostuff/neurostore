@@ -3,11 +3,11 @@ import React, { SyntheticEvent, useState } from 'react';
 import EditAnalysisDetails from './EditAnalysisDetails/EditAnalysisDetails';
 import EditAnalysisPoints from './EditAnalysisPoints/EditAnalysisPoints';
 import EditAnalysisStyles from './EditAnalysis.styles';
-import { AnalysisApiResponse, ConditionApiResponse, PointApiResponse } from 'utils/api';
 import EditAnalysisConditions from './EditAnalysisConditions/EditAnalysisConditions';
 import EditAnalysisImages from './EditAnalysisImages/EditAnalysisImages';
+import { AnalysisReturn, ConditionReturn, PointReturn } from 'neurostore-typescript-sdk';
 
-const EditAnalysis: React.FC<{ analysis: AnalysisApiResponse | undefined }> = (props) => {
+const EditAnalysis: React.FC<{ analysis: AnalysisReturn | undefined }> = (props) => {
     const [editTab, setEditTab] = useState(0);
 
     return (
@@ -22,7 +22,7 @@ const EditAnalysis: React.FC<{ analysis: AnalysisApiResponse | undefined }> = (p
                             },
                         }}
                         value={editTab}
-                        onChange={(event: SyntheticEvent, newValue: number) => {
+                        onChange={(_event: SyntheticEvent, newValue: number) => {
                             setEditTab(newValue);
                         }}
                     >
@@ -36,7 +36,7 @@ const EditAnalysis: React.FC<{ analysis: AnalysisApiResponse | undefined }> = (p
                             <EditAnalysisPoints
                                 analysisId={props.analysis.id}
                                 studyId={props.analysis.study}
-                                points={props.analysis.points as PointApiResponse[] | undefined}
+                                points={props.analysis.points as PointReturn[] | undefined}
                             />
                         )}
                         {editTab === 1 && (
@@ -44,7 +44,7 @@ const EditAnalysis: React.FC<{ analysis: AnalysisApiResponse | undefined }> = (p
                                 studyId={props.analysis.study}
                                 analysisId={props.analysis.id || ''}
                                 conditions={
-                                    props.analysis.conditions as ConditionApiResponse[] | undefined
+                                    props.analysis.conditions as ConditionReturn[] | undefined
                                 }
                                 weights={props.analysis.weights}
                             />

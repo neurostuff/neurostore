@@ -8,24 +8,24 @@ import AddIcon from '@mui/icons-material/Add';
 import { useCreateAnalysis } from 'hooks';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 
-const EditAnalyses: React.FC<{ analyses: AnalysisApiResponse[] | undefined; studyId: string }> =
-    React.memo((props) => {
+const EditAnalyses: React.FC<{ analyses: AnalysisApiResponse[] | undefined }> = React.memo(
+    (props) => {
         const { analyses } = props;
         const { isLoading, mutate } = useCreateAnalysis();
         const [selectedAnalysis, setSelectedAnalysis] = useState(0);
 
         const [createDetailsDialogIsOpen, setCreateDetailsDialogIsOpen] = useState(false);
 
-        const handleTabChange = (event: SyntheticEvent, newVal: number) => {
+        const handleTabChange = (_event: SyntheticEvent, newVal: number) => {
             setSelectedAnalysis(newVal);
         };
 
         const handleCreateAnalysis = (name: string, description: string) => {
-            if (props.analyses) {
+            if (analyses) {
                 mutate({
                     name,
                     description,
-                    study: props.analyses[selectedAnalysis].study || '',
+                    study: analyses[selectedAnalysis].study || '',
                 });
             }
         };
@@ -81,16 +81,14 @@ const EditAnalyses: React.FC<{ analyses: AnalysisApiResponse[] | undefined; stud
                                     orientation="vertical"
                                     variant="scrollable"
                                 >
-                                    {(analyses as AnalysisApiResponse[]).map((analysis, index) => {
-                                        return (
-                                            <Tab
-                                                sx={EditAnalysesStyles.tab}
-                                                key={analysis.id}
-                                                value={index}
-                                                label={analysis.name}
-                                            />
-                                        );
-                                    })}
+                                    {(analyses as AnalysisApiResponse[]).map((analysis, index) => (
+                                        <Tab
+                                            sx={EditAnalysesStyles.tab}
+                                            key={analysis.id}
+                                            value={index}
+                                            label={analysis.name}
+                                        />
+                                    ))}
                                 </Tabs>
                             </Box>
                             <Box
@@ -110,6 +108,7 @@ const EditAnalyses: React.FC<{ analyses: AnalysisApiResponse[] | undefined; stud
                 )}
             </>
         );
-    });
+    }
+);
 
 export default EditAnalyses;

@@ -1,65 +1,33 @@
-import { AnnotationsApiResponse } from 'utils/api';
-import { EAnalysisEdit, EAnalysisEditButtonType } from '../..';
-import { mockConditions, mockWeights } from '../../../../../testing/mockData';
+import { AnalysisReturn } from 'neurostore-typescript-sdk';
+import { useState } from 'react';
 
-const mockEditAnalysis = jest
-    .fn()
-    .mockImplementation((props: AnnotationsApiResponse | undefined) => {
-        const conditions = mockConditions();
-        const weights = mockWeights();
+const MockEditAnalysis: React.FC<{ analysis: AnalysisReturn | undefined }> = (props) => {
+    const [tabIndex, setTabIndex] = useState(0);
 
-        return (
-            <>
-                <button
-                    data-testid="mock-edit-analysis-details"
-                    // onClick={(_event) => props.onEditAnalysisDetails('name', 'new name')}
-                ></button>
-                <button
-                    data-testid="mock-edit-analysis-save-button-details"
-                    onClick={
-                        (_event) => {}
-                        // props.onEditAnalysisButtonPress(
-                        //     EAnalysisEdit.DETAILS,
-                        //     EAnalysisEditButtonType.SAVE
-                        // )
-                    }
-                ></button>
-                <button
-                    data-testid="mock-edit-analysis-cancel-button-details"
-                    onClick={
-                        (_event) => {}
-                        // props.onEditAnalysisButtonPress(
-                        //     EAnalysisEdit.DETAILS,
-                        //     EAnalysisEditButtonType.CANCEL
-                        // )
-                    }
-                ></button>
-                <button
-                    data-testid="mock-edit-analysis-conditions"
-                    // onClick={(_event) => props.onEditAnalysisConditions(conditions, weights)}
-                ></button>
-                <button
-                    data-testid="mock-edit-analysis-save-button-conditions"
-                    onClick={
-                        (_event) => {}
-                        // props.onEditAnalysisButtonPress(
-                        //     EAnalysisEdit.CONDITIONS,
-                        //     EAnalysisEditButtonType.SAVE
-                        // )
-                    }
-                ></button>
-                <button
-                    data-testid="mock-edit-analysis-cancel-button-conditions"
-                    onClick={
-                        (_event) => {}
-                        // props.onEditAnalysisButtonPress(
-                        //     EAnalysisEdit.CONDITIONS,
-                        //     EAnalysisEditButtonType.CANCEL
-                        // )
-                    }
-                ></button>
-            </>
-        );
-    });
+    return (
+        <div>
+            <h1 data-testid="mock-edit-analysis-name">{props.analysis?.name || ''}</h1>
+            <button
+                data-testid="mock-edit-analysis-details"
+                onClick={() => setTabIndex(0)}
+            ></button>
+            <button
+                data-testid="mock-edit-analysis-conditions"
+                onClick={() => setTabIndex(1)}
+            ></button>
+            <button data-testid="mock-edit-analysis-images" onClick={() => setTabIndex(2)}></button>
+            <button
+                data-testid="mock-edit-analysis-general"
+                onClick={() => setTabIndex(3)}
+            ></button>
+            <div>
+                {tabIndex === 0 && <div>mock-edit-analysis-details</div>}
+                {tabIndex === 1 && <div>mock-edit-analysis-conditions</div>}
+                {tabIndex === 2 && <div>mock-edit-analysis-images</div>}
+                {tabIndex === 3 && <div>mock-edit-analysis-general</div>}
+            </div>
+        </div>
+    );
+};
 
-export default mockEditAnalysis;
+export default MockEditAnalysis;

@@ -1,14 +1,14 @@
 import { Step, StepLabel, Stepper } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { IDynamicInputType } from '../../../components/MetaAnalysisConfigComponents';
-import MetaAnalysisAlgorithm from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisAlgorithm/MetaAnalysisAlgorithm';
-import MetaAnalysisData from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisData/MetaAnalysisData';
-import MetaAnalysisFinalize from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/MetaAnalysisFinalize';
-import { ENavigationButton } from '../../../components/Buttons/NavigationButtons/NavigationButtons';
-import { IAutocompleteObject } from '../../../components/NeurosynthAutocomplete/NeurosynthAutocomplete';
-import { AnnotationsApiResponse, StudysetsApiResponse } from '../../../utils/api';
-import { BackButton } from '../../../components';
-import MetaAnalysisDetails from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisDetails/MetaAnalysisDetails';
+import { IDynamicInputType } from 'components/MetaAnalysisConfigComponents';
+import MetaAnalysisAlgorithm from 'components/MetaAnalysisConfigComponents/MetaAnalysisAlgorithm/MetaAnalysisAlgorithm';
+import MetaAnalysisData from 'components/MetaAnalysisConfigComponents/MetaAnalysisData/MetaAnalysisData';
+import MetaAnalysisFinalize from 'components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/MetaAnalysisFinalize';
+import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
+import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
+import { AnnotationsApiResponse, StudysetsApiResponse } from 'utils/api';
+import { BackButton } from 'components';
+import MetaAnalysisDetails from 'components/MetaAnalysisConfigComponents/MetaAnalysisDetails/MetaAnalysisDetails';
 import MetaAnalysisBuilderPageStyles from './MetaAnalysisBuilderPage.styles';
 
 export enum EAnalysisType {
@@ -161,7 +161,7 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
 
             {activeStep === 3 && (
                 <MetaAnalysisFinalize
-                    onNext={(button) => {
+                    onNavigate={(button) => {
                         if (button === ENavigationButton.PREV) setActiveStep((prev) => --prev);
                     }}
                     {...metaAnalysisComponents}

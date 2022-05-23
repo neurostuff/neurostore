@@ -8,12 +8,14 @@ import { useGetStudyById } from 'hooks';
 import { AnalysisApiResponse } from 'utils/api';
 import { AnalysisReturn, PointReturn } from 'neurostore-typescript-sdk';
 
-const AnalysisPointsHeader: React.FC<{
+export interface IAnalysisPointsHeader {
     studyId: string | undefined;
     analysisId: string | undefined;
     onCreatePoint: () => void;
     onMovePoints: (moveToAnalysisId: string, selectedPointIds: string[]) => void;
-}> = (props) => {
+}
+
+const AnalysisPointsHeader: React.FC<IAnalysisPointsHeader> = (props) => {
     const apiRef = useGridApiContext();
     const { isLoading: getStudyIsLoading, data: study } = useGetStudyById(props.studyId || '');
     const selectedRows = apiRef?.current?.getSelectedRows()?.size || 0;
@@ -24,21 +26,19 @@ const AnalysisPointsHeader: React.FC<{
     const handleMenuItemSelected = (analysisId: string | undefined) => {
         if (analysisId && apiRef?.current && study?.analyses) {
             const updatedAnalyses = [...study.analyses] as AnalysisReturn[];
-
             const selectedPointIds = [...apiRef?.current?.getSelectedRows().keys()] as string[];
-            props.onMovePoints(analysisId, selectedPointIds);
 
             const moveToAnalysisIndex = updatedAnalyses.findIndex(
                 (oldAnalysis) => oldAnalysis?.id === analysisId
             );
             if (moveToAnalysisIndex < 0) return;
 
-            const moveToAnalysisPoints = (
+            const moveToAnalysisExistingPoints = (
                 updatedAnalyses[moveToAnalysisIndex].points as PointReturn[]
             ).map((x) => x?.id || '');
-            moveToAnalysisPoints.push(...selectedPointIds);
+            moveToAnalysisExistingPoints.push(...selectedPointIds);
 
-            props.onMovePoints(analysisId, moveToAnalysisPoints);
+            props.onMovePoints(analysisId, moveToAnalysisExistingPoints);
         }
     };
 

@@ -58,7 +58,7 @@ const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
                     <Typography variant="h6">{props.titleText}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex' }}>
-                    <IconButton onClick={() => handleOnClose()}>
+                    <IconButton onClick={handleOnClose}>
                         <CloseIcon sx={{ fontSize: '2rem' }} />
                     </IconButton>
                 </Box>

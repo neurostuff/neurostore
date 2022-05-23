@@ -161,7 +161,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                     <NeurosynthAccordion
                         TitleElement={<Typography>Conditions</Typography>}
                         defaultExpanded={conditionsForTable.rowData.length > 0}
-                        elevation={4}
+                        elevation={2}
                     >
                         <DisplayValuesTable {...conditionsForTable} />
                     </NeurosynthAccordion>
@@ -170,7 +170,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                     <NeurosynthAccordion
                         TitleElement={<Typography>Coordinates</Typography>}
                         defaultExpanded={coordinateDataForTable.rowData.length > 0}
-                        elevation={4}
+                        elevation={2}
                     >
                         <DisplayValuesTable {...coordinateDataForTable} />
                     </NeurosynthAccordion>
@@ -179,7 +179,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                     <NeurosynthAccordion
                         TitleElement={<Typography>Images</Typography>}
                         defaultExpanded={(props?.images || []).length > 0}
-                        elevation={4}
+                        elevation={2}
                     >
                         <DisplayImagesTable
                             initialSelectedImage={selectedImage}

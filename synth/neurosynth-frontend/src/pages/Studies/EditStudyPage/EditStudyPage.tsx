@@ -79,7 +79,7 @@ const EditStudyPage = () => {
                     </Box>
 
                     <Box sx={{ marginBottom: '15px', padding: '0 10px', marginLeft: '15px' }}>
-                        <EditAnalyses studyId={params?.studyId || ''} analyses={study.analyses} />
+                        <EditAnalyses analyses={study.analyses} />
                     </Box>
                 </>
             )}

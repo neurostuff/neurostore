@@ -11,12 +11,14 @@ const mockStudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
                 mock add studyset
             </button>
             <button
-                onClick={() =>
-                    props.onStudyAddedToStudyset(
-                        props.study,
-                        (props.studysets as StudysetsApiResponse[])[0]
-                    )
-                }
+                onClick={() => {
+                    if (props.studysets) {
+                        props.onStudyAddedToStudyset(
+                            props.study,
+                            ((props.studysets as StudysetsApiResponse[]) || [])[0]
+                        );
+                    }
+                }}
                 data-testid="edit-studyset-button"
             >
                 mock edit studyset

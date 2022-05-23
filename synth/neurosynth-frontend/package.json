@@ -56,16 +56,9 @@
     },
     "jest": {
         "moduleNameMapper": {
-            "\\.(css|less)$": "<rootDir>/testing/stylemock.js"
+            "\\.(css|less)$": "<rootDir>/src/testing/stylemock.js"
         },
-        "resetMocks": false,
-        "rootDir": "src",
-        "roots": [
-            "<rootDir>"
-        ],
-        "modulePaths": [
-            "<rootDir>"
-        ]
+        "resetMocks": false
     },
     "devDependencies": {
         "@testing-library/dom": "^8.3.0",

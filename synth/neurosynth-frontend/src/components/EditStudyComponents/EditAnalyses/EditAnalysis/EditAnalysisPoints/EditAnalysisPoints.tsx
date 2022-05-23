@@ -1,4 +1,4 @@
-import { Box, Button } from '@mui/material';
+import { Box } from '@mui/material';
 import {
     DataGrid,
     GridColumns,
@@ -7,37 +7,12 @@ import {
     MuiBaseEvent,
     GridCallbackDetails,
 } from '@mui/x-data-grid';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useIsFetching } from 'react-query';
 import { IEditAnalysisPoints } from '../..';
 import { useCreatePoint, useDeletePoint, useUpdatePoint, useUpdateAnalysis } from 'hooks';
-import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import AnalysisPointsHeader from './AnalysisPointsHeader';
-
-const AnalysisPointsDeleteButton: React.FC<{
-    pointId: string;
-    onDeletePoint: (pointId: string) => void;
-}> = (props) => {
-    const [dialogIsOpen, setDialogIsOpen] = useState(false);
-
-    return (
-        <>
-            <ConfirmationDialog
-                isOpen={dialogIsOpen}
-                confirmText="yes"
-                rejectText="no"
-                dialogTitle="Are you sure you want to delete this point?"
-                onCloseDialog={(confirmed) => {
-                    if (confirmed) props.onDeletePoint(props.pointId);
-                    setDialogIsOpen(false);
-                }}
-            />
-            <Button color="error" variant="text" onClick={() => setDialogIsOpen(true)}>
-                delete
-            </Button>
-        </>
-    );
-};
+import AnalysisPointsDeleteButton from './AnalysisPointsDeleteButton';
 
 const ROW_HEIGHT = 52;
 
@@ -111,7 +86,7 @@ const EditAnalysisPoints: React.FC<IEditAnalysisPoints> = (props) => {
             renderCell: (params) => (
                 <AnalysisPointsDeleteButton
                     pointId={params.id as string}
-                    onDeletePoint={handleOnDelete}
+                    onDelete={handleOnDelete}
                 />
             ),
         },
@@ -169,11 +144,6 @@ const EditAnalysisPoints: React.FC<IEditAnalysisPoints> = (props) => {
     return (
         <Box sx={{ height: totalTableHeight < 600 ? `${totalTableHeight}px` : '600px' }}>
             <DataGrid
-                sx={{
-                    '.MuiDataGrid-columnSeparator': {
-                        display: 'none',
-                    },
-                }}
                 loading={
                     createPointIsLoading ||
                     deletePointIsLoading ||

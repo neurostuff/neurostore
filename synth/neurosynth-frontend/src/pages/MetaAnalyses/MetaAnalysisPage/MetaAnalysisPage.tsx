@@ -1,13 +1,13 @@
 import { Box, Typography, Paper, Button, Link } from '@mui/material';
 import { useParams } from 'react-router-dom';
-import { CodeSnippet, StateHandlerComponent, TextEdit } from '../../../components';
-import { useGetMetaAnalysisById } from '../../../hooks';
-import useUpdateMetaAnalysis from '../../../hooks/requests/useUpdateMetaAnalysis';
+import { CodeSnippet, StateHandlerComponent, TextEdit } from 'components';
+import { useGetMetaAnalysisById } from 'hooks';
+import useUpdateMetaAnalysis from 'hooks/requests/useUpdateMetaAnalysis';
 import {
     AnnotationReturn,
     SpecificationReturn,
     StudysetReturn,
-} from '../../../neurosynth-compose-typescript-sdk';
+} from 'neurosynth-compose-typescript-sdk';
 import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
 
 const MetaAnalysisPage: React.FC = (props) => {

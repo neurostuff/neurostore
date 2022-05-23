@@ -1,18 +1,15 @@
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import EditStudyDetails, { IEditStudyDetails } from './EditStudyDetails';
-import API from '../../../utils/api';
+import API from 'utils/api';
 
-jest.mock('../../../utils/api');
+jest.mock('utils/api');
+jest.mock('hooks');
 
 describe('EditStudyDetails Component', () => {
     let mockStudyDetails: IEditStudyDetails;
 
     beforeEach(() => {
-        (API.NeurostoreServices.StudiesService.studiesIdPut as jest.Mock).mockReturnValue(
-            Promise.resolve({})
-        );
-
         mockStudyDetails = {
             studyId: 'some-test-id',
             name: 'some-test-name',

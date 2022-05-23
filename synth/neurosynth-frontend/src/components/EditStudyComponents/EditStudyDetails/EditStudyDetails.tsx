@@ -1,9 +1,9 @@
 import { TextField, Button, Typography, Box } from '@mui/material';
 import { AxiosError } from 'axios';
 import React, { ChangeEvent, useContext, useState } from 'react';
-import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
-import useIsMounted from '../../../hooks/useIsMounted';
-import API from '../../../utils/api';
+import { GlobalContext, SnackbarType } from 'contexts/GlobalContext';
+import { useIsMounted } from 'hooks';
+import API from 'utils/api';
 import NeurosynthAccordion from '../../NeurosynthAccordion/NeurosynthAccordion';
 import EditStudyDetailsStyles from './EditStudyDetails.styles';
 import EditStudyMetadataStyles from '../EditStudyMetadata/EditStudyMetadata.styles';

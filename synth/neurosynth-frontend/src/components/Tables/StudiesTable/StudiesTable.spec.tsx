@@ -6,7 +6,7 @@ import { StudiesTable } from '../..';
 import { MockThemeProvider } from '../../../testing/helpers';
 import API, { StudyApiResponse, StudysetsApiResponse } from '../../../utils/api';
 
-jest.mock('../../../hooks/useIsMounted');
+jest.mock('hooks');
 jest.mock('@auth0/auth0-react');
 jest.mock('../../../utils/api');
 jest.mock('../../StudysetsPopupMenu/StudysetsPopupMenu');
