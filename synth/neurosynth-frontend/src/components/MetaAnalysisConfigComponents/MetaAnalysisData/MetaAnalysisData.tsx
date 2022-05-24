@@ -90,7 +90,10 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                 value={props.studyset || null}
                 renderOption={(params, option) => (
                     <ListItem {...params}>
-                        <ListItemText primary={option.name} secondary={option.description} />
+                        <ListItemText
+                            primary={option?.name || ''}
+                            secondary={option?.description || ''}
+                        />
                     </ListItem>
                 )}
                 sx={{ ...MetaAnalysisDataStyles.spaceBelow, ...MetaAnalysisDataStyles.selectInput }}
@@ -114,7 +117,10 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                 value={props.annotation || null}
                 renderOption={(params, option) => (
                     <ListItem {...params}>
-                        <ListItemText primary={option.name} secondary={option.description} />
+                        <ListItemText
+                            primary={option?.name || ''}
+                            secondary={option?.description || ''}
+                        />
                     </ListItem>
                 )}
                 sx={{ ...MetaAnalysisDataStyles.spaceBelow, ...MetaAnalysisDataStyles.selectInput }}

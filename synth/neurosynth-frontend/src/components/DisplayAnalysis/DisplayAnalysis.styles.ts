@@ -2,7 +2,7 @@ import { Style } from '../..';
 
 const DisplayAnalysisStyles: Style = {
     spaceBelow: {
-        marginBottom: '8px',
+        marginBottom: '1rem',
     },
     analysisContainer: {
         paddingLeft: {

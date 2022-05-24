@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EPropertyType } from '..';
-import { MockThemeProvider } from '../../../testing/helpers';
+import { MockThemeProvider } from 'testing/helpers';
 import EditMetadataValue from './EditMetadataValue';
 
 describe('EditMetadataValue Component', () => {

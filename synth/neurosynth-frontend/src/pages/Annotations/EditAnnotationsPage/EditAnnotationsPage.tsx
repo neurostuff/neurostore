@@ -8,7 +8,8 @@ import {
     TextEdit,
     NeurosynthSpreadsheet,
     EPropertyType,
-} from '../../../components';
+    BackButton,
+} from 'components';
 import EditStudyPageStyles from '../../Studies/EditStudyPage/EditStudyPage.styles';
 import EditAnnotationsPageStyles from './EditAnnotationsPage.styles';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -63,10 +64,6 @@ const EditAnnotationsPage: React.FC = (props) => {
             });
     };
 
-    const handleOnCancel = (event: React.MouseEvent) => {
-        history.push(`/studysets/${params.studysetId}`);
-    };
-
     const handleCloseConfirmationDialog = async (confirm: boolean | undefined) => {
         setConfirmationIsOpen(false);
 
@@ -109,18 +106,11 @@ const EditAnnotationsPage: React.FC = (props) => {
 
     return (
         <>
-            <Box sx={EditAnnotationsPageStyles.stickyButtonContainer}>
-                <Button
-                    color="secondary"
-                    onClick={handleOnCancel}
-                    sx={EditStudyPageStyles.button}
-                    variant="outlined"
-                >
-                    Return to Studyset View
-                </Button>
+            <Box sx={{ marginBottom: '1rem' }}>
+                <BackButton text="Return to studyset" path={`/studysets/${params.studysetId}`} />
             </Box>
 
-            <Box sx={{ marginBottom: '0.5rem' }}>
+            <Box sx={{ marginBottom: '1rem' }}>
                 <TextEdit
                     onSave={(updatedText, label) => updateAnnotationDetails(label, updatedText)}
                     textToEdit={annotation?.name || ''}
@@ -163,7 +153,7 @@ const EditAnnotationsPage: React.FC = (props) => {
                 color="error"
                 variant="contained"
                 disabled={!isAuthenticated}
-                sx={[EditStudyPageStyles.button, { marginTop: '0.5rem' }]}
+                sx={[EditStudyPageStyles.button, { marginTop: '1rem' }]}
             >
                 Delete this annotation
             </Button>

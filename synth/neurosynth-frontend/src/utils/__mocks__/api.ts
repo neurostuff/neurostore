@@ -1,4 +1,4 @@
-import { mockAnnotations, mockStudysets } from '../../testing/mockData';
+import { mockAnnotations, mockStudy, mockStudysets } from '../../testing/mockData';
 
 const MockAPI = {
     NeurosynthServices: {},
@@ -6,7 +6,7 @@ const MockAPI = {
         StudiesService: {
             studiesGet: jest.fn(),
             studiesIdGet: jest.fn(),
-            studiesIdPut: jest.fn(),
+            studiesIdPut: jest.fn().mockReturnValue(Promise.resolve(mockStudy())),
             studiesPost: jest.fn(),
             studiesIdDelete: jest.fn(),
         },

@@ -1,11 +1,10 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Typography } from '@mui/material';
-import { Box } from '@mui/system';
+import { Typography, Box } from '@mui/material';
 import { useContext, useEffect, useState } from 'react';
-import { NeurosynthLoader, StudiesTable } from '../../../components';
-import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
-import API, { StudyApiResponse } from '../../../utils/api';
-import useIsMounted from '../../../hooks/useIsMounted';
+import { NeurosynthLoader, StudiesTable } from 'components';
+import { GlobalContext, SnackbarType } from 'contexts/GlobalContext';
+import API, { StudyApiResponse } from 'utils/api';
+import useIsMounted from 'hooks/useIsMounted';
 
 const UserStudiesPage: React.FC = (props) => {
     const { user } = useAuth0();

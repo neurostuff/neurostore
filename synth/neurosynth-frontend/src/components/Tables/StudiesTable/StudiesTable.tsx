@@ -7,13 +7,13 @@ import {
     TableHead,
     TableRow,
     Paper,
+    Box,
 } from '@mui/material';
-import { Box } from '@mui/system';
 import React, { useState, useEffect, useContext } from 'react';
 import { useHistory } from 'react-router-dom';
-import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
-import useIsMounted from '../../../hooks/useIsMounted';
-import API, { StudysetsApiResponse, StudyApiResponse } from '../../../utils/api';
+import { GlobalContext, SnackbarType } from 'contexts/GlobalContext';
+import { useIsMounted } from 'hooks';
+import API, { StudysetsApiResponse, StudyApiResponse } from 'utils/api';
 import StudysetsPopupMenu from '../../StudysetsPopupMenu/StudysetsPopupMenu';
 import StudiesTableStyles from './StudiesTable.styles';
 

@@ -1,10 +1,9 @@
 import React from 'react';
 import EditMetadataRowStyles from './EditMetadataRow.styles';
-import { Button } from '@mui/material';
+import { Button, Box } from '@mui/material';
 import { useCallback } from 'react';
 import { getStartValFromType } from './AddMetadataRow';
-import { EPropertyType, IEditMetadataRowModel, IMetadataRowModel } from '..';
-import { Box } from '@mui/system';
+import { EPropertyType, IEditMetadataRowModel, IMetadataRowModel } from 'components';
 import ToggleType from './ToggleType/ToggleType';
 import EditMetadataValue from '../EditMetadataValue/EditMetadataValue';
 

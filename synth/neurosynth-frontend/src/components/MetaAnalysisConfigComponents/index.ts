@@ -4,14 +4,14 @@ import {
     IEstimatorCorrectorArgs,
 } from '../../pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 import { AnnotationsApiResponse, StudysetsApiResponse } from '../../utils/api';
-import { INavigationButtonFn } from '../Buttons/NavigationButtons/NavigationButtons';
+import { ENavigationButton } from '../Buttons/NavigationButtons/NavigationButtons';
 import { IAutocompleteObject } from '../NeurosynthAutocomplete/NeurosynthAutocomplete';
 
 export const KWARG_STRING = '**kwargs';
 
 interface IMetaAnalysisBuilderStep {
     onUpdate: (arg: Partial<IMetaAnalysisComponents>) => void;
-    onNext: INavigationButtonFn;
+    onNext: (button: ENavigationButton) => void;
 }
 
 export interface IMetaAnalysisDetails extends IMetaAnalysisBuilderStep {

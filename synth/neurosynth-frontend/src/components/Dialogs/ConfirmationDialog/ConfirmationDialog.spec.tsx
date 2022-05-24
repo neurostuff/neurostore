@@ -60,9 +60,9 @@ describe('ConfirmationDialog', () => {
         expect(mockOnClose).toBeCalledWith(true);
     });
 
-    it('should signal undefined when clicked away', () => {
+    it('should signal undefined when clicked away', async () => {
         render(
-            <>
+            <div>
                 <ConfirmationDialog
                     isOpen={true}
                     dialogTitle="test-message"
@@ -70,12 +70,28 @@ describe('ConfirmationDialog', () => {
                     confirmText="confirm"
                     rejectText="reject"
                 />
-            </>
+                <button data-testid="trigger-click-outside">testing</button>
+            </div>
         );
 
-        const button = screen.getByRole('button', { name: 'confirm' });
-
-        userEvent.type(button, '{esc}');
+        // we need to trigger a click away by clicking the backdrop. For some reason,
+        // the second presentation div accomplishes this
+        userEvent.click(screen.getAllByRole('presentation')[1]);
         expect(mockOnClose).toBeCalledWith(undefined);
+    });
+
+    it('should close when close icon button is clicked', () => {
+        render(
+            <ConfirmationDialog
+                isOpen={true}
+                dialogTitle="test-message"
+                onCloseDialog={mockOnClose}
+                confirmText="confirm"
+                rejectText="reject"
+            />
+        );
+
+        userEvent.click(screen.getByTestId('CloseIcon'));
+        expect(mockOnClose).toHaveBeenCalledWith(undefined);
     });
 });

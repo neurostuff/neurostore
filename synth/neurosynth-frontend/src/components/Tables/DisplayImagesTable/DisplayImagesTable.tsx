@@ -1,6 +1,13 @@
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Box,
+} from '@mui/material';
 import { useEffect, useState } from 'react';
-import { Box } from '@mui/system';
 import DisplayImagesTableRow from './DisplayImageTableRow/DisplayImageTableRow';
 import { DisplayImagesTableModel } from '.';
 import { ImageApiResponse } from '../../../utils/api';
@@ -21,7 +28,7 @@ const DisplayImagesTable: React.FC<DisplayImagesTableModel> = (props) => {
 
     if (!props || !props.images || props.images.length === 0) {
         return (
-            <Box component="span" sx={{ color: 'warning.dark' }}>
+            <Box component="div" sx={{ color: 'warning.dark', paddingLeft: '15px' }}>
                 No images
             </Box>
         );

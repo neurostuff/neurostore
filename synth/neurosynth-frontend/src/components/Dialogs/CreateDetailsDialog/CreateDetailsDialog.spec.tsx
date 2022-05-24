@@ -108,4 +108,33 @@ describe('CreateDetailsDialog', () => {
 
         expect(mockOnCreateStudyset).toBeCalledWith('ABC', '');
     });
+
+    it('should close when clicked away', () => {
+        render(
+            <CreateDetailsDialog
+                titleText="some title text"
+                isOpen={true}
+                onCreate={mockOnCreateStudyset}
+                onCloseDialog={mockOnCloseDialog}
+            />
+        );
+
+        // we need to trigger a click away by clicking the backdrop. For some reason,
+        // the second presentation div accomplishes this
+        userEvent.click(screen.getAllByRole('presentation')[1]);
+        expect(mockOnCloseDialog).toBeCalledWith();
+    });
+
+    it('should close when the close icon button is clicked', () => {
+        render(
+            <CreateDetailsDialog
+                titleText="some title text"
+                isOpen={true}
+                onCreate={mockOnCreateStudyset}
+                onCloseDialog={mockOnCloseDialog}
+            />
+        );
+        userEvent.click(screen.getByTestId('CloseIcon'));
+        expect(mockOnCloseDialog).toHaveBeenCalled();
+    });
 });

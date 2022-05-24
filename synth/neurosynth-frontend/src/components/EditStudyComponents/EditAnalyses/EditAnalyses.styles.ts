@@ -13,7 +13,7 @@ const EditAnalysesStyles: Style = {
     analysesTabs: {
         borderRight: 1,
         color: 'lightgray',
-        maxWidth: {
+        width: {
             xs: 90,
             md: 150,
         },

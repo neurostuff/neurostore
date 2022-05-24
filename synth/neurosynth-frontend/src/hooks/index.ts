@@ -7,6 +7,15 @@ import useGetMetaAnalyses from './requests/useGetMetaAnalyses';
 import useGetMetaAnalysisById from './requests/useGetMetaAnalysisById';
 import useGetStudysets from './requests/useGetStudysets';
 import useGetAnnotationsByStudysetId from './requests/useGetAnnotationsByStudysetId';
+import useCreatePoint from './requests/useCreatePoint';
+import useUpdateStudy from './requests/useUpdateStudy';
+import useDeletePoint from './requests/useDeletePoint';
+import useCreateAnalysis from './requests/useCreateAnalysis';
+import useUpdateAnalysis from './requests/useUpdateAnalysis';
+import useGetConditions from './requests/useGetConditions';
+import useCreateCondition from './requests/useCreateCondition';
+import useUpdatePoint from './requests/useUpdatePoint';
+import useDeleteAnalysis from './requests/useDeleteAnalysis';
 
 export {
     useIsMounted,
@@ -18,4 +27,13 @@ export {
     useGetMetaAnalysisById,
     useGetStudysets,
     useGetAnnotationsByStudysetId,
+    useCreatePoint,
+    useUpdateStudy,
+    useDeletePoint,
+    useCreateAnalysis,
+    useUpdateAnalysis,
+    useGetConditions,
+    useCreateCondition,
+    useUpdatePoint,
+    useDeleteAnalysis,
 };

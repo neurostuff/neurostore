@@ -1,6 +1,7 @@
 import { ExpandMoreOutlined } from '@mui/icons-material';
 import { Accordion, AccordionDetails, AccordionSummary } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
+import { useEffect, useState } from 'react';
 
 interface INeurosynthAccordion {
     defaultExpanded?: boolean;
@@ -21,9 +22,19 @@ const NeurosynthAccordion: React.FC<INeurosynthAccordion> = (props) => {
         TitleElement = <b></b>,
     } = props;
 
+    const [expanded, setExpanded] = useState(defaultExpanded);
+
+    useEffect(() => {
+        setExpanded(defaultExpanded);
+    }, [defaultExpanded]);
+
     return (
-        <Accordion sx={sx} defaultExpanded={defaultExpanded} elevation={elevation}>
-            <AccordionSummary sx={accordionSummarySx} expandIcon={<ExpandMoreOutlined />}>
+        <Accordion sx={sx} expanded={expanded} elevation={elevation}>
+            <AccordionSummary
+                onClick={() => setExpanded((prev) => !prev)}
+                sx={accordionSummarySx}
+                expandIcon={<ExpandMoreOutlined />}
+            >
                 {TitleElement}
             </AccordionSummary>
             <AccordionDetails sx={accordionDetailsSx}>{props.children}</AccordionDetails>

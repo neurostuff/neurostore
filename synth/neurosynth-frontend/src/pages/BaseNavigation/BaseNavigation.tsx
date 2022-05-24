@@ -1,4 +1,4 @@
-import { Box } from '@mui/system';
+import { Box } from '@mui/material';
 import { Switch, Route } from 'react-router-dom';
 import EditAnnotationsPage from '../Annotations/EditAnnotationsPage/EditAnnotationsPage';
 import StudysetPage from '../Studysets/StudysetPage/StudysetPage';

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { EPropertyType, IMetadataRowModel } from '..';
-import { MockThemeProvider } from '../../../testing/helpers';
+import { EPropertyType, IMetadataRowModel } from 'components';
+import { MockThemeProvider } from 'testing/helpers';
 import AddMetadataRow, { getStartValFromType } from './AddMetadataRow';
 
 describe('AddMetadataRow Component', () => {

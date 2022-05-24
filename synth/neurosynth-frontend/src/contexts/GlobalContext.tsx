@@ -34,7 +34,6 @@ const GlobalContextProvider = (props: any) => {
 
     const handleShowSnackbar = useCallback((message: string, snackbarType: SnackbarType) => {
         setSnackbarState((p) => {
-            console.log('close snackbar');
             return {
                 openSnackbar: false,
                 message: '',
@@ -42,7 +41,6 @@ const GlobalContextProvider = (props: any) => {
             };
         });
         setSnackbarState((p) => {
-            console.log('set snackbar to true');
             return {
                 openSnackbar: true,
                 message: message,

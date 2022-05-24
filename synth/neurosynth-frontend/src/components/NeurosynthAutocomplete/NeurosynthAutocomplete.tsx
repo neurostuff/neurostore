@@ -1,9 +1,10 @@
 import {
     Autocomplete,
     TextField,
-    AutocompleteRenderOptionState,
     CircularProgress,
     Box,
+    AutocompleteRenderOptionState,
+    FilterOptionsState,
 } from '@mui/material';
 import ErrorIcon from '@mui/icons-material/Error';
 import { SystemStyleObject } from '@mui/system';
@@ -31,12 +32,13 @@ interface INeurosynthAutocomplete<T> {
     sx?: SystemStyleObject;
     isLoading?: boolean;
     isError?: boolean;
+    filterOptions?: (options: T[], state: FilterOptionsState<T>) => T[];
 }
 
-const NeurosynthAutocomplete = <X,>(props: INeurosynthAutocomplete<X>) => {
+const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
     const { handleChange, handleOnBlur, handleOnFocus, isValid } = useInputValidation(
         props.value,
-        (arg: X | undefined | null) => !!arg
+        (arg: T | undefined | null) => !!arg
     );
     const {
         required = true,
@@ -51,9 +53,10 @@ const NeurosynthAutocomplete = <X,>(props: INeurosynthAutocomplete<X>) => {
         sx = {},
         isLoading = false,
         isError = false,
+        filterOptions = undefined,
     } = props;
 
-    const handleOnChange = (_event: any, newVal: X | null, _reason: any) => {
+    const handleOnChange = (_event: any, newVal: T | null, _reason: any) => {
         handleChange(newVal);
         onChange(_event, newVal, _reason);
     };
@@ -68,6 +71,7 @@ const NeurosynthAutocomplete = <X,>(props: INeurosynthAutocomplete<X>) => {
             isOptionEqualToValue={isOptionEqualToValue}
             renderOption={renderOption}
             sx={sx}
+            filterOptions={filterOptions}
             renderInput={(params) => (
                 <TextField
                     {...params}

@@ -5,10 +5,6 @@ export enum ENavigationButton {
     NEXT = 'NEXT',
 }
 
-export interface INavigationButtonFn {
-    (button: ENavigationButton): void;
-}
-
 export interface INavigationButtons {
     prevButtonDisabled?: boolean;
     prevButtonText?: string;
@@ -17,7 +13,7 @@ export interface INavigationButtons {
     prevButtonStyle?: 'contained' | 'outlined' | 'text';
     nextButtonStyle?: 'contained' | 'outlined' | 'text';
 
-    onButtonClick: INavigationButtonFn;
+    onButtonClick: (button: ENavigationButton) => void;
 }
 
 const NavigationButtons: React.FC<INavigationButtons> = (props) => {

@@ -1,5 +1,5 @@
 import { TextField, FormGroup, FormControlLabel, Switch, Typography, Box } from '@mui/material';
-import { EPropertyType, IEditMetadataValue } from '..';
+import { EPropertyType, IEditMetadataValue } from 'components';
 import EditMetadataValueStyles from './EditMetadata.styles';
 
 const EditMetadataValue: React.FC<IEditMetadataValue> = (props) => {

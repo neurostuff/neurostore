@@ -1,4 +1,4 @@
-import { IAddMetadataRowModel } from '../..';
+import { IAddMetadataRowModel } from 'components';
 
 const MockAddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
     return (

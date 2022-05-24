@@ -9,11 +9,6 @@ const EditAnalysisDetailsStyles: Style = {
         padding: '8px',
         width: '200px',
     },
-    unsavedChanges: {
-        '.MuiOutlinedInput-notchedOutline': {
-            border: '2px solid #ef8a24 !important',
-        },
-    },
 };
 
 export default EditAnalysisDetailsStyles;

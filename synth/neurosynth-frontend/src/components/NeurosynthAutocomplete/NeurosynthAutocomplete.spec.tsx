@@ -154,7 +154,7 @@ describe('NeurosynthAutocomplete Component', () => {
         expect(screen.getByText('There was an error')).toBeInTheDocument();
     });
 
-    it('should show an error when the field is cleared', () => {
+    it('should show a validation message when the field is cleared', () => {
         render(
             <NeurosynthAutocomplete
                 isOptionEqualToValue={(x, y) => x?.id === y?.id}

@@ -1,20 +1,15 @@
 import { Step, StepLabel, Stepper } from '@mui/material';
-import { useContext, useEffect, useState } from 'react';
-import { IDynamicInputType } from '../../../components/MetaAnalysisConfigComponents';
-import MetaAnalysisAlgorithm from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisAlgorithm/MetaAnalysisAlgorithm';
-import MetaAnalysisData from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisData/MetaAnalysisData';
-import MetaAnalysisFinalize from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/MetaAnalysisFinalize';
-import { ENavigationButton } from '../../../components/Buttons/NavigationButtons/NavigationButtons';
-import { IAutocompleteObject } from '../../../components/NeurosynthAutocomplete/NeurosynthAutocomplete';
-import useIsMounted from '../../../hooks/useIsMounted';
-import API, { AnnotationsApiResponse, StudysetsApiResponse } from '../../../utils/api';
-import { BackButton } from '../../../components';
-import MetaAnalysisDetails from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisDetails/MetaAnalysisDetails';
+import { useEffect, useState } from 'react';
+import { IDynamicInputType } from 'components/MetaAnalysisConfigComponents';
+import MetaAnalysisAlgorithm from 'components/MetaAnalysisConfigComponents/MetaAnalysisAlgorithm/MetaAnalysisAlgorithm';
+import MetaAnalysisData from 'components/MetaAnalysisConfigComponents/MetaAnalysisData/MetaAnalysisData';
+import MetaAnalysisFinalize from 'components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/MetaAnalysisFinalize';
+import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
+import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
+import { AnnotationsApiResponse, StudysetsApiResponse } from 'utils/api';
+import { BackButton } from 'components';
+import MetaAnalysisDetails from 'components/MetaAnalysisConfigComponents/MetaAnalysisDetails/MetaAnalysisDetails';
 import MetaAnalysisBuilderPageStyles from './MetaAnalysisBuilderPage.styles';
-import useCreateMetaAnalysis from '../../../hooks/requests/useCreateMetaAnalysis';
-import { AxiosError } from 'axios';
-import { useHistory } from 'react-router-dom';
-import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 
 export enum EAnalysisType {
     CBMA = 'CBMA',
@@ -38,9 +33,6 @@ export interface IEstimatorCorrectorArgs {
 }
 
 const MetaAnalysisBuilderPage: React.FC = (props) => {
-    const { createMetaAnalysis, isError, isLoading } = useCreateMetaAnalysis();
-    const { showSnackbar } = useContext(GlobalContext);
-    const history = useHistory();
     const [activeStep, setActiveStep] = useState(0);
     const [metaAnalysisComponents, setMetaAnalysisComponents] = useState<IMetaAnalysisComponents>({
         metaAnalysisName: undefined,
@@ -108,33 +100,10 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
         });
     };
 
-    const handleCreateMetaAnalysis = async () => {
-        let tempCorrector = null;
-        if (metaAnalysisComponents.corrector) {
-            tempCorrector = {
-                type: metaAnalysisComponents.corrector?.label,
-                args: {},
-            };
-            tempCorrector.args = estimatorCorrectorArgs.correctorArgs;
-        }
-
-        createMetaAnalysis(metaAnalysisComponents, estimatorCorrectorArgs)
-            .then((res) => {
-                showSnackbar('new meta-analysis successfully created', SnackbarType.SUCCESS);
-                history.push('/usermeta-analyses');
-            })
-            .catch((err: AxiosError) => {
-                console.log(err.toJSON());
-            });
-    };
-
     const handleNavigation = (button: ENavigationButton) => {
         setActiveStep((prev) => (button === ENavigationButton.NEXT ? ++prev : --prev));
     };
 
-    if (isLoading) {
-        return <>...loading</>;
-    }
     return (
         <>
             <BackButton
@@ -192,10 +161,8 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
 
             {activeStep === 3 && (
                 <MetaAnalysisFinalize
-                    onNext={(button) => {
-                        button === ENavigationButton.NEXT
-                            ? handleCreateMetaAnalysis()
-                            : setActiveStep((prev) => --prev);
+                    onNavigate={(button) => {
+                        if (button === ENavigationButton.PREV) setActiveStep((prev) => --prev);
                     }}
                     {...metaAnalysisComponents}
                     {...estimatorCorrectorArgs}

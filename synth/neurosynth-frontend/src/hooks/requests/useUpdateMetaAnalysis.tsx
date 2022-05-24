@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from 'react-query';
 import { MetaAnalysisPostBody, MetaAnalysisReturn } from '../../neurosynth-compose-typescript-sdk';
 import API from '../../utils/api';
 
-const useUpdateMetaAnalysisById = () => {
+const useUpdateMetaAnalysis = () => {
     const queryClient = useQueryClient();
     const updateMetaAnalysisMutation = useMutation<
         AxiosResponse<MetaAnalysisReturn>,
@@ -29,4 +29,4 @@ const useUpdateMetaAnalysisById = () => {
     return updateMetaAnalysisMutation;
 };
 
-export default useUpdateMetaAnalysisById;
+export default useUpdateMetaAnalysis;
