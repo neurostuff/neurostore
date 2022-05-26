@@ -28,7 +28,7 @@ connexion_app.add_api(
     base_path="/api",
     options=options,
     arguments={"title": "NeuroSynth API"},
-    resolver=MethodViewResolver("neurosynth.resources"),
+    resolver=MethodViewResolver("neurosynth-compose.resources"),
     strict_validation=True,
     validate_responses=True,
 )
