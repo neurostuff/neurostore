@@ -2,7 +2,7 @@ version: "2"
 services:
   neurosynth:
     restart: always
-    build: ./neurosynth
+    build: ./neurosynth-compose
     expose:
       - "8000"
     volumes:
@@ -11,7 +11,7 @@ services:
     command: /usr/local/bin/gunicorn -w 2 -b :8000 neurosynth.core:app --log-level debug --timeout 120
     env_file:
       - .env
-    container_name: neurosynth
+    container_name: neurosynth-compose
 
   nginx:
     restart: always
