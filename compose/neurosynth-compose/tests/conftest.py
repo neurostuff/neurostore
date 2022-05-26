@@ -195,7 +195,7 @@ def mock_add_users(app, db, mock_auth):
 @pytest.fixture(scope="function")
 def add_users(app, db):
     """ Adds a test user to db """
-    from neurosynth.resources.auth import decode_token
+    from neurosynth_compose.resources.auth import decode_token
 
     domain = app.config['AUTH0_BASE_URL'].split('://')[1]
     token = GetToken(domain)
