@@ -1,26 +1,67 @@
 import { Typography, Button, Box, Paper } from '@mui/material';
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useParams } from 'react-router';
 import API, { AnnotationsApiResponse } from '../../../utils/api';
-import {
-    ConfirmationDialog,
-    TextEdit,
-    NeurosynthSpreadsheet,
-    EPropertyType,
-    BackButton,
-} from 'components';
+import { ConfirmationDialog, TextEdit, NeurosynthSpreadsheet, BackButton } from 'components';
+import { EPropertyType } from 'components/EditMetadata';
 import EditStudyPageStyles from '../../Studies/EditStudyPage/EditStudyPage.styles';
 import EditAnnotationsPageStyles from './EditAnnotationsPage.styles';
 import { useAuth0 } from '@auth0/auth0-react';
-import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import { AnnotationNote } from '../../../neurostore-typescript-sdk';
 import { AxiosResponse } from 'axios';
+import { registerEditor, NumericEditor, TextEditor, BaseEditor } from 'handsontable/editors';
+import {
+    baseRenderer,
+    registerRenderer,
+    htmlRenderer,
+    numericRenderer,
+    textRenderer,
+} from 'handsontable/renderers';
+import { registerValidator, numericValidator } from 'handsontable/validators';
+import {
+    registerCellType,
+    HandsontableCellType,
+    NumericCellType,
+    TextCellType,
+} from 'handsontable/cellTypes';
+import {
+    CopyPaste,
+    MergeCells,
+    MultipleSelectionHandles,
+    registerPlugin,
+    DragToScroll,
+    UndoRedo,
+    BasePlugin,
+} from 'handsontable/plugins';
+import { useSnackbar } from 'notistack';
+
+registerEditor(BaseEditor);
+registerEditor(NumericEditor);
+registerEditor(TextEditor);
+
+registerRenderer(baseRenderer);
+registerRenderer(htmlRenderer);
+registerRenderer(numericRenderer);
+registerRenderer(textRenderer);
+
+registerValidator(numericValidator);
+
+registerCellType(HandsontableCellType);
+registerCellType(NumericCellType);
+registerCellType(TextCellType);
+
+registerPlugin(CopyPaste);
+registerPlugin(MergeCells);
+registerPlugin(DragToScroll);
+registerPlugin(MultipleSelectionHandles);
+registerPlugin(UndoRedo);
+registerPlugin(BasePlugin);
 
 const EditAnnotationsPage: React.FC = (props) => {
     const history = useHistory();
     const { isAuthenticated } = useAuth0();
-    const { showSnackbar } = useContext(GlobalContext);
+    const { enqueueSnackbar } = useSnackbar();
 
     const [confirmationIsOpen, setConfirmationIsOpen] = useState(false);
     const [annotation, setAnnotation] = useState<AnnotationsApiResponse>();
@@ -53,14 +94,14 @@ const EditAnnotationsPage: React.FC = (props) => {
                         [property]: res.data[property as 'name' | 'description'],
                     };
                 });
-                showSnackbar(`updated the annotation ${property}`, SnackbarType.SUCCESS);
+                enqueueSnackbar(`updated the annotation ${property} successfully`, {
+                    variant: 'success',
+                });
             })
             .catch((err) => {
-                console.error(err);
-                showSnackbar(
-                    `there was an error updating the annotation ${property}`,
-                    SnackbarType.ERROR
-                );
+                enqueueSnackbar(`there was an error updating the annotatino ${property}`, {
+                    variant: 'error',
+                });
             });
     };
 
@@ -71,11 +112,12 @@ const EditAnnotationsPage: React.FC = (props) => {
             API.NeurostoreServices.AnnotationsService.annotationsIdDelete(annotation.id)
                 .then(() => {
                     history.push(`/studysets/${params.studysetId}`);
-                    showSnackbar('deleted annotation', SnackbarType.SUCCESS);
+                    enqueueSnackbar('deleted annotation successfully', { variant: 'success' });
                 })
                 .catch((err) => {
-                    console.error(err);
-                    showSnackbar('there was an error deleting the annotation', SnackbarType.ERROR);
+                    enqueueSnackbar('there was an error deleting the annotation', {
+                        variant: 'error',
+                    });
                 });
         }
     };
@@ -94,14 +136,15 @@ const EditAnnotationsPage: React.FC = (props) => {
                 note_keys: noteKeyTypes,
             })
                 .then((res) => {
-                    showSnackbar('annotation successfully updated', SnackbarType.SUCCESS);
+                    enqueueSnackbar('annotation updated successfully', { variant: 'success' });
                 })
                 .catch((err) => {
-                    showSnackbar('there was an error updating the annotation', SnackbarType.ERROR);
-                    console.error(err);
+                    enqueueSnackbar('there was an error updating the annotation', {
+                        variant: 'error',
+                    });
                 });
         },
-        [params.annotationId, showSnackbar]
+        [params.annotationId]
     );
 
     return (

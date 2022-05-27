@@ -1,15 +1,15 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Typography, Button } from '@mui/material';
-import { useContext, useEffect, useState } from 'react';
-import { NeurosynthLoader, CreateDetailsDialog, Tables } from 'components';
-import { GlobalContext, SnackbarType } from 'contexts/GlobalContext';
+import { useEffect, useState } from 'react';
+import { NeurosynthLoader, CreateDetailsDialog, StudysetsTable } from 'components';
 import useIsMounted from 'hooks/useIsMounted';
 import API, { StudysetsApiResponse } from 'utils/api';
+import { useSnackbar } from 'notistack';
 
 const UserStudysetsPage: React.FC = (props) => {
     const { user } = useAuth0();
     const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
-    const { showSnackbar } = useContext(GlobalContext);
+    const { enqueueSnackbar } = useSnackbar();
     const [createStudysetDialogIsOpen, setCreateStudysetDialogIsOpen] = useState(false);
     const isMountedRef = useIsMounted();
 
@@ -35,12 +35,14 @@ const UserStudysetsPage: React.FC = (props) => {
                 })
                 .catch((err) => {
                     setStudysets([]);
-                    console.error(err);
+                    enqueueSnackbar('there was an error getting the studysets', {
+                        variant: 'error',
+                    });
                 });
         };
 
         getStudysets();
-    }, [user?.sub, isMountedRef]);
+    }, [user?.sub, isMountedRef, enqueueSnackbar]);
 
     const handleCreateStudyset = async (name: string, description: string) => {
         API.NeurostoreServices.StudySetsService.studysetsPost({
@@ -52,6 +54,7 @@ const UserStudysetsPage: React.FC = (props) => {
                 setCreateStudysetDialogIsOpen(false);
 
                 if (isMountedRef.current) {
+                    enqueueSnackbar('created studyset successfully', { variant: 'success' });
                     setStudysets((prevState) => {
                         if (!prevState) return prevState;
                         const newState = [...prevState];
@@ -61,8 +64,7 @@ const UserStudysetsPage: React.FC = (props) => {
                 }
             })
             .catch((err) => {
-                console.error(err);
-                showSnackbar('there was an error creating the studyset', SnackbarType.ERROR);
+                enqueueSnackbar('there was an error creating the studyset', { variant: 'error' });
             });
     };
 
@@ -91,7 +93,7 @@ const UserStudysetsPage: React.FC = (props) => {
                 isOpen={createStudysetDialogIsOpen}
             />
 
-            <Tables.StudysetsTable studysets={studysets || []} />
+            <StudysetsTable studysets={studysets || []} />
         </NeurosynthLoader>
     );
 };

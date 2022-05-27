@@ -3,7 +3,7 @@ import HotTable from '@handsontable/react';
 import DeleteIcon from '@mui/icons-material/Delete';
 import styles from './NeurosynthSpreadsheet.module.css';
 import React, { memo, useEffect, useRef } from 'react';
-import { EPropertyType, IMetadataRowModel } from '..';
+import { EPropertyType, IMetadataRowModel } from 'components/EditMetadata';
 import { NavLink } from 'react-router-dom';
 import AddMetadataRow from '../EditMetadata/EditMetadataRow/AddMetadataRow';
 import EditAnnotationsPageStyles from '../../pages/Annotations/EditAnnotationsPage/EditAnnotationsPage.styles';

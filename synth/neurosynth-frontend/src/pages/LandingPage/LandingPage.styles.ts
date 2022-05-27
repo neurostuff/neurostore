@@ -33,6 +33,7 @@ const LandingPageStyles: Style = {
     },
     logo: {
         width: '100px',
+        height: '100px',
     },
     sponsorContainer: {
         width: '100%',
@@ -58,10 +59,6 @@ const LandingPageStyles: Style = {
             xs: '100px',
             md: '125px',
         },
-    },
-    nihAwardText: {
-        textAlign: 'center',
-        margin: '2% 0',
     },
     descriptor: {
         fontSize: {

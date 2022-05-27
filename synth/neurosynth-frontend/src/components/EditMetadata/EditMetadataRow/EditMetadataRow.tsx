@@ -3,7 +3,7 @@ import EditMetadataRowStyles from './EditMetadataRow.styles';
 import { Button, Box } from '@mui/material';
 import { useCallback } from 'react';
 import { getStartValFromType } from './AddMetadataRow';
-import { EPropertyType, IEditMetadataRowModel, IMetadataRowModel } from 'components';
+import { EPropertyType, IEditMetadataRowModel, IMetadataRowModel } from 'components/EditMetadata';
 import ToggleType from './ToggleType/ToggleType';
 import EditMetadataValue from '../EditMetadataValue/EditMetadataValue';
 

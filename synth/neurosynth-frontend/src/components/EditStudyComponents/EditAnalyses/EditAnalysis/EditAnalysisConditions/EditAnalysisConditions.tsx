@@ -6,17 +6,17 @@ import {
     MuiBaseEvent,
     MuiEvent,
 } from '@mui/x-data-grid';
-import React, { useContext } from 'react';
+import React from 'react';
 import { IEditAnalysisConditions } from '../..';
-import { GlobalContext, SnackbarType } from 'contexts/GlobalContext';
 import ConditionSelector from './ConditionSelector/ConditionSelector';
 import EditAnalysisConditionsStyles from './EditAnalysisConditions.styles';
 import { useUpdateAnalysis } from 'hooks';
 import { ConditionReturn } from 'neurostore-typescript-sdk';
 import { useIsFetching } from 'react-query';
+import { useSnackbar } from 'notistack';
 
 const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = React.memo((props) => {
-    const { showSnackbar } = useContext(GlobalContext);
+    const { enqueueSnackbar } = useSnackbar();
     const { isLoading, mutate, isError } = useUpdateAnalysis();
     const isFetching = useIsFetching(['studies', props.studyId]);
 
@@ -27,10 +27,9 @@ const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = React.memo((pr
             ) >= 0;
 
         if (conditionExistsInTable) {
-            showSnackbar(
-                'cannot add more than one of the same condition to an analysis',
-                SnackbarType.WARNING
-            );
+            enqueueSnackbar('cannot add more than one of the same condition to an analysis', {
+                variant: 'warning',
+            });
             return;
         }
 
@@ -58,7 +57,9 @@ const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = React.memo((pr
         );
 
         if (!props.conditions || !props.weights || conditionWeightToUpdateIndex < 0) {
-            showSnackbar('there was an error updating the weight', SnackbarType.ERROR);
+            enqueueSnackbar('there was an error updating the weight', {
+                variant: 'error',
+            });
             return;
         }
 

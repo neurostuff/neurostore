@@ -1,7 +1,7 @@
 import { TableCell, TableRow, Button, Box } from '@mui/material';
 import React from 'react';
 import { IDisplayValuesTableRowModel } from '..';
-import { getType } from '../../..';
+import { getType } from 'components/EditMetadata';
 import DisplayValuesTableRowStyles from './DisplayValuesTableRow.styles';
 
 const getValue = (value: any): string => {

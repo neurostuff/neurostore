@@ -7,7 +7,6 @@ const NavbarToolbarStyles: Style = {
         display: 'flex',
         alignItems: 'center',
         padding: '0 8px',
-        color: 'primary.contrastText',
     },
     navLinksContainer: {
         height: '100%',

@@ -1,6 +1,7 @@
 import { Box, Button, Divider } from '@mui/material';
 import { useState } from 'react';
-import { DisplayValuesTable, IDisplayValuesTableModel } from '../../..';
+import { DisplayValuesTable } from 'components';
+import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
 import { IMetadataRowModel } from '../../../EditMetadata';
 import AddMetadataRow from '../../../EditMetadata/EditMetadataRow/AddMetadataRow';
 import MetaAnalysisAlgorithmStyles from '../MetaAnalysisAlgorithm.styles';

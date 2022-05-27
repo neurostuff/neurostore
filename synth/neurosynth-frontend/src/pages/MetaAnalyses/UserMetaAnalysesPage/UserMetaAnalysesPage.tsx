@@ -1,7 +1,8 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Button, Typography, Box } from '@mui/material';
 import { useHistory } from 'react-router-dom';
-import { DisplayValuesTable, IDisplayValuesTableModel } from '../../../components';
+import { DisplayValuesTable } from 'components';
+import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
 import StateHandlerComponent from '../../../components/StateHandlerComponent/StateHandlerComponent';
 import { useGetMetaAnalyses } from '../../../hooks';
 

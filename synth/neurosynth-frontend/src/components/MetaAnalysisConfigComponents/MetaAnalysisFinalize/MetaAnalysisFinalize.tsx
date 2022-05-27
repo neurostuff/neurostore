@@ -12,9 +12,7 @@ import MetaAnalysisFinalizeStyles from './MetaAnalysisFinalize.styles';
 import { useCreateMetaAnalysis } from 'hooks';
 import React from 'react';
 import { useHistory } from 'react-router-dom';
-import { useContext } from 'react';
-import { GlobalContext, SnackbarType } from 'contexts/GlobalContext';
-
+import { useSnackbar } from 'notistack';
 interface IMetaAnalysisFinalize extends IMetaAnalysisComponents, IEstimatorCorrectorArgs {
     onNavigate: (button: ENavigationButton) => void;
 }
@@ -23,7 +21,7 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
     const { createMetaAnalysis, isLoading } = useCreateMetaAnalysis();
     const history = useHistory();
     const hasCorrector = !!props.corrector;
-    const { showSnackbar } = useContext(GlobalContext);
+    const { enqueueSnackbar } = useSnackbar();
 
     const handleCreateMetaAnalysis = async () => {
         createMetaAnalysis(
@@ -43,11 +41,13 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
             }
         )
             .then((res) => {
-                showSnackbar('new meta-analysis successfully created', SnackbarType.SUCCESS);
+                enqueueSnackbar('new meta-analysis created successfully', { variant: 'success' });
                 history.push('/usermeta-analyses');
             })
             .catch((err) => {
-                showSnackbar('there was an error', SnackbarType.ERROR);
+                enqueueSnackbar('there was an error creating the meta-analysis', {
+                    variant: 'error',
+                });
             });
     };
 

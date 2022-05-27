@@ -1,11 +1,12 @@
 import { Typography, Button, Box } from '@mui/material';
 import EditStudyMetadataStyles from './EditStudyMetadata.styles';
-import { EditMetadata, IMetadataRowModel, NeurosynthAccordion } from '../..';
-import React, { useState, useContext, useCallback } from 'react';
-import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
+import { EditMetadata, NeurosynthAccordion } from 'components';
+import { IMetadataRowModel } from 'components/EditMetadata';
+import React, { useState, useCallback } from 'react';
 import { AxiosError } from 'axios';
-import API from '../../../utils/api';
-import useIsMounted from '../../../hooks/useIsMounted';
+import API from 'utils/api';
+import useIsMounted from 'hooks/useIsMounted';
+import { useSnackbar } from 'notistack';
 
 export interface IEditStudyMetadata {
     studyId: string;
@@ -33,7 +34,7 @@ export const metadataToArray = (
 };
 
 const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
-    const context = useContext(GlobalContext);
+    const { enqueueSnackbar } = useSnackbar();
     const [updatedEnabled, setUpdateEnabled] = useState(false);
     const isMountedRef = useIsMounted();
 
@@ -48,12 +49,12 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
             metadata: transformedMetadata,
         })
             .then((_res) => {
-                context.showSnackbar('study successfully updated', SnackbarType.SUCCESS);
+                enqueueSnackbar('study updated successfully', { variant: 'success' });
                 props.onUpdateStudyMetadata(transformedMetadata);
                 if (isMountedRef.current) setUpdateEnabled(false);
             })
             .catch((err: Error | AxiosError) => {
-                context.showSnackbar('there was an error', SnackbarType.ERROR);
+                enqueueSnackbar('there was an error updating the study', { variant: 'error' });
                 console.error(err.message);
             });
     };

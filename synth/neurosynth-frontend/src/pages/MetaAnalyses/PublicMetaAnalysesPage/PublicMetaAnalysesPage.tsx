@@ -1,11 +1,8 @@
-import { Button, Typography, Box } from '@mui/material';
+import { Typography, Box } from '@mui/material';
 import { useHistory } from 'react-router-dom';
-import {
-    DisplayValuesTable,
-    IDisplayValuesTableModel,
-    StateHandlerComponent,
-} from '../../../components';
-import { useGetMetaAnalyses } from '../../../hooks';
+import { DisplayValuesTable, StateHandlerComponent } from 'components';
+import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
+import { useGetMetaAnalyses } from 'hooks';
 
 const PublicMetaAnalysesPage: React.FC = (props) => {
     const history = useHistory();

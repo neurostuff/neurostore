@@ -1,4 +1,4 @@
-import { ExpandMoreOutlined } from '@mui/icons-material';
+import ExpandMoreOutlined from '@mui/icons-material/ExpandMoreOutlined';
 import { Accordion, AccordionDetails, AccordionSummary } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
 import { useEffect, useState } from 'react';

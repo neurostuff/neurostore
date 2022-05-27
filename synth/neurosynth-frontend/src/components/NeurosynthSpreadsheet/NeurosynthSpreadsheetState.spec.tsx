@@ -1,7 +1,7 @@
 import HotTable from '@handsontable/react';
 import { numericRenderer, textRenderer } from 'handsontable/renderers';
 import { numericValidator } from 'handsontable/validators';
-import { EPropertyType } from '..';
+import { EPropertyType } from 'components/EditMetadata'
 import { AnnotationNote } from '../../neurostore-typescript-sdk';
 import NeurosynthSpreadsheetHelper from './NeurosynthSpreadsheetHelper';
 import NeurosynthSpreadsheetState from './NeurosynthSpreadsheetState';

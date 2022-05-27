@@ -1,22 +1,23 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Button, Tooltip, Typography, Tab, Tabs, Box, Divider } from '@mui/material';
 import { AxiosError, AxiosResponse } from 'axios';
-import React, { useState, useEffect, useContext, SyntheticEvent } from 'react';
+import { useSnackbar } from 'notistack';
+import React, { useState, useEffect, SyntheticEvent } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import {
     DisplayValuesTable,
-    IDisplayValuesTableModel,
     TextExpansion,
     DisplayAnalysis,
     NeurosynthLoader,
     NeurosynthAccordion,
-} from '../../../components';
-import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
+} from 'components';
+import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API, { StudyApiResponse, AnalysisApiResponse } from '../../../utils/api';
 import StudyPageStyles from './StudyPage.styles';
 
 const StudyPage: React.FC = (props) => {
+    const { enqueueSnackbar } = useSnackbar();
     const [study, setStudy] = useState<StudyApiResponse>();
     const [selectedAnalysis, setSelectedAnalysis] = useState<{
         analysisIndex: number;
@@ -27,7 +28,6 @@ const StudyPage: React.FC = (props) => {
     });
 
     const [editDisabled, setEditDisabled] = useState(false);
-    const context = useContext(GlobalContext);
     const history = useHistory();
     const { isAuthenticated, user } = useAuth0();
     const isMountedRef = useIsMounted();
@@ -36,12 +36,11 @@ const StudyPage: React.FC = (props) => {
     const handleCloneStudy = async () => {
         API.NeurostoreServices.StudiesService.studiesPost(undefined, params.studyId, {})
             .then((res) => {
-                context.showSnackbar('Study successfully cloned', SnackbarType.SUCCESS);
+                enqueueSnackbar('study cloned successfully', { variant: 'success' });
                 history.push(`/studies/${(res.data as StudyApiResponse).id}`);
             })
             .catch((err: Error | AxiosError) => {
-                context.showSnackbar('There was an error', SnackbarType.ERROR);
-                console.error(err.message);
+                enqueueSnackbar('there was an error cloning the stufy', { variant: 'error' });
             });
     };
 

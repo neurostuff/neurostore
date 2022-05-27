@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { IDisplayValuesTableModel } from '../..';
+import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
 import DisplayValuesTable from './DisplayValuesTable';
 
 jest.mock('./DisplayValuesTableRow/DisplayValuesTableRow');

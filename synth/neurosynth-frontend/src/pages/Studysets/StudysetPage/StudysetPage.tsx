@@ -13,7 +13,6 @@ import {
 } from '../../../components';
 import AnnotationsTable from '../../../components/Tables/AnnotationsTable/AnnotationsTable';
 import TextEdit from '../../../components/TextEdit/TextEdit';
-import { GlobalContext, SnackbarType } from '../../../contexts/GlobalContext';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API, {
     AnnotationsApiResponse,
@@ -21,13 +20,14 @@ import API, {
     StudyApiResponse,
 } from '../../../utils/api';
 import StudysetPageStyles from './StudysetPage.styles';
+import { useSnackbar } from 'notistack';
 
 const StudysetsPage: React.FC = (props) => {
     const [studyset, setStudyset] = useState<StudysetsApiResponse | undefined>();
     const [annotations, setAnnotations] = useState<AnnotationsApiResponse[] | undefined>();
     const { isAuthenticated } = useAuth0();
     const history = useHistory();
-    const { showSnackbar } = useContext(GlobalContext);
+    const { enqueueSnackbar } = useSnackbar();
 
     const [confirmationIsOpen, setConfirmationIsOpen] = useState(false);
     const [createDetailsIsOpen, setCreateDetailsIsOpen] = useState(false);
@@ -45,14 +45,15 @@ const StudysetsPage: React.FC = (props) => {
                     }
                 })
                 .catch((err) => {
-                    console.error(err);
                     setStudyset({});
-                    showSnackbar('there was an error', SnackbarType.ERROR);
+                    enqueueSnackbar('there was an error getting the studyset', {
+                        variant: 'error',
+                    });
                 });
         };
 
         getStudyset(params.studysetId);
-    }, [params.studysetId, current, showSnackbar]);
+    }, [params.studysetId, current, enqueueSnackbar]);
 
     useEffect(() => {
         const getAnnotations = async (id: string) => {
@@ -63,18 +64,16 @@ const StudysetsPage: React.FC = (props) => {
                     }
                 },
                 (err) => {
-                    console.error(err);
                     setAnnotations([]);
-                    showSnackbar(
-                        'there was an error getting annotations for this studyset',
-                        SnackbarType.ERROR
-                    );
+                    enqueueSnackbar('there was an error getting annotations for this studyset', {
+                        variant: 'error',
+                    });
                 }
             );
         };
 
         if (params.studysetId) getAnnotations(params.studysetId);
-    }, [params.studysetId, showSnackbar, current]);
+    }, [params.studysetId, current, enqueueSnackbar]);
 
     const handleSaveTextEdit = (editedText: string, fieldName: string) => {
         if (!studyset) return;
@@ -85,8 +84,8 @@ const StudysetsPage: React.FC = (props) => {
             [fieldName]: editedText,
         })
             .then(() => {
-                showSnackbar('analysis successfully updated', SnackbarType.SUCCESS);
                 if (current) {
+                    enqueueSnackbar('studyset updated successfully', { variant: 'success' });
                     setStudyset((prevState) => {
                         if (!prevState) return prevState;
                         return {
@@ -97,7 +96,7 @@ const StudysetsPage: React.FC = (props) => {
                 }
             })
             .catch((err) => {
-                showSnackbar('there was an error updating the studyset', SnackbarType.ERROR);
+                enqueueSnackbar('there was an error updating the studyset', { variant: 'error' });
                 console.error(err);
             });
     };
@@ -109,10 +108,12 @@ const StudysetsPage: React.FC = (props) => {
             API.NeurostoreServices.StudySetsService.studysetsIdDelete(studyset.id)
                 .then((res) => {
                     history.push('/userstudysets');
-                    showSnackbar('deleted studyset', SnackbarType.SUCCESS);
+                    enqueueSnackbar('studyset deleted successfully', { variant: 'success' });
                 })
                 .catch((err) => {
-                    showSnackbar('there was a problem deleting the studyset', SnackbarType.ERROR);
+                    enqueueSnackbar('there was a problem deleting the studyset', {
+                        variant: 'error',
+                    });
                     console.error(err);
                 });
         }
@@ -127,7 +128,7 @@ const StudysetsPage: React.FC = (props) => {
                 studyset: params.studysetId,
             })
                 .then((res) => {
-                    showSnackbar('successfully created annotation', SnackbarType.SUCCESS);
+                    enqueueSnackbar('created annotation successfully', { variant: 'success' });
                     setAnnotations((prevState) => {
                         if (!prevState) return prevState;
                         const newState = [...prevState];
@@ -136,7 +137,9 @@ const StudysetsPage: React.FC = (props) => {
                     });
                 })
                 .catch((err) => {
-                    showSnackbar('there was a problem getting annotations', SnackbarType.ERROR);
+                    enqueueSnackbar('there was a problem creating the annotation', {
+                        variant: 'error',
+                    });
                     console.error(err);
                 });
         }

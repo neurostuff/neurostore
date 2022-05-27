@@ -1,14 +1,14 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Typography, Box } from '@mui/material';
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NeurosynthLoader, StudiesTable } from 'components';
-import { GlobalContext, SnackbarType } from 'contexts/GlobalContext';
 import API, { StudyApiResponse } from 'utils/api';
 import useIsMounted from 'hooks/useIsMounted';
+import { useSnackbar } from 'notistack';
 
 const UserStudiesPage: React.FC = (props) => {
     const { user } = useAuth0();
-    const { showSnackbar } = useContext(GlobalContext);
+    const { enqueueSnackbar } = useSnackbar();
     const [studies, setStudies] = useState<StudyApiResponse[]>();
     const isMountedRef = useIsMounted();
 
@@ -32,17 +32,16 @@ const UserStudiesPage: React.FC = (props) => {
                 .then((res) => {
                     if (isMountedRef.current && res?.data?.results) setStudies(res.data.results);
                 })
-                .catch((err) => {
-                    showSnackbar('there was an error', SnackbarType.ERROR);
+                .catch((_err) => {
                     setStudies([]);
-                    console.error(err);
+                    enqueueSnackbar('there was an error getting studies', { variant: 'error' });
                 });
         };
 
         if (user?.sub) {
             getUserStudies();
         }
-    }, [user?.sub, showSnackbar, isMountedRef]);
+    }, [user?.sub, isMountedRef, enqueueSnackbar]);
 
     return (
         <>

@@ -9,13 +9,13 @@ import {
     Paper,
     Box,
 } from '@mui/material';
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
-import { GlobalContext, SnackbarType } from 'contexts/GlobalContext';
 import { useIsMounted } from 'hooks';
 import API, { StudysetsApiResponse, StudyApiResponse } from 'utils/api';
 import StudysetsPopupMenu from '../../StudysetsPopupMenu/StudysetsPopupMenu';
 import StudiesTableStyles from './StudiesTable.styles';
+import { useSnackbar } from 'notistack';
 
 interface StudiesTableModel {
     studies: StudyApiResponse[] | undefined;
@@ -26,8 +26,8 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     const { isAuthenticated, user } = useAuth0();
     const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
     const history = useHistory();
-    const { showSnackbar } = useContext(GlobalContext);
     const { current } = useIsMounted();
+    const { enqueueSnackbar } = useSnackbar();
 
     const handleSelectTableRow = (row: StudyApiResponse) => {
         history.push(`/studies/${row.id}`);
@@ -73,7 +73,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
             description,
         })
             .then((res) => {
-                showSnackbar('studyset created', SnackbarType.SUCCESS);
+                enqueueSnackbar('studyset created successfully', { variant: 'success' });
                 if (current) {
                     const createdStudyset = res.data;
                     setStudysets((prevState) => {
@@ -86,7 +86,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
             })
             .catch((err) => {
                 console.error(err);
-                showSnackbar('there was an error', SnackbarType.ERROR);
+                enqueueSnackbar('there was an error creating the studyset', { variant: 'error' });
             });
     };
 
@@ -102,10 +102,9 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
             studies: selectedStudysetStudies as string[],
         })
             .then((res) => {
-                showSnackbar(
-                    `${study.name} added to ${studyset.name || studyset.id}`,
-                    SnackbarType.SUCCESS
-                );
+                enqueueSnackbar(`${study.name} added to ${studyset.name || studyset.id}`, {
+                    variant: 'success',
+                });
                 if (current) {
                     setStudysets((prevState) => {
                         if (!prevState) return prevState;
@@ -118,7 +117,9 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
             })
             .catch((err) => {
                 console.error(err);
-                showSnackbar('there was an error', SnackbarType.ERROR);
+                enqueueSnackbar('there was an error adding the study to the studyset', {
+                    variant: 'error',
+                });
             });
     };
 
