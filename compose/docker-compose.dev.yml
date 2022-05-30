@@ -7,5 +7,5 @@ services:
   neurosynth:
     expose:
       - "8000"
-    command: /usr/local/bin/gunicorn -w 2 -b :8000 neurosynth.core:app --log-level debug --timeout 300 --reload
+    command: /usr/local/bin/gunicorn -w 2 -b :8000 neurosynth-compose.core:app --log-level debug --timeout 300 --reload
     restart: "no"
