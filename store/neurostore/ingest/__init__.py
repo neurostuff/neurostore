@@ -29,7 +29,7 @@ from neurostore.models.data import StudysetStudy, _check_type
 def ingest_neurovault(verbose=False, limit=20, overwrite=False):
 
     # Store existing studies for quick lookup
-    all_studies = all_studies = {s.doi: s for s in Study.query.filter(source="neurovault").all()}
+    all_studies = all_studies = {s.doi: s for s in Study.query.filter_by(source="neurovault").all()}
 
     def add_collection(data):
         if data["DOI"] in all_studies and not overwrite:
@@ -161,7 +161,7 @@ def ingest_neurosynth(max_rows=None):
 
     studies = []
     to_commit = []
-    all_studies = {s.doi: s for s in Study.query.filter(source="neurosynth").all()}
+    all_studies = {s.doi: s for s in Study.query.filter_by(source="neurosynth").all()}
     with db.session.no_autoflush:
         for (metadata_row, annotation_row) in zip(
             metadata.itertuples(), annotations.itertuples(index=False)
