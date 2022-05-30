@@ -266,7 +266,7 @@ def ingest_neuroquery(max_rows=None):
     if max_rows is not None:
         metadata = metadata.iloc[:max_rows]
 
-    all_studies = {s.pmid: s for s in Study.query.filter(source="neuroquery").all()}
+    # all_studies = {s.pmid: s for s in Study.query.filter(source="neuroquery").all()}
     for id_, metadata_row in metadata.iterrows():
         study_coord_data = coord_data.loc[[id_]]
         s = Study(
