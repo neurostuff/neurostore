@@ -29,7 +29,9 @@ from neurostore.models.data import StudysetStudy, _check_type
 def ingest_neurovault(verbose=False, limit=20, overwrite=False):
 
     # Store existing studies for quick lookup
-    all_studies = all_studies = {s.doi: s for s in Study.query.filter_by(source="neurovault").all()}
+    all_studies = all_studies = {
+        s.doi: s for s in Study.query.filter_by(source="neurovault").all()
+    }
 
     def add_collection(data):
         if data["DOI"] in all_studies and not overwrite:
