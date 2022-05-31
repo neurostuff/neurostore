@@ -52,6 +52,25 @@ const theme = createTheme({
     },
 });
 
+theme.typography.h3 = {
+    ...theme.typography.h3,
+    [theme.breakpoints.down('md')]: {
+        fontSize: '2rem',
+    },
+    [theme.breakpoints.up('md')]: {
+        fontSize: '3rem',
+    },
+};
+theme.typography.h6 = {
+    ...theme.typography.h6,
+    [theme.breakpoints.down('md')]: {
+        fontSize: '1rem',
+    },
+    [theme.breakpoints.up('md')]: {
+        fontSize: '1.25rem',
+    },
+};
+
 const domain = process.env.REACT_APP_AUTH0_DOMAIN as string;
 const clientId = process.env.REACT_APP_AUTH0_CLIENT_ID as string;
 const audience = process.env.REACT_APP_AUTH0_AUDIENCE as string;

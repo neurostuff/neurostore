@@ -144,7 +144,7 @@ const EditAnnotationsPage: React.FC = (props) => {
                     });
                 });
         },
-        [params.annotationId]
+        [params.annotationId, enqueueSnackbar]
     );
 
     return (

@@ -52,8 +52,7 @@
         ]
     },
     "//jestComments": {
-        "//resetMocks": "we need to set this flag because of this: https://github.com/facebook/create-react-app/issues/9935",
-        "//modulePaths": "required for absolute module imports"
+        "//resetMocks": "we need to set this flag because of this: https://github.com/facebook/create-react-app/issues/9935"
     },
     "jest": {
         "moduleNameMapper": {

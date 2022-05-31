@@ -1,20 +1,11 @@
-import {
-    Typography,
-    Box,
-    Link,
-    Stepper,
-    Step,
-    StepLabel,
-    Paper,
-    Button,
-    StepContent,
-} from '@mui/material';
+import { Typography, Box, Link, Stepper, Step, StepLabel, StepContent } from '@mui/material';
 import LandingPageStyles from './LandingPage.styles';
 import SearchIcon from '@mui/icons-material/Search';
 import AutoAwesomeMotionIcon from '@mui/icons-material/AutoAwesomeMotion';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import PlatformComparisonTable from './PlatformComparisonTable';
 
 const LandingPage = () => {
     const logos: { logoPath: string; alt: string }[] = [
@@ -48,181 +39,165 @@ const LandingPage = () => {
         },
     ];
 
+    const steps = [
+        {
+            icon: <SearchIcon color="primary" />,
+            title: '(1) Search Studies',
+            textContent:
+                'Search titles and abstracts of all articles included in neurosynth, neuroquery, and more.',
+        },
+        {
+            icon: <AutoAwesomeMotionIcon color="primary" />,
+            title: '(2) Create Studyset',
+            textContent: 'Create a collection of studies that meet your search criteria.',
+        },
+        {
+            icon: <FilterAltIcon color="primary" />,
+            title: '(3) Annotate Studyset',
+            textContent:
+                'Annotate each analysis within your study-set with experimental details and inclusion criteria.',
+        },
+        {
+            icon: <SettingsIcon color="primary" />,
+            title: '(4) Specify Meta-Analysis',
+            textContent:
+                'Specify which meta-analytic algorithm and its parameters to apply to your study-set through NiMARE.',
+        },
+        {
+            icon: <CheckCircleIcon color="primary" />,
+            title: '(5) Execute Meta-Analysis',
+            textContent:
+                'Execute the prepared meta-analysis online or on your machine. NiMARE is the primary execution engine downloading the study-set, annotation, and meta-analysis specification for reproducible analysis.',
+        },
+    ];
+
     return (
         <>
             <Box sx={{ width: '100%', backgroundColor: 'primary.main' }}>
-                <Box
-                    sx={{
-                        width: '80%',
-                        margin: '0 auto',
-                        paddingBottom: '10rem',
-                    }}
-                >
-                    <Typography
-                        sx={[
-                            { color: 'primary.contrastText', fontWeight: 'bold' },
-                            { padding: '2rem 0' },
-                            { paddingTop: '9rem' },
-                        ]}
-                        variant="h3"
-                    >
+                <Box sx={LandingPageStyles.sectionContainer}>
+                    <Typography sx={LandingPageStyles.title} variant="h3">
                         A platform for reproducible neuroimaging meta-analysis
                     </Typography>
-                    <Typography
-                        variant="h6"
-                        sx={[{ color: 'lightgray' }, { paddingBottom: '2rem' }]}
-                    >
+                    <Typography variant="h6" sx={LandingPageStyles.introSpacedText}>
                         Neurosynth compose allows you to perform an entire meta-analysis directly
                         from the browser. It provides a centralized location to edit, organize,
                         share, and keep provenance of meta-analyses.
                     </Typography>
-                    <Typography
-                        variant="h6"
-                        sx={[{ color: 'lightgray' }, { paddingBottom: '2.5rem' }]}
-                    >
-                        Get started by browsing various &nbsp;
-                        <Link href="#" color="secondary.main">
-                            studies
-                        </Link>
-                        &nbsp;,
-                        <Link href="#" color="secondary.main">
-                            studysets
-                        </Link>
-                        , or &nbsp;
-                        <Link href="#" color="secondary.main">
-                            meta-analyses
-                        </Link>
-                        &nbsp;on the platform.
-                    </Typography>
-                    <Box>
-                        <Paper elevation={4} sx={{ padding: '1.5rem', display: 'inline-block' }}>
-                            <Button variant="contained">Sign up or sign in now</Button> &nbsp;in
-                            order to get started curating your own meta-analyses
-                        </Paper>
+                    <Box sx={LandingPageStyles.introDetailsContainer}>
+                        <Box
+                            sx={{
+                                color: 'primary.contrastText',
+                                marginRight: '2rem',
+                            }}
+                        >
+                            <Typography variant="h6">Use neurosynth-compose for</Typography>
+                            <ul style={{ marginBottom: 0 }}>
+                                <li>
+                                    <Typography variant="h6">
+                                        <li>Performing custom meta-analyses</li>
+                                    </Typography>
+                                </li>
+                                <li>
+                                    <Typography variant="h6">
+                                        <li>Creating systematic reviews</li>
+                                    </Typography>
+                                </li>
+                                <li>
+                                    <Typography variant="h6">
+                                        <li>Updating and replicating existing reviews</li>
+                                    </Typography>
+                                </li>
+                                <li>
+                                    <Typography variant="h6">
+                                        <li>Analyzing neurosynth/neuroquery databases</li>
+                                    </Typography>
+                                </li>
+                            </ul>
+
+                            <Typography variant="h6" sx={LandingPageStyles.introSpacedText}>
+                                Get started by browsing various &nbsp;
+                                <Link href="#" color="secondary.main">
+                                    studies
+                                </Link>
+                                &nbsp;,
+                                <Link href="#" color="secondary.main">
+                                    studysets
+                                </Link>
+                                , or &nbsp;
+                                <Link href="#" color="secondary.main">
+                                    meta-analyses
+                                </Link>
+                                &nbsp;on the platform.
+                            </Typography>
+                        </Box>
+
+                        <Box sx={{ flex: '1 0 55%' }}>
+                            <PlatformComparisonTable />
+                        </Box>
                     </Box>
                 </Box>
             </Box>
-            <Box sx={{ width: '80%', margin: '0 auto' }}>
-                <Box sx={[{ margin: '2rem 0' }]}>
+            <Box sx={{ width: '100%', backgroundColor: 'white' }}>
+                <Box sx={LandingPageStyles.sectionContainer}>
                     <Typography variant="h3" color="primary.main">
-                        neurosynth compose workflow
+                        Neurosynth-Compose workflow
                     </Typography>
+                    <Box sx={LandingPageStyles.workflowContainer}>
+                        <Box sx={LandingPageStyles.stepperContainer}>
+                            <Stepper orientation="vertical">
+                                {steps.map((step) => (
+                                    <Step
+                                        key={step.title}
+                                        sx={{
+                                            '.MuiSvgIcon-root': {
+                                                fontSize: '3.5rem',
+                                                paddingRight: '20px',
+                                            },
+                                        }}
+                                        expanded={true}
+                                    >
+                                        <StepLabel StepIconComponent={(_props) => step.icon}>
+                                            <Typography color="primary" variant="h5">
+                                                {step.title}
+                                            </Typography>
+                                        </StepLabel>
+                                        <StepContent>
+                                            <Typography sx={{ padding: '1rem 0' }} variant="h6">
+                                                {step.textContent}
+                                            </Typography>
+                                        </StepContent>
+                                    </Step>
+                                ))}
+                            </Stepper>
+                        </Box>
+                        <Box sx={LandingPageStyles.glossaryContainer}>
+                            <Box
+                                sx={LandingPageStyles.glossary}
+                                component="img"
+                                src="/static/glossary.png"
+                                alt="glossary"
+                            ></Box>
+                        </Box>
+                    </Box>
                 </Box>
-                <Box sx={[{ margin: '2rem 0', width: '50%' }]}>
-                    <Stepper orientation="vertical">
-                        <Step
-                            sx={{
-                                '.MuiSvgIcon-root': { fontSize: '3.5rem', paddingRight: '20px' },
-                            }}
-                            expanded={true}
-                        >
-                            <StepLabel
-                                StepIconComponent={(_props) => <SearchIcon color="primary" />}
-                            >
-                                <Typography color="primary" variant="h5">
-                                    <b>(1)</b> Search studies
-                                </Typography>
-                            </StepLabel>
-                            <StepContent>
-                                <Typography sx={{ padding: '1rem 0' }} variant="h6">
-                                    Lorem ipsum dolor sit amet, consectetur adipisicing elit.
-                                    Recusandae deserunt laudantium ullam maiores, hic nulla tenetur
-                                    porro. Cupiditate minus, consequatur ratione excepturi
-                                    laboriosam nostrum! Ducimus iure optio maiores ab omnis?
-                                </Typography>
-                            </StepContent>
-                        </Step>
-                        <Step
-                            sx={{
-                                '.MuiSvgIcon-root': { fontSize: '3.5rem', paddingRight: '20px' },
-                            }}
-                            expanded={true}
-                        >
-                            <StepLabel
-                                StepIconComponent={(_props) => (
-                                    <AutoAwesomeMotionIcon color="primary" />
-                                )}
-                            >
-                                <Typography color="primary" variant="h5">
-                                    <b>(2)</b> Create a studyset
-                                </Typography>
-                            </StepLabel>
-                            <StepContent>
-                                <Typography sx={{ padding: '1rem 0' }} variant="h6">
-                                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Aut
-                                    vero, dolorum animi quis quisquam blanditiis ipsam expedita
-                                    impedit cum fugit dolore maxime quod molestiae culpa, laboriosam
-                                    libero repellat. Ipsam, soluta.
-                                </Typography>
-                            </StepContent>
-                        </Step>
-                        <Step
-                            sx={{
-                                '.MuiSvgIcon-root': { fontSize: '3.5rem', paddingRight: '20px' },
-                            }}
-                            expanded={true}
-                        >
-                            <StepLabel
-                                StepIconComponent={(_props) => <FilterAltIcon color="primary" />}
-                            >
-                                <Typography color="primary" variant="h5">
-                                    <b>(3)</b> Annotate the studyset
-                                </Typography>
-                            </StepLabel>
-                            <StepContent>
-                                <Typography sx={{ padding: '1rem 0' }} variant="h6">
-                                    Lorem, ipsum dolor sit amet consectetur adipisicing elit. Iste
-                                    dolorem fugiat adipisci consectetur temporibus. Autem vero
-                                    eaque, et eos vel inventore quia accusantium perferendis
-                                    molestias illum rerum odio numquam iure!
-                                </Typography>
-                            </StepContent>
-                        </Step>
-                        <Step
-                            sx={{
-                                '.MuiSvgIcon-root': { fontSize: '3.5rem', paddingRight: '20px' },
-                            }}
-                            expanded={true}
-                        >
-                            <StepLabel
-                                StepIconComponent={(_props) => <SettingsIcon color="primary" />}
-                            >
-                                <Typography color="primary" variant="h5">
-                                    <b>(4)</b> Specify the meta-analysis
-                                </Typography>
-                            </StepLabel>
-                            <StepContent>
-                                <Typography sx={{ padding: '1rem 0' }} variant="h6">
-                                    Lorem ipsum dolor sit amet consectetur adipisicing elit. Sequi
-                                    placeat temporibus maxime blanditiis ipsam unde optio harum quae
-                                    tenetur magni mollitia voluptate autem, in ullam nisi fugiat
-                                    nemo iure natus.
-                                </Typography>
-                            </StepContent>
-                        </Step>
-                        <Step
-                            sx={{
-                                '.MuiSvgIcon-root': { fontSize: '3.5rem', paddingRight: '20px' },
-                            }}
-                            expanded={true}
-                        >
-                            <StepLabel
-                                StepIconComponent={(_props) => <CheckCircleIcon color="primary" />}
-                            >
-                                <Typography color="primary" variant="h5">
-                                    <b>(5)</b> Execute the meta-analysis
-                                </Typography>
-                            </StepLabel>
-                            <StepContent>
-                                <Typography sx={{ padding: '1rem 0' }} variant="h6">
-                                    Lorem ipsum dolor sit amet consectetur, adipisicing elit. Odio
-                                    id vel fugiat corporis magni possimus eveniet reiciendis
-                                    eligendi unde ullam, quasi praesentium itaque beatae maxime
-                                    dolore aut. Asperiores, quibusdam consequatur.
-                                </Typography>
-                            </StepContent>
-                        </Step>
-                    </Stepper>
+            </Box>
+            <Box sx={{ width: '100%', backgroundColor: 'aliceblue' }}>
+                <Box sx={LandingPageStyles.sectionContainer}>
+                    <Box>
+                        <Typography variant="h3" color="primary.main" sx={{ marginBottom: '1rem' }}>
+                            Neurosynth-Compose ecosystem
+                        </Typography>
+                        <Typography color="primary.main" variant="h6">
+                            Neurosynth-Compose is part of a larger ecosystem of tools which all work
+                            together to enhance the scientific community by synthesizing fMRI data.
+                        </Typography>
+                    </Box>
+                    <Box
+                        sx={{ width: '100%' }}
+                        component="img"
+                        src="/static/ecosystem.png"
+                        alt="ecosystem"
+                    />
                 </Box>
             </Box>
             <Box sx={{ width: '100%', backgroundColor: 'lightgray' }}>
@@ -236,7 +211,7 @@ const LandingPage = () => {
                         Neurosynth compose is supported by the following organizations:
                     </Typography>
 
-                    <Box sx={LandingPageStyles.sponsorContainer}>
+                    <Box sx={{ width: '100%' }}>
                         <Box sx={LandingPageStyles.sponsorsImgContainer}>
                             {logos.map((logo) => (
                                 <Box
@@ -259,25 +234,6 @@ const LandingPage = () => {
                 </Box>
             </Box>
         </>
-        // <Box sx={LandingPageStyles.contentContainer}>
-        //     <Box sx={{ backgroundColor: 'lightpink', height: '100%', width: '100%' }}>hello</Box>
-
-        //     <Box sx={LandingPageStyles.titleContainer}>
-        //         <Box
-        //             component="img"
-        //             sx={LandingPageStyles.logo}
-        //             src="/static/logo.png"
-        //             alt="Logo"
-        //         />
-        //         <Typography sx={LandingPageStyles.title}>welcome to neurosynth</Typography>
-        //     </Box>
-        //     <Box sx={LandingPageStyles.descriptor}>
-        //         neurosynth is a platform designed to ease the process of developing, running, and
-        //         reproducing meta-analyses for functional magnetic resonance imaging (fMRI) data.
-        //     </Box>
-        //     <Divider sx={LandingPageStyles.divider} />
-
-        // </Box>
     );
 };
 
