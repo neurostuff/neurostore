@@ -58,7 +58,7 @@ def mock_decode_token(token):
 @pytest.fixture(scope="session")
 def mock_auth(monkeysession):
     """mock decode token to get around rate limits"""
-    monkeysession.setenv("BEARERINFO_FUNC", "neurosynth.tests.conftest.mock_decode_token")
+    monkeysession.setenv("BEARERINFO_FUNC", "neurosynth_compose.tests.conftest.mock_decode_token")
 
 
 """
