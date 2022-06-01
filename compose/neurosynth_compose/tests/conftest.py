@@ -6,7 +6,7 @@ import schemathesis
 import pytest
 import sqlalchemy as sa
 
-from ..ingest.neurostore import create_meta_analyses
+from neurosynth_compose.ingest.neurostore import create_meta_analyses
 from ..database import db as _db
 from ..models import (
     User, Specification, Studyset, Annotation, MetaAnalysis,

@@ -3,7 +3,7 @@
 	url = https://github.com/neurostuff/neurostore-spec
 
 [submodule "synth/neurosynth/openapi"]
-	path = compose/neurosynth-compose/openapi
+	path = compose/neurosynth_compose/openapi
 	url = https://github.com/neurostuff/neurostore-spec
 [submodule "synth/neurosynth-frontend/src/neurostore-typescript-sdk"]
 	path = compose/neurosynth-frontend/src/neurostore-typescript-sdk
