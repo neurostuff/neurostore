@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: synth
+        working-directory: compose
     steps:
     - 
       name: Checkout
@@ -105,7 +105,7 @@ jobs:
         AUTH0_AUTH_URL: ${{ secrets.AUTH0_AUTH_URL }}
       run: |
         docker-compose run \
-          -e "APP_SETTINGS=neurosynth.config.DockerTestConfig" \
+          -e "APP_SETTINGS=neurosynth_compose.config.DockerTestConfig" \
           -e "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
           -e "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
           -e "AUTH0_BASE_URL=${AUTH0_BASE_URL}" \
@@ -113,14 +113,14 @@ jobs:
           -e "AUTH0_AUTH_URL=${AUTH0_AUTH_URL}" \
           --rm -w /neurosynth \
           neurosynth \
-          python -m pytest neurosynth/tests
+          python -m pytest neurosynth_compose/tests
     -
       name: Frontend Configuration
       run: |
         cd neurosynth-frontend/ && \
         cp .env.example .env.dev && \
         docker-compose run \
-          -e "APP_SETTINGS=neurosynth.config.DockerTestConfig" \
+          -e "APP_SETTINGS=neurosynth_compose.config.DockerTestConfig" \
           -e "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
           -e "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
           -e "AUTH0_BASE_URL=${AUTH0_BASE_URL}" \
@@ -140,7 +140,7 @@ jobs:
       name: Build Frontend
       run: |
         docker-compose run \
-          -e "APP_SETTINGS=neurosynth.config.DockerTestConfig" \
+          -e "APP_SETTINGS=neurosynth_compose.config.DockerTestConfig" \
           -e "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
           -e "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
           -e "AUTH0_BASE_URL=${AUTH0_BASE_URL}" \
@@ -167,7 +167,7 @@ jobs:
         REACT_APP_AUTH0_CLIENT_ID: ${{ secrets.REACT_APP_AUTH0_CLIENT_ID }}
       run: |
         docker-compose run \
-          -e "APP_SETTINGS=neurosynth.config.DockerTestConfig" \
+          -e "APP_SETTINGS=neurosynth_compose.config.DockerTestConfig" \
           -e "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
           -e "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
           -e "AUTH0_BASE_URL=${AUTH0_BASE_URL}" \
@@ -198,5 +198,5 @@ jobs:
         pip install flake8
         cd ./store
         flake8 ./neurostore
-        cd ../synth
-        flake8 ./neurosynth
+        cd ../compose
+        flake8 ./neurosynth_compose
