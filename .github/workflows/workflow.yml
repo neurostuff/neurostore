@@ -113,7 +113,7 @@ jobs:
           -e "AUTH0_AUTH_URL=${AUTH0_AUTH_URL}" \
           --rm -w /neurosynth \
           neurosynth \
-          python -m pytest neurosynth/tests
+          python -m pytest neurosynth-compose/tests
     -
       name: Frontend Configuration
       run: |
