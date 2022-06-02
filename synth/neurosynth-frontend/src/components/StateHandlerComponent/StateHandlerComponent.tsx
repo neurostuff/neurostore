@@ -6,6 +6,7 @@ export interface IStateHandlerComponent {
     errorMessage?: string;
     isLoading: boolean;
     loadingText?: string;
+    loadingColor?: string;
 }
 
 const StateHandlerComponent: React.FC<IStateHandlerComponent> = (props) => {
@@ -19,8 +20,10 @@ const StateHandlerComponent: React.FC<IStateHandlerComponent> = (props) => {
 
     if (props.isLoading) {
         return (
-            <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-                <ProgressLoader />
+            <Box
+                sx={{ width: '100%', display: 'flex', justifyContent: 'center', margin: '2rem 0' }}
+            >
+                <ProgressLoader sx={{ color: props.loadingColor }} />
                 <Typography>{props.loadingText || ''}</Typography>
             </Box>
         );

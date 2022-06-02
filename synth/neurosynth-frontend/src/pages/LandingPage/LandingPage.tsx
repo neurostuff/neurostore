@@ -6,8 +6,13 @@ import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PlatformComparisonTable from './PlatformComparisonTable';
+import AuthenticatedLandingPage from './AuthenticatedLandingPage';
+import { useAuth0 } from '@auth0/auth0-react';
+import { Link as ReactRouterLink } from 'react-router-dom';
 
 const LandingPage = () => {
+    const { isAuthenticated } = useAuth0();
+
     const logos: { logoPath: string; alt: string }[] = [
         {
             logoPath: '/static/utlogo.png',
@@ -71,6 +76,10 @@ const LandingPage = () => {
         },
     ];
 
+    if (isAuthenticated) {
+        return <AuthenticatedLandingPage />;
+    }
+
     return (
         <>
             <Box sx={{ width: '100%', backgroundColor: 'primary.main' }}>
@@ -115,16 +124,28 @@ const LandingPage = () => {
                             </ul>
 
                             <Typography variant="h6" sx={LandingPageStyles.introSpacedText}>
-                                Get started by browsing various &nbsp;
-                                <Link href="#" color="secondary.main">
+                                Get started by browsing various&nbsp;
+                                <Link
+                                    component={ReactRouterLink}
+                                    to="/studies"
+                                    color="secondary.main"
+                                >
                                     studies
                                 </Link>
-                                &nbsp;,
-                                <Link href="#" color="secondary.main">
+                                ,&nbsp;
+                                <Link
+                                    component={ReactRouterLink}
+                                    to="/studysets"
+                                    color="secondary.main"
+                                >
                                     studysets
                                 </Link>
-                                , or &nbsp;
-                                <Link href="#" color="secondary.main">
+                                , or&nbsp;
+                                <Link
+                                    component={ReactRouterLink}
+                                    to="/meta-analyses"
+                                    color="secondary.main"
+                                >
                                     meta-analyses
                                 </Link>
                                 &nbsp;on the platform.

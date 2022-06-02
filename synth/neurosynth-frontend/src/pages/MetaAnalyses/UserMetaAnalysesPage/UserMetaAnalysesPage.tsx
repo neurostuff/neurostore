@@ -8,8 +8,8 @@ import { useGetMetaAnalyses } from '../../../hooks';
 
 const UserMetaAnalysesPage: React.FC = (props) => {
     const history = useHistory();
-    const { data, isLoading, isError } = useGetMetaAnalyses();
     const { user } = useAuth0();
+    const { data, isLoading, isError } = useGetMetaAnalyses();
 
     const handleMetaAnalysisSelected = (selected: string | number) => {
         history.push(`/meta-analyses/${selected}`);
@@ -74,13 +74,7 @@ const UserMetaAnalysesPage: React.FC = (props) => {
                 </Button>
             </Box>
 
-            <StateHandlerComponent
-                isError={isError}
-                isLoading={false}
-                errorMessage="There was an error fetching meta-analyses"
-            >
-                <DisplayValuesTable {...metaAnalysesTableData} />
-            </StateHandlerComponent>
+            <DisplayValuesTable {...metaAnalysesTableData} />
         </>
     );
 };

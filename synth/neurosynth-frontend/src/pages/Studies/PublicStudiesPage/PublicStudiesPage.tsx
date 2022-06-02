@@ -33,7 +33,8 @@ export class SearchCriteria {
         public descriptionSearch: string | undefined = undefined,
         public authorSearch: string | undefined = undefined,
         public showUnique: boolean = false,
-        public source: Source | undefined = undefined
+        public source: Source | undefined = undefined,
+        public userId: string | undefined = undefined
     ) {}
 }
 
@@ -119,7 +120,8 @@ const PublicStudiesPage = () => {
                     undefined,
                     searchCriteria.showUnique,
                     searchCriteria.source,
-                    searchCriteria.authorSearch
+                    searchCriteria.authorSearch,
+                    searchCriteria.userId
                 )
                     .then((res) => {
                         if (isMountedRef.current && res?.data?.results) {

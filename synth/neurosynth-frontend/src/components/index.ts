@@ -30,6 +30,7 @@ import StudysetsTable from 'components/Tables/StudysetsTable/StudysetsTable';
 import StudiesTable from 'components/Tables/StudiesTable/StudiesTable';
 import AnnotationsTable from 'components/Tables/AnnotationsTable/AnnotationsTable';
 import ProgressLoader from './ProgressLoader/ProgressLoader';
+import NeurosynthList from './NeurosynthList/NeurosynthList';
 
 // export components
 export {
@@ -60,4 +61,5 @@ export {
     LoadingButton,
     NeurosynthAutocomplete,
     ProgressLoader,
+    NeurosynthList,
 };
