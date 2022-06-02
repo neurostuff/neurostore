@@ -26,13 +26,15 @@ from neurostore.models import (
 from neurostore.models.data import StudysetStudy, _check_type
 
 
-def ingest_neurovault(verbose=False, limit=20):
+def ingest_neurovault(verbose=False, limit=20, overwrite=False):
 
     # Store existing studies for quick lookup
-    all_studies = {s.doi: s for s in Study.query.filter(Study.doi.isnot(None)).all()}
+    all_studies = all_studies = {
+        s.doi: s for s in Study.query.filter_by(source="neurovault").all()
+    }
 
     def add_collection(data):
-        if data["DOI"] in all_studies:
+        if data["DOI"] in all_studies and not overwrite:
             print("Skipping {} (already exists)...".format(data["DOI"]))
             return
         collection_id = data.pop('id')
@@ -161,6 +163,7 @@ def ingest_neurosynth(max_rows=None):
 
     studies = []
     to_commit = []
+    all_studies = {s.doi: s for s in Study.query.filter_by(source="neurosynth").all()}
     with db.session.no_autoflush:
         for (metadata_row, annotation_row) in zip(
             metadata.itertuples(), annotations.itertuples(index=False)
@@ -170,6 +173,8 @@ def ingest_neurosynth(max_rows=None):
             md = {
                 "year": int(metadata_row.year),
             }
+            if metadata_row.doi in all_studies:
+                continue
             s = Study(
                 name=metadata_row.title,
                 authors=metadata_row.authors,
@@ -263,6 +268,7 @@ def ingest_neuroquery(max_rows=None):
     if max_rows is not None:
         metadata = metadata.iloc[:max_rows]
 
+    # all_studies = {s.pmid: s for s in Study.query.filter(source="neuroquery").all()}
     for id_, metadata_row in metadata.iterrows():
         study_coord_data = coord_data.loc[[id_]]
         s = Study(

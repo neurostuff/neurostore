@@ -11,7 +11,6 @@ requirements = [
     "flask-cors",
     "flask-sqlalchemy",
     "pyld",
-    "flask-graphql",
     "marshmallow>=3.0.0",
     "webargs",
     "shortuuid",
@@ -22,9 +21,9 @@ requirements = [
 print("PACKAGES:", find_packages(exclude=["tests", "test_*"]))
 
 setup(
-    name="neurosynth",
+    name="neurosynth_compose",
     version="0.0.0",
-    description="neurosynth",
+    description="neurosynth compose",
     install_requires=requirements,
     maintainer="Tal Yarkoni",
     maintainer_email="tyarkoni@gmail.com",
