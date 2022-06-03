@@ -6,7 +6,7 @@ import schemathesis
 import pytest
 import sqlalchemy as sa
 
-from ..ingest.neurostore import create_meta_analyses
+from neurosynth_compose.ingest.neurostore import create_meta_analyses
 from ..database import db as _db
 from ..models import (
     User, Specification, Studyset, Annotation, MetaAnalysis,
@@ -58,7 +58,7 @@ def mock_decode_token(token):
 @pytest.fixture(scope="session")
 def mock_auth(monkeysession):
     """mock decode token to get around rate limits"""
-    monkeysession.setenv("BEARERINFO_FUNC", "neurosynth.tests.conftest.mock_decode_token")
+    monkeysession.setenv("BEARERINFO_FUNC", "neurosynth_compose.tests.conftest.mock_decode_token")
 
 
 """
@@ -195,7 +195,7 @@ def mock_add_users(app, db, mock_auth):
 @pytest.fixture(scope="function")
 def add_users(app, db):
     """ Adds a test user to db """
-    from neurosynth.resources.auth import decode_token
+    from neurosynth_compose.resources.auth import decode_token
 
     domain = app.config['AUTH0_BASE_URL'].split('://')[1]
     token = GetToken(domain)

@@ -35,7 +35,7 @@ class ProductionConfig(Config):
     AUTH0_BASE_URL = "https://neurosynth.us.auth0.com"
     AUTH0_ACCESS_TOKEN_URL = "https://neurosynth.us.auth0.com/oauth/token"
     AUTH0_AUTH_URL = "https://neurosynth.us.auth0.com/authorize"
-    AUTH0_API_AUDIENCE = "https://neurostore.org/api/"
+    AUTH0_API_AUDIENCE = "https://compose.neurosynth.org/api/"
 
 
 class StagingConfig(Config):
