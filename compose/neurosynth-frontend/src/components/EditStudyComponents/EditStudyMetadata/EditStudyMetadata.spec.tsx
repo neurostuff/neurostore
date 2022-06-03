@@ -1,11 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { SnackbarProvider } from 'notistack';
 import { act } from 'react-dom/test-utils';
-import API from '../../../utils/api';
+import API from 'utils/api';
 import EditStudyMetadata from './EditStudyMetadata';
 
 jest.mock('@auth0/auth0-react');
-jest.mock('../../../utils/api');
+jest.mock('utils/api');
 
 describe('EditStudyMetadata Component', () => {
     const handleUpdateStudyMetadata = jest.fn();
@@ -23,11 +24,13 @@ describe('EditStudyMetadata Component', () => {
         );
 
         render(
-            <EditStudyMetadata
-                studyId={'some-test-id'}
-                metadata={mockMetadata}
-                onUpdateStudyMetadata={handleUpdateStudyMetadata}
-            />
+            <SnackbarProvider>
+                <EditStudyMetadata
+                    studyId={'some-test-id'}
+                    metadata={mockMetadata}
+                    onUpdateStudyMetadata={handleUpdateStudyMetadata}
+                />
+            </SnackbarProvider>
         );
 
         // open accordion

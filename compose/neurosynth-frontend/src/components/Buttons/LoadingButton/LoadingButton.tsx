@@ -1,5 +1,6 @@
-import { Button, CircularProgress } from '@mui/material';
+import { Button } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
+import { ProgressLoader } from 'components';
 
 interface ILoadingButton {
     text: string;
@@ -43,7 +44,7 @@ const LoadingButton: React.FC<ILoadingButton> = (props) => {
             endIcon={isLoading ? undefined : endIcon}
             variant={variant}
         >
-            {isLoading ? <CircularProgress size="1.5rem" color={loaderColor} /> : text}
+            {isLoading ? <ProgressLoader size="1.5rem" color={loaderColor} /> : text}
         </Button>
     );
 };

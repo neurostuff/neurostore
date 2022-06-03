@@ -27,15 +27,25 @@ const NavbarDrawer: React.FC<NavbarArgs> = (props) => {
 
     return (
         <Toolbar sx={[NavbarStyles.toolbar, NavbarStyles.mdDown]}>
-            <Button>
+            <Box style={{ display: 'flex', alignItems: 'center' }}>
+                <img
+                    alt="neurosynth compose logo"
+                    style={{
+                        width: '65px',
+                        height: '65px',
+                        marginRight: '1rem',
+                        cursor: 'pointer',
+                    }}
+                    src="/static/synth.png"
+                />
                 <Box to="/" exact sx={NavbarStyles.neurosynthLink} component={NavLink}>
                     <Typography variant="h5">
-                        <Badge color="secondary" badgeContent={<span>alpha</span>}>
-                            neurosynth
+                        <Badge color="warning" badgeContent={<span>beta</span>}>
+                            neurosynth compose
                         </Badge>
                     </Typography>
                 </Box>
-            </Button>
+            </Box>
             <Drawer anchor="left" open={drawerIsOpen} onClose={toggleDrawer}>
                 <List sx={NavbarDrawerStyles.list}>
                     {props.navOptions.map((navOption) => (
@@ -60,10 +70,13 @@ const NavbarDrawer: React.FC<NavbarArgs> = (props) => {
                             sx={[
                                 NavbarDrawerStyles.buttonOverride,
                                 NavbarDrawerStyles.innerButtonOverride,
+                                isAuthenticated ? {} : { color: 'warning.dark' },
                             ]}
                             onClick={isAuthenticated ? props.logout : props.login}
                         >
-                            <Box component="span">{isAuthenticated ? 'Logout' : 'Login'}</Box>
+                            <Box component="span">
+                                {isAuthenticated ? 'Logout' : 'Sign in/Sign up'}
+                            </Box>
                         </Button>
                     </ListItem>
                 </List>

@@ -3,7 +3,7 @@ import API from '../../utils/api';
 
 const useGetMetaAnalyses = (userId?: string) => {
     return useQuery(
-        'meta-analyses',
+        ['meta-analyses', userId],
         () => API.NeurosynthServices.MetaAnalysisService.metaAnalysesGet(false),
         {
             select: (axiosResponse) => {

@@ -52,8 +52,7 @@ describe('NavbarDrawer Component', () => {
     });
 
     it('should render', () => {
-        // ignore the neuroscience button and grab the drawer button to open the drawer
-        const button = screen.getAllByRole('button')[1];
+        const button = screen.getByTestId('MenuIcon');
         expect(button).toBeTruthy();
 
         const titleElement = screen.getByText(/neurosynth/i);
@@ -61,8 +60,7 @@ describe('NavbarDrawer Component', () => {
     });
 
     it('should open the drawer when clicked', () => {
-        // ignore the neuroscience button and grab the drawer button to open the drawer
-        const button = screen.getAllByRole('button')[1];
+        const button = screen.getByTestId('MenuIcon');
         userEvent.click(button);
 
         const mockedOptions = screen.getAllByText('child-menuitem');
@@ -72,11 +70,10 @@ describe('NavbarDrawer Component', () => {
     it('should show login if not authenticated and login on click', () => {
         useAuth0().isAuthenticated = false;
 
-        // ignore the neuroscience button and grab the drawer button to open the drawer
-        const button = screen.getAllByRole('button')[1];
+        const button = screen.getByTestId('MenuIcon');
         userEvent.click(button);
 
-        const loginButton = screen.getByText('Login');
+        const loginButton = screen.getByText('Sign in/Sign up');
         expect(loginButton).toBeInTheDocument();
 
         userEvent.click(loginButton);
@@ -84,8 +81,7 @@ describe('NavbarDrawer Component', () => {
     });
 
     it('should show logout if authenticated and logout on click', () => {
-        // ignore the neuroscience button and grab the drawer button to open the drawer
-        const button = screen.getAllByRole('button')[1];
+        const button = screen.getByTestId('MenuIcon');
         userEvent.click(button);
 
         const logoutButton = screen.getByText('Logout');

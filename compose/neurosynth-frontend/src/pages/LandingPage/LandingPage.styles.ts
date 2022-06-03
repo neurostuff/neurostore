@@ -1,41 +1,72 @@
 import { Style } from '../..';
 
 const LandingPageStyles: Style = {
-    contentContainer: {
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
+    sectionContainer: {
+        width: '80%',
+        margin: '0 auto',
+        padding: {
+            xs: '3rem 0 4rem 0',
+            md: '6rem 0 8rem 0',
+        },
     },
-    titleContainer: {
+    // stuff related to first intro section
+    title: {
+        color: 'primary.contrastText',
+        fontWeight: 'bold',
+    },
+    introSpacedText: {
+        color: 'primary.contrastText',
+        padding: {
+            xs: '1rem 0',
+            md: '2rem 0',
+        },
+    },
+    introDetailsContainer: {
         display: 'flex',
         flexDirection: {
             xs: 'column',
+            md: 'column',
+            lg: 'row',
+        },
+        width: '100%',
+        justifyContent: 'space-between',
+    },
+    // stuff related to workflow section
+    workflowContainer: {
+        display: 'flex',
+        flexDirection: {
+            xs: 'column-reverse',
             md: 'row',
         },
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        fontFamily: 'Inter',
+    },
+    stepperContainer: {
         width: {
             xs: '100%',
-            md: '650px',
+            md: '50%',
+        },
+        margin: {
+            xs: '0',
+            md: '2rem 0',
         },
     },
-    title: {
-        fontSize: {
-            xs: '2rem',
-            md: '3rem',
-        },
-        marginTop: {
-            xs: '6%',
-            md: 0,
+    glossaryContainer: {
+        width: {
+            xs: '100%',
+            md: '50%',
         },
     },
+    glossary: {
+        position: {
+            xs: 'relative',
+            md: 'sticky',
+        },
+        width: '100%',
+        top: 0,
+    },
+    // stuff related to bottom section logos
     logo: {
         width: '100px',
-    },
-    sponsorContainer: {
-        width: '100%',
+        height: '100px',
     },
     sponsorsImgContainer: {
         display: 'flex',
@@ -58,32 +89,6 @@ const LandingPageStyles: Style = {
             xs: '100px',
             md: '125px',
         },
-    },
-    nihAwardText: {
-        textAlign: 'center',
-        margin: '2% 0',
-    },
-    descriptor: {
-        fontSize: {
-            xs: '1rem',
-            md: '1.5rem',
-        },
-        margin: {
-            xs: '30% 0',
-            md: '4% 0',
-        },
-        width: {
-            xs: '100%',
-            md: '650px',
-        },
-        fontFamily: 'Roboto',
-        color: 'muted.main',
-        lineHeight: '2',
-        textAlign: 'center',
-    },
-    divider: {
-        margin: '2% 0 !important',
-        width: '100%',
     },
 };
 

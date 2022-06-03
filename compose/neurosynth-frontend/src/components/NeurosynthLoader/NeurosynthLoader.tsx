@@ -1,4 +1,5 @@
-import { CircularProgress, Box } from '@mui/material';
+import Box from '@mui/material/Box';
+import { ProgressLoader } from 'components';
 
 export interface INeurosynthLoader {
     loaded: boolean;
@@ -19,7 +20,7 @@ const NeurosynthLoader: React.FC<INeurosynthLoader> = (props) => {
                         margin: '0.5rem',
                     }}
                 >
-                    <CircularProgress />
+                    <ProgressLoader />
                     {props.loadingText && (
                         <Box sx={{ margin: '0.5rem' }}> {props.loadingText} </Box>
                     )}

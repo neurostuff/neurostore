@@ -7,7 +7,7 @@ import { MockThemeProvider } from '../../../testing/helpers';
 import NavbarToolbar from './NavbarToolbar';
 
 // already tested child component
-jest.mock('../NavbarPopupMenu/NavbarPopupMenu');
+jest.mock('components/Navbar/NavbarPopupMenu/NavbarPopupMenu');
 jest.mock('@auth0/auth0-react');
 
 describe('NavbarToolbar Component', () => {
@@ -57,7 +57,7 @@ describe('NavbarToolbar Component', () => {
         expect(menuItems.length).toEqual(mockNavOptions.length);
     });
 
-    it('should login with login is clicked', () => {
+    it('should login if login is clicked', () => {
         render(
             <MockThemeProvider>
                 <BrowserRouter>
@@ -69,7 +69,7 @@ describe('NavbarToolbar Component', () => {
                 </BrowserRouter>
             </MockThemeProvider>
         );
-        const loginButton = screen.getByText('Login');
+        const loginButton = screen.getByText('Sign in/Sign up');
         expect(loginButton).toBeInTheDocument();
         userEvent.click(loginButton);
         expect(loginMock).toBeCalled();

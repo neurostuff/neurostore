@@ -1,4 +1,4 @@
-import { Style } from '../../..';
+import { Style } from 'index';
 
 const NavbarPopupMenuStyles: Style = {
     link: {
@@ -6,7 +6,6 @@ const NavbarPopupMenuStyles: Style = {
         height: '100%',
         display: 'flex',
         alignItems: 'center',
-        color: 'primary.contrastText',
     },
 };
 

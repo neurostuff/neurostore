@@ -1,4 +1,4 @@
-import { Box, Typography, Switch, Stack, ToggleButtonGroup, ToggleButton } from '@mui/material';
+import { Box, Typography, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import { IDynamicFormInput } from '../..';
 import MetaAnalysisAlgorithmStyles from '../MetaAnalysisAlgorithm.styles';
 

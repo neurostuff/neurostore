@@ -66,7 +66,7 @@ instance/
 
 # Postgres Python migrations:
 store/postgres/migrations/migrations/versions/*
-synth/postgres/migrations/migrations/versions/*
+compose/postgres/migrations/migrations/versions/*
 # Scrapy stuff:
 .scrapy
 

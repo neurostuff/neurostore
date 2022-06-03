@@ -1,4 +1,4 @@
-import { EPropertyType } from '..';
+import { EPropertyType } from 'components/EditMetadata';
 import HotSettingsBuilder from './HotSettingsBuilder';
 import NeurosynthSpreadsheetState from './NeurosynthSpreadsheetState';
 
