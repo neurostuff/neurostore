@@ -2,16 +2,22 @@ import { Box, Typography, Button } from '@mui/material';
 import ArticleIcon from '@mui/icons-material/Article';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import AutoAwesomeMotionIcon from '@mui/icons-material/AutoAwesomeMotion';
-import { NeurosynthList } from 'components';
-import { useGetMetaAnalyses, useGetStudies, useGetStudysets } from 'hooks';
+import { CreateDetailsDialog, NeurosynthList } from 'components';
+import { useGetMetaAnalyses, useGetStudies, useGetStudysets, useCreateStudyset } from 'hooks';
 import { SearchCriteria } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
 import { useAuth0 } from '@auth0/auth0-react';
 import AuthenticatedLandingPageStyles from './AuthenticatedLandingPage.styles';
 import { useHistory } from 'react-router-dom';
+import { useState } from 'react';
 
 const AuthenticatedLandingPage: React.FC = (props) => {
     const history = useHistory();
     const { user } = useAuth0();
+    const {
+        mutate,
+        isLoading: createStudysetIsLoading,
+        isError: createStudysetIsError,
+    } = useCreateStudyset();
     const {
         data: studies,
         isLoading: getStudiesIsLoading,
@@ -20,11 +26,34 @@ const AuthenticatedLandingPage: React.FC = (props) => {
         ...new SearchCriteria(),
         userId: user?.sub,
     });
-    const { data: studysets } = useGetStudysets(user?.sub);
-    const { data: metaAnalyses } = useGetMetaAnalyses(user?.sub);
+    const {
+        data: studysets,
+        isLoading: getStudysetsIsLoading,
+        isError: getStudysetsIsError,
+    } = useGetStudysets(user?.sub);
+    const {
+        data: metaAnalyses,
+        isLoading: getMetaAnalysesIsLoading,
+        isError: getMetaAnalysesIsError,
+    } = useGetMetaAnalyses(user?.sub);
+
+    const [dialogIsOpen, setDialogIsOpen] = useState(false);
+
+    const handleCreateStudyset = (name: string, description: string) => {
+        mutate({
+            name,
+            description,
+        });
+    };
 
     return (
         <Box sx={{ width: '80%', margin: '3rem auto' }}>
+            <CreateDetailsDialog
+                titleText="Create new studyset"
+                onCreate={handleCreateStudyset}
+                isOpen={dialogIsOpen}
+                onCloseDialog={() => setDialogIsOpen(false)}
+            />
             <Box sx={AuthenticatedLandingPageStyles.landingPageContainer}>
                 <NeurosynthList
                     containerSx={{
@@ -58,10 +87,18 @@ const AuthenticatedLandingPage: React.FC = (props) => {
                             No studysets have been been created yet
                         </Typography>
                     }
-                    TitleButton={<Button variant="contained">new studyset</Button>}
+                    TitleElement={
+                        <Button
+                            onClick={() => setDialogIsOpen(true)}
+                            variant="contained"
+                            disableElevation
+                        >
+                            new studyset
+                        </Button>
+                    }
                     loaderColor="secondary.main"
-                    isLoading={getStudiesIsLoading}
-                    isError={getStudiesIsError}
+                    isLoading={getStudysetsIsLoading || createStudysetIsLoading}
+                    isError={getStudysetsIsError || createStudysetIsError}
                     listIcon={<AutoAwesomeMotionIcon sx={{ color: '#42ab55' }} />}
                     titleText="My Studysets"
                     listItems={(studysets || []).map((studyset) => ({
@@ -72,9 +109,10 @@ const AuthenticatedLandingPage: React.FC = (props) => {
                     }))}
                 />
                 <NeurosynthList
-                    TitleButton={
+                    TitleElement={
                         <Button
                             variant="contained"
+                            disableElevation
                             onClick={() => history.push('/meta-analyses/build')}
                         >
                             new meta-analysis
@@ -90,8 +128,8 @@ const AuthenticatedLandingPage: React.FC = (props) => {
                         </Typography>
                     }
                     loaderColor="secondary.main"
-                    isLoading={getStudiesIsLoading}
-                    isError={getStudiesIsError}
+                    isLoading={getMetaAnalysesIsLoading}
+                    isError={getMetaAnalysesIsError}
                     listIcon={<PsychologyIcon sx={{ color: '#5C2751' }} />}
                     titleText="My Meta-Analyses"
                     listItems={(metaAnalyses || []).map((metaAnalysis) => ({

@@ -2,14 +2,15 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Router } from 'react-router-dom';
-import { StudiesTable } from '../..';
-import { MockThemeProvider } from '../../../testing/helpers';
-import API, { StudyApiResponse, StudysetsApiResponse } from '../../../utils/api';
+import { StudiesTable } from '..';
+import { MockThemeProvider } from 'testing/helpers';
+import API, { StudyApiResponse, StudysetsApiResponse } from 'utils/api';
+import { SnackbarProvider } from 'notistack';
 
 jest.mock('hooks');
 jest.mock('@auth0/auth0-react');
-jest.mock('../../../utils/api');
-jest.mock('../../StudysetsPopupMenu/StudysetsPopupMenu');
+jest.mock('utils/api');
+jest.mock('components/StudysetsPopupMenu/StudysetsPopupMenu');
 
 describe('StudiesTable Component', () => {
     const historyMock = {
@@ -154,9 +155,11 @@ describe('StudiesTable Component', () => {
         await act(async () => {
             render(
                 <MockThemeProvider>
-                    <Router history={historyMock as any}>
-                        <StudiesTable showStudyOptions={true} studies={mockStudies} />
-                    </Router>
+                    <SnackbarProvider>
+                        <Router history={historyMock as any}>
+                            <StudiesTable showStudyOptions={true} studies={mockStudies} />
+                        </Router>
+                    </SnackbarProvider>
                 </MockThemeProvider>
             );
         });
@@ -172,9 +175,11 @@ describe('StudiesTable Component', () => {
         await act(async () => {
             render(
                 <MockThemeProvider>
-                    <Router history={historyMock as any}>
-                        <StudiesTable studies={[]} />
-                    </Router>
+                    <SnackbarProvider>
+                        <Router history={historyMock as any}>
+                            <StudiesTable studies={[]} />
+                        </Router>
+                    </SnackbarProvider>
                 </MockThemeProvider>
             );
         });
@@ -186,9 +191,11 @@ describe('StudiesTable Component', () => {
         await act(async () => {
             render(
                 <MockThemeProvider>
-                    <Router history={historyMock as any}>
-                        <StudiesTable studies={mockStudiesNoInfo} />
-                    </Router>
+                    <SnackbarProvider>
+                        <Router history={historyMock as any}>
+                            <StudiesTable studies={mockStudiesNoInfo} />
+                        </Router>
+                    </SnackbarProvider>
                 </MockThemeProvider>
             );
         });
@@ -201,9 +208,11 @@ describe('StudiesTable Component', () => {
         await act(async () => {
             render(
                 <MockThemeProvider>
-                    <Router history={historyMock as any}>
-                        <StudiesTable studies={mockStudiesNoInfo} />
-                    </Router>
+                    <SnackbarProvider>
+                        <Router history={historyMock as any}>
+                            <StudiesTable studies={mockStudiesNoInfo} />
+                        </Router>
+                    </SnackbarProvider>
                 </MockThemeProvider>
             );
         });
@@ -218,9 +227,11 @@ describe('StudiesTable Component', () => {
         await act(async () => {
             render(
                 <MockThemeProvider>
-                    <Router history={historyMock as any}>
-                        <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
-                    </Router>
+                    <SnackbarProvider>
+                        <Router history={historyMock as any}>
+                            <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
+                        </Router>
+                    </SnackbarProvider>
                 </MockThemeProvider>
             );
         });
@@ -239,9 +250,11 @@ describe('StudiesTable Component', () => {
         await act(async () => {
             render(
                 <MockThemeProvider>
-                    <Router history={historyMock as any}>
-                        <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
-                    </Router>
+                    <SnackbarProvider>
+                        <Router history={historyMock as any}>
+                            <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
+                        </Router>
+                    </SnackbarProvider>
                 </MockThemeProvider>
             );
         });
@@ -264,9 +277,11 @@ describe('StudiesTable Component', () => {
         await act(async () => {
             render(
                 <MockThemeProvider>
-                    <Router history={historyMock as any}>
-                        <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
-                    </Router>
+                    <SnackbarProvider>
+                        <Router history={historyMock as any}>
+                            <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
+                        </Router>
+                    </SnackbarProvider>
                 </MockThemeProvider>
             );
         });
@@ -283,9 +298,11 @@ describe('StudiesTable Component', () => {
         await act(async () => {
             render(
                 <MockThemeProvider>
-                    <Router history={historyMock as any}>
-                        <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
-                    </Router>
+                    <SnackbarProvider>
+                        <Router history={historyMock as any}>
+                            <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
+                        </Router>
+                    </SnackbarProvider>
                 </MockThemeProvider>
             );
         });
@@ -300,9 +317,11 @@ describe('StudiesTable Component', () => {
         await act(async () => {
             render(
                 <MockThemeProvider>
-                    <Router history={historyMock as any}>
-                        <StudiesTable showStudyOptions={false} studies={mockStudiesNoInfo} />
-                    </Router>
+                    <SnackbarProvider>
+                        <Router history={historyMock as any}>
+                            <StudiesTable showStudyOptions={false} studies={mockStudiesNoInfo} />
+                        </Router>
+                    </SnackbarProvider>
                 </MockThemeProvider>
             );
         });

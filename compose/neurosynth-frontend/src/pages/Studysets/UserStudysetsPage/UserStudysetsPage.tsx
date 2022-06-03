@@ -80,7 +80,7 @@ const UserStudysetsPage: React.FC = (props) => {
                 <Typography variant="h4">My Studysets</Typography>
 
                 <Button variant="contained" onClick={() => setCreateStudysetDialogIsOpen(true)}>
-                    Create new studyset
+                    New studyset
                 </Button>
             </Box>
 

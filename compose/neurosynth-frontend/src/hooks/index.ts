@@ -17,6 +17,7 @@ import useCreateCondition from './requests/useCreateCondition';
 import useUpdatePoint from './requests/useUpdatePoint';
 import useDeleteAnalysis from './requests/useDeleteAnalysis';
 import useGetStudies from './requests/useGetStudies';
+import useCreateStudyset from './requests/useCreateStudyset';
 
 export {
     useIsMounted,
@@ -38,4 +39,5 @@ export {
     useUpdatePoint,
     useDeleteAnalysis,
     useGetStudies,
+    useCreateStudyset,
 };

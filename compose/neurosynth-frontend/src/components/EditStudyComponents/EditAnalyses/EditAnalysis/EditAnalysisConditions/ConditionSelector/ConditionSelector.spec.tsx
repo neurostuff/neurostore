@@ -1,6 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useCreateCondition } from 'hooks';
+import { SnackbarProvider } from 'notistack';
 import { mockConditions } from 'testing/mockData';
 import ConditionSelector from './ConditionSelector';
 
@@ -11,25 +12,27 @@ jest.mock('hooks');
 describe('ConditionSelector', () => {
     const mockOnConditionSelected = jest.fn();
 
+    beforeEach(() => {
+        render(
+            <SnackbarProvider>
+                <ConditionSelector onConditionSelected={mockOnConditionSelected} />
+            </SnackbarProvider>
+        );
+    });
+
     afterAll(() => {
         jest.clearAllMocks();
     });
 
-    it('should render', () => {
-        render(<ConditionSelector onConditionSelected={mockOnConditionSelected} />);
-    });
+    it('should render', () => {});
 
     it('should show all the conditions', () => {
-        render(<ConditionSelector onConditionSelected={mockOnConditionSelected} />);
-
         const autocomplete = screen.getByLabelText('add a new condition');
         userEvent.click(autocomplete);
         expect(screen.getAllByRole('option').length).toBe(mockConditions().length);
     });
 
     it('should filter out other options', () => {
-        render(<ConditionSelector onConditionSelected={mockOnConditionSelected} />);
-
         const autocomplete = screen.getByLabelText('add a new condition');
         userEvent.type(autocomplete, mockConditions()[0].name as string);
 
@@ -37,8 +40,6 @@ describe('ConditionSelector', () => {
     });
 
     it('should not show the add new condition option if the condition you input already exists', () => {
-        render(<ConditionSelector onConditionSelected={mockOnConditionSelected} />);
-
         const autocomplete = screen.getByLabelText('add a new condition');
         userEvent.type(autocomplete, mockConditions()[0].name as string);
 
@@ -46,16 +47,12 @@ describe('ConditionSelector', () => {
     });
 
     it('should show the add new condition if the condition you input does not exist', () => {
-        render(<ConditionSelector onConditionSelected={mockOnConditionSelected} />);
-
         const autocomplete = screen.getByLabelText('add a new condition');
         userEvent.type(autocomplete, 'non-existent-text');
         expect(screen.queryByText(`Add "non-existent-text"`)).toBeTruthy();
     });
 
     it('should select an option and call the function', () => {
-        render(<ConditionSelector onConditionSelected={mockOnConditionSelected} />);
-
         const autocomplete = screen.getByLabelText('add a new condition');
         userEvent.type(autocomplete, mockConditions()[0].name as string);
 
@@ -66,8 +63,6 @@ describe('ConditionSelector', () => {
     });
 
     it('should open the dialog and create a new condition and display that condition', async () => {
-        render(<ConditionSelector onConditionSelected={mockOnConditionSelected} />);
-
         const autocomplete = screen.getByLabelText('add a new condition');
         userEvent.type(autocomplete, 'non existent text');
 

@@ -26,7 +26,7 @@ interface INeurosynthList {
     isError?: boolean;
     loaderColor?: string;
     NoDataElement?: JSX.Element;
-    TitleButton?: JSX.Element;
+    TitleElement?: JSX.Element;
 }
 
 const NeurosynthList: React.FC<INeurosynthList> = (props) => {
@@ -37,7 +37,7 @@ const NeurosynthList: React.FC<INeurosynthList> = (props) => {
         isError = false,
         loaderColor = 'primary.main',
         NoDataElement = <>no data</>,
-        TitleButton = undefined,
+        TitleElement = undefined,
     } = props;
 
     const handleNavigate = (link: string) => {
@@ -65,7 +65,7 @@ const NeurosynthList: React.FC<INeurosynthList> = (props) => {
                 <Typography sx={{ display: 'block' }} variant="h6" color="primary.contrastText">
                     {props.titleText}
                 </Typography>
-                {props.TitleButton && props.TitleButton}
+                {!!TitleElement && TitleElement}
             </Box>
             <StateHandlerComponent
                 loadingColor={loaderColor}

@@ -44,6 +44,7 @@ const BaseNavigation: React.FC = (_props) => {
                         width: '100%',
                         height: '100%',
                         justifyContent: 'center',
+                        margin: '2rem 0',
                     }}
                 >
                     <ProgressLoader />

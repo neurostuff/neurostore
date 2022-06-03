@@ -13,7 +13,7 @@ import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useIsMounted } from 'hooks';
 import API, { StudysetsApiResponse, StudyApiResponse } from 'utils/api';
-import StudysetsPopupMenu from '../../StudysetsPopupMenu/StudysetsPopupMenu';
+import StudysetsPopupMenu from 'components/StudysetsPopupMenu/StudysetsPopupMenu';
 import StudiesTableStyles from './StudiesTable.styles';
 import { useSnackbar } from 'notistack';
 
