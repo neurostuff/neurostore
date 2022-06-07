@@ -89,7 +89,7 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                 isOptionEqualToValue={(option, value) => option?.id === value?.id}
                 value={props.studyset || null}
                 renderOption={(params, option) => (
-                    <ListItem {...params}>
+                    <ListItem {...params} key={option?.id}>
                         <ListItemText
                             primary={option?.name || ''}
                             secondary={option?.description || ''}
@@ -116,7 +116,7 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                 isOptionEqualToValue={(option, value) => option?.id === value?.id}
                 value={props.annotation || null}
                 renderOption={(params, option) => (
-                    <ListItem {...params}>
+                    <ListItem {...params} key={option?.id}>
                         <ListItemText
                             primary={option?.name || ''}
                             secondary={option?.description || ''}

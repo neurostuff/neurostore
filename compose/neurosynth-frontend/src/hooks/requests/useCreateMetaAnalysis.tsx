@@ -52,6 +52,9 @@ const useCreateMetaAnalysis = () => {
         estimatorCorrectorArgs: IEstimatorCorrectorArgs
     ) => {
         try {
+            if (!metaAnalysisComponents.studyset?.id) throw new Error('no id from studyset');
+            if (!metaAnalysisComponents.annotation?.id) throw new Error('no id from annotation');
+
             const createdSpec = await createSpecificationMutation.mutateAsync({
                 type: metaAnalysisComponents.analysisType as EAnalysisType,
                 estimator: {
@@ -72,12 +75,12 @@ const useCreateMetaAnalysis = () => {
             if (!createdSpec.data.id) throw new Error('no id from created spec');
 
             const createdSynthStudyset = await createSynthStudysetMutation.mutateAsync({
-                neurostore_id: createdSpec.data.id,
+                neurostore_id: metaAnalysisComponents.studyset?.id,
             });
             if (!createdSynthStudyset.data.id) throw new Error('no id from created synth studyset');
 
             const createdSynthAnnotation = await createSynthAnnotationMutation.mutateAsync({
-                neurostore_id: createdSpec.data.id,
+                neurostore_id: metaAnalysisComponents.annotation.id,
                 internal_studyset_id: createdSynthStudyset.data.id,
             });
             if (!createdSynthAnnotation.data.id)
