@@ -11,15 +11,25 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
 
     return (
         <Toolbar sx={[NavbarStyles.toolbar, NavbarStyles.mdUp]}>
-            <Button>
+            <Box style={{ display: 'flex', alignItems: 'center' }}>
+                <img
+                    alt="neurosynth compose logo"
+                    style={{
+                        width: '65px',
+                        height: '65px',
+                        marginRight: '1rem',
+                        cursor: 'pointer',
+                    }}
+                    src="/static/synth.png"
+                />
                 <Box to="/" exact sx={NavbarStyles.neurosynthLink} component={NavLink}>
-                    <Typography variant="h5">
-                        <Badge color="secondary" badgeContent={<span>alpha</span>}>
-                            neurosynth
+                    <Typography variant="h4">
+                        <Badge color="warning" badgeContent={<span>beta</span>}>
+                            neurosynth compose
                         </Badge>
                     </Typography>
                 </Box>
-            </Button>
+            </Box>
             <Box sx={NavbarToolbarStyles.navLinksContainer}>
                 {props.navOptions.map((navOption) => (
                     <NavbarPopupMenu
@@ -37,9 +47,15 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
                     sx={NavbarToolbarStyles.button}
                     onClick={isAuthenticated ? props.logout : props.login}
                 >
-                    <Box component="span" sx={NavbarToolbarStyles.link}>
-                        {isAuthenticated ? 'Logout' : 'Login'}
-                    </Box>
+                    <Typography
+                        variant="subtitle2"
+                        sx={[
+                            NavbarToolbarStyles.link,
+                            isAuthenticated ? {} : { color: 'warning.main' },
+                        ]}
+                    >
+                        {isAuthenticated ? 'Logout' : 'Sign in/Sign up'}
+                    </Typography>
                 </Button>
             </Box>
         </Toolbar>

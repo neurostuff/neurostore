@@ -1,9 +1,9 @@
 import { createFilterOptions, ListItem, ListItemText } from '@mui/material';
-import { useContext, useState } from 'react';
-import { GlobalContext, SnackbarType } from 'contexts/GlobalContext';
+import React, { useState } from 'react';
 import { useCreateCondition, useGetConditions } from 'hooks';
 import { CreateDetailsDialog, NeurosynthAutocomplete } from 'components';
 import { ConditionReturn } from 'neurostore-typescript-sdk';
+import { useSnackbar } from 'notistack';
 
 interface AutoSelectOption {
     id: string;
@@ -22,14 +22,13 @@ const filterOptions = createFilterOptions<AutoSelectOption | undefined>({
 const ConditionSelector: React.FC<{
     onConditionSelected: (condition: ConditionReturn) => void;
 }> = (props) => {
+    const { enqueueSnackbar } = useSnackbar();
     const {
         isLoading: getConditionsIsLoading,
         data: conditions,
         isError: getConditionsIsError,
     } = useGetConditions();
     const { mutate, isLoading: createConditionIsLoading } = useCreateCondition();
-
-    const { showSnackbar } = useContext(GlobalContext);
 
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption>();
     const [dialog, setDialog] = useState({
@@ -45,10 +44,10 @@ const ConditionSelector: React.FC<{
             },
             {
                 onSuccess: (_data, _variables, _context) => {
-                    showSnackbar('created condition ' + name, SnackbarType.SUCCESS);
+                    enqueueSnackbar('condition created', { variant: 'success' });
                 },
                 onError: (data, _variables, _context) => {
-                    showSnackbar('there was an error', SnackbarType.ERROR);
+                    enqueueSnackbar('there was an error', { variant: 'error' });
                 },
             }
         );

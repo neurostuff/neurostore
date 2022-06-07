@@ -3,9 +3,9 @@
  */
 
 // components
+import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import Navbar from 'components/Navbar/Navbar';
 import SearchBar from 'components/SearchBar/SearchBar';
-import StudiesTable from 'components/Tables/StudiesTable/StudiesTable';
 import EditMetadata from 'components/EditMetadata/EditMetadata';
 import DisplayAnalysis from 'components/DisplayAnalysis/DisplayAnalysis';
 import DisplayValuesTable from 'components/Tables/DisplayValuesTable/DisplayValuesTable';
@@ -26,16 +26,11 @@ import BackButton from 'components/Buttons/BackButton/BackButton';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
-
-import * as Tables from 'components/Tables';
-
-// models
-export * from 'components/Tables/DisplayValuesTable';
-export * from 'components/Tables/DisplayImagesTable';
-export * from 'components/EditMetadata';
-export * from 'components/Navbar';
-export * from 'components/NeurosynthSpreadsheet/NeurosynthSpreadsheet';
+import StudysetsTable from 'components/Tables/StudysetsTable/StudysetsTable';
+import StudiesTable from 'components/Tables/StudiesTable/StudiesTable';
+import AnnotationsTable from 'components/Tables/AnnotationsTable/AnnotationsTable';
+import ProgressLoader from './ProgressLoader/ProgressLoader';
+import NeurosynthList from './NeurosynthList/NeurosynthList';
 
 // export components
 export {
@@ -59,9 +54,12 @@ export {
     NavigationButtons,
     NeurosynthAccordion,
     BackButton,
-    Tables,
+    StudysetsTable,
+    AnnotationsTable,
     StateHandlerComponent,
     CodeSnippet,
     LoadingButton,
     NeurosynthAutocomplete,
+    ProgressLoader,
+    NeurosynthList,
 };

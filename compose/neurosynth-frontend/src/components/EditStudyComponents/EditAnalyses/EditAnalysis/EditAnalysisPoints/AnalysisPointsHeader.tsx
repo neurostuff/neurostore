@@ -1,5 +1,5 @@
-import { Box, Button, MenuList, MenuItem, CircularProgress } from '@mui/material';
-import { NeurosynthPopper } from 'components';
+import { Box, Button, MenuList, MenuItem } from '@mui/material';
+import { NeurosynthPopper, ProgressLoader } from 'components';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import AddIcon from '@mui/icons-material/Add';
 import { useRef, useState } from 'react';
@@ -99,10 +99,7 @@ const AnalysisPointsHeader: React.FC<IAnalysisPointsHeader> = (props) => {
             >
                 <MenuList sx={{ minWidth: '250px' }}>
                     {getStudyIsLoading ? (
-                        <CircularProgress
-                            size="1.5rem"
-                            sx={{ display: 'block', margin: '0 auto' }}
-                        />
+                        <ProgressLoader size="1.5rem" sx={{ display: 'block', margin: '0 auto' }} />
                     ) : (
                         analysisOptions
                     )}

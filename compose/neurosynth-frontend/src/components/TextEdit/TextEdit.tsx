@@ -1,8 +1,9 @@
-import { Box, IconButton, TextField, Button, CircularProgress } from '@mui/material';
+import { Box, IconButton, TextField, Button } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
 import React, { useEffect, useState } from 'react';
 import EditIcon from '@mui/icons-material/Edit';
 import { useAuth0 } from '@auth0/auth0-react';
+import { ProgressLoader } from 'components';
 
 export interface ITextEdit {
     textToEdit: string;
@@ -82,7 +83,7 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                     {children}
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         {isLoading ? (
-                            <CircularProgress
+                            <ProgressLoader
                                 sx={{
                                     marginLeft: '5px',
                                     width: '20px !important',

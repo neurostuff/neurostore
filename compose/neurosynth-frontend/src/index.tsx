@@ -2,35 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
-import reportWebVitals from './reportWebVitals';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Auth0Provider } from '@auth0/auth0-react';
 import { grey } from '@mui/material/colors';
 import { SystemStyleObject } from '@mui/system';
-import { BaseEditor, NumericEditor, registerEditor, TextEditor } from 'handsontable/editors';
-import {
-    baseRenderer,
-    htmlRenderer,
-    numericRenderer,
-    registerRenderer,
-    textRenderer,
-} from 'handsontable/renderers';
-import { numericValidator, registerValidator } from 'handsontable/validators';
-import {
-    HandsontableCellType,
-    NumericCellType,
-    registerCellType,
-    TextCellType,
-} from 'handsontable/cellTypes';
-import {
-    BasePlugin,
-    CopyPaste,
-    DragToScroll,
-    MergeCells,
-    MultipleSelectionHandles,
-    UndoRedo,
-    registerPlugin,
-} from 'handsontable/plugins';
 import { QueryClient, QueryClientProvider } from 'react-query';
 
 export type Style = Record<string, SystemStyleObject>;
@@ -77,31 +52,28 @@ const theme = createTheme({
     },
 });
 
+theme.typography.h3 = {
+    ...theme.typography.h3,
+    [theme.breakpoints.down('md')]: {
+        fontSize: '2rem',
+    },
+    [theme.breakpoints.up('md')]: {
+        fontSize: '3rem',
+    },
+};
+theme.typography.h6 = {
+    ...theme.typography.h6,
+    [theme.breakpoints.down('md')]: {
+        fontSize: '1rem',
+    },
+    [theme.breakpoints.up('md')]: {
+        fontSize: '1.25rem',
+    },
+};
+
 const domain = process.env.REACT_APP_AUTH0_DOMAIN as string;
 const clientId = process.env.REACT_APP_AUTH0_CLIENT_ID as string;
 const audience = process.env.REACT_APP_AUTH0_AUDIENCE as string;
-
-registerEditor(BaseEditor);
-registerEditor(NumericEditor);
-registerEditor(TextEditor);
-
-registerRenderer(baseRenderer);
-registerRenderer(htmlRenderer);
-registerRenderer(numericRenderer);
-registerRenderer(textRenderer);
-
-registerValidator(numericValidator);
-
-registerCellType(HandsontableCellType);
-registerCellType(NumericCellType);
-registerCellType(TextCellType);
-
-registerPlugin(CopyPaste);
-registerPlugin(MergeCells);
-registerPlugin(DragToScroll);
-registerPlugin(MultipleSelectionHandles);
-registerPlugin(UndoRedo);
-registerPlugin(BasePlugin);
 
 const queryClient = new QueryClient();
 
@@ -126,4 +98,4 @@ ReactDOM.render(
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+// reportWebVitals();

@@ -1,4 +1,5 @@
-import { AddCircle, Add } from '@mui/icons-material';
+import Add from '@mui/icons-material/Add';
+import AddCircle from '@mui/icons-material/AddCircle';
 import { IconButton, MenuItem, Divider, Box, TextField, Button, MenuList } from '@mui/material';
 import React, { ChangeEvent, useState, useRef } from 'react';
 import { NeurosynthLoader, NeurosynthPopper } from '..';
