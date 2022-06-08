@@ -56,7 +56,7 @@ const PlatformComparisonTable: React.FC = (props) => {
     return (
         <>
             <TableContainer elevation={5} component={Paper}>
-                <Table size="small">
+                <Table>
                     <TableHead>
                         <TableRow>
                             <TableCell>Platform/Database</TableCell>
