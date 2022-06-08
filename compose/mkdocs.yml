@@ -1,5 +1,9 @@
 site_name: Neurosynth-Compose Documentation
 repo_url: https://github.com/neurostuff/neurostore
+site_url: https://neurostuff.github.io/neurostore/
+theme: material
+markdown_extensions:
+  - admonition
 nav:
     - Home: index.md
     - Glossary: taxonomy.md
