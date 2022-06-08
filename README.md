@@ -7,4 +7,4 @@ This repository contains the backend for:
 and the frontend for Neurosynth-Compose
 
 Both backend services can be run simultaneously following the development guidelines in the
-`store` and `synth` directories.
+`store` and `compose` directories.
