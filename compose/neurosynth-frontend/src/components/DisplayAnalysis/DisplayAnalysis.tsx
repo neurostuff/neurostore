@@ -1,12 +1,10 @@
 import { Typography, Box } from '@mui/material';
 import { useEffect, useState } from 'react';
-import {
-    DisplayValuesTable,
-    TextExpansion,
-    DisplayImagesTable,
-    Visualizer,
-    NeurosynthAccordion,
-} from 'components';
+import TextExpansion from 'components/TextExpansion/TextExpansion';
+import DisplayValuesTable from 'components/Tables/DisplayValuesTable/DisplayValuesTable';
+import Visualizer from 'components/Visualizer/Visualizer';
+import DisplayImagesTable from 'components/Tables/DisplayImagesTable/DisplayImagesTable';
+import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
 import {
     AnalysisApiResponse,

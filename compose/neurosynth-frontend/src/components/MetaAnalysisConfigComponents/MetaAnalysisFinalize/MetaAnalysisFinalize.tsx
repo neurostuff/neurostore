@@ -1,5 +1,5 @@
 import { Box, Typography, Paper, Button } from '@mui/material';
-import { LoadingButton } from 'components';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import {
     EAnalysisType,
     IMetaAnalysisComponents,

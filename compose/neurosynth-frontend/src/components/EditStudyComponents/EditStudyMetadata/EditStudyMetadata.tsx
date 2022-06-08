@@ -1,6 +1,7 @@
 import { Typography, Button, Box } from '@mui/material';
 import EditStudyMetadataStyles from './EditStudyMetadata.styles';
-import { EditMetadata, NeurosynthAccordion } from 'components';
+import EditMetadata from 'components/EditMetadata/EditMetadata';
+import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { IMetadataRowModel } from 'components/EditMetadata';
 import React, { useState, useCallback } from 'react';
 import { AxiosError } from 'axios';

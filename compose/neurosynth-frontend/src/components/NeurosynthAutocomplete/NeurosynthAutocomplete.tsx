@@ -8,7 +8,7 @@ import {
 import ErrorIcon from '@mui/icons-material/Error';
 import { SystemStyleObject } from '@mui/system';
 import { useInputValidation } from '../../hooks';
-import { ProgressLoader } from 'components';
+import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 
 export interface IAutocompleteObject {
     label: string;

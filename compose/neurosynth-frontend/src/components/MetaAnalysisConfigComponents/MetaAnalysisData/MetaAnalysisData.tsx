@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { IMetaAnalysisData } from '..';
-import { NavigationButtons } from '../..';
+import NavigationButtons from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { useInputValidation, useGetStudysets, useGetAnnotationsByStudysetId } from '../../../hooks';
 import { EAnalysisType } from '../../../pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 import { EPropertyType } from '../../EditMetadata';

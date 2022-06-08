@@ -1,6 +1,8 @@
 import { Box, Typography, Paper, Button, Link } from '@mui/material';
 import { useParams } from 'react-router-dom';
-import { CodeSnippet, StateHandlerComponent, TextEdit } from 'components';
+import TextEdit from 'components/TextEdit/TextEdit';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
 import { useGetMetaAnalysisById } from 'hooks';
 import useUpdateMetaAnalysis from 'hooks/requests/useUpdateMetaAnalysis';
 import {
@@ -84,8 +86,8 @@ const MetaAnalysisPage: React.FC = (props) => {
             </Box>
             <Box>
                 <Typography variant="h6" sx={{ marginBottom: '2rem' }}>
-                    This meta-analysis has not been run yet. Run your meta-analysis using one of the
-                    following methods:
+                    This meta-analysis has not been run yet. Run your meta-analysis using the
+                    following method(s):
                 </Typography>
 
                 <Paper sx={{ padding: '1rem', marginBottom: '2rem' }}>
@@ -113,13 +115,16 @@ const MetaAnalysisPage: React.FC = (props) => {
                     <Typography sx={{ fontWeight: 'bold', marginBottom: '1rem' }}>
                         run your meta-analysis via docker
                     </Typography>
-                    <CodeSnippet
+                    <Typography>
+                        Click the "Help" button above to learn more about this in the documentation
+                    </Typography>
+                    {/* <CodeSnippet
                         linesOfCode={[
                             'sudo bash exec ./some-file-name',
                             'sudo bash exec some-other-command',
                             'docker-compose up made-up-service',
                         ]}
-                    />
+                    /> */}
                 </Paper>
 
                 {/* <Paper sx={{ padding: '1rem', marginBottom: '1rem' }}>

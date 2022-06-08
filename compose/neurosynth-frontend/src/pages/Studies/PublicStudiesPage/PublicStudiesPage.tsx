@@ -2,7 +2,9 @@ import { ChangeEvent, useEffect, useState } from 'react';
 import { TablePagination, Typography, Pagination, Box } from '@mui/material';
 import API, { StudyApiResponse } from '../../../utils/api';
 import PublicStudiesPageStyles from './PublicStudiesPage.styles';
-import { StudiesTable, SearchBar, NeurosynthLoader } from '../../../components';
+import StudiesTable from 'components/Tables/StudiesTable/StudiesTable';
+import SearchBar from 'components/SearchBar/SearchBar';
+import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import useIsMounted from '../../../hooks/useIsMounted';
 import { Metadata } from '../../../neurostore-typescript-sdk';
 

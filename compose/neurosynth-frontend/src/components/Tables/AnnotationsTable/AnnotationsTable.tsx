@@ -1,4 +1,4 @@
-import { DisplayValuesTable } from '../..';
+import DisplayValuesTable from 'components/Tables/DisplayValuesTable/DisplayValuesTable';
 import { AnnotationsApiResponse } from '../../../utils/api';
 import { IDisplayValuesTableModel } from '../DisplayValuesTable';
 import { useHistory } from 'react-router';

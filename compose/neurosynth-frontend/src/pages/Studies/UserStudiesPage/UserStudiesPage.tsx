@@ -1,7 +1,8 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Typography, Box } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { NeurosynthLoader, StudiesTable } from 'components';
+import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
+import StudiesTable from 'components/Tables/StudiesTable/StudiesTable';
 import API, { StudyApiResponse } from 'utils/api';
 import useIsMounted from 'hooks/useIsMounted';
 import { useSnackbar } from 'notistack';

@@ -1,7 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { NeurosynthSpreadsheet } from 'components';
+import NeurosynthSpreadsheet from 'components/NeurosynthSpreadsheet/NeurosynthSpreadsheet';
 import { EPropertyType } from 'components/EditMetadata';
 import { AnnotationNote } from '../../neurostore-typescript-sdk';
 import HotSettingsBuilder from './HotSettingsBuilder';
