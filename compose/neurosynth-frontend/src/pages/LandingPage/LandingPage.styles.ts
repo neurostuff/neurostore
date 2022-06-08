@@ -1,41 +1,93 @@
 import { Style } from '../..';
 
 const LandingPageStyles: Style = {
-    contentContainer: {
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
+    sectionContainer: {
+        width: '100%',
+        overflow: 'auto',
     },
-    titleContainer: {
-        display: 'flex',
-        flexDirection: {
-            xs: 'column',
-            md: 'row',
+    sectionContents: {
+        width: '80%',
+        margin: {
+            xs: '2rem auto',
+            md: '2rem auto',
+            lg: '3rem auto',
+            xl: '6rem auto',
         },
-        alignItems: 'center',
+    },
+    // stuff related to first intro section
+    introContentContainer: {
+        display: 'flex',
+        width: '100%',
         justifyContent: 'space-between',
-        fontFamily: 'Inter',
-        width: {
-            xs: '100%',
-            md: '650px',
+        flexDirection: {
+            xs: 'column-reverse',
+            md: 'column-reverse',
+            lg: 'row',
         },
     },
     title: {
-        fontSize: {
-            xs: '2rem',
-            md: '3rem',
-        },
-        marginTop: {
-            xs: '6%',
-            md: 0,
+        color: 'primary.contrastText',
+        fontWeight: 'bold',
+    },
+    introSpacedText: {
+        color: 'primary.contrastText',
+        padding: {
+            xs: '0.5rem 0',
+            md: '1rem 0',
         },
     },
+    imageContainer: {
+        borderTopLeftRadius: {
+            xs: '0px',
+            md: '0px',
+            lg: '400px',
+        },
+        borderBottomLeftRadius: {
+            xs: '0px',
+            md: '0px',
+            lg: '400px',
+        },
+        display: 'flex',
+        backgroundColor: 'white',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    // stuff related to workflow section
+    workflowContainer: {
+        display: 'flex',
+        flexDirection: {
+            xs: 'column-reverse',
+            md: 'row',
+        },
+    },
+    stepperContainer: {
+        width: {
+            xs: '100%',
+            md: '50%',
+        },
+        margin: {
+            xs: '0',
+            md: '2rem 0',
+        },
+    },
+    glossaryContainer: {
+        width: {
+            xs: '100%',
+            md: '50%',
+        },
+    },
+    glossary: {
+        position: {
+            xs: 'relative',
+            md: 'sticky',
+        },
+        width: '100%',
+        top: 0,
+    },
+    // stuff related to bottom section logos
     logo: {
         width: '100px',
-    },
-    sponsorContainer: {
-        width: '100%',
+        height: '100px',
     },
     sponsorsImgContainer: {
         display: 'flex',
@@ -58,32 +110,6 @@ const LandingPageStyles: Style = {
             xs: '100px',
             md: '125px',
         },
-    },
-    nihAwardText: {
-        textAlign: 'center',
-        margin: '2% 0',
-    },
-    descriptor: {
-        fontSize: {
-            xs: '1rem',
-            md: '1.5rem',
-        },
-        margin: {
-            xs: '30% 0',
-            md: '4% 0',
-        },
-        width: {
-            xs: '100%',
-            md: '650px',
-        },
-        fontFamily: 'Roboto',
-        color: 'muted.main',
-        lineHeight: '2',
-        textAlign: 'center',
-    },
-    divider: {
-        margin: '2% 0 !important',
-        width: '100%',
     },
 };
 

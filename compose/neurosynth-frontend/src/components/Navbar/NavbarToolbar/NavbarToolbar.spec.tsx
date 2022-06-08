@@ -7,7 +7,7 @@ import { MockThemeProvider } from '../../../testing/helpers';
 import NavbarToolbar from './NavbarToolbar';
 
 // already tested child component
-jest.mock('../NavbarPopupMenu/NavbarPopupMenu');
+jest.mock('components/Navbar/NavbarPopupMenu/NavbarPopupMenu');
 jest.mock('@auth0/auth0-react');
 
 describe('NavbarToolbar Component', () => {
@@ -57,7 +57,7 @@ describe('NavbarToolbar Component', () => {
         expect(menuItems.length).toEqual(mockNavOptions.length);
     });
 
-    it('should login with login is clicked', () => {
+    it('should login if login is clicked', () => {
         render(
             <MockThemeProvider>
                 <BrowserRouter>
@@ -69,7 +69,7 @@ describe('NavbarToolbar Component', () => {
                 </BrowserRouter>
             </MockThemeProvider>
         );
-        const loginButton = screen.getByText('Login');
+        const loginButton = screen.getByText('Sign in/Sign up');
         expect(loginButton).toBeInTheDocument();
         userEvent.click(loginButton);
         expect(loginMock).toBeCalled();
@@ -94,4 +94,59 @@ describe('NavbarToolbar Component', () => {
         userEvent.click(loginButton);
         expect(logoutMock).toBeCalled();
     });
+
+    // TODO: implement matchMediaQuery and complete these tests for hidden drawer
+    // https://mui.com/material-ui/react-use-media-query/#testing
+    // describe('Navbar Drawer', () => {
+    //     beforeEach(() => {
+    //         <MockThemeProvider>
+    //             <BrowserRouter>
+    //                 <NavbarToolbar
+    //                     login={loginMock}
+    //                     logout={logoutMock}
+    //                     navOptions={mockNavOptions}
+    //                 />
+    //             </BrowserRouter>
+    //         </MockThemeProvider>;
+    //     });
+    //     it('should render', () => {
+    //         const button = screen.getByTestId('MenuIcon');
+    //         expect(button).toBeTruthy();
+
+    //         const titleElement = screen.getByText(/neurosynth/i);
+    //         expect(titleElement).toBeInTheDocument();
+    //     });
+
+    //     it('should open the drawer when clicked', () => {
+    //         const button = screen.getByTestId('MenuIcon');
+    //         userEvent.click(button);
+
+    //         const mockedOptions = screen.getAllByText('child-menuitem');
+    //         expect(mockNavOptions.length).toEqual(mockedOptions.length);
+    //     });
+
+    //     it('should show login if not authenticated and login on click', () => {
+    //         useAuth0().isAuthenticated = false;
+
+    //         const button = screen.getByTestId('MenuIcon');
+    //         userEvent.click(button);
+
+    //         const loginButton = screen.getByText('Sign in/Sign up');
+    //         expect(loginButton).toBeInTheDocument();
+
+    //         userEvent.click(loginButton);
+    //         expect(loginMock).toBeCalled();
+    //     });
+
+    //     it('should show logout if authenticated and logout on click', () => {
+    //         const button = screen.getByTestId('MenuIcon');
+    //         userEvent.click(button);
+
+    //         const logoutButton = screen.getByText('Logout');
+    //         expect(logoutButton).toBeInTheDocument();
+
+    //         userEvent.click(logoutButton);
+    //         expect(logoutMock).toBeCalled();
+    //     });
+    // });
 });

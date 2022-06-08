@@ -1,7 +1,6 @@
 import {
     Autocomplete,
     TextField,
-    CircularProgress,
     Box,
     AutocompleteRenderOptionState,
     FilterOptionsState,
@@ -9,6 +8,7 @@ import {
 import ErrorIcon from '@mui/icons-material/Error';
 import { SystemStyleObject } from '@mui/system';
 import { useInputValidation } from '../../hooks';
+import { ProgressLoader } from 'components';
 
 export interface IAutocompleteObject {
     label: string;
@@ -87,7 +87,7 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
                                         <ErrorIcon sx={{ marginLeft: '5px' }} />
                                     </Box>
                                 )}
-                                {isLoading ? <CircularProgress size={20} /> : null}
+                                {isLoading ? <ProgressLoader size={20} /> : null}
                                 {params.InputProps.endAdornment}
                             </>
                         ),

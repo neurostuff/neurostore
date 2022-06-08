@@ -1,14 +1,15 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Button, Typography, Box } from '@mui/material';
 import { useHistory } from 'react-router-dom';
-import { DisplayValuesTable, IDisplayValuesTableModel } from '../../../components';
+import { DisplayValuesTable } from 'components';
+import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
 import StateHandlerComponent from '../../../components/StateHandlerComponent/StateHandlerComponent';
 import { useGetMetaAnalyses } from '../../../hooks';
 
 const UserMetaAnalysesPage: React.FC = (props) => {
     const history = useHistory();
-    const { data, isLoading, isError } = useGetMetaAnalyses();
     const { user } = useAuth0();
+    const { data, isLoading, isError } = useGetMetaAnalyses();
 
     const handleMetaAnalysisSelected = (selected: string | number) => {
         history.push(`/meta-analyses/${selected}`);
@@ -69,17 +70,10 @@ const UserMetaAnalysesPage: React.FC = (props) => {
                     onClick={() => history.push('/meta-analyses/build')}
                     color="primary"
                 >
-                    Create new meta-analysis
+                    New meta-analysis
                 </Button>
             </Box>
-
-            <StateHandlerComponent
-                isError={isError}
-                isLoading={false}
-                errorMessage="There was an error fetching meta-analyses"
-            >
-                <DisplayValuesTable {...metaAnalysesTableData} />
-            </StateHandlerComponent>
+            <DisplayValuesTable {...metaAnalysesTableData} />
         </>
     );
 };

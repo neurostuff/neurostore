@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { useCreateMetaAnalysis } from 'hooks';
+import { SnackbarProvider } from 'notistack';
 import { EAnalysisType } from 'pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 import { mockAnnotations, mockStudysets } from 'testing/mockData';
 import MetaAnalysisFinalize from './MetaAnalysisFinalize';
@@ -12,37 +13,41 @@ describe('MetaAnalysisFinalize', () => {
     const mockOnNavigate = jest.fn();
     it('should render', () => {
         render(
-            <MetaAnalysisFinalize
-                onNavigate={mockOnNavigate}
-                analysisType={EAnalysisType.CBMA}
-                estimator={{ label: 'ALE', description: 'ALE' }}
-                estimatorArgs={{}}
-                corrector={undefined}
-                correctorArgs={{}}
-                studyset={mockStudysets()[0]}
-                annotation={mockAnnotations()[0]}
-                metaAnalysisDescription=""
-                metaAnalysisName="some-name"
-                inclusionColumn="some-col"
-            />
+            <SnackbarProvider>
+                <MetaAnalysisFinalize
+                    onNavigate={mockOnNavigate}
+                    analysisType={EAnalysisType.CBMA}
+                    estimator={{ label: 'ALE', description: 'ALE' }}
+                    estimatorArgs={{}}
+                    corrector={undefined}
+                    correctorArgs={{}}
+                    studyset={mockStudysets()[0]}
+                    annotation={mockAnnotations()[0]}
+                    metaAnalysisDescription=""
+                    metaAnalysisName="some-name"
+                    inclusionColumn="some-col"
+                />
+            </SnackbarProvider>
         );
     });
 
     it('should call onNavigate', () => {
         render(
-            <MetaAnalysisFinalize
-                onNavigate={mockOnNavigate}
-                analysisType={EAnalysisType.CBMA}
-                estimator={{ label: 'ALE', description: 'ALE' }}
-                estimatorArgs={{}}
-                corrector={undefined}
-                correctorArgs={{}}
-                studyset={mockStudysets()[0]}
-                annotation={mockAnnotations()[0]}
-                metaAnalysisDescription=""
-                metaAnalysisName="some-name"
-                inclusionColumn="some-col"
-            />
+            <SnackbarProvider>
+                <MetaAnalysisFinalize
+                    onNavigate={mockOnNavigate}
+                    analysisType={EAnalysisType.CBMA}
+                    estimator={{ label: 'ALE', description: 'ALE' }}
+                    estimatorArgs={{}}
+                    corrector={undefined}
+                    correctorArgs={{}}
+                    studyset={mockStudysets()[0]}
+                    annotation={mockAnnotations()[0]}
+                    metaAnalysisDescription=""
+                    metaAnalysisName="some-name"
+                    inclusionColumn="some-col"
+                />
+            </SnackbarProvider>
         );
 
         userEvent.click(screen.getByRole('button', { name: 'back' }));
@@ -51,19 +56,21 @@ describe('MetaAnalysisFinalize', () => {
 
     it('should show the corrector if it exists', () => {
         render(
-            <MetaAnalysisFinalize
-                onNavigate={mockOnNavigate}
-                analysisType={EAnalysisType.CBMA}
-                estimator={{ label: 'ALE', description: 'ALE' }}
-                estimatorArgs={{}}
-                corrector={{ label: 'FWECorrector', description: 'Some description' }}
-                correctorArgs={{}}
-                studyset={mockStudysets()[0]}
-                annotation={mockAnnotations()[0]}
-                metaAnalysisDescription=""
-                metaAnalysisName="some-name"
-                inclusionColumn="some-col"
-            />
+            <SnackbarProvider>
+                <MetaAnalysisFinalize
+                    onNavigate={mockOnNavigate}
+                    analysisType={EAnalysisType.CBMA}
+                    estimator={{ label: 'ALE', description: 'ALE' }}
+                    estimatorArgs={{}}
+                    corrector={{ label: 'FWECorrector', description: 'Some description' }}
+                    correctorArgs={{}}
+                    studyset={mockStudysets()[0]}
+                    annotation={mockAnnotations()[0]}
+                    metaAnalysisDescription=""
+                    metaAnalysisName="some-name"
+                    inclusionColumn="some-col"
+                />
+            </SnackbarProvider>
         );
 
         expect(screen.getByText('FWECorrector')).toBeInTheDocument();
@@ -71,19 +78,21 @@ describe('MetaAnalysisFinalize', () => {
 
     it('should create the meta-analysis', () => {
         render(
-            <MetaAnalysisFinalize
-                onNavigate={mockOnNavigate}
-                analysisType={EAnalysisType.CBMA}
-                estimator={{ label: 'ALE', description: 'ALE' }}
-                estimatorArgs={{}}
-                corrector={{ label: 'FWECorrector', description: 'Some description' }}
-                correctorArgs={{}}
-                studyset={mockStudysets()[0]}
-                annotation={mockAnnotations()[0]}
-                metaAnalysisDescription=""
-                metaAnalysisName="some-name"
-                inclusionColumn="some-col"
-            />
+            <SnackbarProvider>
+                <MetaAnalysisFinalize
+                    onNavigate={mockOnNavigate}
+                    analysisType={EAnalysisType.CBMA}
+                    estimator={{ label: 'ALE', description: 'ALE' }}
+                    estimatorArgs={{}}
+                    corrector={{ label: 'FWECorrector', description: 'Some description' }}
+                    correctorArgs={{}}
+                    studyset={mockStudysets()[0]}
+                    annotation={mockAnnotations()[0]}
+                    metaAnalysisDescription=""
+                    metaAnalysisName="some-name"
+                    inclusionColumn="some-col"
+                />
+            </SnackbarProvider>
         );
 
         userEvent.click(screen.getByRole('button', { name: 'create meta-analysis' }));

@@ -1,10 +1,9 @@
 import { AppBar } from '@mui/material';
-import NavbarDrawer from './NavbarDrawer/NavbarDrawer';
 import NavbarToolbar from './NavbarToolbar/NavbarToolbar';
 import { useAuth0 } from '@auth0/auth0-react';
 import { NavOptionsModel } from '.';
 
-const navItems: NavOptionsModel[] = [
+const authenticatedNavItems: NavOptionsModel[] = [
     { label: 'HOME', path: '/', children: null },
     {
         label: 'STUDIES',
@@ -53,8 +52,31 @@ const navItems: NavOptionsModel[] = [
     },
 ];
 
+const nonAuthenticatedNavItems: NavOptionsModel[] = [
+    {
+        label: 'HOME',
+        path: '/',
+        children: null,
+    },
+    {
+        label: 'STUDIES',
+        path: '/studies',
+        children: null,
+    },
+    {
+        label: 'STUDYSETS',
+        path: '/studysets',
+        children: null,
+    },
+    {
+        label: 'META-ANALYSES',
+        path: '/meta-analyses',
+        children: null,
+    },
+];
+
 const Navbar: React.FC = (_props) => {
-    const { loginWithPopup, logout } = useAuth0();
+    const { loginWithPopup, logout, isAuthenticated } = useAuth0();
 
     const handleLogin = async () => {
         await loginWithPopup();
@@ -64,8 +86,11 @@ const Navbar: React.FC = (_props) => {
 
     return (
         <AppBar position="static" elevation={0}>
-            <NavbarToolbar logout={handleLogout} login={handleLogin} navOptions={navItems} />
-            <NavbarDrawer logout={handleLogout} login={handleLogin} navOptions={navItems} />
+            <NavbarToolbar
+                logout={handleLogout}
+                login={handleLogin}
+                navOptions={isAuthenticated ? authenticatedNavItems : nonAuthenticatedNavItems}
+            />
         </AppBar>
     );
 };

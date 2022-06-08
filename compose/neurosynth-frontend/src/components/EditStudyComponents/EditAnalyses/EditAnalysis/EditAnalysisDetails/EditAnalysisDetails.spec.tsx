@@ -1,6 +1,7 @@
 import { render, RenderResult, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useDeleteAnalysis, useUpdateAnalysis } from 'hooks';
+import { SnackbarProvider } from 'notistack';
 import { IEditAnalysisDetails } from '../..';
 import EditAnalysisDetails from './EditAnalysisDetails';
 
@@ -19,7 +20,11 @@ describe('EditAnalysisDetails Component', () => {
             studyId: 'test-studyid',
             analysisId: 'test-analyisId',
         };
-        renderResult = render(<EditAnalysisDetails {...mockAnalysisDetails} />);
+        renderResult = render(
+            <SnackbarProvider>
+                <EditAnalysisDetails {...mockAnalysisDetails} />
+            </SnackbarProvider>
+        );
     });
 
     afterAll(() => {
@@ -40,7 +45,11 @@ describe('EditAnalysisDetails Component', () => {
             expect(saveButton).toBeDisabled();
         });
         it('should enable the save button when the state is updated', () => {
-            renderResult.rerender(<EditAnalysisDetails {...mockAnalysisDetails} />);
+            renderResult.rerender(
+                <SnackbarProvider>
+                    <EditAnalysisDetails {...mockAnalysisDetails} />
+                </SnackbarProvider>
+            );
             userEvent.type(screen.getByLabelText('Edit Analysis Name'), 'abc');
             expect(screen.getByRole('button', { name: 'save' })).toBeEnabled();
         });

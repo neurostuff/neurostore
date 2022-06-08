@@ -1,12 +1,12 @@
 import { TextField, Button, Typography, Box } from '@mui/material';
 import { AxiosError } from 'axios';
-import React, { ChangeEvent, useContext, useState } from 'react';
-import { GlobalContext, SnackbarType } from 'contexts/GlobalContext';
+import React, { ChangeEvent, useState } from 'react';
 import { useIsMounted } from 'hooks';
 import API from 'utils/api';
 import NeurosynthAccordion from '../../NeurosynthAccordion/NeurosynthAccordion';
 import EditStudyDetailsStyles from './EditStudyDetails.styles';
 import EditStudyMetadataStyles from '../EditStudyMetadata/EditStudyMetadata.styles';
+import { useSnackbar } from 'notistack';
 
 export interface IEditStudyDetails {
     studyId: string;
@@ -25,7 +25,7 @@ const textFieldInputProps = {
 
 const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
     const { studyId, name, authors, publication, doi, description } = props;
-    const context = useContext(GlobalContext);
+    const { enqueueSnackbar } = useSnackbar();
     const [updatedEnabled, setUpdateEnabled] = useState(false);
     const isMountedRef = useIsMounted();
 
@@ -65,14 +65,14 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
             doi: details.doi,
         })
             .then((_res) => {
-                context.showSnackbar('study successfully updated', SnackbarType.SUCCESS);
+                enqueueSnackbar('study updated successfully', { variant: 'success' });
                 if (isMountedRef.current) {
                     setUpdateEnabled(false);
                     setOriginalDetails({ ...details });
                 }
             })
             .catch((err: Error | AxiosError) => {
-                context.showSnackbar('there was an error', SnackbarType.ERROR);
+                enqueueSnackbar('there was an error updating the study', { variant: 'error' });
                 console.error(err.message);
             });
     };

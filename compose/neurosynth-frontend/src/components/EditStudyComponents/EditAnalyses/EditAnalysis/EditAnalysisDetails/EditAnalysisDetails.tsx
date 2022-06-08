@@ -1,11 +1,11 @@
 import { Box, TextField } from '@mui/material';
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import { IEditAnalysisDetails } from '../..';
 import EditAnalysisDetailsStyles from './EditAnalysisDetails.styles';
 import EditAnalysisStyles from '../EditAnalysis.styles';
 import { useUpdateAnalysis, useDeleteAnalysis } from 'hooks';
-import { GlobalContext, SnackbarType } from 'contexts/GlobalContext';
 import { ConfirmationDialog, LoadingButton } from 'components';
+import { useSnackbar } from 'notistack';
 
 const textFieldInputProps = {
     style: {
@@ -14,7 +14,7 @@ const textFieldInputProps = {
 };
 
 const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = React.memo((props) => {
-    const { showSnackbar } = useContext(GlobalContext);
+    const { enqueueSnackbar } = useSnackbar();
     const { isLoading: updateAnalysisIsLoading, mutate: updateAnalysis } = useUpdateAnalysis();
     const { isLoading: deleteAnalysisIsLoading, mutate: deleteAnalysis } = useDeleteAnalysis();
     const [name, setName] = useState(props.name);
@@ -39,11 +39,8 @@ const EditAnalysisDetails: React.FC<IEditAnalysisDetails> = React.memo((props) =
             },
             {
                 onSuccess: () => {
-                    showSnackbar('updated analysis', SnackbarType.SUCCESS);
+                    enqueueSnackbar('updated analysis', { variant: 'success' });
                     setSaveDisabled(true);
-                },
-                onError: () => {
-                    showSnackbar('there was an error updating the analysis', SnackbarType.ERROR);
                 },
             }
         );

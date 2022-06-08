@@ -2,7 +2,7 @@ import CellCoords from 'handsontable/3rdparty/walkontable/src/cell/coords';
 import { CellChange, ChangeSource } from 'handsontable/common';
 import { htmlRenderer } from 'handsontable/renderers';
 import { CellMeta } from 'handsontable/settings';
-import { EPropertyType } from '..';
+import { EPropertyType } from 'components/EditMetadata';
 import styles from './NeurosynthSpreadsheet.module.css';
 import NeurosynthSpreadsheetHelper from './NeurosynthSpreadsheetHelper';
 import NeurosynthSpreadsheetState from './NeurosynthSpreadsheetState';

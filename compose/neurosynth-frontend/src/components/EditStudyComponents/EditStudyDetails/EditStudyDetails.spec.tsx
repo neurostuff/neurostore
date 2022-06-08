@@ -2,6 +2,7 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import EditStudyDetails, { IEditStudyDetails } from './EditStudyDetails';
 import API from 'utils/api';
+import { SnackbarProvider } from 'notistack';
 
 jest.mock('utils/api');
 jest.mock('hooks');
@@ -19,7 +20,11 @@ describe('EditStudyDetails Component', () => {
             publication: 'some-test-publication',
         };
 
-        render(<EditStudyDetails {...mockStudyDetails} />);
+        render(
+            <SnackbarProvider>
+                <EditStudyDetails {...mockStudyDetails} />
+            </SnackbarProvider>
+        );
 
         // open accordion
         const title = screen.getByText('Edit Study Details');

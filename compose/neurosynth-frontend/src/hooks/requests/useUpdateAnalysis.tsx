@@ -2,12 +2,11 @@ import { AxiosError, AxiosResponse } from 'axios';
 import { useMutation, useQueryClient } from 'react-query';
 import { Analysis, AnalysisReturn } from 'neurostore-typescript-sdk';
 import API from 'utils/api';
-import { GlobalContext, SnackbarType } from 'contexts/GlobalContext';
-import { useContext } from 'react';
+import { useSnackbar } from 'notistack';
 
 const useUpdateAnalysis = () => {
     const queryClient = useQueryClient();
-    const { showSnackbar } = useContext(GlobalContext);
+    const { enqueueSnackbar } = useSnackbar();
 
     return useMutation<
         AxiosResponse<AnalysisReturn>,
@@ -25,7 +24,7 @@ const useUpdateAnalysis = () => {
                 queryClient.invalidateQueries('studies');
             },
             onError: () => {
-                showSnackbar('there was an error', SnackbarType.ERROR);
+                enqueueSnackbar('there was an error updating the analysis', { variant: 'error' });
             },
         }
     );

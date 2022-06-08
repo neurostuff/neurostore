@@ -3,7 +3,8 @@ import { MenuItem, Button, MenuList } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
 import { useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { NavOptionsModel, NeurosynthPopper } from '../..';
+import { NavOptionsModel } from '..';
+import { NeurosynthPopper } from 'components';
 import NavbarPopupMenuStyles from './NavbarPopupMenu.styles';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 

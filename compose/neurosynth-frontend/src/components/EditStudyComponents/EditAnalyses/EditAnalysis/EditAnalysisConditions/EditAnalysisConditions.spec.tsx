@@ -5,6 +5,7 @@ import EditAnalysisConditions from './EditAnalysisConditions';
 import { mockConditions, mockWeights } from 'testing/mockData';
 import { useUpdateAnalysis } from 'hooks';
 import { MockConditionSelected } from 'components/EditStudyComponents/EditAnalyses/EditAnalysis/EditAnalysisConditions/ConditionSelector/__mocks__/ConditionSelector';
+import { SnackbarProvider } from 'notistack';
 
 jest.mock('react-query');
 jest.mock('./ConditionSelector/ConditionSelector');
@@ -30,7 +31,11 @@ describe('EditAnalysisConditions Component', () => {
             weights: mockWeights(),
         };
 
-        renderResult = render(<EditAnalysisConditions {...conditionsDetails} />);
+        renderResult = render(
+            <SnackbarProvider>
+                <EditAnalysisConditions {...conditionsDetails} />
+            </SnackbarProvider>
+        );
     });
 
     it('should render', () => {
@@ -87,7 +92,11 @@ describe('EditAnalysisConditions Component', () => {
             weights: [1],
         };
 
-        renderResult.rerender(<EditAnalysisConditions {...conditionsDetails} />);
+        renderResult.rerender(
+            <SnackbarProvider>
+                <EditAnalysisConditions {...conditionsDetails} />
+            </SnackbarProvider>
+        );
 
         const addConditionButton = screen.getByTestId('mock-condition-selector');
         userEvent.click(addConditionButton);
@@ -102,7 +111,11 @@ describe('EditAnalysisConditions Component', () => {
             weights: [1],
         };
 
-        renderResult.rerender(<EditAnalysisConditions {...conditionsDetails} />);
+        renderResult.rerender(
+            <SnackbarProvider>
+                <EditAnalysisConditions {...conditionsDetails} />
+            </SnackbarProvider>
+        );
 
         const deleteButton = screen.getByRole('button', { name: 'delete' });
         await act(async () => {

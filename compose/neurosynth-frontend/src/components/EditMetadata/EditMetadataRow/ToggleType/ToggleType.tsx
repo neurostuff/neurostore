@@ -1,6 +1,6 @@
 import { FormControl, MenuItem, Select, SelectChangeEvent, Box } from '@mui/material';
 import React, { ReactNode } from 'react';
-import { EPropertyType, IToggleTypeModel } from 'components';
+import { EPropertyType, IToggleTypeModel } from 'components/EditMetadata';
 import ToggleTypeStyles from './ToggleType.styles';
 
 const ToggleType: React.FC<IToggleTypeModel> = React.memo((props) => {
