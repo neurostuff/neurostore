@@ -1,0 +1,16 @@
+site_name: Neurosynth-Compose Documentation
+repo_url: https://github.com/neurostuff/neurostore
+site_url: https://neurostuff.github.io/neurostore/
+theme: material
+markdown_extensions:
+  - admonition
+nav:
+    - Home: index.md
+    - Glossary: taxonomy.md
+    - Example Workflows: typical-workflows.md
+    - Anatomy of Workflows:
+      - Search Studies: search-studies.md
+      - Create Studysets: create-studysets.md
+      - Annotate Studysets: annotate-studysets.md
+      - Specify Meta-Analysis: specify-meta-analysis.md
+      - Execute Meta-Analysis: execute-meta-analysis.md
