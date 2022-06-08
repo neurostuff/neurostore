@@ -23,3 +23,9 @@ one for each type of finger tapping task: RH_index_finger, RH_multi_finger, and 
 For each analysis in each study, Dors reads the tables reporting the brain coordinates
 and marks the analysis as one of the three categories.
 
+After marking each analysis, Dors proceeds to specify the meta-analysis.
+Clicking on the meta-analysis tab, she is supplied with a form asking her
+what type of meta-analysis to perform: Image-Based Meta-Analysis (IBMA) or
+Coordinate-Based Meta-Analysis (CBMA).
+Her studyset contains coordinates so Dors selects CBMA.
+Next, the selection 
