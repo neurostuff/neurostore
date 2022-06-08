@@ -1,4 +1,4 @@
-import { Typography, Box, Link, Stepper, Step, StepLabel, StepContent } from '@mui/material';
+import { Typography, Box, Link } from '@mui/material';
 import LandingPageStyles from './LandingPage.styles';
 import SearchIcon from '@mui/icons-material/Search';
 import AutoAwesomeMotionIcon from '@mui/icons-material/AutoAwesomeMotion';
@@ -9,6 +9,7 @@ import PlatformComparisonTable from './PlatformComparisonTable';
 import AuthenticatedLandingPage from './AuthenticatedLandingPage';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Link as ReactRouterLink } from 'react-router-dom';
+import StepperDisplay from './StepperDisplay';
 
 const LandingPage = () => {
     const { isAuthenticated } = useAuth0();
@@ -82,25 +83,33 @@ const LandingPage = () => {
 
     return (
         <>
-            <Box sx={{ width: '100%', backgroundColor: 'primary.main' }}>
-                <Box sx={LandingPageStyles.sectionContainer}>
-                    <Typography sx={LandingPageStyles.title} variant="h3">
-                        A platform for reproducible neuroimaging meta-analysis
-                    </Typography>
-                    <Typography variant="h6" sx={LandingPageStyles.introSpacedText}>
-                        Neurosynth compose allows you to perform an entire meta-analysis directly
-                        from the browser. It provides a centralized location to edit, organize,
-                        share, and keep provenance of meta-analyses.
-                    </Typography>
-                    <Box sx={LandingPageStyles.introDetailsContainer}>
-                        <Box
-                            sx={{
-                                color: 'primary.contrastText',
-                                marginRight: '2rem',
-                            }}
-                        >
+            <Box sx={[LandingPageStyles.sectionContainer, { backgroundColor: 'primary.main' }]}>
+                <Box
+                    sx={[
+                        LandingPageStyles.sectionContents,
+                        LandingPageStyles.introContentContainer,
+                    ]}
+                >
+                    <Box
+                        sx={{
+                            padding: {
+                                xs: '2rem',
+                                md: '2rem',
+                                xl: '4rem',
+                            },
+                        }}
+                    >
+                        <Typography sx={LandingPageStyles.title} variant="h3">
+                            A platform for reproducible neuroimaging meta-analysis
+                        </Typography>
+                        <Typography variant="h6" sx={LandingPageStyles.introSpacedText}>
+                            Neurosynth compose allows you to perform an entire meta-analysis
+                            directly from the browser. It provides a centralized location to edit,
+                            organize, share, and keep provenance of meta-analyses.
+                        </Typography>
+                        <Box sx={LandingPageStyles.introSpacedText}>
                             <Typography variant="h6">Use neurosynth-compose for</Typography>
-                            <ul style={{ marginBottom: 0 }}>
+                            <ul>
                                 <li>
                                     <Typography variant="h6">
                                         <li>Performing custom meta-analyses</li>
@@ -151,45 +160,39 @@ const LandingPage = () => {
                                 &nbsp;on the platform.
                             </Typography>
                         </Box>
-
-                        <Box sx={{ flex: '1 0 55%' }}>
-                            <PlatformComparisonTable />
-                        </Box>
+                    </Box>
+                    <Box sx={LandingPageStyles.imageContainer}>
+                        <Box
+                            component="img"
+                            sx={{
+                                padding: '0 4rem',
+                                height: 'auto',
+                                width: {
+                                    xs: '250px',
+                                    md: '35vw',
+                                    lg: '38vw',
+                                    xl: '43vw',
+                                },
+                            }}
+                            src="/static/brain-analysis.png"
+                            alt="brain-analysis"
+                        />
                     </Box>
                 </Box>
             </Box>
-            <Box sx={{ width: '100%', backgroundColor: 'white' }}>
-                <Box sx={LandingPageStyles.sectionContainer}>
+            <Box
+                sx={[
+                    LandingPageStyles.sectionContainer,
+                    { backgroundColor: 'primary.contrastText', overflow: 'visible !important' },
+                ]}
+            >
+                <Box sx={LandingPageStyles.sectionContents}>
                     <Typography variant="h3" color="primary.main">
                         Neurosynth-Compose workflow
                     </Typography>
                     <Box sx={LandingPageStyles.workflowContainer}>
                         <Box sx={LandingPageStyles.stepperContainer}>
-                            <Stepper orientation="vertical">
-                                {steps.map((step) => (
-                                    <Step
-                                        key={step.title}
-                                        sx={{
-                                            '.MuiSvgIcon-root': {
-                                                fontSize: '3.5rem',
-                                                paddingRight: '20px',
-                                            },
-                                        }}
-                                        expanded={true}
-                                    >
-                                        <StepLabel StepIconComponent={(_props) => step.icon}>
-                                            <Typography color="primary" variant="h5">
-                                                {step.title}
-                                            </Typography>
-                                        </StepLabel>
-                                        <StepContent>
-                                            <Typography sx={{ padding: '1rem 0' }} variant="h6">
-                                                {step.textContent}
-                                            </Typography>
-                                        </StepContent>
-                                    </Step>
-                                ))}
-                            </Stepper>
+                            <StepperDisplay steps={steps} />
                         </Box>
                         <Box sx={LandingPageStyles.glossaryContainer}>
                             <Box
@@ -202,8 +205,20 @@ const LandingPage = () => {
                     </Box>
                 </Box>
             </Box>
-            <Box sx={{ width: '100%', backgroundColor: 'aliceblue' }}>
-                <Box sx={LandingPageStyles.sectionContainer}>
+            <Box sx={[LandingPageStyles.sectionContainer, { backgroundColor: 'primary.main' }]}>
+                <Box sx={LandingPageStyles.sectionContents}>
+                    <Typography
+                        variant="h3"
+                        color="primary.main"
+                        sx={{ marginBottom: '2rem', color: 'primary.contrastText' }}
+                    >
+                        Platform Comparison
+                    </Typography>
+                    <PlatformComparisonTable />
+                </Box>
+            </Box>
+            <Box sx={[LandingPageStyles.sectionContainer, { backgroundColor: 'aliceblue' }]}>
+                <Box sx={LandingPageStyles.sectionContents}>
                     <Box>
                         <Typography variant="h3" color="primary.main" sx={{ marginBottom: '1rem' }}>
                             Neurosynth-Compose ecosystem

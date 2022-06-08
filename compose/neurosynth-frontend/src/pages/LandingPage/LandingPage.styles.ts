@@ -2,14 +2,29 @@ import { Style } from '../..';
 
 const LandingPageStyles: Style = {
     sectionContainer: {
+        width: '100%',
+        overflow: 'auto',
+    },
+    sectionContents: {
         width: '80%',
-        margin: '0 auto',
-        padding: {
-            xs: '3rem 0 4rem 0',
-            md: '6rem 0 8rem 0',
+        margin: {
+            xs: '2rem auto',
+            md: '2rem auto',
+            lg: '3rem auto',
+            xl: '6rem auto',
         },
     },
     // stuff related to first intro section
+    introContentContainer: {
+        display: 'flex',
+        width: '100%',
+        justifyContent: 'space-between',
+        flexDirection: {
+            xs: 'column-reverse',
+            md: 'column-reverse',
+            lg: 'row',
+        },
+    },
     title: {
         color: 'primary.contrastText',
         fontWeight: 'bold',
@@ -17,19 +32,25 @@ const LandingPageStyles: Style = {
     introSpacedText: {
         color: 'primary.contrastText',
         padding: {
-            xs: '1rem 0',
-            md: '2rem 0',
+            xs: '0.5rem 0',
+            md: '1rem 0',
         },
     },
-    introDetailsContainer: {
-        display: 'flex',
-        flexDirection: {
-            xs: 'column',
-            md: 'column',
-            lg: 'row',
+    imageContainer: {
+        borderTopLeftRadius: {
+            xs: '0px',
+            md: '0px',
+            lg: '400px',
         },
-        width: '100%',
-        justifyContent: 'space-between',
+        borderBottomLeftRadius: {
+            xs: '0px',
+            md: '0px',
+            lg: '400px',
+        },
+        display: 'flex',
+        backgroundColor: 'white',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     // stuff related to workflow section
     workflowContainer: {

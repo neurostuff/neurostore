@@ -73,7 +73,6 @@ const UserMetaAnalysesPage: React.FC = (props) => {
                     New meta-analysis
                 </Button>
             </Box>
-
             <DisplayValuesTable {...metaAnalysesTableData} />
         </>
     );

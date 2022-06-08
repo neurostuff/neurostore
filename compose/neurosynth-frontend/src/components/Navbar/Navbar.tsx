@@ -1,5 +1,4 @@
 import { AppBar } from '@mui/material';
-import NavbarDrawer from './NavbarDrawer/NavbarDrawer';
 import NavbarToolbar from './NavbarToolbar/NavbarToolbar';
 import { useAuth0 } from '@auth0/auth0-react';
 import { NavOptionsModel } from '.';
@@ -88,11 +87,6 @@ const Navbar: React.FC = (_props) => {
     return (
         <AppBar position="static" elevation={0}>
             <NavbarToolbar
-                logout={handleLogout}
-                login={handleLogin}
-                navOptions={isAuthenticated ? authenticatedNavItems : nonAuthenticatedNavItems}
-            />
-            <NavbarDrawer
                 logout={handleLogout}
                 login={handleLogin}
                 navOptions={isAuthenticated ? authenticatedNavItems : nonAuthenticatedNavItems}
