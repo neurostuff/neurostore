@@ -52,7 +52,7 @@ const useCreateMetaAnalysis = jest.fn().mockReturnValue({
     error: undefined,
     isLoading: false,
     isError: false,
-    createMetaAnalysis: jest.fn(),
+    createMetaAnalysis: jest.fn().mockReturnValue(Promise.resolve()),
 });
 
 const useIsMounted = () => {

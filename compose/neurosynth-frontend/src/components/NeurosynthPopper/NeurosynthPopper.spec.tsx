@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { NeurosynthPopper } from '..';
+import NeurosynthPopper from './NeurosynthPopper';
 
 describe('NeurosynthPopper', () => {
     const mockOnClickAway = jest.fn();
