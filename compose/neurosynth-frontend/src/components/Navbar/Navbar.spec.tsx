@@ -5,9 +5,6 @@ import { Navbar } from '..';
 
 jest.mock('@auth0/auth0-react');
 
-// mock navbar drawer
-jest.mock('./NavbarDrawer/NavbarDrawer');
-
 // mock navbar tool bar
 jest.mock('./NavbarToolbar/NavbarToolbar');
 

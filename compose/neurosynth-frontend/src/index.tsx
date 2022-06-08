@@ -61,6 +61,15 @@ theme.typography.h3 = {
         fontSize: '3rem',
     },
 };
+theme.typography.h4 = {
+    ...theme.typography.h4,
+    [theme.breakpoints.down('md')]: {
+        fontSize: '1.125rem',
+    },
+    [theme.breakpoints.up('md')]: {
+        fontSize: '2.125',
+    },
+};
 theme.typography.h6 = {
     ...theme.typography.h6,
     [theme.breakpoints.down('md')]: {
