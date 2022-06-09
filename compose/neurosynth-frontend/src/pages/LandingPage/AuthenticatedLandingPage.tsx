@@ -9,9 +9,11 @@ import { useAuth0 } from '@auth0/auth0-react';
 import AuthenticatedLandingPageStyles from './AuthenticatedLandingPage.styles';
 import { useHistory } from 'react-router-dom';
 import { useState } from 'react';
+import { useTour } from '@reactour/tour';
 
 const AuthenticatedLandingPage: React.FC = (props) => {
     const history = useHistory();
+    const tour = useTour();
     const { user } = useAuth0();
     const {
         mutate,
@@ -48,6 +50,7 @@ const AuthenticatedLandingPage: React.FC = (props) => {
 
     return (
         <Box sx={{ width: '80%', margin: '3rem auto' }}>
+            <button onClick={() => tour.setIsOpen(true)}>open tour</button>
             <CreateDetailsDialog
                 titleText="Create new studyset"
                 onCreate={handleCreateStudyset}
@@ -69,7 +72,7 @@ const AuthenticatedLandingPage: React.FC = (props) => {
                     isLoading={getStudiesIsLoading}
                     isError={getStudiesIsError}
                     listIcon={<ArticleIcon sx={{ color: 'primary.main' }} />}
-                    titleText="My Studies"
+                    titleText="Studies"
                     listItems={(studies || []).map((study) => ({
                         primaryText: study.name || '',
                         secondaryText: study.authors || '',
@@ -100,7 +103,7 @@ const AuthenticatedLandingPage: React.FC = (props) => {
                     isLoading={getStudysetsIsLoading || createStudysetIsLoading}
                     isError={getStudysetsIsError || createStudysetIsError}
                     listIcon={<AutoAwesomeMotionIcon sx={{ color: '#42ab55' }} />}
-                    titleText="My Studysets"
+                    titleText="Studysets"
                     listItems={(studysets || []).map((studyset) => ({
                         primaryText: studyset.name || '',
                         secondaryText: studyset.description || '',
@@ -131,7 +134,7 @@ const AuthenticatedLandingPage: React.FC = (props) => {
                     isLoading={getMetaAnalysesIsLoading}
                     isError={getMetaAnalysesIsError}
                     listIcon={<PsychologyIcon sx={{ color: '#5C2751' }} />}
-                    titleText="My Meta-Analyses"
+                    titleText="Meta-Analyses"
                     listItems={(metaAnalyses || []).map((metaAnalysis) => ({
                         primaryText: metaAnalysis.name || '',
                         secondaryText: metaAnalysis.description || '',

@@ -7,6 +7,7 @@ import API from './utils/api';
 import useGetToken from './hooks/useGetToken';
 import { Grow, IconButton } from '@mui/material';
 import Close from '@mui/icons-material/Close';
+import { TourProvider } from '@reactour/tour';
 
 function App() {
     const notistackRef = useRef<SnackbarProvider>(null);
@@ -32,8 +33,17 @@ function App() {
             )}
         >
             <BrowserRouter>
-                <Navbar />
-                <BaseNavigation />
+                <TourProvider
+                    steps={[
+                        {
+                            selector: '.first-step',
+                            content: 'this is my first step',
+                        },
+                    ]}
+                >
+                    <Navbar />
+                    <BaseNavigation />
+                </TourProvider>
             </BrowserRouter>
         </SnackbarProvider>
     );

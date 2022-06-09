@@ -4,7 +4,7 @@
     "private": true,
     "dependencies": {
         "@auth0/auth0-react": "^1.6.0",
-        "@emotion/react": "^11.8.2",
+        "@emotion/react": "^11.9.0",
         "@emotion/styled": "^11.8.1",
         "@handsontable/react": "^11.0.1",
         "@mui/icons-material": "^5.0.1",
@@ -12,6 +12,7 @@
         "@mui/styles": "^5.5.1",
         "@mui/system": "^5.5.1",
         "@mui/x-data-grid": "^5.10.0",
+        "@reactour/tour": "^2.10.3",
         "@types/jest": "^26.0.24",
         "@types/node": "^12.20.15",
         "@types/react": "^17.0.13",
