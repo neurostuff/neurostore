@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Button, Tooltip, Typography, Tab, Tabs, Box, Divider } from '@mui/material';
+import { Button, Tooltip, Typography, Tab, Tabs, Box, Divider, IconButton } from '@mui/material';
 import { AxiosError, AxiosResponse } from 'axios';
 import { useSnackbar } from 'notistack';
 import React, { useState, useEffect, SyntheticEvent } from 'react';
@@ -13,8 +13,11 @@ import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API, { StudyApiResponse, AnalysisApiResponse } from '../../../utils/api';
 import StudyPageStyles from './StudyPage.styles';
+import useGetTour from 'hooks/useGetTour';
+import HelpIcon from '@mui/icons-material/Help';
 
 const StudyPage: React.FC = (props) => {
+    const { startTour } = useGetTour('StudyPage', false);
     const { enqueueSnackbar } = useSnackbar();
     const [study, setStudy] = useState<StudyApiResponse>();
     const [selectedAnalysis, setSelectedAnalysis] = useState<{
@@ -86,6 +89,8 @@ const StudyPage: React.FC = (props) => {
                                 analysis: sortedAnalyses[0],
                             });
                         }
+
+                        startTour();
                     }
                 })
                 .catch((err) => {
@@ -172,8 +177,11 @@ const StudyPage: React.FC = (props) => {
                         </Button>
                     </Box>
                 </Tooltip>
+                <IconButton onClick={() => startTour()} color="primary">
+                    <HelpIcon />
+                </IconButton>
             </Box>
-            <Box>
+            <Box data-tour="StudyPage-1">
                 <Typography sx={StudyPageStyles.spaceBelow} variant="h6">
                     <b>{study?.name}</b>
                 </Typography>
@@ -189,7 +197,7 @@ const StudyPage: React.FC = (props) => {
                     sx={{ ...StudyPageStyles.spaceBelow, whiteSpace: 'pre-wrap' }}
                 />
             </Box>
-            <Box sx={{ margin: '15px 0' }}>
+            <Box data-tour="StudyPage-2" sx={{ margin: '15px 0' }}>
                 <NeurosynthAccordion
                     accordionSummarySx={StudyPageStyles.accordionSummary}
                     elevation={2}
@@ -207,6 +215,7 @@ const StudyPage: React.FC = (props) => {
 
             <Box>
                 <Typography
+                    data-tour="StudyPage-3"
                     variant="h6"
                     sx={[
                         {

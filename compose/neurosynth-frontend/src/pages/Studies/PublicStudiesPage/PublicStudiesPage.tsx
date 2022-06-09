@@ -1,5 +1,5 @@
 import { ChangeEvent, useEffect, useState } from 'react';
-import { TablePagination, Typography, Pagination, Box } from '@mui/material';
+import { TablePagination, Typography, Pagination, Box, IconButton } from '@mui/material';
 import API, { StudyApiResponse } from '../../../utils/api';
 import PublicStudiesPageStyles from './PublicStudiesPage.styles';
 import StudiesTable from 'components/Tables/StudiesTable/StudiesTable';
@@ -7,6 +7,8 @@ import SearchBar from 'components/SearchBar/SearchBar';
 import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import useIsMounted from '../../../hooks/useIsMounted';
 import { Metadata } from '../../../neurostore-typescript-sdk';
+import useGetTour from 'hooks/useGetTour';
+import HelpIcon from '@mui/icons-material/Help';
 
 export enum Source {
     NEUROSTORE = 'neurostore',
@@ -41,6 +43,7 @@ export class SearchCriteria {
 }
 
 const PublicStudiesPage = () => {
+    const { startTour } = useGetTour('PublicStudiesPage', false);
     const [studies, setStudies] = useState<StudyApiResponse[]>();
     const [searchMetadata, setSearchMetadata] = useState<Metadata>();
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>(new SearchCriteria());
@@ -129,6 +132,8 @@ const PublicStudiesPage = () => {
                         if (isMountedRef.current && res?.data?.results) {
                             setSearchMetadata(res.data.metadata);
                             setStudies(res.data.results);
+
+                            startTour();
                         }
                     })
                     .catch((err) => {
@@ -147,7 +152,14 @@ const PublicStudiesPage = () => {
 
     return (
         <>
-            <Typography variant="h4">Public Studies</Typography>
+            <Box sx={{ display: 'flex' }}>
+                <Typography variant="h4" data-tour="PublicStudiesPage-1">
+                    Public Studies
+                </Typography>
+                <IconButton onClick={() => startTour()} color="primary">
+                    <HelpIcon />
+                </IconButton>
+            </Box>
 
             <SearchBar onSearch={handleOnSearch} />
 

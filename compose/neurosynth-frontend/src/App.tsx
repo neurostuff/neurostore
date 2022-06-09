@@ -8,6 +8,7 @@ import useGetToken from './hooks/useGetToken';
 import { Grow, IconButton } from '@mui/material';
 import Close from '@mui/icons-material/Close';
 import { TourProvider } from '@reactour/tour';
+import TourSteps from 'TourSteps';
 
 function App() {
     const notistackRef = useRef<SnackbarProvider>(null);
@@ -33,14 +34,7 @@ function App() {
             )}
         >
             <BrowserRouter>
-                <TourProvider
-                    steps={[
-                        {
-                            selector: '.first-step',
-                            content: 'this is my first step',
-                        },
-                    ]}
-                >
+                <TourProvider disableInteraction steps={[]}>
                     <Navbar />
                     <BaseNavigation />
                 </TourProvider>

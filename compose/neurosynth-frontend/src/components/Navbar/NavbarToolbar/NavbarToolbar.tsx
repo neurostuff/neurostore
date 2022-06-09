@@ -30,7 +30,10 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
 
     return (
         <Toolbar sx={[NavbarStyles.toolbar]}>
-            <Box style={{ display: 'flex', alignItems: 'center' }}>
+            <Box
+                data-tour="AuthenticatedLandingPage-1"
+                style={{ display: 'flex', alignItems: 'center' }}
+            >
                 <img
                     alt="neurosynth compose logo"
                     style={{

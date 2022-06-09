@@ -11,7 +11,11 @@ const authenticatedNavItems: NavOptionsModel[] = [
         disabled: false,
         authenticationRequired: false,
         children: [
-            { label: 'Public Studies', path: '/studies', children: null },
+            {
+                label: 'Public Studies',
+                path: '/studies',
+                children: null,
+            },
             {
                 label: 'My Studies',
                 path: '/userstudies',
