@@ -3,7 +3,7 @@ import { Box } from '@mui/material';
 import { Switch, Route } from 'react-router-dom';
 import LandingPage from '../LandingPage/LandingPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
-import { ProgressLoader } from 'components';
+import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 
 const EditAnnotationsPage = React.lazy(
     () => import('../Annotations/EditAnnotationsPage/EditAnnotationsPage')

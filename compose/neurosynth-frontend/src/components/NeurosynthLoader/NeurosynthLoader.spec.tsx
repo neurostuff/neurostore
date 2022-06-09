@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { NeurosynthLoader } from '..';
+import NeurosynthLoader from './NeurosynthLoader';
 
 describe('Neurosynth Loader', () => {
     afterAll(() => {

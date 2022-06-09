@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EPropertyType, IMetadataRowModel, getType } from 'components/EditMetadata';
-import { EditMetadata } from 'components';
+import EditMetadata from 'components/EditMetadata/EditMetadata';
 import { MockThemeProvider } from 'testing/helpers';
 
 describe('EditMetadata Component', () => {

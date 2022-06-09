@@ -1,6 +1,6 @@
 import { TextField, Box, Typography } from '@mui/material';
 import { IMetaAnalysisDetails } from '..';
-import { NavigationButtons } from '../..';
+import NavigationButtons from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { useInputValidation } from '../../../hooks';
 
 const MetaAnalysisDetails: React.FC<IMetaAnalysisDetails> = (props) => {

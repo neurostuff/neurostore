@@ -1,7 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Button, Typography, Box } from '@mui/material';
 import { useHistory } from 'react-router-dom';
-import { DisplayValuesTable } from 'components';
+import DisplayValuesTable from 'components/Tables/DisplayValuesTable/DisplayValuesTable';
 import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
 import StateHandlerComponent from '../../../components/StateHandlerComponent/StateHandlerComponent';
 import { useGetMetaAnalyses } from '../../../hooks';
@@ -73,7 +73,10 @@ const UserMetaAnalysesPage: React.FC = (props) => {
                     New meta-analysis
                 </Button>
             </Box>
-            <DisplayValuesTable {...metaAnalysesTableData} />
+            {/* TODO: implement isError for tables so that we dont have to do this */}
+            <StateHandlerComponent isLoading={false} isError={isError}>
+                <DisplayValuesTable {...metaAnalysesTableData} />
+            </StateHandlerComponent>
         </>
     );
 };

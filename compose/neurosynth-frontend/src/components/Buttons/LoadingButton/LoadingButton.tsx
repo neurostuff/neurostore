@@ -1,6 +1,6 @@
 import { Button } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
-import { ProgressLoader } from 'components';
+import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 
 interface ILoadingButton {
     text: string;

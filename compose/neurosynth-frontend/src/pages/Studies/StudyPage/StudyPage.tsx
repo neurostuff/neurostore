@@ -4,13 +4,11 @@ import { AxiosError, AxiosResponse } from 'axios';
 import { useSnackbar } from 'notistack';
 import React, { useState, useEffect, SyntheticEvent } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import {
-    DisplayValuesTable,
-    TextExpansion,
-    DisplayAnalysis,
-    NeurosynthLoader,
-    NeurosynthAccordion,
-} from 'components';
+import DisplayValuesTable from 'components/Tables/DisplayValuesTable/DisplayValuesTable';
+import TextExpansion from 'components/TextExpansion/TextExpansion';
+import DisplayAnalysis from 'components/DisplayAnalysis/DisplayAnalysis';
+import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
+import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API, { StudyApiResponse, AnalysisApiResponse } from '../../../utils/api';
@@ -40,7 +38,7 @@ const StudyPage: React.FC = (props) => {
                 history.push(`/studies/${(res.data as StudyApiResponse).id}`);
             })
             .catch((err: Error | AxiosError) => {
-                enqueueSnackbar('there was an error cloning the stufy', { variant: 'error' });
+                enqueueSnackbar('there was an error cloning the study', { variant: 'error' });
             });
     };
 

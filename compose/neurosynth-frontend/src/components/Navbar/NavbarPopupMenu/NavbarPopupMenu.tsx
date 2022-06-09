@@ -4,7 +4,7 @@ import { SystemStyleObject } from '@mui/system';
 import { useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { NavOptionsModel } from '..';
-import { NeurosynthPopper } from 'components';
+import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import NavbarPopupMenuStyles from './NavbarPopupMenu.styles';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 

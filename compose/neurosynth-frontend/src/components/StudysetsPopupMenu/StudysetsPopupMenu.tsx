@@ -2,7 +2,8 @@ import Add from '@mui/icons-material/Add';
 import AddCircle from '@mui/icons-material/AddCircle';
 import { IconButton, MenuItem, Divider, Box, TextField, Button, MenuList } from '@mui/material';
 import React, { ChangeEvent, useState, useRef } from 'react';
-import { NeurosynthLoader, NeurosynthPopper } from '..';
+import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
+import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import { StudysetsApiResponse, StudyApiResponse } from '../../utils/api';
 
 export interface IStudysetsPopupMenu {
