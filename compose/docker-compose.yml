@@ -1,6 +1,6 @@
 version: "2"
 services:
-  neurosynth:
+  neurosynth_compose:
     restart: always
     build: ./neurosynth_compose
     expose:
@@ -21,7 +21,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     volumes_from:
-      - neurosynth
+      - neurosynth_compose
     environment:
       - VIRTUAL_HOST=${V_HOST}
       - LETSENCRYPT_HOST=${V_HOST}
