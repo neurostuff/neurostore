@@ -168,10 +168,14 @@ const LandingPage = () => {
                                 padding: '0 4rem',
                                 height: 'auto',
                                 width: {
+                                    // xs: '250px',
+                                    // md: '35vw',
+                                    // lg: '38vw',
+                                    // xl: '43vw',
                                     xs: '250px',
-                                    md: '35vw',
-                                    lg: '38vw',
-                                    xl: '43vw',
+                                    md: '530px',
+                                    lg: '600px',
+                                    xl: '800px',
                                 },
                             }}
                             src="/static/brain-analysis.png"

@@ -1,7 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import { NeurosynthLoader } from '../../../components';
+import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import StudysetsTable from '../../../components/Tables/StudysetsTable/StudysetsTable';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API, { StudysetsApiResponse } from '../../../utils/api';

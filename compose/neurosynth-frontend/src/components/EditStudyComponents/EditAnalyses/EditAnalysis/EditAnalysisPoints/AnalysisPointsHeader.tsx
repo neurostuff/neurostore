@@ -1,5 +1,6 @@
 import { Box, Button, MenuList, MenuItem } from '@mui/material';
-import { NeurosynthPopper, ProgressLoader } from 'components';
+import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
+import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import AddIcon from '@mui/icons-material/Add';
 import { useRef, useState } from 'react';

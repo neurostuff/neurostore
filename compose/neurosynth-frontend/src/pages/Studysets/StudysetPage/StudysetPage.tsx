@@ -1,16 +1,14 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Typography, Box, Button } from '@mui/material';
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import { useHistory } from 'react-router';
 import AddIcon from '@mui/icons-material/Add';
-import {
-    TextExpansion,
-    StudiesTable,
-    NeurosynthLoader,
-    ConfirmationDialog,
-    CreateDetailsDialog,
-} from '../../../components';
+import TextExpansion from 'components/TextExpansion/TextExpansion';
+import StudiesTable from 'components/Tables/StudiesTable/StudiesTable';
+import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
+import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import AnnotationsTable from '../../../components/Tables/AnnotationsTable/AnnotationsTable';
 import TextEdit from '../../../components/TextEdit/TextEdit';
 import useIsMounted from '../../../hooks/useIsMounted';

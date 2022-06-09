@@ -7,7 +7,7 @@ import MetaAnalysisFinalize from 'components/MetaAnalysisConfigComponents/MetaAn
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import { AnnotationsApiResponse, StudysetsApiResponse } from 'utils/api';
-import { BackButton } from 'components';
+import BackButton from 'components/Buttons/BackButton/BackButton';
 import MetaAnalysisDetails from 'components/MetaAnalysisConfigComponents/MetaAnalysisDetails/MetaAnalysisDetails';
 import MetaAnalysisBuilderPageStyles from './MetaAnalysisBuilderPage.styles';
 

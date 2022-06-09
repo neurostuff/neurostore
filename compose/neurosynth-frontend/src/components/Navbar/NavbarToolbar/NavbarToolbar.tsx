@@ -1,4 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
     Box,
     Button,
@@ -9,13 +10,14 @@ import {
     Drawer,
     List,
     ListItem,
+    Link,
 } from '@mui/material';
 import { NavLink } from 'react-router-dom';
 import { NavbarArgs } from '..';
 import NavbarStyles from '../Navbar.styles';
 import NavbarToolbarStyles from './NavbarToolbar.styles';
 import NavbarPopupMenu from '../NavbarPopupMenu/NavbarPopupMenu';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
 
 const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
@@ -74,6 +76,19 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
                         {isAuthenticated ? 'Logout' : 'Sign in/Sign up'}
                     </Typography>
                 </Button>
+                <Link
+                    sx={[
+                        NavbarToolbarStyles.button,
+                        { borderRadius: '4px', textDecoration: 'none' },
+                    ]}
+                    target="_blank"
+                    href="https://neurostuff.github.io/neurostore/"
+                >
+                    <Typography variant="subtitle2" sx={NavbarToolbarStyles.link}>
+                        HELP
+                        <OpenInNewIcon sx={{ marginLeft: '8px' }} />
+                    </Typography>
+                </Link>
             </Box>
             <IconButton sx={NavbarStyles.mdDown} onClick={toggleDrawer} size="medium">
                 <MenuIcon />
@@ -106,9 +121,28 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
                             ]}
                             onClick={isAuthenticated ? props.logout : props.login}
                         >
-                            <Box component="span">
+                            <Typography>
                                 {isAuthenticated ? 'Logout' : 'Sign in/Sign up'}
-                            </Box>
+                            </Typography>
+                        </Button>
+                    </ListItem>
+                    <ListItem sx={NavbarToolbarStyles.listItem}>
+                        <Button
+                            sx={[
+                                NavbarToolbarStyles.buttonOverride,
+                                NavbarToolbarStyles.innerButtonOverride,
+                            ]}
+                        >
+                            <Link
+                                sx={{ textDecoration: 'none', color: 'black', width: '100%' }}
+                                target="_blank"
+                                href="https://neurostuff.github.io/neurostore/"
+                            >
+                                <Typography sx={{ display: 'flex' }}>
+                                    HELP
+                                    <OpenInNewIcon sx={{ marginLeft: '8px' }} />
+                                </Typography>
+                            </Link>
                         </Button>
                     </ListItem>
                 </List>

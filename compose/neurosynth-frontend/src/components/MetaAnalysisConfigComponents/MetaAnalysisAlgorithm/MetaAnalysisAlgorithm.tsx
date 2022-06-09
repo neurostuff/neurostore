@@ -1,6 +1,7 @@
 import { Box, ListItem, ListItemText, Typography, Divider } from '@mui/material';
 import { IDynamicInputType, IMetaAnalysisAlgorithm, IMetaAnalysisParamsSpecification } from '..';
-import { NavigationButtons, NeurosynthAccordion } from '../..';
+import NavigationButtons from 'components/Buttons/NavigationButtons/NavigationButtons';
+import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import metaAnalysisSpec from '../../../assets/config/meta_analysis_params.json';
 import { EAnalysisType } from '../../../pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 import NeurosynthAutocomplete, {

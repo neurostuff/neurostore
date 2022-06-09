@@ -1,7 +1,8 @@
 import { createFilterOptions, ListItem, ListItemText } from '@mui/material';
 import React, { useState } from 'react';
 import { useCreateCondition, useGetConditions } from 'hooks';
-import { CreateDetailsDialog, NeurosynthAutocomplete } from 'components';
+import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
+import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import { ConditionReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 
