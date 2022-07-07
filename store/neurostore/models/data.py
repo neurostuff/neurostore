@@ -91,7 +91,9 @@ class AnnotationAnalysis(db.Model):
 
     study_id = db.Column(db.Text, nullable=False)
     studyset_id = db.Column(db.Text, nullable=False)
-    annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"), index=True, primary_key=True)
+    annotation_id = db.Column(
+        db.Text, db.ForeignKey("annotations.id"), index=True, primary_key=True
+    )
     analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id"), index=True, primary_key=True)
     note = db.Column(MutableDict.as_mutable(db.JSON))
 
@@ -122,8 +124,12 @@ class Study(BaseMixin, db.Model):
 
 class StudysetStudy(db.Model):
     __tablename__ = "studyset_studies"
-    study_id = db.Column(db.ForeignKey('studies.id', ondelete='CASCADE'), index=True, primary_key=True)
-    studyset_id = db.Column(db.ForeignKey('studysets.id', ondelete='CASCADE'), index=True, primary_key=True)
+    study_id = db.Column(
+        db.ForeignKey('studies.id', ondelete='CASCADE'), index=True, primary_key=True
+    )
+    studyset_id = db.Column(
+        db.ForeignKey('studysets.id', ondelete='CASCADE'), index=True, primary_key=True
+    )
     study = relationship(
         "Study",
         backref=backref("studyset_studies"),
