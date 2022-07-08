@@ -120,7 +120,7 @@ class NeurovaultCollection(db.Model):
     cli_args = db.Column(db.JSONB)  # Dictionary of cli arguments
 
     files = db.relationship('NeurovaultFile', backref='collection')
-    result = db.relationship('MetaAnalysisResult', backref=backref("collections"))
+    result = db.relationship('MetaAnalysisResult', backref=backref("collection"))
 
 
 class NeurovaultFile(db.Model):
