@@ -87,6 +87,7 @@ class MetaAnalysis(BaseMixin, db.Model):
     name = db.Column(db.Text)
     description = db.Column(db.Text)
     specification_id = db.Column(db.Text, db.ForeignKey('specifications.id'))
+    # internal meaning local to the neurosynth-compose database
     internal_studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
     internal_annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
@@ -97,27 +98,41 @@ class MetaAnalysis(BaseMixin, db.Model):
     user = relationship("User", backref=backref("meta_analyses"))
 
 
-# class MetaAnalysisImage(db.Model):
-#     __tablename__ = "metaanalysis_images"
 
-#     weight = db.Column(db.Float)
-#     metaanalysis_id = db.Column(
-#         db.Text, db.ForeignKey("metaanalyses.id"), primary_key=True
-#     )
-#     image_id = db.Column(db.Text, db.ForeignKey("images.id"), primary_key=True)
-
-#     metaanalysis = relationship("MetaAnalysis", backref=backref("metanalysis_images"))
-#     image = relationship("Image", backref=backref("metaanalysis_images"))
+class MetaAnalysisResult(BaseMixin, db.Model):
+    __tablename__ = "meta_analysis_results"
+    meta_analysis_id = db.Column(
+        db.Text, db.ForeignKey("meta_analyses.id"), primary_key=True
+    )
+    neurostore_id = db.Column(db.Text, primary_key=True)
+    meta_analysis = relationship("MetaAnalysis", backref=backref("results"))
 
 
-# class MetaAnalysisPoint(db.Model):
-#     __tablename__ = "metaanalysis_points"
+class NeurovaultCollection(db.Model):
+    """ Neurovault collection and upload status """
+    __tablename__ = "neurovault_collections"
 
-#     weight = db.Column(db.Float)
-#     metaanalysis_id = db.Column(
-#         db.Text, db.ForeignKey("metaanalyses.id"), primary_key=True
-#     )
-#     point_id = db.Column(db.Text, db.ForeignKey("points.id"), primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
+    meta_analysis_id = db.Column(db.Text, db.ForeignKey('meta_analyses.id'))
+    uploaded_at = db.Column(db.DateTime, default=func.now())
+    collection_id = db.Column(db.Integer, unique=True)
+    cli_version = db.Column(db.Text)  # neurosynth-compose cli version
+    cli_args = db.Column(db.JSONB)  # Dictionary of cli arguments
 
-#     metaanalysis = relationship("MetaAnalysis", backref=backref("metanalysis_points"))
-#     point = relationship("Point", backref=backref("metaanalysis_points"))
+    files = db.relationship('NeurovaultFile', backref='collection')
+    result = db.relationship('MetaAnalysisResult', backref=backref("collections"))
+
+
+class NeurovaultFile(db.Model):
+    """ NV file upload """
+    id = db.Column(db.Integer, primary_key=True)
+    nv_collection_id = db.Column(
+        db.Integer, db.ForeignKey('neurovault_collections.id'),
+        nullable=False)
+    path = db.Column(db.Text, nullable=False)
+    exception = db.Column(db.Text)
+    traceback = db.Column(db.Text)
+    status = db.Column(db.Text, default='PENDING')
+    __table_args__ = (
+        db.CheckConstraint(status.in_(['OK', 'FAILED', 'PENDING'])),
+        )
