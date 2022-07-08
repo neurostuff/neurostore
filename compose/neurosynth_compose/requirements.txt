@@ -27,4 +27,5 @@ scipy
 schemathesis
 pytest
 git+https://github.com/neurostuff/NiMARE.git@455afed#egg=nimare
-
+pynv
+git+https://github.com/neurostuff/neurostore-python-sdk.git
