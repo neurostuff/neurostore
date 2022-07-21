@@ -10,11 +10,12 @@ import { useAuth0 } from '@auth0/auth0-react';
 import AuthenticatedLandingPageStyles from './AuthenticatedLandingPage.styles';
 import { useHistory } from 'react-router-dom';
 import { useState } from 'react';
+import Help from '@mui/icons-material/Help';
 import useGetTour from 'hooks/useGetTour';
 
 const AuthenticatedLandingPage: React.FC = (props) => {
+    const { startTour } = useGetTour('AuthenticatedLandingPage');
     const history = useHistory();
-    const { startTour } = useGetTour('AuthenticatedLandingPage', true);
     const { user } = useAuth0();
     const {
         mutate,
@@ -51,8 +52,14 @@ const AuthenticatedLandingPage: React.FC = (props) => {
 
     return (
         <Box sx={{ width: '80%', margin: '3rem auto' }}>
-            <Button variant="outlined" onClick={() => startTour()}>
-                Get Started
+            <Button
+                endIcon={<Help />}
+                variant="outlined"
+                onClick={() => {
+                    startTour();
+                }}
+            >
+                Get Started with a tour
             </Button>
             <CreateDetailsDialog
                 titleText="Create new studyset"

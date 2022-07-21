@@ -61,7 +61,7 @@ const SearchBar: React.FC<SearchBarModel> = (props) => {
     };
 
     return (
-        <Box sx={{ display: 'flex' }}>
+        <Box data-tour="PublicStudiesPage-2" sx={{ display: 'flex' }}>
             <Box component="form" sx={{ width: '100%' }} onSubmit={handleOnSubmit}>
                 <Box sx={SearchBarStyles.searchContainer}>
                     <FormControl variant="outlined">

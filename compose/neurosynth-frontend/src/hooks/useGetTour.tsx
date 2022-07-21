@@ -1,24 +1,35 @@
+import { useAuth0 } from '@auth0/auth0-react';
 import { useTour } from '@reactour/tour';
-import { useEffect } from 'react';
-import TourSteps from 'TourSteps';
+import { useCallback, useEffect } from 'react';
+import TourSteps from 'Toursteps';
 
-const useGetTour = (tourPage: string, isLoaded: boolean) => {
+const useGetTour = (page: string) => {
     const tour = useTour();
+    const { getIdTokenClaims } = useAuth0();
 
-    const startTour = () => {
+    const startTour = useCallback(() => {
         tour.setIsOpen(() => {
-            tour.setSteps(TourSteps[tourPage]);
+            tour.setCurrentStep(0);
+            tour.setSteps(TourSteps[page]);
             return true;
         });
-    };
+    }, [page, tour]);
 
     useEffect(() => {
-        const userFirstTimeAuthenticating = true;
+        const shouldStartTour = async () => {
+            const claims = await getIdTokenClaims();
 
-        if (userFirstTimeAuthenticating && isLoaded) {
-            startTour();
-        }
-    }, [isLoaded]);
+            const numTimesLoggedIn = claims ? claims['https://neurosynth-compose/loginsCount'] : 0;
+            const isTour = sessionStorage.getItem('isTour') === 'true';
+            const hasSeenPage = !!localStorage.getItem(`hasSeen${page}`);
+            localStorage.setItem(`hasSeen${page}`, 'true');
+            if (isTour || (numTimesLoggedIn === 1 && !hasSeenPage)) {
+                startTour();
+            }
+        };
+
+        shouldStartTour();
+    }, []);
 
     return { startTour };
 };

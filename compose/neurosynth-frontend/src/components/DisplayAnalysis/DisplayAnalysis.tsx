@@ -155,7 +155,10 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                     sx={DisplayAnalysisStyles.spaceBelow}
                     text={props.description || ''}
                 />
-                <Box sx={[DisplayAnalysisStyles.spaceBelow, { width: '100%' }]}>
+                <Box
+                    data-tour="StudyPage-4"
+                    sx={[DisplayAnalysisStyles.spaceBelow, { width: '100%' }]}
+                >
                     <NeurosynthAccordion
                         TitleElement={<Typography>Conditions</Typography>}
                         defaultExpanded={conditionsForTable.rowData.length > 0}
@@ -164,7 +167,10 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                         <DisplayValuesTable {...conditionsForTable} />
                     </NeurosynthAccordion>
                 </Box>
-                <Box sx={[DisplayAnalysisStyles.spaceBelow, { width: '100%' }]}>
+                <Box
+                    data-tour="StudyPage-5"
+                    sx={[DisplayAnalysisStyles.spaceBelow, { width: '100%' }]}
+                >
                     <NeurosynthAccordion
                         TitleElement={<Typography>Coordinates</Typography>}
                         defaultExpanded={coordinateDataForTable.rowData.length > 0}
@@ -173,7 +179,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                         <DisplayValuesTable {...coordinateDataForTable} />
                     </NeurosynthAccordion>
                 </Box>
-                <Box sx={DisplayAnalysisStyles.spaceBelow}>
+                <Box data-tour="StudyPage-6" sx={DisplayAnalysisStyles.spaceBelow}>
                     <NeurosynthAccordion
                         TitleElement={<Typography>Images</Typography>}
                         defaultExpanded={(props?.images || []).length > 0}

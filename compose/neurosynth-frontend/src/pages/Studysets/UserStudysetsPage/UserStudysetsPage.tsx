@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Typography, Button, IconButton } from '@mui/material';
 import { useEffect, useState } from 'react';
 import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
@@ -7,9 +7,13 @@ import StudysetsTable from 'components/Tables/StudysetsTable/StudysetsTable';
 import useIsMounted from 'hooks/useIsMounted';
 import API, { StudysetsApiResponse } from 'utils/api';
 import { useSnackbar } from 'notistack';
+import HelpIcon from '@mui/icons-material/Help';
+import AddIcon from '@mui/icons-material/Add';
+import useGetTour from 'hooks/useGetTour';
 
 const UserStudysetsPage: React.FC = (props) => {
     const { user } = useAuth0();
+    const { startTour } = useGetTour('UserStudysetsPage');
     const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
     const { enqueueSnackbar } = useSnackbar();
     const [createStudysetDialogIsOpen, setCreateStudysetDialogIsOpen] = useState(false);
@@ -33,7 +37,9 @@ const UserStudysetsPage: React.FC = (props) => {
                 user?.sub
             )
                 .then((res) => {
-                    if (isMountedRef.current && res?.data?.results) setStudysets(res.data.results);
+                    if (isMountedRef.current && res?.data?.results) {
+                        setStudysets(res.data.results);
+                    }
                 })
                 .catch((err) => {
                     setStudysets([]);
@@ -79,9 +85,19 @@ const UserStudysetsPage: React.FC = (props) => {
                     marginBottom: '1rem',
                 }}
             >
-                <Typography variant="h4">My Studysets</Typography>
+                <Typography variant="h4">
+                    My Studysets
+                    <IconButton color="primary" onClick={() => startTour()}>
+                        <HelpIcon />
+                    </IconButton>
+                </Typography>
 
-                <Button variant="contained" onClick={() => setCreateStudysetDialogIsOpen(true)}>
+                <Button
+                    data-tour="UserStudysetsPage-1"
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={() => setCreateStudysetDialogIsOpen(true)}
+                >
                     New studyset
                 </Button>
             </Box>
@@ -94,8 +110,9 @@ const UserStudysetsPage: React.FC = (props) => {
                 onCreate={handleCreateStudyset}
                 isOpen={createStudysetDialogIsOpen}
             />
-
-            <StudysetsTable studysets={studysets || []} />
+            <Box>
+                <StudysetsTable studysets={studysets || []} />
+            </Box>
         </NeurosynthLoader>
     );
 };

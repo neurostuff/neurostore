@@ -30,10 +30,7 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
 
     return (
         <Toolbar sx={[NavbarStyles.toolbar]}>
-            <Box
-                data-tour="AuthenticatedLandingPage-1"
-                style={{ display: 'flex', alignItems: 'center' }}
-            >
+            <Box style={{ display: 'flex', alignItems: 'center' }}>
                 <img
                     alt="neurosynth compose logo"
                     style={{
@@ -87,7 +84,11 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
                     target="_blank"
                     href="https://neurostuff.github.io/neurostore/"
                 >
-                    <Typography variant="subtitle2" sx={NavbarToolbarStyles.link}>
+                    <Typography
+                        data-tour="AuthenticatedLandingPage-2"
+                        variant="subtitle2"
+                        sx={NavbarToolbarStyles.link}
+                    >
                         HELP
                         <OpenInNewIcon sx={{ marginLeft: '8px' }} />
                     </Typography>

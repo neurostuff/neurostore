@@ -11,13 +11,13 @@ import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
 import useIsMounted from '../../../hooks/useIsMounted';
-import API, { StudyApiResponse, AnalysisApiResponse } from '../../../utils/api';
+import API, { StudyApiResponse, AnalysisApiResponse } from 'utils/api';
 import StudyPageStyles from './StudyPage.styles';
-import useGetTour from 'hooks/useGetTour';
 import HelpIcon from '@mui/icons-material/Help';
+import useGetTour from 'hooks/useGetTour';
 
 const StudyPage: React.FC = (props) => {
-    const { startTour } = useGetTour('StudyPage', false);
+    const { startTour } = useGetTour('StudyPage');
     const { enqueueSnackbar } = useSnackbar();
     const [study, setStudy] = useState<StudyApiResponse>();
     const [selectedAnalysis, setSelectedAnalysis] = useState<{
@@ -89,8 +89,6 @@ const StudyPage: React.FC = (props) => {
                                 analysis: sortedAnalyses[0],
                             });
                         }
-
-                        startTour();
                     }
                 })
                 .catch((err) => {
@@ -144,7 +142,10 @@ const StudyPage: React.FC = (props) => {
 
     return (
         <NeurosynthLoader loaded={!!study}>
-            <Box sx={[StudyPageStyles.buttonContainer, StudyPageStyles.spaceBelow]}>
+            <Box
+                data-tour="StudyPage-8"
+                sx={[StudyPageStyles.buttonContainer, StudyPageStyles.spaceBelow]}
+            >
                 <Tooltip
                     placement="top"
                     title={
@@ -240,6 +241,7 @@ const StudyPage: React.FC = (props) => {
                         <Box sx={StudyPageStyles.matchingSibling}>
                             {/* apply flex basis 0 to analyses tabs to make sure it matches sibling */}
                             <Tabs
+                                data-tour="StudyPage-7"
                                 sx={StudyPageStyles.analysesTabs}
                                 scrollButtons
                                 value={selectedAnalysis.analysisIndex}

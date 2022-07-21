@@ -9,6 +9,7 @@ const authenticatedNavItems: NavOptionsModel[] = [
         label: 'STUDIES',
         path: '',
         disabled: false,
+        className: 'tour-studies-tab',
         authenticationRequired: false,
         children: [
             {
@@ -27,6 +28,7 @@ const authenticatedNavItems: NavOptionsModel[] = [
     {
         label: 'STUDYSETS',
         path: '',
+        className: 'tour-studysets-tab',
         disabled: false,
         authenticationRequired: false,
         children: [
@@ -42,6 +44,7 @@ const authenticatedNavItems: NavOptionsModel[] = [
     {
         label: 'META-ANALYSES',
         path: '',
+        className: 'tour-meta-analyses-tab',
         disabled: false,
         authenticationRequired: false,
         children: [

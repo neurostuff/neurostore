@@ -1,4 +1,4 @@
-import { Box, Typography, Paper, Button, Link } from '@mui/material';
+import { Box, Typography, Paper, Button, Link, IconButton } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import TextEdit from 'components/TextEdit/TextEdit';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
@@ -11,8 +11,11 @@ import {
     StudysetReturn,
 } from 'neurosynth-compose-typescript-sdk';
 import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
+import Help from '@mui/icons-material/Help';
+import useGetTour from 'hooks/useGetTour';
 
 const MetaAnalysisPage: React.FC = (props) => {
+    const { startTour } = useGetTour('MetaAnalysisPage');
     const { metaAnalysisId }: { metaAnalysisId: string } = useParams();
     const {
         data,
@@ -46,43 +49,50 @@ const MetaAnalysisPage: React.FC = (props) => {
             isError={getMetaAnalysisIsError}
             errorMessage="There was an error getting your meta-analysis"
         >
-            <Box sx={{ marginBottom: '1rem' }}>
-                <TextEdit
-                    onSave={handleEditFields}
-                    sx={{ fontSize: '1.25rem' }}
-                    label="name"
-                    textToEdit={data?.name || ''}
-                >
-                    <Box sx={MetaAnalysisPageStyles.displayedText}>
-                        <Typography
-                            sx={[
-                                MetaAnalysisPageStyles.displayedText,
-                                !data?.name ? MetaAnalysisPageStyles.noData : {},
-                            ]}
-                            variant="h6"
-                        >
-                            {data?.name || 'No name'}
-                        </Typography>
-                    </Box>
-                </TextEdit>
+            <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
+                <Box sx={{ flexGrow: 1 }}>
+                    <TextEdit
+                        onSave={handleEditFields}
+                        sx={{ fontSize: '1.25rem' }}
+                        label="name"
+                        textToEdit={data?.name || ''}
+                    >
+                        <Box sx={MetaAnalysisPageStyles.displayedText}>
+                            <Typography
+                                sx={[
+                                    MetaAnalysisPageStyles.displayedText,
+                                    !data?.name ? MetaAnalysisPageStyles.noData : {},
+                                ]}
+                                variant="h6"
+                            >
+                                {data?.name || 'No name'}
+                            </Typography>
+                        </Box>
+                    </TextEdit>
 
-                <TextEdit
-                    onSave={handleEditFields}
-                    label="description"
-                    textToEdit={data?.description || ''}
-                >
-                    <Box sx={MetaAnalysisPageStyles.displayedText}>
-                        <Typography
-                            sx={[
-                                MetaAnalysisPageStyles.displayedText,
-                                MetaAnalysisPageStyles.description,
-                                !data?.description ? MetaAnalysisPageStyles.noData : {},
-                            ]}
-                        >
-                            {data?.description || 'No description'}
-                        </Typography>
-                    </Box>
-                </TextEdit>
+                    <TextEdit
+                        onSave={handleEditFields}
+                        label="description"
+                        textToEdit={data?.description || ''}
+                    >
+                        <Box sx={MetaAnalysisPageStyles.displayedText}>
+                            <Typography
+                                sx={[
+                                    MetaAnalysisPageStyles.displayedText,
+                                    MetaAnalysisPageStyles.description,
+                                    !data?.description ? MetaAnalysisPageStyles.noData : {},
+                                ]}
+                            >
+                                {data?.description || 'No description'}
+                            </Typography>
+                        </Box>
+                    </TextEdit>
+                </Box>
+                <Box>
+                    <IconButton onClick={() => startTour()}>
+                        <Help color="primary" />
+                    </IconButton>
+                </Box>
             </Box>
             <Box>
                 <Typography variant="h6" sx={{ marginBottom: '2rem' }}>
@@ -90,7 +100,10 @@ const MetaAnalysisPage: React.FC = (props) => {
                     following method(s):
                 </Typography>
 
-                <Paper sx={{ padding: '1rem', marginBottom: '2rem' }}>
+                <Paper
+                    data-tour="MetaAnalysisPage-1"
+                    sx={{ padding: '1rem', marginBottom: '2rem' }}
+                >
                     <Typography sx={{ fontWeight: 'bold', marginBottom: '1rem' }}>
                         run your meta-analysis via google colab
                     </Typography>
@@ -111,7 +124,10 @@ const MetaAnalysisPage: React.FC = (props) => {
                     </Button>
                 </Paper>
 
-                <Paper sx={{ padding: '1rem', marginBottom: '2rem' }}>
+                <Paper
+                    data-tour="MetaAnalysisPage-2"
+                    sx={{ padding: '1rem', marginBottom: '2rem' }}
+                >
                     <Typography sx={{ fontWeight: 'bold', marginBottom: '1rem' }}>
                         run your meta-analysis via docker
                     </Typography>

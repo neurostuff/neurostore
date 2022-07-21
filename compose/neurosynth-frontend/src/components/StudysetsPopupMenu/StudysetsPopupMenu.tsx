@@ -55,7 +55,7 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
 
     return (
         <>
-            <IconButton onClick={handleOpenMenu} ref={anchorRef}>
+            <IconButton className="hello" onClick={handleOpenMenu} ref={anchorRef}>
                 <AddCircle color="primary" />
             </IconButton>
 
