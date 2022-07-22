@@ -19,7 +19,9 @@ const useGetTour = (page: string) => {
         const shouldStartTour = async () => {
             const claims = await getIdTokenClaims();
 
-            const numTimesLoggedIn = claims ? claims['https://neurosynth-compose/loginsCount'] : 0;
+            const numTimesLoggedIn = claims
+                ? claims['https://neurosynth-compose/loginsCount'] || 0
+                : 0;
             const isTour = sessionStorage.getItem('isTour') === 'true';
             const hasSeenPage = !!localStorage.getItem(`hasSeen${page}`);
             localStorage.setItem(`hasSeen${page}`, 'true');
@@ -29,7 +31,7 @@ const useGetTour = (page: string) => {
         };
 
         shouldStartTour();
-    }, []);
+    }, []); // we dont want to add tour as a dependency as we call startTour(), which updates the tour itself
 
     return { startTour };
 };
