@@ -39,12 +39,29 @@ you do not own and want to edit it.
 ### Overview
 
 A study is a publishable unit of research containing neuroimaging
-data.
+data. 
+The data can be represented as peak coordinates or the actual images.
+The study is connected to the original journal it was published in.
+
+### Functions
+
+Studies can be created, cloned, and edited to accomodate your needs for your meta-analysis
 
 ## Analysis
 
+### Overview
+
+An analysis represents a single statistical contrast between any number of groups/conditions.
+The contents of an analysis include the terms applied to the groups/conditions and their respective
+weights in the contrast.
+An analysis also contains the results of the statistical contrast either with an image and/or a table
+indicating significant results 
+
 ## Condition
 
+### Overview
+
+A condition is term/word that represents a psychological (e.g., 2-back), physical (e.g., biking)
 ## Weights
 
 ## Point
