@@ -1,7 +1,9 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Typography, Button } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { NeurosynthLoader, CreateDetailsDialog, StudysetsTable } from 'components';
+import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
+import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
+import StudysetsTable from 'components/Tables/StudysetsTable/StudysetsTable';
 import useIsMounted from 'hooks/useIsMounted';
 import API, { StudysetsApiResponse } from 'utils/api';
 import { useSnackbar } from 'notistack';

@@ -3,7 +3,7 @@ import { SystemStyleObject } from '@mui/system';
 import React, { useEffect, useState } from 'react';
 import EditIcon from '@mui/icons-material/Edit';
 import { useAuth0 } from '@auth0/auth0-react';
-import { ProgressLoader } from 'components';
+import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 
 export interface ITextEdit {
     textToEdit: string;

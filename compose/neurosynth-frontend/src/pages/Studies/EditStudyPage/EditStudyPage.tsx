@@ -1,8 +1,11 @@
 import { Box } from '@mui/material';
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { BackButton, EditAnalyses, EditStudyDetails, StateHandlerComponent } from 'components';
+import BackButton from 'components/Buttons/BackButton/BackButton';
+import EditAnalyses from 'components/EditStudyComponents/EditAnalyses/EditAnalyses';
+import EditStudyDetails from 'components/EditStudyComponents/EditStudyDetails/EditStudyDetails';
 import EditStudyMetadata from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetStudyById } from 'hooks';
 import { AnalysisApiResponse } from 'utils/api';
 import EditStudyPageStyles from './EditStudyPage.styles';

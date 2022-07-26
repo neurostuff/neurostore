@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import DisplayImageTableRowStyles from './DisplayImageTableRow.styles';
 import { DisplayImagesTableRowModel } from '..';
 import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
-import { DisplayValuesTable } from 'components';
+import DisplayValuesTable from 'components/Tables/DisplayValuesTable/DisplayValuesTable';
 
 const DisplayImagesTableRow: React.FC<DisplayImagesTableRowModel> = (props) => {
     const [expanded, setExpanded] = useState(false);

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { TextExpansion } from '..';
+import TextExpansion from './TextExpansion';
 
 describe('TextExpansion Component', () => {
     // save original scrollwidth

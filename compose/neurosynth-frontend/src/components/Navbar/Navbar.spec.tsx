@@ -1,7 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Navbar } from '..';
+import Navbar from './Navbar';
 
 jest.mock('@auth0/auth0-react');
 

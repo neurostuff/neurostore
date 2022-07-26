@@ -4,7 +4,8 @@ import { IEditAnalysisDetails } from '../..';
 import EditAnalysisDetailsStyles from './EditAnalysisDetails.styles';
 import EditAnalysisStyles from '../EditAnalysis.styles';
 import { useUpdateAnalysis, useDeleteAnalysis } from 'hooks';
-import { ConfirmationDialog, LoadingButton } from 'components';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { useSnackbar } from 'notistack';
 
 const textFieldInputProps = {

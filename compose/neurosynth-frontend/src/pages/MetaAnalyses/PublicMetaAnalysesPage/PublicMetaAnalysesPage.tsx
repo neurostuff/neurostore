@@ -1,6 +1,7 @@
 import { Typography, Box } from '@mui/material';
 import { useHistory } from 'react-router-dom';
-import { DisplayValuesTable, StateHandlerComponent } from 'components';
+import DisplayValuesTable from 'components/Tables/DisplayValuesTable/DisplayValuesTable';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
 import { useGetMetaAnalyses } from 'hooks';
 

@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import MetaAnalysisDetails from './MetaAnalysisDetails';
 
-jest.mock('../../Buttons/NavigationButtons/NavigationButtons');
+jest.mock('components/Buttons/NavigationButtons/NavigationButtons');
 
 describe('MetaAnalysisDetails Component', () => {
     const mockOnUpdate = jest.fn();
