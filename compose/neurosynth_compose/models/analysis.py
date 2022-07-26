@@ -98,7 +98,6 @@ class MetaAnalysis(BaseMixin, db.Model):
     user = relationship("User", backref=backref("meta_analyses"))
 
 
-
 class MetaAnalysisResult(BaseMixin, db.Model):
     __tablename__ = "meta_analysis_results"
     meta_analysis_id = db.Column(
