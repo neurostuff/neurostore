@@ -183,7 +183,7 @@ jobs:
           --rm -w /neurosynth/neurosynth-frontend \
           neurosynth \
           bash -c "cd /neurosynth/neurosynth-frontend && \
-          npm run test && cypress install && npm run cy:ci"
+          npm run cy:install && npm run cy:ci"
 
   style_check:
     runs-on: ubuntu-latest
