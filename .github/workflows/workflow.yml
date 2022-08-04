@@ -165,6 +165,7 @@ jobs:
         AUTH0_ACCESS_TOKEN_URL: ${{ secrets.AUTH0_ACCESS_TOKEN_URL }}
         AUTH0_AUTH_URL: ${{ secrets.AUTH0_AUTH_URL }}
         REACT_APP_AUTH0_CLIENT_ID: ${{ secrets.REACT_APP_AUTH0_CLIENT_ID }}
+        REACT_APP_AUTH0_CLIENT_SECRET: ${{ secrets.REACT_APP_AUTH0_CLIENT_ID }}
       run: |
         docker-compose run \
           -e "APP_SETTINGS=neurosynth_compose.config.DockerTestConfig" \
@@ -175,7 +176,7 @@ jobs:
           -e "AUTH0_AUTH_URL=${AUTH0_AUTH_URL}" \
           -e "REACT_APP_AUTH0_DOMAIN=${REACT_APP_AUTH0_DOMAIN}" \
           -e "REACT_APP_AUTH0_CLIENT_ID=${REACT_APP_AUTH0_CLIENT_ID}" \
-          -e "REACT_APP_AUTH0_CLIENT_SECRET=${}"
+          -e "REACT_APP_AUTH0_CLIENT_SECRET=${REACT_APP_AUTH0_CLIENT_SECRET}"
           -e "REACT_APP_AUTH0_AUDIENCE=localhost" \
           -e "REACT_APP_NEUROSTORE_API_DOMAIN=http://localhost/api" \
           -e "REACT_APP_NEUROSYNTH_API_DOMAIN=http://localhost:81/api" \
