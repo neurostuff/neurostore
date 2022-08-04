@@ -1,7 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { useTour } from '@reactour/tour';
 import { useCallback, useEffect } from 'react';
-import TourSteps from 'Toursteps';
+import TourSteps from 'TourSteps';
 
 const useGetTour = (page: string) => {
     const tour = useTour();
@@ -20,8 +20,8 @@ const useGetTour = (page: string) => {
             const claims = await getIdTokenClaims();
 
             const numTimesLoggedIn = claims
-                ? claims['https://neurosynth-compose/loginsCount'] || 0
-                : 0;
+                ? claims['https://neurosynth-compose/loginsCount'] || 1
+                : 1;
             const isTour = sessionStorage.getItem('isTour') === 'true';
             const hasSeenPage = !!localStorage.getItem(`hasSeen${page}`);
             localStorage.setItem(`hasSeen${page}`, 'true');

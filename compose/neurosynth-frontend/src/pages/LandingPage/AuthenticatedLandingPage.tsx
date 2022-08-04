@@ -59,7 +59,7 @@ const AuthenticatedLandingPage: React.FC = (props) => {
                     startTour();
                 }}
             >
-                Get Started with a tour
+                Get started with a tour
             </Button>
             <CreateDetailsDialog
                 titleText="Create new studyset"
