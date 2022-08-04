@@ -40,7 +40,7 @@
         "test-with-coverage": "npm run test -- --coverage --watchAll=false",
         "cy:e2e-headless": "env-cmd -f .env.dev cypress run",
         "cy:e2e-browser": "env-cmd -f .env.dev cypress open -b chrome --e2e",
-        "cy:ci": "start-server-and-test start-headless:dev http://localhost:3000 cy:e2e-headless",
+        "cy:ci": "start-server-and-test start-headless:dev http://172.18.0.5/ cy:e2e-headless",
         "eject": "react-scripts eject"
     },
     "browserslist": {
