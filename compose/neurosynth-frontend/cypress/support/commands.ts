@@ -51,6 +51,13 @@ const constructMockAuthJWT = (jwtPayload = {}): string => {
 };
 
 Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
+    const audience = Cypress.env('auth0Audience');
+    const client_id = Cypress.env('auth0ClientId');
+    const client_secret = Cypress.env('auth0ClientSecret');
+    const username = Cypress.env('auth0Username');
+    const password = Cypress.env('auth0Password');
+    const domain = Cypress.env('auth0Domain');
+
     /**
      * To prevent rate limiting errors form auth0, we stub our own request func and return a mocked response
      */
@@ -59,23 +66,16 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
             cy.wrap({
                 body: {
                     access_token: constructMockAuthJWT({
-                        testing: 'true',
                         iss: 'https://dev-mui7zm42.us.auth0.com/',
                         sub: 'auth0|62e0e6c9dd47048572613b4d',
-                        aud: [
-                            'https://dev-mui7zm42.us.auth0.com/api/v2/',
-                            'https://dev-mui7zm42.us.auth0.com/userinfo',
-                        ],
-                        iat: Math.floor(Date.now() / 1000 + 86400),
-                        exp: 1659661984,
+                        aud: ['https://dev-mui7zm42.us.auth0.com/userinfo', audience],
+                        iat: 1659719697,
+                        exp: 1659806097,
                         azp: 'EmcOFhu0XAINM4EyslaKpZ3u09QlBvef',
-                        scope: 'openid profile email read:current_user update:current_user_metadata delete:current_user_metadata create:current_user_metadata create:current_user_device_credentials delete:current_user_device_credentials update:current_user_identities',
-                        gty: 'password',
+                        scope: 'openid profile email',
                     }),
                     expires_in: 86400,
-                    blahblah: 'some-val',
                     id_token: constructMockAuthJWT({
-                        testing: 'true',
                         'https://neurosynth-compose/loginsCount': 871,
                         nickname: 'test-user',
                         name: 'test-user@gmail.com',
@@ -98,12 +98,6 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
         );
     }
 
-    const audience = Cypress.env('auth0Audience');
-    const client_id = Cypress.env('auth0ClientId');
-    const client_secret = Cypress.env('auth0ClientSecret');
-    const username = Cypress.env('auth0Username');
-    const password = Cypress.env('auth0Password');
-    const domain = Cypress.env('auth0Domain');
     cy.request({
         method: 'POST',
         url: `https://${domain}/oauth/token`,
@@ -119,6 +113,8 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
         },
     })
         .then(({ body }) => {
+            console.log(body);
+
             const { access_token, expires_in, id_token } = body;
             const jwtObject = jwt.decode(id_token, { complete: true }) as jwt.Jwt;
             const [header, payload, signature] = id_token.split('.');
@@ -133,7 +129,6 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
                     decodedToken: {
                         claims: {
                             ...(jwtObject.payload as jwt.JwtPayload),
-                            ...extraClaims,
                             __raw: id_token,
                         },
                         encoded: {
@@ -152,7 +147,12 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
                 expiresAt: Math.floor(Date.now() / 1000) + expires_in,
             };
 
-            localStorage.setItem(
+            /**
+             * There are a lot of resources online regarding integration of auth0 and cypress; however, very few of them work.
+             * Finally managed to get it working by adding this in localstorage, which seems to be checked by auth0-react to determine
+             * the isAuthenticated state. This code is in tandem with setting the auth0 provider cacheLocation=localstorage.
+             */
+            cy.addToLocalStorage(
                 `@@auth0spajs@@::${client_id}::${audience}::openid profile email`,
                 JSON.stringify(session)
             );

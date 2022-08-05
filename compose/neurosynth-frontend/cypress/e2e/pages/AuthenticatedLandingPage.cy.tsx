@@ -8,6 +8,7 @@ const PAGE_NAME = 'AuthenticatedLandingPage';
 describe(PAGE_NAME, () => {
     beforeEach(() => {
         cy.clearLocalStorage().clearSessionStorage();
+        cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
     });
 
     it('should load successfully', () => {

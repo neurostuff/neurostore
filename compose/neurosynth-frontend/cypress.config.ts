@@ -17,7 +17,7 @@ export default defineConfig({
         auth0Password: 'password',
         auth0ClientId: process.env.REACT_APP_AUTH0_CLIENT_ID,
         auth0ClientSecret: process.env.REACT_APP_AUTH0_CLIENT_SECRET,
-        auth0Domain: 'dev-mui7zm42.us.auth0.com',
+        auth0Domain: process.env.REACT_APP_AUTH0_DOMAIN,
         auth0Audience: process.env.REACT_APP_AUTH0_AUDIENCE,
     },
 });
