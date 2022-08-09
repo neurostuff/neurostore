@@ -7,7 +7,6 @@ import { MockThemeProvider } from 'testing/helpers';
 import API, { StudyApiResponse, StudysetsApiResponse } from 'utils/api';
 import { SnackbarProvider } from 'notistack';
 
-jest.mock('hooks');
 jest.mock('@auth0/auth0-react');
 jest.mock('utils/api');
 jest.mock('components/StudysetsPopupMenu/StudysetsPopupMenu');
@@ -89,55 +88,11 @@ describe('StudiesTable Component', () => {
         },
     ];
 
-    const mockStudysetsPostResponse: StudysetsApiResponse[] = [
-        {
-            created_at: '2021-12-14T05:05:45.722157+00:00',
-            description: null,
-            doi: null,
-            id: '123',
-            name: 'test-name',
-            pmid: null,
-            publication: '',
-            studies: [],
-            user: 'some-user',
-        },
-    ];
-
-    const mockStudysetsIdPutResponse: StudysetsApiResponse[] = [
-        {
-            created_at: '2021-12-14T05:05:34.722631+00:00',
-            description: null,
-            doi: null,
-            id: 'test-id',
-            name: null,
-            pmid: null,
-            publication: null,
-            studies: ['5LMdXPD3ocgD'],
-            user: 'test-user',
-        },
-    ];
-
     beforeEach(() => {
         (API.NeurostoreServices.StudySetsService.studysetsGet as any).mockReturnValue(
             Promise.resolve({
                 data: {
                     results: mockStudysetsGetPayload,
-                },
-            })
-        );
-
-        (API.NeurostoreServices.StudySetsService.studysetsPost as any).mockReturnValue(
-            Promise.resolve({
-                data: {
-                    results: mockStudysetsPostResponse,
-                },
-            })
-        );
-
-        (API.NeurostoreServices.StudySetsService.studysetsIdPut as any).mockReturnValue(
-            Promise.resolve({
-                data: {
-                    results: mockStudysetsIdPutResponse,
                 },
             })
         );
@@ -168,7 +123,6 @@ describe('StudiesTable Component', () => {
 
         // subtract 1 to account for the table header
         expect(rows.length - 1).toEqual(mockStudies.length);
-        expect(API.NeurostoreServices.StudySetsService.studysetsGet).toHaveBeenCalled();
     });
 
     it('should show no data', async () => {
@@ -219,56 +173,6 @@ describe('StudiesTable Component', () => {
 
         const noPublicationText = screen.getByText('No Publication Available');
         expect(noPublicationText).toBeInTheDocument();
-    });
-
-    it('should create the studyset', async () => {
-        useAuth0().isAuthenticated = true;
-
-        await act(async () => {
-            render(
-                <MockThemeProvider>
-                    <SnackbarProvider>
-                        <Router history={historyMock as any}>
-                            <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
-                        </Router>
-                    </SnackbarProvider>
-                </MockThemeProvider>
-            );
-        });
-
-        const studysetCreatedButton = screen.getByTestId('add-studyset-button');
-
-        await act(async () => {
-            userEvent.click(studysetCreatedButton);
-        });
-
-        expect(API.NeurostoreServices.StudySetsService.studysetsPost).toBeCalled();
-    });
-
-    it('should edit the studyset', async () => {
-        useAuth0().isAuthenticated = true;
-        await act(async () => {
-            render(
-                <MockThemeProvider>
-                    <SnackbarProvider>
-                        <Router history={historyMock as any}>
-                            <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
-                        </Router>
-                    </SnackbarProvider>
-                </MockThemeProvider>
-            );
-        });
-
-        const studysetEditButton = screen.getByTestId('edit-studyset-button');
-
-        await act(async () => {
-            userEvent.click(studysetEditButton);
-        });
-
-        expect(API.NeurostoreServices.StudySetsService.studysetsIdPut).toBeCalledWith('123', {
-            name: 'test-name',
-            studies: ['5LMdXPD3ocgD'],
-        });
     });
 
     it('should handle the selection when the row is clicked', async () => {

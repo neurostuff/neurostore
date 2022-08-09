@@ -5,10 +5,7 @@ const StudyPageStyles: Style = {
         '& button': {
             marginRight: '15px',
         },
-        display: {
-            xs: 'flex',
-            md: 'block',
-        },
+        display: 'flex',
         justifyContent: {
             xs: 'center',
             md: 'initial',
