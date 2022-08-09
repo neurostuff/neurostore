@@ -32,7 +32,7 @@
     "scripts": {
         "start:dev": "REACT_APP_ENV=DEV env-cmd -f .env.dev react-scripts start",
         "build:dev": "REACT_APP_ENV=DEV env-cmd -f .env.dev react-scripts build",
-        "start-ci:dev": "BROWSER=none PORT=3100 env-cmd -f .env.dev react-scripts start",
+        "start-ci:dev": "env-cmd -f .env.dev serve -s build",
         "start:staging": "REACT_APP_ENV=staging env-cmd -f .env.staging react-scripts start",
         "build:staging": "REACT_APP_ENV=staging env-cmd -f .env.staging react-scripts build",
         "build:prod": "REACT_APP_ENV=prod env-cmd -f .env.prod react-scripts build",
@@ -41,7 +41,7 @@
         "cy:e2e-headless": "env-cmd -f .env.dev cypress run",
         "cy:e2e-browser": "env-cmd -f .env.dev cypress open -b chrome --e2e",
         "cy:install": "cypress install",
-        "cy:ci": "start-server-and-test start-ci:dev http://localhost:3100 cy:e2e-headless",
+        "cy:ci": "start-server-and-test start-ci:dev 3000 cy:e2e-headless",
         "eject": "react-scripts eject"
     },
     "browserslist": {
@@ -81,6 +81,7 @@
         "jsonwebtoken": "^8.5.1",
         "prettier": "^2.4.0",
         "react-error-overlay": "^6.0.9",
+        "serve": "^14.0.1",
         "start-server-and-test": "^1.14.0"
     }
 }
