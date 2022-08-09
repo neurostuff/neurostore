@@ -21,9 +21,14 @@ const StateHandlerComponent: React.FC<IStateHandlerComponent> = (props) => {
     if (props.isLoading) {
         return (
             <Box
-                sx={{ width: '100%', display: 'flex', justifyContent: 'center', margin: '2rem 0' }}
+                sx={{
+                    width: '100%',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                }}
             >
-                <ProgressLoader sx={{ color: props.loadingColor }} />
+                <ProgressLoader sx={{ color: props.loadingColor, marginRight: '10px' }} />
                 <Typography>{props.loadingText || ''}</Typography>
             </Box>
         );
