@@ -8,7 +8,7 @@ const PAGE_NAME = 'StudyPage';
 describe(PAGE_NAME, () => {
     beforeEach(() => {
         cy.clearLocalStorage().clearSessionStorage();
-        cy.intercept('GET', `**/api/studies/*`, { fixture: 'Study' }).as('studyFixture');
+        cy.intercept('GET', `**/api/studies/*`, { fixture: 'study' }).as('studyFixture');
     });
 
     it('should load successfully', () => {
