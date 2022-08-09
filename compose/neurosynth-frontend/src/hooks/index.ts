@@ -18,6 +18,7 @@ import useUpdatePoint from './requests/useUpdatePoint';
 import useDeleteAnalysis from './requests/useDeleteAnalysis';
 import useGetStudies from './requests/useGetStudies';
 import useCreateStudyset from './requests/useCreateStudyset';
+import useUpdateStudyset from './requests/useUpdateStudyset';
 
 export {
     useIsMounted,
@@ -40,4 +41,5 @@ export {
     useDeleteAnalysis,
     useGetStudies,
     useCreateStudyset,
+    useUpdateStudyset,
 };

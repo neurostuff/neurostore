@@ -11,12 +11,14 @@ import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
 import useIsMounted from '../../../hooks/useIsMounted';
-import API, { StudyApiResponse, AnalysisApiResponse } from '../../../utils/api';
+import API, { StudyApiResponse, AnalysisApiResponse } from 'utils/api';
 import StudyPageStyles from './StudyPage.styles';
+import StudysetsPopupMenu from 'components/StudysetsPopupMenu/StudysetsPopupMenu';
+import { StudyReturn } from 'neurostore-typescript-sdk';
 
 const StudyPage: React.FC = (props) => {
     const { enqueueSnackbar } = useSnackbar();
-    const [study, setStudy] = useState<StudyApiResponse>();
+    const [study, setStudy] = useState<StudyReturn>();
     const [selectedAnalysis, setSelectedAnalysis] = useState<{
         analysisIndex: number;
         analysis: AnalysisApiResponse | undefined;
@@ -58,7 +60,7 @@ const StudyPage: React.FC = (props) => {
             API.NeurostoreServices.StudiesService.studiesIdGet(id, true)
                 .then((res) => {
                     if (isMountedRef.current) {
-                        const resUpdated = res as AxiosResponse<StudyApiResponse>;
+                        const resUpdated = res as AxiosResponse<StudyReturn>;
 
                         let sortedAnalyses = resUpdated.data.analyses as
                             | AnalysisApiResponse[]
@@ -170,6 +172,14 @@ const StudyPage: React.FC = (props) => {
                         >
                             Edit Study
                         </Button>
+                    </Box>
+                </Tooltip>
+                <Tooltip placement="top" title="click to add this study to one of your studysets">
+                    <Box sx={{ display: 'inline' }}>
+                        <StudysetsPopupMenu
+                            disabled={!isAuthenticated}
+                            study={study as StudyReturn}
+                        />
                     </Box>
                 </Tooltip>
             </Box>
