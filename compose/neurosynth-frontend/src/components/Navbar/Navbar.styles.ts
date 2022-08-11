@@ -26,6 +26,9 @@ const NavbarStyles: Style = {
         color: 'white',
         textTransform: 'lowercase',
         '&:hover': {
+            '& img': {
+                opacity: '0.8',
+            },
             color: '#ef8a24',
         },
     },

@@ -53,7 +53,9 @@ coverage.xml
 coverage/
 screenshots/
 downloads/
-videos/
+compose/neurosynth-frontend/cypress/videos/*
+compose/neurosynth-frontend/cypress/screenshots/*
+compose/neurosynth-frontend/build/
 
 # Translations
 *.mo
