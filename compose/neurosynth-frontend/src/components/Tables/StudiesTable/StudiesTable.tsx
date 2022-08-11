@@ -45,6 +45,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                 <TableBody>
                     {(props.studies || []).map((row, index) => (
                         <TableRow
+                            data-tour={index === 0 ? 'PublicStudiesPage-4' : null}
                             sx={StudiesTableStyles.tableRow}
                             key={index}
                             onClick={() => handleSelectTableRow(row)}

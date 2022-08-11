@@ -12,6 +12,7 @@ const NeurosynthPopper: React.FC<INeurosynthPopper> = (props) => {
 
     return (
         <Popper
+            className="tour-highlighted-popper"
             style={{ zIndex: 1 }}
             anchorEl={anchorElement}
             open={open}

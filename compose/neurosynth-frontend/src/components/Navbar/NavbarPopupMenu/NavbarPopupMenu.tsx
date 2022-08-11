@@ -53,6 +53,7 @@ const NavbarPopupMenu: React.FC<INavbarPopupMenu> = (props) => {
                                 ref={anchorRef}
                                 onClick={() => setOpen(true)}
                                 sx={props.styling}
+                                className={props.navOption.className || ''}
                                 disabled={props.navOption.disabled}
                             >
                                 {props.navOption.label}

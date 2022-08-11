@@ -1,11 +1,14 @@
-import { Typography, Box } from '@mui/material';
+import { Typography, Box, IconButton } from '@mui/material';
 import { useHistory } from 'react-router-dom';
 import DisplayValuesTable from 'components/Tables/DisplayValuesTable/DisplayValuesTable';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
 import { useGetMetaAnalyses } from 'hooks';
+import useGetTour from 'hooks/useGetTour';
+import Help from '@mui/icons-material/Help';
 
 const PublicMetaAnalysesPage: React.FC = (props) => {
+    const { startTour } = useGetTour('PublicMetaAnalysesPage');
     const history = useHistory();
     const { data, isLoading, isError } = useGetMetaAnalyses();
 
@@ -55,11 +58,13 @@ const PublicMetaAnalysesPage: React.FC = (props) => {
             <Box
                 sx={{
                     display: 'flex',
-                    justifyContent: 'space-between',
                     marginBottom: '1rem',
                 }}
             >
                 <Typography variant="h4">Public Meta-Analyses</Typography>
+                <IconButton onClick={() => startTour()}>
+                    <Help color="primary" />
+                </IconButton>
             </Box>
 
             <StateHandlerComponent
@@ -67,7 +72,9 @@ const PublicMetaAnalysesPage: React.FC = (props) => {
                 isLoading={false}
                 errorMessage="There was an error fetching meta-analyses"
             >
-                <DisplayValuesTable {...metaAnalysesTableData} />
+                <Box data-tour="PublicMetaAnalysesPage-1">
+                    <DisplayValuesTable {...metaAnalysesTableData} />
+                </Box>
             </StateHandlerComponent>
         </>
     );
