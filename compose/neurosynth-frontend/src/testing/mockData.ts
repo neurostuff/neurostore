@@ -99,6 +99,7 @@ const mockStudysets: () => StudysetReturn[] = () => [
         user: null,
         name: 'studyset-name-1',
         description: 'studyset-description-1',
+        studies: ['4ZhkLTH8k2P6'],
     },
     {
         created_at: '2022-04-28T16:39:36.134359+00:00',
@@ -109,6 +110,7 @@ const mockStudysets: () => StudysetReturn[] = () => [
         user: null,
         name: 'studyset-name-2',
         description: 'studyset-description-2',
+        studies: [],
     },
     {
         created_at: '2022-04-28T16:39:36.134359+00:00',
@@ -119,6 +121,7 @@ const mockStudysets: () => StudysetReturn[] = () => [
         user: null,
         name: 'studyset-name-3',
         description: 'studyset-description-3',
+        studies: [],
     },
 ];
 

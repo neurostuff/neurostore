@@ -1,12 +1,15 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Typography } from '@mui/material';
+import { Box, IconButton, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import StudysetsTable from '../../../components/Tables/StudysetsTable/StudysetsTable';
 import useIsMounted from '../../../hooks/useIsMounted';
 import API, { StudysetsApiResponse } from '../../../utils/api';
+import useGetTour from 'hooks/useGetTour';
+import HelpIcon from '@mui/icons-material/Help';
 
 const PublicStudysetsPage: React.FC = (props) => {
+    const { startTour } = useGetTour('PublicStudysetsPage');
     const { user } = useAuth0();
     const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
     const isMountedRef = useIsMounted();
@@ -29,7 +32,9 @@ const PublicStudysetsPage: React.FC = (props) => {
                 undefined
             )
                 .then((res) => {
-                    if (isMountedRef.current && res?.data?.results) setStudysets(res.data.results);
+                    if (isMountedRef.current && res?.data?.results) {
+                        setStudysets(res.data.results);
+                    }
                 })
                 .catch((err) => {
                     setStudysets([]);
@@ -49,10 +54,17 @@ const PublicStudysetsPage: React.FC = (props) => {
                     marginBottom: '1rem',
                 }}
             >
-                <Typography variant="h4">Public Studysets</Typography>
+                <Typography variant="h4">
+                    Public Studysets
+                    <IconButton color="primary" onClick={() => startTour()}>
+                        <HelpIcon />
+                    </IconButton>
+                </Typography>
             </Box>
 
-            <StudysetsTable studysets={studysets || []} />
+            <Box data-tour="StudysetsPage-1">
+                <StudysetsTable studysets={studysets || []} />
+            </Box>
         </NeurosynthLoader>
     );
 };

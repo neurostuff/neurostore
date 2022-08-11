@@ -84,7 +84,11 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
                     target="_blank"
                     href="https://neurostuff.github.io/neurostore/"
                 >
-                    <Typography variant="subtitle2" sx={NavbarToolbarStyles.link}>
+                    <Typography
+                        data-tour="AuthenticatedLandingPage-2"
+                        variant="subtitle2"
+                        sx={NavbarToolbarStyles.link}
+                    >
                         HELP
                         <OpenInNewIcon sx={{ marginLeft: '8px' }} />
                     </Typography>

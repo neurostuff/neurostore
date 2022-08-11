@@ -1,12 +1,14 @@
 import { ChangeEvent, useEffect, useState } from 'react';
-import { TablePagination, Typography, Pagination, Box } from '@mui/material';
-import API, { StudyApiResponse } from '../../../utils/api';
+import { TablePagination, Typography, Pagination, Box, IconButton } from '@mui/material';
+import API, { StudyApiResponse } from 'utils/api';
 import PublicStudiesPageStyles from './PublicStudiesPage.styles';
 import StudiesTable from 'components/Tables/StudiesTable/StudiesTable';
 import SearchBar from 'components/SearchBar/SearchBar';
 import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
-import useIsMounted from '../../../hooks/useIsMounted';
-import { Metadata } from '../../../neurostore-typescript-sdk';
+import useIsMounted from 'hooks/useIsMounted';
+import { Metadata } from 'neurostore-typescript-sdk';
+import HelpIcon from '@mui/icons-material/Help';
+import useGetTour from 'hooks/useGetTour';
 
 export enum Source {
     NEUROSTORE = 'neurostore',
@@ -41,6 +43,7 @@ export class SearchCriteria {
 }
 
 const PublicStudiesPage = () => {
+    const { startTour } = useGetTour('PublicStudiesPage');
     const [studies, setStudies] = useState<StudyApiResponse[]>();
     const [searchMetadata, setSearchMetadata] = useState<Metadata>();
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>(new SearchCriteria());
@@ -108,7 +111,7 @@ const PublicStudiesPage = () => {
     // runs for any change in study query including rows per page change, page change, etc
     useEffect(() => {
         // implement debounce
-        const timeout = setTimeout(() => {
+        const timeout = setTimeout(async () => {
             const getStudies = (searchCriteria: SearchCriteria) => {
                 API.NeurostoreServices.StudiesService.studiesGet(
                     searchCriteria.genericSearchStr,
@@ -147,7 +150,12 @@ const PublicStudiesPage = () => {
 
     return (
         <>
-            <Typography variant="h4">Public Studies</Typography>
+            <Box sx={{ display: 'flex' }}>
+                <Typography variant="h4">Public Studies</Typography>
+                <IconButton onClick={() => startTour()} color="primary">
+                    <HelpIcon />
+                </IconButton>
+            </Box>
 
             <SearchBar onSearch={handleOnSearch} />
 
@@ -165,7 +173,10 @@ const PublicStudiesPage = () => {
             />
 
             <NeurosynthLoader loaded={!!studies}>
-                <Box sx={{ marginBottom: '1rem' }}>
+                <Box
+                    className={studies === undefined ? '' : 'has-studies'}
+                    sx={{ marginBottom: '1rem' }}
+                >
                     <StudiesTable showStudyOptions={true} studies={studies as StudyApiResponse[]} />
                 </Box>
             </NeurosynthLoader>

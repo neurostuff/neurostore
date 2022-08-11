@@ -1,0 +1,1295 @@
+[
+    {
+        "id": "435e7492-24ba-442b-b3cb-acd8812b10d0",
+        "v": "17.0.0",
+        "widget": {
+            "id": "wb",
+            "meta": {
+                "contentWidth": 270,
+                "onDismiss": [
+                    [
+                        "if",
+                        {
+                            "check": [
+                                [
+                                    "var-eq",
+                                    "page",
+                                    4
+                                ]
+                            ],
+                            "then": [
+                                [
+                                    "ref",
+                                    "btn-dismiss"
+                                ]
+                            ]
+                        }
+                    ]
+                ],
+                "pwr": {
+                    "xMinSpace": 0,
+                    "yShift": 20
+                }
+            },
+            "init": {
+                "var": {
+                    "pwr": "offscreen",
+                    "page": 1
+                }
+            },
+            "host": {
+                "_t": "wf",
+                "height": 482,
+                "width": 380,
+                "anchor": {
+                    "latch": "right"
+                },
+                "borderRadius": [
+                    8
+                ],
+                "backdrop": false,
+                "shift": [
+                    -20,
+                    -20
+                ],
+                "collapsed": {
+                    "shift": [
+                        0,
+                        400
+                    ]
+                }
+            },
+            "blocks": [
+                {
+                    "id": "root",
+                    "_t": "c",
+                    "blocks": [
+                        {
+                            "_t": "c",
+                            "style": {
+                                "textAlign": "center",
+                                "noOverflow": true
+                            },
+                            "blocks": [
+                                {
+                                    "_t": "c",
+                                    "id": "h-pad",
+                                    "blocks": [
+                                        {
+                                            "_t": "c",
+                                            "id": "header-img-wrapper",
+                                            "style": {
+                                                "padding": [
+                                                    40,
+                                                    32,
+                                                    40
+                                                ]
+                                            },
+                                            "blocks": [
+                                                {
+                                                    "_t": "font-img",
+                                                    "config": {
+                                                        "icon": "appzi-4",
+                                                        "size": 51
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "_t": "c",
+                                            "id": "h-paragraph-wrapper",
+                                            "style": {
+                                                "padding": [
+                                                    0,
+                                                    16,
+                                                    15,
+                                                    16
+                                                ]
+                                            },
+                                            "auto": {
+                                                "check": [
+                                                    [
+                                                        "var-lt",
+                                                        "page",
+                                                        2
+                                                    ]
+                                                ],
+                                                "ani": {
+                                                    "offscreen": {
+                                                        "shift": [
+                                                            0,
+                                                            20
+                                                        ]
+                                                    },
+                                                    "atRest": {
+                                                        "maxHeight": 300
+                                                    }
+                                                }
+                                            },
+                                            "blocks": [
+                                                {
+                                                    "_t": "c",
+                                                    "id": "h1",
+                                                    "style": {
+                                                        "noOverflow": true,
+                                                        "font": {
+                                                            "size": 18,
+                                                            "family": [
+                                                                [
+                                                                    "g",
+                                                                    "Roboto"
+                                                                ]
+                                                            ],
+                                                            "letterSpacing": 0.02,
+                                                            "weight": 400,
+                                                            "lineHeight": 20
+                                                        }
+                                                    },
+                                                    "blocks": [
+                                                        {
+                                                            "_t": "c",
+                                                            "blocks": [
+                                                                {
+                                                                    "_t": "txt",
+                                                                    "text": "Help us improve"
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "_t": "c",
+                                                    "id": "h2",
+                                                    "style": {
+                                                        "noOverflow": true,
+                                                        "font": {
+                                                            "size": 14,
+                                                            "family": [
+                                                                [
+                                                                    "g",
+                                                                    "Roboto"
+                                                                ]
+                                                            ],
+                                                            "letterSpacing": 0.02,
+                                                            "weight": 400,
+                                                            "lineHeight": 22
+                                                        },
+                                                        "padding": [
+                                                            8,
+                                                            0,
+                                                            0
+                                                        ]
+                                                    },
+                                                    "blocks": [
+                                                        {
+                                                            "_t": "c",
+                                                            "blocks": [
+                                                                {
+                                                                    "_t": "txt",
+                                                                    "text": "Let us know if there is anything you would like to share about our site"
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ],
+                                    "style": {
+                                        "backgroundColor": "#0077b6",
+                                        "color": "#fff"
+                                    }
+                                },
+                                {
+                                    "_t": "c",
+                                    "id": "h-line",
+                                    "style": {
+                                        "height": 1,
+                                        "backgroundColor": "#fff"
+                                    }
+                                }
+                            ],
+                            "id": "header",
+                            "auto": {
+                                "check": [
+                                    [
+                                        "var-lt",
+                                        "page",
+                                        4
+                                    ]
+                                ]
+                            }
+                        },
+                        {
+                            "_t": "c",
+                            "id": "i3ch-wrapper",
+                            "blocks": [
+                                {
+                                    "id": "i3ch-l",
+                                    "_t": "c",
+                                    "style": {
+                                        "noOverflow": true
+                                    },
+                                    "blocks": [
+                                        {
+                                            "_t": "c",
+                                            "blocks": [
+                                                {
+                                                    "_t": "txt",
+                                                    "text": "What kind of feedback do you have?"
+                                                }
+                                            ],
+                                            "style": {
+                                                "padding": [
+                                                    50,
+                                                    30,
+                                                    20
+                                                ],
+                                                "textAlign": "center",
+                                                "font": {
+                                                    "size": 14,
+                                                    "family": [
+                                                        [
+                                                            "g",
+                                                            "Roboto"
+                                                        ]
+                                                    ],
+                                                    "letterSpacing": 0.02,
+                                                    "weight": 700
+                                                },
+                                                "color": "#4d4d4d"
+                                            },
+                                            "auto": {
+                                                "check": [
+                                                    [
+                                                        "var-eq",
+                                                        "page",
+                                                        1
+                                                    ]
+                                                ],
+                                                "ani": {
+                                                    "offscreen": {
+                                                        "shift": [
+                                                            0,
+                                                            -85
+                                                        ]
+                                                    },
+                                                    "atRest": {
+                                                        "maxHeight": 100
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "id": "i3ch",
+                                    "_t": "3ch",
+                                    "checkMap": {
+                                        "collapsed": [
+                                            [
+                                                "var-gt",
+                                                "page",
+                                                1
+                                            ],
+                                            [
+                                                "var-lt",
+                                                "page",
+                                                4
+                                            ]
+                                        ]
+                                    },
+                                    "execMap": {
+                                        "select": [
+                                            [
+                                                "focus",
+                                                "input-multiline"
+                                            ],
+                                            [
+                                                "var-set",
+                                                "page",
+                                                2
+                                            ]
+                                        ],
+                                        "expand": [
+                                            [
+                                                "var-set",
+                                                "page",
+                                                1
+                                            ]
+                                        ]
+                                    },
+                                    "config": {
+                                        "choices": [
+                                            {
+                                                "type": "thumbUp",
+                                                "text": "I like something"
+                                            },
+                                            {
+                                                "type": "thumbDown",
+                                                "text": "I don't like something"
+                                            },
+                                            {
+                                                "type": "idea",
+                                                "text": "I have a suggestion for improvement"
+                                            }
+                                        ],
+                                        "width": 270
+                                    },
+                                    "labelFrom": "i3ch-l",
+                                    "styleStateMap": {
+                                        "row": {
+                                            "atRest": {
+                                                "color": "#4d4d4d",
+                                                "font": {
+                                                    "size": 14,
+                                                    "family": [
+                                                        [
+                                                            "g",
+                                                            "Roboto"
+                                                        ]
+                                                    ],
+                                                    "letterSpacing": 0.02,
+                                                    "weight": 500
+                                                }
+                                            },
+                                            "hover": {
+                                                "color": "#0077b6",
+                                                "backgroundColor": "#eff3f9"
+                                            }
+                                        },
+                                        "rowCollapsed": {
+                                            "atRest": {
+                                                "color": "#4d4d4d"
+                                            }
+                                        }
+                                    },
+                                    "auto": {
+                                        "check": [
+                                            [
+                                                "var-lt",
+                                                "page",
+                                                4
+                                            ]
+                                        ]
+                                    }
+                                },
+                                {
+                                    "_t": "c",
+                                    "id": "i3ch-first-page-bottom-spacer",
+                                    "auto": {
+                                        "check": [
+                                            [
+                                                "var-eq",
+                                                "page",
+                                                1
+                                            ]
+                                        ]
+                                    },
+                                    "style": {
+                                        "height": 47
+                                    },
+                                    "blocks": []
+                                }
+                            ],
+                            "style": {
+                                "padding": [
+                                    0
+                                ]
+                            }
+                        },
+                        {
+                            "_t": "cc",
+                            "id": "input-multiline-wrapper",
+                            "checkMap": {
+                                "isCollapsed": [
+                                    [
+                                        "var-eq",
+                                        "page",
+                                        3
+                                    ]
+                                ]
+                            },
+                            "hoverMap": {
+                                "collapsedHover": {
+                                    "color": "#155e8f",
+                                    "backgroundColor": "#eff3f9"
+                                }
+                            },
+                            "config": {
+                                "collapsedHeight": 50,
+                                "expandedMaxHeight": 350,
+                                "collapsedExcerpt": {
+                                    "valueFromBlockId": "input-multiline",
+                                    "fallback": "No text"
+                                },
+                                "expandedHeader": {
+                                    "mapFrom": {
+                                        "blockId": "i3ch",
+                                        "map": {
+                                            "thumbUp": "What did you like?",
+                                            "thumbDown": "What did you not like?",
+                                            "idea": "What is your suggestion?"
+                                        }
+                                    }
+                                },
+                                "innerMaxWidth": 270
+                            },
+                            "blocks": [
+                                {
+                                    "_t": "c",
+                                    "blocks": [
+                                        {
+                                            "id": "input-multiline",
+                                            "_t": "i-txt",
+                                            "kind": "mat-textarea",
+                                            "height": 108,
+                                            "placeholder": "Type here",
+                                            "underline": {
+                                                "lineColor": "#0077b6",
+                                                "arrowText": "Press ENTER"
+                                            },
+                                            "styleMap": {
+                                                "input": {
+                                                    "font": {
+                                                        "size": 14,
+                                                        "family": [
+                                                            [
+                                                                "g",
+                                                                "Roboto"
+                                                            ]
+                                                        ],
+                                                        "weight": 400
+                                                    },
+                                                    "color": "#525252"
+                                                },
+                                                "placeholder": {
+                                                    "color": "#c3c3c3",
+                                                    "font": {
+                                                        "size": 14,
+                                                        "family": [
+                                                            [
+                                                                "g",
+                                                                "Roboto"
+                                                            ]
+                                                        ],
+                                                        "weight": 400
+                                                    }
+                                                },
+                                                "enterHint": {
+                                                    "color": "#c3c3c3",
+                                                    "font": {
+                                                        "size": 12,
+                                                        "family": [
+                                                            [
+                                                                "g",
+                                                                "Roboto"
+                                                            ]
+                                                        ],
+                                                        "weight": 400
+                                                    }
+                                                },
+                                                "error": {
+                                                    "color": "#f90000",
+                                                    "font": {
+                                                        "size": 12,
+                                                        "family": [
+                                                            [
+                                                                "g",
+                                                                "Roboto"
+                                                            ]
+                                                        ],
+                                                        "letterSpacing": 0.02
+                                                    }
+                                                }
+                                            },
+                                            "labelFrom": "input-multiline-wrapper"
+                                        }
+                                    ],
+                                    "style": {
+                                        "padding": [
+                                            20,
+                                            0,
+                                            10,
+                                            0
+                                        ]
+                                    }
+                                }
+                            ],
+                            "styleMap": {
+                                "collapsed": {
+                                    "color": "#4d4d4d",
+                                    "font": {
+                                        "size": 14,
+                                        "family": [
+                                            [
+                                                "g",
+                                                "Roboto"
+                                            ]
+                                        ],
+                                        "letterSpacing": 0.02,
+                                        "weight": 700
+                                    },
+                                    "border": {
+                                        "width": [
+                                            0,
+                                            0,
+                                            1,
+                                            0
+                                        ],
+                                        "color": "#e5e5e5"
+                                    }
+                                },
+                                "expandedHeader": {
+                                    "padding": [
+                                        54,
+                                        0,
+                                        0,
+                                        0
+                                    ],
+                                    "font": {
+                                        "size": 14,
+                                        "family": [
+                                            [
+                                                "g",
+                                                "Roboto"
+                                            ]
+                                        ],
+                                        "letterSpacing": 0.02,
+                                        "weight": 700
+                                    },
+                                    "color": "#4d4d4d"
+                                }
+                            },
+                            "auto": {
+                                "check": [
+                                    [
+                                        "var-gt",
+                                        "page",
+                                        1
+                                    ],
+                                    [
+                                        "var-lt",
+                                        "page",
+                                        4
+                                    ]
+                                ]
+                            },
+                            "execMap": {
+                                "onExpand": [
+                                    [
+                                        "var-set",
+                                        "page",
+                                        2
+                                    ],
+                                    [
+                                        "focus",
+                                        "input-multiline"
+                                    ]
+                                ]
+                            }
+                        },
+                        {
+                            "_t": "c",
+                            "id": "input-email-wrapper",
+                            "blocks": [
+                                {
+                                    "_t": "c",
+                                    "id": "input-email-l",
+                                    "blocks": [
+                                        {
+                                            "_t": "txt",
+                                            "text": "Please enter your email (optional)"
+                                        }
+                                    ],
+                                    "style": {
+                                        "font": {
+                                            "size": 14,
+                                            "family": [
+                                                [
+                                                    "g",
+                                                    "Roboto"
+                                                ]
+                                            ],
+                                            "letterSpacing": 0.02,
+                                            "weight": 700
+                                        },
+                                        "padding": [
+                                            0,
+                                            0,
+                                            48
+                                        ],
+                                        "color": "#4d4d4d"
+                                    }
+                                },
+                                {
+                                    "id": "input-email",
+                                    "_t": "i-txt",
+                                    "kind": "mat-email",
+                                    "placeholder": "Please enter your email here",
+                                    "underline": {
+                                        "lineColor": "#0077b6",
+                                        "arrowText": "Press ENTER"
+                                    },
+                                    "validation": [
+                                        [
+                                            "regex",
+                                            "^$|^(([^<>()[\\]\\\\.,;:\\s@\"]+(\\.[^<>()[\\]\\\\.,;:\\s@\"]+)*)|(\".+\"))@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$",
+                                            "Please provide a valid email"
+                                        ]
+                                    ],
+                                    "labelFrom": "input-email-l",
+                                    "styleMap": {
+                                        "input": {
+                                            "font": {
+                                                "size": 14,
+                                                "family": [
+                                                    [
+                                                        "g",
+                                                        "Roboto"
+                                                    ]
+                                                ],
+                                                "weight": 400
+                                            },
+                                            "color": "#525252"
+                                        },
+                                        "placeholder": {
+                                            "color": "#c3c3c3",
+                                            "font": {
+                                                "size": 14,
+                                                "family": [
+                                                    [
+                                                        "g",
+                                                        "Roboto"
+                                                    ]
+                                                ],
+                                                "weight": 400
+                                            }
+                                        },
+                                        "enterHint": {
+                                            "color": "#c3c3c3",
+                                            "font": {
+                                                "size": 12,
+                                                "family": [
+                                                    [
+                                                        "g",
+                                                        "Roboto"
+                                                    ]
+                                                ],
+                                                "weight": 400
+                                            }
+                                        },
+                                        "error": {
+                                            "color": "#f90000",
+                                            "font": {
+                                                "size": 12,
+                                                "family": [
+                                                    [
+                                                        "g",
+                                                        "Roboto"
+                                                    ]
+                                                ],
+                                                "letterSpacing": 0.02
+                                            }
+                                        }
+                                    },
+                                    "exec": [
+                                        [
+                                            "ref",
+                                            "btn-submit"
+                                        ]
+                                    ]
+                                }
+                            ],
+                            "style": {
+                                "padding": [
+                                    54,
+                                    0,
+                                    16
+                                ],
+                                "maxWidth": 270
+                            },
+                            "auto": {
+                                "check": [
+                                    [
+                                        "var-eq",
+                                        "page",
+                                        3
+                                    ]
+                                ]
+                            }
+                        },
+                        {
+                            "_t": "c",
+                            "blocks": [
+                                {
+                                    "_t": "c",
+                                    "style": {
+                                        "textAlign": "center",
+                                        "noOverflow": true
+                                    },
+                                    "id": "ty",
+                                    "blocks": [
+                                        {
+                                            "_t": "c",
+                                            "id": "ty-acc-bar",
+                                            "style": {
+                                                "height": 4,
+                                                "backgroundColor": "#0077b6"
+                                            },
+                                            "blocks": []
+                                        },
+                                        {
+                                            "_t": "c",
+                                            "id": "typ-r",
+                                            "blocks": [
+                                                {
+                                                    "_t": "c",
+                                                    "id": "typ-cw",
+                                                    "blocks": [
+                                                        {
+                                                            "_t": "ty-ok",
+                                                            "id": "typ-c",
+                                                            "style": {
+                                                                "fill": "#0077b6",
+                                                                "stroke": "#fff",
+                                                                "height": 55
+                                                            }
+                                                        }
+                                                    ],
+                                                    "style": {
+                                                        "padding": [
+                                                            28,
+                                                            0,
+                                                            32,
+                                                            0
+                                                        ]
+                                                    }
+                                                },
+                                                {
+                                                    "_t": "c",
+                                                    "id": "typ-h1",
+                                                    "blocks": [
+                                                        {
+                                                            "_t": "c",
+                                                            "blocks": [
+                                                                {
+                                                                    "_t": "txt",
+                                                                    "text": "Thank you for your feedback."
+                                                                }
+                                                            ]
+                                                        }
+                                                    ],
+                                                    "style": {
+                                                        "font": {
+                                                            "size": 18,
+                                                            "family": [
+                                                                [
+                                                                    "g",
+                                                                    "Roboto"
+                                                                ]
+                                                            ],
+                                                            "letterSpacing": 0.02,
+                                                            "weight": 400,
+                                                            "lineHeight": 20
+                                                        }
+                                                    }
+                                                },
+                                                {
+                                                    "_t": "c",
+                                                    "id": "typ-h2",
+                                                    "blocks": [
+                                                        {
+                                                            "_t": "c",
+                                                            "blocks": [
+                                                                {
+                                                                    "_t": "txt",
+                                                                    "text": "Your feedback is extremely valuable and will help us improve neurosynth"
+                                                                }
+                                                            ]
+                                                        }
+                                                    ],
+                                                    "style": {
+                                                        "font": {
+                                                            "size": 14,
+                                                            "family": [
+                                                                [
+                                                                    "g",
+                                                                    "Roboto"
+                                                                ]
+                                                            ],
+                                                            "letterSpacing": 0.02,
+                                                            "weight": 400,
+                                                            "lineHeight": 22
+                                                        },
+                                                        "padding": [
+                                                            8,
+                                                            0,
+                                                            0
+                                                        ]
+                                                    }
+                                                },
+                                                {
+                                                    "id": "btn-dismiss-wrapper",
+                                                    "_t": "c",
+                                                    "blocks": [
+                                                        {
+                                                            "_t": "btn",
+                                                            "id": "btn-dismiss",
+                                                            "blocks": [
+                                                                {
+                                                                    "_t": "txt",
+                                                                    "text": "DONE"
+                                                                }
+                                                            ],
+                                                            "style": {
+                                                                "font": {
+                                                                    "size": 14,
+                                                                    "family": [
+                                                                        [
+                                                                            "g",
+                                                                            "Roboto"
+                                                                        ]
+                                                                    ],
+                                                                    "weight": 500
+                                                                },
+                                                                "color": "#fff",
+                                                                "backgroundColor": "#0077b6",
+                                                                "padding": [
+                                                                    10,
+                                                                    22
+                                                                ],
+                                                                "border": {
+                                                                    "radius": [
+                                                                        2
+                                                                    ]
+                                                                },
+                                                                "minWidth": 150
+                                                            },
+                                                            "hover": {
+                                                                "backgroundColor": "#10689e"
+                                                            },
+                                                            "exec": [
+                                                                "dismiss",
+                                                                [
+                                                                    "delayMs",
+                                                                    300,
+                                                                    [
+                                                                        [
+                                                                            "var-set",
+                                                                            "page",
+                                                                            1
+                                                                        ],
+                                                                        [
+                                                                            "var-set",
+                                                                            "pwr",
+                                                                            "offscreen"
+                                                                        ]
+                                                                    ]
+                                                                ]
+                                                            ]
+                                                        }
+                                                    ],
+                                                    "style": {
+                                                        "padding": [
+                                                            48,
+                                                            0,
+                                                            49
+                                                        ]
+                                                    }
+                                                }
+                                            ],
+                                            "style": {
+                                                "padding": [
+                                                    0,
+                                                    32,
+                                                    32,
+                                                    32
+                                                ]
+                                            }
+                                        }
+                                    ],
+                                    "auto": {
+                                        "check": [
+                                            [
+                                                "var-eq",
+                                                "page",
+                                                4
+                                            ]
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "_t": "c",
+                            "blocks": [
+                                {
+                                    "id": "btn-spacer",
+                                    "_t": "c",
+                                    "auto": {
+                                        "check": [
+                                            [
+                                                "var-gt",
+                                                "page",
+                                                1
+                                            ],
+                                            [
+                                                "var-lt",
+                                                "page",
+                                                4
+                                            ]
+                                        ]
+                                    },
+                                    "style": {
+                                        "padding": [
+                                            6
+                                        ]
+                                    }
+                                },
+                                {
+                                    "_t": "c",
+                                    "id": "b-bar-wrapper",
+                                    "float": "bottom",
+                                    "style": {
+                                        "textAlign": "right",
+                                        "font": {
+                                            "size": 14,
+                                            "family": [
+                                                [
+                                                    "g",
+                                                    "Roboto"
+                                                ]
+                                            ],
+                                            "weight": 500
+                                        },
+                                        "padding": [
+                                            10
+                                        ],
+                                        "backgroundColor": "#fff",
+                                        "border": {
+                                            "width": [
+                                                1,
+                                                0,
+                                                0
+                                            ],
+                                            "radius": [
+                                                0
+                                            ],
+                                            "color": "#e5e5e5"
+                                        }
+                                    },
+                                    "blocks": [
+                                        {
+                                            "_t": "c",
+                                            "style": {
+                                                "padding": [
+                                                    0,
+                                                    5,
+                                                    0,
+                                                    0
+                                                ],
+                                                "display": "inline-block"
+                                            },
+                                            "blocks": [
+                                                {
+                                                    "_t": "btn",
+                                                    "id": "btn-prev",
+                                                    "style": {
+                                                        "textAlign": "center",
+                                                        "padding": [
+                                                            10,
+                                                            22
+                                                        ],
+                                                        "border": {
+                                                            "radius": [
+                                                                2
+                                                            ]
+                                                        },
+                                                        "color": "#525252",
+                                                        "backgroundColor": "#fff"
+                                                    },
+                                                    "blocks": [
+                                                        {
+                                                            "id": "btn-prev-txt",
+                                                            "_t": "txt",
+                                                            "text": "BACK"
+                                                        }
+                                                    ],
+                                                    "hover": {
+                                                        "backgroundColor": "#f2f5f7"
+                                                    },
+                                                    "auto": {
+                                                        "check": [
+                                                            [
+                                                                "var-gt",
+                                                                "page",
+                                                                2
+                                                            ],
+                                                            [
+                                                                "var-lt",
+                                                                "page",
+                                                                4
+                                                            ]
+                                                        ]
+                                                    },
+                                                    "exec": [
+                                                        [
+                                                            "var-dec",
+                                                            "page"
+                                                        ],
+                                                        [
+                                                            "focus",
+                                                            "input-multiline"
+                                                        ]
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "_t": "btn",
+                                            "id": "btn-next",
+                                            "blocks": [
+                                                {
+                                                    "id": "btn-next-txt",
+                                                    "_t": "txt",
+                                                    "text": "NEXT"
+                                                }
+                                            ],
+                                            "style": {
+                                                "padding": [
+                                                    10,
+                                                    22
+                                                ],
+                                                "border": {
+                                                    "radius": [
+                                                        2
+                                                    ]
+                                                },
+                                                "color": "#155e8f",
+                                                "backgroundColor": "#e9edf1"
+                                            },
+                                            "hover": {
+                                                "backgroundColor": "#f2f5f7"
+                                            },
+                                            "auto": {
+                                                "check": [
+                                                    [
+                                                        "var-lt",
+                                                        "page",
+                                                        3
+                                                    ]
+                                                ]
+                                            },
+                                            "exec": [
+                                                [
+                                                    "var-inc",
+                                                    "page"
+                                                ],
+                                                [
+                                                    "focus",
+                                                    "input-email"
+                                                ]
+                                            ]
+                                        },
+                                        {
+                                            "_t": "btn",
+                                            "id": "btn-submit",
+                                            "blocks": [
+                                                {
+                                                    "id": "btn-submit-txt",
+                                                    "_t": "txt",
+                                                    "text": "SEND"
+                                                }
+                                            ],
+                                            "style": {
+                                                "padding": [
+                                                    10,
+                                                    22
+                                                ],
+                                                "border": {
+                                                    "radius": [
+                                                        2
+                                                    ]
+                                                },
+                                                "color": "#155e8f",
+                                                "backgroundColor": "#e9edf1"
+                                            },
+                                            "hover": {
+                                                "backgroundColor": "#f2f5f7"
+                                            },
+                                            "auto": {
+                                                "check": [
+                                                    [
+                                                        "var-eq",
+                                                        "page",
+                                                        3
+                                                    ]
+                                                ]
+                                            },
+                                            "exec": [
+                                                [
+                                                    "if",
+                                                    {
+                                                        "check": [
+                                                            [
+                                                                "valid",
+                                                                "all"
+                                                            ]
+                                                        ],
+                                                        "then": [
+                                                            "submit",
+                                                            [
+                                                                "var-set",
+                                                                "page",
+                                                                4
+                                                            ],
+                                                            [
+                                                                "var-set",
+                                                                "pwr",
+                                                                "center"
+                                                            ],
+                                                            "reset"
+                                                        ]
+                                                    }
+                                                ]
+                                            ]
+                                        }
+                                    ],
+                                    "auto": {
+                                        "check": [
+                                            [
+                                                "var-gt",
+                                                "page",
+                                                1
+                                            ],
+                                            [
+                                                "var-lt",
+                                                "page",
+                                                4
+                                            ]
+                                        ],
+                                        "ani": {
+                                            "offscreen": {
+                                                "shift": [
+                                                    0,
+                                                    70
+                                                ],
+                                                "opacity": 0
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "surveyId": "435e7492-24ba-442b-b3cb-acd8812b10d0"
+        },
+        "targeting": {
+            "excludedDevices": [],
+            "filter": []
+        },
+        "privacy": {
+            "screenShot": true,
+            "ip": true
+        },
+        "screenshotStrategy": null,
+        "launcher": {
+            "id": "d9e5c",
+            "host": {
+                "_t": "ls",
+                "borderRadius": [
+                    4
+                ],
+                "anchor": {
+                    "latch": "bottom-right"
+                },
+                "shift": [
+                    -20,
+                    40
+                ],
+                "collapsed": {
+                    "shift": [
+                        0,
+                        40
+                    ]
+                },
+                "transformOrigin": [
+                    0,
+                    0
+                ],
+                "hover": {
+                    "shift": [
+                        0,
+                        -4
+                    ]
+                },
+                "width": 115,
+                "height": 70
+            },
+            "blocks": [
+                {
+                    "_t": "c",
+                    "style": {
+                        "padding": [
+                            5,
+                            12,
+                            46,
+                            12
+                        ],
+                        "noWrap": true,
+                        "noOverflow": true,
+                        "textAlign": "right",
+                        "cursor": "pointer",
+                        "display": "flex",
+                        "backgroundColor": "#0077b6",
+                        "color": "#fff"
+                    },
+                    "exec": [
+                        "submit"
+                    ],
+                    "blocks": [
+                        {
+                            "_t": "font-img",
+                            "config": {
+                                "icon": "appzi-4",
+                                "rotate": 15,
+                                "padding": [
+                                    1
+                                ],
+                                "size": 15
+                            }
+                        },
+                        {
+                            "_t": "txt",
+                            "style": {
+                                "font": {
+                                    "family": [
+                                        [
+                                            "g",
+                                            "Roboto"
+                                        ]
+                                    ],
+                                    "weight": 700,
+                                    "size": 16,
+                                    "letterSpacing": 0.02
+                                },
+                                "noWrap": true,
+                                "padding": [
+                                    0,
+                                    0,
+                                    0,
+                                    8
+                                ]
+                            },
+                            "whiteSpaceCollapse": false,
+                            "text": "Feedback"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+]
