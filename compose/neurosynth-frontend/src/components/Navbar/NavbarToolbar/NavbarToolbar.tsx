@@ -30,7 +30,11 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
 
     return (
         <Toolbar sx={[NavbarStyles.toolbar]}>
-            <Box style={{ display: 'flex', alignItems: 'center' }}>
+            <Box
+                sx={[NavbarStyles.neurosynthLink, { display: 'flex', alignItems: 'center' }]}
+                component={NavLink}
+                to="/"
+            >
                 <img
                     alt="neurosynth compose logo"
                     style={{
@@ -41,7 +45,7 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
                     }}
                     src="/static/synth.png"
                 />
-                <Box to="/" exact sx={NavbarStyles.neurosynthLink} component={NavLink}>
+                <Box>
                     <Typography variant="h4">
                         <Badge color="warning" badgeContent={<span>beta</span>}>
                             neurosynth compose
