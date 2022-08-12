@@ -10,7 +10,7 @@ const useUpdateMetaAnalysis = () => {
         AxiosError,
         {
             metaAnalysisId: string;
-            metaAnalysis: MetaAnalysisPostBody;
+            metaAnalysis: Partial<MetaAnalysisPostBody>;
         },
         unknown
     >(

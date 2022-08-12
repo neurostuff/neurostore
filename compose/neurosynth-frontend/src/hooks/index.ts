@@ -19,6 +19,9 @@ import useDeleteAnalysis from './requests/useDeleteAnalysis';
 import useGetStudies from './requests/useGetStudies';
 import useCreateStudyset from './requests/useCreateStudyset';
 import useUpdateStudyset from './requests/useUpdateStudyset';
+import useGetAnnotationById from './requests/useGetAnnotationById';
+import useUpdateAnnotationById from './requests/useUpdateAnnotationById';
+import useDeleteAnnotation from './requests/useDeleteAnnotation';
 
 export {
     useIsMounted,
@@ -42,4 +45,7 @@ export {
     useGetStudies,
     useCreateStudyset,
     useUpdateStudyset,
+    useGetAnnotationById,
+    useUpdateAnnotationById,
+    useDeleteAnnotation,
 };

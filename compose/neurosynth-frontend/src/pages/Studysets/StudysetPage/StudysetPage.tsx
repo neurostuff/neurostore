@@ -157,7 +157,7 @@ const StudysetsPage: React.FC = (props) => {
                         <Box sx={{ flexGrow: 1 }}>
                             <TextEdit
                                 onSave={handleSaveTextEdit}
-                                sx={{ fontSize: '1.25rem' }}
+                                sx={{ fontSize: '1.5rem' }}
                                 label="name"
                                 textToEdit={studyset.name || ''}
                             >
@@ -167,37 +167,39 @@ const StudysetsPage: React.FC = (props) => {
                                             StudysetPageStyles.displayedText,
                                             !studyset.name ? StudysetPageStyles.noData : {},
                                         ]}
-                                        variant="h6"
+                                        variant="h5"
                                     >
                                         {studyset.name || 'No name'}
                                     </Typography>
                                 </Box>
                             </TextEdit>
                             <TextEdit
+                                sx={{ fontSize: '1.25rem' }}
                                 onSave={handleSaveTextEdit}
                                 label="publication"
                                 textToEdit={studyset.publication || ''}
                             >
                                 <Box sx={StudysetPageStyles.displayedText}>
                                     <Typography
-                                        sx={{
-                                            ...StudysetPageStyles.displayedText,
-                                            ...(!studyset.publication
-                                                ? StudysetPageStyles.noData
-                                                : {}),
-                                        }}
+                                        variant="h6"
+                                        sx={[
+                                            StudysetPageStyles.displayedText,
+                                            !studyset.publication ? StudysetPageStyles.noData : {},
+                                        ]}
                                     >
                                         {studyset.publication || 'No publication'}
                                     </Typography>
                                 </Box>
                             </TextEdit>
                             <TextEdit
+                                sx={{ fontSize: '1.25rem' }}
                                 label="doi"
                                 onSave={handleSaveTextEdit}
                                 textToEdit={studyset.doi || ''}
                             >
                                 <Box sx={StudysetPageStyles.displayedText}>
                                     <Typography
+                                        variant="h6"
                                         sx={[
                                             StudysetPageStyles.displayedText,
                                             !studyset.doi ? StudysetPageStyles.noData : {},
@@ -208,6 +210,7 @@ const StudysetsPage: React.FC = (props) => {
                                 </Box>
                             </TextEdit>
                             <TextEdit
+                                sx={{ fontSize: '1.25rem' }}
                                 onSave={handleSaveTextEdit}
                                 label="description"
                                 textToEdit={studyset.description || ''}
@@ -220,7 +223,7 @@ const StudysetsPage: React.FC = (props) => {
                                     }}
                                 >
                                     <TextExpansion
-                                        sx={{ fontSize: '12px' }}
+                                        textSx={{ fontSize: '1.25rem' }}
                                         text={studyset.description || 'No description'}
                                     />
                                 </Box>
