@@ -46,6 +46,8 @@ const MetaAnalysisPage: React.FC = (props) => {
     const studyset = data?.studyset as StudysetReturn;
     const annotation = data?.annotation as AnnotationReturn;
 
+    const thisUserOwnsThisMetaAnalysis = (data?.user || undefined) === (user?.sub || null);
+
     const updateName = (updatedName: string, _label: string) => {
         if (data?.id && specification?.id && studyset?.id && annotation?.id) {
             updateMetaAnalysisName(
@@ -99,7 +101,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                 <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
                     <Box sx={{ flexGrow: 1 }}>
                         <TextEdit
-                            editIconIsVisible={data?.user === user?.sub}
+                            editIconIsVisible={thisUserOwnsThisMetaAnalysis}
                             isLoading={updateMetaAnalysisNameIsLoading}
                             onSave={updateName}
                             sx={{ fontSize: '1.5rem' }}
@@ -120,7 +122,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                         </TextEdit>
 
                         <TextEdit
-                            editIconIsVisible={data?.user === user?.sub}
+                            editIconIsVisible={thisUserOwnsThisMetaAnalysis}
                             isLoading={updateMetaAnalysisDescriptionIsLoading}
                             onSave={updateDescription}
                             label="description"

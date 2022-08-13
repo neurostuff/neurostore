@@ -80,6 +80,8 @@ const EditAnnotationsPage: React.FC = (props) => {
     const { mutate: deleteAnnotation, isLoading: deleteAnnotationIsLoading } =
         useDeleteAnnotation();
 
+    const thisUserOwnsThisAnnotation = (annotation?.user || null) === (user?.sub || undefined);
+
     const handleUpdateName = (updatedName: string, label: string) => {
         if (params?.annotationId) {
             updateAnnotationName({
@@ -140,6 +142,7 @@ const EditAnnotationsPage: React.FC = (props) => {
 
             <Box sx={{ marginBottom: '1rem' }}>
                 <TextEdit
+                    editIconIsVisible={thisUserOwnsThisAnnotation}
                     isLoading={updateAnnotationNameIsLoading}
                     onSave={handleUpdateName}
                     textToEdit={annotation?.name || ''}
@@ -155,6 +158,7 @@ const EditAnnotationsPage: React.FC = (props) => {
                     </Typography>
                 </TextEdit>
                 <TextEdit
+                    editIconIsVisible={thisUserOwnsThisAnnotation}
                     isLoading={updateAnnotationDescriptionIsLoading}
                     label="description"
                     sx={{ fontSize: '1.25rem' }}
@@ -182,7 +186,7 @@ const EditAnnotationsPage: React.FC = (props) => {
             <LoadingButton
                 loaderColor="primary"
                 isLoading={deleteAnnotationIsLoading}
-                disabled={!isAuthenticated}
+                disabled={!isAuthenticated || !thisUserOwnsThisAnnotation}
                 sx={[EditStudyPageStyles.button, { marginTop: '1rem' }]}
                 color="error"
                 onClick={() => setConfirmationIsOpen(true)}

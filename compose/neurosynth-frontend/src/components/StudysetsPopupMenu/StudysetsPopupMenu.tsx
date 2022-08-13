@@ -95,34 +95,12 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
             const updatedStudysetStudies = [...(selectedStudyset.studies || [])] as string[];
             updatedStudysetStudies.push(study.id as string);
 
-            updateStudyset(
-                {
-                    studysetId: selectedStudyset.id,
-                    studyset: {
-                        studies: updatedStudysetStudies,
-                    },
+            updateStudyset({
+                studysetId: selectedStudyset.id,
+                studyset: {
+                    studies: updatedStudysetStudies,
                 },
-                {
-                    onSuccess: () => {
-                        enqueueSnackbar(
-                            `${study.name} added to ${
-                                selectedStudyset.name || selectedStudyset.id
-                            }`,
-                            {
-                                variant: 'success',
-                            }
-                        );
-                    },
-                    onError: () => {
-                        enqueueSnackbar(
-                            `There was an error adding this study to ${
-                                selectedStudyset.name || selectedStudyset.id
-                            }`,
-                            { variant: 'error' }
-                        );
-                    },
-                }
-            );
+            });
             setOpen(false);
         }
     };
@@ -162,7 +140,7 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
                 </Box>
                 <Box
                     onClick={(event) => event.stopPropagation()}
-                    sx={{ padding: '10px 16px', cursor: 'default' }}
+                    sx={{ padding: '0px 16px 10px 16px', cursor: 'default' }}
                 >
                     <StateHandlerComponent
                         loadingText="getting studysets"
@@ -170,8 +148,14 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
                         isError={getStudysetsIsError || !props.study}
                     >
                         <>
-                            {(studysets || []).length > 0 && <Divider />}
-                            <MenuList sx={{ maxHeight: '300px', overflowY: 'scroll' }}>
+                            <Divider />
+                            <MenuList
+                                sx={{
+                                    maxHeight: '300px',
+                                    overflowY: 'scroll',
+                                    display: (studysets?.length || 0) > 0 ? 'block' : 'none',
+                                }}
+                            >
                                 {(studysets || []).map((studyset) => (
                                     <MenuItem
                                         onClick={(event) => {
@@ -228,6 +212,7 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
                                 </Box>
                             ) : (
                                 <MenuItem
+                                    sx={{ marginTop: '10px' }}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setInCreateMode(true);

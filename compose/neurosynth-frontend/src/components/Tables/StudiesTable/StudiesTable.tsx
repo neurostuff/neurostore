@@ -32,7 +32,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
 
     return (
         <TableContainer component={Paper} elevation={2} sx={StudiesTableStyles.root}>
-            <Table size="small">
+            <Table>
                 <TableHead>
                     <TableRow sx={{ backgroundColor: 'primary.main' }}>
                         {shouldShowStudyOptions && <TableCell></TableCell>}
