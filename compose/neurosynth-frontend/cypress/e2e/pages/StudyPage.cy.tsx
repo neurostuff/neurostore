@@ -16,7 +16,8 @@ describe(PAGE_NAME, () => {
         cy.login('real')
             .visit('/studies')
             .wait(['@realStudyFixture', '@realStudyFixture'])
-            .get('[data-tour="PublicStudiesPage-4"]') // target the first study in the table
+            .get('tr')
+            .eq(0)
             .click()
             .wait('@realStudyFixture');
     });
