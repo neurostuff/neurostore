@@ -62,7 +62,7 @@ const UserStudysetsPage: React.FC = (props) => {
                 setCreateStudysetDialogIsOpen(false);
 
                 if (isMountedRef.current) {
-                    enqueueSnackbar('created studyset successfully', { variant: 'success' });
+                    enqueueSnackbar('studyset created successfully', { variant: 'success' });
                     setStudysets((prevState) => {
                         if (!prevState) return prevState;
                         const newState = [...prevState];

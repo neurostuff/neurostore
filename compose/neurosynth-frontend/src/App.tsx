@@ -7,13 +7,12 @@ import API from './utils/api';
 import useGetToken from './hooks/useGetToken';
 import { Grow, IconButton } from '@mui/material';
 import Close from '@mui/icons-material/Close';
-import { TourProvider, useTour } from '@reactour/tour';
+import { TourProvider } from '@reactour/tour';
 import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock';
 
 function App() {
     const notistackRef = useRef<SnackbarProvider>(null);
     const token = useGetToken();
-    const tour = useTour();
 
     useEffect(() => {
         API.UpdateServicesWithToken(token);

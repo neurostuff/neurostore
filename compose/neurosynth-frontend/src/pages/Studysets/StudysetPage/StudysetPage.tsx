@@ -1,6 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Typography, Box, Button, IconButton } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router';
 import { useHistory } from 'react-router';
 import AddIcon from '@mui/icons-material/Add';
@@ -9,140 +9,96 @@ import StudiesTable from 'components/Tables/StudiesTable/StudiesTable';
 import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
-import AnnotationsTable from '../../../components/Tables/AnnotationsTable/AnnotationsTable';
-import TextEdit from '../../../components/TextEdit/TextEdit';
-import useIsMounted from '../../../hooks/useIsMounted';
-import API, {
-    AnnotationsApiResponse,
-    StudysetsApiResponse,
-    StudyApiResponse,
-} from '../../../utils/api';
+import AnnotationsTable from 'components/Tables/AnnotationsTable/AnnotationsTable';
+import TextEdit from 'components/TextEdit/TextEdit';
 import StudysetPageStyles from './StudysetPage.styles';
-import { useSnackbar } from 'notistack';
 import HelpIcon from '@mui/icons-material/Help';
 import useGetTour from 'hooks/useGetTour';
+import {
+    useCreateAnnotation,
+    useDeleteStudyset,
+    useGetAnnotationsByStudysetId,
+    useGetStudysetById,
+    useUpdateStudyset,
+} from 'hooks';
+import { StudyReturn } from 'neurostore-typescript-sdk';
 
 const StudysetsPage: React.FC = (props) => {
     const { startTour } = useGetTour('StudysetPage');
-    const [studyset, setStudyset] = useState<StudysetsApiResponse | undefined>();
-    const [annotations, setAnnotations] = useState<AnnotationsApiResponse[] | undefined>();
-    const { isAuthenticated } = useAuth0();
+    const { user, isAuthenticated } = useAuth0();
     const history = useHistory();
-    const { enqueueSnackbar } = useSnackbar();
 
     const [confirmationIsOpen, setConfirmationIsOpen] = useState(false);
     const [createDetailsIsOpen, setCreateDetailsIsOpen] = useState(false);
 
     const params: { studysetId: string } = useParams();
-    const { current } = useIsMounted();
 
-    useEffect(() => {
-        const getStudyset = async (id: string) => {
-            API.NeurostoreServices.StudySetsService.studysetsIdGet(id, true)
-                .then((res) => {
-                    if (current) {
-                        const receivedStudyset = res.data;
-                        setStudyset(receivedStudyset);
-                    }
-                })
-                .catch((err) => {
-                    setStudyset({});
-                    enqueueSnackbar('there was an error getting the studyset', {
-                        variant: 'error',
-                    });
-                });
+    const { mutate: updateStudysetName, isLoading: updateStudysetNameIsLoading } =
+        useUpdateStudyset();
+    const { mutate: updateStudysetDescription, isLoading: updateStudysetDescriptionIsLoading } =
+        useUpdateStudyset();
+    const { mutate: updateStudysetPublication, isLoading: updateStudysetPublicationIsLoading } =
+        useUpdateStudyset();
+    const { mutate: updateStudysetDoi, isLoading: updateStudysetDoiIsLoading } =
+        useUpdateStudyset();
+    const { data: studyset } = useGetStudysetById(params.studysetId);
+    const { data: annotations } = useGetAnnotationsByStudysetId(params?.studysetId);
+    const { mutate: createAnnotation } = useCreateAnnotation();
+    const { mutate: deleteStudyset } = useDeleteStudyset();
+
+    const thisUserOwnsthisStudyset = (studyset?.user || undefined) === (user?.sub || null);
+
+    const handleUpdateField = (updatedText: string, label: string) => {
+        const updateStudysetObj = {
+            studysetId: params.studysetId,
+            studyset: {
+                [label]: updatedText,
+            },
         };
-
-        getStudyset(params.studysetId);
-    }, [params.studysetId, current, enqueueSnackbar]);
-
-    useEffect(() => {
-        const getAnnotations = async (id: string) => {
-            API.NeurostoreServices.AnnotationsService.annotationsGet(id).then(
-                (res) => {
-                    if (current && res?.data?.results) {
-                        setAnnotations(res.data.results);
-                    }
-                },
-                (err) => {
-                    setAnnotations([]);
-                    enqueueSnackbar('there was an error getting annotations for this studyset', {
-                        variant: 'error',
-                    });
-                }
-            );
-        };
-
-        if (params.studysetId) getAnnotations(params.studysetId);
-    }, [params.studysetId, current, enqueueSnackbar]);
-
-    const handleSaveTextEdit = (editedText: string, fieldName: string) => {
-        if (!studyset) return;
-
-        API.NeurostoreServices.StudySetsService.studysetsIdPut(params.studysetId, {
-            name: studyset.name,
-            studies: (studyset.studies as StudyApiResponse[]).map((x) => x.id as string),
-            [fieldName]: editedText,
-        })
-            .then(() => {
-                if (current) {
-                    enqueueSnackbar('studyset updated successfully', { variant: 'success' });
-                    setStudyset((prevState) => {
-                        if (!prevState) return prevState;
-                        return {
-                            ...prevState,
-                            [fieldName]: editedText,
-                        };
-                    });
-                }
-            })
-            .catch((err) => {
-                enqueueSnackbar('there was an error updating the studyset', { variant: 'error' });
-                console.error(err);
-            });
+        /**
+         * in order to make sure that each field visually loads by itself, we need to split the studyset update
+         * into separate useQuery instances (otherwise to name will show the loading icon for all fields)
+         */
+        switch (label) {
+            case 'name':
+                updateStudysetName(updateStudysetObj);
+                break;
+            case 'description':
+                updateStudysetDescription(updateStudysetObj);
+                break;
+            case 'doi':
+                updateStudysetDoi(updateStudysetObj);
+                break;
+            case 'publication':
+                updateStudysetPublication(updateStudysetObj);
+                break;
+            default:
+                break;
+        }
     };
 
     const handleCloseDialog = async (confirm: boolean | undefined) => {
         setConfirmationIsOpen(false);
 
         if (studyset?.id && confirm) {
-            API.NeurostoreServices.StudySetsService.studysetsIdDelete(studyset.id)
-                .then((res) => {
-                    history.push('/userstudysets');
-                    enqueueSnackbar('studyset deleted successfully', { variant: 'success' });
-                })
-                .catch((err) => {
-                    enqueueSnackbar('there was a problem deleting the studyset', {
-                        variant: 'error',
-                    });
-                    console.error(err);
-                });
+            deleteStudyset(studyset?.id, {
+                onSuccess: () => history.push('/studysets'),
+            });
         }
     };
 
     const handleCreateAnnotation = async (name: string, description: string) => {
-        if (studyset && studyset?.id) {
-            API.NeurostoreServices.AnnotationsService.annotationsPost('neurosynth', undefined, {
-                name,
-                description,
-                note_keys: {},
-                studyset: params.studysetId,
-            })
-                .then((res) => {
-                    enqueueSnackbar('created annotation successfully', { variant: 'success' });
-                    setAnnotations((prevState) => {
-                        if (!prevState) return prevState;
-                        const newState = [...prevState];
-                        newState.push(res.data);
-                        return newState;
-                    });
-                })
-                .catch((err) => {
-                    enqueueSnackbar('there was a problem creating the annotation', {
-                        variant: 'error',
-                    });
-                    console.error(err);
-                });
+        if (studyset && params.studysetId) {
+            createAnnotation({
+                source: 'neurosynth',
+                sourceId: undefined,
+                annotation: {
+                    name,
+                    description,
+                    note_keys: {},
+                    studyset: params.studysetId,
+                },
+            });
         }
     };
 
@@ -156,8 +112,10 @@ const StudysetsPage: React.FC = (props) => {
                     >
                         <Box sx={{ flexGrow: 1 }}>
                             <TextEdit
-                                onSave={handleSaveTextEdit}
-                                sx={{ fontSize: '1.25rem' }}
+                                isLoading={updateStudysetNameIsLoading}
+                                editIconIsVisible={thisUserOwnsthisStudyset}
+                                onSave={handleUpdateField}
+                                sx={{ fontSize: '1.5rem' }}
                                 label="name"
                                 textToEdit={studyset.name || ''}
                             >
@@ -167,37 +125,43 @@ const StudysetsPage: React.FC = (props) => {
                                             StudysetPageStyles.displayedText,
                                             !studyset.name ? StudysetPageStyles.noData : {},
                                         ]}
-                                        variant="h6"
+                                        variant="h5"
                                     >
                                         {studyset.name || 'No name'}
                                     </Typography>
                                 </Box>
                             </TextEdit>
                             <TextEdit
-                                onSave={handleSaveTextEdit}
+                                isLoading={updateStudysetPublicationIsLoading}
+                                editIconIsVisible={thisUserOwnsthisStudyset}
+                                sx={{ fontSize: '1.25rem' }}
+                                onSave={handleUpdateField}
                                 label="publication"
                                 textToEdit={studyset.publication || ''}
                             >
                                 <Box sx={StudysetPageStyles.displayedText}>
                                     <Typography
-                                        sx={{
-                                            ...StudysetPageStyles.displayedText,
-                                            ...(!studyset.publication
-                                                ? StudysetPageStyles.noData
-                                                : {}),
-                                        }}
+                                        variant="h6"
+                                        sx={[
+                                            StudysetPageStyles.displayedText,
+                                            !studyset.publication ? StudysetPageStyles.noData : {},
+                                        ]}
                                     >
                                         {studyset.publication || 'No publication'}
                                     </Typography>
                                 </Box>
                             </TextEdit>
                             <TextEdit
+                                isLoading={updateStudysetDoiIsLoading}
+                                editIconIsVisible={thisUserOwnsthisStudyset}
+                                sx={{ fontSize: '1.25rem' }}
                                 label="doi"
-                                onSave={handleSaveTextEdit}
+                                onSave={handleUpdateField}
                                 textToEdit={studyset.doi || ''}
                             >
                                 <Box sx={StudysetPageStyles.displayedText}>
                                     <Typography
+                                        variant="h6"
                                         sx={[
                                             StudysetPageStyles.displayedText,
                                             !studyset.doi ? StudysetPageStyles.noData : {},
@@ -208,7 +172,10 @@ const StudysetsPage: React.FC = (props) => {
                                 </Box>
                             </TextEdit>
                             <TextEdit
-                                onSave={handleSaveTextEdit}
+                                isLoading={updateStudysetDescriptionIsLoading}
+                                editIconIsVisible={thisUserOwnsthisStudyset}
+                                sx={{ fontSize: '1.25rem' }}
+                                onSave={handleUpdateField}
                                 label="description"
                                 textToEdit={studyset.description || ''}
                                 multiline
@@ -220,7 +187,7 @@ const StudysetsPage: React.FC = (props) => {
                                     }}
                                 >
                                     <TextExpansion
-                                        sx={{ fontSize: '12px' }}
+                                        textSx={{ fontSize: '1.25rem' }}
                                         text={studyset.description || 'No description'}
                                     />
                                 </Box>
@@ -280,7 +247,7 @@ const StudysetsPage: React.FC = (props) => {
                         <Typography variant="h6" sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
                             Studies in this studyset
                         </Typography>
-                        <StudiesTable studies={studyset.studies as StudyApiResponse[]} />
+                        <StudiesTable studies={studyset.studies as StudyReturn[]} />
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
                         <ConfirmationDialog
@@ -297,7 +264,7 @@ const StudysetsPage: React.FC = (props) => {
                             variant="contained"
                             sx={{ width: '200px' }}
                             color="error"
-                            disabled={!isAuthenticated}
+                            disabled={!isAuthenticated || !thisUserOwnsthisStudyset}
                         >
                             Delete studyset
                         </Button>

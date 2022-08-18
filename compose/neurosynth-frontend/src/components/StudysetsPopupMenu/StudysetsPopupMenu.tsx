@@ -15,7 +15,6 @@ import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useCreateStudyset, useGetStudysets, useUpdateStudyset } from 'hooks';
 import { StudyReturn, StudysetReturn } from 'neurostore-typescript-sdk';
-import { useSnackbar } from 'notistack';
 import { useAuth0 } from '@auth0/auth0-react';
 
 export interface IStudysetsPopupMenu {
@@ -24,7 +23,6 @@ export interface IStudysetsPopupMenu {
 }
 
 const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
-    const { enqueueSnackbar } = useSnackbar();
     const { user } = useAuth0();
     const anchorRef = useRef<HTMLButtonElement>(null);
     const [open, setOpen] = useState(false);
@@ -33,16 +31,8 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
         isError: getStudysetsIsError,
         data: studysets,
     } = useGetStudysets(user?.sub);
-    const {
-        isLoading: createStudysetIsLoading,
-        isError: _createStudysetIsError,
-        mutate: createStudyet,
-    } = useCreateStudyset();
-    const {
-        isLoading: _updateStudysetIsLoading,
-        isError: _updateStudysetIsError,
-        mutate: updateStudyset,
-    } = useUpdateStudyset();
+    const { isLoading: createStudysetIsLoading, mutate: createStudyset } = useCreateStudyset();
+    const { isLoading: updateStudysetIsLoading, mutate: updateStudyset } = useUpdateStudyset();
     const [inCreateMode, setInCreateMode] = useState(false);
     const [studysetDetails, setStudysetDetails] = useState({
         name: '',
@@ -64,26 +54,16 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
     };
 
     const handleCreateStudyset = (name: string, description: string) => {
-        createStudyet(
+        createStudyset(
             {
                 name,
                 description,
             },
             {
-                onSuccess: () => {
+                onSettled: () => {
                     setStudysetDetails({
                         name: '',
                         description: '',
-                    });
-                    enqueueSnackbar(`Created new studyset: ${name}`, { variant: 'success' });
-                },
-                onError: () => {
-                    setStudysetDetails({
-                        name: '',
-                        description: '',
-                    });
-                    enqueueSnackbar('There was an error creating the studyset', {
-                        variant: 'error',
                     });
                 },
             }
@@ -103,27 +83,9 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
                     },
                 },
                 {
-                    onSuccess: () => {
-                        enqueueSnackbar(
-                            `${study.name} added to ${
-                                selectedStudyset.name || selectedStudyset.id
-                            }`,
-                            {
-                                variant: 'success',
-                            }
-                        );
-                    },
-                    onError: () => {
-                        enqueueSnackbar(
-                            `There was an error adding this study to ${
-                                selectedStudyset.name || selectedStudyset.id
-                            }`,
-                            { variant: 'error' }
-                        );
-                    },
+                    onSuccess: () => setOpen(false),
                 }
             );
-            setOpen(false);
         }
     };
 
@@ -162,16 +124,26 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
                 </Box>
                 <Box
                     onClick={(event) => event.stopPropagation()}
-                    sx={{ padding: '10px 16px', cursor: 'default' }}
+                    sx={{ padding: '0px 16px 10px 16px', cursor: 'default' }}
                 >
                     <StateHandlerComponent
-                        loadingText="getting studysets"
-                        isLoading={getStudysetsIsLoading || createStudysetIsLoading}
+                        loadingText="loading studysets"
+                        isLoading={
+                            getStudysetsIsLoading ||
+                            createStudysetIsLoading ||
+                            updateStudysetIsLoading
+                        }
                         isError={getStudysetsIsError || !props.study}
                     >
                         <>
-                            {(studysets || []).length > 0 && <Divider />}
-                            <MenuList sx={{ maxHeight: '300px', overflowY: 'scroll' }}>
+                            <Divider />
+                            <MenuList
+                                sx={{
+                                    maxHeight: '300px',
+                                    overflowY: 'scroll',
+                                    display: (studysets?.length || 0) > 0 ? 'block' : 'none',
+                                }}
+                            >
                                 {(studysets || []).map((studyset) => (
                                     <MenuItem
                                         onClick={(event) => {
@@ -228,6 +200,7 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
                                 </Box>
                             ) : (
                                 <MenuItem
+                                    sx={{ marginTop: '10px' }}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setInCreateMode(true);

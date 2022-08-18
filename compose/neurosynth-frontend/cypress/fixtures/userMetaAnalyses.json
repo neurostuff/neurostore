@@ -1,0 +1,15 @@
+{
+    "results": [
+        {
+            "annotation": "6M3PvaWEmcWf",
+            "created_at": "2022-08-12T00:47:12.259280+00:00",
+            "description": "description 1",
+            "id": "iBcMmTBvr7Zh",
+            "name": "name 1",
+            "specification": "6ovxxkKiy7Sw",
+            "studyset": "5ATjENA3VVyE",
+            "updated_at": "2022-08-12T00:48:08.734923+00:00",
+            "user": "auth0|62e0e6c9dd47048572613b4d"
+        }
+    ]
+}

@@ -19,27 +19,46 @@ import useDeleteAnalysis from './requests/useDeleteAnalysis';
 import useGetStudies from './requests/useGetStudies';
 import useCreateStudyset from './requests/useCreateStudyset';
 import useUpdateStudyset from './requests/useUpdateStudyset';
+import useGetAnnotationById from './requests/useGetAnnotationById';
+import useUpdateAnnotationById from './requests/useUpdateAnnotationById';
+import useDeleteAnnotation from './requests/useDeleteAnnotation';
+import useGetStudysetById from './requests/useGetStudysetById';
+import useCreateAnnotation from './requests/useCreateAnnotation';
+import useDeleteStudyset from './requests/useDeleteStudyset';
 
 export {
     useIsMounted,
     useInputValidation,
-    useGetStudyById,
     useCreateMetaAnalysis,
     useGetToken,
+    // STUDIES
+    useGetStudies,
+    useGetStudyById,
+    useUpdateStudy,
+    // META-ANALYSES
     useGetMetaAnalyses,
     useGetMetaAnalysisById,
+    // STUDYSETS
     useGetStudysets,
+    useGetStudysetById,
+    useCreateStudyset,
+    useDeleteStudyset,
+    useUpdateStudyset,
+    // ANNOTATIONS
+    useGetAnnotationById,
+    useUpdateAnnotationById,
     useGetAnnotationsByStudysetId,
+    useDeleteAnnotation,
+    useCreateAnnotation,
+    // POINTS
     useCreatePoint,
-    useUpdateStudy,
     useDeletePoint,
+    useUpdatePoint,
+    // ANALYSES
+    useDeleteAnalysis,
     useCreateAnalysis,
     useUpdateAnalysis,
+    // CONDITIONS
     useGetConditions,
     useCreateCondition,
-    useUpdatePoint,
-    useDeleteAnalysis,
-    useGetStudies,
-    useCreateStudyset,
-    useUpdateStudyset,
 };
