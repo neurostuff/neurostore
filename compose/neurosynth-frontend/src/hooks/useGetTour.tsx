@@ -21,7 +21,9 @@ const useGetTour = (page: string) => {
 
             const numTimesLoggedIn = claims
                 ? claims['https://neurosynth-compose/loginsCount'] || 1
-                : 1;
+                : null;
+            console.log(numTimesLoggedIn);
+
             const isTour = sessionStorage.getItem('isTour') === 'true';
             const hasSeenPage = !!localStorage.getItem(`hasSeen${page}`);
             localStorage.setItem(`hasSeen${page}`, 'true');

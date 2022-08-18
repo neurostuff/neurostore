@@ -13,12 +13,10 @@ import {
 import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
 import Help from '@mui/icons-material/Help';
 import useGetTour from 'hooks/useGetTour';
-import { useSnackbar } from 'notistack';
 import { useAuth0 } from '@auth0/auth0-react';
 
 const MetaAnalysisPage: React.FC = (props) => {
     const { startTour } = useGetTour('MetaAnalysisPage');
-    const { enqueueSnackbar } = useSnackbar();
     const { user } = useAuth0();
     const { metaAnalysisId }: { metaAnalysisId: string } = useParams();
 
@@ -50,44 +48,23 @@ const MetaAnalysisPage: React.FC = (props) => {
 
     const updateName = (updatedName: string, _label: string) => {
         if (data?.id && specification?.id && studyset?.id && annotation?.id) {
-            updateMetaAnalysisName(
-                {
-                    metaAnalysisId: data.id,
-                    metaAnalysis: {
-                        name: updatedName,
-                    },
+            updateMetaAnalysisName({
+                metaAnalysisId: data.id,
+                metaAnalysis: {
+                    name: updatedName,
                 },
-                {
-                    onError: () => {
-                        enqueueSnackbar('There was an error updating the meta-analysis name', {
-                            variant: 'error',
-                        });
-                    },
-                }
-            );
+            });
         }
     };
 
     const updateDescription = (updatedDescription: string, _label: string) => {
         if (data?.id && specification?.id && studyset?.id && annotation?.id) {
-            updateMetaAnalysisDescription(
-                {
-                    metaAnalysisId: data.id,
-                    metaAnalysis: {
-                        description: updatedDescription,
-                    },
+            updateMetaAnalysisDescription({
+                metaAnalysisId: data.id,
+                metaAnalysis: {
+                    description: updatedDescription,
                 },
-                {
-                    onError: () => {
-                        enqueueSnackbar(
-                            'There was an error updating the meta-analysis description',
-                            {
-                                variant: 'error',
-                            }
-                        );
-                    },
-                }
-            );
+            });
         }
     };
 

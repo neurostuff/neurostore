@@ -24,10 +24,6 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     const { isAuthenticated, user } = useAuth0();
     const history = useHistory();
 
-    const handleSelectTableRow = (row: StudyApiResponse) => {
-        history.push(`/studies/${row.id}`);
-    };
-
     const shouldShowStudyOptions = isAuthenticated && !!props.showStudyOptions;
 
     return (
@@ -48,7 +44,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                             data-tour={index === 0 ? 'PublicStudiesPage-4' : null}
                             sx={StudiesTableStyles.tableRow}
                             key={index}
-                            onClick={() => handleSelectTableRow(row)}
+                            onClick={() => history.push(`/studies/${row.id}`)}
                         >
                             {shouldShowStudyOptions && (
                                 <TableCell>

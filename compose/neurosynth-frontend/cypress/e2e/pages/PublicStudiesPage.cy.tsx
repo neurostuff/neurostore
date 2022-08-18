@@ -1,5 +1,7 @@
 /// <reference types="cypress" />
 
+import { mockStudies } from 'testing/mockData';
+
 export {};
 
 const PATH = '/studies';
@@ -12,21 +14,34 @@ describe(PAGE_NAME, () => {
     });
 
     it('should load successfully', () => {
-        cy.login('real', { 'https://neurosynth-compose/loginsCount': 1 }).visit(PATH);
+        cy.intercept('GET', `**/api/studies/*`).as('realStudiesRequest');
+        cy.login('real').visit(PATH).wait(['@realStudiesRequest', '@realStudiesRequest']);
     });
 
     describe('Tour ', () => {
+        beforeEach(() => {
+            cy.intercept('GET', `**/api/studies/*`, { results: mockStudies() }).as(
+                'studiesRequest'
+            );
+        });
+
         it('should open immediately if it is the users first time logging in', () => {
             cy.login('mocked', { 'https://neurosynth-compose/loginsCount': 1 })
                 .visit(PATH)
+                .wait(['@studiesRequest', '@studiesRequest'])
                 .get('.reactour__popover')
                 .should('exist')
                 .and('be.visible');
         });
 
+        it('should not open immediately if not authenticated', () => {
+            cy.visit(PATH).wait('@studiesRequest').get('.reactour__popover').should('not.exist');
+        });
+
         it('should not open immediately if it is not the first time logging in', () => {
             cy.login('mocked', { 'https://neurosynth-compose/loginsCount': 2 })
                 .visit(PATH)
+                .wait(['@studiesRequest', '@studiesRequest'])
                 .get('.reactour__popover')
                 .should('not.exist');
         });
@@ -34,6 +49,7 @@ describe(PAGE_NAME, () => {
         it('should open when the button is clicked', () => {
             cy.login('mocked', { 'https://neurosynth-compose/loginsCount': 2 })
                 .visit(PATH)
+                .wait(['@studiesRequest', '@studiesRequest'])
                 .get('[data-testid="HelpIcon"]')
                 .click()
                 .get('.reactour__popover')
@@ -45,10 +61,9 @@ describe(PAGE_NAME, () => {
             cy.login('mocked', { 'https://neurosynth-compose/loginsCount': 1 })
                 .get('body')
                 .click(0, 0)
-                .then((_res) => {
-                    localStorage.setItem(`hasSeen${PAGE_NAME}`, 'true');
-                })
-                .visit('/')
+                .addToLocalStorage(`hasSeen${PAGE_NAME}`, 'true')
+                .visit(PATH)
+                .wait(['@studiesRequest', '@studiesRequest'])
                 .get('.reactour__popover')
                 .should('not.exist');
         });
@@ -57,6 +72,7 @@ describe(PAGE_NAME, () => {
             // 1. ARRANGE
             cy.login('mocked', { 'https://neurosynth-compose/loginsCount': 2 })
                 .visit(PATH)
+                .wait(['@studiesRequest', '@studiesRequest'])
                 .get('[data-testid="HelpIcon"]')
                 .click()
                 .get('body')
@@ -68,6 +84,7 @@ describe(PAGE_NAME, () => {
         it('should close when the close button is clicked', () => {
             cy.login('mocked', { 'https://neurosynth-compose/loginsCount': 2 })
                 .visit(PATH)
+                .wait(['@studiesRequest', '@studiesRequest'])
                 .get('[data-testid="HelpIcon"]')
                 .click()
                 .get('[aria-label="Close Tour"]')

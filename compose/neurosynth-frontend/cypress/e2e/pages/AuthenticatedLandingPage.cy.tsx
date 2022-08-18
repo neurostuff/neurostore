@@ -2,7 +2,7 @@
 
 export {};
 
-const _PATH = '/';
+const PATH = '/';
 const PAGE_NAME = 'AuthenticatedLandingPage';
 
 describe(PAGE_NAME, () => {
@@ -12,7 +12,7 @@ describe(PAGE_NAME, () => {
     });
 
     it('should load successfully', () => {
-        cy.login('real', { 'https://neurosynth-compose/loginsCount': 1 });
+        cy.login('real');
     });
 
     describe('Tour ', () => {
@@ -21,6 +21,10 @@ describe(PAGE_NAME, () => {
                 .get('.reactour__popover')
                 .should('exist')
                 .and('be.visible');
+        });
+
+        it('should not open immediately if not authenticated', () => {
+            cy.visit(PATH).get('.reactour__popover').should('not.exist');
         });
 
         it('should not open immediately if it is not the first time logging in', () => {

@@ -1,10 +1,12 @@
 import { AxiosError, AxiosResponse } from 'axios';
+import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from 'react-query';
-import { MetaAnalysisPostBody, MetaAnalysisReturn } from '../../neurosynth-compose-typescript-sdk';
-import API from '../../utils/api';
+import { MetaAnalysisPostBody, MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
+import API from 'utils/api';
 
 const useUpdateMetaAnalysis = () => {
     const queryClient = useQueryClient();
+    const { enqueueSnackbar } = useSnackbar();
     const updateMetaAnalysisMutation = useMutation<
         AxiosResponse<MetaAnalysisReturn>,
         AxiosError,
@@ -22,6 +24,11 @@ const useUpdateMetaAnalysis = () => {
         {
             onSuccess: () => {
                 queryClient.invalidateQueries('meta-analyses');
+            },
+            onError: () => {
+                enqueueSnackbar('there was an error updating the meta-analysis', {
+                    variant: 'error',
+                });
             },
         }
     );

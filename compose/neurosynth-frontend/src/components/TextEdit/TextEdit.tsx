@@ -49,9 +49,7 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                     value={editedValue}
                     label={label}
                     placeholder={placeholder}
-                    onChange={(event) => {
-                        setEditedValue(event.target.value);
-                    }}
+                    onChange={(event) => setEditedValue(event.target.value)}
                     sx={{
                         '.MuiInputBase-root': { ...sx },
                         '.MuiInputLabel-root': { ...sx },
@@ -102,9 +100,7 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                             marginLeft: display === 'row' ? '5px' : '0px',
                             display: editIconIsVisible ? 'inline' : 'none',
                         }}
-                        onClick={() => {
-                            setEditMode(true);
-                        }}
+                        onClick={() => setEditMode(true)}
                     >
                         <EditIcon sx={{ fontSize: '20px' }} color="primary" />
                     </IconButton>

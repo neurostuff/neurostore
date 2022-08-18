@@ -82,9 +82,7 @@ const StudysetsPage: React.FC = (props) => {
 
         if (studyset?.id && confirm) {
             deleteStudyset(studyset?.id, {
-                onSuccess: () => {
-                    history.push('/studysets');
-                },
+                onSuccess: () => history.push('/studysets'),
             });
         }
     };

@@ -50,7 +50,7 @@ const EditStudyPage = () => {
                 analyses: data.analyses as AnalysisApiResponse[] | undefined,
             });
         }
-    }, [data]);
+    }, [data, enqueueSnackbar, history, params.studyId, user?.sub]);
 
     const handleUpdateStudyMetadata = useCallback((updatedMetadata: any) => {
         setStudy((prevState) => {

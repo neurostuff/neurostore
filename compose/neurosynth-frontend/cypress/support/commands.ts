@@ -98,6 +98,10 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
         );
     }
 
+    /**
+     * this request will show up in the cypress UI as a non-filled circular indicator. This does not mean it's stubbed, just that
+     * the request is being made through cypress itself
+     */
     cy.request({
         method: 'POST',
         url: `https://${domain}/oauth/token`,
@@ -113,8 +117,6 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
         },
     })
         .then(({ body }) => {
-            console.log(body);
-
             const { access_token, expires_in, id_token } = body;
             const jwtObject = jwt.decode(id_token, { complete: true }) as jwt.Jwt;
             const [header, payload, signature] = id_token.split('.');

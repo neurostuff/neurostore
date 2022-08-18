@@ -15,7 +15,6 @@ import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useCreateStudyset, useGetStudysets, useUpdateStudyset } from 'hooks';
 import { StudyReturn, StudysetReturn } from 'neurostore-typescript-sdk';
-import { useSnackbar } from 'notistack';
 import { useAuth0 } from '@auth0/auth0-react';
 
 export interface IStudysetsPopupMenu {
@@ -24,7 +23,6 @@ export interface IStudysetsPopupMenu {
 }
 
 const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
-    const { enqueueSnackbar } = useSnackbar();
     const { user } = useAuth0();
     const anchorRef = useRef<HTMLButtonElement>(null);
     const [open, setOpen] = useState(false);
@@ -33,16 +31,8 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
         isError: getStudysetsIsError,
         data: studysets,
     } = useGetStudysets(user?.sub);
-    const {
-        isLoading: createStudysetIsLoading,
-        isError: _createStudysetIsError,
-        mutate: createStudyet,
-    } = useCreateStudyset();
-    const {
-        isLoading: _updateStudysetIsLoading,
-        isError: _updateStudysetIsError,
-        mutate: updateStudyset,
-    } = useUpdateStudyset();
+    const { isLoading: createStudysetIsLoading, mutate: createStudyset } = useCreateStudyset();
+    const { isLoading: updateStudysetIsLoading, mutate: updateStudyset } = useUpdateStudyset();
     const [inCreateMode, setInCreateMode] = useState(false);
     const [studysetDetails, setStudysetDetails] = useState({
         name: '',
@@ -64,26 +54,16 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
     };
 
     const handleCreateStudyset = (name: string, description: string) => {
-        createStudyet(
+        createStudyset(
             {
                 name,
                 description,
             },
             {
-                onSuccess: () => {
+                onSettled: () => {
                     setStudysetDetails({
                         name: '',
                         description: '',
-                    });
-                    enqueueSnackbar(`Created new studyset: ${name}`, { variant: 'success' });
-                },
-                onError: () => {
-                    setStudysetDetails({
-                        name: '',
-                        description: '',
-                    });
-                    enqueueSnackbar('There was an error creating the studyset', {
-                        variant: 'error',
                     });
                 },
             }
@@ -95,13 +75,17 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
             const updatedStudysetStudies = [...(selectedStudyset.studies || [])] as string[];
             updatedStudysetStudies.push(study.id as string);
 
-            updateStudyset({
-                studysetId: selectedStudyset.id,
-                studyset: {
-                    studies: updatedStudysetStudies,
+            updateStudyset(
+                {
+                    studysetId: selectedStudyset.id,
+                    studyset: {
+                        studies: updatedStudysetStudies,
+                    },
                 },
-            });
-            setOpen(false);
+                {
+                    onSuccess: () => setOpen(false),
+                }
+            );
         }
     };
 
@@ -143,8 +127,12 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
                     sx={{ padding: '0px 16px 10px 16px', cursor: 'default' }}
                 >
                     <StateHandlerComponent
-                        loadingText="getting studysets"
-                        isLoading={getStudysetsIsLoading || createStudysetIsLoading}
+                        loadingText="loading studysets"
+                        isLoading={
+                            getStudysetsIsLoading ||
+                            createStudysetIsLoading ||
+                            updateStudysetIsLoading
+                        }
                         isError={getStudysetsIsError || !props.study}
                     >
                         <>

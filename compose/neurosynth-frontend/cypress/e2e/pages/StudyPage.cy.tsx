@@ -8,16 +8,25 @@ const PAGE_NAME = 'StudyPage';
 describe(PAGE_NAME, () => {
     beforeEach(() => {
         cy.clearLocalStorage().clearSessionStorage();
-        cy.intercept('GET', `**/api/studies/*`, { fixture: 'study' }).as('studyFixture');
+        cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
     });
 
     it('should load successfully', () => {
-        cy.login('real', { 'https://neurosynth-compose/loginsCount': 1 })
-            .visit(PATH)
-            .wait('@studyFixture');
+        cy.intercept('GET', `**/api/studies/**`).as('realStudyFixture');
+        cy.login('real')
+            .visit('/studies')
+            .wait(['@realStudyFixture', '@realStudyFixture'])
+            .get('[data-tour="PublicStudiesPage-4"]') // target the first study in the table
+            .click()
+            .wait('@realStudyFixture');
     });
 
     describe('Tour ', () => {
+        beforeEach(() => {
+            cy.intercept('GET', `**/api/studies/mock-study-id*`, { fixture: 'study' }).as(
+                'studyFixture'
+            );
+        });
         it('should open immediately if it is the users first time logging in', () => {
             cy.login('mocked', { 'https://neurosynth-compose/loginsCount': 1 })
                 .visit(PATH)

@@ -10,10 +10,11 @@ const PAGE_NAME = 'MetaAnalysisBuilderPage';
 describe(PAGE_NAME, () => {
     beforeEach(() => {
         cy.clearLocalStorage().clearSessionStorage();
+        cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
     });
 
     it('should load successfully', () => {
-        cy.login('real', { 'https://neurosynth-compose/loginsCount': 1 }).visit(PATH);
+        cy.login('real').visit(PATH);
     });
 
     describe('Tour ', () => {
@@ -23,6 +24,10 @@ describe(PAGE_NAME, () => {
                 .get('.reactour__popover')
                 .should('exist')
                 .and('be.visible');
+        });
+
+        it('should not open immediately if not authenticated', () => {
+            cy.visit(PATH).get('.reactour__popover').should('not.exist');
         });
 
         it('should not open immediately if it is not the first time logging in', () => {
@@ -49,7 +54,7 @@ describe(PAGE_NAME, () => {
                 .then((_res) => {
                     localStorage.setItem(`hasSeen${PAGE_NAME}`, 'true');
                 })
-                .visit('/')
+                .visit(PATH)
                 .get('.reactour__popover')
                 .should('not.exist');
         });

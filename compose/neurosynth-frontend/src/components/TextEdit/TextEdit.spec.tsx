@@ -97,6 +97,19 @@ describe('TextEdit', () => {
         expect(button).toBeFalsy();
     });
 
+    it('should not show the edit button if editIconIsVisible flag is set to false', () => {
+        useAuth0().isAuthenticated = true;
+
+        render(
+            <TextEdit onSave={mockOnSave} editIconIsVisible={false} textToEdit="test-text">
+                <span>test-text</span>
+            </TextEdit>
+        );
+
+        const button = screen.queryByRole('button');
+        expect(button).toBeFalsy();
+    });
+
     it('should show the edit button when authenticated', () => {
         render(
             <TextEdit onSave={mockOnSave} textToEdit="test-text">
@@ -124,10 +137,40 @@ describe('TextEdit', () => {
         userEvent.type(textField, 'A');
 
         const saveButton = screen.getByText('Save');
-        await act(async () => {
-            userEvent.click(saveButton);
-        });
+        userEvent.click(saveButton);
 
         expect(mockOnSave).toBeCalledWith('test-textA', 'some-label');
+    });
+
+    it('should not show the loading icon', () => {
+        render(
+            <TextEdit
+                isLoading={false}
+                onSave={mockOnSave}
+                label="some-label"
+                textToEdit="test-text"
+            >
+                <span>test-text</span>
+            </TextEdit>
+        );
+
+        const progressLoader = screen.queryByRole('progressbar');
+        expect(progressLoader).not.toBeInTheDocument();
+    });
+
+    it('should show the loading icon', () => {
+        render(
+            <TextEdit
+                isLoading={true}
+                onSave={mockOnSave}
+                label="some-label"
+                textToEdit="test-text"
+            >
+                <span>test-text</span>
+            </TextEdit>
+        );
+
+        const progressLoader = screen.getByRole('progressbar');
+        expect(progressLoader).toBeInTheDocument();
     });
 });
