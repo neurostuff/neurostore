@@ -20,23 +20,21 @@ import { StudyReturn } from 'neurostore-typescript-sdk';
 
 interface StudiesTableModel {
     studies: StudyReturn[] | undefined;
-    studysetEditMode?: 'add' | 'delete';
+    studysetEditMode?: 'add' | 'delete' | undefined;
     onRemoveStudyFromStudyset?: (studyId: string) => void;
     isLoading?: boolean;
 }
 
 const StudiesTable: React.FC<StudiesTableModel> = (props) => {
-    const { isAuthenticated, user } = useAuth0();
+    const { user } = useAuth0();
     const history = useHistory();
-
-    const shouldShowAdditionalColumn = isAuthenticated && !!props.studysetEditMode;
 
     return (
         <TableContainer component={Paper} elevation={2} sx={StudiesTableStyles.root}>
             <Table>
                 <TableHead>
                     <TableRow sx={{ backgroundColor: 'primary.main' }}>
-                        {shouldShowAdditionalColumn && <TableCell></TableCell>}
+                        {props.studysetEditMode && <TableCell></TableCell>}
                         <TableCell sx={StudiesTableStyles.headerCell}>Title</TableCell>
                         <TableCell sx={StudiesTableStyles.headerCell}>Authors</TableCell>
                         <TableCell sx={StudiesTableStyles.headerCell}>Journal</TableCell>
@@ -44,10 +42,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                     </TableRow>
                     <TableRow>
                         {props.isLoading ? (
-                            <TableCell
-                                sx={{ padding: 0 }}
-                                colSpan={shouldShowAdditionalColumn ? 5 : 4}
-                            >
+                            <TableCell sx={{ padding: 0 }} colSpan={props.studysetEditMode ? 5 : 4}>
                                 <Box
                                     sx={{
                                         width: '100%',
@@ -71,7 +66,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                             key={index}
                             onClick={() => history.push(`/studies/${row.id}`)}
                         >
-                            {shouldShowAdditionalColumn && (
+                            {props.studysetEditMode && (
                                 <TableCell>
                                     {props.studysetEditMode === 'add' ? (
                                         <StudysetsPopupMenu study={row} />

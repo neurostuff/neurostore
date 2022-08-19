@@ -286,7 +286,9 @@ const StudysetsPage: React.FC = (props) => {
                             data: { studyId },
                         })
                     }
-                    studysetEditMode="delete"
+                    studysetEditMode={
+                        isAuthenticated && thisUserOwnsthisStudyset ? 'delete' : undefined
+                    }
                     studies={studyset?.studies as StudyReturn[]}
                 />
                 <ConfirmationDialog

@@ -9,6 +9,7 @@ import useIsMounted from 'hooks/useIsMounted';
 import { Metadata } from 'neurostore-typescript-sdk';
 import HelpIcon from '@mui/icons-material/Help';
 import useGetTour from 'hooks/useGetTour';
+import { useAuth0 } from '@auth0/auth0-react';
 
 export enum Source {
     NEUROSTORE = 'neurostore',
@@ -45,6 +46,7 @@ export class SearchCriteria {
 const PublicStudiesPage = () => {
     const { startTour } = useGetTour('PublicStudiesPage');
     const [studies, setStudies] = useState<StudyApiResponse[]>();
+    const { isAuthenticated } = useAuth0();
     const [searchMetadata, setSearchMetadata] = useState<Metadata>();
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>(new SearchCriteria());
     const isMountedRef = useIsMounted();
@@ -177,7 +179,10 @@ const PublicStudiesPage = () => {
                     className={studies === undefined ? '' : 'has-studies'}
                     sx={{ marginBottom: '1rem' }}
                 >
-                    <StudiesTable studysetEditMode="add" studies={studies as StudyApiResponse[]} />
+                    <StudiesTable
+                        studysetEditMode={isAuthenticated ? 'add' : undefined}
+                        studies={studies as StudyApiResponse[]}
+                    />
                 </Box>
             </NeurosynthLoader>
 
