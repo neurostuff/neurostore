@@ -59,7 +59,7 @@ const UserStudiesPage: React.FC = (props) => {
             </Typography>
             <NeurosynthLoader loaded={!!studies}>
                 <Box data-tour="UserStudiesPage-2" sx={{ marginBottom: '1rem' }}>
-                    <StudiesTable showStudyOptions={true} studies={studies as StudyApiResponse[]} />
+                    <StudiesTable studysetEditMode="add" studies={studies as StudyApiResponse[]} />
                 </Box>
             </NeurosynthLoader>
         </>

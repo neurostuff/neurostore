@@ -75,8 +75,7 @@ const EditAnnotationsPage: React.FC = (props) => {
         useUpdateAnnotationById(params.annotationId);
     const { mutate: updateAnnotationDescription, isLoading: updateAnnotationDescriptionIsLoading } =
         useUpdateAnnotationById(params.annotationId);
-    const { mutate: updateAnnotation, isLoading: updateAnnotationIsLoading } =
-        useUpdateAnnotationById(params.annotationId);
+    const { mutate: updateAnnotation } = useUpdateAnnotationById(params.annotationId);
     const { mutate: deleteAnnotation, isLoading: deleteAnnotationIsLoading } =
         useDeleteAnnotation();
 

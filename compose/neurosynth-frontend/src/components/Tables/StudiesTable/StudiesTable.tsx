@@ -8,34 +8,59 @@ import {
     TableRow,
     Paper,
     Box,
+    IconButton,
+    LinearProgress,
 } from '@mui/material';
 import React from 'react';
 import { useHistory } from 'react-router-dom';
-import { StudyApiResponse } from 'utils/api';
 import StudysetsPopupMenu from 'components/StudysetsPopupMenu/StudysetsPopupMenu';
 import StudiesTableStyles from './StudiesTable.styles';
+import Delete from '@mui/icons-material/Delete';
+import { StudyReturn } from 'neurostore-typescript-sdk';
 
 interface StudiesTableModel {
-    studies: StudyApiResponse[] | undefined;
-    showStudyOptions?: boolean;
+    studies: StudyReturn[] | undefined;
+    studysetEditMode?: 'add' | 'delete';
+    onRemoveStudyFromStudyset?: (studyId: string) => void;
+    isLoading?: boolean;
 }
 
 const StudiesTable: React.FC<StudiesTableModel> = (props) => {
     const { isAuthenticated, user } = useAuth0();
     const history = useHistory();
 
-    const shouldShowStudyOptions = isAuthenticated && !!props.showStudyOptions;
+    const shouldShowAdditionalColumn = isAuthenticated && !!props.studysetEditMode;
 
     return (
         <TableContainer component={Paper} elevation={2} sx={StudiesTableStyles.root}>
             <Table>
                 <TableHead>
                     <TableRow sx={{ backgroundColor: 'primary.main' }}>
-                        {shouldShowStudyOptions && <TableCell></TableCell>}
+                        {shouldShowAdditionalColumn && <TableCell></TableCell>}
                         <TableCell sx={StudiesTableStyles.headerCell}>Title</TableCell>
                         <TableCell sx={StudiesTableStyles.headerCell}>Authors</TableCell>
                         <TableCell sx={StudiesTableStyles.headerCell}>Journal</TableCell>
                         <TableCell sx={StudiesTableStyles.headerCell}>Owner</TableCell>
+                    </TableRow>
+                    <TableRow>
+                        {props.isLoading ? (
+                            <TableCell
+                                sx={{ padding: 0 }}
+                                colSpan={shouldShowAdditionalColumn ? 5 : 4}
+                            >
+                                <Box
+                                    sx={{
+                                        width: '100%',
+                                        paddingBottom:
+                                            (props.studies || []).length > 0 ? '0' : '2rem',
+                                    }}
+                                >
+                                    <LinearProgress color="primary" />
+                                </Box>
+                            </TableCell>
+                        ) : (
+                            <></>
+                        )}
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -46,9 +71,22 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                             key={index}
                             onClick={() => history.push(`/studies/${row.id}`)}
                         >
-                            {shouldShowStudyOptions && (
+                            {shouldShowAdditionalColumn && (
                                 <TableCell>
-                                    <StudysetsPopupMenu study={row} />
+                                    {props.studysetEditMode === 'add' ? (
+                                        <StudysetsPopupMenu study={row} />
+                                    ) : (
+                                        <IconButton
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                if (props.onRemoveStudyFromStudyset) {
+                                                    props.onRemoveStudyFromStudyset(row.id || '');
+                                                }
+                                            }}
+                                        >
+                                            <Delete color="error" />
+                                        </IconButton>
+                                    )}
                                 </TableCell>
                             )}
                             <TableCell>

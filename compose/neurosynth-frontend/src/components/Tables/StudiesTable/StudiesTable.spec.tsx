@@ -112,7 +112,7 @@ describe('StudiesTable Component', () => {
                 <MockThemeProvider>
                     <SnackbarProvider>
                         <Router history={historyMock as any}>
-                            <StudiesTable showStudyOptions={true} studies={mockStudies} />
+                            <StudiesTable showStudysetOptions={true} studies={mockStudies} />
                         </Router>
                     </SnackbarProvider>
                 </MockThemeProvider>
@@ -183,7 +183,7 @@ describe('StudiesTable Component', () => {
                 <MockThemeProvider>
                     <SnackbarProvider>
                         <Router history={historyMock as any}>
-                            <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
+                            <StudiesTable showStudysetOptions={true} studies={mockStudiesNoInfo} />
                         </Router>
                     </SnackbarProvider>
                 </MockThemeProvider>
@@ -204,7 +204,7 @@ describe('StudiesTable Component', () => {
                 <MockThemeProvider>
                     <SnackbarProvider>
                         <Router history={historyMock as any}>
-                            <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
+                            <StudiesTable showStudysetOptions={true} studies={mockStudiesNoInfo} />
                         </Router>
                     </SnackbarProvider>
                 </MockThemeProvider>
@@ -223,7 +223,7 @@ describe('StudiesTable Component', () => {
                 <MockThemeProvider>
                     <SnackbarProvider>
                         <Router history={historyMock as any}>
-                            <StudiesTable showStudyOptions={false} studies={mockStudiesNoInfo} />
+                            <StudiesTable showStudysetOptions={false} studies={mockStudiesNoInfo} />
                         </Router>
                     </SnackbarProvider>
                 </MockThemeProvider>

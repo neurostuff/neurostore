@@ -177,7 +177,7 @@ const PublicStudiesPage = () => {
                     className={studies === undefined ? '' : 'has-studies'}
                     sx={{ marginBottom: '1rem' }}
                 >
-                    <StudiesTable showStudyOptions={true} studies={studies as StudyApiResponse[]} />
+                    <StudiesTable studysetEditMode="add" studies={studies as StudyApiResponse[]} />
                 </Box>
             </NeurosynthLoader>
 
