@@ -8,6 +8,13 @@ const NavbarToolbarStyles: Style = {
         color: 'primary.contrastText',
         alignItems: 'center',
         padding: '0 8px',
+        whiteSpace: 'nowrap',
+    },
+    logoText: {
+        fontSize: {
+            md: '1rem',
+            lg: '1.25rem',
+        },
     },
     navLinksContainer: {
         height: '100%',
@@ -37,6 +44,25 @@ const NavbarToolbarStyles: Style = {
     },
     listItem: {
         padding: 0,
+    },
+    neurosynthLink: {
+        textDecoration: 'none',
+        color: 'white',
+        textTransform: 'lowercase',
+        '&:hover': {
+            '& img': {
+                opacity: '0.8',
+            },
+            color: '#ef8a24',
+        },
+        flexGrow: {
+            xs: 1,
+            md: 0,
+        },
+        justifyContent: {
+            xs: 'center',
+            md: 'start',
+        },
     },
 };
 
