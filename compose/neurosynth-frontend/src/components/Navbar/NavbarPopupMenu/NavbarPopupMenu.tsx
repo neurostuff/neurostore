@@ -75,6 +75,7 @@ const NavbarPopupMenu: React.FC<INavbarPopupMenu> = (props) => {
                         <Button
                             disabled={props.navOption.disabled}
                             to={props.navOption.path}
+                            className={props.navOption.className || ''}
                             exact
                             component={NavLink}
                             sx={[props.styling || {}, NavbarPopupMenuStyles.link]}

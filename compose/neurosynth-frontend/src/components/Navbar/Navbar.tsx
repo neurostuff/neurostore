@@ -68,16 +68,19 @@ const nonAuthenticatedNavItems: NavOptionsModel[] = [
     {
         label: 'STUDIES',
         path: '/studies',
+        className: 'tour-studies-tab',
         children: null,
     },
     {
         label: 'STUDYSETS',
+        className: 'tour-studysets-tab',
         path: '/studysets',
         children: null,
     },
     {
         label: 'META-ANALYSES',
         path: '/meta-analyses',
+        className: 'tour-meta-analyses-tab',
         children: null,
     },
 ];

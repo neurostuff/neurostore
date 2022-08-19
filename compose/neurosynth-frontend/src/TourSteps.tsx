@@ -200,7 +200,7 @@ const TourSteps: { [key: string]: StepType[] } = {
                 <div>
                     <Typography variant="subtitle1">
                         Now let's go to the My Studies Page. Click on{' '}
-                        <b>STUDIES {'>'} MY STUDIES</b>
+                        <b>STUDIES {'>'} MY STUDIES</b> (you must be logged in to view this page)
                     </Typography>
                 </div>
             ),
@@ -371,7 +371,8 @@ const TourSteps: { [key: string]: StepType[] } = {
                         Now lets take a look at the <b>My Studysets Page</b>.
                     </Typography>
                     <Typography variant="subtitle1">
-                        Navigate to <b>STUDYSETS {'>'} MY STUDYSETS</b>
+                        Navigate to <b>STUDYSETS {'>'} MY STUDYSETS</b> (you must be logged in to
+                        view this page)
                     </Typography>
                 </div>
             ),
@@ -502,7 +503,8 @@ const TourSteps: { [key: string]: StepType[] } = {
             content: () => (
                 <Typography>
                     Let's now go to the My Meta-Analyses Page. Click{' '}
-                    <b>META-ANALYSES {'>'} MY META-ANALYSES </b>
+                    <b>META-ANALYSES {'>'} MY META-ANALYSES </b> (you must be logged in to view this
+                    page)
                 </Typography>
             ),
             mutationObservables: ['.tour-highlighted-popper'],
