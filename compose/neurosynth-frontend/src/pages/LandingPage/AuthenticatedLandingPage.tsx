@@ -54,7 +54,7 @@ const AuthenticatedLandingPage: React.FC = (props) => {
         <Box sx={{ width: '80%', margin: '3rem auto' }}>
             <Button
                 endIcon={<Help />}
-                variant="outlined"
+                variant="text"
                 onClick={() => {
                     startTour();
                 }}

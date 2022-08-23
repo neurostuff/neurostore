@@ -6,7 +6,6 @@ import { useHistory } from 'react-router';
 import AddIcon from '@mui/icons-material/Add';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
 import StudiesTable from 'components/Tables/StudiesTable/StudiesTable';
-import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import AnnotationsTable from 'components/Tables/AnnotationsTable/AnnotationsTable';
@@ -22,13 +21,19 @@ import {
     useUpdateStudyset,
 } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { useIsFetching } from 'react-query';
 
 const StudysetsPage: React.FC = (props) => {
     const { startTour } = useGetTour('StudysetPage');
     const { user, isAuthenticated } = useAuth0();
     const history = useHistory();
 
-    const [confirmationIsOpen, setConfirmationIsOpen] = useState(false);
+    const [deleteStudysetConfirmationIsOpen, setDeleteStudysetConfirmationIsOpen] = useState(false);
+    const [
+        deleteStudyFromStudysetConfirmationIsOpen,
+        setDeleteStudyFromStudysetConfirmationIsOpen,
+    ] = useState<{ isOpen: boolean; data: any }>({ isOpen: false, data: undefined });
     const [createDetailsIsOpen, setCreateDetailsIsOpen] = useState(false);
 
     const params: { studysetId: string } = useParams();
@@ -41,7 +46,13 @@ const StudysetsPage: React.FC = (props) => {
         useUpdateStudyset();
     const { mutate: updateStudysetDoi, isLoading: updateStudysetDoiIsLoading } =
         useUpdateStudyset();
-    const { data: studyset } = useGetStudysetById(params.studysetId);
+    const { mutate: updateStudyset, isLoading: updateStudysetIsLoading } = useUpdateStudyset();
+    const {
+        data: studyset,
+        isLoading: getStudysetIsLoading,
+        isError: getStudysetIsError,
+    } = useGetStudysetById(params.studysetId);
+    const isFetching = useIsFetching(['studysets', params.studysetId]);
     const { data: annotations } = useGetAnnotationsByStudysetId(params?.studysetId);
     const { mutate: createAnnotation } = useCreateAnnotation();
     const { mutate: deleteStudyset } = useDeleteStudyset();
@@ -77,14 +88,32 @@ const StudysetsPage: React.FC = (props) => {
         }
     };
 
-    const handleCloseDialog = async (confirm: boolean | undefined) => {
-        setConfirmationIsOpen(false);
+    const handleCloseDeleteStudysetDialog = async (confirm: boolean | undefined) => {
+        setDeleteStudysetConfirmationIsOpen(false);
 
         if (studyset?.id && confirm) {
             deleteStudyset(studyset?.id, {
                 onSuccess: () => history.push('/studysets'),
             });
         }
+    };
+
+    const handleCloseDeleteStudyFromStudysetDialog = (confirm: boolean | undefined, data: any) => {
+        if (confirm) {
+            if (studyset && studyset.studies && params.studysetId && data?.studyId) {
+                const updatedStudiesList = (studyset.studies as StudyReturn[]).filter(
+                    (x) => x.id !== data.studyId
+                );
+
+                updateStudyset({
+                    studysetId: params.studysetId,
+                    studyset: {
+                        studies: updatedStudiesList.map((x) => x.id || ''),
+                    },
+                });
+            }
+        }
+        setDeleteStudyFromStudysetConfirmationIsOpen({ isOpen: false, data: undefined });
     };
 
     const handleCreateAnnotation = async (name: string, description: string) => {
@@ -103,175 +132,195 @@ const StudysetsPage: React.FC = (props) => {
     };
 
     return (
-        <NeurosynthLoader loaded={!!studyset}>
-            {studyset && (
-                <>
-                    <Box
-                        data-tour="StudysetPage-2"
-                        sx={{ display: 'flex', marginBottom: '1rem', width: '100%' }}
+        <StateHandlerComponent
+            isLoading={getStudysetIsLoading}
+            isError={getStudysetIsError}
+            errorMessage="There was an error getting the studyset"
+        >
+            <Box
+                data-tour="StudysetPage-2"
+                sx={{ display: 'flex', marginBottom: '1rem', width: '100%' }}
+            >
+                <Box sx={{ flexGrow: 1 }}>
+                    <TextEdit
+                        isLoading={updateStudysetNameIsLoading}
+                        editIconIsVisible={thisUserOwnsthisStudyset}
+                        onSave={handleUpdateField}
+                        sx={{ fontSize: '1.5rem' }}
+                        label="name"
+                        textToEdit={studyset?.name || ''}
                     >
-                        <Box sx={{ flexGrow: 1 }}>
-                            <TextEdit
-                                isLoading={updateStudysetNameIsLoading}
-                                editIconIsVisible={thisUserOwnsthisStudyset}
-                                onSave={handleUpdateField}
-                                sx={{ fontSize: '1.5rem' }}
-                                label="name"
-                                textToEdit={studyset.name || ''}
+                        <Box sx={StudysetPageStyles.displayedText}>
+                            <Typography
+                                sx={[
+                                    StudysetPageStyles.displayedText,
+                                    !studyset?.name ? StudysetPageStyles.noData : {},
+                                ]}
+                                variant="h5"
                             >
-                                <Box sx={StudysetPageStyles.displayedText}>
-                                    <Typography
-                                        sx={[
-                                            StudysetPageStyles.displayedText,
-                                            !studyset.name ? StudysetPageStyles.noData : {},
-                                        ]}
-                                        variant="h5"
-                                    >
-                                        {studyset.name || 'No name'}
-                                    </Typography>
-                                </Box>
-                            </TextEdit>
-                            <TextEdit
-                                isLoading={updateStudysetPublicationIsLoading}
-                                editIconIsVisible={thisUserOwnsthisStudyset}
-                                sx={{ fontSize: '1.25rem' }}
-                                onSave={handleUpdateField}
-                                label="publication"
-                                textToEdit={studyset.publication || ''}
-                            >
-                                <Box sx={StudysetPageStyles.displayedText}>
-                                    <Typography
-                                        variant="h6"
-                                        sx={[
-                                            StudysetPageStyles.displayedText,
-                                            !studyset.publication ? StudysetPageStyles.noData : {},
-                                        ]}
-                                    >
-                                        {studyset.publication || 'No publication'}
-                                    </Typography>
-                                </Box>
-                            </TextEdit>
-                            <TextEdit
-                                isLoading={updateStudysetDoiIsLoading}
-                                editIconIsVisible={thisUserOwnsthisStudyset}
-                                sx={{ fontSize: '1.25rem' }}
-                                label="doi"
-                                onSave={handleUpdateField}
-                                textToEdit={studyset.doi || ''}
-                            >
-                                <Box sx={StudysetPageStyles.displayedText}>
-                                    <Typography
-                                        variant="h6"
-                                        sx={[
-                                            StudysetPageStyles.displayedText,
-                                            !studyset.doi ? StudysetPageStyles.noData : {},
-                                        ]}
-                                    >
-                                        {studyset.doi || 'No DOI'}
-                                    </Typography>
-                                </Box>
-                            </TextEdit>
-                            <TextEdit
-                                isLoading={updateStudysetDescriptionIsLoading}
-                                editIconIsVisible={thisUserOwnsthisStudyset}
-                                sx={{ fontSize: '1.25rem' }}
-                                onSave={handleUpdateField}
-                                label="description"
-                                textToEdit={studyset.description || ''}
-                                multiline
-                            >
-                                <Box
-                                    sx={{
-                                        ...StudysetPageStyles.displayedText,
-                                        ...(!studyset.description ? StudysetPageStyles.noData : {}),
-                                    }}
-                                >
-                                    <TextExpansion
-                                        textSx={{ fontSize: '1.25rem' }}
-                                        text={studyset.description || 'No description'}
-                                    />
-                                </Box>
-                            </TextEdit>
+                                {studyset?.name || 'No name'}
+                            </Typography>
                         </Box>
-                        <Box>
-                            <IconButton onClick={() => startTour()} color="primary">
-                                <HelpIcon />
-                            </IconButton>
-                        </Box>
-                    </Box>
-
-                    <Box data-tour="StudysetPage-4">
-                        <Box sx={{ marginBottom: '1rem' }}>
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    marginBottom: '1rem',
-                                }}
+                    </TextEdit>
+                    <TextEdit
+                        isLoading={updateStudysetPublicationIsLoading}
+                        editIconIsVisible={thisUserOwnsthisStudyset}
+                        sx={{ fontSize: '1.25rem' }}
+                        onSave={handleUpdateField}
+                        label="publication"
+                        textToEdit={studyset?.publication || ''}
+                    >
+                        <Box sx={StudysetPageStyles.displayedText}>
+                            <Typography
+                                variant="h6"
+                                sx={[
+                                    StudysetPageStyles.displayedText,
+                                    !studyset?.publication ? StudysetPageStyles.noData : {},
+                                ]}
                             >
-                                <Typography
-                                    variant="h6"
-                                    sx={{
-                                        marginBottom: '1rem',
-                                        fontWeight: 'bold',
-                                        margin: 'auto 0',
-                                    }}
-                                >
-                                    Annotations for this studyset
-                                </Typography>
-                                <Button
-                                    data-tour="StudysetPage-5"
-                                    onClick={() => setCreateDetailsIsOpen(true)}
-                                    variant="contained"
-                                    sx={{ width: '200px' }}
-                                    startIcon={<AddIcon />}
-                                    disabled={!isAuthenticated}
-                                >
-                                    new Annotation
-                                </Button>
-                                <CreateDetailsDialog
-                                    titleText="Create new Annotation"
-                                    isOpen={createDetailsIsOpen}
-                                    onCreate={handleCreateAnnotation}
-                                    onCloseDialog={() => setCreateDetailsIsOpen(false)}
-                                />
-                            </Box>
-                            <AnnotationsTable
-                                studysetId={params.studysetId}
-                                annotations={annotations || []}
+                                {studyset?.publication || 'No publication'}
+                            </Typography>
+                        </Box>
+                    </TextEdit>
+                    <TextEdit
+                        isLoading={updateStudysetDoiIsLoading}
+                        editIconIsVisible={thisUserOwnsthisStudyset}
+                        sx={{ fontSize: '1.25rem' }}
+                        label="doi"
+                        onSave={handleUpdateField}
+                        textToEdit={studyset?.doi || ''}
+                    >
+                        <Box sx={StudysetPageStyles.displayedText}>
+                            <Typography
+                                variant="h6"
+                                sx={[
+                                    StudysetPageStyles.displayedText,
+                                    !studyset?.doi ? StudysetPageStyles.noData : {},
+                                ]}
+                            >
+                                {studyset?.doi || 'No DOI'}
+                            </Typography>
+                        </Box>
+                    </TextEdit>
+                    <TextEdit
+                        isLoading={updateStudysetDescriptionIsLoading}
+                        editIconIsVisible={thisUserOwnsthisStudyset}
+                        sx={{ fontSize: '1.25rem' }}
+                        onSave={handleUpdateField}
+                        label="description"
+                        textToEdit={studyset?.description || ''}
+                        multiline
+                    >
+                        <Box
+                            sx={{
+                                ...StudysetPageStyles.displayedText,
+                                ...(!studyset?.description ? StudysetPageStyles.noData : {}),
+                            }}
+                        >
+                            <TextExpansion
+                                textSx={{ fontSize: '1.25rem' }}
+                                text={studyset?.description || 'No description'}
                             />
                         </Box>
-                    </Box>
+                    </TextEdit>
+                </Box>
+                <Box>
+                    <IconButton onClick={() => startTour()} color="primary">
+                        <HelpIcon />
+                    </IconButton>
+                </Box>
+            </Box>
 
-                    <Box data-tour="StudysetPage-3">
-                        <Typography variant="h6" sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
-                            Studies in this studyset
+            <Box data-tour="StudysetPage-4">
+                <Box sx={{ marginBottom: '1rem' }}>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            marginBottom: '1rem',
+                        }}
+                    >
+                        <Typography
+                            variant="h6"
+                            sx={{
+                                marginBottom: '1rem',
+                                fontWeight: 'bold',
+                                margin: 'auto 0',
+                            }}
+                        >
+                            Annotations for this studyset
                         </Typography>
-                        <StudiesTable studies={studyset.studies as StudyReturn[]} />
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                        <ConfirmationDialog
-                            dialogTitle="Are you sure you want to delete the studyset?"
-                            dialogMessage="You will not be able to undo this action"
-                            confirmText="Yes"
-                            rejectText="No"
-                            isOpen={confirmationIsOpen}
-                            onCloseDialog={handleCloseDialog}
-                        />
                         <Button
-                            data-tour="StudysetPage-6"
-                            onClick={() => setConfirmationIsOpen(true)}
+                            data-tour="StudysetPage-5"
+                            onClick={() => setCreateDetailsIsOpen(true)}
                             variant="contained"
                             sx={{ width: '200px' }}
-                            color="error"
-                            disabled={!isAuthenticated || !thisUserOwnsthisStudyset}
+                            startIcon={<AddIcon />}
+                            disabled={!isAuthenticated}
                         >
-                            Delete studyset
+                            new Annotation
                         </Button>
+                        <CreateDetailsDialog
+                            titleText="Create new Annotation"
+                            isOpen={createDetailsIsOpen}
+                            onCreate={handleCreateAnnotation}
+                            onCloseDialog={() => setCreateDetailsIsOpen(false)}
+                        />
                     </Box>
-                </>
-            )}
-        </NeurosynthLoader>
+                    <AnnotationsTable
+                        studysetId={params.studysetId}
+                        annotations={annotations || []}
+                    />
+                </Box>
+            </Box>
+
+            <Box data-tour="StudysetPage-3">
+                <Typography variant="h6" sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
+                    Studies in this studyset
+                </Typography>
+                <StudiesTable
+                    isLoading={updateStudysetIsLoading || isFetching > 0}
+                    onRemoveStudyFromStudyset={(studyId) =>
+                        setDeleteStudyFromStudysetConfirmationIsOpen({
+                            isOpen: true,
+                            data: { studyId },
+                        })
+                    }
+                    studysetEditMode={
+                        isAuthenticated && thisUserOwnsthisStudyset ? 'delete' : undefined
+                    }
+                    studies={studyset?.studies as StudyReturn[]}
+                />
+                <ConfirmationDialog
+                    isOpen={deleteStudyFromStudysetConfirmationIsOpen.isOpen}
+                    dialogTitle="Are you sure you want to remove this study from the studyset?"
+                    confirmText="Yes"
+                    data={deleteStudyFromStudysetConfirmationIsOpen.data}
+                    rejectText="No"
+                    onCloseDialog={handleCloseDeleteStudyFromStudysetDialog}
+                />
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                <ConfirmationDialog
+                    dialogTitle="Are you sure you want to delete the studyset?"
+                    dialogMessage="You will not be able to undo this action"
+                    confirmText="Yes"
+                    rejectText="No"
+                    isOpen={deleteStudysetConfirmationIsOpen}
+                    onCloseDialog={handleCloseDeleteStudysetDialog}
+                />
+                <Button
+                    data-tour="StudysetPage-6"
+                    onClick={() => setDeleteStudysetConfirmationIsOpen(true)}
+                    variant="contained"
+                    sx={{ width: '200px' }}
+                    color="error"
+                    disabled={!isAuthenticated || !thisUserOwnsthisStudyset}
+                >
+                    Delete studyset
+                </Button>
+            </Box>
+        </StateHandlerComponent>
     );
 };
 

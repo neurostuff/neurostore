@@ -22,7 +22,6 @@ const useGetTour = (page: string) => {
             const numTimesLoggedIn = claims
                 ? claims['https://neurosynth-compose/loginsCount'] || 1
                 : null;
-            console.log(numTimesLoggedIn);
 
             const isTour = sessionStorage.getItem('isTour') === 'true';
             const hasSeenPage = !!localStorage.getItem(`hasSeen${page}`);
@@ -33,7 +32,8 @@ const useGetTour = (page: string) => {
         };
 
         shouldStartTour();
-    }, []); // we dont want to add tour as a dependency as we call startTour(), which updates the tour itself
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page, getIdTokenClaims]); // we dont want to add startTour() as a dependency as it updates tour which creates a circular dependency
 
     return { startTour };
 };

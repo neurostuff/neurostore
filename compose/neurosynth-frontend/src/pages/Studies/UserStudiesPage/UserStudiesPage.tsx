@@ -10,7 +10,7 @@ import HelpIcon from '@mui/icons-material/Help';
 import useGetTour from 'hooks/useGetTour';
 
 const UserStudiesPage: React.FC = (props) => {
-    const { user } = useAuth0();
+    const { user, isAuthenticated } = useAuth0();
     const { startTour } = useGetTour('UserStudiesPage');
     const { enqueueSnackbar } = useSnackbar();
     const [studies, setStudies] = useState<StudyApiResponse[]>();
@@ -59,7 +59,10 @@ const UserStudiesPage: React.FC = (props) => {
             </Typography>
             <NeurosynthLoader loaded={!!studies}>
                 <Box data-tour="UserStudiesPage-2" sx={{ marginBottom: '1rem' }}>
-                    <StudiesTable showStudyOptions={true} studies={studies as StudyApiResponse[]} />
+                    <StudiesTable
+                        studysetEditMode={isAuthenticated ? 'add' : undefined}
+                        studies={studies as StudyApiResponse[]}
+                    />
                 </Box>
             </NeurosynthLoader>
         </>

@@ -13,7 +13,7 @@ const UserMetaAnalysesPage: React.FC = (props) => {
     const history = useHistory();
     const { startTour } = useGetTour('UserMetaAnalysesPage');
     const { user } = useAuth0();
-    const { data, isLoading, isError, isSuccess } = useGetMetaAnalyses();
+    const { data, isLoading, isError } = useGetMetaAnalyses();
 
     const handleMetaAnalysisSelected = (selected: string | number) => {
         history.push(`/meta-analyses/${selected}`);

@@ -77,11 +77,22 @@ describe('DisplayValuesTable Component', () => {
             expect(rows.length).toBe(mockTableData.rowData.length);
         });
 
+        it('should load', () => {
+            render(<DisplayValuesTable isLoading={true} {...mockTableData} />);
+            expect(screen.getByRole('progressbar')).toBeInTheDocument();
+        });
+
+        it('should not load', () => {
+            render(<DisplayValuesTable {...mockTableData} />);
+            expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+        });
+
         it('should render data with correct columns', () => {
             // override and set rowData as empty arr as we are just testing columns
             render(<DisplayValuesTable {...mockTableData} />);
-            const rows = screen.getAllByRole('columnheader');
-            expect(rows.length).toBe(mockTableData.columnHeaders.length);
+            const columns = screen.getAllByRole('columnheader');
+            // subtract 1 to take account of the loading column header
+            expect(columns.length - 1).toBe(mockTableData.columnHeaders.length);
         });
     });
 
@@ -124,7 +135,8 @@ describe('DisplayValuesTable Component', () => {
                     rowData={[]}
                 />
             );
-            const tableHeadRow = screen.getByRole('row');
+            // select the first row (and not the loader row)
+            const tableHeadRow = screen.getAllByRole('row')[0];
             const tableHeadRowStyles = getComputedStyle(tableHeadRow);
             expect(tableHeadRowStyles.backgroundColor).toBe('blue');
         });

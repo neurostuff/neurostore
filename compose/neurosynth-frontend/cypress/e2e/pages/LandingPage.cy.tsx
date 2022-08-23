@@ -13,8 +13,5 @@ describe(PAGE_NAME, () => {
         // md breakpoint is at 900px
         cy.visit('/').viewport(899, 750);
         cy.get('[data-testid="MenuIcon"]').should('be.visible');
-        cy.contains('STUDIES').should('not.be.visible');
-        cy.contains('STUDYSETS').should('not.be.visible');
-        cy.contains('META-ANALYSES').should('not.be.visible');
     });
 });
