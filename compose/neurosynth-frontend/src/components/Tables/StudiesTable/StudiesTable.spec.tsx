@@ -263,4 +263,21 @@ describe('StudiesTable Component', () => {
 
         expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
+
+    it('should show the given no data message', () => {
+        render(
+            <MockThemeProvider>
+                <SnackbarProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable
+                            noDataElement={<span>custom no data message</span>}
+                            studies={[]}
+                        />
+                    </Router>
+                </SnackbarProvider>
+            </MockThemeProvider>
+        );
+
+        expect(screen.getByText('custom no data message')).toBeInTheDocument();
+    });
 });

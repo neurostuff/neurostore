@@ -228,7 +228,7 @@ const NeurosynthSpreadsheet: React.FC<{
 
             <Box
                 id="no-data-message"
-                style={{ padding: '1rem 0' }}
+                style={{ padding: '1rem 0', color: '#b2a14c' }} // have to use hex as we are mixing Mui with handsontable
                 className={styles.hide}
                 component="div"
             >

@@ -30,7 +30,7 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
         isLoading: getStudysetsIsLoading,
         isError: getStudysetsIsError,
         data: studysets,
-    } = useGetStudysets(user?.sub);
+    } = useGetStudysets({ userId: user?.sub });
     const { isLoading: createStudysetIsLoading, mutate: createStudyset } = useCreateStudyset();
     const { isLoading: updateStudysetIsLoading, mutate: updateStudyset } = useUpdateStudyset();
     const [inCreateMode, setInCreateMode] = useState(false);

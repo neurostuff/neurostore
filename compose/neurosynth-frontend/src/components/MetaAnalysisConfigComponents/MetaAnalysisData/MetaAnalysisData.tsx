@@ -22,7 +22,7 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
         data: studysetsData,
         isLoading: studysetsIsLoading,
         isError: studysetsIsError,
-    } = useGetStudysets();
+    } = useGetStudysets({ nested: false });
     const {
         data: annotationsData,
         isLoading: annotationsIsLoading,

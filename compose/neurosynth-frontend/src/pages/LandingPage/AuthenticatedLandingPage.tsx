@@ -34,7 +34,7 @@ const AuthenticatedLandingPage: React.FC = (props) => {
         data: studysets,
         isLoading: getStudysetsIsLoading,
         isError: getStudysetsIsError,
-    } = useGetStudysets(user?.sub);
+    } = useGetStudysets({ userId: user?.sub });
     const {
         data: metaAnalyses,
         isLoading: getMetaAnalysesIsLoading,

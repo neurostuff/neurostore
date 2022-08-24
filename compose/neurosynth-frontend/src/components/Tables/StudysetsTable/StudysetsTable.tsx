@@ -7,6 +7,7 @@ import { IDisplayValuesTableModel } from '../DisplayValuesTable';
 export interface IStudysetsTable {
     studysets: StudysetsApiResponse[];
     tableSize?: 'small' | 'medium';
+    isLoading?: boolean;
 }
 
 const getNumStudiesString = (studies: any[] | undefined): string => {
@@ -33,6 +34,7 @@ const StudysetsTable: React.FC<IStudysetsTable> = (props) => {
             { value: 'Description', bold: true },
             { value: 'User', bold: true },
         ],
+        isLoading: props.isLoading,
         tableHeadRowColor: '#42ab55',
         selectable: true,
         tableHeadRowTextContrastColor: 'white',
