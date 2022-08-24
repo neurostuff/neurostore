@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Typography, Box, Button, IconButton } from '@mui/material';
+import { Typography, Box, Button, IconButton, Link } from '@mui/material';
 import { useState } from 'react';
 import { useParams } from 'react-router';
 import { useHistory } from 'react-router';
@@ -23,6 +23,7 @@ import {
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useIsFetching } from 'react-query';
+import { NavLink } from 'react-router-dom';
 
 const StudysetsPage: React.FC = (props) => {
     const { startTour } = useGetTour('StudysetPage');
@@ -280,6 +281,14 @@ const StudysetsPage: React.FC = (props) => {
                 </Typography>
                 <StudiesTable
                     isLoading={updateStudysetIsLoading || isFetching > 0}
+                    noDataElement={
+                        <Typography sx={{ padding: '1rem' }} color="warning.dark">
+                            There are no studies in this studyset. Start by{' '}
+                            <Link color="primary" exact component={NavLink} to="/studies">
+                                adding studies to this studyset
+                            </Link>
+                        </Typography>
+                    }
                     onRemoveStudyFromStudyset={(studyId) =>
                         setDeleteStudyFromStudysetConfirmationIsOpen({
                             isOpen: true,

@@ -1,14 +1,47 @@
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
-const useGetStudysets = (userId?: string) => {
+interface IGetStudysetArgs {
+    search?: string;
+    sort?: string;
+    page?: number;
+    desc?: boolean;
+    pageSize?: number;
+    nested?: boolean;
+    name?: string;
+    description?: string;
+    sourceId?: string;
+    unique?: boolean;
+    source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery';
+    authors?: string;
+    userId?: string;
+}
+
+const useGetStudysets = (getStudysetArgs: IGetStudysetArgs) => {
     return useQuery(
-        ['studysets', userId],
-        () => API.NeurostoreServices.StudySetsService.studysetsGet(),
+        ['studysets', getStudysetArgs.userId],
+        () =>
+            API.NeurostoreServices.StudySetsService.studysetsGet(
+                getStudysetArgs.search,
+                getStudysetArgs.sort,
+                getStudysetArgs.page,
+                getStudysetArgs.desc,
+                getStudysetArgs.pageSize,
+                getStudysetArgs.nested,
+                getStudysetArgs.name,
+                getStudysetArgs.description,
+                getStudysetArgs.sourceId,
+                getStudysetArgs.unique,
+                getStudysetArgs.source,
+                getStudysetArgs.authors,
+                getStudysetArgs.userId
+            ),
         {
             select: (axiosResponse) => {
                 const res = axiosResponse.data.results || [];
-                return userId ? res.filter((x) => x.user === userId) : res;
+                return getStudysetArgs.userId
+                    ? res.filter((x) => x.user === getStudysetArgs.userId)
+                    : res;
             },
         }
     );

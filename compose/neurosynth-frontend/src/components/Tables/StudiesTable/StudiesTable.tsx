@@ -23,6 +23,7 @@ interface StudiesTableModel {
     studysetEditMode?: 'add' | 'delete' | undefined;
     onRemoveStudyFromStudyset?: (studyId: string) => void;
     isLoading?: boolean;
+    noDataElement?: JSX.Element;
 }
 
 const StudiesTable: React.FC<StudiesTableModel> = (props) => {
@@ -114,9 +115,12 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                     ))}
                 </TableBody>
             </Table>
-            {(props.studies || []).length === 0 && (
-                <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No data</Box>
-            )}
+            {(props.studies || []).length === 0 &&
+                (props.noDataElement ? (
+                    props.noDataElement
+                ) : (
+                    <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No data</Box>
+                ))}
         </TableContainer>
     );
 };
