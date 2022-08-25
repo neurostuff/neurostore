@@ -89,7 +89,7 @@ const ConditionSelector: React.FC<{
                     }
                 }}
                 renderOption={(params, option) => (
-                    <ListItem {...params}>
+                    <ListItem {...params} key={option?.id}>
                         <ListItemText
                             primary={option?.label || ''}
                             secondary={option?.description || ''}

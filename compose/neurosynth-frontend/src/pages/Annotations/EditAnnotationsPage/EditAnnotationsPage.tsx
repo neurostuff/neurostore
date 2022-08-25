@@ -110,7 +110,7 @@ const EditAnnotationsPage: React.FC = (props) => {
             deleteAnnotation(annotation.id, {
                 onSuccess: () => {
                     // delete annotation hook already opens a snackbar on success and failure
-                    history.push(`/studysets/${params.studysetId}`);
+                    history.push(`/studysets/${annotation?.studyset}`);
                 },
             });
         }
@@ -136,7 +136,12 @@ const EditAnnotationsPage: React.FC = (props) => {
     return (
         <>
             <Box sx={{ marginBottom: '1rem' }}>
-                <BackButton text="Return to studyset" path={`/studysets/${params.studysetId}`} />
+                <BackButton
+                    text="Return to studyset"
+                    color="secondary"
+                    variant="outlined"
+                    path={`/studysets/${annotation?.studyset}`}
+                />
             </Box>
 
             <Box sx={{ marginBottom: '1rem' }}>

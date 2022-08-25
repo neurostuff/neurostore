@@ -4,6 +4,7 @@ import { Switch, Route } from 'react-router-dom';
 import LandingPage from '../LandingPage/LandingPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
+import NotFoundPage from 'pages/NotFound/NotFoundPage';
 
 const EditAnnotationsPage = React.lazy(
     () => import('../Annotations/EditAnnotationsPage/EditAnnotationsPage')
@@ -65,7 +66,7 @@ const BaseNavigation: React.FC = (_props) => {
                         <UserStudysetsPage />
                     </Box>
                 </Route>
-                <Route path="/studysets/:studysetId/annotations/:annotationId" exact={true}>
+                <Route path="/annotations/:annotationId" exact={true}>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <EditAnnotationsPage />
                     </Box>
@@ -115,8 +116,10 @@ const BaseNavigation: React.FC = (_props) => {
                         <UserMetaAnalysesPage />
                     </Box>
                 </Route>
-                <Route>
-                    <div>Page not found</div>
+                <Route path="*">
+                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                        <NotFoundPage />
+                    </Box>
                 </Route>
             </Switch>
         </Suspense>

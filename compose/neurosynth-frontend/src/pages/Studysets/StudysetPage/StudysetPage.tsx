@@ -219,7 +219,7 @@ const StudysetsPage: React.FC = (props) => {
                             }}
                         >
                             <TextExpansion
-                                textSx={{ fontSize: '1.25rem' }}
+                                textSx={{ fontSize: '1.25rem', whiteSpace: 'break-spaces' }}
                                 text={studyset?.description || 'No description'}
                             />
                         </Box>

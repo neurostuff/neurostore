@@ -7,6 +7,9 @@ export interface IDisplayValuesTableRowArgs {
         bold?: boolean;
         shouldHighlightNoData?: boolean;
         isAction?: boolean;
+        width?: number;
+        noWrap?: boolean;
+        expandable?: boolean;
         actionStyling?:
             | 'inherit'
             | 'error'

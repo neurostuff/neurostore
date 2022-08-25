@@ -53,7 +53,8 @@ const TextExpansion: React.FC<{
                 <Button
                     sx={{ padding: 0 }}
                     color="secondary"
-                    onClick={() => {
+                    onClick={(event) => {
+                        event.stopPropagation();
                         setExpanded((prevExpanded) => !prevExpanded);
                     }}
                 >

@@ -6,7 +6,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Auth0Provider } from '@auth0/auth0-react';
 import { grey } from '@mui/material/colors';
 import { SystemStyleObject } from '@mui/system';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { BrowserRouter } from 'react-router-dom';
 
 export type Style = Record<string, SystemStyleObject>;
 
@@ -84,7 +84,6 @@ const domain = process.env.REACT_APP_AUTH0_DOMAIN as string;
 const clientId = process.env.REACT_APP_AUTH0_CLIENT_ID as string;
 const audience = process.env.REACT_APP_AUTH0_AUDIENCE as string;
 const env = process.env.REACT_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
-const queryClient = new QueryClient();
 
 ReactDOM.render(
     <React.StrictMode>
@@ -95,11 +94,11 @@ ReactDOM.render(
             audience={audience}
             cacheLocation={env === 'DEV' ? 'localstorage' : 'memory'} // we need to switch to localstorage for cypress testing or else state will not work properly
         >
-            <ThemeProvider theme={theme}>
-                <QueryClientProvider client={queryClient}>
+            <BrowserRouter>
+                <ThemeProvider theme={theme}>
                     <App />
-                </QueryClientProvider>
-            </ThemeProvider>
+                </ThemeProvider>
+            </BrowserRouter>
         </Auth0Provider>
     </React.StrictMode>,
     document.getElementById('root')

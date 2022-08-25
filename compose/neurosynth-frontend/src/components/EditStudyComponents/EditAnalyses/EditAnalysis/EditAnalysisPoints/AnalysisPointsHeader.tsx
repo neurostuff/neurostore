@@ -58,7 +58,11 @@ const AnalysisPointsHeader: React.FC<IAnalysisPointsHeader> = (props) => {
         ));
 
     if (analysisOptions.length === 0)
-        analysisOptions.push(<MenuItem disabled>No analyses</MenuItem>);
+        analysisOptions.push(
+            <MenuItem key="no-analyses-menu-item" disabled>
+                No analyses
+            </MenuItem>
+        );
 
     return (
         <Box

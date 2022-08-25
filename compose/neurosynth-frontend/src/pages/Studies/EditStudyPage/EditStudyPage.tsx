@@ -66,6 +66,8 @@ const EditStudyPage = () => {
         <StateHandlerComponent isLoading={isLoading} isError={isError}>
             <Box sx={EditStudyPageStyles.stickyButtonContainer}>
                 <BackButton
+                    color="secondary"
+                    variant="outlined"
                     sx={EditStudyPageStyles.button}
                     text="return to study view"
                     path={`/studies/${params.studyId}`}
