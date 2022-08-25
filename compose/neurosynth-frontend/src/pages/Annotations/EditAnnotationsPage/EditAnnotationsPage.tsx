@@ -67,7 +67,6 @@ const EditAnnotationsPage: React.FC = (props) => {
 
     const params: {
         annotationId: string;
-        studysetId: string;
     } = useParams();
 
     const { data: annotation } = useGetAnnotationById(params?.annotationId);
