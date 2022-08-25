@@ -76,9 +76,7 @@ describe('AnnotationsTable component', () => {
 
         const button = screen.getByTestId('simulate-row-click');
         userEvent.click(button);
-        expect(historyMock.push).toBeCalledWith(
-            '/studysets/test-studyset-id/annotations/some-selected-id'
-        );
+        expect(historyMock.push).toBeCalledWith('/annotations/some-selected-id');
     });
 
     it('should format the data correctly', () => {
