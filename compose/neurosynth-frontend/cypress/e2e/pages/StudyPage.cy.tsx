@@ -11,13 +11,14 @@ describe(PAGE_NAME, () => {
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
     });
 
-    it('should load successfully', () => {
+    it.only('should load successfully', () => {
         cy.intercept('GET', `**/api/studies/**`).as('realStudyFixture');
         cy.login('real')
+            .wait('@realStudyFixture')
             .visit('/studies')
-            .wait(['@realStudyFixture', '@realStudyFixture'])
+            .wait('@realStudyFixture')
             .get('tr')
-            .eq(0)
+            .eq(2)
             .click()
             .wait('@realStudyFixture');
     });
