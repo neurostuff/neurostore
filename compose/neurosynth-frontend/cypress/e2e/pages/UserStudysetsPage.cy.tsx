@@ -18,6 +18,13 @@ describe(PAGE_NAME, () => {
             .wait(['@realUserStudysetsRequest', '@realUserStudysetsRequest']);
     });
 
+    it('should redirect if the user is not authenticated', () => {
+        cy.intercept('GET', `**/api/studysets/**`, { fixture: 'userStudysets' });
+        cy.visit(PATH)
+            .url()
+            .should('be.equal', `${Cypress.config('baseUrl')}/studysets`);
+    });
+
     describe('Tour ', () => {
         beforeEach(() => {
             cy.intercept('GET', `**/api/studysets/**`, { fixture: 'userStudysets' }).as(

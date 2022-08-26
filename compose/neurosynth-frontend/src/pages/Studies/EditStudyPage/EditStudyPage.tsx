@@ -1,16 +1,15 @@
 import { Box } from '@mui/material';
 import { useState, useEffect, useCallback } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import BackButton from 'components/Buttons/BackButton/BackButton';
 import EditAnalyses from 'components/EditStudyComponents/EditAnalyses/EditAnalyses';
 import EditStudyDetails from 'components/EditStudyComponents/EditStudyDetails/EditStudyDetails';
 import EditStudyMetadata from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useGetStudyById } from 'hooks';
+import { useGetStudyById, useGuard } from 'hooks';
 import { AnalysisApiResponse } from 'utils/api';
 import EditStudyPageStyles from './EditStudyPage.styles';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useSnackbar } from 'notistack';
 
 interface IStudyEdit {
     name: string;
@@ -26,20 +25,21 @@ const EditStudyPage = () => {
     // study and metadata edits are updated and stored in this state
     const [study, setStudy] = useState<IStudyEdit | undefined>(undefined);
     const params: { studyId: string } = useParams();
-    const history = useHistory();
-    const { user } = useAuth0();
-    const { enqueueSnackbar } = useSnackbar();
+    const { user, isAuthenticated } = useAuth0();
     const { isLoading, data, isError } = useGetStudyById(params.studyId || '');
+    console.log(params.studyId);
+    console.log(data?.id);
+
+    const thisUserOwnsthisStudyset = (data?.user || undefined) === (user?.sub || null);
+
+    useGuard(
+        `/studies/${params.studyId}`,
+        isAuthenticated ? 'you can only edit studies that you have cloned' : undefined,
+        !isLoading && !thisUserOwnsthisStudyset
+    );
 
     useEffect(() => {
         if (data) {
-            if ((data.user || null) !== (user?.sub || undefined)) {
-                history.push(`/studies/${params.studyId}`);
-                enqueueSnackbar('you are not allowed to edit this study', {
-                    variant: 'warning',
-                });
-            }
-
             setStudy({
                 name: data.name || '',
                 authors: data.authors || '',
@@ -50,7 +50,7 @@ const EditStudyPage = () => {
                 analyses: data.analyses as AnalysisApiResponse[] | undefined,
             });
         }
-    }, [data, enqueueSnackbar, history, params.studyId, user?.sub]);
+    }, [data]);
 
     const handleUpdateStudyMetadata = useCallback((updatedMetadata: any) => {
         setStudy((prevState) => {

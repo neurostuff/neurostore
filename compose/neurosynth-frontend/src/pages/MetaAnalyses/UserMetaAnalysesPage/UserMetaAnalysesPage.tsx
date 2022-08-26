@@ -4,12 +4,13 @@ import { useHistory } from 'react-router-dom';
 import DisplayValuesTable from 'components/Tables/DisplayValuesTable/DisplayValuesTable';
 import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useGetMetaAnalyses } from 'hooks';
+import { useGetMetaAnalyses, useGuard } from 'hooks';
 import HelpIcon from '@mui/icons-material/Help';
 import AddIcon from '@mui/icons-material/Add';
 import useGetTour from 'hooks/useGetTour';
 
 const UserMetaAnalysesPage: React.FC = (props) => {
+    useGuard('/meta-analyses');
     const history = useHistory();
     const { startTour } = useGetTour('UserMetaAnalysesPage');
     const { user } = useAuth0();

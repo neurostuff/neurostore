@@ -247,12 +247,12 @@
                     "space":"TAL"
                 }
             ],
-            "study":"3iPD3TsGYEf9",
+            "study":"mock-study-id",
             "weights":[],
             "id":"5KyvcoE3eE8f",
             "description":null,
             "user":null,
-            "name":"17500",
+            "name":"Analysis 1",
             "conditions":[]
         },
         {
@@ -321,20 +321,20 @@
                     "space":"TAL"
                 }
             ],
-            "study":"3iPD3TsGYEf9",
+            "study":"mock-study-id",
             "weights":[],
             "id":"B7GDVjuVThso",
             "description":null,
             "user":null,
-            "name":"17502",
+            "name":"Analysis 2",
             "conditions":[]
         }
     ],
     "source_id":"19401185",
     "pmid":"19401185",
-    "id":"3iPD3TsGYEf9",
+    "id":"mock-study-id",
     "description":null,
-    "user":null,
+    "user": "auth0|62e0e6c9dd47048572613b4d",
     "metadata":null,
     "source_updated_at":null,
     "year":2009

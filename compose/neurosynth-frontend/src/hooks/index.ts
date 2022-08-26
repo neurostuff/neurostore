@@ -1,6 +1,8 @@
 import useIsMounted from './useIsMounted';
 import useInputValidation from './useInputValidation';
 import useGetToken from './useGetToken';
+import useGuard from './useGuard';
+
 import useGetStudyById from './requests/useGetStudyById';
 import useCreateMetaAnalysis from './requests/useCreateMetaAnalysis';
 import useGetMetaAnalyses from './requests/useGetMetaAnalyses';
@@ -29,13 +31,14 @@ import useDeleteStudyset from './requests/useDeleteStudyset';
 export {
     useIsMounted,
     useInputValidation,
-    useCreateMetaAnalysis,
     useGetToken,
+    useGuard,
     // STUDIES
     useGetStudies,
     useGetStudyById,
     useUpdateStudy,
     // META-ANALYSES
+    useCreateMetaAnalysis,
     useGetMetaAnalyses,
     useGetMetaAnalysisById,
     // STUDYSETS
