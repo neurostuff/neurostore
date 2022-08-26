@@ -12,6 +12,7 @@ import MetaAnalysisDetails from 'components/MetaAnalysisConfigComponents/MetaAna
 import MetaAnalysisBuilderPageStyles from './MetaAnalysisBuilderPage.styles';
 import useGetTour from 'hooks/useGetTour';
 import Help from '@mui/icons-material/Help';
+import { useGuard } from 'hooks';
 
 export enum EAnalysisType {
     CBMA = 'CBMA',
@@ -35,6 +36,7 @@ export interface IEstimatorCorrectorArgs {
 }
 
 const MetaAnalysisBuilderPage: React.FC = (props) => {
+    useGuard('/meta-analyses');
     const { startTour } = useGetTour('MetaAnalysisBuilderPage');
     const [activeStep, setActiveStep] = useState(0);
     const [metaAnalysisComponents, setMetaAnalysisComponents] = useState<IMetaAnalysisComponents>({

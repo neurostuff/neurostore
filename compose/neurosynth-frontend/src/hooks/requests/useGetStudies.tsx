@@ -2,7 +2,7 @@ import { SearchCriteria } from 'pages/Studies/PublicStudiesPage/PublicStudiesPag
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
-const useGetStudies = (searchCriteria: SearchCriteria) => {
+const useGetStudies = (searchCriteria: Partial<SearchCriteria>) => {
     return useQuery(
         ['studies', searchCriteria?.userId],
         () =>
