@@ -18,6 +18,13 @@ describe(PAGE_NAME, () => {
             .wait(['@realUserMetaAnalysesRequest', '@realUserMetaAnalysesRequest']);
     });
 
+    it('should redirect if the user is not authenticated', () => {
+        cy.intercept('GET', `**/meta-analyses*`, { fixture: 'userMetaAnalyses' });
+        cy.visit(PATH)
+            .url()
+            .should('be.equal', `${Cypress.config('baseUrl')}/meta-analyses`);
+    });
+
     describe('Tour ', () => {
         beforeEach(() => {
             cy.intercept('GET', `**/api/meta-analyses*`, { fixture: 'userMetaAnalyses' }).as(

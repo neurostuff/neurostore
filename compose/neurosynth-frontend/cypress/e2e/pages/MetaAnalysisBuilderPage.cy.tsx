@@ -1,5 +1,7 @@
 /// <reference types="cypress" />
 
+import { mockMetaAnalyses } from 'testing/mockData';
+
 export {};
 
 const PATH = '/meta-analyses/build';
@@ -15,6 +17,13 @@ describe(PAGE_NAME, () => {
 
     it('should load successfully', () => {
         cy.login('real').visit(PATH);
+    });
+
+    it('should redirect if the user is not authenticated', () => {
+        cy.intercept('GET', `**/meta-analyses*`, { results: mockMetaAnalyses() });
+        cy.visit(PATH)
+            .url()
+            .should('be.equal', `${Cypress.config('baseUrl')}/meta-analyses`);
     });
 
     describe('Tour ', () => {

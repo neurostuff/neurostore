@@ -27,13 +27,15 @@ const EditStudyPage = () => {
     const params: { studyId: string } = useParams();
     const { user, isAuthenticated } = useAuth0();
     const { isLoading, data, isError } = useGetStudyById(params.studyId || '');
+    console.log(params.studyId);
+    console.log(data?.id);
 
     const thisUserOwnsthisStudyset = (data?.user || undefined) === (user?.sub || null);
 
     useGuard(
         `/studies/${params.studyId}`,
         isAuthenticated ? 'you can only edit studies that you have cloned' : undefined,
-        !thisUserOwnsthisStudyset
+        !isLoading && !thisUserOwnsthisStudyset
     );
 
     useEffect(() => {

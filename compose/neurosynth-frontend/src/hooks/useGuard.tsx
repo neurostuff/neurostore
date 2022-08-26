@@ -19,7 +19,15 @@ const useGuard = (
                 variant: 'warning',
             });
         }
-    }, [isAuthenticated, isLoading, history, enqueueSnackbar, navigationLink, shouldNotSeePage]);
+    }, [
+        isAuthenticated,
+        isLoading,
+        history,
+        enqueueSnackbar,
+        navigationLink,
+        shouldNotSeePage,
+        snackbarMessage,
+    ]);
 
     return;
 };
