@@ -17,11 +17,13 @@ import HelpIcon from '@mui/icons-material/Help';
 import useGetTour from 'hooks/useGetTour';
 import StudysetsPopupMenu from 'components/StudysetsPopupMenu/StudysetsPopupMenu';
 import { StudyReturn } from 'neurostore-typescript-sdk';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 
 const StudyPage: React.FC = (props) => {
     const { startTour } = useGetTour('StudyPage');
     const { enqueueSnackbar } = useSnackbar();
     const [study, setStudy] = useState<StudyReturn>();
+    const [dialogIsOpen, setDialogIsOpen] = useState(false);
     const [selectedAnalysis, setSelectedAnalysis] = useState<{
         analysisIndex: number;
         analysis: AnalysisApiResponse | undefined;
@@ -156,7 +158,9 @@ const StudyPage: React.FC = (props) => {
                 >
                     <Box sx={{ display: 'inline' }}>
                         <Button
-                            onClick={handleCloneStudy}
+                            onClick={() =>
+                                editDisabled ? handleCloneStudy() : setDialogIsOpen(true)
+                            }
                             disabled={!isAuthenticated}
                             variant={editDisabled ? 'outlined' : 'text'}
                             color="primary"
@@ -165,6 +169,17 @@ const StudyPage: React.FC = (props) => {
                         </Button>
                     </Box>
                 </Tooltip>
+                <ConfirmationDialog
+                    isOpen={dialogIsOpen}
+                    confirmText="Yes"
+                    rejectText="No"
+                    onCloseDialog={(confirm) => {
+                        if (confirm) handleCloneStudy();
+                        setDialogIsOpen(false);
+                    }}
+                    dialogTitle="Are you sure you want to clone this study?"
+                    dialogMessage="This study is a clone of an existing study."
+                />
                 <Tooltip
                     placement="top"
                     title={editDisabled ? 'you can only edit studies you have cloned' : ''}
