@@ -14,8 +14,9 @@ describe(PAGE_NAME, () => {
     it('should load successfully', () => {
         cy.intercept('GET', `**/api/studysets/**`).as('realUserStudysetsRequest');
         cy.login('real')
+            .wait('@realUserStudysetsRequest')
             .visit(PATH)
-            .wait(['@realUserStudysetsRequest', '@realUserStudysetsRequest']);
+            .wait('@realUserStudysetsRequest');
     });
 
     it('should redirect if the user is not authenticated', () => {

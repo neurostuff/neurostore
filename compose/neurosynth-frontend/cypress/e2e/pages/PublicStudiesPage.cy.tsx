@@ -15,7 +15,7 @@ describe(PAGE_NAME, () => {
 
     it('should load successfully', () => {
         cy.intercept('GET', `**/api/studies/*`).as('realStudiesRequest');
-        cy.login('real').visit(PATH).wait(['@realStudiesRequest', '@realStudiesRequest']);
+        cy.login('real').wait('@realStudiesRequest').visit(PATH).wait('@realStudiesRequest');
     });
 
     describe('Tour ', () => {

@@ -15,7 +15,10 @@ describe(PAGE_NAME, () => {
 
     it('should load successfully', () => {
         cy.intercept('GET', '**/api/studies/*').as('realUserStudiesRequest');
-        cy.login('real').visit(PATH).wait(['@realUserStudiesRequest', '@realUserStudiesRequest']);
+        cy.login('real')
+            .wait('@realUserStudiesRequest')
+            .visit(PATH)
+            .wait('@realUserStudiesRequest');
     });
 
     it('should redirect if the user is not authenticated', () => {

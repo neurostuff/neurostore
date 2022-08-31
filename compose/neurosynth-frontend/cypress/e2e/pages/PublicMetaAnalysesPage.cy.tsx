@@ -15,7 +15,10 @@ describe(PAGE_NAME, () => {
 
     it('should load successfully', () => {
         cy.intercept('GET', `**/api/meta-analyses*`).as('realMetaAnalysesRequest');
-        cy.login('real').visit(PATH).wait(['@realMetaAnalysesRequest', '@realMetaAnalysesRequest']);
+        cy.login('real')
+            .wait('@realMetaAnalysesRequest')
+            .visit(PATH)
+            .wait('@realMetaAnalysesRequest');
     });
 
     describe('Tour ', () => {
