@@ -1,5 +1,7 @@
 /// <reference types="cypress" />
 
+import { mockStudy } from 'testing/mockData';
+
 export {};
 
 const PATH = '/studies/mock-study-id';
@@ -26,12 +28,51 @@ describe(PAGE_NAME, () => {
     //         .wait('@realStudyFixture');
     // });
 
+    describe('Cloning', () => {
+        it('should show a confirmation dialog if you have already cloned the study', () => {
+            cy.intercept(
+                'GET',
+                `**/api/studies/mock-study-id*`,
+                mockStudy({ user: 'auth0|62e0e6c9dd47048572613b4d' }) // mock a cloned study by replacing user with our test user
+            ).as('studyFixture');
+
+            cy.login('mocked')
+                .visit(PATH)
+                .wait('@studyFixture')
+                .get('body')
+                .contains('Clone Study')
+                .click()
+                .get('[role="dialog"]')
+                .should('be.visible');
+        });
+
+        it('should not show the confirmation dialog and directly clone the study', () => {
+            cy.intercept(
+                'GET',
+                `**/api/studies/**`,
+                mockStudy({ user: 'some-other-user' }) // mock a cloned study by replacing user with our test user
+            ).as('studyFixture');
+
+            cy.intercept('POST', '**/api/studies/**', { statusCode: 201 }).as('studyPostRequest');
+
+            cy.login('mocked')
+                .visit(PATH)
+                .wait('@studyFixture')
+                .get('body')
+                .contains('Clone Study')
+                .click()
+                .get('[role="dialog"]')
+                .should('not.exist');
+        });
+    });
+
     describe('Tour ', () => {
         beforeEach(() => {
             cy.intercept('GET', `**/api/studies/mock-study-id*`, { fixture: 'study' }).as(
                 'studyFixture'
             );
         });
+
         it('should open immediately if it is the users first time logging in', () => {
             cy.login('mocked', { 'https://neurosynth-compose/loginsCount': 1 })
                 .visit(PATH)

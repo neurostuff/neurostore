@@ -2,6 +2,7 @@ import useIsMounted from './useIsMounted';
 import useInputValidation from './useInputValidation';
 import useGetToken from './useGetToken';
 import useGuard from './useGuard';
+import useGetTour from './useGetTour';
 
 import useGetStudyById from './requests/useGetStudyById';
 import useCreateMetaAnalysis from './requests/useCreateMetaAnalysis';
@@ -33,6 +34,7 @@ export {
     useInputValidation,
     useGetToken,
     useGuard,
+    useGetTour,
     // STUDIES
     useGetStudies,
     useGetStudyById,
