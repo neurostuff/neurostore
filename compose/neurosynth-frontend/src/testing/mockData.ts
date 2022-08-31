@@ -224,7 +224,9 @@ const mockAnnotations: () => AnnotationsApiResponse[] = () => [
     },
 ];
 
-const mockStudy: () => StudyReturn = () => ({
+const mockStudy: (studyPropOverride?: Partial<StudyReturn>) => StudyReturn = (
+    studyPropOverride
+) => ({
     source: 'neurostore',
     source_id: '7f66YLxzjPKk',
     doi: 'NaN',
@@ -242,6 +244,7 @@ const mockStudy: () => StudyReturn = () => ({
     year: 1999,
     metadata: null,
     pmid: '10594068',
+    ...(studyPropOverride || {}),
 });
 
 const mockMetaAnalyses: () => MetaAnalysisReturn[] = () => [

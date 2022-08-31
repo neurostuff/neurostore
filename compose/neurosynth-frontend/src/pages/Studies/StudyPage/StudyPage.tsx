@@ -10,18 +10,19 @@ import DisplayAnalysis from 'components/DisplayAnalysis/DisplayAnalysis';
 import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
-import useIsMounted from '../../../hooks/useIsMounted';
 import API, { StudyApiResponse, AnalysisApiResponse } from 'utils/api';
 import StudyPageStyles from './StudyPage.styles';
 import HelpIcon from '@mui/icons-material/Help';
-import useGetTour from 'hooks/useGetTour';
+import { useGetTour, useIsMounted } from 'hooks';
 import StudysetsPopupMenu from 'components/StudysetsPopupMenu/StudysetsPopupMenu';
 import { StudyReturn } from 'neurostore-typescript-sdk';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 
 const StudyPage: React.FC = (props) => {
     const { startTour } = useGetTour('StudyPage');
     const { enqueueSnackbar } = useSnackbar();
     const [study, setStudy] = useState<StudyReturn>();
+    const [dialogIsOpen, setDialogIsOpen] = useState(false);
     const [selectedAnalysis, setSelectedAnalysis] = useState<{
         analysisIndex: number;
         analysis: AnalysisApiResponse | undefined;
@@ -30,7 +31,7 @@ const StudyPage: React.FC = (props) => {
         analysis: undefined,
     });
 
-    const [editDisabled, setEditDisabled] = useState(false);
+    const [allowEdits, setAllowEdits] = useState(false);
     const history = useHistory();
     const { isAuthenticated, user } = useAuth0();
     const isMountedRef = useIsMounted();
@@ -105,9 +106,9 @@ const StudyPage: React.FC = (props) => {
 
     useEffect(() => {
         const userIDAndStudyIDExist = !!user?.sub && !!study?.user;
-        const disable = !isAuthenticated || !userIDAndStudyIDExist || user?.sub !== study?.user;
-
-        setEditDisabled(disable);
+        const thisUserOwnsThisStudy = (study?.user || null) === (user?.sub || undefined);
+        const allowEdit = isAuthenticated && userIDAndStudyIDExist && thisUserOwnsThisStudy;
+        setAllowEdits(allowEdit);
     }, [isAuthenticated, user?.sub, study?.user]);
 
     const metadataForTable: IDisplayValuesTableModel = {
@@ -156,22 +157,35 @@ const StudyPage: React.FC = (props) => {
                 >
                     <Box sx={{ display: 'inline' }}>
                         <Button
-                            onClick={handleCloneStudy}
+                            onClick={() =>
+                                allowEdits ? setDialogIsOpen(true) : handleCloneStudy()
+                            }
                             disabled={!isAuthenticated}
-                            variant={editDisabled ? 'outlined' : 'text'}
+                            variant={allowEdits ? 'text' : 'outlined'}
                             color="primary"
                         >
                             Clone Study
                         </Button>
                     </Box>
                 </Tooltip>
+                <ConfirmationDialog
+                    isOpen={dialogIsOpen}
+                    confirmText="Yes"
+                    rejectText="No"
+                    onCloseDialog={(confirm) => {
+                        if (confirm) handleCloneStudy();
+                        setDialogIsOpen(false);
+                    }}
+                    dialogTitle="Are you sure you want to clone this study?"
+                    dialogMessage="This study is a clone of an existing study."
+                />
                 <Tooltip
                     placement="top"
-                    title={editDisabled ? 'you can only edit studies you have cloned' : ''}
+                    title={allowEdits ? '' : 'you can only edit studies you have cloned'}
                 >
                     <Box sx={{ display: 'inline' }}>
                         <Button
-                            disabled={editDisabled}
+                            disabled={!allowEdits}
                             onClick={handleEditStudy}
                             variant="outlined"
                             color="secondary"

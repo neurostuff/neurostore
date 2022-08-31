@@ -14,8 +14,9 @@ describe(PAGE_NAME, () => {
     it('should load successfully', () => {
         cy.intercept('GET', `**/api/meta-analyses*`).as('realUserMetaAnalysesRequest');
         cy.login('real')
+            .wait('@realUserMetaAnalysesRequest')
             .visit(PATH)
-            .wait(['@realUserMetaAnalysesRequest', '@realUserMetaAnalysesRequest']);
+            .wait('@realUserMetaAnalysesRequest');
     });
 
     it('should redirect if the user is not authenticated', () => {
