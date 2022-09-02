@@ -26,7 +26,7 @@ const AuthenticatedLandingPage: React.FC = (props) => {
         data: studies,
         isLoading: getStudiesIsLoading,
         isError: getStudiesIsError,
-    } = useGetStudies({
+    } = useGetStudies(!!user?.sub, {
         ...new SearchCriteria(),
         userId: user?.sub,
     });
@@ -83,7 +83,7 @@ const AuthenticatedLandingPage: React.FC = (props) => {
                     isError={getStudiesIsError}
                     listIcon={<ArticleIcon sx={{ color: 'primary.main' }} />}
                     titleText="Studies"
-                    listItems={(studies || []).map((study) => ({
+                    listItems={(studies?.results || []).map((study) => ({
                         primaryText: study.name || '',
                         secondaryText: study.authors || '',
                         id: study?.id || '',

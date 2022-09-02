@@ -44,13 +44,7 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                     <TableRow>
                         {props.isLoading ? (
                             <TableCell sx={{ padding: 0 }} colSpan={props.studysetEditMode ? 5 : 4}>
-                                <Box
-                                    sx={{
-                                        width: '100%',
-                                        paddingBottom:
-                                            (props.studies || []).length > 0 ? '0' : '2rem',
-                                    }}
-                                >
+                                <Box>
                                     <LinearProgress color="primary" />
                                 </Box>
                             </TableCell>
@@ -70,7 +64,9 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                             {props.studysetEditMode && (
                                 <TableCell>
                                     {props.studysetEditMode === 'add' ? (
-                                        <StudysetsPopupMenu study={row} />
+                                        <div data-tour={index === 0 ? 'PublicStudiesPage-3' : ''}>
+                                            <StudysetsPopupMenu study={row} />
+                                        </div>
                                     ) : (
                                         <IconButton
                                             onClick={(event) => {

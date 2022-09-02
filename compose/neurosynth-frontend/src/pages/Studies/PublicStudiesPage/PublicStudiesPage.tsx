@@ -1,15 +1,15 @@
-import { ChangeEvent, useEffect, useState } from 'react';
+import React, { ChangeEvent, useEffect, useState } from 'react';
 import { TablePagination, Typography, Pagination, Box, IconButton } from '@mui/material';
-import API, { StudyApiResponse } from 'utils/api';
 import PublicStudiesPageStyles from './PublicStudiesPage.styles';
 import StudiesTable from 'components/Tables/StudiesTable/StudiesTable';
 import SearchBar from 'components/SearchBar/SearchBar';
-import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
-import useIsMounted from 'hooks/useIsMounted';
-import { Metadata } from 'neurostore-typescript-sdk';
 import HelpIcon from '@mui/icons-material/Help';
 import useGetTour from 'hooks/useGetTour';
 import { useAuth0 } from '@auth0/auth0-react';
+import { useGetStudies } from 'hooks';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { useHistory, useLocation } from 'react-router-dom';
+import { StudyList } from 'neurostore-typescript-sdk';
 
 export enum Source {
     NEUROSTORE = 'neurostore',
@@ -24,6 +24,13 @@ enum SortBy {
     AUTHORS = 'authors',
     DESCRIPTION = 'description',
     CREATEDAT = 'created_at',
+}
+
+export enum SearchBy {
+    NAME = 'nameSearch',
+    DESCRIPTION = 'descriptionSearch',
+    AUTHORS = 'authorSearch',
+    ALL = 'genericSearchStr',
 }
 
 export class SearchCriteria {
@@ -43,13 +50,104 @@ export class SearchCriteria {
     ) {}
 }
 
+const getSearchCriteriaFromURL = (locationURL?: string): SearchCriteria => {
+    const newSearchCriteria = new SearchCriteria();
+    if (locationURL) {
+        const search = new URLSearchParams(locationURL);
+
+        let searchCriteriaObj: any = {}; // have to force this to be any so that we can assign props to the object
+        for (const [key, value] of search) {
+            if (key === 'pageOfResults' || key === 'pageSize') {
+                const parsedValue = parseInt(value);
+                if (!isNaN(parsedValue)) searchCriteriaObj[key] = parsedValue;
+            } else if (key in newSearchCriteria) {
+                searchCriteriaObj[key] = value;
+            }
+        }
+        return {
+            ...newSearchCriteria,
+            ...searchCriteriaObj,
+        };
+    }
+    return newSearchCriteria;
+};
+
+const getURLFromSearchCriteria = (searchCriteria: Partial<SearchCriteria>) => {
+    let stringifiedValueSearch: Record<string, string> = {};
+    for (let [key, value] of Object.entries(searchCriteria)) {
+        stringifiedValueSearch[key] = `${value}`;
+    }
+    const search = new URLSearchParams(stringifiedValueSearch);
+    return search.toString();
+};
+
+const addKVPToSearch = (locationURL: string, key: string, value: string) => {
+    const search = new URLSearchParams(locationURL);
+    search.has(key) ? search.set(key, value) : search.append(key, value);
+    return search.toString();
+};
+
+const extractSearchedStringFromURL = (
+    locationURL: string
+): { searchedString: string; searchBy: SearchBy } => {
+    const search = new URLSearchParams(locationURL);
+
+    for (const searchByString in SearchBy) {
+        const key = SearchBy[searchByString as keyof typeof SearchBy];
+        if (search.has(key)) {
+            return {
+                searchBy: key,
+                searchedString: search.get(key) || '',
+            };
+        }
+    }
+
+    return {
+        searchBy: SearchBy.ALL,
+        searchedString: '',
+    };
+};
+
 const PublicStudiesPage = () => {
     const { startTour } = useGetTour('PublicStudiesPage');
-    const [studies, setStudies] = useState<StudyApiResponse[]>();
+    const history = useHistory();
+    const location = useLocation();
     const { isAuthenticated } = useAuth0();
-    const [searchMetadata, setSearchMetadata] = useState<Metadata>();
+
+    const [searchBarParams, setSearchBarParams] = useState<{
+        searchedString: string;
+        searchBy: SearchBy;
+    }>(extractSearchedStringFromURL(location.search));
+    const [studyData, setStudyData] = useState<StudyList>();
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>(new SearchCriteria());
-    const isMountedRef = useIsMounted();
+    const { data, refetch, isLoading, isError, isRefetching } = useGetStudies(
+        false,
+        getSearchCriteriaFromURL(location.search)
+    );
+
+    /**
+     * the data variable itself is undefined when refetch() is called, so we need to save it
+     * in memory to craete a more stable experience when changing search criteria
+     */
+    useEffect(() => {
+        if (data) setStudyData(data);
+    }, [data]);
+
+    useEffect(() => {
+        const searchCriteria = getSearchCriteriaFromURL(location?.search);
+        setSearchCriteria(searchCriteria);
+    }, [location.search, refetch]);
+
+    // runs for any change in study query
+    useEffect(() => {
+        const timeout = setTimeout(async () => {
+            refetch();
+        }, 300);
+
+        return () => {
+            clearTimeout(timeout);
+        };
+    }, [searchCriteria, refetch]);
 
     const getNumTotalPages = (totalCount: number | undefined, pageSize: number | undefined) => {
         if (!totalCount || !pageSize) {
@@ -60,95 +158,46 @@ const PublicStudiesPage = () => {
         return remainder > 0 ? numTotalPages + 1 : numTotalPages;
     };
 
-    const handleOnSearch = (newSearchTerm: SearchCriteria) => {
-        setSearchCriteria((prevState) => {
-            return {
-                ...prevState,
-                ...newSearchTerm, // same name properties override the ones in prevState
-            };
-        });
+    const handleOnSearch = (formEvent: React.FormEvent) => {
+        const searchParamObj = {
+            [searchBarParams.searchBy]: searchBarParams.searchedString,
+        };
+        // when we search, we want to reset the search criteria as we dont know the
+        // page number of number of results in advance
+        const searchURL = getURLFromSearchCriteria(searchParamObj);
+        history.push(`/studies?${searchURL}`);
     };
 
     const handlePageChange = (
         event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null,
         page: number
     ) => {
-        setSearchCriteria((prevState) => {
-            return {
-                ...prevState,
-                // we have to do this because MUI's pagination component starts at 0,
-                // whereas 0 and 1 are the same in the backend
-                pageOfResults: page + 1,
-            };
-        });
+        if (page === null) return;
+
+        const searchURL = addKVPToSearch(location.search, 'pageOfResults', `${page + 1}`);
+        history.push(`/studies?${searchURL}`);
     };
 
     const handleRowsPerPageChange = (
         event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
     ) => {
         const newRowsPerPage = parseInt(event.target.value);
+        if (!isNaN(newRowsPerPage)) {
+            const searchURL = addKVPToSearch(
+                addKVPToSearch(location.search, 'pageSize', `${newRowsPerPage}`),
+                'pageOfResults',
+                '1'
+            );
 
-        setSearchCriteria((prevState) => {
-            return {
-                ...prevState,
-                // set page to 1 so that we don't have issue where the paginator goes out of bounds
-                // when at the last page and rowsperpage is decreased
-                pageOfResults: 1,
-                pageSize: newRowsPerPage,
-            };
-        });
+            history.push(`/studies?${searchURL}`);
+        }
     };
 
     const handlePaginationChange = (event: ChangeEvent<unknown>, page: number) => {
         if (page === null) return;
-
-        setSearchCriteria((prevState) => {
-            return {
-                ...prevState,
-                pageOfResults: page,
-            };
-        });
+        const searchURL = addKVPToSearch(location.search, 'pageOfResults', `${page}`);
+        history.push(`/studies?${searchURL}`);
     };
-
-    // runs for any change in study query including rows per page change, page change, etc
-    useEffect(() => {
-        // implement debounce
-        const timeout = setTimeout(async () => {
-            const getStudies = (searchCriteria: SearchCriteria) => {
-                API.NeurostoreServices.StudiesService.studiesGet(
-                    searchCriteria.genericSearchStr,
-                    searchCriteria.sortBy,
-                    searchCriteria.pageOfResults,
-                    searchCriteria.descOrder,
-                    searchCriteria.pageSize,
-                    searchCriteria.isNested,
-                    searchCriteria.nameSearch,
-                    searchCriteria.descriptionSearch,
-                    undefined,
-                    searchCriteria.showUnique,
-                    searchCriteria.source,
-                    searchCriteria.authorSearch,
-                    searchCriteria.userId
-                )
-                    .then((res) => {
-                        if (isMountedRef.current && res?.data?.results) {
-                            setSearchMetadata(res.data.metadata);
-                            setStudies(res.data.results);
-                        }
-                    })
-                    .catch((err) => {
-                        setStudies([]);
-                        console.error(err);
-                    });
-            };
-
-            getStudies(searchCriteria);
-        }, 500);
-
-        return () => {
-            clearTimeout(timeout);
-        };
-    }, [searchCriteria, isMountedRef]);
 
     return (
         <>
@@ -159,7 +208,42 @@ const PublicStudiesPage = () => {
                 </IconButton>
             </Box>
 
-            <SearchBar onSearch={handleOnSearch} />
+            <SearchBar
+                onSearchByChange={(input) =>
+                    setSearchBarParams((prev) => ({ ...prev, searchBy: input }))
+                }
+                onTextInputChange={(input) =>
+                    setSearchBarParams((prev) => ({ ...prev, searchedString: input }))
+                }
+                onSearch={handleOnSearch}
+                {...searchBarParams}
+            />
+
+            <Pagination
+                siblingCount={2}
+                boundaryCount={2}
+                color="primary"
+                sx={PublicStudiesPageStyles.paginator}
+                onChange={handlePaginationChange}
+                showFirstButton
+                showLastButton
+                page={
+                    studyData?.metadata?.total_count === undefined
+                        ? 0
+                        : searchCriteria.pageOfResults
+                }
+                count={getNumTotalPages(studyData?.metadata?.total_count, searchCriteria.pageSize)}
+            />
+
+            <StateHandlerComponent isLoading={false} isError={isError}>
+                <Box sx={{ marginBottom: '1rem' }}>
+                    <StudiesTable
+                        isLoading={isLoading || isRefetching}
+                        studysetEditMode={isAuthenticated ? 'add' : undefined}
+                        studies={studyData?.results}
+                    />
+                </Box>
+            </StateHandlerComponent>
 
             <TablePagination
                 rowsPerPage={searchCriteria.pageSize}
@@ -169,31 +253,13 @@ const PublicStudiesPage = () => {
                 rowsPerPageOptions={[10, 25, 50, 99]}
                 // we have to do this because MUI's pagination component starts at 0,
                 // whereas 0 and 1 are the same in the backend
-                page={searchCriteria.pageOfResults - 1}
-                count={searchMetadata?.total_count || 0}
+                page={
+                    studyData?.metadata?.total_count === undefined
+                        ? 0
+                        : searchCriteria.pageOfResults - 1
+                }
+                count={studyData?.metadata?.total_count || 0}
                 sx={PublicStudiesPageStyles.paginator}
-            />
-
-            <NeurosynthLoader loaded={!!studies}>
-                <Box
-                    className={studies === undefined ? '' : 'has-studies'}
-                    sx={{ marginBottom: '1rem' }}
-                >
-                    <StudiesTable
-                        studysetEditMode={isAuthenticated ? 'add' : undefined}
-                        studies={studies as StudyApiResponse[]}
-                    />
-                </Box>
-            </NeurosynthLoader>
-
-            <Pagination
-                color="primary"
-                sx={PublicStudiesPageStyles.paginator}
-                onChange={handlePaginationChange}
-                showFirstButton
-                showLastButton
-                page={searchCriteria.pageOfResults}
-                count={getNumTotalPages(searchMetadata?.total_count, searchCriteria.pageSize)}
             />
         </>
     );
