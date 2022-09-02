@@ -1,16 +1,23 @@
 import { SnackbarKey, SnackbarProvider } from 'notistack';
 import Navbar from './components/Navbar/Navbar';
 import BaseNavigation from './pages/BaseNavigation/BaseNavigation';
-import { BrowserRouter } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
 import API from './utils/api';
 import useGetToken from './hooks/useGetToken';
-import { Grow, IconButton } from '@mui/material';
+import { IconButton } from '@mui/material';
 import Close from '@mui/icons-material/Close';
+import { TourProvider } from '@reactour/tour';
+import { disableBodyScroll, enableBodyScroll } from 'body-scroll-lock';
+import { QueryCache, QueryClient, QueryClientProvider } from 'react-query';
+import { AxiosError } from 'axios';
+import { useHistory } from 'react-router-dom';
+
+const env = process.env.REACT_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
 
 function App() {
     const notistackRef = useRef<SnackbarProvider>(null);
     const token = useGetToken();
+    const history = useHistory();
 
     useEffect(() => {
         API.UpdateServicesWithToken(token);
@@ -20,22 +27,50 @@ function App() {
         if (notistackRef?.current?.closeSnackbar) notistackRef.current?.closeSnackbar(key);
     };
 
+    const queryClient = new QueryClient({
+        defaultOptions: {
+            queries: {
+                retry: env === 'DEV' ? 0 : 3,
+            },
+        },
+        queryCache: new QueryCache({
+            onError: (error) => {
+                const responseStatus = (error as AxiosError)?.response?.status;
+                if (responseStatus && responseStatus === 404) {
+                    history.push('/not-found');
+                }
+            },
+        }),
+    });
+
     return (
-        <SnackbarProvider
-            ref={notistackRef}
-            autoHideDuration={5000}
-            TransitionComponent={Grow}
-            action={(key) => (
-                <IconButton onClick={handleCloseSnackbar(key)}>
-                    <Close sx={{ color: 'white' }} />
-                </IconButton>
-            )}
-        >
-            <BrowserRouter>
-                <Navbar />
-                <BaseNavigation />
-            </BrowserRouter>
-        </SnackbarProvider>
+        <QueryClientProvider client={queryClient}>
+            <SnackbarProvider
+                ref={notistackRef}
+                autoHideDuration={5000}
+                action={(key) => (
+                    <IconButton onClick={handleCloseSnackbar(key)}>
+                        <Close sx={{ color: 'white' }} />
+                    </IconButton>
+                )}
+            >
+                <TourProvider
+                    steps={[]}
+                    disableInteraction
+                    afterOpen={(target) => {
+                        if (target) disableBodyScroll(target);
+                        sessionStorage.setItem('isTour', 'true');
+                    }}
+                    beforeClose={(target) => {
+                        if (target) enableBodyScroll(target);
+                        sessionStorage.setItem('isTour', 'false');
+                    }}
+                >
+                    <Navbar />
+                    <BaseNavigation />
+                </TourProvider>
+            </SnackbarProvider>
+        </QueryClientProvider>
     );
 }
 

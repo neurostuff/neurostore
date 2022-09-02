@@ -1,13 +1,18 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Button, Typography, Box } from '@mui/material';
+import { Button, Typography, Box, IconButton } from '@mui/material';
 import { useHistory } from 'react-router-dom';
 import DisplayValuesTable from 'components/Tables/DisplayValuesTable/DisplayValuesTable';
 import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
-import StateHandlerComponent from '../../../components/StateHandlerComponent/StateHandlerComponent';
-import { useGetMetaAnalyses } from '../../../hooks';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { useGetMetaAnalyses, useGuard } from 'hooks';
+import HelpIcon from '@mui/icons-material/Help';
+import AddIcon from '@mui/icons-material/Add';
+import useGetTour from 'hooks/useGetTour';
 
 const UserMetaAnalysesPage: React.FC = (props) => {
+    useGuard('/meta-analyses');
     const history = useHistory();
+    const { startTour } = useGetTour('UserMetaAnalysesPage');
     const { user } = useAuth0();
     const { data, isLoading, isError } = useGetMetaAnalyses();
 
@@ -63,19 +68,28 @@ const UserMetaAnalysesPage: React.FC = (props) => {
                     marginBottom: '1rem',
                 }}
             >
-                <Typography variant="h4">My Meta-Analyses</Typography>
+                <Typography variant="h4">
+                    My Meta-Analyses
+                    <IconButton onClick={() => startTour()} color="primary">
+                        <HelpIcon />
+                    </IconButton>
+                </Typography>
 
                 <Button
+                    data-tour="UserMetaAnalysesPage-2"
                     variant="contained"
                     onClick={() => history.push('/meta-analyses/build')}
                     color="primary"
+                    startIcon={<AddIcon />}
                 >
                     New meta-analysis
                 </Button>
             </Box>
             {/* TODO: implement isError for tables so that we dont have to do this */}
             <StateHandlerComponent isLoading={false} isError={isError}>
-                <DisplayValuesTable {...metaAnalysesTableData} />
+                <Box data-tour="UserMetaAnalysesPage-1">
+                    <DisplayValuesTable {...metaAnalysesTableData} />
+                </Box>
             </StateHandlerComponent>
         </>
     );

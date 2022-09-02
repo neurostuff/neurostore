@@ -1,8 +1,0 @@
-{
-      "component": {
-            "testFiles": "**/*.spec.{js,ts,jsx,tsx}",
-            "componentFolder": "src",
-            "supportFile": "cypress/support/index.js"
-      },
-      "baseUrl": "http://localhost:3000"
-}

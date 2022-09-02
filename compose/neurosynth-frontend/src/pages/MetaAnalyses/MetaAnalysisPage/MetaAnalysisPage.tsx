@@ -1,4 +1,4 @@
-import { Box, Typography, Paper, Button, Link } from '@mui/material';
+import { Box, Typography, Paper, Button, Link, IconButton } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import TextEdit from 'components/TextEdit/TextEdit';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
@@ -11,123 +11,172 @@ import {
     StudysetReturn,
 } from 'neurosynth-compose-typescript-sdk';
 import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
+import Help from '@mui/icons-material/Help';
+import useGetTour from 'hooks/useGetTour';
+import { useAuth0 } from '@auth0/auth0-react';
 
 const MetaAnalysisPage: React.FC = (props) => {
+    const { startTour } = useGetTour('MetaAnalysisPage');
+    const { user } = useAuth0();
     const { metaAnalysisId }: { metaAnalysisId: string } = useParams();
+
+    /**
+     * We need to use two separate instances of the same hook so that it only shows
+     * the name loading when we update the name, and only the description loading when
+     * we update the description
+     */
+    const { mutate: updateMetaAnalysisName, isLoading: updateMetaAnalysisNameIsLoading } =
+        useUpdateMetaAnalysis();
+
+    const {
+        mutate: updateMetaAnalysisDescription,
+        isLoading: updateMetaAnalysisDescriptionIsLoading,
+    } = useUpdateMetaAnalysis();
+
     const {
         data,
         isError: getMetaAnalysisIsError,
         isLoading: getMetaAnalysisIsLoading,
     } = useGetMetaAnalysisById(metaAnalysisId);
-    const { mutateAsync } = useUpdateMetaAnalysis();
 
     // get request is set to nested: true so below casting is safe
     const specification = data?.specification as SpecificationReturn;
     const studyset = data?.studyset as StudysetReturn;
     const annotation = data?.annotation as AnnotationReturn;
 
-    const handleEditFields = (newValue: string, label: string) => {
-        if (specification?.id && studyset?.id && annotation?.id) {
-            return mutateAsync({
-                metaAnalysisId: metaAnalysisId,
+    const thisUserOwnsThisMetaAnalysis = (data?.user || undefined) === (user?.sub || null);
+
+    const updateName = (updatedName: string, _label: string) => {
+        if (data?.id && specification?.id && studyset?.id && annotation?.id) {
+            updateMetaAnalysisName({
+                metaAnalysisId: data.id,
                 metaAnalysis: {
-                    specification: specification?.id,
-                    internal_annotation_id: annotation?.id,
-                    internal_studyset_id: studyset?.id,
-                    [label]: newValue,
+                    name: updatedName,
+                },
+            });
+        }
+    };
+
+    const updateDescription = (updatedDescription: string, _label: string) => {
+        if (data?.id && specification?.id && studyset?.id && annotation?.id) {
+            updateMetaAnalysisDescription({
+                metaAnalysisId: data.id,
+                metaAnalysis: {
+                    description: updatedDescription,
                 },
             });
         }
     };
 
     return (
-        <StateHandlerComponent
-            isLoading={getMetaAnalysisIsLoading}
-            isError={getMetaAnalysisIsError}
-            errorMessage="There was an error getting your meta-analysis"
-        >
-            <Box sx={{ marginBottom: '1rem' }}>
-                <TextEdit
-                    onSave={handleEditFields}
-                    sx={{ fontSize: '1.25rem' }}
-                    label="name"
-                    textToEdit={data?.name || ''}
-                >
-                    <Box sx={MetaAnalysisPageStyles.displayedText}>
-                        <Typography
-                            sx={[
-                                MetaAnalysisPageStyles.displayedText,
-                                !data?.name ? MetaAnalysisPageStyles.noData : {},
-                            ]}
-                            variant="h6"
+        <>
+            <StateHandlerComponent
+                isLoading={getMetaAnalysisIsLoading}
+                isError={getMetaAnalysisIsError}
+                errorMessage="There was an error getting your meta-analysis"
+            >
+                <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
+                    <Box sx={{ flexGrow: 1 }}>
+                        <TextEdit
+                            editIconIsVisible={thisUserOwnsThisMetaAnalysis}
+                            isLoading={updateMetaAnalysisNameIsLoading}
+                            onSave={updateName}
+                            sx={{ fontSize: '1.5rem' }}
+                            label="name"
+                            textToEdit={data?.name || ''}
                         >
-                            {data?.name || 'No name'}
-                        </Typography>
-                    </Box>
-                </TextEdit>
+                            <Box sx={MetaAnalysisPageStyles.displayedText}>
+                                <Typography
+                                    sx={[
+                                        MetaAnalysisPageStyles.displayedText,
+                                        !data?.name ? MetaAnalysisPageStyles.noData : {},
+                                    ]}
+                                    variant="h5"
+                                >
+                                    {data?.name || 'No name'}
+                                </Typography>
+                            </Box>
+                        </TextEdit>
 
-                <TextEdit
-                    onSave={handleEditFields}
-                    label="description"
-                    textToEdit={data?.description || ''}
-                >
-                    <Box sx={MetaAnalysisPageStyles.displayedText}>
-                        <Typography
-                            sx={[
-                                MetaAnalysisPageStyles.displayedText,
-                                MetaAnalysisPageStyles.description,
-                                !data?.description ? MetaAnalysisPageStyles.noData : {},
-                            ]}
+                        <TextEdit
+                            editIconIsVisible={thisUserOwnsThisMetaAnalysis}
+                            isLoading={updateMetaAnalysisDescriptionIsLoading}
+                            onSave={updateDescription}
+                            label="description"
+                            sx={{ fontSize: '1.25rem' }}
+                            textToEdit={data?.description || ''}
                         >
-                            {data?.description || 'No description'}
-                        </Typography>
+                            <Box sx={MetaAnalysisPageStyles.displayedText}>
+                                <Typography
+                                    variant="h6"
+                                    sx={[
+                                        MetaAnalysisPageStyles.displayedText,
+                                        MetaAnalysisPageStyles.description,
+                                        !data?.description ? MetaAnalysisPageStyles.noData : {},
+                                    ]}
+                                >
+                                    {data?.description || 'No description'}
+                                </Typography>
+                            </Box>
+                        </TextEdit>
                     </Box>
-                </TextEdit>
-            </Box>
-            <Box>
-                <Typography variant="h6" sx={{ marginBottom: '2rem' }}>
-                    This meta-analysis has not been run yet. Run your meta-analysis using the
-                    following method(s):
-                </Typography>
+                    <Box>
+                        <IconButton onClick={() => startTour()}>
+                            <Help color="primary" />
+                        </IconButton>
+                    </Box>
+                </Box>
+                <Box>
+                    <Typography variant="h6" sx={{ marginBottom: '2rem' }}>
+                        This meta-analysis has not been run yet. Run your meta-analysis using the
+                        following method(s):
+                    </Typography>
 
-                <Paper sx={{ padding: '1rem', marginBottom: '2rem' }}>
-                    <Typography sx={{ fontWeight: 'bold', marginBottom: '1rem' }}>
-                        run your meta-analysis via google colab
-                    </Typography>
-                    <Typography sx={{ marginBottom: '0.5rem' }}>
-                        copy the meta-analysis id below and then click the button to open google
-                        collab
-                    </Typography>
-                    <CodeSnippet linesOfCode={[`${data?.id}`]} />
-                    <Button
-                        sx={{ marginTop: '1rem' }}
-                        variant="contained"
-                        component={Link}
-                        target="_blank"
-                        rel="noopener"
-                        href="https://githubtocolab.com/neurostuff/neurosynth-compose-notebook/blob/main/run_and_explore.ipynb"
+                    <Paper
+                        data-tour="MetaAnalysisPage-1"
+                        sx={{ padding: '1rem', marginBottom: '2rem' }}
                     >
-                        open google collab
-                    </Button>
-                </Paper>
+                        <Typography sx={{ fontWeight: 'bold', marginBottom: '1rem' }}>
+                            run your meta-analysis via google colab
+                        </Typography>
+                        <Typography sx={{ marginBottom: '0.5rem' }}>
+                            copy the meta-analysis id below and then click the button to open google
+                            collab
+                        </Typography>
+                        <CodeSnippet linesOfCode={[`${data?.id}`]} />
+                        <Button
+                            sx={{ marginTop: '1rem' }}
+                            variant="contained"
+                            component={Link}
+                            target="_blank"
+                            rel="noopener"
+                            href="https://githubtocolab.com/neurostuff/neurosynth-compose-notebook/blob/main/run_and_explore.ipynb"
+                        >
+                            open google collab
+                        </Button>
+                    </Paper>
 
-                <Paper sx={{ padding: '1rem', marginBottom: '2rem' }}>
-                    <Typography sx={{ fontWeight: 'bold', marginBottom: '1rem' }}>
-                        run your meta-analysis via docker
-                    </Typography>
-                    <Typography>
-                        Click the "Help" button above to learn more about this in the documentation
-                    </Typography>
-                    {/* <CodeSnippet
+                    <Paper
+                        data-tour="MetaAnalysisPage-2"
+                        sx={{ padding: '1rem', marginBottom: '2rem' }}
+                    >
+                        <Typography sx={{ fontWeight: 'bold', marginBottom: '1rem' }}>
+                            run your meta-analysis via docker
+                        </Typography>
+                        <Typography>
+                            Click the "Help" button above to learn more about this in the
+                            documentation
+                        </Typography>
+                        {/* <CodeSnippet
                         linesOfCode={[
                             'sudo bash exec ./some-file-name',
                             'sudo bash exec some-other-command',
                             'docker-compose up made-up-service',
                         ]}
                     /> */}
-                </Paper>
+                    </Paper>
 
-                {/* <Paper sx={{ padding: '1rem', marginBottom: '1rem' }}>
+                    {/* <Paper sx={{ padding: '1rem', marginBottom: '1rem' }}>
                     <Typography sx={{ fontWeight: 'bold', marginBottom: '2rem' }}>
                         run your meta-analysis using NiMARE and your own environment
                     </Typography>
@@ -139,8 +188,9 @@ const MetaAnalysisPage: React.FC = (props) => {
                         ]}
                     />
                 </Paper> */}
-            </Box>
-        </StateHandlerComponent>
+                </Box>
+            </StateHandlerComponent>
+        </>
     );
 };
 

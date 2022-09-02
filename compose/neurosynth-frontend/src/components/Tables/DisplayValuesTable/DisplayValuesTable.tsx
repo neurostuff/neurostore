@@ -33,10 +33,10 @@ const DisplayValuesTable: React.FC<IDisplayValuesTableModel> = (props) => {
         if (selectable && onValueSelected) onValueSelected(selectedVal);
     };
 
-    let TableInfoComponent;
+    let TableInfoComponent = <></>;
     if (isLoading) {
         TableInfoComponent = (
-            <Box sx={{ paddingBottom: '2rem' }}>
+            <Box sx={{ width: '100%', paddingBottom: props.rowData.length > 0 ? '0' : '2rem' }}>
                 <LinearProgress color="primary" />
             </Box>
         );
@@ -68,6 +68,11 @@ const DisplayValuesTable: React.FC<IDisplayValuesTableModel> = (props) => {
                             </TableCell>
                         ))}
                     </TableRow>
+                    <TableRow>
+                        <TableCell sx={{ padding: 0 }} colSpan={columnHeaders.length}>
+                            {TableInfoComponent}
+                        </TableCell>
+                    </TableRow>
                 </TableHead>
                 <TableBody>
                     {props.rowData.map((row) => (
@@ -81,7 +86,6 @@ const DisplayValuesTable: React.FC<IDisplayValuesTableModel> = (props) => {
                     ))}
                 </TableBody>
             </Table>
-            {TableInfoComponent}
         </TableContainer>
     );
 };

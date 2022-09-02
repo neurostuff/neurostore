@@ -3,6 +3,7 @@ import React from 'react';
 import { IDisplayValuesTableRowModel } from '..';
 import { getType } from 'components/EditMetadata';
 import DisplayValuesTableRowStyles from './DisplayValuesTableRow.styles';
+import TextExpansion from 'components/TextExpansion/TextExpansion';
 
 const getValue = (value: any): string => {
     if (value === null) {
@@ -25,24 +26,34 @@ const DisplayMetadataTableRow: React.FC<IDisplayValuesTableRowModel> = (props) =
             sx={props.canSelectRow ? DisplayValuesTableRowStyles.selectableRow : {}}
         >
             {props.columnValues.map((col, index) => {
-                let typedStyles: any;
+                let typedStyles: any = {};
                 if (col.shouldHighlightNoData) {
                     typedStyles = { color: 'warning.dark' };
                 } else if (col.colorByType) {
                     typedStyles = DisplayValuesTableRowStyles[getType(col.value)];
-                } else {
-                    typedStyles = {};
                 }
 
                 return (
-                    <TableCell key={index} sx={{ textAlign: col.center ? 'center' : 'left' }}>
+                    <TableCell
+                        key={index}
+                        sx={[
+                            { textAlign: col.center ? 'center' : 'left' },
+                            col.width ? { width: `${col.width}%` } : {},
+                            col.noWrap ? { whiteSpace: 'nowrap' } : {},
+                        ]}
+                    >
                         {col.isAction ? (
                             <Button
-                                onClick={() => props.onSelectAction(`${props.uniqueKey}`)}
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    props.onSelectAction(`${props.uniqueKey}`);
+                                }}
                                 color={col.actionStyling}
                             >
                                 {getValue(col.value)}
                             </Button>
+                        ) : col.expandable ? (
+                            <TextExpansion text={getValue(col.value)} />
                         ) : (
                             <Box
                                 component="span"

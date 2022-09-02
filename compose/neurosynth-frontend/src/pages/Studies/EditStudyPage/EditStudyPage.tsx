@@ -6,9 +6,10 @@ import EditAnalyses from 'components/EditStudyComponents/EditAnalyses/EditAnalys
 import EditStudyDetails from 'components/EditStudyComponents/EditStudyDetails/EditStudyDetails';
 import EditStudyMetadata from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useGetStudyById } from 'hooks';
+import { useGetStudyById, useGuard } from 'hooks';
 import { AnalysisApiResponse } from 'utils/api';
 import EditStudyPageStyles from './EditStudyPage.styles';
+import { useAuth0 } from '@auth0/auth0-react';
 
 interface IStudyEdit {
     name: string;
@@ -24,7 +25,18 @@ const EditStudyPage = () => {
     // study and metadata edits are updated and stored in this state
     const [study, setStudy] = useState<IStudyEdit | undefined>(undefined);
     const params: { studyId: string } = useParams();
+    const { user, isAuthenticated } = useAuth0();
     const { isLoading, data, isError } = useGetStudyById(params.studyId || '');
+    console.log(params.studyId);
+    console.log(data?.id);
+
+    const thisUserOwnsthisStudyset = (data?.user || undefined) === (user?.sub || null);
+
+    useGuard(
+        `/studies/${params.studyId}`,
+        isAuthenticated ? 'you can only edit studies that you have cloned' : undefined,
+        !isLoading && !thisUserOwnsthisStudyset
+    );
 
     useEffect(() => {
         if (data) {
@@ -54,6 +66,8 @@ const EditStudyPage = () => {
         <StateHandlerComponent isLoading={isLoading} isError={isError}>
             <Box sx={EditStudyPageStyles.stickyButtonContainer}>
                 <BackButton
+                    color="secondary"
+                    variant="outlined"
                     sx={EditStudyPageStyles.button}
                     text="return to study view"
                     path={`/studies/${params.studyId}`}

@@ -8,148 +8,81 @@ import {
     TableRow,
     Paper,
     Box,
+    IconButton,
+    LinearProgress,
 } from '@mui/material';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useHistory } from 'react-router-dom';
-import { useIsMounted } from 'hooks';
-import API, { StudysetsApiResponse, StudyApiResponse } from 'utils/api';
 import StudysetsPopupMenu from 'components/StudysetsPopupMenu/StudysetsPopupMenu';
 import StudiesTableStyles from './StudiesTable.styles';
-import { useSnackbar } from 'notistack';
+import Delete from '@mui/icons-material/Delete';
+import { StudyReturn } from 'neurostore-typescript-sdk';
 
 interface StudiesTableModel {
-    studies: StudyApiResponse[] | undefined;
-    showStudyOptions?: boolean;
+    studies: StudyReturn[] | undefined;
+    studysetEditMode?: 'add' | 'delete' | undefined;
+    onRemoveStudyFromStudyset?: (studyId: string) => void;
+    isLoading?: boolean;
+    noDataElement?: JSX.Element;
 }
 
 const StudiesTable: React.FC<StudiesTableModel> = (props) => {
-    const { isAuthenticated, user } = useAuth0();
-    const [studysets, setStudysets] = useState<StudysetsApiResponse[]>();
+    const { user } = useAuth0();
     const history = useHistory();
-    const { current } = useIsMounted();
-    const { enqueueSnackbar } = useSnackbar();
-
-    const handleSelectTableRow = (row: StudyApiResponse) => {
-        history.push(`/studies/${row.id}`);
-    };
-
-    const shouldShowStudyOptions = isAuthenticated && !!props.showStudyOptions;
-
-    useEffect(() => {
-        if (shouldShowStudyOptions) {
-            const getStudysets = async () => {
-                API.NeurostoreServices.StudySetsService.studysetsGet(
-                    undefined,
-                    undefined,
-                    undefined,
-                    undefined,
-                    undefined,
-                    false,
-                    undefined,
-                    undefined,
-                    undefined,
-                    undefined,
-                    undefined,
-                    undefined,
-                    user?.sub || ''
-                )
-                    .then((res) => {
-                        if (current && res?.data?.results) {
-                            setStudysets(res.data.results);
-                        }
-                    })
-                    .catch((err) => {
-                        console.error(err);
-                    });
-            };
-
-            getStudysets();
-        }
-    }, [shouldShowStudyOptions, user?.sub, current]);
-
-    const handleStudysetCreated = async (name: string, description: string) => {
-        API.NeurostoreServices.StudySetsService.studysetsPost({
-            name,
-            description,
-        })
-            .then((res) => {
-                enqueueSnackbar('studyset created successfully', { variant: 'success' });
-                if (current) {
-                    const createdStudyset = res.data;
-                    setStudysets((prevState) => {
-                        if (!prevState) return prevState;
-                        const newStudysets = [...prevState];
-                        newStudysets.push(createdStudyset as any);
-                        return newStudysets;
-                    });
-                }
-            })
-            .catch((err) => {
-                console.error(err);
-                enqueueSnackbar('there was an error creating the studyset', { variant: 'error' });
-            });
-    };
-
-    const handleAddStudyToStudyset = async (
-        study: StudyApiResponse,
-        studyset: StudysetsApiResponse
-    ) => {
-        const selectedStudysetStudies = [...(studyset.studies || [])] as string[];
-        selectedStudysetStudies.push(study.id as string);
-
-        API.NeurostoreServices.StudySetsService.studysetsIdPut(studyset.id as string, {
-            name: studyset.name,
-            studies: selectedStudysetStudies as string[],
-        })
-            .then((res) => {
-                enqueueSnackbar(`${study.name} added to ${studyset.name || studyset.id}`, {
-                    variant: 'success',
-                });
-                if (current) {
-                    setStudysets((prevState) => {
-                        if (!prevState) return prevState;
-                        const newArr = [...prevState];
-                        const modifiedStudysetIndex = newArr.findIndex((x) => x.id === res.data.id);
-                        newArr[modifiedStudysetIndex] = { ...res.data };
-                        return newArr;
-                    });
-                }
-            })
-            .catch((err) => {
-                console.error(err);
-                enqueueSnackbar('there was an error adding the study to the studyset', {
-                    variant: 'error',
-                });
-            });
-    };
 
     return (
         <TableContainer component={Paper} elevation={2} sx={StudiesTableStyles.root}>
-            <Table size="small">
+            <Table>
                 <TableHead>
                     <TableRow sx={{ backgroundColor: 'primary.main' }}>
-                        {shouldShowStudyOptions && <TableCell></TableCell>}
+                        {props.studysetEditMode && <TableCell></TableCell>}
                         <TableCell sx={StudiesTableStyles.headerCell}>Title</TableCell>
                         <TableCell sx={StudiesTableStyles.headerCell}>Authors</TableCell>
                         <TableCell sx={StudiesTableStyles.headerCell}>Journal</TableCell>
                         <TableCell sx={StudiesTableStyles.headerCell}>Owner</TableCell>
                     </TableRow>
+                    <TableRow>
+                        {props.isLoading ? (
+                            <TableCell sx={{ padding: 0 }} colSpan={props.studysetEditMode ? 5 : 4}>
+                                <Box
+                                    sx={{
+                                        width: '100%',
+                                        paddingBottom:
+                                            (props.studies || []).length > 0 ? '0' : '2rem',
+                                    }}
+                                >
+                                    <LinearProgress color="primary" />
+                                </Box>
+                            </TableCell>
+                        ) : (
+                            <></>
+                        )}
+                    </TableRow>
                 </TableHead>
                 <TableBody>
                     {(props.studies || []).map((row, index) => (
                         <TableRow
+                            data-tour={index === 0 ? 'PublicStudiesPage-4' : null}
                             sx={StudiesTableStyles.tableRow}
                             key={index}
-                            onClick={() => handleSelectTableRow(row)}
+                            onClick={() => history.push(`/studies/${row.id}`)}
                         >
-                            {shouldShowStudyOptions && (
+                            {props.studysetEditMode && (
                                 <TableCell>
-                                    <StudysetsPopupMenu
-                                        study={row}
-                                        onStudyAddedToStudyset={handleAddStudyToStudyset}
-                                        onCreateStudyset={handleStudysetCreated}
-                                        studysets={studysets}
-                                    />
+                                    {props.studysetEditMode === 'add' ? (
+                                        <StudysetsPopupMenu study={row} />
+                                    ) : (
+                                        <IconButton
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                if (props.onRemoveStudyFromStudyset) {
+                                                    props.onRemoveStudyFromStudyset(row.id || '');
+                                                }
+                                            }}
+                                        >
+                                            <Delete color="error" />
+                                        </IconButton>
+                                    )}
                                 </TableCell>
                             )}
                             <TableCell>
@@ -182,9 +115,12 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                     ))}
                 </TableBody>
             </Table>
-            {(props.studies || []).length === 0 && (
-                <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No data</Box>
-            )}
+            {(props.studies || []).length === 0 &&
+                (props.noDataElement ? (
+                    props.noDataElement
+                ) : (
+                    <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No data</Box>
+                ))}
         </TableContainer>
     );
 };

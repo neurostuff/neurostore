@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Button, Tooltip, Typography, Tab, Tabs, Box, Divider } from '@mui/material';
+import { Button, Tooltip, Typography, Tab, Tabs, Box, Divider, IconButton } from '@mui/material';
 import { AxiosError, AxiosResponse } from 'axios';
 import { useSnackbar } from 'notistack';
 import React, { useState, useEffect, SyntheticEvent } from 'react';
@@ -10,13 +10,19 @@ import DisplayAnalysis from 'components/DisplayAnalysis/DisplayAnalysis';
 import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
-import useIsMounted from '../../../hooks/useIsMounted';
-import API, { StudyApiResponse, AnalysisApiResponse } from '../../../utils/api';
+import API, { StudyApiResponse, AnalysisApiResponse } from 'utils/api';
 import StudyPageStyles from './StudyPage.styles';
+import HelpIcon from '@mui/icons-material/Help';
+import { useGetTour, useIsMounted } from 'hooks';
+import StudysetsPopupMenu from 'components/StudysetsPopupMenu/StudysetsPopupMenu';
+import { StudyReturn } from 'neurostore-typescript-sdk';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 
 const StudyPage: React.FC = (props) => {
+    const { startTour } = useGetTour('StudyPage');
     const { enqueueSnackbar } = useSnackbar();
-    const [study, setStudy] = useState<StudyApiResponse>();
+    const [study, setStudy] = useState<StudyReturn>();
+    const [dialogIsOpen, setDialogIsOpen] = useState(false);
     const [selectedAnalysis, setSelectedAnalysis] = useState<{
         analysisIndex: number;
         analysis: AnalysisApiResponse | undefined;
@@ -25,7 +31,7 @@ const StudyPage: React.FC = (props) => {
         analysis: undefined,
     });
 
-    const [editDisabled, setEditDisabled] = useState(false);
+    const [allowEdits, setAllowEdits] = useState(false);
     const history = useHistory();
     const { isAuthenticated, user } = useAuth0();
     const isMountedRef = useIsMounted();
@@ -58,7 +64,7 @@ const StudyPage: React.FC = (props) => {
             API.NeurostoreServices.StudiesService.studiesIdGet(id, true)
                 .then((res) => {
                     if (isMountedRef.current) {
-                        const resUpdated = res as AxiosResponse<StudyApiResponse>;
+                        const resUpdated = res as AxiosResponse<StudyReturn>;
 
                         let sortedAnalyses = resUpdated.data.analyses as
                             | AnalysisApiResponse[]
@@ -100,9 +106,9 @@ const StudyPage: React.FC = (props) => {
 
     useEffect(() => {
         const userIDAndStudyIDExist = !!user?.sub && !!study?.user;
-        const disable = !isAuthenticated || !userIDAndStudyIDExist || user?.sub !== study?.user;
-
-        setEditDisabled(disable);
+        const thisUserOwnsThisStudy = (study?.user || null) === (user?.sub || undefined);
+        const allowEdit = isAuthenticated && userIDAndStudyIDExist && thisUserOwnsThisStudy;
+        setAllowEdits(allowEdit);
     }, [isAuthenticated, user?.sub, study?.user]);
 
     const metadataForTable: IDisplayValuesTableModel = {
@@ -139,7 +145,10 @@ const StudyPage: React.FC = (props) => {
 
     return (
         <NeurosynthLoader loaded={!!study}>
-            <Box sx={[StudyPageStyles.buttonContainer, StudyPageStyles.spaceBelow]}>
+            <Box
+                data-tour="StudyPage-8"
+                sx={[StudyPageStyles.buttonContainer, StudyPageStyles.spaceBelow]}
+            >
                 <Tooltip
                     placement="top"
                     title={
@@ -148,22 +157,35 @@ const StudyPage: React.FC = (props) => {
                 >
                     <Box sx={{ display: 'inline' }}>
                         <Button
-                            onClick={handleCloneStudy}
+                            onClick={() =>
+                                allowEdits ? setDialogIsOpen(true) : handleCloneStudy()
+                            }
                             disabled={!isAuthenticated}
-                            variant={editDisabled ? 'outlined' : 'text'}
+                            variant={allowEdits ? 'text' : 'outlined'}
                             color="primary"
                         >
                             Clone Study
                         </Button>
                     </Box>
                 </Tooltip>
+                <ConfirmationDialog
+                    isOpen={dialogIsOpen}
+                    confirmText="Yes"
+                    rejectText="No"
+                    onCloseDialog={(confirm) => {
+                        if (confirm) handleCloneStudy();
+                        setDialogIsOpen(false);
+                    }}
+                    dialogTitle="Are you sure you want to clone this study?"
+                    dialogMessage="This study is a clone of an existing study."
+                />
                 <Tooltip
                     placement="top"
-                    title={editDisabled ? 'you can only edit studies you have cloned' : ''}
+                    title={allowEdits ? '' : 'you can only edit studies you have cloned'}
                 >
                     <Box sx={{ display: 'inline' }}>
                         <Button
-                            disabled={editDisabled}
+                            disabled={!allowEdits}
                             onClick={handleEditStudy}
                             variant="outlined"
                             color="secondary"
@@ -172,8 +194,22 @@ const StudyPage: React.FC = (props) => {
                         </Button>
                     </Box>
                 </Tooltip>
+                <Tooltip placement="top" title="click to add this study to one of your studysets">
+                    <Box sx={{ display: 'inline' }}>
+                        <StudysetsPopupMenu
+                            disabled={!isAuthenticated}
+                            study={study as StudyReturn}
+                        />
+                    </Box>
+                </Tooltip>
+
+                <Box sx={{ marginLeft: 'auto' }}>
+                    <IconButton onClick={() => startTour()} color="primary">
+                        <HelpIcon />
+                    </IconButton>
+                </Box>
             </Box>
-            <Box>
+            <Box data-tour="StudyPage-1">
                 <Typography sx={StudyPageStyles.spaceBelow} variant="h6">
                     <b>{study?.name}</b>
                 </Typography>
@@ -189,7 +225,7 @@ const StudyPage: React.FC = (props) => {
                     sx={{ ...StudyPageStyles.spaceBelow, whiteSpace: 'pre-wrap' }}
                 />
             </Box>
-            <Box sx={{ margin: '15px 0' }}>
+            <Box data-tour="StudyPage-2" sx={{ margin: '15px 0' }}>
                 <NeurosynthAccordion
                     accordionSummarySx={StudyPageStyles.accordionSummary}
                     elevation={2}
@@ -207,6 +243,7 @@ const StudyPage: React.FC = (props) => {
 
             <Box>
                 <Typography
+                    data-tour="StudyPage-3"
                     variant="h6"
                     sx={[
                         {
@@ -231,6 +268,7 @@ const StudyPage: React.FC = (props) => {
                         <Box sx={StudyPageStyles.matchingSibling}>
                             {/* apply flex basis 0 to analyses tabs to make sure it matches sibling */}
                             <Tabs
+                                data-tour="StudyPage-7"
                                 sx={StudyPageStyles.analysesTabs}
                                 scrollButtons
                                 value={selectedAnalysis.analysisIndex}

@@ -1,5 +1,5 @@
 import { useQuery } from 'react-query';
-import API, { AnalysisApiResponse } from '../../utils/api';
+import API, { AnalysisApiResponse } from 'utils/api';
 
 const useGetStudyById = (studyId: string) => {
     const { data, isLoading, isError, error } = useQuery(

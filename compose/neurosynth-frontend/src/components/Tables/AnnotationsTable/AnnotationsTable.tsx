@@ -11,7 +11,7 @@ const AnnotationsTable: React.FC<{ annotations: AnnotationsApiResponse[]; studys
     const { user } = useAuth0();
 
     const handleRowClick = (id: string | number) => {
-        history.push(`/studysets/${props.studysetId}/annotations/${id}`);
+        history.push(`/annotations/${id}`);
     };
 
     const dataForAnnotationsTable: IDisplayValuesTableModel = {

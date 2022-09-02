@@ -7,6 +7,7 @@ export interface NavOptionsModel {
     path: string;
     disabled?: boolean;
     authenticationRequired?: boolean;
+    className?: string;
     children: NavOptionsModel[] | null;
 }
 

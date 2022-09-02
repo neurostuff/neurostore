@@ -5,7 +5,7 @@ import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 interface ILoadingButton {
     text: string;
     isLoading?: boolean;
-    sx?: SystemStyleObject;
+    sx?: SystemStyleObject | SystemStyleObject[];
     variant: 'contained' | 'outlined' | 'text';
     startIcon?: React.ReactNode;
     endIcon?: React.ReactNode;

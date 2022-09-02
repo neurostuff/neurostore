@@ -1,0 +1,37 @@
+{
+    "results": [
+        {
+            "created_at": "2022-04-28T16:39:36.134359+00:00",
+            "id": "4eTAChpnL3Tg",
+            "neurostore_id": "4gUL3Zj2Kb7S",
+            "snapshot": null,
+            "updated_at": null,
+            "user": "auth0|62e0e6c9dd47048572613b4d",
+            "name": "studyset-name-1",
+            "description": "studyset-description-1",
+            "studies": ["4ZhkLTH8k2P6"]
+        },
+        {
+            "created_at": "2022-04-28T16:39:36.134359+00:00",
+            "id": "3JRewi4ND7rq",
+            "neurostore_id": "wXQ9Fxw3mPz3",
+            "snapshot": null,
+            "updated_at": null,
+            "user": "auth0|62e0e6c9dd47048572613b4d",
+            "name": "studyset-name-2",
+            "description": "studyset-description-2",
+            "studies": []
+        },
+        {
+            "created_at": "2022-04-28T16:39:36.134359+00:00",
+            "id": "88oi5AKK8aJN",
+            "neurostore_id": "M8VRV2ZKMHh2",
+            "snapshot": null,
+            "updated_at": null,
+            "user": "auth0|62e0e6c9dd47048572613b4d",
+            "name": "studyset-name-3",
+            "description": "studyset-description-3",
+            "studies": []
+        }
+    ]
+}

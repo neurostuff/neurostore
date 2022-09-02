@@ -43,50 +43,55 @@ const NavbarPopupMenu: React.FC<INavbarPopupMenu> = (props) => {
 
     const shouldSee = !props.navOption.authenticationRequired || isAuthenticated;
 
-    return (
-        <>
-            {props.navOption.children ? (
+    if (shouldSee) {
+        if (props.navOption.children) {
+            return (
                 <>
-                    {shouldSee && (
-                        <>
-                            <Button
-                                ref={anchorRef}
-                                onClick={() => setOpen(true)}
-                                sx={props.styling}
-                                disabled={props.navOption.disabled}
-                            >
-                                {props.navOption.label}
-                                <KeyboardArrowDownIcon sx={{ marginLeft: '0.25rem' }} />
-                            </Button>
-                            <NeurosynthPopper
-                                open={open}
-                                anchorElement={anchorRef.current}
-                                onClickAway={(event: any) => setOpen(false)}
-                            >
-                                <MenuList>{menuItems}</MenuList>
-                            </NeurosynthPopper>
-                        </>
-                    )}
+                    <Button
+                        ref={anchorRef}
+                        onClick={() => setOpen(true)}
+                        sx={[
+                            props.styling || {},
+                            { whiteSpace: 'nowrap' },
+                            NavbarPopupMenuStyles.button,
+                        ]}
+                        className={props.navOption.className || ''}
+                        disabled={props.navOption.disabled}
+                    >
+                        {props.navOption.label}
+                        <KeyboardArrowDownIcon sx={{ marginLeft: '0.25rem' }} />
+                    </Button>
+                    <NeurosynthPopper
+                        open={open}
+                        anchorElement={anchorRef.current}
+                        onClickAway={(event: any) => setOpen(false)}
+                    >
+                        <MenuList>{menuItems}</MenuList>
+                    </NeurosynthPopper>
                 </>
-            ) : (
-                <>
-                    {shouldSee && (
-                        <Button
-                            disabled={props.navOption.disabled}
-                            to={props.navOption.path}
-                            exact
-                            component={NavLink}
-                            sx={[props.styling || {}, NavbarPopupMenuStyles.link]}
-                            // manually add bg color as navlink doesn't have access to mui system
-                            activeStyle={{ color: '#ef8a24' }}
-                        >
-                            {props.navOption.label}
-                        </Button>
-                    )}
-                </>
-            )}
-        </>
-    );
+            );
+        } else {
+            return (
+                <Button
+                    disabled={props.navOption.disabled}
+                    to={props.navOption.path}
+                    exact
+                    component={NavLink}
+                    sx={[
+                        props.styling || {},
+                        NavbarPopupMenuStyles.link,
+                        NavbarPopupMenuStyles.button,
+                    ]}
+                    // manually add bg color as navlink doesn't have access to mui system
+                    activeStyle={{ color: '#ef8a24' }}
+                >
+                    {props.navOption.label}
+                </Button>
+            );
+        }
+    }
+
+    return <></>;
 };
 
 export default NavbarPopupMenu;

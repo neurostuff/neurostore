@@ -19,6 +19,7 @@ export interface IAnalysisPointsHeader {
 const AnalysisPointsHeader: React.FC<IAnalysisPointsHeader> = (props) => {
     const apiRef = useGridApiContext();
     const { isLoading: getStudyIsLoading, data: study } = useGetStudyById(props.studyId || '');
+
     const selectedRows = apiRef?.current?.getSelectedRows()?.size || 0;
 
     const [popperIsOpen, setPopperIsOpen] = useState(false);
@@ -58,7 +59,11 @@ const AnalysisPointsHeader: React.FC<IAnalysisPointsHeader> = (props) => {
         ));
 
     if (analysisOptions.length === 0)
-        analysisOptions.push(<MenuItem disabled>No analyses</MenuItem>);
+        analysisOptions.push(
+            <MenuItem key="no-analyses-menu-item" disabled>
+                No analyses
+            </MenuItem>
+        );
 
     return (
         <Box

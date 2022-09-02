@@ -41,7 +41,7 @@ describe('ConfirmationDialog', () => {
 
         const rejectButton = screen.getByRole('button', { name: 'reject' });
         userEvent.click(rejectButton);
-        expect(mockOnClose).toBeCalledWith(false);
+        expect(mockOnClose).toBeCalledWith(false, undefined);
     });
 
     it('should signal true when confirm is clicked', () => {
@@ -57,7 +57,7 @@ describe('ConfirmationDialog', () => {
 
         const confirmButton = screen.getByRole('button', { name: 'confirm' });
         userEvent.click(confirmButton);
-        expect(mockOnClose).toBeCalledWith(true);
+        expect(mockOnClose).toBeCalledWith(true, undefined);
     });
 
     it('should signal undefined when clicked away', async () => {
@@ -77,7 +77,7 @@ describe('ConfirmationDialog', () => {
         // we need to trigger a click away by clicking the backdrop. For some reason,
         // the second presentation div accomplishes this
         userEvent.click(screen.getAllByRole('presentation')[1]);
-        expect(mockOnClose).toBeCalledWith(undefined);
+        expect(mockOnClose).toBeCalledWith(undefined, undefined);
     });
 
     it('should close when close icon button is clicked', () => {
@@ -92,6 +92,24 @@ describe('ConfirmationDialog', () => {
         );
 
         userEvent.click(screen.getByTestId('CloseIcon'));
-        expect(mockOnClose).toHaveBeenCalledWith(undefined);
+        expect(mockOnClose).toHaveBeenCalledWith(undefined, undefined);
+    });
+
+    it('should be called with the data', () => {
+        render(
+            <ConfirmationDialog
+                isOpen={true}
+                dialogTitle="test-message"
+                onCloseDialog={mockOnClose}
+                confirmText="confirm"
+                rejectText="reject"
+                data={{ data: 'test-data' }}
+            />
+        );
+
+        const confirmButton = screen.getByRole('button', { name: 'confirm' });
+        userEvent.click(confirmButton);
+
+        expect(mockOnClose).toHaveBeenCalledWith(true, { data: 'test-data' });
     });
 });

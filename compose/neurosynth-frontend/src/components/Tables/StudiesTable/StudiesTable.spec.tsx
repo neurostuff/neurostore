@@ -4,15 +4,16 @@ import userEvent from '@testing-library/user-event';
 import { Router } from 'react-router-dom';
 import { StudiesTable } from '..';
 import { MockThemeProvider } from 'testing/helpers';
-import API, { StudyApiResponse, StudysetsApiResponse } from 'utils/api';
+import { StudyApiResponse } from 'utils/api';
 import { SnackbarProvider } from 'notistack';
 
-jest.mock('hooks');
 jest.mock('@auth0/auth0-react');
 jest.mock('utils/api');
 jest.mock('components/StudysetsPopupMenu/StudysetsPopupMenu');
 
 describe('StudiesTable Component', () => {
+    const mockDeleteStudy = jest.fn();
+
     const historyMock = {
         push: jest.fn(),
         location: {},
@@ -75,73 +76,7 @@ describe('StudiesTable Component', () => {
         },
     ];
 
-    const mockStudysetsGetPayload: StudysetsApiResponse[] = [
-        {
-            created_at: '2021-12-14T05:05:45.722157+00:00',
-            description: null,
-            doi: null,
-            id: '123',
-            name: 'test-name',
-            pmid: null,
-            publication: '',
-            studies: [],
-            user: 'some-user',
-        },
-    ];
-
-    const mockStudysetsPostResponse: StudysetsApiResponse[] = [
-        {
-            created_at: '2021-12-14T05:05:45.722157+00:00',
-            description: null,
-            doi: null,
-            id: '123',
-            name: 'test-name',
-            pmid: null,
-            publication: '',
-            studies: [],
-            user: 'some-user',
-        },
-    ];
-
-    const mockStudysetsIdPutResponse: StudysetsApiResponse[] = [
-        {
-            created_at: '2021-12-14T05:05:34.722631+00:00',
-            description: null,
-            doi: null,
-            id: 'test-id',
-            name: null,
-            pmid: null,
-            publication: null,
-            studies: ['5LMdXPD3ocgD'],
-            user: 'test-user',
-        },
-    ];
-
     beforeEach(() => {
-        (API.NeurostoreServices.StudySetsService.studysetsGet as any).mockReturnValue(
-            Promise.resolve({
-                data: {
-                    results: mockStudysetsGetPayload,
-                },
-            })
-        );
-
-        (API.NeurostoreServices.StudySetsService.studysetsPost as any).mockReturnValue(
-            Promise.resolve({
-                data: {
-                    results: mockStudysetsPostResponse,
-                },
-            })
-        );
-
-        (API.NeurostoreServices.StudySetsService.studysetsIdPut as any).mockReturnValue(
-            Promise.resolve({
-                data: {
-                    results: mockStudysetsIdPutResponse,
-                },
-            })
-        );
-
         useAuth0().isAuthenticated = false;
     });
 
@@ -149,142 +84,81 @@ describe('StudiesTable Component', () => {
         jest.clearAllMocks();
     });
 
-    it('should render', async () => {
+    it('should render', () => {
         useAuth0().isAuthenticated = true;
 
-        await act(async () => {
-            render(
-                <MockThemeProvider>
-                    <SnackbarProvider>
-                        <Router history={historyMock as any}>
-                            <StudiesTable showStudyOptions={true} studies={mockStudies} />
-                        </Router>
-                    </SnackbarProvider>
-                </MockThemeProvider>
-            );
-        });
+        render(
+            <MockThemeProvider>
+                <SnackbarProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable studysetEditMode="add" studies={mockStudies} />
+                    </Router>
+                </SnackbarProvider>
+            </MockThemeProvider>
+        );
 
         const rows = screen.getAllByRole('row');
 
-        // subtract 1 to account for the table header
-        expect(rows.length - 1).toEqual(mockStudies.length);
-        expect(API.NeurostoreServices.StudySetsService.studysetsGet).toHaveBeenCalled();
+        // subtract 2 to account for the table header and loading row
+        expect(rows.length - 2).toEqual(mockStudies.length);
     });
 
     it('should show no data', async () => {
-        await act(async () => {
-            render(
-                <MockThemeProvider>
-                    <SnackbarProvider>
-                        <Router history={historyMock as any}>
-                            <StudiesTable studies={[]} />
-                        </Router>
-                    </SnackbarProvider>
-                </MockThemeProvider>
-            );
-        });
+        render(
+            <MockThemeProvider>
+                <SnackbarProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable studies={[]} />
+                    </Router>
+                </SnackbarProvider>
+            </MockThemeProvider>
+        );
         const noResults = screen.getByText('No data');
         expect(noResults).toBeInTheDocument();
     });
 
-    it('should show no authors available if no authors', async () => {
-        await act(async () => {
-            render(
-                <MockThemeProvider>
-                    <SnackbarProvider>
-                        <Router history={historyMock as any}>
-                            <StudiesTable studies={mockStudiesNoInfo} />
-                        </Router>
-                    </SnackbarProvider>
-                </MockThemeProvider>
-            );
-        });
+    it('should show no authors available if no authors', () => {
+        render(
+            <MockThemeProvider>
+                <SnackbarProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable studies={mockStudiesNoInfo} />
+                    </Router>
+                </SnackbarProvider>
+            </MockThemeProvider>
+        );
 
         const noAuthorsText = screen.getByText('No Authors Available');
         expect(noAuthorsText).toBeInTheDocument();
     });
 
-    it('should show no publication available if no publication', async () => {
-        await act(async () => {
-            render(
-                <MockThemeProvider>
-                    <SnackbarProvider>
-                        <Router history={historyMock as any}>
-                            <StudiesTable studies={mockStudiesNoInfo} />
-                        </Router>
-                    </SnackbarProvider>
-                </MockThemeProvider>
-            );
-        });
+    it('should show no publication available if no publication', () => {
+        render(
+            <MockThemeProvider>
+                <SnackbarProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable studies={mockStudiesNoInfo} />
+                    </Router>
+                </SnackbarProvider>
+            </MockThemeProvider>
+        );
 
         const noPublicationText = screen.getByText('No Publication Available');
         expect(noPublicationText).toBeInTheDocument();
     });
 
-    it('should create the studyset', async () => {
+    it('should handle the selection when the row is clicked', () => {
         useAuth0().isAuthenticated = true;
 
-        await act(async () => {
-            render(
-                <MockThemeProvider>
-                    <SnackbarProvider>
-                        <Router history={historyMock as any}>
-                            <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
-                        </Router>
-                    </SnackbarProvider>
-                </MockThemeProvider>
-            );
-        });
-
-        const studysetCreatedButton = screen.getByTestId('add-studyset-button');
-
-        await act(async () => {
-            userEvent.click(studysetCreatedButton);
-        });
-
-        expect(API.NeurostoreServices.StudySetsService.studysetsPost).toBeCalled();
-    });
-
-    it('should edit the studyset', async () => {
-        useAuth0().isAuthenticated = true;
-        await act(async () => {
-            render(
-                <MockThemeProvider>
-                    <SnackbarProvider>
-                        <Router history={historyMock as any}>
-                            <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
-                        </Router>
-                    </SnackbarProvider>
-                </MockThemeProvider>
-            );
-        });
-
-        const studysetEditButton = screen.getByTestId('edit-studyset-button');
-
-        await act(async () => {
-            userEvent.click(studysetEditButton);
-        });
-
-        expect(API.NeurostoreServices.StudySetsService.studysetsIdPut).toBeCalledWith('123', {
-            name: 'test-name',
-            studies: ['5LMdXPD3ocgD'],
-        });
-    });
-
-    it('should handle the selection when the row is clicked', async () => {
-        useAuth0().isAuthenticated = true;
-
-        await act(async () => {
-            render(
-                <MockThemeProvider>
-                    <SnackbarProvider>
-                        <Router history={historyMock as any}>
-                            <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
-                        </Router>
-                    </SnackbarProvider>
-                </MockThemeProvider>
-            );
-        });
+        render(
+            <MockThemeProvider>
+                <SnackbarProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable studysetEditMode="add" studies={mockStudiesNoInfo} />
+                    </Router>
+                </SnackbarProvider>
+            </MockThemeProvider>
+        );
 
         const row = screen.getByText('some-test-name');
         userEvent.click(row);
@@ -292,41 +166,118 @@ describe('StudiesTable Component', () => {
         expect(historyMock.push).toBeCalledWith('/studies/5LMdXPD3ocgD');
     });
 
-    it('should show the add icon when showStudyOptions flag is enabled', async () => {
+    it('should show the add icon', async () => {
         useAuth0().isAuthenticated = true;
 
-        await act(async () => {
-            render(
-                <MockThemeProvider>
-                    <SnackbarProvider>
-                        <Router history={historyMock as any}>
-                            <StudiesTable showStudyOptions={true} studies={mockStudiesNoInfo} />
-                        </Router>
-                    </SnackbarProvider>
-                </MockThemeProvider>
-            );
-        });
+        render(
+            <MockThemeProvider>
+                <SnackbarProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable studysetEditMode="add" studies={mockStudiesNoInfo} />
+                    </Router>
+                </SnackbarProvider>
+            </MockThemeProvider>
+        );
 
         const icon = screen.getByTestId('add-studyset-button');
         expect(icon).toBeInTheDocument();
     });
 
-    it('should hide the add icon when showStudyOptions flag is false', async () => {
+    it('should show the delete icon', () => {
+        render(
+            <MockThemeProvider>
+                <SnackbarProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable studysetEditMode="delete" studies={mockStudiesNoInfo} />
+                    </Router>
+                </SnackbarProvider>
+            </MockThemeProvider>
+        );
+
+        const icon = screen.getByTestId('DeleteIcon');
+        expect(icon).toBeInTheDocument();
+    });
+
+    it('should delete the study when clicked', () => {
+        render(
+            <MockThemeProvider>
+                <SnackbarProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable
+                            studysetEditMode="delete"
+                            onRemoveStudyFromStudyset={mockDeleteStudy}
+                            studies={mockStudies}
+                        />
+                    </Router>
+                </SnackbarProvider>
+            </MockThemeProvider>
+        );
+
+        const icon = screen.getAllByTestId('DeleteIcon')[0];
+        userEvent.click(icon);
+
+        expect(mockDeleteStudy).toHaveBeenCalledWith(mockStudies[0].id);
+    });
+
+    it('should hide the additional column if studyset edit mode is not set', () => {
         useAuth0().isAuthenticated = true;
 
-        await act(async () => {
-            render(
-                <MockThemeProvider>
-                    <SnackbarProvider>
-                        <Router history={historyMock as any}>
-                            <StudiesTable showStudyOptions={false} studies={mockStudiesNoInfo} />
-                        </Router>
-                    </SnackbarProvider>
-                </MockThemeProvider>
-            );
-        });
+        render(
+            <MockThemeProvider>
+                <SnackbarProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable studies={mockStudiesNoInfo} />
+                    </Router>
+                </SnackbarProvider>
+            </MockThemeProvider>
+        );
 
-        const icon = screen.queryByTestId('add-studyset-button');
-        expect(icon).not.toBeInTheDocument();
+        const columns = screen.getAllByRole('columnheader');
+        expect(columns.length).toEqual(4);
+    });
+
+    it('should load', () => {
+        render(
+            <MockThemeProvider>
+                <SnackbarProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable isLoading={true} studies={mockStudiesNoInfo} />
+                    </Router>
+                </SnackbarProvider>
+            </MockThemeProvider>
+        );
+
+        expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    });
+
+    it('should not load', () => {
+        render(
+            <MockThemeProvider>
+                <SnackbarProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable studies={mockStudiesNoInfo} />
+                    </Router>
+                </SnackbarProvider>
+            </MockThemeProvider>
+        );
+
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    });
+
+    it('should show the given no data message', () => {
+        render(
+            <MockThemeProvider>
+                <SnackbarProvider>
+                    <Router history={historyMock as any}>
+                        <StudiesTable
+                            noDataElement={<span>custom no data message</span>}
+                            studies={[]}
+                        />
+                    </Router>
+                </SnackbarProvider>
+            </MockThemeProvider>
+        );
+
+        expect(screen.getByText('custom no data message')).toBeInTheDocument();
     });
 });
