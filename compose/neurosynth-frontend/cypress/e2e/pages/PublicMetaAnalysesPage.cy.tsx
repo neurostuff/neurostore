@@ -29,8 +29,9 @@ describe(PAGE_NAME, () => {
         });
         it('should open immediately if it is the users first time logging in', () => {
             cy.login('mocked', { 'https://neurosynth-compose/loginsCount': 1 })
+                .wait('@metaAnalysesRequest')
                 .visit(PATH)
-                .wait(['@metaAnalysesRequest', '@metaAnalysesRequest'])
+                .wait('@metaAnalysesRequest')
                 .get('.reactour__popover')
                 .should('exist')
                 .and('be.visible');
@@ -45,8 +46,9 @@ describe(PAGE_NAME, () => {
 
         it('should not open immediately if it is not the first time logging in', () => {
             cy.login('mocked', { 'https://neurosynth-compose/loginsCount': 2 })
+                .wait('@metaAnalysesRequest')
                 .visit(PATH)
-                .wait(['@metaAnalysesRequest', '@metaAnalysesRequest'])
+                .wait('@metaAnalysesRequest')
                 .get('.reactour__popover')
                 .should('not.exist');
         });
