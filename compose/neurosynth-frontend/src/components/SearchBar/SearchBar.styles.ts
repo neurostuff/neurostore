@@ -25,7 +25,6 @@ const SearchBarStyles: Style = {
         flexGrow: 1,
         borderRadius: '0 !important',
         borderLeft: 'none !important',
-        borderRight: 'none !important',
         justifyContent: 'center',
         display: 'flex',
     },

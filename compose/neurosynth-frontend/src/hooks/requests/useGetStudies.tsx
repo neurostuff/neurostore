@@ -2,27 +2,47 @@ import { SearchCriteria } from 'pages/Studies/PublicStudiesPage/PublicStudiesPag
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
-const useGetStudies = (searchCriteria: Partial<SearchCriteria>) => {
+const useGetStudies = (enabled: boolean, searchCriteria: Partial<SearchCriteria>) => {
     return useQuery(
-        ['studies', searchCriteria?.userId],
+        [
+            'studies',
+            {
+                genericSearchStr: searchCriteria?.genericSearchStr,
+                sortBy: searchCriteria?.sortBy,
+                pageOfResults: searchCriteria.pageOfResults,
+                descOrder: searchCriteria?.descOrder,
+                pageSize: searchCriteria?.pageSize,
+                isNested: searchCriteria?.isNested,
+                nameSearch: searchCriteria?.nameSearch,
+                descriptionSearch: searchCriteria?.descriptionSearch,
+                showUnique: searchCriteria?.showUnique,
+                source: searchCriteria?.source,
+                authorSearch: searchCriteria?.authorSearch,
+                userId: searchCriteria?.userId,
+            },
+        ],
         () =>
             API.NeurostoreServices.StudiesService.studiesGet(
-                searchCriteria.genericSearchStr,
+                searchCriteria.genericSearchStr || undefined,
                 searchCriteria.sortBy,
                 searchCriteria.pageOfResults,
                 searchCriteria.descOrder,
                 searchCriteria.pageSize,
                 searchCriteria.isNested,
-                searchCriteria.nameSearch,
-                searchCriteria.descriptionSearch,
+                searchCriteria.nameSearch || undefined,
+                searchCriteria.descriptionSearch || undefined,
                 undefined,
                 searchCriteria.showUnique,
                 searchCriteria.source,
-                searchCriteria.authorSearch,
+                searchCriteria.authorSearch || undefined,
                 searchCriteria.userId
             ),
         {
-            select: (res) => res.data.results,
+            refetchOnWindowFocus: enabled,
+            refetchOnMount: enabled,
+            refetchOnReconnect: enabled,
+            enabled: enabled,
+            select: (res) => res.data,
         }
     );
 };

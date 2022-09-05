@@ -1,63 +1,21 @@
-import {
-    Paper,
-    InputBase,
-    Button,
-    FormControl,
-    Select,
-    MenuItem,
-    SelectChangeEvent,
-    Box,
-} from '@mui/material';
+import { Paper, InputBase, Button, FormControl, Select, MenuItem, Box } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import React from 'react';
-import { useState } from 'react';
 import SearchBarStyles from './SearchBar.styles';
-import { SearchCriteria } from '../../pages/Studies/PublicStudiesPage/PublicStudiesPage';
-
-enum SearchBy {
-    NAME = 'nameSearch',
-    DESCRIPTION = 'descriptionSearch',
-    AUTHORS = 'authorSearch',
-    ALL = 'genericSearchStr',
-}
+import { SearchBy } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
 
 export interface SearchBarModel {
-    onSearch: (arg: SearchCriteria) => void;
+    searchedString: string;
+    searchBy: SearchBy;
+    onSearch: (event: React.FormEvent) => void;
+    onSearchByChange: (newSearchBy: SearchBy) => void;
+    onTextInputChange: (newTextInput: string) => void;
 }
 
 const SearchBar: React.FC<SearchBarModel> = (props) => {
-    const [searchParams, setSearchParams] = useState<{
-        searchedString: string;
-        searchBy: SearchBy;
-    }>({
-        searchedString: '',
-        searchBy: SearchBy.ALL,
-    });
-
     const handleOnSubmit = (event: React.FormEvent) => {
         event.preventDefault();
-
-        const newSearch = new SearchCriteria();
-        newSearch[searchParams.searchBy] = searchParams.searchedString;
-        props.onSearch(newSearch);
-    };
-
-    const handleEnteredText = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchParams((prevState) => {
-            return {
-                ...prevState,
-                searchedString: event.target.value,
-            };
-        });
-    };
-
-    const handleSelectChange = (event: SelectChangeEvent<string>, child: React.ReactNode) => {
-        setSearchParams((prevState) => {
-            return {
-                ...prevState,
-                searchBy: event.target.value as SearchBy,
-            };
-        });
+        props.onSearch(event);
     };
 
     return (
@@ -68,8 +26,10 @@ const SearchBar: React.FC<SearchBarModel> = (props) => {
                         <Select
                             sx={SearchBarStyles.select}
                             autoWidth
-                            value={searchParams.searchBy}
-                            onChange={handleSelectChange}
+                            value={props.searchBy}
+                            onChange={(event) =>
+                                props.onSearchByChange(event.target.value as SearchBy)
+                            }
                         >
                             <MenuItem value={SearchBy.ALL}>All</MenuItem>
                             <MenuItem value={SearchBy.NAME}>Title</MenuItem>
@@ -79,7 +39,8 @@ const SearchBar: React.FC<SearchBarModel> = (props) => {
                     </FormControl>
                     <Paper sx={SearchBarStyles.paper} variant="outlined">
                         <InputBase
-                            onChange={handleEnteredText}
+                            value={props.searchedString}
+                            onChange={(event) => props.onTextInputChange(event.target.value)}
                             placeholder="Search for a study"
                             sx={SearchBarStyles.textfield}
                         />

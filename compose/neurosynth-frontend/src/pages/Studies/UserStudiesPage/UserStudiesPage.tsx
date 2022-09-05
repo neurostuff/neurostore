@@ -11,7 +11,7 @@ const UserStudiesPage: React.FC = (props) => {
     const { user, isAuthenticated } = useAuth0();
     useGuard('/studies');
     const { startTour } = useGetTour('UserStudiesPage');
-    const { data, isLoading, isError } = useGetStudies({
+    const { data, isLoading, isError } = useGetStudies(!!user?.sub, {
         userId: user?.sub,
     });
 
@@ -29,7 +29,7 @@ const UserStudiesPage: React.FC = (props) => {
                 <Box data-tour="UserStudiesPage-2" sx={{ marginBottom: '1rem' }}>
                     <StudiesTable
                         studysetEditMode={isAuthenticated ? 'add' : undefined}
-                        studies={data}
+                        studies={data?.results || []}
                     />
                 </Box>
             </StateHandlerComponent>
