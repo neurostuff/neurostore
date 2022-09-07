@@ -5,6 +5,8 @@ import pathlib
 import schemathesis
 import pytest
 import sqlalchemy as sa
+from requests.exceptions import HTTPError
+
 
 from neurosynth_compose.ingest.neurostore import create_meta_analyses
 from ..database import db as _db
@@ -307,7 +309,10 @@ def user_data(session, mock_add_users):
 
 @pytest.fixture(scope="function")
 def neurostore_data(session, mock_add_users):
-    create_meta_analyses()
+    try:
+        create_meta_analyses(url="https://neurostore.xyz")
+    except HTTPError:
+        pytest.skip("neurostore.xyz is not responding as expected", allow_module_level=True)
 
 
 @pytest.fixture()
