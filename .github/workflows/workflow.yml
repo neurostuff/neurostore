@@ -145,7 +145,7 @@ jobs:
           --rm -w /neurosynth/neurosynth-frontend \
           neurosynth \
           bash -c "cd /neurosynth/neurosynth-frontend && \
-          export CYPRESS_CACHE_FOLDER=/app/.cache && \
+          npm install --unsafe-perm=true --allow-root cypress && \
           npm install && npm run build:dev && npm run test && npm run cy:ci"
 
   style_check:
