@@ -145,7 +145,7 @@ jobs:
           --rm -w /neurosynth/neurosynth-frontend \
           neurosynth \
           bash -c "cd /neurosynth/neurosynth-frontend && \
-          npm run cy:install && npm install && npm run build:dev && npm run test && npm run cy:ci"
+          npm install && npm run cy:install && npm run build:dev && npm run test && npm run cy:ci"
 
   style_check:
     runs-on: ubuntu-latest
