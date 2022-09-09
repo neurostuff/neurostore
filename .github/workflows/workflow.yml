@@ -197,7 +197,7 @@ jobs:
       uses: cypress-io/github-action@v4
       with:
         build: npm run build:dev
-        start: npm run start:dev
+        start: npm run start-ci:dev
         browser: chrome
         wait-on: http://localhost:3000
         working-directory: /home/runner/work/neurostore/neurostore/compose/neurosynth-frontend
