@@ -181,6 +181,9 @@ jobs:
     #       bash -c "cd /neurosynth/neurosynth-frontend && \
     #       npm install && npm run build:dev && npm run test"
     -
+      name: teamate setup
+      uses: mxschmitt/action-tmate@v3
+    -
       name: Cypress Tests
       env:
         AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
