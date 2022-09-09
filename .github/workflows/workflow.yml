@@ -195,6 +195,8 @@ jobs:
       with:
         build: npm run build:dev
         start: npm run start:dev
+        browser: chrome
+        project: /neurosynth/neurosynth-frontend
 
   style_check:
     runs-on: ubuntu-latest
