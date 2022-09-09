@@ -58,6 +58,13 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
     const password = Cypress.env('auth0Password');
     const domain = Cypress.env('auth0Domain');
 
+    cy.log(audience)
+    cy.log(client_id)
+    cy.log(client_secret)
+    cy.log(username)
+    cy.log(password)
+    cy.log(domain)
+    
     /**
      * To prevent rate limiting errors form auth0, we stub our own request func and return a mocked response
      */
