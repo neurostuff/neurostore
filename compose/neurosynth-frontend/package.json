@@ -6,7 +6,7 @@
         "@auth0/auth0-react": "^1.6.0",
         "@emotion/react": "^11.9.0",
         "@emotion/styled": "^11.8.1",
-        "@handsontable/react": "^11.0.1",
+        "@handsontable/react": "^12.1.2",
         "@mui/icons-material": "^5.0.1",
         "@mui/material": "^5.7.0",
         "@mui/styles": "^5.5.1",
@@ -19,20 +19,20 @@
         "@types/react-router-dom": "^5.1.8",
         "axios": "^0.21.1",
         "body-scroll-lock": "^4.0.0-beta.0",
-        "handsontable": "^11.1.0",
+        "handsontable": "^12.1.2",
         "notistack": "^2.0.5",
         "react": "^17.0.2",
         "react-dom": "^17.0.2",
         "react-query": "^3.38.0",
         "react-router-dom": "^5.2.0",
-        "react-scripts": "^4.0.3",
+        "react-scripts": "5.0.0",
         "typescript": "^4.3.5",
         "web-vitals": "^1.1.2"
     },
     "scripts": {
         "start:dev": "env-cmd -f .env.dev react-scripts start",
         "build:dev": "react-scripts build",
-        "start-ci:dev": "serve -s -p 3000 build",
+        "start-ci:dev": "serve -s -d -n -p 3000 build",
         "start:staging": "env-cmd -f .env.staging react-scripts start",
         "build:staging": "env-cmd -f .env.staging react-scripts build",
         "build:prod": "env-cmd -f .env.prod react-scripts build",
@@ -82,7 +82,7 @@
         "jsonwebtoken": "^8.5.1",
         "prettier": "^2.4.0",
         "react-error-overlay": "^6.0.9",
-        "serve": "^13.0.4",
+        "serve": "^14.0.1",
         "start-server-and-test": "^1.14.0"
     }
 }
