@@ -182,6 +182,15 @@ jobs:
     #       npm install && npm run build:dev && npm run test"
     -
       name: Cypress Tests
+      env:
+        AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
+        AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET }}
+        AUTH0_BASE_URL: ${{ secrets.AUTH0_BASE_URL }}
+        AUTH0_ACCESS_TOKEN_URL: ${{ secrets.AUTH0_ACCESS_TOKEN_URL }}
+        AUTH0_AUTH_URL: ${{ secrets.AUTH0_AUTH_URL }}
+        REACT_APP_AUTH0_CLIENT_ID: ${{ secrets.REACT_APP_AUTH0_CLIENT_ID }}
+        REACT_APP_AUTH0_DOMAIN: ${{ secrets.REACT_APP_AUTH0_DOMAIN }}
+        REACT_APP_AUTH0_CLIENT_SECRET: ${{ secrets.REACT_APP_AUTH0_CLIENT_SECRET }}
       uses: cypress-io/github-action@v4
       with:
         build: npm run build:dev
@@ -190,9 +199,9 @@ jobs:
         wait-on: http://localhost:3000
         working-directory: /home/runner/work/neurostore/neurostore/compose/neurosynth-frontend
         env:
-          CYPRESS_REACT_APP_AUTH0_CLIENT_SECRET: ${{ secrets.REACT_APP_AUTH0_CLIENT_SECRET }}
-          CYPRESS_REACT_APP_AUTH0_CLIENT_ID: ${{ secrets.REACT_APP_AUTH0_CLIENT_ID }}
-          CYPRESS_REACT_APP_AUTH0_DOMAIN: ${{ secrets.REACT_APP_AUTH0_DOMAIN }}
+          CYPRESS_REACT_APP_AUTH0_CLIENT_SECRET: ${ REACT_APP_AUTH0_CLIENT_SECRET }
+          CYPRESS_REACT_APP_AUTH0_CLIENT_ID: ${ AUTH0_CLIENT_ID }
+          CYPRESS_REACT_APP_AUTH0_DOMAIN: ${ REACT_APP_AUTH0_DOMAIN }
           CYPRESS_REACT_APP_AUTH0_AUDIENCE: localhost
 
   style_check:
