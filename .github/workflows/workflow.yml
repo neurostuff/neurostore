@@ -183,17 +183,17 @@ jobs:
     -
       name: Cypress Tests
       uses: cypress-io/github-action@v4
+      env:
+        CYPRESS_REACT_APP_AUTH0_CLIENT_ID: ${{ secrets.REACT_APP_AUTH0_CLIENT_ID }}
+        CYPRESS_REACT_APP_AUTH0_CLIENT_SECRET: ${{ secrets.REACT_APP_AUTH0_CLIENT_SECRET }}
+        CYPRESS_REACT_APP_AUTH0_DOMAIN: ${{ secrets.REACT_APP_AUTH0_DOMAIN }}
+        CYPRESS_REACT_APP_AUTH0_AUDIENCE: localhost
       with:
         build: npm run build:dev
         start: npm run start-ci:dev
         browser: chrome
         wait-on: http://localhost:3000
         working-directory: /home/runner/work/neurostore/neurostore/compose/neurosynth-frontend
-      env:
-        CYPRESS_REACT_APP_AUTH0_CLIENT_ID: ${{ secrets.REACT_APP_AUTH0_CLIENT_ID }}
-        CYPRESS_REACT_APP_AUTH0_CLIENT_SECRET: ${{ secrets.REACT_APP_AUTH0_CLIENT_SECRET }}
-        CYPRESS_REACT_APP_AUTH0_DOMAIN: ${{ secrets.REACT_APP_AUTH0_DOMAIN }}
-        CYPRESS_REACT_APP_AUTH0_AUDIENCE: localhost
 
   style_check:
     runs-on: ubuntu-latest
