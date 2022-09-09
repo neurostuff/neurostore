@@ -42,7 +42,7 @@
         "cy:e2e-headless-local": "env-cmd -f .env.dev cypress run",
         "cy:e2e-browser": "env-cmd -f .env.dev cypress open -b chrome --e2e",
         "cy:install": "cypress install",
-        "cy:ci": "export DEBUG=start-server-and-test && start-server-and-test start-ci:dev 3000 cy:e2e-headless",
+        "cy:ci": "export DEBUG=start-server-and-test && start-server-and-test start-ci:dev http-get://localhost:3000 cy:e2e-headless",
         "eject": "react-scripts eject"
     },
     "browserslist": {
