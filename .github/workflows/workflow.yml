@@ -16,7 +16,7 @@ jobs:
     -
       name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
-    - 
+    -
       name: Configuration
       run: |
         cp .env.example .env
@@ -72,11 +72,11 @@ jobs:
     -
       name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
-    - 
+    -
       name: Configuration
       run: |
         cp .env.example .env
-    - 
+    -
       name: Build backend
       run: |
         docker-compose build
@@ -85,7 +85,7 @@ jobs:
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
           up -d
-    - 
+    -
       name: Create Test Database
       run: |
         until docker-compose exec -T \
