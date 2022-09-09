@@ -200,7 +200,7 @@ jobs:
         start: npm run start:dev
         browser: chrome
         wait-on: http://localhost:3000
-        working-directory: /neurosynth/neurosynth-frontend
+        working-directory: /home/runner/work/neurostore/neurostore/compose/neurosynth-frontend
 
   style_check:
     runs-on: ubuntu-latest
