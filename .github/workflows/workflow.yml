@@ -1,5 +1,4 @@
 name: Testing Workflow
-
 on: [workflow_dispatch,push]
 
 jobs:
