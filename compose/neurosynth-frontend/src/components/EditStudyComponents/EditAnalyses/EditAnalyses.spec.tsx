@@ -16,7 +16,7 @@ describe('EditAnalyses Component', () => {
 
     beforeEach(() => {
         analyses = mockAnalyses();
-        renderResult = render(<EditAnalyses analyses={analyses} />);
+        renderResult = render(<EditAnalyses studyId="test-id" analyses={analyses} />);
     });
 
     afterAll(() => {
@@ -29,7 +29,7 @@ describe('EditAnalyses Component', () => {
     });
 
     it('should show a no analyses message if there are no analyses', () => {
-        renderResult.rerender(<EditAnalyses analyses={[]} />);
+        renderResult.rerender(<EditAnalyses studyId="test-id" analyses={[]} />);
 
         expect(screen.getByText('No analyses for this study')).toBeInTheDocument();
     });

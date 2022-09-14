@@ -223,9 +223,7 @@ const StudyPage: React.FC = (props) => {
                 </Typography>
                 <Divider />
                 {data?.analyses?.length === 0 ? (
-                    <Box component="span" sx={{ color: 'warning.dark' }}>
-                        No analyses
-                    </Box>
+                    <Box sx={{ color: 'warning.dark', margin: '15px 0 0 15px' }}>No analyses</Box>
                 ) : (
                     /** * The following CSS is applied to make sure that the tab height grows based on
                     the height * of the analysis. * The tab height should expand and match the height if the

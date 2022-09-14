@@ -32,7 +32,9 @@
     "scripts": {
         "start:dev": "env-cmd -f .env.dev react-scripts start",
         "build:dev": "react-scripts build",
+        "build:dev-local": "env-cmd -f .env.dev react-scripts build",
         "start-ci:dev": "serve -s -d -n -p 3000 build",
+        "start-ci:dev-local": "env-cmd -f .env.dev serve -s -d -n -p 3000 build",
         "start:staging": "env-cmd -f .env.staging react-scripts start",
         "build:staging": "env-cmd -f .env.staging react-scripts build",
         "build:prod": "env-cmd -f .env.prod react-scripts build",
