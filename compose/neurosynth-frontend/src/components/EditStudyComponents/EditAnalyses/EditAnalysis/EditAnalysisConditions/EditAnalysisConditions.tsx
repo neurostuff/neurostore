@@ -140,14 +140,14 @@ const EditAnalysisConditions: React.FC<IEditAnalysisConditions> = React.memo((pr
                     {
                         field: 'condition',
                         headerName: 'Conditions',
-                        flex: 2,
+                        flex: 1,
                         editable: false,
                         cellClassName: 'readonly',
                     },
                     {
                         field: 'weight',
                         headerName: 'Weights',
-                        flex: 1,
+                        flex: 2,
                         editable: true,
                         headerAlign: 'left',
                         align: 'left',

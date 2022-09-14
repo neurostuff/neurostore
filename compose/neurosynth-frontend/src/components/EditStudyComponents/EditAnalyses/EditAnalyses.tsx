@@ -1,3 +1,6 @@
+// TODO: fix error that appears when you delete the last analysis
+// TODO: fix error when you try and create an analysis
+
 import { Typography, Box, Tabs, Tab, Divider } from '@mui/material';
 import React, { useState, SyntheticEvent } from 'react';
 import { AnalysisApiResponse } from '../../../utils/api';

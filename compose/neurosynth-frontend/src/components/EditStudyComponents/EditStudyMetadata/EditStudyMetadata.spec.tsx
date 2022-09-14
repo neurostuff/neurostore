@@ -25,11 +25,7 @@ describe('EditStudyMetadata Component', () => {
 
         render(
             <SnackbarProvider>
-                <EditStudyMetadata
-                    studyId={'some-test-id'}
-                    metadata={mockMetadata}
-                    onUpdateStudyMetadata={handleUpdateStudyMetadata}
-                />
+                <EditStudyMetadata studyId={'some-test-id'} metadata={mockMetadata} />
             </SnackbarProvider>
         );
 

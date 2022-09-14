@@ -3,16 +3,13 @@ import EditStudyMetadataStyles from './EditStudyMetadata.styles';
 import EditMetadata from 'components/EditMetadata/EditMetadata';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { IMetadataRowModel } from 'components/EditMetadata';
-import React, { useState, useCallback } from 'react';
-import { AxiosError } from 'axios';
-import API from 'utils/api';
-import useIsMounted from 'hooks/useIsMounted';
-import { useSnackbar } from 'notistack';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useUpdateStudy } from 'hooks';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 
 export interface IEditStudyMetadata {
     studyId: string;
     metadata: any;
-    onUpdateStudyMetadata: (metadata: any) => void;
 }
 
 export const arrayToMetadata = (arr: IMetadataRowModel[]): { [key: string]: any } => {
@@ -35,29 +32,32 @@ export const metadataToArray = (
 };
 
 const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
-    const { enqueueSnackbar } = useSnackbar();
+    const { isLoading, mutate } = useUpdateStudy();
     const [updatedEnabled, setUpdateEnabled] = useState(false);
-    const isMountedRef = useIsMounted();
 
-    const [metadataArr, setMetadataArr] = useState<IMetadataRowModel[]>(
-        metadataToArray(props.metadata)
-    );
+    const [metadataArr, setMetadataArr] = useState<IMetadataRowModel[]>([]);
 
-    const handleOnSave = async (event: React.MouseEvent) => {
+    useEffect(() => {
+        if (props.metadata) {
+            setMetadataArr(metadataToArray(props.metadata));
+        }
+    }, [props.metadata]);
+
+    const handleOnSave = () => {
         const transformedMetadata = arrayToMetadata(metadataArr);
-
-        API.NeurostoreServices.StudiesService.studiesIdPut(props.studyId, {
-            metadata: transformedMetadata,
-        })
-            .then((_res) => {
-                enqueueSnackbar('study updated successfully', { variant: 'success' });
-                props.onUpdateStudyMetadata(transformedMetadata);
-                if (isMountedRef.current) setUpdateEnabled(false);
-            })
-            .catch((err: Error | AxiosError) => {
-                enqueueSnackbar('there was an error updating the study', { variant: 'error' });
-                console.error(err.message);
-            });
+        mutate(
+            {
+                studyId: props.studyId,
+                study: {
+                    metadata: transformedMetadata,
+                },
+            },
+            {
+                onSuccess: () => {
+                    setUpdateEnabled(false);
+                },
+            }
+        );
     };
 
     const handleMetadataRowEdit = useCallback((updatedRow: IMetadataRowModel) => {
@@ -137,15 +137,15 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
                     metadata={metadataArr}
                 />
             )}
-            <Button
+            <LoadingButton
                 disabled={!updatedEnabled}
                 onClick={handleOnSave}
+                isLoading={isLoading}
                 color="success"
+                text="Save"
                 variant="contained"
                 sx={{ ...EditStudyMetadataStyles.button, marginRight: '15px' }}
-            >
-                Save
-            </Button>
+            />
             <Button
                 disabled={!updatedEnabled}
                 color="secondary"

@@ -1,12 +1,10 @@
 import { TextField, Button, Typography, Box } from '@mui/material';
-import { AxiosError } from 'axios';
 import React, { ChangeEvent, useState } from 'react';
-import { useIsMounted } from 'hooks';
-import API from 'utils/api';
-import NeurosynthAccordion from '../../NeurosynthAccordion/NeurosynthAccordion';
-import EditStudyDetailsStyles from './EditStudyDetails.styles';
-import EditStudyMetadataStyles from '../EditStudyMetadata/EditStudyMetadata.styles';
-import { useSnackbar } from 'notistack';
+import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
+import EditStudyDetailsStyles from 'components/EditStudyComponents/EditStudyDetails/EditStudyDetails.styles';
+import EditStudyMetadataStyles from 'components/EditMetadata/EditMetadata.styles';
+import { useUpdateStudy } from 'hooks';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 
 export interface IEditStudyDetails {
     studyId: string;
@@ -24,29 +22,12 @@ const textFieldInputProps = {
 };
 
 const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
-    const { studyId, name, authors, publication, doi, description } = props;
-    const { enqueueSnackbar } = useSnackbar();
     const [updatedEnabled, setUpdateEnabled] = useState(false);
-    const isMountedRef = useIsMounted();
-
+    const { isLoading, mutate } = useUpdateStudy();
     // save original details for revert behavior
-    const [originalDetails, setOriginalDetails] = useState<IEditStudyDetails>({
-        studyId: studyId,
-        name: name,
-        authors: authors,
-        publication: publication,
-        doi: doi,
-        description: description,
-    });
+    const [originalDetails, setOriginalDetails] = useState<IEditStudyDetails>({ ...props });
 
-    const [details, setDetails] = useState<IEditStudyDetails>({
-        studyId: studyId,
-        name: name,
-        authors: authors,
-        publication: publication,
-        doi: doi,
-        description: description,
-    });
+    const [details, setDetails] = useState<IEditStudyDetails>({ ...props });
 
     const handleOnEdit = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
         setDetails((prevState) => ({
@@ -56,25 +37,25 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
         setUpdateEnabled(true);
     };
 
-    const handleOnSave = async (_event: React.MouseEvent) => {
-        API.NeurostoreServices.StudiesService.studiesIdPut(props.studyId, {
-            name: details.name,
-            description: details.description,
-            authors: details.authors,
-            publication: details.publication,
-            doi: details.doi,
-        })
-            .then((_res) => {
-                enqueueSnackbar('study updated successfully', { variant: 'success' });
-                if (isMountedRef.current) {
+    const handleOnSave = () => {
+        mutate(
+            {
+                studyId: props.studyId,
+                study: {
+                    name: details.name,
+                    authors: details.authors,
+                    publication: details.publication,
+                    doi: details.doi,
+                    description: details.description,
+                },
+            },
+            {
+                onSuccess: () => {
                     setUpdateEnabled(false);
                     setOriginalDetails({ ...details });
-                }
-            })
-            .catch((err: Error | AxiosError) => {
-                enqueueSnackbar('there was an error updating the study', { variant: 'error' });
-                console.error(err.message);
-            });
+                },
+            }
+        );
     };
 
     const handleRevertChanges = (event: React.MouseEvent) => {
@@ -146,15 +127,15 @@ const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
                 name="description"
                 onChange={handleOnEdit}
             />
-            <Button
+            <LoadingButton
                 disabled={!updatedEnabled}
+                isLoading={isLoading}
                 onClick={handleOnSave}
                 color="success"
                 variant="contained"
-                sx={[EditStudyDetailsStyles.button, { marginRight: '15px' }]}
-            >
-                Save
-            </Button>
+                text="Save"
+                sx={{ ...EditStudyDetailsStyles.button, marginRight: '15px' }}
+            />
             <Button
                 disabled={!updatedEnabled}
                 onClick={handleRevertChanges}

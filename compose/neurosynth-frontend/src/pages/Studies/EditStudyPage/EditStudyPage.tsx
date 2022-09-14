@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import BackButton from 'components/Buttons/BackButton/BackButton';
 import EditAnalyses from 'components/EditStudyComponents/EditAnalyses/EditAnalyses';
@@ -10,6 +10,7 @@ import { useGetStudyById, useGuard } from 'hooks';
 import { AnalysisApiResponse } from 'utils/api';
 import EditStudyPageStyles from './EditStudyPage.styles';
 import { useAuth0 } from '@auth0/auth0-react';
+import { AnalysisReturn } from 'neurostore-typescript-sdk';
 
 interface IStudyEdit {
     name: string;
@@ -23,12 +24,10 @@ interface IStudyEdit {
 
 const EditStudyPage = () => {
     // study and metadata edits are updated and stored in this state
-    const [study, setStudy] = useState<IStudyEdit | undefined>(undefined);
+    // const [study, setStudy] = useState<IStudyEdit | undefined>(undefined);
     const params: { studyId: string } = useParams();
     const { user, isAuthenticated } = useAuth0();
     const { isLoading, data, isError } = useGetStudyById(params.studyId || '');
-    console.log(params.studyId);
-    console.log(data?.id);
 
     const thisUserOwnsthisStudyset = (data?.user || undefined) === (user?.sub || null);
 
@@ -37,30 +36,6 @@ const EditStudyPage = () => {
         isAuthenticated ? 'you can only edit studies that you have cloned' : undefined,
         !isLoading && !thisUserOwnsthisStudyset
     );
-
-    useEffect(() => {
-        if (data) {
-            setStudy({
-                name: data.name || '',
-                authors: data.authors || '',
-                publication: data.publication || '',
-                doi: data.doi || '',
-                description: data.description || '',
-                metadata: data.metadata ? data.metadata : {},
-                analyses: data.analyses as AnalysisApiResponse[] | undefined,
-            });
-        }
-    }, [data]);
-
-    const handleUpdateStudyMetadata = useCallback((updatedMetadata: any) => {
-        setStudy((prevState) => {
-            if (!prevState) return undefined;
-            return {
-                ...prevState,
-                metadata: updatedMetadata,
-            };
-        });
-    }, []);
 
     return (
         <StateHandlerComponent isLoading={isLoading} isError={isError}>
@@ -74,32 +49,24 @@ const EditStudyPage = () => {
                 />
             </Box>
 
-            {study && (
-                <>
-                    <Box sx={{ marginBottom: '15px', padding: '0 10px' }}>
-                        <EditStudyDetails
-                            studyId={params.studyId}
-                            name={study.name}
-                            description={study.description}
-                            authors={study.authors}
-                            doi={study.doi}
-                            publication={study.publication}
-                        />
-                    </Box>
+            <Box sx={{ marginBottom: '15px', padding: '0 10px' }}>
+                {/* <EditStudyDetails
+                    studyId={params.studyId}
+                    name={data?.name || ''}
+                    description={data?.description || ''}
+                    authors={data?.authors || ''}
+                    doi={data?.doi || ''}
+                    publication={data?.publication || ''}
+                /> */}
+            </Box>
 
-                    <Box sx={{ marginBottom: '15px', padding: '0 10px' }}>
-                        <EditStudyMetadata
-                            onUpdateStudyMetadata={handleUpdateStudyMetadata}
-                            metadata={study.metadata}
-                            studyId={params.studyId}
-                        />
-                    </Box>
+            <Box sx={{ marginBottom: '15px', padding: '0 10px' }}>
+                <EditStudyMetadata metadata={data?.metadata || {}} studyId={params.studyId} />
+            </Box>
 
-                    <Box sx={{ marginBottom: '15px', padding: '0 10px', marginLeft: '15px' }}>
-                        <EditAnalyses analyses={study.analyses} />
-                    </Box>
-                </>
-            )}
+            {/* <Box sx={{ marginBottom: '15px', padding: '0 10px', marginLeft: '15px' }}>
+                <EditAnalyses analyses={data?.analyses as AnalysisReturn[]} />
+            </Box> */}
         </StateHandlerComponent>
     );
 };
