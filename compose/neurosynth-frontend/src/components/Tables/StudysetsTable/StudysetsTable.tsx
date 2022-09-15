@@ -1,11 +1,11 @@
 import React from 'react';
 import { useHistory } from 'react-router';
 import DisplayValuesTable from 'components/Tables/DisplayValuesTable/DisplayValuesTable';
-import { StudysetsApiResponse } from '../../../utils/api';
 import { IDisplayValuesTableModel } from '../DisplayValuesTable';
+import { StudysetReturn } from 'neurostore-typescript-sdk';
 
 export interface IStudysetsTable {
-    studysets: StudysetsApiResponse[];
+    studysets: StudysetReturn[];
     tableSize?: 'small' | 'medium';
     isLoading?: boolean;
 }

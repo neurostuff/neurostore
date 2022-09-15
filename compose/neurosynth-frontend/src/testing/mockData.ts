@@ -1,8 +1,15 @@
 import { MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
-import { StudysetReturn, StudyReturn, PointReturn } from 'neurostore-typescript-sdk';
-import { AnalysisApiResponse, AnnotationsApiResponse, ConditionApiResponse } from 'utils/api';
+import {
+    StudysetReturn,
+    StudyReturn,
+    PointReturn,
+    ConditionReturn,
+    AnalysisReturn,
+    Annotation,
+    ReadOnly,
+} from 'neurostore-typescript-sdk';
 
-const mockConditions: () => ConditionApiResponse[] = () => [
+const mockConditions: () => ConditionReturn[] = () => [
     {
         name: 'mock-condition-name-1',
         description: 'mock-condition-description-1',
@@ -63,7 +70,7 @@ const mockPoints: () => PointReturn[] = () => [
     },
 ];
 
-const mockAnalyses: () => AnalysisApiResponse[] = () => [
+const mockAnalyses: () => AnalysisReturn[] = () => [
     {
         conditions: mockConditions(),
         created_at: '2021-11-10T19:46:43.510565+00:00',
@@ -126,7 +133,7 @@ const mockStudysets: () => StudysetReturn[] = () => [
     },
 ];
 
-const mockAnnotations: () => AnnotationsApiResponse[] = () => [
+const mockAnnotations: () => (Annotation & ReadOnly)[] = () => [
     {
         description: 'this is an annotation',
         user: 'github|26612023',

@@ -1,10 +1,10 @@
 import DisplayValuesTable from 'components/Tables/DisplayValuesTable/DisplayValuesTable';
-import { AnnotationsApiResponse } from '../../../utils/api';
 import { IDisplayValuesTableModel } from '../DisplayValuesTable';
 import { useHistory } from 'react-router';
 import { useAuth0 } from '@auth0/auth0-react';
+import { Annotation, ReadOnly } from 'neurostore-typescript-sdk';
 
-const AnnotationsTable: React.FC<{ annotations: AnnotationsApiResponse[]; studysetId: string }> = (
+const AnnotationsTable: React.FC<{ annotations: (Annotation & ReadOnly)[]; studysetId: string }> = (
     props
 ) => {
     const history = useHistory();
@@ -26,21 +26,21 @@ const AnnotationsTable: React.FC<{ annotations: AnnotationsApiResponse[]; studys
         onValueSelected: handleRowClick,
         paper: true,
         rowData: props.annotations.map((annotation) => ({
-            uniqueKey: annotation.id as string,
+            uniqueKey: annotation?.id as string,
             columnValues: [
                 {
-                    value: annotation.name ? annotation.name : 'No name',
-                    shouldHighlightNoData: !annotation.name,
+                    value: annotation?.name ? annotation?.name : 'No name',
+                    shouldHighlightNoData: !annotation?.name,
                 },
                 {
-                    value: annotation.description ? annotation.description : 'No description',
-                    shouldHighlightNoData: !annotation.description,
+                    value: annotation?.description ? annotation?.description : 'No description',
+                    shouldHighlightNoData: !annotation?.description,
                 },
                 {
-                    value: annotation.user
-                        ? annotation.user === user?.sub
+                    value: annotation?.user
+                        ? annotation?.user === user?.sub
                             ? 'Me'
-                            : annotation.user
+                            : annotation?.user
                         : 'Neurosynth',
                 },
             ],

@@ -10,18 +10,16 @@ import {
 import { useEffect, useState } from 'react';
 import DisplayImagesTableRow from './DisplayImageTableRow/DisplayImageTableRow';
 import { DisplayImagesTableModel } from '.';
-import { ImageApiResponse } from '../../../utils/api';
+import { ImageReturn } from 'neurostore-typescript-sdk';
 
 const DisplayImagesTable: React.FC<DisplayImagesTableModel> = (props) => {
-    const [currentSelectedImage, setCurrentSelectedImage] = useState<
-        ImageApiResponse | undefined
-    >();
+    const [currentSelectedImage, setCurrentSelectedImage] = useState<ImageReturn | undefined>();
 
     useEffect(() => {
         setCurrentSelectedImage(props.initialSelectedImage);
     }, [props.initialSelectedImage]);
 
-    const handleRowSelect = (selectedImage: ImageApiResponse | undefined) => {
+    const handleRowSelect = (selectedImage: ImageReturn | undefined) => {
         setCurrentSelectedImage(selectedImage);
         props.onSelectImage(selectedImage);
     };
