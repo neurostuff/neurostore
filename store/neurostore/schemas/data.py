@@ -161,9 +161,15 @@ class AnalysisConditionSchema(BaseDataSchema):
 
 
 class StudysetStudySchema(BaseDataSchema):
+    studyset_id = fields.String()
+    study_id = fields.String()
 
     @pre_load
     def process_values(self, data, **kwargs):
+        pass
+
+    @pre_dump
+    def filter_values(self, data, **kwargs):
         pass
 
 
@@ -207,14 +213,25 @@ class AnalysisSchema(BaseDataSchema):
         return data
 
 
+class StudySetStudyInfoSchema(Schema):
+    id = fields.String(dump_only=True)
+    name = fields.String(attribute="studyset.name", dump_only=True)
+    description = fields.String(attribute="studyset.description", dump_only=True)
+
+
 class StudySchema(BaseDataSchema):
 
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
-
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
     analyses = StringOrNested(AnalysisSchema, many=True)
     source = fields.String(dump_only=True, metadata={'db_only': True}, allow_none=True)
     source_id = fields.String(dump_only=True, metadata={'db_only': True}, allow_none=True)
+    studysets = fields.Nested(
+        "StudySetStudyInfoSchema",
+        dump_only=True,
+        metadata={'db_only': True},
+        many=True
+    )
     source_updated_at = fields.DateTime(
         dump_only=True, metadata={'db_only': True}, allow_none=True
     )
