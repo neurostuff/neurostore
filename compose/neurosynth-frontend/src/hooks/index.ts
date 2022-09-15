@@ -28,6 +28,7 @@ import useDeleteAnnotation from './requests/useDeleteAnnotation';
 import useGetStudysetById from './requests/useGetStudysetById';
 import useCreateAnnotation from './requests/useCreateAnnotation';
 import useDeleteStudyset from './requests/useDeleteStudyset';
+import useCreateStudy from './requests/useCreateStudy';
 
 export {
     useIsMounted,
@@ -39,6 +40,7 @@ export {
     useGetStudies,
     useGetStudyById,
     useUpdateStudy,
+    useCreateStudy,
     // META-ANALYSES
     useCreateMetaAnalysis,
     useGetMetaAnalyses,

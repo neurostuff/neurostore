@@ -1,16 +1,17 @@
-import { render, screen } from '@testing-library/react';
+import { render, RenderResult, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useUpdateStudy } from 'hooks';
+import { Study } from 'neurostore-typescript-sdk';
 import { SnackbarProvider } from 'notistack';
 import { act } from 'react-dom/test-utils';
-import API from 'utils/api';
 import EditStudyMetadata from './EditStudyMetadata';
 
 jest.mock('@auth0/auth0-react');
 jest.mock('utils/api');
+jest.mock('hooks');
 
 describe('EditStudyMetadata Component', () => {
-    const handleUpdateStudyMetadata = jest.fn();
-
+    let renderResult: RenderResult;
     const mockMetadata: { [key: string]: any } = {
         firstTestKey: 'some value',
         secondTestKey: 12345,
@@ -19,17 +20,11 @@ describe('EditStudyMetadata Component', () => {
     };
 
     beforeEach(() => {
-        (API.NeurostoreServices.StudiesService.studiesIdPut as jest.Mock).mockReturnValue(
-            Promise.resolve({})
-        );
+        useUpdateStudy().isLoading = false;
 
-        render(
+        renderResult = render(
             <SnackbarProvider>
-                <EditStudyMetadata
-                    studyId={'some-test-id'}
-                    metadata={mockMetadata}
-                    onUpdateStudyMetadata={handleUpdateStudyMetadata}
-                />
+                <EditStudyMetadata studyId={'some-test-id'} metadata={mockMetadata} />
             </SnackbarProvider>
         );
 
@@ -72,16 +67,21 @@ describe('EditStudyMetadata Component', () => {
             userEvent.click(saveButton);
         });
 
-        expect(API.NeurostoreServices.StudiesService.studiesIdPut).toHaveBeenCalledWith(
-            'some-test-id',
+        expect(useUpdateStudy().mutate).toHaveBeenCalledWith(
             {
-                metadata: {
-                    X: '',
-                    firstTestKey: 'some value',
-                    secondTestKey: 12345,
-                    thirdTestKey: false,
-                    fourthTestKey: null,
+                studyId: 'some-test-id',
+                study: {
+                    metadata: {
+                        X: '',
+                        firstTestKey: 'some value',
+                        secondTestKey: 12345,
+                        thirdTestKey: false,
+                        fourthTestKey: null,
+                    },
                 },
+            },
+            {
+                onSuccess: expect.anything(),
             }
         );
     });
@@ -111,15 +111,20 @@ describe('EditStudyMetadata Component', () => {
             userEvent.click(saveButton);
         });
 
-        expect(API.NeurostoreServices.StudiesService.studiesIdPut).toHaveBeenCalledWith(
-            'some-test-id',
+        expect(useUpdateStudy().mutate).toHaveBeenCalledWith(
             {
-                metadata: {
-                    firstTestKey: 'some value and more text',
-                    secondTestKey: 12345,
-                    thirdTestKey: false,
-                    fourthTestKey: null,
+                studyId: 'some-test-id',
+                study: {
+                    metadata: {
+                        firstTestKey: 'some value and more text',
+                        secondTestKey: 12345,
+                        thirdTestKey: false,
+                        fourthTestKey: null,
+                    },
                 },
+            },
+            {
+                onSuccess: expect.anything(),
             }
         );
     });
@@ -138,14 +143,19 @@ describe('EditStudyMetadata Component', () => {
             userEvent.click(saveButton);
         });
 
-        expect(API.NeurostoreServices.StudiesService.studiesIdPut).toHaveBeenCalledWith(
-            'some-test-id',
+        expect(useUpdateStudy().mutate).toHaveBeenCalledWith(
             {
-                metadata: {
-                    secondTestKey: 12345,
-                    thirdTestKey: false,
-                    fourthTestKey: null,
+                studyId: 'some-test-id',
+                study: {
+                    metadata: {
+                        secondTestKey: 12345,
+                        thirdTestKey: false,
+                        fourthTestKey: null,
+                    },
                 },
+            },
+            {
+                onSuccess: expect.anything(),
             }
         );
     });
@@ -164,13 +174,23 @@ describe('EditStudyMetadata Component', () => {
             userEvent.click(saveButton);
         });
 
-        expect(handleUpdateStudyMetadata).toHaveBeenCalledWith({
-            X: '',
-            firstTestKey: 'some value',
-            secondTestKey: 12345,
-            thirdTestKey: false,
-            fourthTestKey: null,
-        });
+        expect(useUpdateStudy().mutate).toHaveBeenCalledWith(
+            {
+                studyId: 'some-test-id',
+                study: {
+                    metadata: {
+                        X: '',
+                        firstTestKey: 'some value',
+                        secondTestKey: 12345,
+                        thirdTestKey: false,
+                        fourthTestKey: null,
+                    },
+                },
+            },
+            {
+                onSuccess: expect.anything(),
+            }
+        );
     });
 
     it('should revert changes when the Cancel button is clicked', () => {
@@ -193,6 +213,17 @@ describe('EditStudyMetadata Component', () => {
 
         addedKVP = screen.queryByText('X');
         expect(addedKVP).not.toBeInTheDocument();
+    });
+
+    it('should show the loader when the save button is pressed', () => {
+        useUpdateStudy().isLoading = true;
+        renderResult.rerender(
+            <SnackbarProvider>
+                <EditStudyMetadata studyId={'some-test-id'} metadata={mockMetadata} />
+            </SnackbarProvider>
+        );
+
+        expect(screen.getByRole('progressbar')).toBeInTheDocument();
     });
 
     describe('edit study metadata unsaved changes', () => {
@@ -224,6 +255,15 @@ describe('EditStudyMetadata Component', () => {
         });
 
         it('should be removed on save', async () => {
+            (useUpdateStudy().mutate as jest.Mock).mockImplementation(
+                (
+                    _studyArg: { studyId: string; study: Partial<Study> },
+                    optional: { onSuccess: () => void }
+                ) => {
+                    optional.onSuccess();
+                }
+            );
+
             const addMetadataKeyTextbox = screen.getByPlaceholderText('New metadata key');
             userEvent.type(addMetadataKeyTextbox, 'X');
 

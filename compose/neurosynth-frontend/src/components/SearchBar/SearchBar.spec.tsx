@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { SearchBy, SearchCriteria } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
+import { SearchBy } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
 import SearchBar from './SearchBar';
 
 describe('SearchBar Component', () => {

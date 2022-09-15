@@ -1,14 +1,19 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, RenderResult, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import EditStudyDetails, { IEditStudyDetails } from './EditStudyDetails';
-import API from 'utils/api';
 import { SnackbarProvider } from 'notistack';
+import { useUpdateStudy } from 'hooks';
+import { Study } from 'neurostore-typescript-sdk';
 
-jest.mock('utils/api');
 jest.mock('hooks');
 
 describe('EditStudyDetails Component', () => {
     let mockStudyDetails: IEditStudyDetails;
+    let renderResult: RenderResult;
+
+    afterAll(() => {
+        jest.clearAllMocks();
+    });
 
     beforeEach(() => {
         mockStudyDetails = {
@@ -20,7 +25,7 @@ describe('EditStudyDetails Component', () => {
             publication: 'some-test-publication',
         };
 
-        render(
+        renderResult = render(
             <SnackbarProvider>
                 <EditStudyDetails {...mockStudyDetails} />
             </SnackbarProvider>
@@ -29,10 +34,6 @@ describe('EditStudyDetails Component', () => {
         // open accordion
         const title = screen.getByText('Edit Study Details');
         userEvent.click(title);
-    });
-
-    afterAll(() => {
-        jest.clearAllMocks();
     });
 
     it('should render', () => {
@@ -111,14 +112,19 @@ describe('EditStudyDetails Component', () => {
             userEvent.click(saveButton);
         });
 
-        expect(API.NeurostoreServices.StudiesService.studiesIdPut).toHaveBeenCalledWith(
-            'some-test-id',
+        expect(useUpdateStudy().mutate).toHaveBeenCalledWith(
             {
-                name: mockStudyDetails.name,
-                description: mockStudyDetails.description + 'E',
-                authors: mockStudyDetails.authors,
-                publication: mockStudyDetails.publication,
-                doi: mockStudyDetails.doi,
+                studyId: 'some-test-id',
+                study: {
+                    name: mockStudyDetails.name,
+                    description: mockStudyDetails.description + 'E',
+                    authors: mockStudyDetails.authors,
+                    publication: mockStudyDetails.publication,
+                    doi: mockStudyDetails.doi,
+                },
+            },
+            {
+                onSuccess: expect.anything(),
             }
         );
     });
@@ -147,7 +153,28 @@ describe('EditStudyDetails Component', () => {
         expect(screen.getByDisplayValue(mockStudyDetails.authors)).toBeInTheDocument();
     });
 
+    it('should not indicate unsaved changes when the Cancel button is clicked', () => {
+        // mock a type event in order to enable the cancel button
+        let descriptionTextbox = screen.getByDisplayValue(mockStudyDetails.description);
+        userEvent.type(descriptionTextbox, 'E');
+
+        const revertChangesButton = screen.getByRole('button', { name: 'Cancel' });
+        userEvent.click(revertChangesButton);
+
+        const unsavedChangesText = screen.queryByText('unsaved changes');
+        expect(unsavedChangesText).not.toBeInTheDocument();
+    });
+
     it('should not indicate save changes after we call the API and update', async () => {
+        (useUpdateStudy().mutate as jest.Mock).mockImplementation(
+            (
+                _studyArg: { studyId: string; study: Partial<Study> },
+                optional: { onSuccess: () => void }
+            ) => {
+                optional.onSuccess();
+            }
+        );
+
         const descriptionTextbox = screen.getByDisplayValue(mockStudyDetails.description);
         userEvent.type(descriptionTextbox, 'E');
 
@@ -161,15 +188,19 @@ describe('EditStudyDetails Component', () => {
         expect(saveChangesText).not.toBeInTheDocument();
     });
 
-    it('should not indicate unsaved changes when the Cancel button is clicked', () => {
-        // mock a type event in order to enable the cancel button
-        let descriptionTextbox = screen.getByDisplayValue(mockStudyDetails.description);
-        userEvent.type(descriptionTextbox, 'E');
+    it('should show a loading icon on the save button', async () => {
+        useUpdateStudy().isLoading = true;
 
-        const revertChangesButton = screen.getByRole('button', { name: 'Cancel' });
-        userEvent.click(revertChangesButton);
+        /**
+         * this component is memoized, so we need to change the props in order to ensure that the
+         * component rerenders and the above isLoading value is updated within the component
+         */
+        renderResult.rerender(
+            <SnackbarProvider>
+                <EditStudyDetails {...mockStudyDetails} authors="some new author" />
+            </SnackbarProvider>
+        );
 
-        const unsavedChangesText = screen.queryByText('unsaved changes');
-        expect(unsavedChangesText).not.toBeInTheDocument();
+        expect(screen.getByRole('progressbar')).toBeInTheDocument();
     });
 });

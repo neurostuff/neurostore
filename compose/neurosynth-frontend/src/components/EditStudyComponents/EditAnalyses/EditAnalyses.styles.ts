@@ -4,7 +4,7 @@ const EditAnalysesStyles: Style = {
     matchingSibling: {
         display: 'flex',
         flexDirection: 'column',
-        minHeight: '300px',
+        minHeight: '400px',
     },
     heightDefiningSibling: {
         width: '100%',

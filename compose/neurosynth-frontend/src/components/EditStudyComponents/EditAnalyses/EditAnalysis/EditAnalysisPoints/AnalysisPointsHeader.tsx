@@ -68,7 +68,7 @@ const AnalysisPointsHeader: React.FC<IAnalysisPointsHeader> = (props) => {
     return (
         <Box
             sx={{
-                height: '70px',
+                height: '69px',
                 borderBottom: '1px solid lightgray',
                 display: 'flex',
                 justifyContent: 'space-between',
