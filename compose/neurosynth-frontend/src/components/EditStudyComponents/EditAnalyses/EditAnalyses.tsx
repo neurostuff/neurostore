@@ -1,5 +1,3 @@
-// TODO: fix error that appears when you delete the last analysis
-
 import { Typography, Box, Tabs, Tab, Divider } from '@mui/material';
 import React, { useState, SyntheticEvent, useEffect } from 'react';
 import CreateDetailsDialog from '../../Dialogs/CreateDetailsDialog/CreateDetailsDialog';
@@ -8,7 +6,6 @@ import EditAnalysis from './EditAnalysis/EditAnalysis';
 import AddIcon from '@mui/icons-material/Add';
 import { useCreateAnalysis } from 'hooks';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import { useParams } from 'react-router-dom';
 import { AnalysisReturn } from 'neurostore-typescript-sdk';
 
 const EditAnalyses: React.FC<{ analyses: AnalysisReturn[] | undefined; studyId: string }> =
@@ -17,7 +14,6 @@ const EditAnalyses: React.FC<{ analyses: AnalysisReturn[] | undefined; studyId: 
         const [selectedAnalysis, setSelectedAnalysis] = useState(0);
         const [createDetailsDialogIsOpen, setCreateDetailsDialogIsOpen] = useState(false);
 
-        const params: { studyId: string } = useParams();
         const { isLoading, mutate } = useCreateAnalysis();
 
         // we need to cache the analyses into an intermediate state in order to make sure that we do a check first
@@ -39,14 +35,11 @@ const EditAnalyses: React.FC<{ analyses: AnalysisReturn[] | undefined; studyId: 
         };
 
         const handleCreateAnalysis = (name: string, description: string) => {
-            mutate(
-                {
-                    name,
-                    description,
-                    study: params.studyId,
-                },
-                {}
-            );
+            mutate({
+                name,
+                description,
+                study: props.studyId,
+            });
         };
 
         const hasAnalyses = !!analyses && analyses.length > 0;

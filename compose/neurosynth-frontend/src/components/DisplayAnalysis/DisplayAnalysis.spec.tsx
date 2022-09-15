@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import DisplayAnalysis from './DisplayAnalysis';
-import { AnalysisApiResponse, ImageApiResponse } from '../../utils/api';
+import { AnalysisReturn, ImageReturn } from 'neurostore-typescript-sdk';
 
 jest.mock('../Visualizer/Visualizer');
 jest.mock('../Tables/DisplayValuesTable/DisplayValuesTable');
@@ -18,7 +18,7 @@ describe('DisplayAnalysis Component', () => {
     });
 
     it('should not render with the visualizer when no images are present', () => {
-        const mockAnalysis: AnalysisApiResponse = {
+        const mockAnalysis: AnalysisReturn = {
             conditions: [],
             created_at: '2021-10-25T10:37:20.237634+00:00',
             description: 'FSL5.0',
@@ -38,7 +38,7 @@ describe('DisplayAnalysis Component', () => {
     });
 
     it('should pass the correct image in the visualizer when there is only one image', () => {
-        const mockAnalysis: AnalysisApiResponse = {
+        const mockAnalysis: AnalysisReturn = {
             conditions: [],
             created_at: '2021-10-25T10:37:20.237634+00:00',
             description: 'FSL5.0',
@@ -74,7 +74,7 @@ describe('DisplayAnalysis Component', () => {
 
         render(<DisplayAnalysis {...mockAnalysis} />);
 
-        const mockImages = mockAnalysis.images as ImageApiResponse[];
+        const mockImages = mockAnalysis.images as ImageReturn[];
 
         const imageURL = screen.getByTestId('imageURL');
         const fileName = screen.getByTestId('fileName');
@@ -90,7 +90,7 @@ describe('DisplayAnalysis Component', () => {
     });
 
     it('should select the first image that has a T value type when there are multiple images', () => {
-        const mockAnalysis: AnalysisApiResponse = {
+        const mockAnalysis: AnalysisReturn = {
             conditions: [
                 {
                     created_at: '2021-10-25T10:27:54.741936+00:00',
@@ -153,7 +153,7 @@ describe('DisplayAnalysis Component', () => {
 
         render(<DisplayAnalysis {...mockAnalysis} />);
 
-        const mockImages = mockAnalysis.images as ImageApiResponse[];
+        const mockImages = mockAnalysis.images as ImageReturn[];
 
         const imageURL = screen.getByTestId('imageURL');
         const fileName = screen.getByTestId('fileName');

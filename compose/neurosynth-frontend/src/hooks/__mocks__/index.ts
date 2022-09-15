@@ -66,7 +66,6 @@ const useCreateStudyset = jest.fn().mockReturnValue({
     // isLoading: false,
     // isError: false,
     // mutate: jest.fn(),
-    blahblah: 12345,
     isLoading: false,
     isError: false,
     mutate: jest.fn(),
@@ -75,6 +74,12 @@ const useCreateStudyset = jest.fn().mockReturnValue({
 const useUpdateStudyset = jest.fn().mockReturnValue({
     isLoading: false,
     isError: false,
+    mutate: jest.fn(),
+});
+
+const useUpdateStudy = jest.fn().mockReturnValue({
+    isLoading: false,
+    someTest: 'test',
     mutate: jest.fn(),
 });
 
@@ -104,4 +109,5 @@ export {
     useUpdateStudyset,
     useCreateStudyset,
     useGetStudysets,
+    useUpdateStudy,
 };

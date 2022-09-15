@@ -1,13 +1,13 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { StudysetReturn } from 'neurostore-typescript-sdk';
 import { Router } from 'react-router-dom';
-import { StudysetsApiResponse } from '../../../utils/api';
 import StudysetsTable from './StudysetsTable';
 
 jest.mock('../DisplayValuesTable/DisplayValuesTable');
 
 describe('StudysetsTable', () => {
-    const mockStudysets: StudysetsApiResponse[] = [
+    const mockStudysets: StudysetReturn[] = [
         {
             created_at: '2021-12-14T05:05:45.722157+00:00',
             description: 'test-description-1',
@@ -32,7 +32,7 @@ describe('StudysetsTable', () => {
         },
     ];
 
-    const mockStudysetsNoInfo: StudysetsApiResponse[] = [
+    const mockStudysetsNoInfo: StudysetReturn[] = [
         {
             created_at: '2021-12-14T05:05:45.722157+00:00',
             description: null,
@@ -97,7 +97,7 @@ describe('StudysetsTable', () => {
     });
 
     it('should show 1 study', () => {
-        const mockDataWithOneStudy: StudysetsApiResponse[] = [
+        const mockDataWithOneStudy: StudysetReturn[] = [
             {
                 created_at: '2021-12-14T05:05:45.722157+00:00',
                 description: null,
@@ -121,7 +121,7 @@ describe('StudysetsTable', () => {
     });
 
     it('should show multiple studies', () => {
-        const mockDataWithOneStudy: StudysetsApiResponse[] = [
+        const mockDataWithOneStudy: StudysetReturn[] = [
             {
                 created_at: '2021-12-14T05:05:45.722157+00:00',
                 description: null,

@@ -1,11 +1,11 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { act, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Router } from 'react-router-dom';
 import { StudiesTable } from '..';
 import { MockThemeProvider } from 'testing/helpers';
-import { StudyApiResponse } from 'utils/api';
 import { SnackbarProvider } from 'notistack';
+import { StudyReturn } from 'neurostore-typescript-sdk';
 
 jest.mock('@auth0/auth0-react');
 jest.mock('utils/api');
@@ -20,7 +20,7 @@ describe('StudiesTable Component', () => {
         listen: jest.fn(),
     };
 
-    const mockStudies: StudyApiResponse[] = [
+    const mockStudies: StudyReturn[] = [
         {
             analyses: ['5CgFrbqVsKsH', '4TType6JzACT', '3qgrMH6Etutw'],
             authors:
@@ -59,7 +59,7 @@ describe('StudiesTable Component', () => {
         },
     ];
 
-    const mockStudiesNoInfo: StudyApiResponse[] = [
+    const mockStudiesNoInfo: StudyReturn[] = [
         {
             analyses: [],
             authors: '',

@@ -27,4 +27,9 @@ describe(PAGE_NAME, () => {
             .url()
             .should('be.equal', `${Cypress.config('baseUrl')}/studies/mock-study-id`);
     });
+
+    // TODO:
+    // it('should switch to the second last tab if the selected analysis is last and gets deleted', () => {
+
+    // });
 });

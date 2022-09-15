@@ -24,6 +24,7 @@ const textFieldInputProps = {
 const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
     const [updatedEnabled, setUpdateEnabled] = useState(false);
     const { isLoading, mutate } = useUpdateStudy();
+
     // save original details for revert behavior
     const [originalDetails, setOriginalDetails] = useState<IEditStudyDetails>({ ...props });
 

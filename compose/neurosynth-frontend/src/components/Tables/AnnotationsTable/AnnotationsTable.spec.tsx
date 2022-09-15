@@ -1,15 +1,14 @@
-import { useAuth0 } from '@auth0/auth0-react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Annotation, AnnotationReturn, ReadOnly } from 'neurostore-typescript-sdk';
 import { Router } from 'react-router-dom';
-import { AnnotationsApiResponse } from '../../../utils/api';
 import AnnotationsTable from './AnnotationsTable';
 
 jest.mock('@auth0/auth0-react');
 jest.mock('../DisplayValuesTable/DisplayValuesTable');
 
 describe('AnnotationsTable component', () => {
-    const mockAnnotationApiResponse: AnnotationsApiResponse[] = [
+    const mockAnnotationApiResponse: AnnotationReturn[] = [
         {
             studyset: 'test-studyset-id',
             notes: [],
@@ -32,7 +31,7 @@ describe('AnnotationsTable component', () => {
         },
     ];
 
-    const mockAnnotationApiResponseNoData: AnnotationsApiResponse[] = [
+    const mockAnnotationApiResponseNoData: AnnotationReturn[] = [
         {
             studyset: 'test-studyset-id',
             notes: [],
@@ -86,7 +85,7 @@ describe('AnnotationsTable component', () => {
             </Router>
         );
 
-        mockAnnotationApiResponse.forEach((res) => {
+        mockAnnotationApiResponse.forEach((res: Annotation & ReadOnly) => {
             const uniqueKey = screen.getByText(`unique key: ${res.id}`);
             const name = screen.getByText(`Name: ${res.name}`);
             const description = screen.getByText(`Description: ${res.description}`);

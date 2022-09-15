@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { ImageReturn } from 'neurostore-typescript-sdk';
 import { DisplayImagesTableModel } from '.';
-import { ImageApiResponse } from '../../../utils/api';
 import DisplayImagesTable from './DisplayImagesTable';
 
 describe('DisplayImagesTable Component', () => {
@@ -111,7 +111,7 @@ describe('DisplayImagesTable Component', () => {
 
         userEvent.click(rows[1]);
 
-        expect(mockData.onSelectImage).toBeCalledWith((mockData.images as ImageApiResponse[])[0]);
+        expect(mockData.onSelectImage).toBeCalledWith((mockData.images as ImageReturn[])[0]);
 
         firstDataRowStyle = getComputedStyle(rows[1]);
         secondDataRowStyle = getComputedStyle(rows[3]);
