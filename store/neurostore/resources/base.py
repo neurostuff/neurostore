@@ -197,6 +197,7 @@ LIST_USER_ARGS = {
     "studyset_id": fields.String(missing=None),
     "export": fields.Boolean(missing=False),
     "data_type": fields.String(missing=None),
+    "studyset_owner": fields.String(missing=None),
 }
 
 
@@ -241,6 +242,9 @@ class ListView(BaseView):
         # query annotations for a specific studyset
         if args.get('studyset_id'):
             q = q.filter(m.studyset_id == args.get('studyset_id'))
+
+        if args.get('studyset_owner'):
+            q = q.filter(m.studysets.user_id.in_(args.get('studyset_owner')))
 
         # search studies for data_type
         if args.get('data_type'):
