@@ -6,7 +6,6 @@ import AddIcon from '@mui/icons-material/Add';
 import { useRef, useState } from 'react';
 import { useGridApiContext } from '@mui/x-data-grid';
 import { useGetStudyById } from 'hooks';
-import { AnalysisApiResponse } from 'utils/api';
 import { AnalysisReturn, PointReturn } from 'neurostore-typescript-sdk';
 
 export interface IAnalysisPointsHeader {
@@ -44,7 +43,7 @@ const AnalysisPointsHeader: React.FC<IAnalysisPointsHeader> = (props) => {
         }
     };
 
-    const analysisOptions = ((study?.analyses || []) as AnalysisApiResponse[])
+    const analysisOptions = ((study?.analyses || []) as AnalysisReturn[])
         .filter((x) => x.id !== props.analysisId)
         .map((analysis, index) => (
             <MenuItem

@@ -1,10 +1,19 @@
 import { render, screen } from '@testing-library/react';
 import DisplayAnalysis from './DisplayAnalysis';
 import { AnalysisReturn, ImageReturn } from 'neurostore-typescript-sdk';
+import { DataGridProps } from '@mui/x-data-grid';
 
 jest.mock('../Visualizer/Visualizer');
-jest.mock('../Tables/DisplayValuesTable/DisplayValuesTable');
 jest.mock('../Tables/DisplayImagesTable/DisplayImagesTable');
+jest.mock('@mui/x-data-grid', () => {
+    const { DataGrid } = jest.requireActual('@mui/x-data-grid');
+    return {
+        ...jest.requireActual('@mui/x-data-grid'),
+        DataGrid: (props: DataGridProps) => {
+            return <DataGrid {...props} disableVirtualization />;
+        },
+    };
+});
 
 describe('DisplayAnalysis Component', () => {
     afterAll(() => {

@@ -1,24 +1,24 @@
 import { Typography, Box } from '@mui/material';
 import { useEffect, useState } from 'react';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
-import DisplayValuesTable from 'components/Tables/DisplayValuesTable/DisplayValuesTable';
 import Visualizer from 'components/Visualizer/Visualizer';
 import DisplayImagesTable from 'components/Tables/DisplayImagesTable/DisplayImagesTable';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
-import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
-import {
-    AnalysisApiResponse,
-    ConditionApiResponse,
-    ImageApiResponse,
-    PointApiResponse,
-} from 'utils/api';
 import DisplayAnalysisStyles from './DisplayAnalysis.styles';
+import { DataGrid } from '@mui/x-data-grid';
+import {
+    AnalysisReturn,
+    ConditionReturn,
+    ImageReturn,
+    PointReturn,
+} from 'neurostore-typescript-sdk';
+import { ROW_HEIGHT } from 'components/EditStudyComponents/EditAnalyses/EditAnalysis/EditAnalysisPoints/EditAnalysisPoints';
 
-const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
-    const [selectedImage, setSelectedImage] = useState<ImageApiResponse | undefined>(undefined);
+const DisplayAnalysis: React.FC<AnalysisReturn | undefined> = (props) => {
+    const [selectedImage, setSelectedImage] = useState<ImageReturn | undefined>(undefined);
 
     useEffect(() => {
-        const images = props?.images as ImageApiResponse[];
+        const images = props?.images as ImageReturn[];
         if (!images || images.length === 0) {
             // images does not exist or is empty
             setSelectedImage(undefined);
@@ -44,106 +44,35 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
         return <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No analysis</Box>;
     }
 
-    const coordinateDataForTable: IDisplayValuesTableModel = {
-        columnHeaders: [
-            {
-                value: 'X',
-                center: false,
-                bold: false,
-            },
-            {
-                value: 'Y',
-                center: false,
-                bold: false,
-            },
-            {
-                value: 'Z',
-                center: false,
-                bold: false,
-            },
-            {
-                value: 'Kind',
-                center: false,
-                bold: false,
-            },
-            {
-                value: 'Space',
-                center: false,
-                bold: false,
-            },
-        ],
-        rowData: (props?.points as PointApiResponse[]).map((point) => ({
-            uniqueKey: point.id as string,
-            columnValues: [
-                {
-                    value: point.coordinates ? point?.coordinates[0] : undefined,
-                    colorByType: true,
-                    center: false,
-                    bold: false,
-                },
-                {
-                    value: point.coordinates ? point?.coordinates[1] : undefined,
-                    colorByType: true,
-                    center: false,
-                    bold: false,
-                },
-                {
-                    value: point.coordinates ? point?.coordinates[2] : undefined,
-                    colorByType: true,
-                    center: false,
-                    bold: false,
-                },
-                {
-                    value: point.kind as string,
-                    colorByType: true,
-                    center: false,
-                    bold: false,
-                },
-                {
-                    value: point.space as string,
-                    colorByType: true,
-                    center: false,
-                    bold: false,
-                },
-            ],
-        })),
-    };
-
-    const handleSelectImage = (selectedImage: ImageApiResponse | undefined) => {
+    const handleSelectImage = (selectedImage: ImageReturn | undefined) => {
         setSelectedImage(selectedImage);
     };
 
-    const conditionsForTable: IDisplayValuesTableModel = {
-        columnHeaders: [
-            {
-                value: 'Condition',
-                bold: false,
-                center: false,
-            },
-            {
-                value: 'Weight',
-                bold: false,
-                center: false,
-            },
-        ],
-        rowData: (props?.conditions as ConditionApiResponse[]).map((condition, index) => ({
-            uniqueKey: condition.id || index.toString(),
-            columnValues: [
-                {
-                    value: condition.name,
-                    colorByType: false,
-                    center: false,
-                    bold: false,
-                },
-                {
-                    value: (props?.weights || [])[index],
-                    colorByType: false,
-                    center: false,
-                    bold: false,
-                },
-            ],
-        })),
-    };
+    const conditionRows = ((props?.conditions as ConditionReturn[]) || []).map(
+        (condition, index) => ({
+            id: condition.id,
+            condition: condition.name,
+            weight: (props?.weights || [])[index],
+        })
+    );
+
+    const coordinateRows = ((props.points as PointReturn[]) || []).map((point, index) => ({
+        id: point.id,
+        x: point.coordinates ? point.coordinates[0] : 0,
+        y: point.coordinates ? point.coordinates[1] : 0,
+        z: point.coordinates ? point.coordinates[2] : 0,
+        kind: point.kind || '',
+        space: point.space || '',
+    }));
+
+    // 2 is for the borders
+    // add one to account for column header
+    // add one to account for the "no rows message"
+    const conditionsGridHeight =
+        2 + (conditionRows.length + 1 + (conditionRows.length === 0 ? 1 : 0)) * ROW_HEIGHT;
+
+    const coordinateGridHeight =
+        2 + (coordinateRows.length + 1 + (coordinateRows.length === 0 ? 1 : 0)) * ROW_HEIGHT;
 
     return (
         <Box sx={DisplayAnalysisStyles.analysisContainer}>
@@ -161,10 +90,39 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                 >
                     <NeurosynthAccordion
                         TitleElement={<Typography>Conditions</Typography>}
-                        defaultExpanded={conditionsForTable.rowData.length > 0}
+                        defaultExpanded={conditionRows.length > 0}
                         elevation={2}
                     >
-                        <DisplayValuesTable {...conditionsForTable} />
+                        <Box sx={{ height: `${conditionsGridHeight}px`, maxHeight: '600px' }}>
+                            <DataGrid
+                                disableColumnSelector
+                                hideFooter
+                                disableSelectionOnClick
+                                showCellRightBorder
+                                rowHeight={ROW_HEIGHT}
+                                columns={[
+                                    {
+                                        field: 'condition',
+                                        headerAlign: 'left',
+                                        align: 'left',
+                                        headerName: 'Condition',
+                                        editable: false,
+                                        flex: 1,
+                                        type: 'string',
+                                    },
+                                    {
+                                        field: 'weight',
+                                        headerAlign: 'left',
+                                        align: 'left',
+                                        headerName: 'Weight',
+                                        editable: false,
+                                        flex: 1,
+                                        type: 'number',
+                                    },
+                                ]}
+                                rows={conditionRows}
+                            />
+                        </Box>
                     </NeurosynthAccordion>
                 </Box>
                 <Box
@@ -173,10 +131,66 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                 >
                     <NeurosynthAccordion
                         TitleElement={<Typography>Coordinates</Typography>}
-                        defaultExpanded={coordinateDataForTable.rowData.length > 0}
+                        defaultExpanded={coordinateRows.length > 0}
                         elevation={2}
                     >
-                        <DisplayValuesTable {...coordinateDataForTable} />
+                        <Box sx={{ height: `${coordinateGridHeight}px`, maxHeight: '600px' }}>
+                            <DataGrid
+                                disableColumnSelector
+                                hideFooter
+                                disableSelectionOnClick
+                                showCellRightBorder
+                                rowHeight={ROW_HEIGHT}
+                                columns={[
+                                    {
+                                        field: 'x',
+                                        headerAlign: 'left',
+                                        align: 'left',
+                                        headerName: 'X Coordinate',
+                                        editable: false,
+                                        flex: 1,
+                                        type: 'string',
+                                    },
+                                    {
+                                        field: 'y',
+                                        headerAlign: 'left',
+                                        align: 'left',
+                                        headerName: 'Y Coordinate',
+                                        editable: false,
+                                        flex: 1,
+                                        type: 'string',
+                                    },
+                                    {
+                                        field: 'z',
+                                        headerAlign: 'left',
+                                        align: 'left',
+                                        headerName: 'Z Coordinate',
+                                        editable: false,
+                                        flex: 1,
+                                        type: 'string',
+                                    },
+                                    {
+                                        field: 'kind',
+                                        headerAlign: 'left',
+                                        align: 'left',
+                                        headerName: 'Kind',
+                                        editable: false,
+                                        flex: 1,
+                                        type: 'string',
+                                    },
+                                    {
+                                        field: 'space',
+                                        headerAlign: 'left',
+                                        align: 'left',
+                                        headerName: 'Space',
+                                        editable: false,
+                                        flex: 1,
+                                        type: 'string',
+                                    },
+                                ]}
+                                rows={coordinateRows}
+                            />
+                        </Box>
                     </NeurosynthAccordion>
                 </Box>
                 <Box data-tour="StudyPage-6" sx={DisplayAnalysisStyles.spaceBelow}>
@@ -188,7 +202,7 @@ const DisplayAnalysis: React.FC<AnalysisApiResponse | undefined> = (props) => {
                         <DisplayImagesTable
                             initialSelectedImage={selectedImage}
                             onSelectImage={handleSelectImage}
-                            images={props.images as ImageApiResponse[]}
+                            images={props.images as ImageReturn[]}
                         />
                     </NeurosynthAccordion>
                 </Box>

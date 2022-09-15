@@ -1,13 +1,13 @@
-import { ImageApiResponse } from '../../../utils/api';
+import { ImageReturn } from 'neurostore-typescript-sdk';
 
 export interface DisplayImagesTableModel {
-    images: ImageApiResponse[] | undefined;
-    initialSelectedImage: ImageApiResponse | undefined;
-    onSelectImage: (selectedImage: ImageApiResponse | undefined) => void;
+    images: ImageReturn[] | undefined;
+    initialSelectedImage: ImageReturn | undefined;
+    onSelectImage: (selectedImage: ImageReturn | undefined) => void;
 }
 
 export interface DisplayImagesTableRowModel {
-    onRowSelect: (selectedImage: ImageApiResponse | undefined) => void;
-    image: ImageApiResponse;
+    onRowSelect: (selectedImage: ImageReturn | undefined) => void;
+    image: ImageReturn;
     active: boolean;
 }

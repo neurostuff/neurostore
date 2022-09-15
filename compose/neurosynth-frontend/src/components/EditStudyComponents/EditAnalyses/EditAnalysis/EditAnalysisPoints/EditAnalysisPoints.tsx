@@ -14,7 +14,7 @@ import { useCreatePoint, useDeletePoint, useUpdatePoint, useUpdateAnalysis } fro
 import AnalysisPointsHeader from './AnalysisPointsHeader';
 import AnalysisPointsDeleteButton from './AnalysisPointsDeleteButton';
 
-const ROW_HEIGHT = 56;
+export const ROW_HEIGHT = 56;
 
 const EditAnalysisPoints: React.FC<IEditAnalysisPoints> = (props) => {
     const { isLoading: createPointIsLoading, mutate: createPoint } = useCreatePoint();

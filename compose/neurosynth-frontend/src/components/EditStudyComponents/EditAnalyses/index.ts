@@ -1,5 +1,4 @@
-import { ConditionReturn } from '../../../neurostore-typescript-sdk';
-import { PointApiResponse } from '../../../utils/api';
+import { ConditionReturn, PointReturn } from 'neurostore-typescript-sdk';
 
 export interface IEditAnalysisDetails {
     studyId: string;
@@ -9,7 +8,7 @@ export interface IEditAnalysisDetails {
 }
 
 export interface IEditAnalysisPoints {
-    points: PointApiResponse[] | undefined;
+    points: PointReturn[] | undefined;
     studyId: string | undefined;
     analysisId: string | undefined;
 }
