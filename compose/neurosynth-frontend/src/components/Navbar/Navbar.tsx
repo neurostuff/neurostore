@@ -55,6 +55,12 @@ const authenticatedNavItems: NavOptionsModel[] = [
                 children: null,
                 authenticationRequired: true,
             },
+            {
+                label: 'Create New Meta-Analysis',
+                path: '/meta-analyses/build',
+                children: null,
+                authenticationRequired: true,
+            },
         ],
     },
 ];
