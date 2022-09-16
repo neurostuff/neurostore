@@ -235,14 +235,16 @@ const MetaAnalysisPage: React.FC = (props) => {
                                 />
                             </MetaAnalysisSummaryRow>
 
-                            <MetaAnalysisSummaryRow
-                                title="corrector and optional arguments"
-                                value={metaAnalysisDisplayObj?.corrector}
-                            >
-                                <DynamicInputDisplay
-                                    dynamicArg={metaAnalysisDisplayObj?.correctorArgs}
-                                />
-                            </MetaAnalysisSummaryRow>
+                            {metaAnalysisDisplayObj.corrector && (
+                                <MetaAnalysisSummaryRow
+                                    title="corrector and optional arguments"
+                                    value={metaAnalysisDisplayObj?.corrector}
+                                >
+                                    <DynamicInputDisplay
+                                        dynamicArg={metaAnalysisDisplayObj?.correctorArgs}
+                                    />
+                                </MetaAnalysisSummaryRow>
+                            )}
                         </Box>
                     </NeurosynthAccordion>
                 </Box>
