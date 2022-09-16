@@ -26,6 +26,18 @@ describe(PAGE_NAME, () => {
             .should('be.equal', `${Cypress.config('baseUrl')}/meta-analyses`);
     });
 
+    it.only('should redirect to the meta-analysis builder page from the navbar', () => {
+        cy.login('mocked')
+            .get('button')
+            .contains('META-ANALYSES')
+            .click()
+            .get('a')
+            .contains('Create New Meta-Analysis')
+            .click()
+            .url()
+            .should('be.equal', `${Cypress.config('baseUrl')}/meta-analyses/build`);
+    });
+
     describe('Tour ', () => {
         it('should open immediately if it is the users first time logging in', () => {
             cy.login('mocked', { 'https://neurosynth-compose/loginsCount': 1 })
