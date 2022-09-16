@@ -42,7 +42,7 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
         )
             .then((res) => {
                 enqueueSnackbar('new meta-analysis created successfully', { variant: 'success' });
-                history.push('/usermeta-analyses');
+                history.push(`/meta-analyses/${res?.data?.id}`);
             })
             .catch((err) => {
                 enqueueSnackbar('there was an error creating the meta-analysis', {

@@ -4,6 +4,8 @@ import { ENavigationButton } from 'components/Buttons/NavigationButtons/Navigati
 import { useCreateMetaAnalysis } from 'hooks';
 import { SnackbarProvider } from 'notistack';
 import { EAnalysisType } from 'pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
+import { act } from 'react-dom/test-utils';
+import { Router } from 'react-router-dom';
 import { mockAnnotations, mockStudysets } from 'testing/mockData';
 import MetaAnalysisFinalize from './MetaAnalysisFinalize';
 
@@ -112,5 +114,42 @@ describe('MetaAnalysisFinalize', () => {
                 correctorArgs: {},
             }
         );
+    });
+
+    it('should navigate to the created meta-analysis when it has been created', async () => {
+        const historyMock = {
+            push: jest.fn(),
+            location: {},
+            listen: jest.fn(),
+        };
+
+        (useCreateMetaAnalysis().createMetaAnalysis as jest.Mock).mockImplementation(() =>
+            Promise.resolve({ data: { id: 'test-id' } })
+        );
+
+        render(
+            <Router history={historyMock as any}>
+                <SnackbarProvider>
+                    <MetaAnalysisFinalize
+                        onNavigate={mockOnNavigate}
+                        analysisType={EAnalysisType.CBMA}
+                        estimator={{ label: 'ALE', description: 'ALE' }}
+                        estimatorArgs={{}}
+                        corrector={{ label: 'FWECorrector', description: 'Some description' }}
+                        correctorArgs={{}}
+                        studyset={mockStudysets()[0]}
+                        annotation={mockAnnotations()[0]}
+                        metaAnalysisDescription=""
+                        metaAnalysisName="some-name"
+                        inclusionColumn="some-col"
+                    />
+                </SnackbarProvider>
+            </Router>
+        );
+        await act(async () => {
+            userEvent.click(screen.getByRole('button', { name: 'create meta-analysis' }));
+        });
+
+        expect(historyMock.push).toHaveBeenCalledWith(`/meta-analyses/test-id`);
     });
 });
