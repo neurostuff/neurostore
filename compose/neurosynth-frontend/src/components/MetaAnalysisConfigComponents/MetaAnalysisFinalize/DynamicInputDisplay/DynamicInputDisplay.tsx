@@ -28,7 +28,7 @@ const DynamicInputDisplay: React.FC<{ dynamicArg: IDynamicInputType }> = (props)
                     <Box sx={DynamicInputDisplayStyles.valuesListContainer}>
                         {valuesList.map((value) => (
                             <Box key={value} sx={DynamicInputDisplayStyles.tr}>
-                                <Box sx={DynamicInputDisplayStyles.cell}>{value}</Box>
+                                <Box sx={DynamicInputDisplayStyles.cell}>{value}</Box>:
                                 <Box sx={DynamicInputDisplayStyles.cell}>
                                     {`${props.dynamicArg[value]}`}
                                 </Box>
@@ -46,7 +46,7 @@ const DynamicInputDisplay: React.FC<{ dynamicArg: IDynamicInputType }> = (props)
                     <Box sx={DynamicInputDisplayStyles.valuesListContainer}>
                         {kwargList.map((value) => (
                             <Box key={value} sx={DynamicInputDisplayStyles.tr}>
-                                <Box sx={DynamicInputDisplayStyles.cell}>{value}</Box>
+                                <Box sx={DynamicInputDisplayStyles.cell}>{value}</Box>:
                                 <Box sx={DynamicInputDisplayStyles.cell}>{`${kwargs[value]}`}</Box>
                             </Box>
                         ))}

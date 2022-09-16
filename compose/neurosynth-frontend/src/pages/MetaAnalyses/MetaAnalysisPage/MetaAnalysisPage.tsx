@@ -1,19 +1,28 @@
-import { Box, Typography, Paper, Button, Link, IconButton } from '@mui/material';
-import { useParams } from 'react-router-dom';
+import { Box, Typography, Paper, Button, Link, IconButton, Divider } from '@mui/material';
+import { NavLink, useParams } from 'react-router-dom';
 import TextEdit from 'components/TextEdit/TextEdit';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
 import { useGetMetaAnalysisById } from 'hooks';
 import useUpdateMetaAnalysis from 'hooks/requests/useUpdateMetaAnalysis';
 import {
+    Annotation,
     AnnotationReturn,
+    ReadOnly,
+    Specification,
     SpecificationReturn,
+    Studyset,
     StudysetReturn,
 } from 'neurosynth-compose-typescript-sdk';
 import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
 import Help from '@mui/icons-material/Help';
 import useGetTour from 'hooks/useGetTour';
 import { useAuth0 } from '@auth0/auth0-react';
+import MetaAnalysisSummaryRow from 'components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/MetaAnalysisSummaryRow/MetaAnalysisSummaryRow';
+import { getAnalysisTypeDescription } from 'components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/MetaAnalysisFinalize';
+import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
+import DynamicInputDisplay from 'components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/DynamicInputDisplay/DynamicInputDisplay';
+import { IDynamicInputType } from 'components/MetaAnalysisConfigComponents';
 
 const MetaAnalysisPage: React.FC = (props) => {
     const { startTour } = useGetTour('MetaAnalysisPage');
@@ -66,6 +75,46 @@ const MetaAnalysisPage: React.FC = (props) => {
                 },
             });
         }
+    };
+
+    const metaAnalysisDisplayObj = {
+        name: data?.name || '',
+        description: data?.description || '',
+        analysisType: (data?.specification as Specification)?.type || '',
+        analysisTypeDescription: getAnalysisTypeDescription(
+            (data?.specification as Specification)?.type
+        ),
+        studyset: (data?.studyset as Studyset & ReadOnly)?.id || '',
+        studysetDescription: (data?.studyset as Studyset)?.neurostore_id ? (
+            <Link
+                color="secondary"
+                exact
+                component={NavLink}
+                to={`/studysets/${(data?.studyset as Studyset).neurostore_id}`}
+            >
+                view associated studyset
+            </Link>
+        ) : (
+            ''
+        ),
+        annotation: (data?.annotation as Annotation & ReadOnly)?.id || '',
+        annotationDescription: (data?.annotation as Annotation & ReadOnly)?.id ? (
+            <Link
+                color="secondary"
+                exact
+                component={NavLink}
+                to={`/annotations/${(data?.annotation as Annotation).neurostore_id}`}
+            >
+                view associated annotation
+            </Link>
+        ) : (
+            ''
+        ),
+        inclusionColumn: specification?.filter || '',
+        estimator: specification?.estimator?.type || '',
+        estimatorArgs: (specification?.estimator?.args || {}) as IDynamicInputType,
+        corrector: specification?.corrector?.type || '',
+        correctorArgs: (specification?.corrector?.args || {}) as IDynamicInputType,
     };
 
     return (
@@ -126,15 +175,86 @@ const MetaAnalysisPage: React.FC = (props) => {
                         </IconButton>
                     </Box>
                 </Box>
+
+                <Box sx={{ margin: '2rem 0' }}>
+                    <NeurosynthAccordion
+                        elevation={2}
+                        TitleElement={
+                            <Typography variant="h6">Meta-Analysis Specification</Typography>
+                        }
+                    >
+                        <Divider sx={{ marginBottom: '1.5rem' }} />
+                        <Box>
+                            <Typography variant="h6">Details</Typography>
+
+                            <MetaAnalysisSummaryRow
+                                title="meta-analysis name"
+                                value={metaAnalysisDisplayObj.name || ''}
+                                caption={metaAnalysisDisplayObj.description || ''}
+                            />
+                        </Box>
+
+                        <Box>
+                            <Typography variant="h6">Data</Typography>
+
+                            <MetaAnalysisSummaryRow
+                                title="analysis type"
+                                value={metaAnalysisDisplayObj.analysisType}
+                                caption={metaAnalysisDisplayObj.analysisTypeDescription}
+                            />
+
+                            <MetaAnalysisSummaryRow
+                                title="studyset id"
+                                value={metaAnalysisDisplayObj.studyset}
+                                caption={metaAnalysisDisplayObj.studysetDescription}
+                            />
+
+                            {metaAnalysisDisplayObj.annotation && (
+                                <MetaAnalysisSummaryRow
+                                    title="annotation"
+                                    value={metaAnalysisDisplayObj?.annotation}
+                                    caption={metaAnalysisDisplayObj?.annotationDescription}
+                                />
+                            )}
+
+                            <MetaAnalysisSummaryRow
+                                title="inclusion column"
+                                value={metaAnalysisDisplayObj.inclusionColumn}
+                            />
+                        </Box>
+
+                        <Box>
+                            <Typography variant="h6">Algorithm</Typography>
+
+                            <MetaAnalysisSummaryRow
+                                title="algorithm and optional arguments"
+                                value={metaAnalysisDisplayObj?.estimator}
+                            >
+                                <DynamicInputDisplay
+                                    dynamicArg={metaAnalysisDisplayObj?.estimatorArgs}
+                                />
+                            </MetaAnalysisSummaryRow>
+
+                            <MetaAnalysisSummaryRow
+                                title="corrector and optional arguments"
+                                value={metaAnalysisDisplayObj?.corrector}
+                            >
+                                <DynamicInputDisplay
+                                    dynamicArg={metaAnalysisDisplayObj?.correctorArgs}
+                                />
+                            </MetaAnalysisSummaryRow>
+                        </Box>
+                    </NeurosynthAccordion>
+                </Box>
+
                 <Box>
-                    <Typography variant="h6" sx={{ marginBottom: '2rem' }}>
-                        This meta-analysis has not been run yet. Run your meta-analysis using the
-                        following method(s):
+                    <Typography variant="h6" sx={{ marginBottom: '1rem' }}>
+                        Run your meta-analysis using the following method(s):
                     </Typography>
 
                     <Paper
                         data-tour="MetaAnalysisPage-1"
-                        sx={{ padding: '1rem', marginBottom: '2rem' }}
+                        sx={{ padding: '1rem', marginBottom: '1rem' }}
                     >
                         <Typography sx={{ fontWeight: 'bold', marginBottom: '1rem' }}>
                             run your meta-analysis via google colab
