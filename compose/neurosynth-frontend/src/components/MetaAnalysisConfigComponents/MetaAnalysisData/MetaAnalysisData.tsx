@@ -150,7 +150,12 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
 
             <NavigationButtons
                 onButtonClick={props.onNext}
-                nextButtonDisabled={!props.metaAnalysisType || !props.studyset || !props.annotation}
+                nextButtonDisabled={
+                    !props.metaAnalysisType ||
+                    !props.studyset ||
+                    !props.annotation ||
+                    !props.inclusionColumn
+                }
                 nextButtonStyle="outlined"
             />
         </>

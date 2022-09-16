@@ -2,9 +2,9 @@ import { Box, Typography } from '@mui/material';
 import MetaAnalysisSummaryRowStyles from './MetaAnalysisSummaryRow.styles';
 
 interface IMetaAnalysisSummaryRow {
-    title: string;
-    value: string;
-    caption?: string;
+    title: string | JSX.Element;
+    value: string | JSX.Element;
+    caption?: string | JSX.Element;
 }
 
 const MetaAnalysisSummaryRow: React.FC<IMetaAnalysisSummaryRow> = (props) => {
