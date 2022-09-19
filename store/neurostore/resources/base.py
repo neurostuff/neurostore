@@ -243,9 +243,6 @@ class ListView(BaseView):
         if args.get('studyset_id'):
             q = q.filter(m.studyset_id == args.get('studyset_id'))
 
-        if args.get('studyset_owner'):
-            q = q.filter(m.studysets.user_id.in_(args.get('studyset_owner')))
-
         # search studies for data_type
         if args.get('data_type'):
             if args['data_type'] == 'coordinate':
@@ -319,6 +316,12 @@ class ListView(BaseView):
                 unique_count = count
 
         records = q.paginate(args["page"], args["page_size"], False).items
+        if m is Study and args.get("studyset_owner"):
+            for study in records:
+                study.studysets = study.studysets.filter(
+                    Studyset.user_id == args.get('studyset_owner')
+                ).all()
+
         if m is Studyset and nested:
             snapshot = StudysetSnapshot()
             content = [snapshot.dump(r) for r in records]
