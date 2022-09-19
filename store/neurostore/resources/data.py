@@ -1,3 +1,4 @@
+from marshmallow import EXCLUDE
 
 from .utils import view_maker
 from .base import BaseView, ObjectView, ListView
@@ -213,7 +214,7 @@ class StudyListView(ListView):
             parent_source_id = parent.source_id
 
         schema = cls._schema(copy=True)
-        data = schema.load(schema.dump(study))
+        data = schema.load(schema.dump(study), unknown=EXCLUDE)
         data['source'] = "neurostore"
         data['source_id'] = source_id
         data['source_updated_at'] = study.updated_at or study.created_at

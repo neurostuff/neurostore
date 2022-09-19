@@ -197,6 +197,7 @@ LIST_USER_ARGS = {
     "studyset_id": fields.String(missing=None),
     "export": fields.Boolean(missing=False),
     "data_type": fields.String(missing=None),
+    "studyset_owner": fields.String(missing=None),
 }
 
 
@@ -315,6 +316,12 @@ class ListView(BaseView):
                 unique_count = count
 
         records = q.paginate(args["page"], args["page_size"], False).items
+        if m is Study and args.get("studyset_owner"):
+            for study in records:
+                study.studysets = study.studysets.filter(
+                    Studyset.user_id == args.get('studyset_owner')
+                ).all()
+
         if m is Studyset and nested:
             snapshot = StudysetSnapshot()
             content = [snapshot.dump(r) for r in records]

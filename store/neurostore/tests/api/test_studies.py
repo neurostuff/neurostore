@@ -1,7 +1,7 @@
 import pytest
 
 from ..request_utils import decode_json
-from ...models import Study, User, Analysis
+from ...models import Studyset, Study, User, Analysis
 
 
 def test_get_studies(auth_client, ingest_neurosynth, ingest_neuroquery):
@@ -131,3 +131,22 @@ def test_delete_studies(auth_client, ingest_neurosynth, session):
 
     for analysis in get.json['analyses']:
         assert Analysis.query.filter_by(id=analysis).first() is None
+
+
+def test_getting_studysets_by_owner(auth_clients, user_data):
+    client1, _ = auth_clients
+    id1 = client1.username
+    user_studysets_db = Studyset.query.filter_by(user_id=id1).all()
+    all_studysets_db = Studyset.query.all()
+    non_user_studysets_db = list(set(all_studysets_db) - set(user_studysets_db))
+    all_studysets = client1.get("/api/studies/")
+
+    for study in all_studysets.json['results']:
+        for studyset in study['studysets']:
+            assert studyset['id'] in [as_db.id for as_db in all_studysets_db]
+
+    filtered_studysets = client1.get(f"/api/studies/?studyset_owner={id1}")
+    for study in filtered_studysets.json['results']:
+        for studyset in study['studysets']:
+            assert studyset['id'] in [us_db.id for us_db in user_studysets_db]
+            assert studyset['id'] not in [nus_db.id for nus_db in non_user_studysets_db]
