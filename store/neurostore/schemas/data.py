@@ -215,8 +215,8 @@ class AnalysisSchema(BaseDataSchema):
 
 class StudySetStudyInfoSchema(Schema):
     id = fields.String(dump_only=True)
-    name = fields.String(attribute="studyset.name", dump_only=True)
-    description = fields.String(attribute="studyset.description", dump_only=True)
+    name = fields.String(dump_only=True)
+    description = fields.String(dump_only=True)
 
 
 class StudySchema(BaseDataSchema):
