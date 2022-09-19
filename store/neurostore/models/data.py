@@ -55,7 +55,6 @@ class Studyset(BaseMixin, db.Model):
         cascade="all",
         secondary="studyset_studies",
         backref=backref("studysets", lazy='dynamic'),
-        lazy='dynamic',
     )
     annotations = relationship("Annotation", cascade="all, delete", backref="studyset")
 
