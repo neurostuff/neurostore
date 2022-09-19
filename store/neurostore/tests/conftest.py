@@ -240,6 +240,12 @@ def ingest_neuroquery(session):
 def user_data(session, mock_add_users):
     to_commit = []
     with session.no_autoflush:
+        public_studyset = Studyset(
+            name="public studyset",
+            description="public detailed description",
+            public=True,
+        )
+        public_studies = []
         for user_info in mock_add_users.values():
             user = User.query.filter_by(id=user_info['id']).first()
             for public in [True, False]:
@@ -250,6 +256,7 @@ def user_data(session, mock_add_users):
 
                 studyset = Studyset(
                     name=name + "studyset",
+                    description="detailed description",
                     user=user,
                     public=public,
                 )
@@ -296,8 +303,15 @@ def user_data(session, mock_add_users):
                 # put together the studyset
                 studyset.studies = [study]
 
+                if public:
+                    public_studies.append(study)
+
                 # add everything to commit
                 to_commit.append(studyset)
+
+        # add public studyset to commit
+        public_studyset.studies = public_studies
+        to_commit.append(public_studyset)
 
         session.add_all(to_commit)
         session.commit()
@@ -307,6 +321,8 @@ def user_data(session, mock_add_users):
         studysets = Studyset.query.all()
         for studyset in studysets:
             user = studyset.user
+            if user is None:
+                continue
 
             if studyset.public:
                 name = f"{user.id}'s public "
