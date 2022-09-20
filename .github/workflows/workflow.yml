@@ -39,15 +39,15 @@ jobs:
               neurosynth.tags=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/neurosynth_compose/**') }}
               neurosynth.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/neurosynth_compose/**') }}
               neurosynth.cache-from=type=gha
-              neurosynth.cache-to=type=gha
+              neurosynth.cache-to=type=gha,mode=max
               nginx.tags=ghcr.io/${{ github.repository_owner }}/synth_nginx:${{ hashFiles('**/compose/nginx/**') }}
               nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/synth_nginx:${{ hashFiles('**/compose/nginx/**') }}
               nginx.cache-from=type=gha
-              nginx.cache-to=type=gha
+              nginx.cache-to=type=gha,mode=max
               synth_pgsql.tags=ghcr.io/${{ github.repository_owner }}/synth_pgsql:${{ hashFiles('**/compose/postgres/**') }}
               synth_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/synth_pgsql:${{ hashFiles('**/compose/postgres/**') }}
               synth_pgsql.cache-from=type=gha
-              synth_pgsql.cache-to=type=gha
+              synth_pgsql.cache-to=type=gha,mode=max
 
   build_neurostore:
    runs-on: ubuntu-latest
@@ -86,15 +86,15 @@ jobs:
               neurostore.tags=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/neurostore/**') }}
               neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/neurostore/**') }}
               neurostore.cache-from=type=gha
-              neurostore.cache-to=type=gha
+              neurostore.cache-to=type=gha,mode=max
               nginx.tags=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
               nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
               nginx.cache-from=type=gha
-              nginx.cache-to=type=gha
+              nginx.cache-to=type=gha,mode=max
               store_pgsql.tags=ghcr.io/${{ github.repository_owner }}/store_pgsql:${{ hashFiles('**/store/postgres/**') }}
               store_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store_pgsql:${{ hashFiles('**/store/postgres/**') }}
               store_pgsql.cache-from=type=gha
-              store_pgsql.cache-to=type=gha
+              store_pgsql.cache-to=type=gha,mode=max
 
 
   neurostore_backend_tests:
