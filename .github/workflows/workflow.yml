@@ -90,8 +90,8 @@ jobs:
               nginx.cache-from=type=registry,ref=nginx:${{ github.ref_name }}
               nginx.cache-from=type=gha
               nginx.cache-to=type=gha
-              synth_pgsql.tags=synth_pgsql:${{ github.ref_name }}
-              synth_pgsql.cache-from=type=registry,ref=synth_pgsql:${{ github.ref_name }}
+              store_pgsql.tags=store_pgsql:${{ github.ref_name }}
+              store_pgsql.cache-from=type=registry,ref=store_pgsql:${{ github.ref_name }}
               store_pgsql.cache-from=type=gha
               store_pgsql.cache-to=type=gha
 
