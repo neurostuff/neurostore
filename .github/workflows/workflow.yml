@@ -40,14 +40,17 @@ jobs:
               neurosynth.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/neurosynth_compose/**') }}
               neurosynth.cache-from=type=gha
               neurosynth.cache-to=type=gha
+              neurosynth.args.BUILDKIT_INLINE_CACHE=1
               nginx.tags=ghcr.io/${{ github.repository_owner }}/synth_nginx:${{ hashFiles('**/compose/nginx/**') }}
               nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/synth_nginx:${{ hashFiles('**/compose/nginx/**') }}
               nginx.cache-from=type=gha
               nginx.cache-to=type=gha
+              nginx.args.BUILDKIT_INLINE_CACHE=1
               synth_pgsql.tags=ghcr.io/${{ github.repository_owner }}/synth_pgsql:${{ hashFiles('**/compose/postgres/**') }}
               synth_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/synth_pgsql:${{ hashFiles('**/compose/postgres/**') }}
               synth_pgsql.cache-from=type=gha
               synth_pgsql.cache-to=type=gha
+              synth_pgsql.args.BUILDKIT_INLINE_CACHE=1
 
   build_neurostore:
    runs-on: ubuntu-latest
