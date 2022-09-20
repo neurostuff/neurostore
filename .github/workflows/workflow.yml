@@ -24,7 +24,7 @@ jobs:
         name: Build and push
         uses: docker/bake-action@master
         with:
-          files: compose/docker-compose.yml,compose/docker-compose.dev.yml
+          files: docker-compose.yml,docker-compose.dev.yml
           push: false
           load: false
           workdir: compose
@@ -58,7 +58,7 @@ jobs:
         name: Build and push
         uses: docker/bake-action@master
         with:
-          files: store/docker-compose.yml,store/docker-compose.dev.yml
+          files: docker-compose.yml,docker-compose.dev.yml
           push: false
           load: false
           workdir: store
@@ -95,7 +95,7 @@ jobs:
         name: load images
         uses: docker/bake-action@master
         with:
-          files: store/docker-compose.yml,store/docker-compose.dev.yml
+          files: docker-compose.yml,docker-compose.dev.yml
           push: false
           load: true
           workdir: store
@@ -164,7 +164,7 @@ jobs:
       name: Build and push
       uses: docker/bake-action@master
       with:
-        files: compose/docker-compose.yml,compose/docker-compose.dev.yml
+        files: docker-compose.yml,docker-compose.dev.yml
         push: false
         load: true
         workdir: compose
