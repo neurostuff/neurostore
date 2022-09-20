@@ -1,6 +1,7 @@
 version: "2"
 services:
   neurostore:
+    image: neurostore
     restart: always
     build: ./neurostore
     expose:
@@ -14,6 +15,7 @@ services:
     container_name: neurostore
   
   nginx:
+    image: nginx
     restart: always
     build: ./nginx
     expose:
@@ -27,6 +29,7 @@ services:
       - LETSENCRYPT_HOST=${V_HOST}
 
   store_pgsql:
+    image: store_pgsql
     restart: always
     build: ./postgres
     volumes:
