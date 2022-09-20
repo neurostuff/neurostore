@@ -36,14 +36,14 @@ jobs:
           load: false
           workdir: compose
           set: |
-              neurosynth.tags=ghcr.io/${{ github.repository_owner }}/neurosynth:${{ hashFiles('**/compose/neurosynth_compose/**') }}
-              neurosynth.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth:${{ hashFiles('**/compose/neurosynth_compose/**') }}
-              neurosynth.cache-from=type=gha
-              neurosynth.cache-to=type=gha
-              nginx.tags=ghcr.io/${{ github.repository_owner }}/nginx:${{ hashFiles('**/compose/nginx/**') }}
-              nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/nginx:${{ hashFiles('**/compose/nginx/**') }}
-              nginx.cache-from=type=gha
-              nginx.cache-to=type=gha
+              neurosynth_compose.tags=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/neurosynth_compose/**') }}
+              neurosynth_compose.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/neurosynth_compose/**') }}
+              neurosynth_compose.cache-from=type=gha
+              neurosynth_compose.cache-to=type=gha
+              synth_nginx.tags=ghcr.io/${{ github.repository_owner }}/synth_nginx:${{ hashFiles('**/compose/nginx/**') }}
+              synth_nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/synth_nginx:${{ hashFiles('**/compose/nginx/**') }}
+              synth_nginx.cache-from=type=gha
+              synth_nginx.cache-to=type=gha
               synth_pgsql.tags=ghcr.io/${{ github.repository_owner }}/synth_pgsql:${{ hashFiles('**/compose/postgres/**') }}
               synth_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/synth_pgsql:${{ hashFiles('**/compose/postgres/**') }}
               synth_pgsql.cache-from=type=gha
@@ -87,10 +87,10 @@ jobs:
               neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/neurostore/**') }}
               neurostore.cache-from=type=gha
               neurostore.cache-to=type=gha
-              nginx.tags=ghcr.io/${{ github.repository_owner }}/nginx:${{ hashFiles('**/store/nginx/**') }}
-              nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/nginx:${{ hashFiles('**/store/nginx/**') }}
-              nginx.cache-from=type=gha
-              nginx.cache-to=type=gha
+              store_nginx.tags=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
+              store_nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
+              store_nginx.cache-from=type=gha
+              store_nginx.cache-to=type=gha
               store_pgsql.tags=ghcr.io/${{ github.repository_owner }}/store_pgsql:${{ hashFiles('**/store/postgres/**') }}
               store_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store_pgsql:${{ hashFiles('**/store/postgres/**') }}
               store_pgsql.cache-from=type=gha
@@ -126,7 +126,7 @@ jobs:
           workdir: store
           set: |
               neurostore.cache-from=type=gha
-              nginx.cache-from=type=gha
+              store_nginx.cache-from=type=gha
               store_pgsql.cache-from=type=gha
       - 
         name: spin up backend
@@ -186,7 +186,7 @@ jobs:
       run: |
         cp .env.example .env
     -
-      name: Build and push
+      name: load images
       uses: docker/bake-action@master
       with:
         files: docker-compose.yml,docker-compose.dev.yml
@@ -194,15 +194,11 @@ jobs:
         load: true
         workdir: compose
         set: |
-            neurosynth.cache-from=type=gha
-            nginx.cache-from=type=gha
+            neurosynth_compose.cache-from=type=gha
+            synth_nginx.cache-from=type=gha
             synth_pgsql.cache-from=type=gha
     -
-      name: Configuration
-      run: |
-        cp .env.example .env
-    -
-      name: Build backend
+      name: Spin up backend
       run: |
         docker network create nginx-proxy
         docker-compose pull
