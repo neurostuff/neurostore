@@ -36,16 +36,16 @@ jobs:
           load: false
           workdir: compose
           set: |
-              neurosynth.tags=neurosynth:${{ hashFiles('**/compose/neurosynth/**') }}
-              neurosynth.cache-from=type=registry,ref=neurosynth:${{ hashFiles('**/compose/neurosynth/**') }}
+              neurosynth.tags=ghcr.io/${{ github.repository_owner }}/neurosynth:${{ hashFiles('**/compose/neurosynth_compose/**') }}
+              neurosynth.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth:${{ hashFiles('**/compose/neurosynth_compose/**') }}
               neurosynth.cache-from=type=gha
               neurosynth.cache-to=type=gha
-              nginx.tags=nginx:${{ hashFiles('**/compose/nginx/**') }}
-              nginx.cache-from=type=registry,ref=nginx:${{ hashFiles('**/compose/nginx/**') }}
+              nginx.tags=ghcr.io/${{ github.repository_owner }}/nginx:${{ hashFiles('**/compose/nginx/**') }}
+              nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/nginx:${{ hashFiles('**/compose/nginx/**') }}
               nginx.cache-from=type=gha
               nginx.cache-to=type=gha
-              synth_pgsql.tags=synth_pgsql:${{ hashFiles('**/compose/postgres/**') }}
-              synth_pgsql.cache-from=type=registry,ref=synth_pgsql:${{ hashFiles('**/compose/postgres/**') }}
+              synth_pgsql.tags=ghcr.io/${{ github.repository_owner }}/synth_pgsql:${{ hashFiles('**/compose/postgres/**') }}
+              synth_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/synth_pgsql:${{ hashFiles('**/compose/postgres/**') }}
               synth_pgsql.cache-from=type=gha
               synth_pgsql.cache-to=type=gha
 
@@ -83,16 +83,16 @@ jobs:
           load: false
           workdir: store
           set: |
-              neurostore.tags=neurostore:${{ hashFiles('**/store/neurostore/**') }}
-              neurostore.cache-from=type=registry,ref=neurostore:${{ hashFiles('**/store/neurostore/**') }}
+              neurostore.tags=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/neurostore/**') }}
+              neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/neurostore/**') }}
               neurostore.cache-from=type=gha
               neurostore.cache-to=type=gha
-              nginx.tags=nginx:${{ hashFiles('**/store/nginx/**') }}
-              nginx.cache-from=type=registry,ref=nginx:${{ hashFiles('**/store/nginx/**') }}
+              nginx.tags=ghcr.io/${{ github.repository_owner }}/nginx:${{ hashFiles('**/store/nginx/**') }}
+              nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/nginx:${{ hashFiles('**/store/nginx/**') }}
               nginx.cache-from=type=gha
               nginx.cache-to=type=gha
-              store_pgsql.tags=store_pgsql:${{ hashFiles('**/store/postgres/**') }}
-              store_pgsql.cache-from=type=registry,ref=store_pgsql:${{ hashFiles('**/store/postgres/**') }}
+              store_pgsql.tags=ghcr.io/${{ github.repository_owner }}/store_pgsql:${{ hashFiles('**/store/postgres/**') }}
+              store_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store_pgsql:${{ hashFiles('**/store/postgres/**') }}
               store_pgsql.cache-from=type=gha
               store_pgsql.cache-to=type=gha
 
