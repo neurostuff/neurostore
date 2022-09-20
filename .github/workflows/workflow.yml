@@ -106,10 +106,11 @@ jobs:
         name: spin up backend
         run: |
           docker network create nginx-proxy
+          docker-compose pull
           docker-compose \
             -f docker-compose.yml \
             -f docker-compose.dev.yml \
-            up -d
+            up -d --no-build
       - 
         name: Create Test Database
         run: |
@@ -178,10 +179,11 @@ jobs:
       name: Build backend
       run: |
         docker network create nginx-proxy
+        docker-compose pull
         docker-compose \
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
-          up -d
+          up -d --no-build
     -
       name: Create Test Database
       run: |
