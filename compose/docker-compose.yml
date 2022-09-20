@@ -1,7 +1,7 @@
 version: "2"
 services:
   neurosynth:
-    image: neurosynth
+    image: neurosynth_compose
     restart: always
     build: ./neurosynth_compose
     expose:
@@ -15,7 +15,7 @@ services:
     container_name: neurosynth_compose
 
   nginx:
-    image: nginx
+    image: synth_nginx
     restart: always
     build: ./nginx
     expose:

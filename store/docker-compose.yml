@@ -15,7 +15,7 @@ services:
     container_name: neurostore
   
   nginx:
-    image: nginx
+    image: store_nginx
     restart: always
     build: ./nginx
     expose:
