@@ -27,6 +27,7 @@ jobs:
           files: compose/docker-compose.yml,compose/docker-compose.dev.yml
           push: false
           load: false
+          workdir: compose
           set: |
               neurosynth.cache-from=type=gha
               neurosynth.cache-to=type=gha
@@ -60,6 +61,7 @@ jobs:
           files: store/docker-compose.yml,store/docker-compose.dev.yml
           push: false
           load: false
+          workdir: store
           set: |
               neurostore.cache-from=type=gha
               neurostore.cache-to=type=gha
@@ -96,6 +98,7 @@ jobs:
           files: store/docker-compose.yml,store/docker-compose.dev.yml
           push: false
           load: true
+          workdir: store
           set: |
               neurostore.cache-from=type=gha
               nginx.cache-from=type=gha
@@ -164,6 +167,7 @@ jobs:
         files: compose/docker-compose.yml,compose/docker-compose.dev.yml
         push: false
         load: true
+        workdir: compose
         set: |
             neurosynth.cache-from=type=gha
             nginx.cache-from=type=gha
