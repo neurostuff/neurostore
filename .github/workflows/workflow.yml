@@ -28,12 +28,12 @@ jobs:
           push: false
           load: false
           set: |
-              compose_neurosynth.cache-from=type=gha
-              compose_neurosynth.cache-to=type=gha
-              compose_nginx.cache-from=type=gha
-              compose_nginx.cache-to=type=gha
-              compose_synth_pgsql.cache-from=type=gha
-              compose_synth_pgsql.cache-to=type=gha
+              neurosynth.cache-from=type=gha
+              neurosynth.cache-to=type=gha
+              nginx.cache-from=type=gha
+              nginx.cache-to=type=gha
+              synth_pgsql.cache-from=type=gha
+              synth_pgsql.cache-to=type=gha
 
   build_neurostore:
    runs-on: ubuntu-latest
@@ -61,12 +61,12 @@ jobs:
           push: false
           load: false
           set: |
-              store_neurostore.cache-from=type=gha
-              store_neurostore.cache-to=type=gha
-              store_nginx.cache-from=type=gha
-              store_nginx.cache-to=type=gha
-              store_store_pgsql.cache-from=type=gha
-              store_store_pgsql.cache-to=type=gha
+              neurostore.cache-from=type=gha
+              neurostore.cache-to=type=gha
+              nginx.cache-from=type=gha
+              nginx.cache-to=type=gha
+              store_pgsql.cache-from=type=gha
+              store_pgsql.cache-to=type=gha
 
 
   neurostore_backend_tests:
@@ -85,6 +85,11 @@ jobs:
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       -
+        name: Configuration
+        run: |
+          cp .env.example .env
+          cp .env.example ../.env
+      -
         name: load images
         uses: docker/bake-action@master
         with:
@@ -92,13 +97,9 @@ jobs:
           push: false
           load: true
           set: |
-              store_neurostore.cache-from=type=gha
-              store_nginx.cache-from=type=gha
-              store_store_pgsql.cache-from=type=gha
-      -
-        name: Configuration
-        run: |
-          cp .env.example .env
+              neurostore.cache-from=type=gha
+              nginx.cache-from=type=gha
+              store_pgsql.cache-from=type=gha
       - 
         name: spin up backend
         run: |
@@ -150,7 +151,12 @@ jobs:
         submodules: recursive
     -
       name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+      uses: docker/setup-buildx-action@v2
+    -
+      name: Configuration
+      run: |
+        cp .env.example ../.env
+        cp .env.example .env
     -
       name: Build and push
       uses: docker/bake-action@master
@@ -159,9 +165,9 @@ jobs:
         push: false
         load: true
         set: |
-            compose_neurosynth.cache-from=type=gha
-            compose_nginx.cache-from=type=gha
-            compose_synth_pgsql.cache-from=type=gha
+            neurosynth.cache-from=type=gha
+            nginx.cache-from=type=gha
+            synth_pgsql.cache-from=type=gha
     -
       name: Configuration
       run: |
