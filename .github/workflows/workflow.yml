@@ -20,7 +20,7 @@ jobs:
         name: Build and push
         uses: docker/bake-action@master
         with:
-          files: docker-compose.yml,docker-compose.dev.yml
+          files: compose/docker-compose.yml,compose/docker-compose.dev.yml
           push: false
           load: false
           set: |
@@ -49,7 +49,7 @@ jobs:
         name: Build and push
         uses: docker/bake-action@master
         with:
-          files: docker-compose.yml,docker-compose.dev.yml
+          files: store/docker-compose.yml,store/docker-compose.dev.yml
           push: false
           load: false
           set: |
@@ -80,7 +80,7 @@ jobs:
         name: load images
         uses: docker/bake-action@master
         with:
-          files: docker-compose.yml,docker-compose.dev.yml
+          files: store/docker-compose.yml,store/docker-compose.dev.yml
           push: false
           load: true
           set: |
@@ -147,7 +147,7 @@ jobs:
       name: Build and push
       uses: docker/bake-action@master
       with:
-        files: docker-compose.yml,docker-compose.dev.yml
+        files: compose/docker-compose.yml,compose/docker-compose.dev.yml
         push: false
         load: true
         set: |
