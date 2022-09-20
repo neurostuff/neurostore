@@ -1,61 +1,79 @@
-import { useAuth0 } from '@auth0/auth0-react';
 import {
     Table,
-    TableBody,
-    TableCell,
     TableContainer,
     TableHead,
     TableRow,
+    TableBody,
+    TableCell,
     Paper,
-    Box,
-    IconButton,
     LinearProgress,
+    Box,
+    Typography,
 } from '@mui/material';
-import React from 'react';
-import { useHistory } from 'react-router-dom';
-import StudysetsPopupMenu from 'components/StudysetsPopupMenu/StudysetsPopupMenu';
-import StudiesTableStyles from './StudiesTable.styles';
-import Delete from '@mui/icons-material/Delete';
-import { StudyReturn } from 'neurostore-typescript-sdk';
+import { SystemStyleObject } from '@mui/system';
+import { ColorOptions } from 'index';
 
-interface StudiesTableModel {
-    studies: StudyReturn[] | undefined;
-    studysetEditMode?: 'add' | 'delete' | undefined;
-    onRemoveStudyFromStudyset?: (studyId: string) => void;
-    isLoading?: boolean;
-    noDataElement?: JSX.Element;
+export interface INeurosynthTable {
+    tableConfig: {
+        tableHeaderBackgroundColor?: string;
+        tableElevation?: number;
+        isLoading?: boolean;
+        loaderColor?: ColorOptions;
+        noDataDisplay?: JSX.Element;
+    };
+    headerCells: {
+        text: string;
+        key: number | string;
+        styles: SystemStyleObject | SystemStyleObject[];
+    }[];
+    rows: JSX.Element[];
 }
 
-const StudiesTable: React.FC<StudiesTableModel> = (props) => {
-    const { user } = useAuth0();
-    const history = useHistory();
+const NeurosynthTable: React.FC<INeurosynthTable> = (props) => {
+    const { tableConfig, headerCells = [], rows = [] } = props;
+    const {
+        tableHeaderBackgroundColor = 'primary.main',
+        tableElevation = 2,
+        isLoading = false,
+        loaderColor = 'primary',
+        noDataDisplay = (
+            <Box sx={{ padding: '1rem' }}>
+                <Typography color="warning.dark">No data</Typography>
+            </Box>
+        ),
+    } = tableConfig;
 
     return (
-        <TableContainer component={Paper} elevation={2} sx={StudiesTableStyles.root}>
+        <TableContainer component={Paper} elevation={tableElevation}>
             <Table>
                 <TableHead>
-                    <TableRow sx={{ backgroundColor: 'primary.main' }}>
-                        {props.studysetEditMode && <TableCell></TableCell>}
-                        <TableCell sx={StudiesTableStyles.headerCell}>Title</TableCell>
-                        <TableCell sx={StudiesTableStyles.headerCell}>Authors</TableCell>
-                        <TableCell sx={StudiesTableStyles.headerCell}>Journal</TableCell>
-                        <TableCell sx={StudiesTableStyles.headerCell}>Owner</TableCell>
-                    </TableRow>
-                    <TableRow>
-                        {props.isLoading ? (
-                            <TableCell sx={{ padding: 0 }} colSpan={props.studysetEditMode ? 5 : 4}>
-                                <Box>
-                                    <LinearProgress color="primary" />
-                                </Box>
+                    <TableRow sx={{ backgroundColor: tableHeaderBackgroundColor }}>
+                        {headerCells.map((headerCell) => (
+                            <TableCell key={headerCell.key} sx={headerCell.styles}>
+                                {headerCell.text}
                             </TableCell>
-                        ) : (
-                            <></>
-                        )}
+                        ))}
+                    </TableRow>
+                    <TableRow sx={{ display: isLoading ? 'table-row' : 'none' }}>
+                        <TableCell sx={{ padding: 0 }} colSpan={headerCells.length}>
+                            <Box>
+                                <LinearProgress color={loaderColor} />
+                            </Box>
+                        </TableCell>
                     </TableRow>
                 </TableHead>
-                <TableBody>
-                    {(props.studies || []).map((row, index) => (
-                        <TableRow
+
+                <TableBody>{rows}</TableBody>
+            </Table>
+            {rows.length === 0 && noDataDisplay}
+        </TableContainer>
+    );
+};
+
+export default NeurosynthTable;
+
+/**
+ *                         <TableRow
                             data-tour={index === 0 ? 'PublicStudiesPage-4' : null}
                             sx={StudiesTableStyles.tableRow}
                             key={index}
@@ -108,17 +126,4 @@ const StudiesTable: React.FC<StudiesTableModel> = (props) => {
                                 </Box>
                             </TableCell>
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-            {(props.studies || []).length === 0 &&
-                (props.noDataElement ? (
-                    props.noDataElement
-                ) : (
-                    <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No data</Box>
-                ))}
-        </TableContainer>
-    );
-};
-
-export default StudiesTable;
+ */

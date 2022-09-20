@@ -176,7 +176,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                     </Box>
                 </Box>
 
-                <Box sx={{ margin: '2rem 0' }}>
+                <Box data-tour="MetaAnalysisPage-1" sx={{ margin: '1rem 0' }}>
                     <NeurosynthAccordion
                         elevation={2}
                         TitleElement={
@@ -255,7 +255,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                     </Typography>
 
                     <Paper
-                        data-tour="MetaAnalysisPage-1"
+                        data-tour="MetaAnalysisPage-2"
                         sx={{ padding: '1rem', marginBottom: '1rem' }}
                     >
                         <Typography sx={{ fontWeight: 'bold', marginBottom: '1rem' }}>
@@ -279,7 +279,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                     </Paper>
 
                     <Paper
-                        data-tour="MetaAnalysisPage-2"
+                        data-tour="MetaAnalysisPage-3"
                         sx={{ padding: '1rem', marginBottom: '2rem' }}
                     >
                         <Typography sx={{ fontWeight: 'bold', marginBottom: '1rem' }}>

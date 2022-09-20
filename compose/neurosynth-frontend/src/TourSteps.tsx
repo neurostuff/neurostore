@@ -231,6 +231,15 @@ const TourSteps: { [key: string]: StepType[] } = {
             ),
         },
         {
+            selector: '[data-tour="UserStudiesPage-3"]',
+            content: () => (
+                <Typography variant="subtitle1">
+                    Use this button to delete a study that you have cloned. This action is
+                    irreversible!
+                </Typography>
+            ),
+        },
+        {
             selector: '.tour-studysets-tab',
             content: () => (
                 <div>
@@ -469,6 +478,20 @@ const TourSteps: { [key: string]: StepType[] } = {
             selector: '[data-tour="MetaAnalysisPage-1"]',
             content: () => (
                 <div>
+                    <Typography variant="h5">Specification Summary</Typography>
+                    <Typography variant="subtitle1">
+                        Expand this accordion to view the specification summary of this
+                        meta-analysis.
+                    </Typography>
+                </div>
+            ),
+            resizeObservables: ['[data-tour="MetaAnalysisPage-1"]'],
+            stepInteraction: true,
+        },
+        {
+            selector: '[data-tour="MetaAnalysisPage-2"]',
+            content: () => (
+                <div>
                     <Typography variant="h5">Google Collab</Typography>
                     <Typography variant="subtitle1">
                         We have created an environment for you to easily run your meta-analyis in
@@ -487,7 +510,7 @@ const TourSteps: { [key: string]: StepType[] } = {
             ),
         },
         {
-            selector: '[data-tour="MetaAnalysisPage-2"]',
+            selector: '[data-tour="MetaAnalysisPage-3"]',
             content: () => (
                 <div>
                     <Typography variant="h5">Run Locally</Typography>

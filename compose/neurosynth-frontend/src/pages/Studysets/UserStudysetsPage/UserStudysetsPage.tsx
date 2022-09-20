@@ -1,7 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Typography, IconButton } from '@mui/material';
+import { Box, Typography, IconButton, TableRow, TableCell } from '@mui/material';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
-import StudysetsTable from 'components/Tables/StudysetsTable/StudysetsTable';
 import HelpIcon from '@mui/icons-material/Help';
 import AddIcon from '@mui/icons-material/Add';
 import useGetTour from 'hooks/useGetTour';
@@ -10,11 +9,16 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { useState } from 'react';
 import { useIsFetching } from 'react-query';
+import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
+import { getNumStudiesString } from '../PublicStudysetsPage/PublicStudysetsPage';
+import { useHistory } from 'react-router-dom';
+import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 
 const UserStudysetsPage: React.FC = (props) => {
     const { user } = useAuth0();
     useGuard('/studysets');
     const { startTour } = useGetTour('UserStudysetsPage');
+    const history = useHistory();
     const isFetching = useIsFetching('studysets');
     const {
         data,
@@ -35,7 +39,7 @@ const UserStudysetsPage: React.FC = (props) => {
     };
 
     return (
-        <StateHandlerComponent isLoading={getStudysetIsLoading} isError={isError}>
+        <StateHandlerComponent isLoading={false} isError={isError}>
             <Box
                 sx={{
                     display: 'flex',
@@ -70,9 +74,57 @@ const UserStudysetsPage: React.FC = (props) => {
                 isOpen={createStudysetDialogIsOpen}
             />
             <Box>
-                <StudysetsTable
-                    isLoading={getStudysetIsLoading || isFetching > 0}
-                    studysets={data || []}
+                <NeurosynthTable
+                    tableConfig={{
+                        isLoading: getStudysetIsLoading || isFetching > 0,
+                        tableHeaderBackgroundColor: '#42ab55',
+                        loaderColor: 'secondary',
+                    }}
+                    headerCells={[
+                        {
+                            text: 'Name',
+                            key: 'name',
+                            styles: { fontWeight: 'bold', color: 'primary.contrastText' },
+                        },
+                        {
+                            text: 'Number of Studies',
+                            key: 'numberStudies',
+                            styles: { fontWeight: 'bold', color: 'primary.contrastText' },
+                        },
+                        {
+                            text: 'Description',
+                            key: 'description',
+                            styles: { fontWeight: 'bold', color: 'primary.contrastText' },
+                        },
+                    ]}
+                    rows={(data || []).map((studyset, index) => (
+                        <TableRow
+                            key={studyset?.id || index}
+                            onClick={() => history.push(`studysets/${studyset?.id}`)}
+                            sx={NeurosynthTableStyles.tableRow}
+                        >
+                            <TableCell>
+                                {studyset?.name || (
+                                    <Box sx={{ color: 'warning.dark' }}>No name</Box>
+                                )}
+                            </TableCell>
+                            <TableCell
+                                sx={{
+                                    color:
+                                        (studyset.studies || []).length === 0
+                                            ? 'warning.dark'
+                                            : 'black',
+                                }}
+                            >
+                                {getNumStudiesString(studyset.studies)}
+                            </TableCell>
+                            <TableCell>
+                                {studyset?.description || (
+                                    <Box sx={{ color: 'warning.dark' }}>No description</Box>
+                                )}
+                            </TableCell>
+                        </TableRow>
+                    ))}
                 />
             </Box>
         </StateHandlerComponent>

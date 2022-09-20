@@ -1,7 +1,14 @@
 import React, { ChangeEvent, useEffect, useState } from 'react';
-import { TablePagination, Typography, Pagination, Box, IconButton } from '@mui/material';
+import {
+    TablePagination,
+    Typography,
+    Pagination,
+    Box,
+    IconButton,
+    TableRow,
+    TableCell,
+} from '@mui/material';
 import PublicStudiesPageStyles from './PublicStudiesPage.styles';
-import StudiesTable from 'components/Tables/StudiesTable/StudiesTable';
 import SearchBar from 'components/SearchBar/SearchBar';
 import HelpIcon from '@mui/icons-material/Help';
 import useGetTour from 'hooks/useGetTour';
@@ -10,6 +17,9 @@ import { useGetStudies } from 'hooks';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useHistory, useLocation } from 'react-router-dom';
 import { StudyList } from 'neurostore-typescript-sdk';
+import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
+import StudysetsPopupMenu from 'components/StudysetsPopupMenu/StudysetsPopupMenu';
+import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 
 export enum Source {
     NEUROSTORE = 'neurostore',
@@ -112,7 +122,7 @@ const PublicStudiesPage = () => {
     const { startTour } = useGetTour('PublicStudiesPage');
     const history = useHistory();
     const location = useLocation();
-    const { isAuthenticated } = useAuth0();
+    const { isAuthenticated, user } = useAuth0();
 
     const [searchBarParams, setSearchBarParams] = useState<{
         searchedString: string;
@@ -138,7 +148,7 @@ const PublicStudiesPage = () => {
         setSearchCriteria(searchCriteria);
     }, [location.search, refetch]);
 
-    // runs for any change in study query
+    // runs for any change in study query, add set timeout and clear timeout for debounce
     useEffect(() => {
         const timeout = setTimeout(async () => {
             refetch();
@@ -237,10 +247,77 @@ const PublicStudiesPage = () => {
 
             <StateHandlerComponent isLoading={false} isError={isError}>
                 <Box sx={{ marginBottom: '1rem' }}>
-                    <StudiesTable
-                        isLoading={isLoading || isRefetching}
-                        studysetEditMode={isAuthenticated ? 'add' : undefined}
-                        studies={studyData?.results}
+                    <NeurosynthTable
+                        tableConfig={{
+                            isLoading: isLoading || isRefetching,
+                            loaderColor: 'secondary',
+                            noDataDisplay: (
+                                <Box sx={{ color: 'warning.dark', padding: '1rem' }}>
+                                    No studies found
+                                </Box>
+                            ),
+                        }}
+                        headerCells={[
+                            {
+                                text: '',
+                                key: 'addToStudysetCol',
+                                styles: { display: isAuthenticated ? 'table-cell' : 'none' },
+                            },
+                            {
+                                text: 'Title',
+                                key: 'title',
+                                styles: { color: 'primary.contrastText', fontWeight: 'bold' },
+                            },
+                            {
+                                text: 'Authors',
+                                key: 'authors',
+                                styles: { color: 'primary.contrastText', fontWeight: 'bold' },
+                            },
+                            {
+                                text: 'Journal',
+                                key: 'journal',
+                                styles: { color: 'primary.contrastText', fontWeight: 'bold' },
+                            },
+                            {
+                                text: 'Owner',
+                                key: 'owner',
+                                styles: { color: 'primary.contrastText', fontWeight: 'bold' },
+                            },
+                        ]}
+                        rows={(studyData?.results || []).map((data, index) => (
+                            <TableRow
+                                data-tour={index === 0 ? 'PublicStudiesPage-4' : null}
+                                sx={NeurosynthTableStyles.tableRow}
+                                key={data.id || index}
+                                onClick={() => history.push(`/studies/${data.id}`)}
+                            >
+                                <TableCell
+                                    data-tour={index === 0 ? 'PublicStudiesPage-3' : null}
+                                    sx={{ display: isAuthenticated ? 'table-cell' : 'none' }}
+                                >
+                                    <StudysetsPopupMenu study={data} />
+                                </TableCell>
+                                <TableCell>
+                                    {data?.name || (
+                                        <Box sx={{ color: 'warning.dark' }}>No name</Box>
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    {data?.authors || (
+                                        <Box sx={{ color: 'warning.dark' }}>No author(s)</Box>
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    {data?.publication || (
+                                        <Box sx={{ color: 'warning.dark' }}>No Journal</Box>
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    {(data?.user === user?.sub ? 'Me' : data?.user) ||
+                                        'Neurosynth-Compose'}
+                                </TableCell>
+                            </TableRow>
+                        ))}
                     />
                 </Box>
             </StateHandlerComponent>

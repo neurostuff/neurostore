@@ -1,6 +1,7 @@
 import { Button } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
+import { ColorOptions } from 'index';
 
 interface ILoadingButton {
     text: string;
@@ -10,9 +11,9 @@ interface ILoadingButton {
     startIcon?: React.ReactNode;
     endIcon?: React.ReactNode;
     onClick: () => void;
-    color?: 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
+    color?: ColorOptions;
     disabled?: boolean;
-    loaderColor?: 'inherit' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
+    loaderColor?: ColorOptions;
 }
 
 const LoadingButton: React.FC<ILoadingButton> = (props) => {
