@@ -1,12 +1,12 @@
-import { Box, Button, Divider } from '@mui/material';
+import { Box, Button, Divider, TableCell, TableRow, Typography, IconButton } from '@mui/material';
 import { useState } from 'react';
-import DisplayValuesTable from 'components/Tables/DisplayValuesTable/DisplayValuesTable';
-import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
-import { IMetadataRowModel } from '../../../EditMetadata';
-import AddMetadataRow from '../../../EditMetadata/EditMetadataRow/AddMetadataRow';
+import { IMetadataRowModel } from 'components/EditMetadata';
+import AddMetadataRow from 'components/EditMetadata/EditMetadataRow/AddMetadataRow';
 import MetaAnalysisAlgorithmStyles from '../MetaAnalysisAlgorithm.styles';
 import { IDynamicFormInput } from '../..';
 import DynamicFormBaseTitle from './DynamicFormBaseTitle';
+import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
+import RemoveCircle from '@mui/icons-material/RemoveCircle';
 
 const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
     const kwargList: { key: string; value: string }[] = Object.keys(props.value || {}).map(
@@ -18,7 +18,7 @@ const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
 
     const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
 
-    const handleActionSelected = (id: string) => {
+    const handleDeleteKwarg = (id: string) => {
         const newObj = { ...props.value };
         delete newObj[id];
         props.onUpdate({
@@ -35,32 +35,6 @@ const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
             [props.parameterName]: newObj,
         });
         return true;
-    };
-
-    const dataForKwargsTable: IDisplayValuesTableModel = {
-        columnHeaders: [
-            { value: 'Variable', bold: true },
-            { value: 'Argument', bold: true },
-            { value: '' },
-        ],
-        paper: true,
-        rowData: kwargList.map((kwarg) => ({
-            uniqueKey: kwarg.key,
-            columnValues: [
-                {
-                    value: kwarg.key,
-                },
-                {
-                    value: kwarg.value,
-                },
-                {
-                    value: 'delete',
-                    isAction: true,
-                    actionStyling: 'error',
-                },
-            ],
-        })),
-        onActionSelected: handleActionSelected,
     };
 
     return (
@@ -105,7 +79,46 @@ const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
                         />
                     </Box>
                     <Box sx={{ width: '100%' }}>
-                        <DisplayValuesTable {...dataForKwargsTable} />
+                        <NeurosynthTable
+                            tableConfig={{
+                                isLoading: false,
+                                tableHeaderBackgroundColor: 'transparent',
+                                tableElevation: 0,
+                                noDataDisplay: (
+                                    <Typography color="warning.dark" style={{ padding: '1rem' }}>
+                                        No keyword arguments
+                                    </Typography>
+                                ),
+                            }}
+                            headerCells={[
+                                {
+                                    text: 'Variable',
+                                    key: 'variable',
+                                    styles: { fontWeight: 'bold' },
+                                },
+                                {
+                                    text: 'Argument',
+                                    key: 'argument',
+                                    styles: { fontWeight: 'bold' },
+                                },
+                                {
+                                    text: '',
+                                    key: 'deleteRow',
+                                    styles: {},
+                                },
+                            ]}
+                            rows={kwargList.map((kwarg) => (
+                                <TableRow key={kwarg.key}>
+                                    <TableCell>{kwarg.key}</TableCell>
+                                    <TableCell>{kwarg.value}</TableCell>
+                                    <TableCell>
+                                        <IconButton onClick={() => handleDeleteKwarg(kwarg.key)}>
+                                            <RemoveCircle color="error" />
+                                        </IconButton>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        />
                     </Box>
                 </Box>
             </Box>

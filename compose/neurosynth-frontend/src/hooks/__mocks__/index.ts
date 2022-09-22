@@ -1,4 +1,4 @@
-import { mockConditions, mockStudy, mockStudysets } from 'testing/mockData';
+import { mockAnnotations, mockConditions, mockStudy, mockStudysets } from 'testing/mockData';
 import useInputValidation from 'hooks/useInputValidation'; // don't need to mock this as it isn't making any api calls
 
 const useUpdateAnalysis = jest.fn().mockReturnValue({
@@ -79,8 +79,13 @@ const useUpdateStudyset = jest.fn().mockReturnValue({
 
 const useUpdateStudy = jest.fn().mockReturnValue({
     isLoading: false,
-    someTest: 'test',
     mutate: jest.fn(),
+});
+
+const useGetAnnotationsByStudysetId = jest.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    data: mockAnnotations(),
 });
 
 const useIsMounted = () => {
@@ -110,4 +115,5 @@ export {
     useCreateStudyset,
     useGetStudysets,
     useUpdateStudy,
+    useGetAnnotationsByStudysetId,
 };
