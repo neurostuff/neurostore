@@ -10,7 +10,7 @@ const useDeleteStudyset = () => {
         {
             onSuccess: () => {
                 // we need to send a request to retrieve studies again with its associated analyses and points
-                queryClient.invalidateQueries('studies');
+                queryClient.invalidateQueries('studysets');
                 enqueueSnackbar('studyset deleted successfully', { variant: 'success' });
             },
             onError: () => {

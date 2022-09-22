@@ -2,7 +2,6 @@ import { Typography, Box } from '@mui/material';
 import { useEffect, useState } from 'react';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
 import Visualizer from 'components/Visualizer/Visualizer';
-import DisplayImagesTable from 'components/Tables/DisplayImagesTable/DisplayImagesTable';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import DisplayAnalysisStyles from './DisplayAnalysis.styles';
 import { DataGrid } from '@mui/x-data-grid';
@@ -13,6 +12,8 @@ import {
     PointReturn,
 } from 'neurostore-typescript-sdk';
 import { ROW_HEIGHT } from 'components/EditStudyComponents/EditAnalyses/EditAnalysis/EditAnalysisPoints/EditAnalysisPoints';
+import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
+import DisplayImageTableRow from 'components/Tables/DisplayImageTableRow/DisplayImageTableRow';
 
 const DisplayAnalysis: React.FC<AnalysisReturn | undefined> = (props) => {
     const [selectedImage, setSelectedImage] = useState<ImageReturn | undefined>(undefined);
@@ -43,10 +44,6 @@ const DisplayAnalysis: React.FC<AnalysisReturn | undefined> = (props) => {
     if (!props || Object.keys(props).length === 0) {
         return <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No analysis</Box>;
     }
-
-    const handleSelectImage = (selectedImage: ImageReturn | undefined) => {
-        setSelectedImage(selectedImage);
-    };
 
     const conditionRows = ((props?.conditions as ConditionReturn[]) || []).map(
         (condition, index) => ({
@@ -199,10 +196,29 @@ const DisplayAnalysis: React.FC<AnalysisReturn | undefined> = (props) => {
                         defaultExpanded={(props?.images || []).length > 0}
                         elevation={2}
                     >
-                        <DisplayImagesTable
-                            initialSelectedImage={selectedImage}
-                            onSelectImage={handleSelectImage}
-                            images={props.images as ImageReturn[]}
+                        <NeurosynthTable
+                            tableConfig={{
+                                tableHeaderBackgroundColor: 'transparent',
+                                tableElevation: 0,
+                                noDataDisplay: (
+                                    <Typography sx={{ padding: '1rem', color: 'warning.dark' }}>
+                                        No images
+                                    </Typography>
+                                ),
+                            }}
+                            headerCells={[
+                                { text: '', key: 'dropdown', styles: {} },
+                                { text: 'Type', key: 'type', styles: {} },
+                                { text: 'Space', key: 'space', styles: {} },
+                            ]}
+                            rows={((props.images || []) as ImageReturn[]).map((image, index) => (
+                                <DisplayImageTableRow
+                                    key={image.id}
+                                    image={image}
+                                    onRowSelect={(image) => setSelectedImage(image)}
+                                    active={selectedImage?.id === image.id || false}
+                                />
+                            ))}
                         />
                     </NeurosynthAccordion>
                 </Box>

@@ -3,8 +3,9 @@ import DisplayAnalysis from './DisplayAnalysis';
 import { AnalysisReturn, ImageReturn } from 'neurostore-typescript-sdk';
 import { DataGridProps } from '@mui/x-data-grid';
 
-jest.mock('../Visualizer/Visualizer');
-jest.mock('../Tables/DisplayImagesTable/DisplayImagesTable');
+jest.mock('components/Visualizer/Visualizer');
+jest.mock('components/Tables/NeurosynthTable/NeurosynthTable');
+jest.mock('components/Tables/DisplayImageTableRow/DisplayImageTableRow');
 jest.mock('@mui/x-data-grid', () => {
     const { DataGrid } = jest.requireActual('@mui/x-data-grid');
     return {
@@ -119,7 +120,7 @@ describe('DisplayAnalysis Component', () => {
                     analysis_name: 'model001 task001 cope001 tstat1',
                     created_at: '2021-10-25T10:37:20.237634+00:00',
                     filename: 'model001_task001_cope001_tstat1.nii.gz',
-                    id: '5asPG5P4x7F9',
+                    id: 'some-key',
                     metadata: {
                         BMI: null,
                         add_date: '2016-01-21T17:22:27.397856Z',
@@ -138,7 +139,7 @@ describe('DisplayAnalysis Component', () => {
                     analysis_name: 'model001 task001 cope001 tstat1',
                     created_at: '2021-10-25T10:37:20.237634+00:00',
                     filename: 'some_test_file.nii.gz',
-                    id: '5asPG5P4x7F9',
+                    id: 'some-other-key',
                     metadata: {
                         BMI: null,
                         add_date: '2016-01-21T17:22:27.397856Z',

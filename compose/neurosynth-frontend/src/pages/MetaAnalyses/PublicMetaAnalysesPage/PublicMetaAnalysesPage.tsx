@@ -1,57 +1,18 @@
-import { Typography, Box, IconButton } from '@mui/material';
+import { Typography, Box, IconButton, TableRow, TableCell } from '@mui/material';
 import { useHistory } from 'react-router-dom';
-import DisplayValuesTable from 'components/Tables/DisplayValuesTable/DisplayValuesTable';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
 import { useGetMetaAnalyses } from 'hooks';
 import useGetTour from 'hooks/useGetTour';
 import Help from '@mui/icons-material/Help';
+import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
+import { useAuth0 } from '@auth0/auth0-react';
+import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 
 const PublicMetaAnalysesPage: React.FC = (props) => {
     const { startTour } = useGetTour('PublicMetaAnalysesPage');
     const history = useHistory();
     const { data, isLoading, isError } = useGetMetaAnalyses();
-
-    const handleMetaAnalysisSelected = (selected: string | number) => {
-        history.push(`/meta-analyses/${selected}`);
-    };
-
-    const metaAnalysesTableData: IDisplayValuesTableModel = {
-        isLoading: isLoading,
-        paper: true,
-        selectable: true,
-        onValueSelected: handleMetaAnalysisSelected,
-        tableHeadRowColor: '#5C2751',
-        tableHeadRowTextContrastColor: 'white',
-        columnHeaders: [
-            {
-                value: 'Name',
-            },
-            {
-                value: 'Description',
-            },
-            {
-                value: 'User',
-            },
-        ],
-        rowData: (data || []).map((metaAnalysis, index) => ({
-            uniqueKey: metaAnalysis.id || index,
-            columnValues: [
-                {
-                    value: metaAnalysis.name || 'no name',
-                    shouldHighlightNoData: !metaAnalysis.name,
-                },
-                {
-                    value: metaAnalysis.description || 'no description',
-                    shouldHighlightNoData: !metaAnalysis.description,
-                },
-                {
-                    value: metaAnalysis.user || 'no user',
-                    shouldHighlightNoData: !metaAnalysis.user,
-                },
-            ],
-        })),
-    };
+    const { user } = useAuth0();
 
     return (
         <>
@@ -73,7 +34,53 @@ const PublicMetaAnalysesPage: React.FC = (props) => {
                 errorMessage="There was an error fetching meta-analyses"
             >
                 <Box data-tour="PublicMetaAnalysesPage-1">
-                    <DisplayValuesTable {...metaAnalysesTableData} />
+                    <NeurosynthTable
+                        tableConfig={{
+                            isLoading: isLoading,
+                            loaderColor: 'secondary',
+                            tableHeaderBackgroundColor: '#5C2751',
+                        }}
+                        headerCells={[
+                            {
+                                text: 'Name',
+                                key: 'name',
+                                styles: { fontWeight: 'bold', color: 'primary.contrastText' },
+                            },
+                            {
+                                text: 'Description',
+                                key: 'description',
+                                styles: { fontWeight: 'bold', color: 'primary.contrastText' },
+                            },
+                            {
+                                text: 'Owner',
+                                key: 'owner',
+                                styles: { fontWeight: 'bold', color: 'primary.contrastText' },
+                            },
+                        ]}
+                        rows={(data || []).map((metaAnalysis, index) => (
+                            <TableRow
+                                onClick={() => history.push(`/meta-analyses/${metaAnalysis?.id}`)}
+                                key={metaAnalysis?.id || index}
+                                sx={NeurosynthTableStyles.tableRow}
+                            >
+                                <TableCell>
+                                    {metaAnalysis?.name || (
+                                        <Box sx={{ color: 'warning.dark' }}>No name</Box>
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    {metaAnalysis?.description || (
+                                        <Box sx={{ color: 'warning.dark' }}>No description</Box>
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    {(metaAnalysis?.user === user?.sub
+                                        ? 'Me'
+                                        : metaAnalysis?.user) || 'Neurosynth-Compose'}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    />
                 </Box>
             </StateHandlerComponent>
         </>

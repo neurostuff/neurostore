@@ -7,7 +7,6 @@ import { act } from 'react-dom/test-utils';
 import EditStudyMetadata from './EditStudyMetadata';
 
 jest.mock('@auth0/auth0-react');
-jest.mock('utils/api');
 jest.mock('hooks');
 
 describe('EditStudyMetadata Component', () => {

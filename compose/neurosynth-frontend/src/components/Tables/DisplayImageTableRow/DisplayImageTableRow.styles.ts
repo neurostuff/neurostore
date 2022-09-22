@@ -1,4 +1,4 @@
-import { Style } from '../../../..';
+import { Style } from '../../..';
 
 const DisplayImageTableRowStyles: Style = {
     root: {
