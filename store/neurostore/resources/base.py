@@ -250,7 +250,7 @@ class ListView(BaseView):
             elif args['data_type'] == 'image':
                 q = q.filter(m.analyses.any(Analysis.images.any()))
             elif args['data_type'] == 'both':
-                q = q.filter(sae.and_(
+                q = q.filter(sae.or_(
                     m.analyses.any(Analysis.images.any()),
                     m.analyses.any(Analysis.points.any())))
 
