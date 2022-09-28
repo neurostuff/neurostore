@@ -9,6 +9,9 @@ import {
     Button,
     MenuList,
     Typography,
+    FormControlLabel,
+    Checkbox,
+    LinearProgress,
 } from '@mui/material';
 import React, { ChangeEvent, useState, useRef } from 'react';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
@@ -16,6 +19,7 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import { useCreateStudyset, useGetStudysets, useUpdateStudyset } from 'hooks';
 import { StudyReturn, StudysetReturn } from 'neurostore-typescript-sdk';
 import { useAuth0 } from '@auth0/auth0-react';
+import { useIsFetching, useQueryClient } from 'react-query';
 
 export interface IStudysetsPopupMenu {
     study: StudyReturn;
@@ -23,6 +27,7 @@ export interface IStudysetsPopupMenu {
 }
 
 const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
+    const queryClient = useQueryClient();
     const { user } = useAuth0();
     const anchorRef = useRef<HTMLButtonElement>(null);
     const [open, setOpen] = useState(false);
@@ -38,6 +43,7 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
         name: '',
         description: '',
     });
+    const isFetching = useIsFetching('studies');
 
     const handleClickClose = (event: MouseEvent | TouchEvent) => {
         event.stopPropagation();
@@ -83,7 +89,36 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
                     },
                 },
                 {
-                    onSuccess: () => setOpen(false),
+                    onSuccess: () => {
+                        queryClient.invalidateQueries('studies');
+                        setOpen(false);
+                    },
+                }
+            );
+        }
+    };
+
+    const handleUpdateStudyset = (
+        study: StudyReturn,
+        selectedStudyset: StudysetReturn,
+        checked: boolean
+    ) => {
+        if (study?.id && selectedStudyset?.id) {
+            const updatedStudysetStudies = checked
+                ? [...(selectedStudyset.studies || []), study.id] // if checked, add the study id
+                : [...(selectedStudyset.studies || []).filter((x) => x !== study.id)]; // if not checked, remove the study id
+
+            updateStudyset(
+                {
+                    studysetId: selectedStudyset.id,
+                    studyset: {
+                        studies: updatedStudysetStudies,
+                    },
+                },
+                {
+                    onSuccess: () => {
+                        queryClient.invalidateQueries('studies');
+                    },
                 }
             );
         }
@@ -103,6 +138,12 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
         }));
     };
 
+    const isLoading =
+        getStudysetsIsLoading ||
+        createStudysetIsLoading ||
+        updateStudysetIsLoading ||
+        isFetching > 0;
+
     return (
         <>
             <IconButton disabled={!!props.disabled} onClick={handleOpenMenu} ref={anchorRef}>
@@ -119,7 +160,7 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
                     sx={{ padding: '6px 16px', cursor: 'default' }}
                 >
                     <Typography variant="subtitle1" fontWeight="bold">
-                        Add to a studyset
+                        Add/Remove from studyset
                     </Typography>
                 </Box>
                 <Box
@@ -128,14 +169,11 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
                 >
                     <StateHandlerComponent
                         loadingText="loading studysets"
-                        isLoading={
-                            getStudysetsIsLoading ||
-                            createStudysetIsLoading ||
-                            updateStudysetIsLoading
-                        }
+                        isLoading={false}
                         isError={getStudysetsIsError || !props.study}
                     >
                         <>
+                            <LinearProgress sx={{ visibility: isLoading ? 'visible' : 'hidden' }} />
                             <Divider />
                             <MenuList
                                 sx={{
@@ -145,14 +183,27 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
                                 }}
                             >
                                 {(studysets || []).map((studyset) => (
-                                    <MenuItem
-                                        onClick={(event) => {
-                                            event.stopPropagation();
-                                            handleAddStudyToStudyset(props.study, studyset);
-                                        }}
-                                        key={studyset.id}
-                                    >
-                                        {studyset.name || studyset.id}
+                                    <MenuItem key={studyset.id}>
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    onChange={(event) => {
+                                                        event.stopPropagation();
+                                                        handleUpdateStudyset(
+                                                            props.study,
+                                                            studyset,
+                                                            event.target.checked
+                                                        );
+                                                    }}
+                                                    checked={props.study.studysets?.some(
+                                                        (x) =>
+                                                            (x.id || null) ===
+                                                            (studyset.id || undefined)
+                                                    )}
+                                                />
+                                            }
+                                            label={studyset?.name || ''}
+                                        />
                                     </MenuItem>
                                 ))}
                             </MenuList>
@@ -184,30 +235,45 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
                                         sx={{ width: '100%' }}
                                         id="studyset-description"
                                     />
-                                    <Button
-                                        onClick={(event) => {
-                                            event.stopPropagation();
-                                            handleCreateStudyset(
-                                                studysetDetails.name,
-                                                studysetDetails.description
-                                            );
-                                        }}
-                                        disabled={studysetDetails.name.length === 0}
-                                        sx={{ marginTop: '1rem', width: '100%' }}
-                                    >
-                                        Create
-                                    </Button>
+                                    <Box sx={{ display: 'flex', width: '208px' }}>
+                                        <Button
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                handleCreateStudyset(
+                                                    studysetDetails.name,
+                                                    studysetDetails.description
+                                                );
+                                            }}
+                                            disabled={studysetDetails.name.length === 0}
+                                            sx={{ marginTop: '1rem', width: '100%' }}
+                                        >
+                                            Create
+                                        </Button>
+                                        <Button
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                setInCreateMode(false);
+                                            }}
+                                            color="error"
+                                            sx={{ marginTop: '1rem', width: '100%' }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </Box>
                                 </Box>
                             ) : (
                                 <MenuItem
-                                    sx={{ marginTop: '10px' }}
+                                    sx={{ marginTop: '10px', width: '208px' }}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setInCreateMode(true);
                                     }}
                                 >
                                     <Typography
-                                        sx={{ display: 'flex', alignItems: 'center' }}
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                        }}
                                         variant="subtitle1"
                                     >
                                         <Add sx={{ marginRight: '5px' }} />

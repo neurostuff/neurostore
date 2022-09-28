@@ -8,6 +8,7 @@ import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import { useAuth0 } from '@auth0/auth0-react';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { useHistory } from 'react-router-dom';
+import { useQueryClient } from 'react-query';
 
 export const getNumStudiesString = (studies: any[] | undefined): string => {
     if (!studies) {
@@ -20,10 +21,12 @@ export const getNumStudiesString = (studies: any[] | undefined): string => {
 };
 
 const PublicStudysetsPage: React.FC = (props) => {
+    const queryClient = useQueryClient();
     const { startTour } = useGetTour('PublicStudysetsPage');
     const { user } = useAuth0();
     const history = useHistory();
     const { data: studysets, isError, isLoading } = useGetStudysets({ nested: false });
+    console.log(queryClient.getQueryCache());
 
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>

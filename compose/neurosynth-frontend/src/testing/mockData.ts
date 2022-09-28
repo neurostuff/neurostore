@@ -5,9 +5,8 @@ import {
     PointReturn,
     ConditionReturn,
     AnalysisReturn,
-    Annotation,
-    ReadOnly,
 } from 'neurostore-typescript-sdk';
+import { NeurostoreAnnotation } from 'utils/api';
 
 const mockConditions: () => ConditionReturn[] = () => [
     {
@@ -39,7 +38,7 @@ const mockPoints: () => PointReturn[] = () => [
         label_id: null,
         space: 'MNI',
         user: 'some-user',
-        value: [],
+        value: '',
         entities: [],
     },
     {
@@ -52,7 +51,7 @@ const mockPoints: () => PointReturn[] = () => [
         label_id: null,
         space: 'MNI',
         user: 'some-user',
-        value: [],
+        value: '',
         entities: [],
     },
     {
@@ -65,7 +64,7 @@ const mockPoints: () => PointReturn[] = () => [
         label_id: null,
         space: 'MNI',
         user: 'some-user',
-        value: [],
+        value: '',
         entities: [],
     },
 ];
@@ -133,7 +132,7 @@ const mockStudysets: () => StudysetReturn[] = () => [
     },
 ];
 
-const mockAnnotations: () => (Annotation & ReadOnly)[] = () => [
+const mockAnnotations: () => NeurostoreAnnotation[] = () => [
     {
         description: 'this is an annotation',
         user: 'github|26612023',

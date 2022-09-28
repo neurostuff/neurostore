@@ -5,14 +5,13 @@ import AutoAwesomeMotionIcon from '@mui/icons-material/AutoAwesomeMotion';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import NeurosynthList from 'components/NeurosynthList/NeurosynthList';
 import { useGetMetaAnalyses, useGetStudies, useGetStudysets, useCreateStudyset } from 'hooks';
-import { SearchCriteria } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
+// import { SearchCriteria } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
 import { useAuth0 } from '@auth0/auth0-react';
 import AuthenticatedLandingPageStyles from './AuthenticatedLandingPage.styles';
 import { useHistory } from 'react-router-dom';
 import { useState } from 'react';
 import Help from '@mui/icons-material/Help';
 import useGetTour from 'hooks/useGetTour';
-
 const AuthenticatedLandingPage: React.FC = (props) => {
     const { startTour } = useGetTour('AuthenticatedLandingPage');
     const history = useHistory();
@@ -26,8 +25,8 @@ const AuthenticatedLandingPage: React.FC = (props) => {
         data: studies,
         isLoading: getStudiesIsLoading,
         isError: getStudiesIsError,
-    } = useGetStudies(!!user?.sub, {
-        ...new SearchCriteria(),
+    } = useGetStudies({
+        // ...new SearchCriteria(),
         userId: user?.sub,
     });
     const {

@@ -1,5 +1,5 @@
 import { AxiosError, AxiosResponse } from 'axios';
-import { Studyset, StudysetReturn } from 'neurostore-typescript-sdk';
+import { StudysetRequest, StudysetReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from 'react-query';
 import API from 'utils/api';
@@ -7,8 +7,8 @@ import API from 'utils/api';
 const useCreateStudyset = () => {
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
-    return useMutation<AxiosResponse<StudysetReturn>, AxiosError, Studyset, unknown>(
-        (studyset: Studyset) => API.NeurostoreServices.StudySetsService.studysetsPost(studyset),
+    return useMutation<AxiosResponse<StudysetReturn>, AxiosError, StudysetRequest, unknown>(
+        (studyset) => API.NeurostoreServices.StudySetsService.studysetsPost(studyset),
         {
             onSuccess: () => {
                 // update study

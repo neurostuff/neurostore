@@ -28,7 +28,7 @@ const UserStudiesPage: React.FC = (props) => {
         data,
         isLoading: getStudiesIsLoading,
         isError,
-    } = useGetStudies(!!user?.sub, {
+    } = useGetStudies({
         userId: user?.sub,
     });
 

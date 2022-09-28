@@ -39,9 +39,11 @@ const useGetStudysets = (getStudysetArgs: IGetStudysetArgs) => {
         {
             select: (axiosResponse) => {
                 const res = axiosResponse.data.results || [];
-                return getStudysetArgs.userId
-                    ? res.filter((x) => x.user === getStudysetArgs.userId)
-                    : res;
+                return res.sort((a, b) => {
+                    const firstStudysetId = a.id as string;
+                    const secondStudysetId = b.id as string;
+                    return firstStudysetId.localeCompare(secondStudysetId);
+                });
             },
         }
     );

@@ -1,5 +1,5 @@
 import { AxiosResponse, AxiosError } from 'axios';
-import { Point, PointReturn } from 'neurostore-typescript-sdk';
+import { PointRequest, PointReturn } from 'neurostore-typescript-sdk';
 import { useMutation, useQueryClient } from 'react-query';
 import API from 'utils/api';
 
@@ -10,7 +10,7 @@ const useUpdatePoint = () => {
         AxiosError,
         {
             pointId: string;
-            point: Point;
+            point: PointRequest;
         },
         unknown
     >((args) => API.NeurostoreServices.PointsService.pointsIdPut(args.pointId, args.point), {

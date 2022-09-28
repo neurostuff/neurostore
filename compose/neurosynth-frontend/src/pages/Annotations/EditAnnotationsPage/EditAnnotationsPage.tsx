@@ -10,7 +10,7 @@ import { EPropertyType } from 'components/EditMetadata';
 import EditStudyPageStyles from 'pages/Studies/EditStudyPage/EditStudyPage.styles';
 import EditAnnotationsPageStyles from './EditAnnotationsPage.styles';
 import { useAuth0 } from '@auth0/auth0-react';
-import { AnnotationNote } from 'neurostore-typescript-sdk';
+import { AnnotationReturn, NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { registerEditor, NumericEditor, TextEditor, BaseEditor } from 'handsontable/editors';
 import {
     baseRenderer,
@@ -37,6 +37,7 @@ import {
 } from 'handsontable/plugins';
 import { useDeleteAnnotation, useGetAnnotationById, useUpdateAnnotationById } from 'hooks';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import { NeurostoreAnnotation } from 'utils/api';
 
 registerEditor(BaseEditor);
 registerEditor(NumericEditor);
@@ -102,21 +103,21 @@ const EditAnnotationsPage: React.FC = (props) => {
         }
     };
 
-    const handleCloseConfirmationDialog = async (confirm: boolean | undefined) => {
+    const handleCloseConfirmationDialog = (confirm: boolean | undefined) => {
         setConfirmationIsOpen(false);
 
         if (confirm && annotation && annotation?.id) {
             deleteAnnotation(annotation.id, {
                 onSuccess: () => {
                     // delete annotation hook already opens a snackbar on success and failure
-                    history.push(`/studysets/${annotation?.studyset}`);
+                    history.push(`/studysets/${annotation.studyset || ''}`); // TODO: fix the neurostore spec
                 },
             });
         }
     };
 
     const handleSaveAnnotation = (
-        annotationNotes: AnnotationNote[],
+        annotationNotes: NoteCollectionReturn[],
         noteKeyTypes: { [key: string]: EPropertyType }
     ) => {
         updateAnnotation({
@@ -139,7 +140,7 @@ const EditAnnotationsPage: React.FC = (props) => {
                     text="Return to studyset"
                     color="secondary"
                     variant="outlined"
-                    path={`/studysets/${annotation?.studyset}`}
+                    path={`/studysets/${(annotation as NeurostoreAnnotation)?.studyset}`}
                 />
             </Box>
 
@@ -180,7 +181,7 @@ const EditAnnotationsPage: React.FC = (props) => {
 
             <Box component={Paper} sx={EditAnnotationsPageStyles.spreadsheetContainer}>
                 <NeurosynthSpreadsheet
-                    annotationNotes={annotation?.notes}
+                    annotationNotes={annotation?.notes as NoteCollectionReturn[]}
                     annotationNoteKeyTypes={annotation?.note_keys}
                     onSaveAnnotation={handleSaveAnnotation}
                 />

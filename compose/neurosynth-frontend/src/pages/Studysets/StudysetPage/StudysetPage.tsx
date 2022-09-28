@@ -72,7 +72,7 @@ const StudysetsPage: React.FC = (props) => {
             },
         };
         /**
-         * in order to make sure that each field visually loads by itself, we need to split the studyset update
+         * in order to make sure that each field visually loads independently, we need to split the studyset update
          * into separate useQuery instances (otherwise to name will show the loading icon for all fields)
          */
         switch (label) {

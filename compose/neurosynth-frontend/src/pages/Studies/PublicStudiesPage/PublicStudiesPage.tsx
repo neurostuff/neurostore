@@ -7,6 +7,8 @@ import {
     IconButton,
     TableRow,
     TableCell,
+    Tooltip,
+    Chip,
 } from '@mui/material';
 import PublicStudiesPageStyles from './PublicStudiesPage.styles';
 import SearchBar from 'components/SearchBar/SearchBar';
@@ -56,7 +58,9 @@ export class SearchCriteria {
         public authorSearch: string | undefined = undefined,
         public showUnique: boolean = false,
         public source: Source | undefined = undefined,
-        public userId: string | undefined = undefined
+        public userId: string | undefined = undefined,
+        public dataType: 'coordinate' | 'image' | 'both' = 'coordinate',
+        public studysetOwner: string | undefined = undefined
     ) {}
 }
 
@@ -118,46 +122,98 @@ const extractSearchedStringFromURL = (
     };
 };
 
+/**
+ * Most common hashcode implementations multiply by 31 for mathematical reasons as it is odd, prime, and provides an acceptable distribution with minimal collisions:
+ * https://stackoverflow.com/questions/299304/why-does-javas-hashcode-in-string-use-31-as-a-multiplier
+ */
+const stringToColor = (stringArg: string) => {
+    // first step: create binary hashcode from string
+    let hash = 0;
+    for (let i = 0; i < stringArg.length; i++) {
+        const charCode = stringArg.charCodeAt(i);
+        const multiplier = (hash << 5) - hash; // Mathematically, 31 * i === (i << 5) - i
+        hash = charCode + multiplier;
+    }
+    // second step: create hexadecimal string
+    // a hexadecimal string describes the RGB value with the first two digits corresponding to R, second two to G, and final two to B.
+    let color = '#';
+    for (let i = 0; i < 3; i++) {
+        const value = (hash >> (i * 8)) & 0xff; // mask the ith 8th binary digits which correspond to a number between 0 and 255
+        const hexColor = `00${value.toString(16)}`; // need the '00' to pad in case we don't have enough hexadecimal digits
+        color = `${color}${hexColor.substring(hexColor.length - 2)}`;
+    }
+    return color;
+};
+
 const PublicStudiesPage = () => {
     const { startTour } = useGetTour('PublicStudiesPage');
     const history = useHistory();
     const location = useLocation();
-    const { isAuthenticated, user } = useAuth0();
+    const { isAuthenticated, user, isLoading: authenticationIsLoading } = useAuth0();
 
+    // state of the search bar
     const [searchBarParams, setSearchBarParams] = useState<{
         searchedString: string;
         searchBy: SearchBy;
     }>(extractSearchedStringFromURL(location.search));
+
+    // cached data returned from the api
     const [studyData, setStudyData] = useState<StudyList>();
-    const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>(new SearchCriteria());
-    const { data, refetch, isLoading, isError, isRefetching } = useGetStudies(
-        false,
-        getSearchCriteriaFromURL(location.search)
+
+    // state of the current search
+    const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({
+        ...new SearchCriteria(),
+        ...getSearchCriteriaFromURL(location?.search),
+    });
+
+    // state of the search to the API (separated from searchCriteria to allow for debouncing)
+    const [apiSearch, setApiSearch] = useState<SearchCriteria>(searchCriteria);
+
+    /**
+     * This query will not be made until authentication has finished loading. The user?.sub property
+     * exists before loading is complete so we are guaranteed that the first query will run
+     * with the studysetOwner set (if logged in) and undefined otherwise
+     */
+    const { data, isLoading, isError, isFetching } = useGetStudies(
+        { ...apiSearch, studysetOwner: user?.sub },
+        !authenticationIsLoading
     );
 
     /**
-     * the data variable itself is undefined when refetch() is called, so we need to save it
-     * in memory to craete a more stable experience when changing search criteria
+     * the data variable itself is undefined when refetching, so we need to save it
+     * in memory to create a more stable experience when changing search criteria.
+     * This is especially noticable when paginating
      */
     useEffect(() => {
         if (data) setStudyData(data);
     }, [data]);
 
     useEffect(() => {
-        const searchCriteria = getSearchCriteriaFromURL(location?.search);
-        setSearchCriteria(searchCriteria);
-    }, [location.search, refetch]);
+        if (user?.sub) {
+            setSearchCriteria((prev) => ({
+                ...prev,
+                studysetOwner: user.sub,
+            }));
+        }
+    }, [user?.sub]);
+
+    useEffect(() => {
+        const urlSearchCriteria = getSearchCriteriaFromURL(location?.search);
+        setSearchCriteria((prev) => {
+            return { ...prev, ...urlSearchCriteria };
+        });
+    }, [location.search]);
 
     // runs for any change in study query, add set timeout and clear timeout for debounce
     useEffect(() => {
         const timeout = setTimeout(async () => {
-            refetch();
-        }, 300);
+            setApiSearch(searchCriteria);
+        }, 400);
 
         return () => {
             clearTimeout(timeout);
         };
-    }, [searchCriteria, refetch]);
+    }, [searchCriteria]);
 
     const getNumTotalPages = (totalCount: number | undefined, pageSize: number | undefined) => {
         if (!totalCount || !pageSize) {
@@ -198,7 +254,6 @@ const PublicStudiesPage = () => {
                 'pageOfResults',
                 '1'
             );
-
             history.push(`/studies?${searchURL}`);
         }
     };
@@ -249,7 +304,7 @@ const PublicStudiesPage = () => {
                 <Box sx={{ marginBottom: '1rem' }}>
                     <NeurosynthTable
                         tableConfig={{
-                            isLoading: isLoading || isRefetching,
+                            isLoading: isLoading || isFetching,
                             loaderColor: 'secondary',
                             noDataDisplay: (
                                 <Box sx={{ color: 'warning.dark', padding: '1rem' }}>
@@ -283,38 +338,78 @@ const PublicStudiesPage = () => {
                                 key: 'owner',
                                 styles: { color: 'primary.contrastText', fontWeight: 'bold' },
                             },
+                            {
+                                text: 'Studysets',
+                                key: 'studysets',
+                                styles: {
+                                    display: isAuthenticated ? 'table-cell' : 'none',
+                                    color: 'primary.contrastText',
+                                    fontWeight: 'bold',
+                                },
+                            },
                         ]}
-                        rows={(studyData?.results || []).map((data, index) => (
+                        rows={(studyData?.results || []).map((studyrow, index) => (
                             <TableRow
                                 data-tour={index === 0 ? 'PublicStudiesPage-4' : null}
                                 sx={NeurosynthTableStyles.tableRow}
-                                key={data.id || index}
-                                onClick={() => history.push(`/studies/${data.id}`)}
+                                key={studyrow.id || index}
+                                onClick={() => history.push(`/studies/${studyrow.id}`)}
                             >
                                 <TableCell
                                     data-tour={index === 0 ? 'PublicStudiesPage-3' : null}
                                     sx={{ display: isAuthenticated ? 'table-cell' : 'none' }}
                                 >
-                                    <StudysetsPopupMenu study={data} />
+                                    <StudysetsPopupMenu study={studyrow} />
                                 </TableCell>
                                 <TableCell>
-                                    {data?.name || (
+                                    {studyrow?.name || (
                                         <Box sx={{ color: 'warning.dark' }}>No name</Box>
                                     )}
                                 </TableCell>
                                 <TableCell>
-                                    {data?.authors || (
+                                    {studyrow?.authors || (
                                         <Box sx={{ color: 'warning.dark' }}>No author(s)</Box>
                                     )}
                                 </TableCell>
                                 <TableCell>
-                                    {data?.publication || (
+                                    {studyrow?.publication || (
                                         <Box sx={{ color: 'warning.dark' }}>No Journal</Box>
                                     )}
                                 </TableCell>
                                 <TableCell>
-                                    {(data?.user === user?.sub ? 'Me' : data?.user) ||
+                                    {(studyrow?.user === user?.sub ? 'Me' : studyrow?.user) ||
                                         'Neurosynth-Compose'}
+                                </TableCell>
+                                <TableCell
+                                    sx={{ display: isAuthenticated ? 'table-cell' : 'none' }}
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                    }}
+                                >
+                                    {(studyrow.studysets || []).map((studyset, index) => (
+                                        <Tooltip
+                                            key={studyset?.id || index}
+                                            title={studyset?.name || ''}
+                                            placement="top"
+                                        >
+                                            <Chip
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    history.push(`/studysets/${studyset.id || ''}`);
+                                                }}
+                                                size="small"
+                                                sx={{
+                                                    backgroundColor: stringToColor(
+                                                        studyset?.id || ''
+                                                    ),
+                                                    color: 'white',
+                                                    margin: '0.1rem',
+                                                    maxWidth: '80px',
+                                                }}
+                                                label={studyset?.name || ''}
+                                            />
+                                        </Tooltip>
+                                    ))}
                                 </TableCell>
                             </TableRow>
                         ))}
