@@ -57,3 +57,5 @@ def test_data_type(auth_client, ingest_neurosynth, ingest_neurovault):
     assert get_img.status_code == 200
     get_both = auth_client.get("/api/studies/?data_type=both")
     assert get_both.status_code == 200
+    assert len(get_coord.json['results']) + len(get_img.json['results'])\
+        == len(get_both.json['results']) != 0
