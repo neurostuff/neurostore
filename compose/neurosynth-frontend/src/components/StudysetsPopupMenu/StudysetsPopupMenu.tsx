@@ -76,28 +76,6 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
         );
     };
 
-    const handleAddStudyToStudyset = (study: StudyReturn, selectedStudyset: StudysetReturn) => {
-        if (study?.id && selectedStudyset?.id) {
-            const updatedStudysetStudies = [...(selectedStudyset.studies || [])] as string[];
-            updatedStudysetStudies.push(study.id as string);
-
-            updateStudyset(
-                {
-                    studysetId: selectedStudyset.id,
-                    studyset: {
-                        studies: updatedStudysetStudies,
-                    },
-                },
-                {
-                    onSuccess: () => {
-                        queryClient.invalidateQueries('studies');
-                        setOpen(false);
-                    },
-                }
-            );
-        }
-    };
-
     const handleUpdateStudyset = (
         study: StudyReturn,
         selectedStudyset: StudysetReturn,
@@ -183,8 +161,14 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
                                 }}
                             >
                                 {(studysets || []).map((studyset) => (
-                                    <MenuItem key={studyset.id}>
+                                    <MenuItem sx={{ padding: 0 }} key={studyset.id}>
                                         <FormControlLabel
+                                            sx={{
+                                                width: '100%',
+                                                marginRight: 0,
+                                                marginLeft: 0,
+                                                paddingRight: '16px',
+                                            }}
                                             control={
                                                 <Checkbox
                                                     onChange={(event) => {

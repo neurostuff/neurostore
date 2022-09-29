@@ -250,6 +250,7 @@ const mockStudy: (studyPropOverride?: Partial<StudyReturn>) => StudyReturn = (
     year: 1999,
     metadata: null,
     pmid: '10594068',
+    studysets: [],
     ...(studyPropOverride || {}),
 });
 
