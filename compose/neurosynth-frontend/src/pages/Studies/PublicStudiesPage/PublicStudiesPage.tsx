@@ -199,6 +199,7 @@ const PublicStudiesPage = () => {
 
     useEffect(() => {
         const urlSearchCriteria = getSearchCriteriaFromURL(location?.search);
+        console.log(urlSearchCriteria);
         setSearchCriteria((prev) => {
             return { ...prev, ...urlSearchCriteria };
         });

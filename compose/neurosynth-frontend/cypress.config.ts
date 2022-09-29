@@ -11,6 +11,8 @@ export default defineConfig({
             // implement node event listeners here
         },
         baseUrl: 'http://localhost:3000',
+        defaultCommandTimeout: 6000,
+        requestTimeout: 6000,
     },
     env: {
         auth0Username: 'test-user@gmail.com',

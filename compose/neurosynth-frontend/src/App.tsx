@@ -30,7 +30,8 @@ function App() {
     const queryClient = new QueryClient({
         defaultOptions: {
             queries: {
-                retry: env === 'DEV' ? 0 : 3,
+                retry: env === 'DEV' ? 0 : 3, // need to do this because of issues testing with cypress
+                refetchOnWindowFocus: env !== 'DEV', // need to do this because of issues testing with cypress
             },
         },
         queryCache: new QueryCache({
