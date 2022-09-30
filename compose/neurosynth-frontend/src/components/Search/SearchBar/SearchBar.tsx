@@ -1,21 +1,32 @@
 import { Paper, InputBase, Button, FormControl, Select, MenuItem, Box } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import SearchBarStyles from './SearchBar.styles';
 import { SearchBy } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
+import { useLocation } from 'react-router-dom';
+import { extractSearchedStringFromURL } from 'pages/helpers/utils';
 
-export interface SearchBarModel {
-    searchedString: string;
-    searchBy: SearchBy;
-    onSearch: (event: React.FormEvent) => void;
-    onSearchByChange: (newSearchBy: SearchBy) => void;
-    onTextInputChange: (newTextInput: string) => void;
+export interface ISearchBar {
+    onSearch: (searchedString: string, searchBy: SearchBy) => void;
+    searchButtonColor?: string;
 }
 
-const SearchBar: React.FC<SearchBarModel> = (props) => {
+const SearchBar: React.FC<ISearchBar> = (props) => {
+    const location = useLocation();
+
+    useEffect(() => {
+        setSearchBarParams(extractSearchedStringFromURL(location.search));
+    }, [location.search]);
+
+    // state of the search bar
+    const [searchBarParams, setSearchBarParams] = useState<{
+        searchedString: string;
+        searchBy: SearchBy;
+    }>(extractSearchedStringFromURL(location.search));
+
     const handleOnSubmit = (event: React.FormEvent) => {
         event.preventDefault();
-        props.onSearch(event);
+        props.onSearch(searchBarParams.searchedString, searchBarParams.searchBy);
     };
 
     return (
@@ -26,9 +37,12 @@ const SearchBar: React.FC<SearchBarModel> = (props) => {
                         <Select
                             sx={SearchBarStyles.select}
                             autoWidth
-                            value={props.searchBy}
+                            value={searchBarParams.searchBy}
                             onChange={(event) =>
-                                props.onSearchByChange(event.target.value as SearchBy)
+                                setSearchBarParams((prev) => ({
+                                    ...prev,
+                                    searchBy: event.target.value as SearchBy,
+                                }))
                             }
                         >
                             <MenuItem value={SearchBy.ALL}>All</MenuItem>
@@ -39,15 +53,22 @@ const SearchBar: React.FC<SearchBarModel> = (props) => {
                     </FormControl>
                     <Paper sx={SearchBarStyles.paper} variant="outlined">
                         <InputBase
-                            value={props.searchedString}
-                            onChange={(event) => props.onTextInputChange(event.target.value)}
+                            value={searchBarParams.searchedString}
+                            onChange={(event) =>
+                                setSearchBarParams((prev) => ({
+                                    ...prev,
+                                    searchedString: event.target.value as string,
+                                }))
+                            }
                             placeholder="Search for a study"
                             sx={SearchBarStyles.textfield}
                         />
                     </Paper>
                     <Button
-                        sx={SearchBarStyles.iconContainer}
-                        color="primary"
+                        sx={[
+                            SearchBarStyles.iconContainer,
+                            { backgroundColor: props.searchButtonColor || 'primary' },
+                        ]}
                         variant="contained"
                         onClick={handleOnSubmit}
                         size="large"

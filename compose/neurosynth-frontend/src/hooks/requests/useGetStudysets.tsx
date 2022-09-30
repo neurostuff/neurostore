@@ -1,49 +1,37 @@
+import { SearchCriteria } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
-interface IGetStudysetArgs {
-    search?: string;
-    sort?: string;
-    page?: number;
-    desc?: boolean;
-    pageSize?: number;
-    nested?: boolean;
-    name?: string;
-    description?: string;
-    sourceId?: string;
-    unique?: boolean;
-    source?: 'neurostore' | 'neurovault' | 'pubmed' | 'neurosynth' | 'neuroquery';
-    authors?: string;
-    userId?: string;
-}
-
-const useGetStudysets = (getStudysetArgs: IGetStudysetArgs) => {
+const useGetStudysets = (searchCriteria: Partial<SearchCriteria>, enabled?: boolean) => {
     return useQuery(
-        ['studysets', getStudysetArgs.userId],
+        ['studysets', { ...searchCriteria }],
         () =>
             API.NeurostoreServices.StudySetsService.studysetsGet(
-                getStudysetArgs.search,
-                getStudysetArgs.sort,
-                getStudysetArgs.page,
-                getStudysetArgs.desc,
-                getStudysetArgs.pageSize,
-                getStudysetArgs.nested,
-                getStudysetArgs.name,
-                getStudysetArgs.description,
-                getStudysetArgs.sourceId,
-                getStudysetArgs.unique,
-                getStudysetArgs.source,
-                getStudysetArgs.authors,
-                getStudysetArgs.userId
+                searchCriteria.genericSearchStr,
+                searchCriteria.sortBy,
+                searchCriteria.pageOfResults,
+                searchCriteria.descOrder,
+                searchCriteria.pageSize,
+                searchCriteria.isNested,
+                searchCriteria.nameSearch,
+                searchCriteria.descriptionSearch,
+                undefined,
+                searchCriteria.showUnique,
+                searchCriteria.source,
+                searchCriteria.authorSearch,
+                searchCriteria.userId
             ),
         {
+            enabled,
             select: (axiosResponse) => {
-                const res = axiosResponse.data.results || [];
-                return res.sort((a, b) => {
-                    const firstStudysetId = a.id as string;
-                    const secondStudysetId = b.id as string;
-                    return firstStudysetId.localeCompare(secondStudysetId);
-                });
+                if (axiosResponse?.data?.results) {
+                    axiosResponse.data.results.sort((a, b) => {
+                        const firstStudysetId = a.id as string;
+                        const secondStudysetId = b.id as string;
+                        return firstStudysetId.localeCompare(secondStudysetId);
+                    });
+                }
+                return axiosResponse.data;
             },
         }
     );

@@ -59,7 +59,13 @@ const useGetStudysets = jest.fn().mockReturnValue({
     error: undefined,
     isLoading: false,
     isError: false,
-    data: mockStudysets(),
+    data: {
+        metadata: {
+            total_count: 100,
+            unique_count: 100,
+        },
+        results: mockStudysets(),
+    },
 });
 
 const useCreateStudyset = jest.fn().mockReturnValue({
