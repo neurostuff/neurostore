@@ -18,6 +18,134 @@ describe(PAGE_NAME, () => {
         cy.login('real').wait('@realStudysetRequest').visit(PATH).wait('@realStudysetRequest');
     });
 
+    describe('Search', () => {
+        beforeEach(() => {
+            cy.intercept('GET', `**/api/studysets/*`, {
+                metadata: { total_count: 1000, unique_count: 1000 },
+                results: [...mockStudysets(), ...mockStudysets(), ...mockStudysets()],
+            }).as('studysetsRequest');
+        });
+
+        it('should make a correct request after selecting a different page of results', () => {
+            cy.login('mocked')
+                // ARRANGE
+                .wait('@studysetsRequest')
+                .visit(PATH)
+                .wait('@studysetsRequest')
+                .get('button')
+                .contains('5')
+                // ACT
+                .click()
+                .click()
+                .wait('@studysetsRequest')
+                // ASSERT
+                .its('request.url')
+                .should('contain', 'page=5');
+        });
+
+        it('should make a correct request when selecting a different number of items to display on a single page', () => {
+            cy.login('mocked')
+                // ARRANGE
+                .wait('@studysetsRequest')
+                .visit(PATH)
+                .wait('@studysetsRequest')
+                .get('body')
+                .contains('Rows per page')
+                .siblings()
+                .eq(1)
+                // ACT
+                .click()
+                .get('[role="option"]')
+                .contains('99')
+                .click()
+                // ASSERT
+                .wait('@studysetsRequest')
+                .its('request.url')
+                .should('contain', 'page_size=99');
+        });
+
+        it('should make a correct request when searching via the "All" option', () => {
+            cy.login('mocked')
+                // ARRANGE
+                .wait('@studysetsRequest')
+                .visit(PATH)
+                .wait('@studysetsRequest')
+                .get('input')
+                .eq(1)
+                // ACT
+                .type('abcdefg{enter}')
+                .wait('@studysetsRequest')
+                .its('request.url')
+                .should('contain', 'search=abcdefg');
+        });
+
+        it('should make a correct request when searching via the "Title" option', () => {
+            cy.login('mocked')
+                // ARRANGE
+                .wait('@studysetsRequest')
+                .visit(PATH)
+                .wait('@studysetsRequest')
+                .get('body')
+                .contains('All')
+                // ACT
+                .click()
+                .get('[role="option"]')
+                .contains('Title')
+                .click()
+                .get('input')
+                .eq(1)
+                // ASSERT
+                .type('abcdefg{enter}')
+                .wait('@studysetsRequest')
+                .its('request.url')
+                .should('contain', 'name=abcdefg');
+        });
+
+        it('should make a correct request when searching via the "Authors" option', () => {
+            cy.login('mocked')
+                // ARRANGE
+                .wait('@studysetsRequest')
+                .visit(PATH)
+                .wait('@studysetsRequest')
+                .get('body')
+                .contains('All')
+                // ACT
+                .click()
+                .get('[role="option"]')
+                .contains('Authors')
+                .click()
+                .get('input')
+                .eq(1)
+                // ASSERT
+                .type('abcdefg{enter}')
+                .wait('@studysetsRequest')
+                .its('request.url')
+                .should('contain', 'authors=abcdefg');
+        });
+
+        it('should make a correct request when searching via the "Description" option', () => {
+            cy.login('mocked')
+                // ARRANGE
+                .wait('@studysetsRequest')
+                .visit(PATH)
+                .wait('@studysetsRequest')
+                .get('body')
+                .contains('All')
+                // ACT
+                .click()
+                .get('[role="option"]')
+                .contains('Description')
+                .click()
+                .get('input')
+                .eq(1)
+                // ASSERT
+                .type('abcdefg{enter}')
+                .wait('@studysetsRequest')
+                .its('request.url')
+                .should('contain', 'description=abcdefg');
+        });
+    });
+
     describe('Tour ', () => {
         beforeEach(() => {
             cy.intercept('GET', `**/api/studysets/**`, { results: mockStudysets() }).as(
