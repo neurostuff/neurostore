@@ -9,7 +9,7 @@ import NeurosynthSpreadsheetHelper from './NeurosynthSpreadsheetHelper';
 import styles from './NeurosynthSpreadsheet.module.css';
 import { numericRenderer, textRenderer } from 'handsontable/renderers';
 import { renderToString } from 'react-dom/server';
-import { AnnotationNote } from '../../neurostore-typescript-sdk';
+import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 
 interface IStudyTitleRow {
     publication: string;
@@ -190,7 +190,7 @@ class NeurosynthSpreadsheetState {
     };
 
     public convertToAnnotationObject = (
-        annotationNotes: AnnotationNote[],
+        annotationNotes: NoteCollectionReturn[],
         data: (string | boolean | number | null)[][]
     ) => {
         if (this.numColumns === 0) {

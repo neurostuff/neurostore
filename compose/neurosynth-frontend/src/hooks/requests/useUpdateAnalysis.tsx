@@ -1,6 +1,6 @@
 import { AxiosError, AxiosResponse } from 'axios';
 import { useMutation, useQueryClient } from 'react-query';
-import { Analysis, AnalysisReturn } from 'neurostore-typescript-sdk';
+import { AnalysisRequest, AnalysisReturn } from 'neurostore-typescript-sdk';
 import API from 'utils/api';
 import { useSnackbar } from 'notistack';
 
@@ -13,7 +13,7 @@ const useUpdateAnalysis = () => {
         AxiosError,
         {
             analysisId: string;
-            analysis: Analysis;
+            analysis: AnalysisRequest;
         },
         unknown
     >(

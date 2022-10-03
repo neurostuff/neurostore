@@ -12,7 +12,7 @@ import { Button, Link, Box } from '@mui/material';
 import HotSettingsBuilder from './HotSettingsBuilder';
 import NeurosynthSpreadsheetState from './NeurosynthSpreadsheetState';
 import NeurosynthSpreadsheetHelper from './NeurosynthSpreadsheetHelper';
-import { AnnotationNote, ReadOnly } from '../../neurostore-typescript-sdk';
+import { NoteCollectionReturn, ResourceAttributes } from 'neurostore-typescript-sdk';
 
 export interface INeurosynthColumn {
     value: string;
@@ -20,10 +20,10 @@ export interface INeurosynthColumn {
 }
 
 const NeurosynthSpreadsheet: React.FC<{
-    annotationNotes: (AnnotationNote & ReadOnly)[] | undefined;
+    annotationNotes: NoteCollectionReturn[] | undefined;
     annotationNoteKeyTypes: object | undefined | null;
     onSaveAnnotation: (
-        annotationNotes: AnnotationNote[],
+        annotationNotes: NoteCollectionReturn[],
         noteKeyTypes: { [key: string]: EPropertyType }
     ) => void;
 }> = memo((props) => {
@@ -42,7 +42,9 @@ const NeurosynthSpreadsheet: React.FC<{
         if (!STATE.ref || !props.annotationNotes || !props.annotationNoteKeyTypes) return;
         const getAnnotation = () => {
             // sort notes by study id. This is necessary to visually group them by study in the spreadsheet
-            const notes = (props.annotationNotes as (AnnotationNote & ReadOnly)[]).sort((a, b) => {
+            const notes = (
+                props.annotationNotes as (NoteCollectionReturn & ResourceAttributes)[]
+            ).sort((a, b) => {
                 const firstStudyId = a.study as string;
                 const secondStudyId = b.study as string;
                 return firstStudyId.localeCompare(secondStudyId);

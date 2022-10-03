@@ -1,13 +1,13 @@
 import { AxiosResponse, AxiosError } from 'axios';
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from 'react-query';
-import { Analysis, AnalysisReturn } from 'neurostore-typescript-sdk';
+import { AnalysisRequest, AnalysisReturn } from 'neurostore-typescript-sdk';
 import API from 'utils/api';
 
 const useCreateAnalysis = () => {
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
-    return useMutation<AxiosResponse<AnalysisReturn>, AxiosError, Analysis, unknown>(
+    return useMutation<AxiosResponse<AnalysisReturn>, AxiosError, AnalysisRequest, unknown>(
         (analysis) => API.NeurostoreServices.AnalysesService.analysesPost(analysis),
         {
             onSuccess: () => {

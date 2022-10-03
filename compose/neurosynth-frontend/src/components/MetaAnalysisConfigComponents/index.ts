@@ -1,4 +1,4 @@
-import { Annotation, ReadOnly, StudysetReturn } from 'neurostore-typescript-sdk';
+import { StudysetReturn } from 'neurostore-typescript-sdk';
 import {
     EAnalysisType as EMetaAnalysisType,
     IMetaAnalysisComponents,
@@ -6,6 +6,7 @@ import {
 } from 'pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
+import { NeurostoreAnnotation } from 'utils/api';
 
 export const KWARG_STRING = '**kwargs';
 
@@ -22,7 +23,7 @@ export interface IMetaAnalysisDetails extends IMetaAnalysisBuilderStep {
 export interface IMetaAnalysisData extends IMetaAnalysisBuilderStep {
     metaAnalysisType: EMetaAnalysisType | undefined;
     studyset: StudysetReturn | undefined | null;
-    annotation: (Annotation & ReadOnly) | undefined | null;
+    annotation: NeurostoreAnnotation | undefined | null;
     inclusionColumn: string | undefined | null;
 }
 

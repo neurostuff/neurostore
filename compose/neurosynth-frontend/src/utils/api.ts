@@ -8,6 +8,11 @@ import {
     PointsApi,
     ImagesApi,
     AnalysesApi,
+    AnnotationBase,
+    ResourceAttributes,
+    Clone,
+    AnnotationReturnRelationships,
+    AnnotationCommon,
 } from '../neurostore-typescript-sdk';
 import {
     SpecificationApi,
@@ -15,6 +20,12 @@ import {
     AnnotationApi as NeurosynthAnnotationApi,
     StudysetApi as NeurosynthStudysetApi,
 } from '../neurosynth-compose-typescript-sdk';
+
+export type NeurostoreAnnotation = AnnotationBase &
+    ResourceAttributes &
+    Clone &
+    AnnotationReturnRelationships &
+    AnnotationCommon;
 
 const NEUROSTORE_API_DOMAIN = process.env.REACT_APP_NEUROSTORE_API_DOMAIN as string;
 const NEUROSYNTH_API_DOMAIN = process.env.REACT_APP_NEUROSYNTH_API_DOMAIN as string;

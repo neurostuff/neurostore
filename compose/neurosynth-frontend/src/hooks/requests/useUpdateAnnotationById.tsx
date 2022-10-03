@@ -1,7 +1,6 @@
 import { AxiosError, AxiosResponse } from 'axios';
 import { useMutation, useQueryClient } from 'react-query';
-import { Annotation, AnnotationReturn } from 'neurostore-typescript-sdk';
-import API from 'utils/api';
+import API, { NeurostoreAnnotation } from 'utils/api';
 import { useSnackbar } from 'notistack';
 
 const useUpdateAnnotationById = (annotationId: string | undefined | null) => {
@@ -9,11 +8,11 @@ const useUpdateAnnotationById = (annotationId: string | undefined | null) => {
     const { enqueueSnackbar } = useSnackbar();
 
     return useMutation<
-        AxiosResponse<AnnotationReturn>,
+        AxiosResponse<NeurostoreAnnotation>,
         AxiosError,
         {
             argAnnotationId: string;
-            annotation: Annotation;
+            annotation: NeurostoreAnnotation;
         },
         unknown
     >(

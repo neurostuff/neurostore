@@ -1,17 +1,20 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, RenderResult, screen } from '@testing-library/react';
 import StudysetsPopupMenu from './StudysetsPopupMenu';
 import userEvent from '@testing-library/user-event';
 import { SnackbarProvider } from 'notistack';
 import { mockStudy, mockStudysets } from 'testing/mockData';
-import { useCreateStudyset, useUpdateStudyset } from 'hooks';
+import { useCreateStudyset, useGetStudysets, useUpdateStudyset } from 'hooks';
+import { useIsFetching } from 'react-query';
 
 jest.mock('hooks');
+jest.mock('react-query');
 jest.mock('components/NeurosynthPopper/NeurosynthPopper');
 jest.mock('components/StateHandlerComponent/StateHandlerComponent');
 
 describe('StudysetsPopupMenu', () => {
+    let renderResult: RenderResult;
     beforeEach(() => {
-        render(
+        renderResult = render(
             <SnackbarProvider>
                 <StudysetsPopupMenu study={mockStudy()} />
             </SnackbarProvider>
@@ -23,7 +26,7 @@ describe('StudysetsPopupMenu', () => {
     });
 
     it('should render', () => {
-        const text = screen.getByText('Add to a studyset');
+        const text = screen.getByText('Add/Remove from studyset');
         expect(text).toBeInTheDocument();
     });
 
@@ -98,28 +101,150 @@ describe('StudysetsPopupMenu', () => {
             userEvent.click(createButton);
         });
 
-        const call = (useCreateStudyset().mutate as jest.Mock).mock.calls[0][0];
+        expect(useCreateStudyset().mutate as jest.Mock).toHaveBeenCalledWith(
+            {
+                name: 'ABC',
+                description: '',
+            },
+            expect.anything()
+        );
+    });
 
-        expect(call).toEqual({
-            name: 'ABC',
-            description: '',
+    it('should leave create studyset mode when cancel is clicked', async () => {
+        // enable edit mode
+        const createStudysetButton = screen.getByText('Create new studyset');
+        userEvent.click(createStudysetButton);
+
+        const createButton = screen.getByText('Cancel');
+        await act(async () => {
+            userEvent.click(createButton);
         });
+
+        expect(screen.getByText('Create new studyset')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
     });
 
     it('should add the study to the clicked studyset', async () => {
-        const menuItem = screen.getByRole('menuitem', { name: 'studyset-name-3' });
+        const menuItem = screen.getByText('studyset-name-3');
 
         await act(async () => {
             userEvent.click(menuItem);
         });
 
-        const call = (useUpdateStudyset().mutate as jest.Mock).mock.calls[0][0];
-
-        expect(call).toEqual({
-            studysetId: '88oi5AKK8aJN',
-            studyset: {
-                studies: ['4ZhkLTH8k2P6'],
+        expect(useUpdateStudyset().mutate as jest.Mock).toHaveBeenCalledWith(
+            {
+                studysetId: '88oi5AKK8aJN',
+                studyset: {
+                    studies: [...(mockStudysets()[2].studies as string[]), mockStudy().id],
+                },
             },
+            expect.anything()
+        );
+    });
+
+    it('should show checkmarks next to the relevant studysets', () => {
+        renderResult.rerender(
+            <SnackbarProvider>
+                <StudysetsPopupMenu
+                    study={mockStudy({
+                        studysets: mockStudysets().map((x) => ({
+                            name: x.name || '',
+                            description: x.description || '',
+                            id: x.id || '',
+                        })),
+                    })}
+                />
+            </SnackbarProvider>
+        );
+
+        const checkboxes = screen.getAllByRole('checkbox') as HTMLInputElement[];
+        checkboxes.forEach((checkbox) => expect(checkbox.checked).toBeTruthy());
+    });
+
+    it('should remove the study from the clicked studyset', async () => {
+        renderResult.rerender(
+            <SnackbarProvider>
+                <StudysetsPopupMenu
+                    study={mockStudy({
+                        studysets: mockStudysets().map((x) => ({
+                            name: x.name || '',
+                            description: x.description || '',
+                            id: x.id || '',
+                        })),
+                    })}
+                />
+            </SnackbarProvider>
+        );
+
+        const menuItem = screen.getByText('studyset-name-1');
+
+        await act(async () => {
+            userEvent.click(menuItem);
+        });
+
+        expect(useUpdateStudyset().mutate as jest.Mock).toHaveBeenCalledWith(
+            {
+                studysetId: '4eTAChpnL3Tg',
+                studyset: {
+                    studies: (mockStudysets()[0].studies as string[]).filter(
+                        (id) => id !== mockStudy().id
+                    ),
+                },
+            },
+            expect.anything()
+        );
+    });
+
+    describe('Progress Loader', () => {
+        beforeEach(() => {
+            (useIsFetching as jest.Mock).mockReturnValue(0);
+            useCreateStudyset().isLoading = false;
+            useUpdateStudyset().isLoading = false;
+            useGetStudysets({}).isLoading = false;
+        });
+
+        it('should not be shown', () => {
+            expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+        });
+
+        it('should show when fetching', () => {
+            (useIsFetching as jest.Mock).mockReturnValue(1);
+            renderResult.rerender(
+                <SnackbarProvider>
+                    <StudysetsPopupMenu study={mockStudy()} />
+                </SnackbarProvider>
+            );
+            expect(screen.queryByRole('progressbar')).toBeInTheDocument();
+        });
+
+        it('should show when getting studysets', () => {
+            useGetStudysets({}).isLoading = true;
+            renderResult.rerender(
+                <SnackbarProvider>
+                    <StudysetsPopupMenu study={mockStudy()} />
+                </SnackbarProvider>
+            );
+            expect(screen.queryByRole('progressbar')).toBeInTheDocument();
+        });
+
+        it('should show when creating studyset', () => {
+            useCreateStudyset().isLoading = true;
+            renderResult.rerender(
+                <SnackbarProvider>
+                    <StudysetsPopupMenu study={mockStudy()} />
+                </SnackbarProvider>
+            );
+            expect(screen.queryByRole('progressbar')).toBeInTheDocument();
+        });
+
+        it('should show when updating studyset', () => {
+            useUpdateStudyset().isLoading = true;
+            renderResult.rerender(
+                <SnackbarProvider>
+                    <StudysetsPopupMenu study={mockStudy()} />
+                </SnackbarProvider>
+            );
+            expect(screen.queryByRole('progressbar')).toBeInTheDocument();
         });
     });
 
