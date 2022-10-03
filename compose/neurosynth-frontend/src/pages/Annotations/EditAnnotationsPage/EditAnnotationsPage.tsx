@@ -10,7 +10,7 @@ import { EPropertyType } from 'components/EditMetadata';
 import EditStudyPageStyles from 'pages/Studies/EditStudyPage/EditStudyPage.styles';
 import EditAnnotationsPageStyles from './EditAnnotationsPage.styles';
 import { useAuth0 } from '@auth0/auth0-react';
-import { AnnotationReturn, NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { registerEditor, NumericEditor, TextEditor, BaseEditor } from 'handsontable/editors';
 import {
     baseRenderer,
