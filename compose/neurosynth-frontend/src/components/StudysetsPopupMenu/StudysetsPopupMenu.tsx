@@ -157,10 +157,11 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
                                 sx={{
                                     maxHeight: '300px',
                                     overflowY: 'scroll',
-                                    display: (studysets?.length || 0) > 0 ? 'block' : 'none',
+                                    display:
+                                        (studysets?.results?.length || 0) > 0 ? 'block' : 'none',
                                 }}
                             >
-                                {(studysets || []).map((studyset) => (
+                                {(studysets?.results || []).map((studyset) => (
                                     <MenuItem sx={{ padding: 0 }} key={studyset.id}>
                                         <FormControlLabel
                                             sx={{

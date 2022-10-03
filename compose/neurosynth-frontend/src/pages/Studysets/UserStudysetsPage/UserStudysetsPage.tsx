@@ -10,12 +10,12 @@ import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { useState } from 'react';
 import { useIsFetching } from 'react-query';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
-import { getNumStudiesString } from '../PublicStudysetsPage/PublicStudysetsPage';
 import { useHistory } from 'react-router-dom';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
+import { getNumStudiesString } from 'pages/helpers/utils';
 
 const UserStudysetsPage: React.FC = (props) => {
-    const { user } = useAuth0();
+    const { user, isAuthenticated } = useAuth0();
     useGuard('/studysets');
     const { startTour } = useGetTour('UserStudysetsPage');
     const history = useHistory();
@@ -24,10 +24,13 @@ const UserStudysetsPage: React.FC = (props) => {
         data,
         isLoading: getStudysetIsLoading,
         isError,
-    } = useGetStudysets({
-        userId: user?.sub,
-        nested: false,
-    });
+    } = useGetStudysets(
+        {
+            userId: user?.sub,
+            isNested: false,
+        },
+        !!user && isAuthenticated
+    );
     const { mutate, isLoading: createStudysetIsLoading } = useCreateStudyset();
     const [createStudysetDialogIsOpen, setCreateStudysetDialogIsOpen] = useState(false);
 
@@ -37,6 +40,8 @@ const UserStudysetsPage: React.FC = (props) => {
             description,
         });
     };
+
+    const studysets = data?.results || [];
 
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>
@@ -97,7 +102,7 @@ const UserStudysetsPage: React.FC = (props) => {
                             styles: { fontWeight: 'bold', color: 'primary.contrastText' },
                         },
                     ]}
-                    rows={(data || []).map((studyset, index) => (
+                    rows={studysets.map((studyset, index) => (
                         <TableRow
                             key={studyset?.id || index}
                             onClick={() => history.push(`studysets/${studyset?.id}`)}

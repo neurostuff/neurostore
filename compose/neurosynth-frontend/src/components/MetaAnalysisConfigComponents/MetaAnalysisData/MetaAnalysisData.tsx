@@ -22,7 +22,7 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
         data: studysetsData,
         isLoading: studysetsIsLoading,
         isError: studysetsIsError,
-    } = useGetStudysets({ nested: false });
+    } = useGetStudysets({ isNested: false });
     const {
         data: annotationsData,
         isLoading: annotationsIsLoading,
@@ -101,7 +101,7 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                 onChange={(_event, newVal, _reason) => {
                     props.onUpdate({ studyset: newVal, annotation: null, inclusionColumn: null });
                 }}
-                options={studysetsData || []}
+                options={studysetsData?.results || []}
             />
 
             <Typography sx={MetaAnalysisDataStyles.spaceBelow}>

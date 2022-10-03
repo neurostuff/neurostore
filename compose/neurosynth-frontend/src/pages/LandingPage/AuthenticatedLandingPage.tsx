@@ -26,7 +26,6 @@ const AuthenticatedLandingPage: React.FC = (props) => {
         isLoading: getStudiesIsLoading,
         isError: getStudiesIsError,
     } = useGetStudies({
-        // ...new SearchCriteria(),
         userId: user?.sub,
     });
     const {
@@ -113,7 +112,7 @@ const AuthenticatedLandingPage: React.FC = (props) => {
                     isError={getStudysetsIsError || createStudysetIsError}
                     listIcon={<AutoAwesomeMotionIcon sx={{ color: '#42ab55' }} />}
                     titleText="Studysets"
-                    listItems={(studysets || []).map((studyset) => ({
+                    listItems={(studysets?.results || []).map((studyset) => ({
                         primaryText: studyset.name || '',
                         secondaryText: studyset.description || '',
                         id: studyset?.id || '',
