@@ -38,16 +38,16 @@ jobs:
           set: |
               neurosynth.tags=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/neurosynth_compose/**') }}
               neurosynth.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/neurosynth_compose/**') }}
-              neurosynth.cache-from=type=gha,scope=cached-stage
-              neurosynth.cache-to=type=gha,scope=cached-stage,mode=max
+              neurosynth.cache-from=type=gha,scope=cached-neurosynth
+              neurosynth.cache-to=type=gha,scope=cached-neurosynth,mode=max
               nginx.tags=ghcr.io/${{ github.repository_owner }}/synth_nginx:${{ hashFiles('**/compose/nginx/**') }}
               nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/synth_nginx:${{ hashFiles('**/compose/nginx/**') }}
-              nginx.cache-from=type=gha,scope=cached-stage
-              nginx.cache-to=type=gha,scope=cached-stage,mode=max
+              nginx.cache-from=type=gha,scope=cached-synth-nginx
+              nginx.cache-to=type=gha,scope=cached-synth-nginx,mode=max
               synth_pgsql.tags=ghcr.io/${{ github.repository_owner }}/synth_pgsql:${{ hashFiles('**/compose/postgres/**') }}
               synth_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/synth_pgsql:${{ hashFiles('**/compose/postgres/**') }}
-              synth_pgsql.cache-from=type=gha,scope=cached-stage
-              synth_pgsql.cache-to=type=gha,scope=cached-stage,mode=max
+              synth_pgsql.cache-from=type=gha,scope=cached-synth-pgsql
+              synth_pgsql.cache-to=type=gha,scope=cached-synth-pgsql,mode=max
 
   build_neurostore:
    runs-on: ubuntu-latest
@@ -85,16 +85,16 @@ jobs:
           set: |
               neurostore.tags=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/neurostore/**') }}
               neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/neurostore/**') }}
-              neurostore.cache-from=type=gha,scope=cached-stage
-              neurostore.cache-to=type=gha,scope=cached-stage,mode=max
+              neurostore.cache-from=type=gha,scope=cached-neurostore
+              neurostore.cache-to=type=gha,scope=cached-neurostore,mode=max
               nginx.tags=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
               nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
-              nginx.cache-from=type=gha,scope=cached-stage
-              nginx.cache-to=type=gha,scope=cached-stage,mode=max
+              nginx.cache-from=type=gha,scope=cached-store-nginx
+              nginx.cache-to=type=gha,scope=cached-store-nginx,mode=max
               store_pgsql.tags=ghcr.io/${{ github.repository_owner }}/store_pgsql:${{ hashFiles('**/store/postgres/**') }}
               store_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store_pgsql:${{ hashFiles('**/store/postgres/**') }}
-              store_pgsql.cache-from=type=gha,scope=cached-stage
-              store_pgsql.cache-to=type=gha,scope=cached-stage,mode=max
+              store_pgsql.cache-from=type=gha,scope=cached-store-pgsql
+              store_pgsql.cache-to=type=gha,scope=cached-store-pgsql,mode=max
 
 
   neurostore_backend_tests:
@@ -125,9 +125,9 @@ jobs:
           load: true
           workdir: store
           set: |
-              neurostore.cache-from=type=gha,scope=cached-stage
-              nginx.cache-from=type=gha,scope=cached-stage
-              store_pgsql.cache-from=type=gha,scope=cached-stage
+              neurostore.cache-from=type=gha,scope=cached-neurostore
+              nginx.cache-from=type=gha,scope=cached-store-nginx
+              store_pgsql.cache-from=type=gha,scope=cached-store-pgsql
       - 
         name: spin up backend
         run: |
@@ -194,9 +194,9 @@ jobs:
         load: true
         workdir: compose
         set: |
-            neurosynth.cache-from=type=gha,scope=cached-stage
-            nginx.cache-from=type=gha,scope=cached-stage
-            synth_pgsql.cache-from=type=gha,scope=cached-stage
+            neurosynth.cache-from=type=gha,scope=cached-neurosynth
+            nginx.cache-from=type=gha,scope=cached-synth-nginx
+            synth_pgsql.cache-from=type=gha,scope=cached-synth-pgsql
     -
       name: Spin up backend
       run: |
