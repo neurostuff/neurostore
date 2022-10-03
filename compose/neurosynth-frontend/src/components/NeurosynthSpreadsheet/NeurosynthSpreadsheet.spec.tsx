@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import NeurosynthSpreadsheet from 'components/NeurosynthSpreadsheet/NeurosynthSpreadsheet';
 import { EPropertyType } from 'components/EditMetadata';
-import { AnnotationNote } from '../../neurostore-typescript-sdk';
+import { NoteCollectionReturn } from '../../neurostore-typescript-sdk';
 import HotSettingsBuilder from './HotSettingsBuilder';
 import NeurosynthSpreadsheetHelper from './NeurosynthSpreadsheetHelper';
 import NeurosynthSpreadsheetState from './NeurosynthSpreadsheetState';
@@ -35,7 +35,7 @@ jest.mock('@mui/material/Link', () => {
 
 jest.mock('../EditMetadata/EditMetadataRow/AddMetadataRow');
 
-const mockAnnotationNotes: AnnotationNote[] = [
+const mockAnnotationNotes: NoteCollectionReturn[] = [
     {
         study: 'study_id_1',
         study_name: 'study_name_1',
@@ -309,7 +309,7 @@ describe('NeurosynthSpreadsheet', () => {
     });
 
     describe('on receiving data with no columns', () => {
-        const mockAnnotationNotesWithNoColumns: AnnotationNote[] = [
+        const mockAnnotationNotesWithNoColumns: NoteCollectionReturn[] = [
             {
                 study: 'study_id_1',
                 study_name: 'study_name_1',
@@ -435,7 +435,7 @@ describe('NeurosynthSpreadsheet', () => {
         });
 
         it('should remove the no columns message when a column is added', () => {
-            const mockAnnotationNotesWithNoColumns: AnnotationNote[] = [
+            const mockAnnotationNotesWithNoColumns: NoteCollectionReturn[] = [
                 {
                     study: 'study_id_1',
                     study_name: 'study_name_1',

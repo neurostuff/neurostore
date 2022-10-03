@@ -1,12 +1,21 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Button, Tooltip, Typography, Tab, Tabs, Box, Divider, IconButton } from '@mui/material';
+import {
+    Button,
+    Tooltip,
+    Typography,
+    Tab,
+    Tabs,
+    Box,
+    Divider,
+    IconButton,
+    TableRow,
+    TableCell,
+} from '@mui/material';
 import React, { useState, useEffect, SyntheticEvent } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import DisplayValuesTable from 'components/Tables/DisplayValuesTable/DisplayValuesTable';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
 import DisplayAnalysis from 'components/DisplayAnalysis/DisplayAnalysis';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
-import { IDisplayValuesTableModel } from 'components/Tables/DisplayValuesTable';
 import StudyPageStyles from './StudyPage.styles';
 import HelpIcon from '@mui/icons-material/Help';
 import { useCreateStudy, useGetStudyById, useGetTour } from 'hooks';
@@ -15,6 +24,10 @@ import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import NeurosynthTable, { getValue } from 'components/Tables/NeurosynthTable/NeurosynthTable';
+import { getType } from 'components/EditMetadata';
+import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
+import { sortMetadataArrayFn } from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 
 const StudyPage: React.FC = (props) => {
     const { startTour } = useGetTour('StudyPage');
@@ -74,38 +87,6 @@ const StudyPage: React.FC = (props) => {
         const allowEdit = isAuthenticated && userIDAndStudyIDExist && thisUserOwnsThisStudy;
         setAllowEdits(allowEdit);
     }, [isAuthenticated, user?.sub, data?.user]);
-
-    const metadataForTable: IDisplayValuesTableModel = {
-        columnHeaders: [
-            {
-                value: 'Name',
-                center: false,
-                bold: false,
-            },
-            {
-                value: 'Value',
-                center: false,
-                bold: false,
-            },
-        ],
-        rowData: Object.entries(data?.metadata || {}).map(([key, value]) => ({
-            uniqueKey: key,
-            columnValues: [
-                {
-                    value: key,
-                    colorByType: false,
-                    center: false,
-                    bold: true,
-                },
-                {
-                    value: value,
-                    colorByType: true,
-                    center: false,
-                    bold: true,
-                },
-            ],
-        })),
-    };
 
     return (
         <StateHandlerComponent isLoading={getStudyIsLoading} isError={getStudyIsError}>
@@ -202,7 +183,28 @@ const StudyPage: React.FC = (props) => {
                     }
                 >
                     <Box sx={StudyPageStyles.metadataContainer}>
-                        {data && <DisplayValuesTable {...metadataForTable} />}
+                        <NeurosynthTable
+                            tableConfig={{
+                                tableHeaderBackgroundColor: 'white',
+                                tableElevation: 0,
+                            }}
+                            headerCells={[
+                                { text: 'Name', key: 'name', styles: { fontWeight: 'bold' } },
+                                { text: 'Value', key: 'value', styles: { fontWeight: 'bold' } },
+                            ]}
+                            rows={Object.entries(data?.metadata || {})
+                                .sort((a, b) => sortMetadataArrayFn(a[0], b[0]))
+                                .map(([key, value]) => (
+                                    <TableRow key={key}>
+                                        <TableCell>{key}</TableCell>
+                                        <TableCell
+                                            sx={{ color: NeurosynthTableStyles[getType(value)] }}
+                                        >
+                                            {getValue(value)}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                        />
                     </Box>
                 </NeurosynthAccordion>
             </Box>

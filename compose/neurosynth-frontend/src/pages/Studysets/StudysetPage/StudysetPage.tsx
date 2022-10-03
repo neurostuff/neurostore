@@ -1,14 +1,13 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Typography, Box, Button, IconButton, Link } from '@mui/material';
+import { Typography, Box, Button, IconButton, Link, TableRow, TableCell } from '@mui/material';
 import { useState } from 'react';
 import { useParams } from 'react-router';
+import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 import { useHistory } from 'react-router';
 import AddIcon from '@mui/icons-material/Add';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
-import StudiesTable from 'components/Tables/StudiesTable/StudiesTable';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
-import AnnotationsTable from 'components/Tables/AnnotationsTable/AnnotationsTable';
 import TextEdit from 'components/TextEdit/TextEdit';
 import StudysetPageStyles from './StudysetPage.styles';
 import HelpIcon from '@mui/icons-material/Help';
@@ -24,6 +23,8 @@ import { StudyReturn } from 'neurostore-typescript-sdk';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useIsFetching } from 'react-query';
 import { NavLink } from 'react-router-dom';
+import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
+import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 
 const StudysetsPage: React.FC = (props) => {
     const { startTour } = useGetTour('StudysetPage');
@@ -47,14 +48,17 @@ const StudysetsPage: React.FC = (props) => {
         useUpdateStudyset();
     const { mutate: updateStudysetDoi, isLoading: updateStudysetDoiIsLoading } =
         useUpdateStudyset();
-    const { mutate: updateStudyset, isLoading: updateStudysetIsLoading } = useUpdateStudyset();
+    const { mutate: deleteStudyFromStudyset, isLoading: deleteStudyFromStudysetIsLoading } =
+        useUpdateStudyset();
     const {
         data: studyset,
         isLoading: getStudysetIsLoading,
         isError: getStudysetIsError,
     } = useGetStudysetById(params.studysetId);
     const isFetching = useIsFetching(['studysets', params.studysetId]);
-    const { data: annotations } = useGetAnnotationsByStudysetId(params?.studysetId);
+    const { data: annotations, isLoading: getAnnotationsIsLoading } = useGetAnnotationsByStudysetId(
+        params?.studysetId
+    );
     const { mutate: createAnnotation } = useCreateAnnotation();
     const { mutate: deleteStudyset } = useDeleteStudyset();
 
@@ -68,7 +72,7 @@ const StudysetsPage: React.FC = (props) => {
             },
         };
         /**
-         * in order to make sure that each field visually loads by itself, we need to split the studyset update
+         * in order to make sure that each field visually loads independently, we need to split the studyset update
          * into separate useQuery instances (otherwise to name will show the loading icon for all fields)
          */
         switch (label) {
@@ -106,7 +110,7 @@ const StudysetsPage: React.FC = (props) => {
                     (x) => x.id !== data.studyId
                 );
 
-                updateStudyset({
+                deleteStudyFromStudyset({
                     studysetId: params.studysetId,
                     studyset: {
                         studies: updatedStudiesList.map((x) => x.id || ''),
@@ -268,9 +272,54 @@ const StudysetsPage: React.FC = (props) => {
                             onCloseDialog={() => setCreateDetailsIsOpen(false)}
                         />
                     </Box>
-                    <AnnotationsTable
+                    {/* <AnnotationsTable
                         studysetId={params.studysetId}
                         annotations={annotations || []}
+                    /> */}
+                    <NeurosynthTable
+                        tableConfig={{
+                            isLoading: getAnnotationsIsLoading,
+                            tableHeaderBackgroundColor: '#b4656f',
+                        }}
+                        headerCells={[
+                            {
+                                text: 'Name',
+                                key: 'name',
+                                styles: { fontWeight: 'bold', color: 'primary.contrastText' },
+                            },
+                            {
+                                text: 'Description',
+                                key: 'description',
+                                styles: { fontWeight: 'bold', color: 'primary.contrastText' },
+                            },
+                            {
+                                text: 'Owner',
+                                key: 'owner',
+                                styles: { fontWeight: 'bold', color: 'primary.contrastText' },
+                            },
+                        ]}
+                        rows={(annotations || []).map((annotation, index) => (
+                            <TableRow
+                                key={annotation?.id || index}
+                                onClick={() => history.push(`/annotations/${annotation?.id}`)}
+                                sx={NeurosynthTableStyles.tableRow}
+                            >
+                                <TableCell>
+                                    {annotation?.name || (
+                                        <Box sx={{ color: 'warning.dark' }}>No name</Box>
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    {annotation?.description || (
+                                        <Box sx={{ color: 'warning.dark' }}>No description</Box>
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    {(annotation?.user === user?.sub ? 'Me' : annotation?.user) ||
+                                        'Neurosynth-Compose'}
+                                </TableCell>
+                            </TableRow>
+                        ))}
                     />
                 </Box>
             </Box>
@@ -279,26 +328,91 @@ const StudysetsPage: React.FC = (props) => {
                 <Typography variant="h6" sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
                     Studies in this studyset
                 </Typography>
-                <StudiesTable
-                    isLoading={updateStudysetIsLoading || isFetching > 0}
-                    noDataElement={
-                        <Typography sx={{ padding: '1rem' }} color="warning.dark">
-                            There are no studies in this studyset. Start by{' '}
-                            <Link color="primary" exact component={NavLink} to="/studies">
-                                adding studies to this studyset
-                            </Link>
-                        </Typography>
-                    }
-                    onRemoveStudyFromStudyset={(studyId) =>
-                        setDeleteStudyFromStudysetConfirmationIsOpen({
-                            isOpen: true,
-                            data: { studyId },
-                        })
-                    }
-                    studysetEditMode={
-                        isAuthenticated && thisUserOwnsthisStudyset ? 'delete' : undefined
-                    }
-                    studies={studyset?.studies as StudyReturn[]}
+                <NeurosynthTable
+                    tableConfig={{
+                        isLoading:
+                            getStudysetIsLoading ||
+                            deleteStudyFromStudysetIsLoading ||
+                            isFetching > 0,
+                        loaderColor: 'secondary',
+                        noDataDisplay: (
+                            <Typography sx={{ padding: '1rem' }} color="warning.dark">
+                                There are no studies in this studyset yet. Start by{' '}
+                                <Link color="primary" exact component={NavLink} to="/studies">
+                                    adding studies to this studyset
+                                </Link>
+                            </Typography>
+                        ),
+                    }}
+                    headerCells={[
+                        {
+                            text: 'Title',
+                            key: 'title',
+                            styles: { color: 'primary.contrastText', fontWeight: 'bold' },
+                        },
+                        {
+                            text: 'Authors',
+                            key: 'authors',
+                            styles: { color: 'primary.contrastText', fontWeight: 'bold' },
+                        },
+                        {
+                            text: 'Journal',
+                            key: 'journal',
+                            styles: { color: 'primary.contrastText', fontWeight: 'bold' },
+                        },
+                        {
+                            text: '',
+                            key: 'deleteStudyFromStudyset',
+                            styles: {
+                                display:
+                                    isAuthenticated && thisUserOwnsthisStudyset
+                                        ? 'table-cell'
+                                        : 'none',
+                            },
+                        },
+                    ]}
+                    rows={((studyset?.studies || []) as StudyReturn[]).map((study, index) => (
+                        <TableRow
+                            sx={NeurosynthTableStyles.tableRow}
+                            key={study?.id || index}
+                            onClick={() => history.push(`/studies/${study.id}`)}
+                        >
+                            <TableCell>
+                                {study?.name || <Box sx={{ color: 'warning.dark' }}>No name</Box>}
+                            </TableCell>
+                            <TableCell>
+                                {study?.authors || (
+                                    <Box sx={{ color: 'warning.dark' }}>No author(s)</Box>
+                                )}
+                            </TableCell>
+                            <TableCell>
+                                {study?.publication || (
+                                    <Box sx={{ color: 'warning.dark' }}>No Journal</Box>
+                                )}
+                            </TableCell>
+                            <TableCell
+                                sx={{
+                                    display:
+                                        isAuthenticated && thisUserOwnsthisStudyset
+                                            ? 'table-cell'
+                                            : 'none',
+                                }}
+                                data-tour={index === 0 ? 'UserStudiesPage-3' : null}
+                            >
+                                <IconButton
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        setDeleteStudyFromStudysetConfirmationIsOpen({
+                                            isOpen: true,
+                                            data: { studyId: study.id },
+                                        });
+                                    }}
+                                >
+                                    <RemoveCircleIcon color="error" />
+                                </IconButton>
+                            </TableCell>
+                        </TableRow>
+                    ))}
                 />
                 <ConfirmationDialog
                     isOpen={deleteStudyFromStudysetConfirmationIsOpen.isOpen}

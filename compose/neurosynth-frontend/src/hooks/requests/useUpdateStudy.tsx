@@ -1,7 +1,7 @@
 import { AxiosError, AxiosResponse } from 'axios';
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from 'react-query';
-import { Study, StudyReturn } from 'neurostore-typescript-sdk';
+import { StudyRequest, StudyReturn } from 'neurostore-typescript-sdk';
 import API from 'utils/api';
 
 const useUpdateStudy = () => {
@@ -12,7 +12,7 @@ const useUpdateStudy = () => {
         AxiosError,
         {
             studyId: string;
-            study: Study;
+            study: StudyRequest;
         },
         unknown
     >((args) => API.NeurostoreServices.StudiesService.studiesIdPut(args.studyId, args.study), {

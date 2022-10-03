@@ -1,13 +1,12 @@
 import { render, RenderResult, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useUpdateStudy } from 'hooks';
-import { Study } from 'neurostore-typescript-sdk';
+import { StudyRequest } from 'neurostore-typescript-sdk';
 import { SnackbarProvider } from 'notistack';
 import { act } from 'react-dom/test-utils';
 import EditStudyMetadata from './EditStudyMetadata';
 
 jest.mock('@auth0/auth0-react');
-jest.mock('utils/api');
 jest.mock('hooks');
 
 describe('EditStudyMetadata Component', () => {
@@ -257,7 +256,7 @@ describe('EditStudyMetadata Component', () => {
         it('should be removed on save', async () => {
             (useUpdateStudy().mutate as jest.Mock).mockImplementation(
                 (
-                    _studyArg: { studyId: string; study: Partial<Study> },
+                    _studyArg: { studyId: string; study: Partial<StudyRequest> },
                     optional: { onSuccess: () => void }
                 ) => {
                     optional.onSuccess();

@@ -36,6 +36,7 @@ describe(PAGE_NAME, () => {
                 .contains('5')
                 // ACT
                 .click()
+                .click()
                 .wait('@studiesRequest')
                 // ASSERT
                 .its('request.url')
@@ -122,7 +123,7 @@ describe(PAGE_NAME, () => {
                 .should('contain', 'authors=abcdefg');
         });
 
-        it.only('should make a correct request when searching via the "Description" option', () => {
+        it('should make a correct request when searching via the "Description" option', () => {
             cy.login('mocked')
                 // ARRANGE
                 .wait('@studiesRequest')

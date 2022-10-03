@@ -9,12 +9,12 @@ import {
     Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { IMetaAnalysisData } from '..';
+import { IMetaAnalysisData } from 'components/MetaAnalysisConfigComponents';
 import NavigationButtons from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { useInputValidation, useGetStudysets, useGetAnnotationsByStudysetId } from '../../../hooks';
-import { EAnalysisType } from '../../../pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
-import { EPropertyType } from '../../EditMetadata';
-import NeurosynthAutocomplete from '../../NeurosynthAutocomplete/NeurosynthAutocomplete';
+import { useInputValidation, useGetStudysets, useGetAnnotationsByStudysetId } from 'hooks';
+import { EAnalysisType } from 'pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
+import { EPropertyType } from 'components/EditMetadata';
+import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import MetaAnalysisDataStyles from './MetaAnalysisData.styles';
 
 const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {

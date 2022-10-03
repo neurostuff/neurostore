@@ -1,14 +1,13 @@
 import { AxiosError, AxiosResponse } from 'axios';
-import { Annotation, AnnotationReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from 'react-query';
-import API from 'utils/api';
+import API, { NeurostoreAnnotation } from 'utils/api';
 
 const useCreateAnnotation = () => {
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
     return useMutation<
-        AxiosResponse<AnnotationReturn>,
+        AxiosResponse<NeurostoreAnnotation>,
         AxiosError,
         {
             source?:
@@ -19,7 +18,7 @@ const useCreateAnnotation = () => {
                 | 'neuroquery'
                 | undefined;
             sourceId?: string;
-            annotation: Annotation;
+            annotation: Partial<NeurostoreAnnotation>;
         },
         unknown
     >(

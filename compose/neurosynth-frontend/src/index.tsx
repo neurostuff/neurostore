@@ -9,6 +9,14 @@ import { SystemStyleObject } from '@mui/system';
 import { BrowserRouter } from 'react-router-dom';
 
 export type Style = Record<string, SystemStyleObject>;
+export type ColorOptions =
+    | 'inherit'
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'error'
+    | 'info'
+    | 'warning';
 
 declare module '@mui/material/styles/createPalette' {
     interface Palette {

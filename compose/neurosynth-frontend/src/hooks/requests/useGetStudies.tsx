@@ -2,25 +2,9 @@ import { SearchCriteria } from 'pages/Studies/PublicStudiesPage/PublicStudiesPag
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
-const useGetStudies = (enabled: boolean, searchCriteria: Partial<SearchCriteria>) => {
+const useGetStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: boolean) => {
     return useQuery(
-        [
-            'studies',
-            {
-                genericSearchStr: searchCriteria?.genericSearchStr,
-                sortBy: searchCriteria?.sortBy,
-                pageOfResults: searchCriteria.pageOfResults,
-                descOrder: searchCriteria?.descOrder,
-                pageSize: searchCriteria?.pageSize,
-                isNested: searchCriteria?.isNested,
-                nameSearch: searchCriteria?.nameSearch,
-                descriptionSearch: searchCriteria?.descriptionSearch,
-                showUnique: searchCriteria?.showUnique,
-                source: searchCriteria?.source,
-                authorSearch: searchCriteria?.authorSearch,
-                userId: searchCriteria?.userId,
-            },
-        ],
+        ['studies', { ...searchCriteria }],
         () =>
             API.NeurostoreServices.StudiesService.studiesGet(
                 searchCriteria.genericSearchStr || undefined,
@@ -35,14 +19,26 @@ const useGetStudies = (enabled: boolean, searchCriteria: Partial<SearchCriteria>
                 searchCriteria.showUnique,
                 searchCriteria.source,
                 searchCriteria.authorSearch || undefined,
-                searchCriteria.userId
+                searchCriteria.userId,
+                searchCriteria.dataType,
+                searchCriteria.studysetOwner || undefined
             ),
         {
-            refetchOnWindowFocus: enabled,
-            refetchOnMount: enabled,
-            refetchOnReconnect: enabled,
-            enabled: enabled,
-            select: (res) => res.data,
+            enabled,
+            select: (res) => {
+                const studyList = res.data;
+                // sort studysets
+                (studyList.results || [])?.forEach((study) => {
+                    (study.studysets || []).sort((a, b) => {
+                        const firstStudysetId = a.name as string;
+                        const secondStudysetId = b.name as string;
+
+                        return firstStudysetId.localeCompare(secondStudysetId);
+                    });
+                });
+
+                return studyList;
+            },
         }
     );
 };

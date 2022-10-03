@@ -1,6 +1,6 @@
 import { AxiosError, AxiosResponse } from 'axios';
 import { useMutation, useQueryClient } from 'react-query';
-import { Studyset, StudysetReturn } from 'neurostore-typescript-sdk';
+import { StudysetRequest, StudysetReturn } from 'neurostore-typescript-sdk';
 import API from 'utils/api';
 import { useSnackbar } from 'notistack';
 
@@ -12,7 +12,7 @@ const useUpdateStudyset = () => {
         AxiosError,
         {
             studysetId: string;
-            studyset: Studyset;
+            studyset: StudysetRequest;
         },
         unknown
     >(

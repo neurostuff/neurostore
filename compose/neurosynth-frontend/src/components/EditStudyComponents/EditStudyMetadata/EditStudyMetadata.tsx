@@ -31,17 +31,30 @@ export const metadataToArray = (
     return transformedArr;
 };
 
+export const sortMetadataArrayFn = (a: string, b: string) => {
+    const lowerCaseA = a.toLocaleLowerCase();
+    const lowerCaseB = b.toLocaleLowerCase();
+
+    return lowerCaseA < lowerCaseB ? -1 : lowerCaseA > lowerCaseB ? 1 : 0;
+};
+
 const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
     const { isLoading, mutate } = useUpdateStudy();
     const [updatedEnabled, setUpdateEnabled] = useState(false);
 
     const [metadataArr, setMetadataArr] = useState<IMetadataRowModel[]>([]);
 
+    // we dont need to update the UI as the parent component will always be in sync.
+    // save is the only action that updates the metadata, and that will reflect what is already shown on the page
     useEffect(() => {
         if (props.metadata) {
-            setMetadataArr(metadataToArray(props.metadata));
+            const metadataArray = metadataToArray(props.metadata).sort((a, b) =>
+                sortMetadataArrayFn(a.metadataKey, b.metadataKey)
+            );
+            setMetadataArr(metadataArray);
         }
-    }, [props.metadata]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleOnSave = () => {
         const transformedMetadata = arrayToMetadata(metadataArr);
@@ -82,9 +95,9 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
             const updatedMetadata = prevState.filter(
                 (element) => element.metadataKey !== updatedRow.metadataKey
             );
-            setUpdateEnabled(true);
             return updatedMetadata;
         });
+        setUpdateEnabled(true);
     }, []);
 
     const handleMetadataRowAdd = useCallback(
@@ -94,11 +107,10 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
                 return false;
             } else {
                 setMetadataArr((prevState) => {
-                    const updatedState = [...prevState];
-                    updatedState.unshift({ ...row });
-                    setUpdateEnabled(true);
+                    const updatedState = [{ ...row }, ...prevState];
                     return updatedState;
                 });
+                setUpdateEnabled(true);
                 return true;
             }
         },
@@ -106,7 +118,9 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
     );
 
     const handleRevertChanges = (event: React.MouseEvent) => {
-        const tempRevertedChanges = metadataToArray(props.metadata);
+        const tempRevertedChanges = metadataToArray(props.metadata).sort((a, b) =>
+            sortMetadataArrayFn(a.metadataKey, b.metadataKey)
+        );
         setMetadataArr(tempRevertedChanges);
         setUpdateEnabled(false);
     };

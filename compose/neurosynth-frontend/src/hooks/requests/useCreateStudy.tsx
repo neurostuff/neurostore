@@ -12,8 +12,8 @@ const useCreateStudy = () => {
             API.NeurostoreServices.StudiesService.studiesPost(undefined, studyId, undefined),
         {
             onSuccess: () => {
-                // update study
-                queryClient.invalidateQueries('studysets');
+                // update queries
+                queryClient.invalidateQueries('studies');
                 enqueueSnackbar('Created new study successfully', { variant: 'success' });
             },
             onError: () => {

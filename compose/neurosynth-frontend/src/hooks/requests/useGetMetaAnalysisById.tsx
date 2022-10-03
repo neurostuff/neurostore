@@ -1,5 +1,5 @@
 import { useQuery } from 'react-query';
-import API from '../../utils/api';
+import API from 'utils/api';
 
 const useGetMetaAnalysisById = (metaAnalysisId: string) => {
     const query = useQuery(

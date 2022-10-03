@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import EditStudyDetails, { IEditStudyDetails } from './EditStudyDetails';
 import { SnackbarProvider } from 'notistack';
 import { useUpdateStudy } from 'hooks';
-import { Study } from 'neurostore-typescript-sdk';
+import { StudyRequest } from 'neurostore-typescript-sdk';
 
 jest.mock('hooks');
 
@@ -168,7 +168,7 @@ describe('EditStudyDetails Component', () => {
     it('should not indicate save changes after we call the API and update', async () => {
         (useUpdateStudy().mutate as jest.Mock).mockImplementation(
             (
-                _studyArg: { studyId: string; study: Partial<Study> },
+                _studyArg: { studyId: string; study: Partial<StudyRequest> },
                 optional: { onSuccess: () => void }
             ) => {
                 optional.onSuccess();

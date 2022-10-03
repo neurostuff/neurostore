@@ -1,12 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { DisplayImagesTableRowModel } from '..';
-import DisplayImagesTableRow from './DisplayImageTableRow';
+import DisplayImageTableRow, { IDisplayImageTableRow } from './DisplayImageTableRow';
 
-jest.mock('../../DisplayValuesTable/DisplayValuesTable');
+jest.mock('components/Tables/NeurosynthTable/NeurosynthTable');
 
-describe('DisplayImagesTableRow Component', () => {
-    const mockTableRow: DisplayImagesTableRowModel = {
+describe('DisplayImageTableRow Component', () => {
+    const mockTableRow: IDisplayImageTableRow = {
         onRowSelect: jest.fn(),
         image: {
             add_date: '2016-01-21T17:22:27.397856+00:00',
@@ -35,7 +34,7 @@ describe('DisplayImagesTableRow Component', () => {
     });
 
     it('should render', () => {
-        render(<DisplayImagesTableRow {...mockTableRow} />, {
+        render(<DisplayImageTableRow {...mockTableRow} />, {
             container: document.body.appendChild(document.createElement('tbody')),
         });
         const rows = screen.getAllByRole('row');
@@ -49,7 +48,7 @@ describe('DisplayImagesTableRow Component', () => {
     });
 
     it('should call the select method when row is clicked', () => {
-        render(<DisplayImagesTableRow {...mockTableRow} />, {
+        render(<DisplayImageTableRow {...mockTableRow} />, {
             container: document.body.appendChild(document.createElement('tbody')),
         });
 
@@ -59,7 +58,7 @@ describe('DisplayImagesTableRow Component', () => {
     });
 
     it('should expand the row when the button is clicked', () => {
-        render(<DisplayImagesTableRow {...mockTableRow} />, {
+        render(<DisplayImageTableRow {...mockTableRow} />, {
             container: document.body.appendChild(document.createElement('tbody')),
         });
 
@@ -74,8 +73,8 @@ describe('DisplayImagesTableRow Component', () => {
         expect(titleText).toBeVisible();
     });
 
-    it('should render the correct data in the display values table', () => {
-        render(<DisplayImagesTableRow {...mockTableRow} />, {
+    it('should render the correct data in the table', () => {
+        render(<DisplayImageTableRow {...mockTableRow} />, {
             container: document.body.appendChild(document.createElement('tbody')),
         });
 
@@ -83,9 +82,9 @@ describe('DisplayImagesTableRow Component', () => {
         userEvent.click(expansionButton);
 
         Object.entries(mockTableRow.image.metadata || {}).forEach((kvp) => {
-            const uniqueKey = screen.getByText(`unique key: ${kvp[0]}`);
-            const name = screen.getByText(`Name: ${kvp[0]}`);
-            const value = screen.getByText(`Value: ${kvp[1]}`);
+            const uniqueKey = screen.getByText(`${kvp[0]}`);
+            const name = screen.getByText(`${kvp[0]}`);
+            const value = screen.getByText(`${kvp[1]}`);
             expect(uniqueKey).toBeInTheDocument();
             expect(name).toBeInTheDocument();
             expect(value).toBeInTheDocument();

@@ -12,7 +12,8 @@ import MetaAnalysisBuilderPageStyles from './MetaAnalysisBuilderPage.styles';
 import useGetTour from 'hooks/useGetTour';
 import Help from '@mui/icons-material/Help';
 import { useGuard } from 'hooks';
-import { Annotation, ReadOnly, StudysetReturn } from 'neurostore-typescript-sdk';
+import { StudysetReturn } from 'neurostore-typescript-sdk';
+import { NeurostoreAnnotation } from 'utils/api';
 
 export enum EAnalysisType {
     CBMA = 'CBMA',
@@ -24,7 +25,7 @@ export interface IMetaAnalysisComponents {
     estimator: IAutocompleteObject | undefined | null;
     corrector: IAutocompleteObject | undefined | null;
     studyset: StudysetReturn | undefined | null;
-    annotation: (Annotation & ReadOnly) | undefined | null;
+    annotation: NeurostoreAnnotation | undefined | null;
     inclusionColumn: string | undefined | null;
     metaAnalysisName: string | undefined;
     metaAnalysisDescription: string | undefined;

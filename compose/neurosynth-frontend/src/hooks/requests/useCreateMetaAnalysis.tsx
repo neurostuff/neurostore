@@ -2,7 +2,6 @@ import { AxiosError, AxiosResponse } from 'axios';
 import { useMutation } from 'react-query';
 import {
     AnnotationPostBody,
-    AnnotationReturn,
     MetaAnalysisPostBody,
     MetaAnalysisReturn,
     SpecificationPostBody,
@@ -15,7 +14,7 @@ import {
     IEstimatorCorrectorArgs,
     IMetaAnalysisComponents,
 } from '../../pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
-import API from '../../utils/api';
+import API, { NeurostoreAnnotation } from '../../utils/api';
 
 const useCreateMetaAnalysis = () => {
     const createSpecificationMutation = useMutation<
@@ -33,7 +32,7 @@ const useCreateMetaAnalysis = () => {
         unknown
     >((studyset) => API.NeurosynthServices.StudysetsService.studysetsPost(studyset));
     const createSynthAnnotationMutation = useMutation<
-        AxiosResponse<AnnotationReturn>,
+        AxiosResponse<NeurostoreAnnotation>,
         AxiosError,
         AnnotationPostBody,
         unknown

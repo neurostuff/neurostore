@@ -8,7 +8,6 @@ import EditAnalyses from './EditAnalyses';
 // already tested child component
 jest.mock('components/EditStudyComponents/EditAnalyses/EditAnalysis/EditAnalysis');
 jest.mock('components/Dialogs/CreateDetailsDialog/CreateDetailsDialog');
-jest.mock('utils/api');
 jest.mock('hooks');
 
 describe('EditAnalyses Component', () => {
