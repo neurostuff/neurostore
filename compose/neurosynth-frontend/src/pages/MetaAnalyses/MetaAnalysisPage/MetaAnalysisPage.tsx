@@ -7,7 +7,6 @@ import { useGetMetaAnalysisById } from 'hooks';
 import useUpdateMetaAnalysis from 'hooks/requests/useUpdateMetaAnalysis';
 import {
     Annotation,
-    AnnotationReturn,
     ReadOnly,
     Specification,
     SpecificationReturn,
@@ -23,6 +22,7 @@ import { getAnalysisTypeDescription } from 'components/MetaAnalysisConfigCompone
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import DynamicInputDisplay from 'components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/DynamicInputDisplay/DynamicInputDisplay';
 import { IDynamicInputType } from 'components/MetaAnalysisConfigComponents';
+import { NeurostoreAnnotation } from 'utils/api';
 
 const MetaAnalysisPage: React.FC = (props) => {
     const { startTour } = useGetTour('MetaAnalysisPage');
@@ -51,7 +51,7 @@ const MetaAnalysisPage: React.FC = (props) => {
     // get request is set to nested: true so below casting is safe
     const specification = data?.specification as SpecificationReturn;
     const studyset = data?.studyset as StudysetReturn;
-    const annotation = data?.annotation as AnnotationReturn;
+    const annotation = data?.annotation as NeurostoreAnnotation;
 
     const thisUserOwnsThisMetaAnalysis = (data?.user || undefined) === (user?.sub || null);
 
