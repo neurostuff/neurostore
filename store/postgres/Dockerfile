@@ -1,4 +1,4 @@
-FROM postgres:12
+FROM postgres:12.12
 RUN apt-get update && apt-get install -y dos2unix
 RUN apt-get install -yq python3-pip python-dev build-essential
 RUN apt-get install -yq cron

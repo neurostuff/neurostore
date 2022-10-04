@@ -1,6 +1,7 @@
 version: "2"
 services:
   neurosynth:
+    image: neurosynth_compose
     restart: always
     build: ./neurosynth_compose
     expose:
@@ -14,6 +15,7 @@ services:
     container_name: neurosynth_compose
 
   nginx:
+    image: synth_nginx
     restart: always
     build: ./nginx
     expose:
@@ -27,6 +29,7 @@ services:
       - LETSENCRYPT_HOST=${V_HOST}
 
   synth_pgsql:
+    image: synth_pgsql
     restart: always
     build: ./postgres
     volumes:

@@ -2,89 +2,210 @@ name: Testing Workflow
 on: [workflow_dispatch,push]
 
 jobs:
-  neurostore_build_and_test:
+  build_neurosynth_compose:
+   runs-on: ubuntu-latest
+   defaults:
+      run:
+        working-directory: compose
+   steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      -
+        name: Configuration
+        run: |
+          cp .env.example .env
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Build and push
+        uses: docker/bake-action@master
+        with:
+          files: docker-compose.yml,docker-compose.dev.yml
+          push: true
+          load: false
+          workdir: compose
+          set: |
+              neurosynth.tags=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/neurosynth_compose/**') }}
+              neurosynth.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurosynth_compose:${{ hashFiles('**/compose/neurosynth_compose/**') }}
+              neurosynth.cache-from=type=gha,scope=cached-neurosynth
+              neurosynth.cache-to=type=gha,scope=cached-neurosynth,mode=max
+              nginx.tags=ghcr.io/${{ github.repository_owner }}/synth_nginx:${{ hashFiles('**/compose/nginx/**') }}
+              nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/synth_nginx:${{ hashFiles('**/compose/nginx/**') }}
+              nginx.cache-from=type=gha,scope=cached-synth-nginx
+              nginx.cache-to=type=gha,scope=cached-synth-nginx,mode=max
+              synth_pgsql.tags=ghcr.io/${{ github.repository_owner }}/synth_pgsql:${{ hashFiles('**/compose/postgres/**') }}
+              synth_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/synth_pgsql:${{ hashFiles('**/compose/postgres/**') }}
+              synth_pgsql.cache-from=type=gha,scope=cached-synth-pgsql
+              synth_pgsql.cache-to=type=gha,scope=cached-synth-pgsql,mode=max
+
+  build_neurostore:
+   runs-on: ubuntu-latest
+   defaults:
+      run:
+        working-directory: store
+   steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      -
+        name: Configuration
+        run: |
+          cp .env.example .env
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Build and push
+        uses: docker/bake-action@master
+        with:
+          files: docker-compose.yml,docker-compose.dev.yml
+          push: true
+          load: false
+          workdir: store
+          set: |
+              neurostore.tags=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/neurostore/**') }}
+              neurostore.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/neurostore:${{ hashFiles('**/store/neurostore/**') }}
+              neurostore.cache-from=type=gha,scope=cached-neurostore
+              neurostore.cache-to=type=gha,scope=cached-neurostore,mode=max
+              nginx.tags=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
+              nginx.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store_nginx:${{ hashFiles('**/store/nginx/**') }}
+              nginx.cache-from=type=gha,scope=cached-store-nginx
+              nginx.cache-to=type=gha,scope=cached-store-nginx,mode=max
+              store_pgsql.tags=ghcr.io/${{ github.repository_owner }}/store_pgsql:${{ hashFiles('**/store/postgres/**') }}
+              store_pgsql.cache-from=type=registry,ref=ghcr.io/${{ github.repository_owner }}/store_pgsql:${{ hashFiles('**/store/postgres/**') }}
+              store_pgsql.cache-from=type=gha,scope=cached-store-pgsql
+              store_pgsql.cache-to=type=gha,scope=cached-store-pgsql,mode=max
+
+
+  neurostore_backend_tests:
     runs-on: ubuntu-latest
+    needs: build_neurostore
     defaults:
       run:
         working-directory: store
     steps:
-    - 
-      name: Checkout
-      uses: actions/checkout@v2
-      with:
-        submodules: recursive
-    -
-      name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
-    -
-      name: Configuration
-      run: |
-        cp .env.example .env
-    - 
-      name: Build backend
-      run: |
-        docker-compose build
-        docker network create nginx-proxy
-        docker-compose \
-          -f docker-compose.yml \
-          -f docker-compose.dev.yml \
-          up -d
-    - 
-      name: Create Test Database
-      run: |
-        until docker-compose exec -T \
-        store_pgsql pg_isready -U postgres; do sleep 1; done
+      - 
+        name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      -
+        name: Configuration
+        run: |
+          cp .env.example .env
+      -
+        name: load images
+        uses: docker/bake-action@master
+        with:
+          files: docker-compose.yml,docker-compose.dev.yml
+          push: false
+          load: true
+          workdir: store
+          set: |
+              neurostore.cache-from=type=gha,scope=cached-neurostore
+              nginx.cache-from=type=gha,scope=cached-store-nginx
+              store_pgsql.cache-from=type=gha,scope=cached-store-pgsql
+      - 
+        name: spin up backend
+        run: |
+          docker network create nginx-proxy
+          docker-compose pull
+          docker-compose \
+            -f docker-compose.yml \
+            -f docker-compose.dev.yml \
+            up -d --no-build
+      - 
+        name: Create Test Database
+        run: |
+          until docker-compose exec -T \
+          store_pgsql pg_isready -U postgres; do sleep 1; done
 
-        docker-compose exec -T \
-        store_pgsql \
-        psql -U postgres -c "create database test_db"
-    -
-      name: Backend Tests
-      env:
-        AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
-        AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET }}
-        AUTH0_BASE_URL: ${{ secrets.AUTH0_BASE_URL }}
-        AUTH0_ACCESS_TOKEN_URL: ${{ secrets.AUTH0_ACCESS_TOKEN_URL }}
-        AUTH0_AUTH_URL: ${{ secrets.AUTH0_AUTH_URL }}
-      run: |
-        docker-compose run \
-          -e "APP_SETTINGS=neurostore.config.DockerTestConfig" \
-          -e "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
-          -e "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
-          -e "AUTH0_BASE_URL=${AUTH0_BASE_URL}" \
-          -e "AUTH0_ACCESS_TOKEN_URL=${AUTH0_ACCESS_TOKEN_URL}" \
-          -e "AUTH0_AUTH_URL=${AUTH0_AUTH_URL}" \
-          --rm -w /neurostore \
-          neurostore \
-          python -m pytest neurostore/tests
+          docker-compose exec -T \
+          store_pgsql \
+          psql -U postgres -c "create database test_db"
+      -
+        name: Backend Tests
+        env:
+          AUTH0_CLIENT_ID: ${{ secrets.AUTH0_CLIENT_ID }}
+          AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET }}
+          AUTH0_BASE_URL: ${{ secrets.AUTH0_BASE_URL }}
+          AUTH0_ACCESS_TOKEN_URL: ${{ secrets.AUTH0_ACCESS_TOKEN_URL }}
+          AUTH0_AUTH_URL: ${{ secrets.AUTH0_AUTH_URL }}
+        run: |
+          docker-compose run \
+            -e "APP_SETTINGS=neurostore.config.DockerTestConfig" \
+            -e "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
+            -e "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
+            -e "AUTH0_BASE_URL=${AUTH0_BASE_URL}" \
+            -e "AUTH0_ACCESS_TOKEN_URL=${AUTH0_ACCESS_TOKEN_URL}" \
+            -e "AUTH0_AUTH_URL=${AUTH0_AUTH_URL}" \
+            --rm -w /neurostore \
+            neurostore \
+            python -m pytest neurostore/tests
 
-  neurosynth_build_and_test:
+  neurosynth_compose_backend_tests:
     runs-on: ubuntu-latest
+    needs: build_neurosynth_compose
     defaults:
       run:
         working-directory: compose
     steps:
     - 
       name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: recursive
     -
       name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+      uses: docker/setup-buildx-action@v2
     -
       name: Configuration
       run: |
         cp .env.example .env
     -
-      name: Build backend
+      name: load images
+      uses: docker/bake-action@master
+      with:
+        files: docker-compose.yml,docker-compose.dev.yml
+        push: false
+        load: true
+        workdir: compose
+        set: |
+            neurosynth.cache-from=type=gha,scope=cached-neurosynth
+            nginx.cache-from=type=gha,scope=cached-synth-nginx
+            synth_pgsql.cache-from=type=gha,scope=cached-synth-pgsql
+    -
+      name: Spin up backend
       run: |
-        docker-compose build
         docker network create nginx-proxy
+        docker-compose pull
         docker-compose \
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
-          up -d
+          up -d --no-build
     -
       name: Create Test Database
       run: |
@@ -113,6 +234,74 @@ jobs:
           --rm -w /neurosynth \
           neurosynth \
           python -m pytest neurosynth_compose/tests
+
+  style_check:
+    runs-on: ubuntu-latest
+    steps:
+    -
+      name: Checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    -
+      name: run flake8
+      run: |
+        pip install flake8
+        cd ./store
+        flake8 ./neurostore
+        cd ../compose
+        flake8 ./neurosynth_compose
+
+
+  neurosynth_compose_JUNIT_tests:
+    runs-on: ubuntu-latest
+    needs: build_neurosynth_compose
+    defaults:
+      run:
+        working-directory: compose
+    steps:
+    - 
+      name: Checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    -
+      name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    -
+      name: Configuration
+      run: |
+        cp .env.example .env
+    -
+      name: load images
+      uses: docker/bake-action@master
+      with:
+        files: docker-compose.yml,docker-compose.dev.yml
+        push: false
+        load: true
+        workdir: compose
+        set: |
+            neurosynth.cache-from=type=gha,scope=cached-neurosynth
+            nginx.cache-from=type=gha,scope=cached-synth-nginx
+            synth_pgsql.cache-from=type=gha,scope=cached-synth-pgsql
+    -
+      name: Spin up backend
+      run: |
+        docker network create nginx-proxy
+        docker-compose pull
+        docker-compose \
+          -f docker-compose.yml \
+          -f docker-compose.dev.yml \
+          up -d --no-build
+    -
+      name: Create Test Database
+      run: |
+        until docker-compose exec -T \
+        synth_pgsql pg_isready -U postgres; do sleep 1; done
+
+        docker-compose exec -T \
+        synth_pgsql \
+        psql -U postgres -c "create database test_db"
     -
       name: Frontend Jest Unit Tests
       env:
@@ -146,6 +335,120 @@ jobs:
           neurosynth \
           bash -c "cd /neurosynth/neurosynth-frontend && \
           npm install && npm run test"
+
+  neurosynth_compose_cypress_tests:
+    runs-on: ubuntu-latest
+    needs:
+      - build_neurosynth_compose
+      - build_neurostore
+    steps:
+    - 
+      name: Checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    -
+      name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    -
+      name: Configuration
+      run: |
+        cp compose/.env.example compose/.env
+        cp store/.env.example store/.env
+    -
+      name: load compose images
+      uses: docker/bake-action@master
+      with:
+        files: docker-compose.yml,docker-compose.dev.yml
+        push: false
+        load: true
+        workdir: compose
+        set: |
+            neurosynth.cache-from=type=gha,scope=cached-neurosynth
+            nginx.cache-from=type=gha,scope=cached-synth-nginx
+            synth_pgsql.cache-from=type=gha,scope=cached-synth-pgsql
+    -
+      name: load store images
+      uses: docker/bake-action@master
+      with:
+        files: docker-compose.yml,docker-compose.dev.yml
+        push: false
+        load: true
+        workdir: store
+        set: |
+            neurostore.cache-from=type=gha,scope=cached-neurostore
+            nginx.cache-from=type=gha,scope=cached-store-nginx
+            store_pgsql.cache-from=type=gha,scope=cached-store-pgsql
+    -
+      name: Spin up compose backend
+      run: |
+        cd compose
+        docker network create nginx-proxy
+        docker-compose pull
+        docker-compose \
+          -f docker-compose.yml \
+          -f docker-compose.dev.yml \
+          up -d --no-build
+    -
+      name: Spin up store backend
+      run: |
+        cd store
+        docker-compose pull
+        docker-compose \
+          -f docker-compose.yml \
+          -f docker-compose.dev.yml \
+          up -d --no-build
+    -
+      name: Create Compose Database
+      run: |
+        cd compose
+        until docker-compose exec -T \
+        synth_pgsql pg_isready -U postgres; do sleep 1; done
+
+        docker-compose exec -T \
+        synth_pgsql \
+        psql -U postgres -c "create database neurosynth"
+    -
+      name: Create Store Database
+      run: |
+        cd store
+        until docker-compose exec -T \
+        store_pgsql pg_isready -U postgres; do sleep 1; done
+
+        docker-compose exec -T \
+        store_pgsql \
+        psql -U postgres -c "create database neurostore"
+    -
+      name: Initialize Compose Database
+      run: |
+        cd compose
+        docker-compose exec -T neurosynth \
+        bash -c \
+            "flask db merge heads && \
+             flask db stamp head && \
+             flask db migrate && \
+             flask db upgrade"
+    -
+      name: Initialize Store Database
+      run: |
+        cd store
+        docker-compose exec -T neurostore \
+        bash -c \
+            "flask db merge heads && \
+             flask db stamp head && \
+             flask db migrate && \
+             flask db upgrade"
+    - 
+      name: Ingest data into Store
+      run: |
+        cd store
+        docker-compose exec -T neurostore bash -c "flask ingest-neurosynth --max-rows 100"
+    -
+      name: Ingest data into Compose
+      run: |
+        cd compose
+        ipaddr=$(docker inspect neurostore | python3 -c "import sys, json; print(json.load(sys.stdin)[0]['NetworkSettings']['Networks']['nginx-proxy']['IPAddress'])")
+        docker-compose exec -T neurosynth bash -c "flask create-meta-analyses --n-studysets 1 --neurostore-url http://${ipaddr}:8000"
     -
       name: Frontend Cypress E2E Tests
       uses: cypress-io/github-action@v4
@@ -165,20 +468,3 @@ jobs:
         browser: chrome
         wait-on: http://localhost:3000
         working-directory: /home/runner/work/neurostore/neurostore/compose/neurosynth-frontend
-
-  style_check:
-    runs-on: ubuntu-latest
-    steps:
-    -
-      name: Checkout
-      uses: actions/checkout@v2
-      with:
-        submodules: recursive
-    -
-      name: run flake8
-      run: |
-        pip install flake8
-        cd ./store
-        flake8 ./neurostore
-        cd ../compose
-        flake8 ./neurosynth_compose
