@@ -442,13 +442,13 @@ jobs:
       name: Ingest data into Store
       run: |
         cd store
-        docker-compose exec neurostore bash -c "flask ingest-neurosynth --max-rows 100"
+        docker-compose exec -T neurostore bash -c "flask ingest-neurosynth --max-rows 100"
     -
       name: Ingest data into Compose
       run: |
         cd compose
         ipaddr=$(docker inspect neurostore | python3 -c "import sys, json; print(json.load(sys.stdin)[0]['NetworkSettings']['Networks']['nginx-proxy']['IPAddress'])")
-        docker-compose exec neurosynth bash -c "flask create-meta-analyses --n-studysets 1 --neurostore-url http://${ipaddr}:8000"
+        docker-compose exec -T neurosynth bash -c "flask create-meta-analyses --n-studysets 1 --neurostore-url http://${ipaddr}:8000"
     -
       name: Frontend Cypress E2E Tests
       uses: cypress-io/github-action@v4
