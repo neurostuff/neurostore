@@ -379,7 +379,7 @@ jobs:
         set: |
             neurostore.cache-from=type=gha,scope=cached-neurosynth
             nginx.cache-from=type=gha,scope=cached-store-nginx
-            synth_pgsql.cache-from=type=gha,scope=cached-store-pgsql
+            store_pgsql.cache-from=type=gha,scope=cached-store-pgsql
     -
       name: Spin up compose backend
       run: |
