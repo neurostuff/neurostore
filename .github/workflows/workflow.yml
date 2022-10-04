@@ -355,7 +355,7 @@ jobs:
       name: Configuration
       run: |
         cp .env.example .env
-        cp ../store/.env.example cp ../store/.env
+        cp ../store/.env.example ../store/.env
     -
       name: load compose images
       uses: docker/bake-action@master
