@@ -338,10 +338,9 @@ jobs:
 
   neurosynth_compose_cypress_tests:
     runs-on: ubuntu-latest
-    needs: build_neurosynth_compose
-    defaults:
-      run:
-        working-directory: compose
+    needs:
+      - build_neurosynth_compose
+      - build_neurostore
     steps:
     - 
       name: Checkout
@@ -354,8 +353,8 @@ jobs:
     -
       name: Configuration
       run: |
-        cp .env.example .env
-        cp ../store/.env.example ../store/.env
+        cp compose/.env.example compose.env
+        cp store/.env.example store/.env
     -
       name: load compose images
       uses: docker/bake-action@master
@@ -383,6 +382,7 @@ jobs:
     -
       name: Spin up compose backend
       run: |
+        cd compose
         docker network create nginx-proxy
         docker-compose pull
         docker-compose \
@@ -392,7 +392,7 @@ jobs:
     -
       name: Spin up store backend
       run: |
-        cd ../store
+        cd store
         docker-compose pull
         docker-compose \
           -f docker-compose.yml \
@@ -401,6 +401,7 @@ jobs:
     -
       name: Create Compose Database
       run: |
+        cd compose
         until docker-compose exec -T \
         synth_pgsql pg_isready -U postgres; do sleep 1; done
 
@@ -410,7 +411,7 @@ jobs:
     -
       name: Create Store Database
       run: |
-        cd ../store
+        cd store
         until docker-compose exec -T \
         store_pgsql pg_isready -U postgres; do sleep 1; done
 
@@ -420,7 +421,8 @@ jobs:
     -
       name: Initialize Compose Database
       run: |
-        docker-compose exec neurosynth \
+        cd compose
+        docker-compose exec -T neurosynth \
         bash -c \
             "flask db merge heads && \
              flask db stamp head && \
@@ -429,8 +431,8 @@ jobs:
     -
       name: Initialize Store Database
       run: |
-        cd ../store
-        docker-compose exec neurostore \
+        cd store
+        docker-compose exec -T neurostore \
         bash -c \
             "flask db merge heads && \
              flask db stamp head && \
@@ -439,11 +441,12 @@ jobs:
     - 
       name: Ingest data into Store
       run: |
-        cd ../store
+        cd store
         docker-compose exec neurostore bash -c "flask ingest-neurosynth --max-rows 100"
     -
       name: Ingest data into Compose
       run: |
+        cd compose
         ipaddr=$(docker inspect neurostore | python3 -c "import sys, json; print(json.load(sys.stdin)[0]['NetworkSettings']['Networks']['nginx-proxy']['IPAddress'])")
         docker-compose exec neurosynth bash -c "flask create-meta-analyses --n-studysets 1 --neurostore-url http://${ipaddr}:8000"
     -
