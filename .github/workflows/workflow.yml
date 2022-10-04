@@ -363,6 +363,7 @@ jobs:
         push: false
         load: true
         workdir: compose
+        working-directory: compose
         set: |
             neurosynth.cache-from=type=gha,scope=cached-neurosynth
             nginx.cache-from=type=gha,scope=cached-synth-nginx
@@ -374,6 +375,7 @@ jobs:
         files: docker-compose.yml,docker-compose.dev.yml
         push: false
         load: true
+        working-directory: store
         workdir: store
         set: |
             neurostore.cache-from=type=gha,scope=cached-neurosynth
