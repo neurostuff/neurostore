@@ -376,7 +376,7 @@ jobs:
         load: true
         workdir: store
         set: |
-            neurostore.cache-from=type=gha,scope=cached-neurosynth
+            neurostore.cache-from=type=gha,scope=cached-neurostore
             nginx.cache-from=type=gha,scope=cached-store-nginx
             store_pgsql.cache-from=type=gha,scope=cached-store-pgsql
     -
