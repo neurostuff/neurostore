@@ -59,3 +59,8 @@ def test_data_type(auth_client, ingest_neurosynth, ingest_neurovault):
     assert get_both.status_code == 200
     assert len(get_coord.json['results']) + len(get_img.json['results'])\
         == len(get_both.json['results']) != 0
+
+
+def test_page_size(auth_client, ingest_neurosynth):
+    get_page_size = auth_client.get("/api/studies/?page_size=5")
+    assert get_page_size.status_code == 200
