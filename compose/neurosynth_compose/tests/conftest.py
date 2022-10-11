@@ -74,7 +74,7 @@ def app(mock_auth):
     from ..core import app as _app
 
     if "APP_SETTINGS" not in environ:
-        config = 'neurosynth.config.TestingConfig'
+        config = 'neurosynth_compose.config.TestingConfig'
     else:
         config = environ['APP_SETTINGS']
     _app.config.from_object(config)
