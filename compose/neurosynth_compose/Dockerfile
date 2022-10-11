@@ -28,4 +28,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /usr/src/app
 
-WORKDIR /neurosynth
+WORKDIR /compose
