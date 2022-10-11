@@ -14,7 +14,7 @@ services:
       - .env
     container_name: neurostore
   
-  nginx:
+  store_nginx:
     image: store_nginx
     restart: always
     build: ./nginx
