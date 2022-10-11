@@ -1,21 +1,20 @@
 version: "2"
 services:
-  neurosynth:
-    image: neurosynth_compose
+  compose:
+    image: compose
     restart: always
     build: ./neurosynth_compose
     expose:
       - "8000"
     volumes:
       - ./postgres/migrations:/migrations
-      - ./:/neurosynth
+      - ./:/compose
     command: /usr/local/bin/gunicorn -w 2 -b :8000 neurosynth_compose.core:app --log-level debug --timeout 120
     env_file:
       - .env
-    container_name: neurosynth_compose
 
-  nginx:
-    image: synth_nginx
+  compose_nginx:
+    image: compose_nginx
     restart: always
     build: ./nginx
     expose:
@@ -23,13 +22,13 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     volumes_from:
-      - neurosynth
+      - compose
     environment:
       - VIRTUAL_HOST=${V_HOST}
       - LETSENCRYPT_HOST=${V_HOST}
 
-  synth_pgsql:
-    image: synth_pgsql
+  compose_pgsql:
+    image: compose_pgsql
     restart: always
     build: ./postgres
     volumes:
