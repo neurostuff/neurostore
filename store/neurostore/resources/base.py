@@ -315,7 +315,7 @@ class ListView(BaseView):
             else:
                 unique_count = count
 
-        records = q.paginate(args["page"], args["page_size"], False).items
+        records = q.paginate(page=args["page"], per_page=args["page_size"], error_out=False).items
         if m is Study and args.get("studyset_owner"):
             for study in records:
                 study.studysets = study.studysets.filter(
