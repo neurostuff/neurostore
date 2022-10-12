@@ -2,27 +2,43 @@ import { SearchCriteria } from 'pages/Studies/PublicStudiesPage/PublicStudiesPag
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
-const useGetStudies = (searchCriteria: SearchCriteria) => {
+const useGetStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: boolean) => {
     return useQuery(
-        ['studies', searchCriteria?.userId],
+        ['studies', { ...searchCriteria }],
         () =>
             API.NeurostoreServices.StudiesService.studiesGet(
-                searchCriteria.genericSearchStr,
+                searchCriteria.genericSearchStr || undefined,
                 searchCriteria.sortBy,
                 searchCriteria.pageOfResults,
                 searchCriteria.descOrder,
                 searchCriteria.pageSize,
                 searchCriteria.isNested,
-                searchCriteria.nameSearch,
-                searchCriteria.descriptionSearch,
+                searchCriteria.nameSearch || undefined,
+                searchCriteria.descriptionSearch || undefined,
                 undefined,
                 searchCriteria.showUnique,
                 searchCriteria.source,
-                searchCriteria.authorSearch,
-                searchCriteria.userId
+                searchCriteria.authorSearch || undefined,
+                searchCriteria.userId,
+                searchCriteria.dataType,
+                searchCriteria.studysetOwner || undefined
             ),
         {
-            select: (res) => res.data.results,
+            enabled,
+            select: (res) => {
+                const studyList = res.data;
+                // sort studysets
+                (studyList.results || [])?.forEach((study) => {
+                    (study.studysets || []).sort((a, b) => {
+                        const firstStudysetId = a.name as string;
+                        const secondStudysetId = b.name as string;
+
+                        return firstStudysetId.localeCompare(secondStudysetId);
+                    });
+                });
+
+                return studyList;
+            },
         }
     );
 };

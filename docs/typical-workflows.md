@@ -28,4 +28,9 @@ Clicking on the meta-analysis tab, she is supplied with a form asking her
 what type of meta-analysis to perform: Image-Based Meta-Analysis (IBMA) or
 Coordinate-Based Meta-Analysis (CBMA).
 Her studyset contains coordinates so Dors selects CBMA.
-Next, the selection 
+Next, she specifies the desired CBMA algorithm: multi-level kernel density analysis (or MKDA).
+After that, she specifies the type of correction she wants to apply and then she's ready to run.
+
+neurosynth-compose generates a unique id for the analysis and Dors follows the link to the google collab
+to run her analysis.
+She runs the cells in the notebook which uploads the results back to neurosynth-compose.

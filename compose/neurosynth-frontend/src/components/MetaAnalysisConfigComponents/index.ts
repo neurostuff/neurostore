@@ -1,11 +1,12 @@
+import { StudysetReturn } from 'neurostore-typescript-sdk';
 import {
     EAnalysisType as EMetaAnalysisType,
     IMetaAnalysisComponents,
     IEstimatorCorrectorArgs,
-} from '../../pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
-import { AnnotationsApiResponse, StudysetsApiResponse } from '../../utils/api';
-import { ENavigationButton } from '../Buttons/NavigationButtons/NavigationButtons';
-import { IAutocompleteObject } from '../NeurosynthAutocomplete/NeurosynthAutocomplete';
+} from 'pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
+import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
+import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
+import { NeurostoreAnnotation } from 'utils/api';
 
 export const KWARG_STRING = '**kwargs';
 
@@ -21,8 +22,8 @@ export interface IMetaAnalysisDetails extends IMetaAnalysisBuilderStep {
 
 export interface IMetaAnalysisData extends IMetaAnalysisBuilderStep {
     metaAnalysisType: EMetaAnalysisType | undefined;
-    studyset: StudysetsApiResponse | undefined | null;
-    annotation: AnnotationsApiResponse | undefined | null;
+    studyset: StudysetReturn | undefined | null;
+    annotation: NeurostoreAnnotation | undefined | null;
     inclusionColumn: string | undefined | null;
 }
 

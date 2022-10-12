@@ -2,8 +2,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DynamicFormKwargInput from './DynamicFormKwargInput';
 
-jest.mock('../../../Tables/DisplayValuesTable/DisplayValuesTable');
-jest.mock('../../../EditMetadata/EditMetadataRow/AddMetadataRow');
+jest.mock('components/Tables/NeurosynthTable/NeurosynthTable');
+jest.mock('components/EditMetadata/EditMetadataRow/AddMetadataRow');
 
 describe('DynamicFormKwargInput Component', () => {
     const mockOnUpdate = jest.fn();
@@ -40,10 +40,10 @@ describe('DynamicFormKwargInput Component', () => {
             />
         );
 
-        expect(screen.getByText('unique key: some_arg')).toBeInTheDocument();
-        expect(screen.getByText('Argument: abc')).toBeInTheDocument();
-        expect(screen.getByText('unique key: another_arg')).toBeInTheDocument();
-        expect(screen.getByText('Argument: def')).toBeInTheDocument();
+        expect(screen.getByText('some_arg')).toBeInTheDocument();
+        expect(screen.getByText('abc')).toBeInTheDocument();
+        expect(screen.getByText('another_arg')).toBeInTheDocument();
+        expect(screen.getByText('def')).toBeInTheDocument();
     });
 
     it('should update the table when a new kvp is added', () => {
@@ -75,7 +75,7 @@ describe('DynamicFormKwargInput Component', () => {
         });
     });
 
-    it('should update the table when the action is triggered', () => {
+    it('should update the table when a row has been deleted', () => {
         render(
             <DynamicFormKwargInput
                 parameterName="**kwargs"
@@ -92,7 +92,7 @@ describe('DynamicFormKwargInput Component', () => {
             />
         );
 
-        userEvent.click(screen.getByTestId('simulate-trigger-action'));
+        userEvent.click(screen.getAllByTestId('RemoveCircleIcon')[0]);
         expect(mockOnUpdate).toBeCalledWith({
             '**kwargs': {
                 another_arg: 'def',

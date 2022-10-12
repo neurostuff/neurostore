@@ -9,12 +9,12 @@ import {
     Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { IMetaAnalysisData } from '..';
+import { IMetaAnalysisData } from 'components/MetaAnalysisConfigComponents';
 import NavigationButtons from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { useInputValidation, useGetStudysets, useGetAnnotationsByStudysetId } from '../../../hooks';
-import { EAnalysisType } from '../../../pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
-import { EPropertyType } from '../../EditMetadata';
-import NeurosynthAutocomplete from '../../NeurosynthAutocomplete/NeurosynthAutocomplete';
+import { useInputValidation, useGetStudysets, useGetAnnotationsByStudysetId } from 'hooks';
+import { EAnalysisType } from 'pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
+import { EPropertyType } from 'components/EditMetadata';
+import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import MetaAnalysisDataStyles from './MetaAnalysisData.styles';
 
 const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
@@ -22,7 +22,7 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
         data: studysetsData,
         isLoading: studysetsIsLoading,
         isError: studysetsIsError,
-    } = useGetStudysets();
+    } = useGetStudysets({ isNested: false });
     const {
         data: annotationsData,
         isLoading: annotationsIsLoading,
@@ -101,7 +101,7 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                 onChange={(_event, newVal, _reason) => {
                     props.onUpdate({ studyset: newVal, annotation: null, inclusionColumn: null });
                 }}
-                options={studysetsData || []}
+                options={studysetsData?.results || []}
             />
 
             <Typography sx={MetaAnalysisDataStyles.spaceBelow}>
@@ -150,7 +150,12 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
 
             <NavigationButtons
                 onButtonClick={props.onNext}
-                nextButtonDisabled={!props.metaAnalysisType || !props.studyset || !props.annotation}
+                nextButtonDisabled={
+                    !props.metaAnalysisType ||
+                    !props.studyset ||
+                    !props.annotation ||
+                    !props.inclusionColumn
+                }
                 nextButtonStyle="outlined"
             />
         </>

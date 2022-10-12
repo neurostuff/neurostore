@@ -1,29 +1,49 @@
 import Add from '@mui/icons-material/Add';
 import AddCircle from '@mui/icons-material/AddCircle';
-import { IconButton, MenuItem, Divider, Box, TextField, Button, MenuList } from '@mui/material';
+import {
+    IconButton,
+    MenuItem,
+    Divider,
+    Box,
+    TextField,
+    Button,
+    MenuList,
+    Typography,
+    FormControlLabel,
+    Checkbox,
+    LinearProgress,
+} from '@mui/material';
 import React, { ChangeEvent, useState, useRef } from 'react';
-import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
-import { StudysetsApiResponse, StudyApiResponse } from '../../utils/api';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { useCreateStudyset, useGetStudysets, useUpdateStudyset } from 'hooks';
+import { StudyReturn, StudysetReturn } from 'neurostore-typescript-sdk';
+import { useAuth0 } from '@auth0/auth0-react';
+import { useIsFetching, useQueryClient } from 'react-query';
 
 export interface IStudysetsPopupMenu {
-    studysets: StudysetsApiResponse[] | undefined;
-    study: StudyApiResponse;
-    onCreateStudyset: (studysetName: string, studysetDescription: string) => void;
-    onStudyAddedToStudyset: (
-        study: StudyApiResponse,
-        updatedStudyset: StudysetsApiResponse
-    ) => void;
+    study: StudyReturn;
+    disabled?: boolean;
 }
 
 const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
+    const queryClient = useQueryClient();
+    const { user } = useAuth0();
     const anchorRef = useRef<HTMLButtonElement>(null);
     const [open, setOpen] = useState(false);
+    const {
+        isLoading: getStudysetsIsLoading,
+        isError: getStudysetsIsError,
+        data: studysets,
+    } = useGetStudysets({ userId: user?.sub });
+    const { isLoading: createStudysetIsLoading, mutate: createStudyset } = useCreateStudyset();
+    const { isLoading: updateStudysetIsLoading, mutate: updateStudyset } = useUpdateStudyset();
     const [inCreateMode, setInCreateMode] = useState(false);
     const [studysetDetails, setStudysetDetails] = useState({
         name: '',
         description: '',
     });
+    const isFetching = useIsFetching('studies');
 
     const handleClickClose = (event: MouseEvent | TouchEvent) => {
         event.stopPropagation();
@@ -37,6 +57,49 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
             description: '',
         });
         setOpen(false);
+    };
+
+    const handleCreateStudyset = (name: string, description: string) => {
+        createStudyset(
+            {
+                name,
+                description,
+            },
+            {
+                onSettled: () => {
+                    setStudysetDetails({
+                        name: '',
+                        description: '',
+                    });
+                },
+            }
+        );
+    };
+
+    const handleUpdateStudyset = (
+        study: StudyReturn,
+        selectedStudyset: StudysetReturn,
+        checked: boolean
+    ) => {
+        if (study?.id && selectedStudyset?.id) {
+            const updatedStudysetStudies = checked
+                ? [...(selectedStudyset.studies || []), study.id] // if checked, add the study id
+                : [...(selectedStudyset.studies || []).filter((x) => x !== study.id)]; // if not checked, remove the study id
+
+            updateStudyset(
+                {
+                    studysetId: selectedStudyset.id,
+                    studyset: {
+                        studies: updatedStudysetStudies,
+                    },
+                },
+                {
+                    onSuccess: () => {
+                        queryClient.invalidateQueries('studies');
+                    },
+                }
+            );
+        }
     };
 
     const handleOpenMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -53,10 +116,16 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
         }));
     };
 
+    const isLoading =
+        getStudysetsIsLoading ||
+        createStudysetIsLoading ||
+        updateStudysetIsLoading ||
+        isFetching > 0;
+
     return (
         <>
-            <IconButton onClick={handleOpenMenu} ref={anchorRef}>
-                <AddCircle color="primary" />
+            <IconButton disabled={!!props.disabled} onClick={handleOpenMenu} ref={anchorRef}>
+                <AddCircle color={props.disabled ? 'disabled' : 'primary'} />
             </IconButton>
 
             <NeurosynthPopper
@@ -64,91 +133,142 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
                 onClickAway={handleClickClose}
                 anchorElement={anchorRef.current}
             >
-                <MenuList sx={{ cursor: 'default' }} onClick={(e) => e.stopPropagation()}>
-                    <Box sx={{ padding: '6px 16px', fontSize: '1rem' }}>
-                        <Box sx={{ fontWeight: 'bold', marginBottom: '8px' }}>
-                            Add to a studyset...
-                        </Box>
-                    </Box>
-                    <NeurosynthLoader loadingText="fetching studysets" loaded={!!props.studysets}>
-                        {props.studysets && (
-                            <>
-                                {props.studysets.length > 0 && <Divider />}
-                                <Box sx={{ maxHeight: '300px', overflowY: 'scroll' }}>
-                                    {props.studysets.map((studyset) => (
-                                        <MenuItem
-                                            onClick={(event) => {
-                                                event.stopPropagation();
-                                                props.onStudyAddedToStudyset(props.study, studyset);
-                                                setOpen(false);
+                <Box
+                    onClick={(event) => event.stopPropagation()}
+                    sx={{ padding: '6px 16px', cursor: 'default' }}
+                >
+                    <Typography variant="subtitle1" fontWeight="bold">
+                        Add/Remove from studyset
+                    </Typography>
+                </Box>
+                <Box
+                    onClick={(event) => event.stopPropagation()}
+                    sx={{ padding: '0px 16px 10px 16px', cursor: 'default' }}
+                >
+                    <StateHandlerComponent
+                        loadingText="loading studysets"
+                        isLoading={false}
+                        isError={getStudysetsIsError || !props.study}
+                    >
+                        <>
+                            <LinearProgress sx={{ visibility: isLoading ? 'visible' : 'hidden' }} />
+                            <Divider />
+                            <MenuList
+                                sx={{
+                                    maxHeight: '300px',
+                                    overflowY: 'scroll',
+                                    display:
+                                        (studysets?.results?.length || 0) > 0 ? 'block' : 'none',
+                                }}
+                            >
+                                {(studysets?.results || []).map((studyset) => (
+                                    <MenuItem sx={{ padding: 0 }} key={studyset.id}>
+                                        <FormControlLabel
+                                            sx={{
+                                                width: '100%',
+                                                marginRight: 0,
+                                                marginLeft: 0,
+                                                paddingRight: '16px',
                                             }}
-                                            key={studyset.id}
-                                        >
-                                            {studyset.name || studyset.id}
-                                        </MenuItem>
-                                    ))}
-                                </Box>
-                                <Divider sx={{ margin: '0 !important' }} />
-                                {inCreateMode ? (
-                                    <MenuItem
-                                        onKeyDown={(e) => e.stopPropagation()}
-                                        disableRipple
-                                        onClick={(e) => e.stopPropagation()}
-                                        sx={{
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            width: '100%',
-                                        }}
-                                    >
-                                        <TextField
-                                            name="name"
-                                            onChange={handleStudysetDetailsChange}
-                                            value={studysetDetails.name}
-                                            sx={{ marginBottom: '0.5rem', width: '100%' }}
-                                            label="Studyset name"
-                                            variant="standard"
-                                            id="studyset-name"
+                                            control={
+                                                <Checkbox
+                                                    onChange={(event) => {
+                                                        event.stopPropagation();
+                                                        handleUpdateStudyset(
+                                                            props.study,
+                                                            studyset,
+                                                            event.target.checked
+                                                        );
+                                                    }}
+                                                    checked={props.study.studysets?.some(
+                                                        (x) =>
+                                                            (x.id || null) ===
+                                                            (studyset.id || undefined)
+                                                    )}
+                                                />
+                                            }
+                                            label={studyset?.name || ''}
                                         />
-                                        <TextField
-                                            name="description"
-                                            onChange={handleStudysetDetailsChange}
-                                            value={studysetDetails.description}
-                                            label="Studyset description"
-                                            variant="standard"
-                                            sx={{ width: '100%' }}
-                                            id="studyset-description"
-                                        />
+                                    </MenuItem>
+                                ))}
+                            </MenuList>
+                            <Divider sx={{ margin: '0 !important' }} />
+                            {inCreateMode ? (
+                                <Box
+                                    onClick={(event) => event.stopPropagation()}
+                                    sx={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        cursor: 'default',
+                                    }}
+                                >
+                                    <TextField
+                                        name="name"
+                                        onChange={handleStudysetDetailsChange}
+                                        value={studysetDetails.name}
+                                        sx={{ marginBottom: '0.5rem', width: '100%' }}
+                                        label="Studyset name"
+                                        variant="standard"
+                                        id="studyset-name"
+                                    />
+                                    <TextField
+                                        name="description"
+                                        onChange={handleStudysetDetailsChange}
+                                        value={studysetDetails.description}
+                                        label="Studyset description"
+                                        variant="standard"
+                                        sx={{ width: '100%' }}
+                                        id="studyset-description"
+                                    />
+                                    <Box sx={{ display: 'flex', width: '208px' }}>
                                         <Button
                                             onClick={(event) => {
                                                 event.stopPropagation();
-                                                props.onCreateStudyset(
+                                                handleCreateStudyset(
                                                     studysetDetails.name,
                                                     studysetDetails.description
                                                 );
-                                                handleClose();
                                             }}
                                             disabled={studysetDetails.name.length === 0}
                                             sx={{ marginTop: '1rem', width: '100%' }}
                                         >
                                             Create
                                         </Button>
-                                    </MenuItem>
-                                ) : (
-                                    <MenuItem
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setInCreateMode(true);
+                                        <Button
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                setInCreateMode(false);
+                                            }}
+                                            color="error"
+                                            sx={{ marginTop: '1rem', width: '100%' }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </Box>
+                                </Box>
+                            ) : (
+                                <MenuItem
+                                    sx={{ marginTop: '10px', width: '208px' }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setInCreateMode(true);
+                                    }}
+                                >
+                                    <Typography
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
                                         }}
-                                        sx={{ marginTop: '8px' }}
+                                        variant="subtitle1"
                                     >
-                                        <Add sx={{ marginRight: '0.5rem' }} />
+                                        <Add sx={{ marginRight: '5px' }} />
                                         Create new studyset
-                                    </MenuItem>
-                                )}
-                            </>
-                        )}
-                    </NeurosynthLoader>
-                </MenuList>
+                                    </Typography>
+                                </MenuItem>
+                            )}
+                        </>
+                    </StateHandlerComponent>
+                </Box>
             </NeurosynthPopper>
         </>
     );

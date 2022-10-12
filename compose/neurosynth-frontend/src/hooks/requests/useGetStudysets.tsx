@@ -1,14 +1,37 @@
+import { SearchCriteria } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
 import { useQuery } from 'react-query';
-import API from '../../utils/api';
+import API from 'utils/api';
 
-const useGetStudysets = (userId?: string) => {
+const useGetStudysets = (searchCriteria: Partial<SearchCriteria>, enabled?: boolean) => {
     return useQuery(
-        ['studysets', userId],
-        () => API.NeurostoreServices.StudySetsService.studysetsGet(),
+        ['studysets', { ...searchCriteria }],
+        () =>
+            API.NeurostoreServices.StudySetsService.studysetsGet(
+                searchCriteria.genericSearchStr,
+                searchCriteria.sortBy,
+                searchCriteria.pageOfResults,
+                searchCriteria.descOrder,
+                searchCriteria.pageSize,
+                searchCriteria.isNested,
+                searchCriteria.nameSearch,
+                searchCriteria.descriptionSearch,
+                undefined,
+                searchCriteria.showUnique,
+                searchCriteria.source,
+                searchCriteria.authorSearch,
+                searchCriteria.userId
+            ),
         {
+            enabled,
             select: (axiosResponse) => {
-                const res = axiosResponse.data.results || [];
-                return userId ? res.filter((x) => x.user === userId) : res;
+                if (axiosResponse?.data?.results) {
+                    axiosResponse.data.results.sort((a, b) => {
+                        const firstStudysetId = a.id as string;
+                        const secondStudysetId = b.id as string;
+                        return firstStudysetId.localeCompare(secondStudysetId);
+                    });
+                }
+                return axiosResponse.data;
             },
         }
     );

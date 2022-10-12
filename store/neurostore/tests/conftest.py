@@ -3,6 +3,7 @@ from os import environ
 from neurostore.models.data import Analysis, Condition
 from ..database import db as _db
 import sqlalchemy as sa
+from flask_sqlalchemy import __version__ as FLASK_SQL_VER
 from .. import ingest
 from ..models import (
     User, Study, Studyset, Annotation, AnnotationAnalysis,
@@ -54,7 +55,7 @@ def app(mock_auth):
     else:
         config = environ['APP_SETTINGS']
     _app.config.from_object(config)
-    _app.config["SQLALCHEMY_ECHO"] = True
+    # _app.config["SQLALCHEMY_ECHO"] = True
 
     # Establish an application context before running the tests.
     ctx = _app.app_context()
@@ -86,7 +87,10 @@ def session(db):
     transaction = connection.begin()
 
     options = dict(bind=connection, binds={})
-    session = db.create_scoped_session(options=options)
+    if FLASK_SQL_VER.startswith('3.'):
+        session = db._make_scoped_session(options=options)
+    else:
+        session = db.create_scoped_session(options=options)
 
     session.begin_nested()
 
@@ -240,6 +244,12 @@ def ingest_neuroquery(session):
 def user_data(session, mock_add_users):
     to_commit = []
     with session.no_autoflush:
+        public_studyset = Studyset(
+            name="public studyset",
+            description="public detailed description",
+            public=True,
+        )
+        public_studies = []
         for user_info in mock_add_users.values():
             user = User.query.filter_by(id=user_info['id']).first()
             for public in [True, False]:
@@ -250,6 +260,7 @@ def user_data(session, mock_add_users):
 
                 studyset = Studyset(
                     name=name + "studyset",
+                    description="detailed description",
                     user=user,
                     public=public,
                 )
@@ -296,8 +307,15 @@ def user_data(session, mock_add_users):
                 # put together the studyset
                 studyset.studies = [study]
 
+                if public:
+                    public_studies.append(study)
+
                 # add everything to commit
                 to_commit.append(studyset)
+
+        # add public studyset to commit
+        public_studyset.studies = public_studies
+        to_commit.append(public_studyset)
 
         session.add_all(to_commit)
         session.commit()
@@ -307,6 +325,8 @@ def user_data(session, mock_add_users):
         studysets = Studyset.query.all()
         for studyset in studysets:
             user = studyset.user
+            if user is None:
+                continue
 
             if studyset.public:
                 name = f"{user.id}'s public "

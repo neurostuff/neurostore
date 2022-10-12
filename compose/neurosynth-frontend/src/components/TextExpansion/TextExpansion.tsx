@@ -1,9 +1,13 @@
 import { Box, Button, Typography } from '@mui/material';
-import { SxProps, Theme } from '@mui/system';
+import { SystemStyleObject } from '@mui/system';
 import React, { useEffect, useRef, useState } from 'react';
 import TextExpansionStyles from './TextExpansion.styles';
 
-const TextExpansion: React.FC<{ text: string; sx?: SxProps<Theme> }> = (props) => {
+const TextExpansion: React.FC<{
+    text: string;
+    sx?: SystemStyleObject | SystemStyleObject[];
+    textSx?: SystemStyleObject;
+}> = (props) => {
     const [expanded, setExpanded] = useState(false);
     const [isOverflowingElement, setIsOverflowing] = useState(false);
     const textRef = useRef<HTMLSpanElement>(null);
@@ -38,15 +42,19 @@ const TextExpansion: React.FC<{ text: string; sx?: SxProps<Theme> }> = (props) =
     }, [props.text, expanded]);
 
     return (
-        <Box component="div" sx={props.sx}>
-            <Typography sx={expanded ? {} : TextExpansionStyles.limitToOneLine} ref={textRef}>
+        <Box component="div" sx={props.sx || {}}>
+            <Typography
+                sx={[expanded ? {} : TextExpansionStyles.limitToOneLine, props.textSx || {}]}
+                ref={textRef}
+            >
                 {props.text}
             </Typography>
             {(isOverflowingElement || expanded) && (
                 <Button
                     sx={{ padding: 0 }}
                     color="secondary"
-                    onClick={() => {
+                    onClick={(event) => {
+                        event.stopPropagation();
                         setExpanded((prevExpanded) => !prevExpanded);
                     }}
                 >

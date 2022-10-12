@@ -19,6 +19,7 @@ import NavbarToolbarStyles from './NavbarToolbar.styles';
 import NavbarPopupMenu from '../NavbarPopupMenu/NavbarPopupMenu';
 import React, { useState } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
+import NavbarPopupMenuStyles from '../NavbarPopupMenu/NavbarPopupMenu.styles';
 
 const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
     const { isAuthenticated } = useAuth0();
@@ -30,24 +31,27 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
 
     return (
         <Toolbar sx={[NavbarStyles.toolbar]}>
-            <Box style={{ display: 'flex', alignItems: 'center' }}>
+            <Box
+                sx={[NavbarToolbarStyles.neurosynthLink, { display: 'flex', alignItems: 'center' }]}
+                component={NavLink}
+                to="/"
+            >
                 <img
                     alt="neurosynth compose logo"
                     style={{
-                        width: '55px',
-                        height: '55px',
-                        marginRight: '1rem',
+                        width: '45px',
+                        height: '45px',
+                        marginRight: '0.75rem',
                         cursor: 'pointer',
                     }}
                     src="/static/synth.png"
                 />
-                <Box to="/" exact sx={NavbarStyles.neurosynthLink} component={NavLink}>
-                    <Typography variant="h4">
-                        <Badge color="warning" badgeContent={<span>beta</span>}>
-                            neurosynth compose
-                        </Badge>
-                    </Typography>
-                </Box>
+                <Badge
+                    color="warning"
+                    badgeContent={<Typography variant="caption">beta</Typography>}
+                >
+                    <Typography sx={NavbarToolbarStyles.logoText}>neurosynth compose</Typography>
+                </Badge>
             </Box>
             <Box sx={[NavbarToolbarStyles.navLinksContainer, NavbarStyles.mdUp]}>
                 {props.navOptions.map((navOption) => (
@@ -71,6 +75,7 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
                         sx={[
                             NavbarToolbarStyles.link,
                             isAuthenticated ? {} : { color: 'warning.main' },
+                            NavbarPopupMenuStyles.button,
                         ]}
                     >
                         {isAuthenticated ? 'Logout' : 'Sign in/Sign up'}
@@ -84,16 +89,20 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
                     target="_blank"
                     href="https://neurostuff.github.io/neurostore/"
                 >
-                    <Typography variant="subtitle2" sx={NavbarToolbarStyles.link}>
+                    <Typography
+                        data-tour="AuthenticatedLandingPage-2"
+                        variant="subtitle2"
+                        sx={[NavbarToolbarStyles.link, NavbarPopupMenuStyles.button]}
+                    >
                         HELP
-                        <OpenInNewIcon sx={{ marginLeft: '8px' }} />
+                        <OpenInNewIcon sx={{ marginLeft: '8px', fontSize: '1.2rem' }} />
                     </Typography>
                 </Link>
             </Box>
             <IconButton sx={NavbarStyles.mdDown} onClick={toggleDrawer} size="medium">
                 <MenuIcon />
             </IconButton>
-            <Drawer anchor="left" open={drawerIsOpen} onClose={toggleDrawer}>
+            <Drawer anchor="right" open={drawerIsOpen} onClose={toggleDrawer}>
                 <List sx={NavbarToolbarStyles.list}>
                     {props.navOptions.map((navOption) => (
                         <ListItem sx={NavbarToolbarStyles.listItem} key={navOption.label}>

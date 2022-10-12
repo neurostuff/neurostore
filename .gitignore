@@ -51,6 +51,11 @@ coverage.xml
 *,cover
 .hypothesis/
 coverage/
+screenshots/
+downloads/
+compose/neurosynth-frontend/cypress/videos/*
+compose/neurosynth-frontend/cypress/screenshots/*
+compose/neurosynth-frontend/build/
 
 # Translations
 *.mo

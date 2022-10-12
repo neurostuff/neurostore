@@ -5,13 +5,15 @@ import AutoAwesomeMotionIcon from '@mui/icons-material/AutoAwesomeMotion';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import NeurosynthList from 'components/NeurosynthList/NeurosynthList';
 import { useGetMetaAnalyses, useGetStudies, useGetStudysets, useCreateStudyset } from 'hooks';
-import { SearchCriteria } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
+// import { SearchCriteria } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
 import { useAuth0 } from '@auth0/auth0-react';
 import AuthenticatedLandingPageStyles from './AuthenticatedLandingPage.styles';
 import { useHistory } from 'react-router-dom';
 import { useState } from 'react';
-
+import Help from '@mui/icons-material/Help';
+import useGetTour from 'hooks/useGetTour';
 const AuthenticatedLandingPage: React.FC = (props) => {
+    const { startTour } = useGetTour('AuthenticatedLandingPage');
     const history = useHistory();
     const { user } = useAuth0();
     const {
@@ -24,14 +26,13 @@ const AuthenticatedLandingPage: React.FC = (props) => {
         isLoading: getStudiesIsLoading,
         isError: getStudiesIsError,
     } = useGetStudies({
-        ...new SearchCriteria(),
         userId: user?.sub,
     });
     const {
         data: studysets,
         isLoading: getStudysetsIsLoading,
         isError: getStudysetsIsError,
-    } = useGetStudysets(user?.sub);
+    } = useGetStudysets({ userId: user?.sub });
     const {
         data: metaAnalyses,
         isLoading: getMetaAnalysesIsLoading,
@@ -49,6 +50,15 @@ const AuthenticatedLandingPage: React.FC = (props) => {
 
     return (
         <Box sx={{ width: '80%', margin: '3rem auto' }}>
+            <Button
+                endIcon={<Help />}
+                variant="text"
+                onClick={() => {
+                    startTour();
+                }}
+            >
+                Get started with a tour
+            </Button>
             <CreateDetailsDialog
                 titleText="Create new studyset"
                 onCreate={handleCreateStudyset}
@@ -70,8 +80,8 @@ const AuthenticatedLandingPage: React.FC = (props) => {
                     isLoading={getStudiesIsLoading}
                     isError={getStudiesIsError}
                     listIcon={<ArticleIcon sx={{ color: 'primary.main' }} />}
-                    titleText="My Studies"
-                    listItems={(studies || []).map((study) => ({
+                    titleText="Studies"
+                    listItems={(studies?.results || []).map((study) => ({
                         primaryText: study.name || '',
                         secondaryText: study.authors || '',
                         id: study?.id || '',
@@ -101,8 +111,8 @@ const AuthenticatedLandingPage: React.FC = (props) => {
                     isLoading={getStudysetsIsLoading || createStudysetIsLoading}
                     isError={getStudysetsIsError || createStudysetIsError}
                     listIcon={<AutoAwesomeMotionIcon sx={{ color: '#42ab55' }} />}
-                    titleText="My Studysets"
-                    listItems={(studysets || []).map((studyset) => ({
+                    titleText="Studysets"
+                    listItems={(studysets?.results || []).map((studyset) => ({
                         primaryText: studyset.name || '',
                         secondaryText: studyset.description || '',
                         id: studyset?.id || '',
@@ -132,7 +142,7 @@ const AuthenticatedLandingPage: React.FC = (props) => {
                     isLoading={getMetaAnalysesIsLoading}
                     isError={getMetaAnalysesIsError}
                     listIcon={<PsychologyIcon sx={{ color: '#5C2751' }} />}
-                    titleText="My Meta-Analyses"
+                    titleText="Meta-Analyses"
                     listItems={(metaAnalyses || []).map((metaAnalysis) => ({
                         primaryText: metaAnalysis.name || '',
                         secondaryText: metaAnalysis.description || '',

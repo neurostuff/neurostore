@@ -1,4 +1,4 @@
-import { ConditionApiResponse } from 'utils/api';
+import { ConditionReturn } from 'neurostore-typescript-sdk';
 
 export const MockConditionSelected = {
     name: 'mock-selected-condition-name',
@@ -9,7 +9,7 @@ export const MockConditionSelected = {
 };
 
 const mockConditionSelector: React.FC<{
-    onConditionSelected: (condition: ConditionApiResponse) => void;
+    onConditionSelected: (condition: ConditionReturn) => void;
 }> = (props) => {
     return (
         <button

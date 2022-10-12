@@ -1,18 +1,16 @@
-import { Typography, Button, Box, Paper } from '@mui/material';
-import React, { useCallback, useEffect, useState } from 'react';
+import { Typography, Box, Paper } from '@mui/material';
+import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { useParams } from 'react-router';
-import API, { AnnotationsApiResponse } from 'utils/api';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import TextEdit from 'components/TextEdit/TextEdit';
 import BackButton from 'components/Buttons/BackButton/BackButton';
 import NeurosynthSpreadsheet from 'components/NeurosynthSpreadsheet/NeurosynthSpreadsheet';
 import { EPropertyType } from 'components/EditMetadata';
-import EditStudyPageStyles from '../../Studies/EditStudyPage/EditStudyPage.styles';
+import EditStudyPageStyles from 'pages/Studies/EditStudyPage/EditStudyPage.styles';
 import EditAnnotationsPageStyles from './EditAnnotationsPage.styles';
 import { useAuth0 } from '@auth0/auth0-react';
-import { AnnotationNote } from '../../../neurostore-typescript-sdk';
-import { AxiosResponse } from 'axios';
+import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { registerEditor, NumericEditor, TextEditor, BaseEditor } from 'handsontable/editors';
 import {
     baseRenderer,
@@ -37,7 +35,9 @@ import {
     UndoRedo,
     BasePlugin,
 } from 'handsontable/plugins';
-import { useSnackbar } from 'notistack';
+import { useDeleteAnnotation, useGetAnnotationById, useUpdateAnnotationById } from 'hooks';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import { NeurostoreAnnotation } from 'utils/api';
 
 registerEditor(BaseEditor);
 registerEditor(NumericEditor);
@@ -63,102 +63,92 @@ registerPlugin(BasePlugin);
 
 const EditAnnotationsPage: React.FC = (props) => {
     const history = useHistory();
-    const { isAuthenticated } = useAuth0();
-    const { enqueueSnackbar } = useSnackbar();
-
+    const { isAuthenticated, user } = useAuth0();
     const [confirmationIsOpen, setConfirmationIsOpen] = useState(false);
-    const [annotation, setAnnotation] = useState<AnnotationsApiResponse>();
 
     const params: {
         annotationId: string;
-        studysetId: string;
     } = useParams();
 
-    useEffect(() => {
-        const getAnnotation = () => {
-            API.NeurostoreServices.AnnotationsService.annotationsIdGet(params.annotationId).then(
-                (res) => {
-                    setAnnotation(res.data);
-                }
-            );
-        };
-        getAnnotation();
-    }, [params.annotationId]);
+    const { data: annotation } = useGetAnnotationById(params?.annotationId);
+    const { mutate: updateAnnotationName, isLoading: updateAnnotationNameIsLoading } =
+        useUpdateAnnotationById(params.annotationId);
+    const { mutate: updateAnnotationDescription, isLoading: updateAnnotationDescriptionIsLoading } =
+        useUpdateAnnotationById(params.annotationId);
+    const { mutate: updateAnnotation } = useUpdateAnnotationById(params.annotationId);
+    const { mutate: deleteAnnotation, isLoading: deleteAnnotationIsLoading } =
+        useDeleteAnnotation();
 
-    const updateAnnotationDetails = async (property: string, updatedText: string) => {
-        API.NeurostoreServices.AnnotationsService.annotationsIdPut(params.annotationId, {
-            [property]: updatedText,
-        })
-            .then((res: AxiosResponse<AnnotationsApiResponse>) => {
-                setAnnotation((prevState) => {
-                    if (!prevState) return prevState;
-                    return {
-                        ...prevState,
-                        [property]: res.data[property as 'name' | 'description'],
-                    };
-                });
-                enqueueSnackbar(`updated the annotation ${property} successfully`, {
-                    variant: 'success',
-                });
-            })
-            .catch((err) => {
-                enqueueSnackbar(`there was an error updating the annotatino ${property}`, {
-                    variant: 'error',
-                });
+    const thisUserOwnsThisAnnotation = (annotation?.user || null) === (user?.sub || undefined);
+
+    const handleUpdateName = (updatedName: string, label: string) => {
+        if (params?.annotationId) {
+            updateAnnotationName({
+                argAnnotationId: params.annotationId,
+                annotation: {
+                    name: updatedName,
+                },
             });
-    };
-
-    const handleCloseConfirmationDialog = async (confirm: boolean | undefined) => {
-        setConfirmationIsOpen(false);
-
-        if (confirm && annotation && annotation.id) {
-            API.NeurostoreServices.AnnotationsService.annotationsIdDelete(annotation.id)
-                .then(() => {
-                    history.push(`/studysets/${params.studysetId}`);
-                    enqueueSnackbar('deleted annotation successfully', { variant: 'success' });
-                })
-                .catch((err) => {
-                    enqueueSnackbar('there was an error deleting the annotation', {
-                        variant: 'error',
-                    });
-                });
         }
     };
 
-    const handleSaveAnnotation = useCallback(
-        async (
-            annotationNotes: AnnotationNote[],
-            noteKeyTypes: { [key: string]: EPropertyType }
-        ) => {
-            API.NeurostoreServices.AnnotationsService.annotationsIdPut(params.annotationId, {
+    const handleUpdateDescription = (updatedDescription: string, label: string) => {
+        if (params?.annotationId) {
+            updateAnnotationDescription({
+                argAnnotationId: params.annotationId,
+                annotation: {
+                    description: updatedDescription,
+                },
+            });
+        }
+    };
+
+    const handleCloseConfirmationDialog = (confirm: boolean | undefined) => {
+        setConfirmationIsOpen(false);
+
+        if (confirm && annotation && annotation?.id) {
+            deleteAnnotation(annotation.id, {
+                onSuccess: () => {
+                    // delete annotation hook already opens a snackbar on success and failure
+                    history.push(`/studysets/${annotation.studyset || ''}`); // TODO: fix the neurostore spec
+                },
+            });
+        }
+    };
+
+    const handleSaveAnnotation = (
+        annotationNotes: NoteCollectionReturn[],
+        noteKeyTypes: { [key: string]: EPropertyType }
+    ) => {
+        updateAnnotation({
+            argAnnotationId: params.annotationId,
+            annotation: {
                 notes: annotationNotes.map((annotationNote) => ({
                     note: annotationNote.note,
                     analysis: annotationNote.analysis,
                     study: annotationNote.study,
                 })),
                 note_keys: noteKeyTypes,
-            })
-                .then((res) => {
-                    enqueueSnackbar('annotation updated successfully', { variant: 'success' });
-                })
-                .catch((err) => {
-                    enqueueSnackbar('there was an error updating the annotation', {
-                        variant: 'error',
-                    });
-                });
-        },
-        [params.annotationId, enqueueSnackbar]
-    );
+            },
+        });
+    };
 
     return (
         <>
             <Box sx={{ marginBottom: '1rem' }}>
-                <BackButton text="Return to studyset" path={`/studysets/${params.studysetId}`} />
+                <BackButton
+                    text="Return to studyset"
+                    color="secondary"
+                    variant="outlined"
+                    path={`/studysets/${(annotation as NeurostoreAnnotation)?.studyset}`}
+                />
             </Box>
 
             <Box sx={{ marginBottom: '1rem' }}>
                 <TextEdit
-                    onSave={(updatedText, label) => updateAnnotationDetails(label, updatedText)}
+                    editIconIsVisible={thisUserOwnsThisAnnotation}
+                    isLoading={updateAnnotationNameIsLoading}
+                    onSave={handleUpdateName}
                     textToEdit={annotation?.name || ''}
                     label="name"
                     sx={{ fontSize: '1.5rem' }}
@@ -172,11 +162,14 @@ const EditAnnotationsPage: React.FC = (props) => {
                     </Typography>
                 </TextEdit>
                 <TextEdit
+                    editIconIsVisible={thisUserOwnsThisAnnotation}
+                    isLoading={updateAnnotationDescriptionIsLoading}
                     label="description"
-                    onSave={(updatedText, label) => updateAnnotationDetails(label, updatedText)}
+                    sx={{ fontSize: '1.25rem' }}
+                    onSave={handleUpdateDescription}
                     textToEdit={annotation?.description || ''}
                 >
-                    <Typography>
+                    <Typography variant="h6">
                         {annotation?.description || (
                             <Box component="span" sx={{ color: 'warning.dark' }}>
                                 No description
@@ -188,21 +181,22 @@ const EditAnnotationsPage: React.FC = (props) => {
 
             <Box component={Paper} sx={EditAnnotationsPageStyles.spreadsheetContainer}>
                 <NeurosynthSpreadsheet
-                    annotationNotes={annotation?.notes}
+                    annotationNotes={annotation?.notes as NoteCollectionReturn[]}
                     annotationNoteKeyTypes={annotation?.note_keys}
                     onSaveAnnotation={handleSaveAnnotation}
                 />
             </Box>
 
-            <Button
-                onClick={() => setConfirmationIsOpen(true)}
-                color="error"
-                variant="contained"
-                disabled={!isAuthenticated}
+            <LoadingButton
+                loaderColor="primary"
+                isLoading={deleteAnnotationIsLoading}
+                disabled={!isAuthenticated || !thisUserOwnsThisAnnotation}
                 sx={[EditStudyPageStyles.button, { marginTop: '1rem' }]}
-            >
-                Delete this annotation
-            </Button>
+                color="error"
+                onClick={() => setConfirmationIsOpen(true)}
+                variant="contained"
+                text="Delete this annotation"
+            ></LoadingButton>
             <ConfirmationDialog
                 dialogTitle="Are you sure you want to delete this annotation?"
                 confirmText="Yes"

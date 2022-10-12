@@ -10,9 +10,10 @@ import AuthenticatedLandingPage from './AuthenticatedLandingPage';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Link as ReactRouterLink } from 'react-router-dom';
 import StepperDisplay from './StepperDisplay';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 
 const LandingPage = () => {
-    const { isAuthenticated } = useAuth0();
+    const { isAuthenticated, isLoading } = useAuth0();
 
     const logos: { logoPath: string; alt: string }[] = [
         {
@@ -77,8 +78,12 @@ const LandingPage = () => {
         },
     ];
 
-    if (isAuthenticated) {
-        return <AuthenticatedLandingPage />;
+    if (isAuthenticated || isLoading) {
+        return (
+            <StateHandlerComponent isError={false} isLoading={isLoading}>
+                <AuthenticatedLandingPage />;
+            </StateHandlerComponent>
+        );
     }
 
     return (

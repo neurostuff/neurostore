@@ -1,33 +1,45 @@
 import { Typography, Box, Tabs, Tab, Divider } from '@mui/material';
-import React, { useState, SyntheticEvent } from 'react';
-import { AnalysisApiResponse } from '../../../utils/api';
+import React, { useState, SyntheticEvent, useEffect } from 'react';
 import CreateDetailsDialog from '../../Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import EditAnalysesStyles from './EditAnalyses.styles';
 import EditAnalysis from './EditAnalysis/EditAnalysis';
 import AddIcon from '@mui/icons-material/Add';
 import { useCreateAnalysis } from 'hooks';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import { AnalysisReturn } from 'neurostore-typescript-sdk';
 
-const EditAnalyses: React.FC<{ analyses: AnalysisApiResponse[] | undefined }> = React.memo(
-    (props) => {
-        const { analyses } = props;
-        const { isLoading, mutate } = useCreateAnalysis();
+const EditAnalyses: React.FC<{ analyses: AnalysisReturn[] | undefined; studyId: string }> =
+    React.memo((props) => {
+        const [analyses, setAnalyses] = useState<AnalysisReturn[]>(props.analyses || []);
         const [selectedAnalysis, setSelectedAnalysis] = useState(0);
-
         const [createDetailsDialogIsOpen, setCreateDetailsDialogIsOpen] = useState(false);
+
+        const { isLoading, mutate } = useCreateAnalysis();
+
+        // we need to cache the analyses into an intermediate state in order to make sure that we do a check first
+        // so that our tab is not selecting an analysis that was just deleted
+        useEffect(() => {
+            if (!props.analyses) {
+                setAnalyses([]);
+            } else {
+                if (props.analyses.length === selectedAnalysis) {
+                    // if we have deleted the last analysis
+                    setSelectedAnalysis(props.analyses.length - 1);
+                }
+                setAnalyses(props.analyses);
+            }
+        }, [props.analyses, selectedAnalysis]);
 
         const handleTabChange = (_event: SyntheticEvent, newVal: number) => {
             setSelectedAnalysis(newVal);
         };
 
         const handleCreateAnalysis = (name: string, description: string) => {
-            if (analyses) {
-                mutate({
-                    name,
-                    description,
-                    study: analyses[selectedAnalysis].study || '',
-                });
-            }
+            mutate({
+                name,
+                description,
+                study: props.studyId,
+            });
         };
 
         const hasAnalyses = !!analyses && analyses.length > 0;
@@ -81,7 +93,7 @@ const EditAnalyses: React.FC<{ analyses: AnalysisApiResponse[] | undefined }> = 
                                     orientation="vertical"
                                     variant="scrollable"
                                 >
-                                    {(analyses as AnalysisApiResponse[]).map((analysis, index) => (
+                                    {(analyses as AnalysisReturn[]).map((analysis, index) => (
                                         <Tab
                                             sx={EditAnalysesStyles.tab}
                                             key={analysis.id}
@@ -108,7 +120,6 @@ const EditAnalyses: React.FC<{ analyses: AnalysisApiResponse[] | undefined }> = 
                 )}
             </>
         );
-    }
-);
+    });
 
 export default EditAnalyses;

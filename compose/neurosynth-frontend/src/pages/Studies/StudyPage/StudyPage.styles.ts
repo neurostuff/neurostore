@@ -1,18 +1,18 @@
 import { Style } from '../../..';
 
 const StudyPageStyles: Style = {
-    buttonContainer: {
+    actionButtonContainer: {
         '& button': {
             marginRight: '15px',
         },
-        display: {
-            xs: 'flex',
-            md: 'block',
-        },
+        display: 'flex',
         justifyContent: {
             xs: 'center',
             md: 'initial',
         },
+    },
+    actionButton: {
+        width: '130px',
     },
     muted: {
         color: 'muted.main',

@@ -1,10 +1,20 @@
 import { render, screen } from '@testing-library/react';
 import DisplayAnalysis from './DisplayAnalysis';
-import { AnalysisApiResponse, ImageApiResponse } from '../../utils/api';
+import { AnalysisReturn, ImageReturn } from 'neurostore-typescript-sdk';
+import { DataGridProps } from '@mui/x-data-grid';
 
-jest.mock('../Visualizer/Visualizer');
-jest.mock('../Tables/DisplayValuesTable/DisplayValuesTable');
-jest.mock('../Tables/DisplayImagesTable/DisplayImagesTable');
+jest.mock('components/Visualizer/Visualizer');
+jest.mock('components/Tables/NeurosynthTable/NeurosynthTable');
+jest.mock('components/Tables/DisplayImageTableRow/DisplayImageTableRow');
+jest.mock('@mui/x-data-grid', () => {
+    const { DataGrid } = jest.requireActual('@mui/x-data-grid');
+    return {
+        ...jest.requireActual('@mui/x-data-grid'),
+        DataGrid: (props: DataGridProps) => {
+            return <DataGrid {...props} disableVirtualization />;
+        },
+    };
+});
 
 describe('DisplayAnalysis Component', () => {
     afterAll(() => {
@@ -18,7 +28,7 @@ describe('DisplayAnalysis Component', () => {
     });
 
     it('should not render with the visualizer when no images are present', () => {
-        const mockAnalysis: AnalysisApiResponse = {
+        const mockAnalysis: AnalysisReturn = {
             conditions: [],
             created_at: '2021-10-25T10:37:20.237634+00:00',
             description: 'FSL5.0',
@@ -38,7 +48,7 @@ describe('DisplayAnalysis Component', () => {
     });
 
     it('should pass the correct image in the visualizer when there is only one image', () => {
-        const mockAnalysis: AnalysisApiResponse = {
+        const mockAnalysis: AnalysisReturn = {
             conditions: [],
             created_at: '2021-10-25T10:37:20.237634+00:00',
             description: 'FSL5.0',
@@ -74,7 +84,7 @@ describe('DisplayAnalysis Component', () => {
 
         render(<DisplayAnalysis {...mockAnalysis} />);
 
-        const mockImages = mockAnalysis.images as ImageApiResponse[];
+        const mockImages = mockAnalysis.images as ImageReturn[];
 
         const imageURL = screen.getByTestId('imageURL');
         const fileName = screen.getByTestId('fileName');
@@ -90,7 +100,7 @@ describe('DisplayAnalysis Component', () => {
     });
 
     it('should select the first image that has a T value type when there are multiple images', () => {
-        const mockAnalysis: AnalysisApiResponse = {
+        const mockAnalysis: AnalysisReturn = {
             conditions: [
                 {
                     created_at: '2021-10-25T10:27:54.741936+00:00',
@@ -110,7 +120,7 @@ describe('DisplayAnalysis Component', () => {
                     analysis_name: 'model001 task001 cope001 tstat1',
                     created_at: '2021-10-25T10:37:20.237634+00:00',
                     filename: 'model001_task001_cope001_tstat1.nii.gz',
-                    id: '5asPG5P4x7F9',
+                    id: 'some-key',
                     metadata: {
                         BMI: null,
                         add_date: '2016-01-21T17:22:27.397856Z',
@@ -129,7 +139,7 @@ describe('DisplayAnalysis Component', () => {
                     analysis_name: 'model001 task001 cope001 tstat1',
                     created_at: '2021-10-25T10:37:20.237634+00:00',
                     filename: 'some_test_file.nii.gz',
-                    id: '5asPG5P4x7F9',
+                    id: 'some-other-key',
                     metadata: {
                         BMI: null,
                         add_date: '2016-01-21T17:22:27.397856Z',
@@ -153,7 +163,7 @@ describe('DisplayAnalysis Component', () => {
 
         render(<DisplayAnalysis {...mockAnalysis} />);
 
-        const mockImages = mockAnalysis.images as ImageApiResponse[];
+        const mockImages = mockAnalysis.images as ImageReturn[];
 
         const imageURL = screen.getByTestId('imageURL');
         const fileName = screen.getByTestId('fileName');

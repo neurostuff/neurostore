@@ -12,22 +12,23 @@ import CloseIcon from '@mui/icons-material/Close';
 
 export interface IConfirmationDialog {
     isOpen: boolean;
-    onCloseDialog: (confirm: boolean | undefined) => void;
+    onCloseDialog: (confirm: boolean | undefined, data?: any) => void;
     dialogTitle: string;
     dialogMessage?: string;
     confirmText?: string;
     rejectText?: string;
+    data?: any;
 }
 
 const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
     return (
-        <Dialog open={props.isOpen} onClose={() => props.onCloseDialog(undefined)}>
+        <Dialog open={props.isOpen} onClose={() => props.onCloseDialog(undefined, props.data)}>
             <DialogTitle sx={{ display: 'flex' }}>
                 <Box sx={{ display: 'flex', flexGrow: 1, alignItems: 'center' }}>
                     <Typography variant="h6">{props.dialogTitle}</Typography>
                 </Box>
-                <Box sx={{ display: 'flex' }}>
-                    <IconButton onClick={() => props.onCloseDialog(undefined)}>
+                <Box>
+                    <IconButton onClick={() => props.onCloseDialog(undefined, props.data)}>
                         <CloseIcon sx={{ fontSize: '2rem' }} />
                     </IconButton>
                 </Box>
@@ -41,7 +42,7 @@ const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Button
                         sx={{ width: '250px', marginRight: '15px' }}
-                        onClick={() => props.onCloseDialog(true)}
+                        onClick={() => props.onCloseDialog(true, props.data)}
                         variant="contained"
                         color="success"
                     >
@@ -49,7 +50,7 @@ const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
                     </Button>
                     <Button
                         sx={{ width: '250px' }}
-                        onClick={() => props.onCloseDialog(false)}
+                        onClick={() => props.onCloseDialog(false, props.data)}
                         variant="contained"
                         color="error"
                     >

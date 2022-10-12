@@ -1,4 +1,4 @@
-import { Step, StepLabel, Stepper } from '@mui/material';
+import { Box, IconButton, Step, StepLabel, Stepper } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { IDynamicInputType } from 'components/MetaAnalysisConfigComponents';
 import MetaAnalysisAlgorithm from 'components/MetaAnalysisConfigComponents/MetaAnalysisAlgorithm/MetaAnalysisAlgorithm';
@@ -6,10 +6,14 @@ import MetaAnalysisData from 'components/MetaAnalysisConfigComponents/MetaAnalys
 import MetaAnalysisFinalize from 'components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/MetaAnalysisFinalize';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
-import { AnnotationsApiResponse, StudysetsApiResponse } from 'utils/api';
 import BackButton from 'components/Buttons/BackButton/BackButton';
 import MetaAnalysisDetails from 'components/MetaAnalysisConfigComponents/MetaAnalysisDetails/MetaAnalysisDetails';
 import MetaAnalysisBuilderPageStyles from './MetaAnalysisBuilderPage.styles';
+import useGetTour from 'hooks/useGetTour';
+import Help from '@mui/icons-material/Help';
+import { useGuard } from 'hooks';
+import { StudysetReturn } from 'neurostore-typescript-sdk';
+import { NeurostoreAnnotation } from 'utils/api';
 
 export enum EAnalysisType {
     CBMA = 'CBMA',
@@ -20,8 +24,8 @@ export interface IMetaAnalysisComponents {
     analysisType: EAnalysisType | undefined;
     estimator: IAutocompleteObject | undefined | null;
     corrector: IAutocompleteObject | undefined | null;
-    studyset: StudysetsApiResponse | undefined | null;
-    annotation: AnnotationsApiResponse | undefined | null;
+    studyset: StudysetReturn | undefined | null;
+    annotation: NeurostoreAnnotation | undefined | null;
     inclusionColumn: string | undefined | null;
     metaAnalysisName: string | undefined;
     metaAnalysisDescription: string | undefined;
@@ -33,6 +37,8 @@ export interface IEstimatorCorrectorArgs {
 }
 
 const MetaAnalysisBuilderPage: React.FC = (props) => {
+    useGuard('/meta-analyses');
+    const { startTour } = useGetTour('MetaAnalysisBuilderPage');
     const [activeStep, setActiveStep] = useState(0);
     const [metaAnalysisComponents, setMetaAnalysisComponents] = useState<IMetaAnalysisComponents>({
         metaAnalysisName: undefined,
@@ -106,11 +112,20 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
 
     return (
         <>
-            <BackButton
-                sx={{ marginBottom: '1.5rem' }}
-                text="Return to my meta-analyses"
-                path="/usermeta-analyses"
-            />
+            <Box sx={{ display: 'flex' }}>
+                <Box sx={{ flexGrow: 1 }}>
+                    <BackButton
+                        sx={{ marginBottom: '1.5rem' }}
+                        text="Return to my meta-analyses"
+                        path="/usermeta-analyses"
+                    />
+                </Box>
+                <Box>
+                    <IconButton onClick={() => startTour()}>
+                        <Help color="primary" />
+                    </IconButton>
+                </Box>
+            </Box>
             <Stepper sx={{ marginBottom: '1.5rem' }} activeStep={activeStep}>
                 <Step>
                     <StepLabel sx={MetaAnalysisBuilderPageStyles.step}>Details</StepLabel>

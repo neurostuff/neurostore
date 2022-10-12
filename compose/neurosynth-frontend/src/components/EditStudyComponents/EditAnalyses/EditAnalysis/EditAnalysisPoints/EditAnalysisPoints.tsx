@@ -14,7 +14,7 @@ import { useCreatePoint, useDeletePoint, useUpdatePoint, useUpdateAnalysis } fro
 import AnalysisPointsHeader from './AnalysisPointsHeader';
 import AnalysisPointsDeleteButton from './AnalysisPointsDeleteButton';
 
-const ROW_HEIGHT = 52;
+export const ROW_HEIGHT = 56;
 
 const EditAnalysisPoints: React.FC<IEditAnalysisPoints> = (props) => {
     const { isLoading: createPointIsLoading, mutate: createPoint } = useCreatePoint();
@@ -137,12 +137,17 @@ const EditAnalysisPoints: React.FC<IEditAnalysisPoints> = (props) => {
             space: point.space,
         }));
 
-    // 70 is the height of the AnalysisPointsHeader
-    // add one for the column header
-    const totalTableHeight = 70 + (rows.length + 1) * ROW_HEIGHT;
+    // 70 is the height of the AnalysisPointsHeader and its border
+    // 1 is for the bottom border of the head row
+    // add one to account for column header
+    // add one to account for the "no rows message"
+    const totalTableHeight = 71 + 1 + (rows.length + 1 + (rows.length === 0 ? 1 : 0)) * ROW_HEIGHT;
 
     return (
-        <Box sx={{ height: totalTableHeight < 600 ? `${totalTableHeight}px` : '600px' }}>
+        <Box
+            className="test-test-test"
+            sx={{ height: totalTableHeight < 600 ? `${totalTableHeight}px` : '600px' }}
+        >
             <DataGrid
                 loading={
                     createPointIsLoading ||
@@ -151,7 +156,6 @@ const EditAnalysisPoints: React.FC<IEditAnalysisPoints> = (props) => {
                     updateAnalysisIsLoading ||
                     isFetching > 0
                 }
-                autoHeight={totalTableHeight < 600}
                 showCellRightBorder
                 onCellEditCommit={handleCellEditCommit}
                 disableSelectionOnClick

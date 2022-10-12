@@ -15,7 +15,7 @@ def generate_id():
 
 class BaseMixin(object):
 
-    id = db.Column(db.Text, primary_key=True, default=generate_id)
+    id = db.Column(db.Text, primary_key=True, index=True, default=generate_id)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
 
@@ -54,7 +54,7 @@ class Studyset(BaseMixin, db.Model):
         "Study",
         cascade="all",
         secondary="studyset_studies",
-        backref=backref("studysets"),
+        backref=backref("studysets", lazy='dynamic'),
     )
     annotations = relationship("Annotation", cascade="all, delete", backref="studyset")
 
@@ -91,8 +91,10 @@ class AnnotationAnalysis(db.Model):
 
     study_id = db.Column(db.Text, nullable=False)
     studyset_id = db.Column(db.Text, nullable=False)
-    annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"), primary_key=True)
-    analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id"), primary_key=True)
+    annotation_id = db.Column(
+        db.Text, db.ForeignKey("annotations.id"), index=True, primary_key=True
+    )
+    analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id"), index=True, primary_key=True)
     note = db.Column(MutableDict.as_mutable(db.JSON))
 
 
@@ -122,8 +124,12 @@ class Study(BaseMixin, db.Model):
 
 class StudysetStudy(db.Model):
     __tablename__ = "studyset_studies"
-    study_id = db.Column(db.ForeignKey('studies.id', ondelete='CASCADE'), primary_key=True)
-    studyset_id = db.Column(db.ForeignKey('studysets.id', ondelete='CASCADE'), primary_key=True)
+    study_id = db.Column(
+        db.ForeignKey('studies.id', ondelete='CASCADE'), index=True, primary_key=True
+    )
+    studyset_id = db.Column(
+        db.ForeignKey('studysets.id', ondelete='CASCADE'), index=True, primary_key=True
+    )
     study = relationship(
         "Study",
         backref=backref("studyset_studies"),
@@ -161,7 +167,6 @@ class Analysis(BaseMixin, db.Model):
         "AnalysisConditions",
         backref=backref("analysis"),
         cascade="all, delete-orphan",
-        lazy='subquery',
     )
     annotation_analyses = relationship(
         "AnnotationAnalysis",
@@ -188,10 +193,10 @@ class AnalysisConditions(db.Model):
     __tablename__ = "analysis_conditions"
     weight = db.Column(db.Float)
     analysis_id = db.Column(
-        db.Text, db.ForeignKey("analyses.id"), primary_key=True
+        db.Text, db.ForeignKey("analyses.id"), index=True, primary_key=True
     )
     condition_id = db.Column(
-        db.Text, db.ForeignKey("conditions.id"), primary_key=True
+        db.Text, db.ForeignKey("conditions.id"), index=True, primary_key=True
     )
 
 

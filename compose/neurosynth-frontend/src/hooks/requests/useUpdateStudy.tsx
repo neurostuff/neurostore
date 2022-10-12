@@ -1,18 +1,29 @@
 import { AxiosError, AxiosResponse } from 'axios';
-import { useMutation } from 'react-query';
-import { Study, StudyReturn } from '../../neurostore-typescript-sdk';
-import API from '../../utils/api';
+import { useSnackbar } from 'notistack';
+import { useMutation, useQueryClient } from 'react-query';
+import { StudyRequest, StudyReturn } from 'neurostore-typescript-sdk';
+import API from 'utils/api';
 
 const useUpdateStudy = () => {
+    const { enqueueSnackbar } = useSnackbar();
+    const queryClient = useQueryClient();
     return useMutation<
         AxiosResponse<StudyReturn>,
         AxiosError,
         {
             studyId: string;
-            study: Study;
+            study: StudyRequest;
         },
         unknown
-    >((args) => API.NeurostoreServices.StudiesService.studiesIdPut(args.studyId, args.study));
+    >((args) => API.NeurostoreServices.StudiesService.studiesIdPut(args.studyId, args.study), {
+        onSuccess: () => {
+            queryClient.invalidateQueries('studies');
+            enqueueSnackbar('study updated successfully', { variant: 'success' });
+        },
+        onError: () => {
+            enqueueSnackbar('there was an error updating the study', { variant: 'error' });
+        },
+    });
 };
 
 export default useUpdateStudy;

@@ -1,8 +1,8 @@
 import HotTable from '@handsontable/react';
 import { numericRenderer, textRenderer } from 'handsontable/renderers';
 import { numericValidator } from 'handsontable/validators';
-import { EPropertyType } from 'components/EditMetadata'
-import { AnnotationNote } from '../../neurostore-typescript-sdk';
+import { EPropertyType } from 'components/EditMetadata';
+import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import NeurosynthSpreadsheetHelper from './NeurosynthSpreadsheetHelper';
 import NeurosynthSpreadsheetState from './NeurosynthSpreadsheetState';
 
@@ -131,7 +131,7 @@ describe('NeurosynthSpreadsheetState', () => {
     });
 
     describe('convertToAnnotationObject', () => {
-        const mockAnnotationNotes: AnnotationNote[] = [
+        const mockAnnotationNotes: NoteCollectionReturn[] = [
             {
                 study: 'study_id_1',
                 study_name: 'study_name_1',

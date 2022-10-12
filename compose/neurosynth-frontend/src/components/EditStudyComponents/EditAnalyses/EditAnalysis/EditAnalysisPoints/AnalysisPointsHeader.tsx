@@ -6,7 +6,6 @@ import AddIcon from '@mui/icons-material/Add';
 import { useRef, useState } from 'react';
 import { useGridApiContext } from '@mui/x-data-grid';
 import { useGetStudyById } from 'hooks';
-import { AnalysisApiResponse } from 'utils/api';
 import { AnalysisReturn, PointReturn } from 'neurostore-typescript-sdk';
 
 export interface IAnalysisPointsHeader {
@@ -19,6 +18,7 @@ export interface IAnalysisPointsHeader {
 const AnalysisPointsHeader: React.FC<IAnalysisPointsHeader> = (props) => {
     const apiRef = useGridApiContext();
     const { isLoading: getStudyIsLoading, data: study } = useGetStudyById(props.studyId || '');
+
     const selectedRows = apiRef?.current?.getSelectedRows()?.size || 0;
 
     const [popperIsOpen, setPopperIsOpen] = useState(false);
@@ -43,7 +43,7 @@ const AnalysisPointsHeader: React.FC<IAnalysisPointsHeader> = (props) => {
         }
     };
 
-    const analysisOptions = ((study?.analyses || []) as AnalysisApiResponse[])
+    const analysisOptions = ((study?.analyses || []) as AnalysisReturn[])
         .filter((x) => x.id !== props.analysisId)
         .map((analysis, index) => (
             <MenuItem
@@ -58,12 +58,16 @@ const AnalysisPointsHeader: React.FC<IAnalysisPointsHeader> = (props) => {
         ));
 
     if (analysisOptions.length === 0)
-        analysisOptions.push(<MenuItem disabled>No analyses</MenuItem>);
+        analysisOptions.push(
+            <MenuItem key="no-analyses-menu-item" disabled>
+                No analyses
+            </MenuItem>
+        );
 
     return (
         <Box
             sx={{
-                height: '70px',
+                height: '69px',
                 borderBottom: '1px solid lightgray',
                 display: 'flex',
                 justifyContent: 'space-between',

@@ -5,9 +5,9 @@ import { EAnalysisType } from '../../../pages/MetaAnalyses/MetaAnalysisBuilderPa
 import { mockAnnotations, mockStudysets } from '../../../testing/mockData';
 import MetaAnalysisData from './MetaAnalysisData';
 
-jest.mock('../../NeurosynthAutocomplete/NeurosynthAutocomplete');
-jest.mock('../../Buttons/NavigationButtons/NavigationButtons');
-jest.mock('../../../utils/api');
+jest.mock('components/NeurosynthAutocomplete/NeurosynthAutocomplete');
+jest.mock('components/Buttons/NavigationButtons/NavigationButtons');
+jest.mock('hooks');
 
 describe('MetaAnalysisData component', () => {
     const mockOnUpdate = jest.fn();

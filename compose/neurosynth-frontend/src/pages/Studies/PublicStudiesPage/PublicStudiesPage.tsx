@@ -1,12 +1,29 @@
-import { ChangeEvent, useEffect, useState } from 'react';
-import { TablePagination, Typography, Pagination, Box } from '@mui/material';
-import API, { StudyApiResponse } from '../../../utils/api';
-import PublicStudiesPageStyles from './PublicStudiesPage.styles';
-import StudiesTable from 'components/Tables/StudiesTable/StudiesTable';
-import SearchBar from 'components/SearchBar/SearchBar';
-import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
-import useIsMounted from '../../../hooks/useIsMounted';
-import { Metadata } from '../../../neurostore-typescript-sdk';
+import { useEffect, useState } from 'react';
+import { Typography, Box, IconButton, TableRow, TableCell, Tooltip, Chip } from '@mui/material';
+import HelpIcon from '@mui/icons-material/Help';
+import useGetTour from 'hooks/useGetTour';
+import { useAuth0 } from '@auth0/auth0-react';
+import { useGetStudies } from 'hooks';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { useHistory, useLocation } from 'react-router-dom';
+import { StudyList } from 'neurostore-typescript-sdk';
+import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
+import StudysetsPopupMenu from 'components/StudysetsPopupMenu/StudysetsPopupMenu';
+import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
+import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
+import {
+    addKVPToSearch,
+    getSearchCriteriaFromURL,
+    getURLFromSearchCriteria,
+    stringToColor,
+} from 'pages/helpers/utils';
+
+export enum SortBy {
+    NAME = 'name',
+    AUTHORS = 'authors',
+    DESCRIPTION = 'description',
+    CREATEDAT = 'created_at',
+}
 
 export enum Source {
     NEUROSTORE = 'neurostore',
@@ -15,12 +32,11 @@ export enum Source {
     NEUROSYNTH = 'neurosynth',
     NEUROQUERY = 'neuroquery',
 }
-
-enum SortBy {
-    NAME = 'name',
-    AUTHORS = 'authors',
-    DESCRIPTION = 'description',
-    CREATEDAT = 'created_at',
+export enum SearchBy {
+    NAME = 'nameSearch',
+    DESCRIPTION = 'descriptionSearch',
+    AUTHORS = 'authorSearch',
+    ALL = 'genericSearchStr',
 }
 
 export class SearchCriteria {
@@ -36,150 +52,241 @@ export class SearchCriteria {
         public authorSearch: string | undefined = undefined,
         public showUnique: boolean = false,
         public source: Source | undefined = undefined,
-        public userId: string | undefined = undefined
+        public userId: string | undefined = undefined,
+        public dataType: 'coordinate' | 'image' | 'both' = 'coordinate',
+        public studysetOwner: string | undefined = undefined
     ) {}
 }
 
 const PublicStudiesPage = () => {
-    const [studies, setStudies] = useState<StudyApiResponse[]>();
-    const [searchMetadata, setSearchMetadata] = useState<Metadata>();
-    const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>(new SearchCriteria());
-    const isMountedRef = useIsMounted();
+    const { startTour } = useGetTour('PublicStudiesPage');
+    const history = useHistory();
+    const location = useLocation();
+    const { isAuthenticated, user, isLoading: authenticationIsLoading } = useAuth0();
 
-    const getNumTotalPages = (totalCount: number | undefined, pageSize: number | undefined) => {
-        if (!totalCount || !pageSize) {
-            return 0;
-        }
-        const numTotalPages = Math.trunc(totalCount / pageSize);
-        const remainder = totalCount % pageSize;
-        return remainder > 0 ? numTotalPages + 1 : numTotalPages;
-    };
+    // cached data returned from the api
+    const [studyData, setStudyData] = useState<StudyList>();
 
-    const handleOnSearch = (newSearchTerm: SearchCriteria) => {
-        setSearchCriteria((prevState) => {
-            return {
-                ...prevState,
-                ...newSearchTerm, // same name properties override the ones in prevState
-            };
-        });
-    };
+    // state of the current search
+    const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({
+        ...new SearchCriteria(),
+        ...getSearchCriteriaFromURL(location?.search),
+    });
 
-    const handlePageChange = (
-        event: React.MouseEvent<HTMLButtonElement, MouseEvent> | null,
-        page: number
-    ) => {
-        setSearchCriteria((prevState) => {
-            return {
-                ...prevState,
-                // we have to do this because MUI's pagination component starts at 0,
-                // whereas 0 and 1 are the same in the backend
-                pageOfResults: page + 1,
-            };
-        });
-    };
+    // state of the search to the API (separated from searchCriteria to allow for debouncing)
+    const [apiSearch, setApiSearch] = useState<SearchCriteria>(searchCriteria);
 
-    const handleRowsPerPageChange = (
-        event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-    ) => {
-        const newRowsPerPage = parseInt(event.target.value);
+    /**
+     * This query will not be made until authentication has finished loading. The user?.sub property
+     * exists before loading is complete so we are guaranteed that the first query will run
+     * with the studysetOwner set (if logged in) and undefined otherwise
+     */
+    const { data, isLoading, isError, isFetching } = useGetStudies(
+        { ...apiSearch, studysetOwner: user?.sub },
+        !authenticationIsLoading
+    );
 
-        setSearchCriteria((prevState) => {
-            return {
-                ...prevState,
-                // set page to 1 so that we don't have issue where the paginator goes out of bounds
-                // when at the last page and rowsperpage is decreased
-                pageOfResults: 1,
-                pageSize: newRowsPerPage,
-            };
-        });
-    };
-
-    const handlePaginationChange = (event: ChangeEvent<unknown>, page: number) => {
-        if (page === null) return;
-
-        setSearchCriteria((prevState) => {
-            return {
-                ...prevState,
-                pageOfResults: page,
-            };
-        });
-    };
-
-    // runs for any change in study query including rows per page change, page change, etc
+    /**
+     * the data variable itself is undefined when refetching, so we need to save it
+     * in memory to create a more stable experience when changing search criteria.
+     * This is especially noticable when paginating
+     */
     useEffect(() => {
-        // implement debounce
-        const timeout = setTimeout(() => {
-            const getStudies = (searchCriteria: SearchCriteria) => {
-                API.NeurostoreServices.StudiesService.studiesGet(
-                    searchCriteria.genericSearchStr,
-                    searchCriteria.sortBy,
-                    searchCriteria.pageOfResults,
-                    searchCriteria.descOrder,
-                    searchCriteria.pageSize,
-                    searchCriteria.isNested,
-                    searchCriteria.nameSearch,
-                    searchCriteria.descriptionSearch,
-                    undefined,
-                    searchCriteria.showUnique,
-                    searchCriteria.source,
-                    searchCriteria.authorSearch,
-                    searchCriteria.userId
-                )
-                    .then((res) => {
-                        if (isMountedRef.current && res?.data?.results) {
-                            setSearchMetadata(res.data.metadata);
-                            setStudies(res.data.results);
-                        }
-                    })
-                    .catch((err) => {
-                        setStudies([]);
-                        console.error(err);
-                    });
-            };
+        if (data) setStudyData(data);
+    }, [data]);
 
-            getStudies(searchCriteria);
-        }, 500);
+    useEffect(() => {
+        if (user?.sub) {
+            setSearchCriteria((prev) => ({
+                ...prev,
+                studysetOwner: user.sub,
+            }));
+        }
+    }, [user?.sub]);
+
+    // runs every time the URL changes, to create a URL driven search.
+    // this is separated from the debounce because otherwise the URL would
+    // not update until the setTimeout is complete
+    useEffect(() => {
+        const urlSearchCriteria = getSearchCriteriaFromURL(location?.search);
+        setSearchCriteria((prev) => {
+            return { ...prev, ...urlSearchCriteria };
+        });
+    }, [location.search]);
+
+    // runs for any change in study query, add set timeout and clear timeout for debounce.
+    useEffect(() => {
+        const timeout = setTimeout(async () => {
+            setApiSearch(searchCriteria);
+        }, 200);
 
         return () => {
             clearTimeout(timeout);
         };
-    }, [searchCriteria, isMountedRef]);
+    }, [searchCriteria]);
+
+    const handleSearch = (searchString: string, searchBy: SearchBy) => {
+        // when we search, we want to reset the search criteria as we dont know the
+        // page number of number of results in advance
+        const searchURL = getURLFromSearchCriteria({ [searchBy]: searchString });
+        history.push(`/studies?${searchURL}`);
+    };
+
+    const handleRowsPerPageChange = (newRowsPerPage: number) => {
+        const searchURL = addKVPToSearch(
+            addKVPToSearch(location.search, 'pageSize', `${newRowsPerPage}`),
+            'pageOfResults',
+            '1'
+        );
+        history.push(`/studies?${searchURL}`);
+    };
+
+    const handlePageChange = (page: number) => {
+        const searchURL = addKVPToSearch(location.search, 'pageOfResults', `${page}`);
+        history.push(`/studies?${searchURL}`);
+    };
 
     return (
-        <>
-            <Typography variant="h4">Public Studies</Typography>
+        <StateHandlerComponent isLoading={false} isError={isError}>
+            <Box sx={{ display: 'flex' }}>
+                <Typography variant="h4">Public Studies</Typography>
+                <IconButton onClick={() => startTour()} color="primary">
+                    <HelpIcon />
+                </IconButton>
+            </Box>
 
-            <SearchBar onSearch={handleOnSearch} />
-
-            <TablePagination
-                rowsPerPage={searchCriteria.pageSize}
-                onRowsPerPageChange={handleRowsPerPageChange}
+            <SearchContainer
                 onPageChange={handlePageChange}
-                component="div"
-                rowsPerPageOptions={[10, 25, 50, 99]}
-                // we have to do this because MUI's pagination component starts at 0,
-                // whereas 0 and 1 are the same in the backend
-                page={searchCriteria.pageOfResults - 1}
-                count={searchMetadata?.total_count || 0}
-                sx={PublicStudiesPageStyles.paginator}
-            />
-
-            <NeurosynthLoader loaded={!!studies}>
+                onRowsPerPageChange={handleRowsPerPageChange}
+                onSearch={handleSearch}
+                totalCount={studyData?.metadata?.total_count}
+                pageSize={searchCriteria.pageSize}
+                pageOfResults={
+                    (studyData?.results || []).length === 0 ? 1 : searchCriteria.pageOfResults
+                }
+                paginationSelectorStyles={{
+                    '& .MuiPaginationItem-root.Mui-selected': {
+                        backgroundColor: 'primary.main',
+                        color: 'primary.contrastText',
+                    },
+                }}
+            >
                 <Box sx={{ marginBottom: '1rem' }}>
-                    <StudiesTable showStudyOptions={true} studies={studies as StudyApiResponse[]} />
+                    <NeurosynthTable
+                        tableConfig={{
+                            isLoading: isLoading || isFetching,
+                            loaderColor: 'secondary',
+                            noDataDisplay: (
+                                <Box sx={{ color: 'warning.dark', padding: '1rem' }}>
+                                    No studies found
+                                </Box>
+                            ),
+                        }}
+                        headerCells={[
+                            {
+                                text: '',
+                                key: 'addToStudysetCol',
+                                styles: { display: isAuthenticated ? 'table-cell' : 'none' },
+                            },
+                            {
+                                text: 'Title',
+                                key: 'title',
+                                styles: { color: 'primary.contrastText', fontWeight: 'bold' },
+                            },
+                            {
+                                text: 'Authors',
+                                key: 'authors',
+                                styles: { color: 'primary.contrastText', fontWeight: 'bold' },
+                            },
+                            {
+                                text: 'Journal',
+                                key: 'journal',
+                                styles: { color: 'primary.contrastText', fontWeight: 'bold' },
+                            },
+                            {
+                                text: 'Owner',
+                                key: 'owner',
+                                styles: { color: 'primary.contrastText', fontWeight: 'bold' },
+                            },
+                            {
+                                text: 'Studysets',
+                                key: 'studysets',
+                                styles: {
+                                    display: isAuthenticated ? 'table-cell' : 'none',
+                                    color: 'primary.contrastText',
+                                    fontWeight: 'bold',
+                                },
+                            },
+                        ]}
+                        rows={(studyData?.results || []).map((studyrow, index) => (
+                            <TableRow
+                                data-tour={index === 0 ? 'PublicStudiesPage-4' : null}
+                                sx={NeurosynthTableStyles.tableRow}
+                                key={studyrow.id || index}
+                                onClick={() => history.push(`/studies/${studyrow.id}`)}
+                            >
+                                <TableCell
+                                    data-tour={index === 0 ? 'PublicStudiesPage-3' : null}
+                                    sx={{ display: isAuthenticated ? 'table-cell' : 'none' }}
+                                >
+                                    <StudysetsPopupMenu study={studyrow} />
+                                </TableCell>
+                                <TableCell>
+                                    {studyrow?.name || (
+                                        <Box sx={{ color: 'warning.dark' }}>No name</Box>
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    {studyrow?.authors || (
+                                        <Box sx={{ color: 'warning.dark' }}>No author(s)</Box>
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    {studyrow?.publication || (
+                                        <Box sx={{ color: 'warning.dark' }}>No Journal</Box>
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    {(studyrow?.user === user?.sub ? 'Me' : studyrow?.user) ||
+                                        'Neurosynth-Compose'}
+                                </TableCell>
+                                <TableCell
+                                    sx={{ display: isAuthenticated ? 'table-cell' : 'none' }}
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                    }}
+                                >
+                                    {(studyrow.studysets || []).map((studyset, index) => (
+                                        <Tooltip
+                                            key={studyset?.id || index}
+                                            title={studyset?.name || ''}
+                                            placement="top"
+                                        >
+                                            <Chip
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    history.push(`/studysets/${studyset.id || ''}`);
+                                                }}
+                                                size="small"
+                                                sx={{
+                                                    backgroundColor: stringToColor(
+                                                        studyset?.id || ''
+                                                    ),
+                                                    color: 'white',
+                                                    margin: '0.1rem',
+                                                    maxWidth: '80px',
+                                                }}
+                                                label={studyset?.name || ''}
+                                            />
+                                        </Tooltip>
+                                    ))}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    />
                 </Box>
-            </NeurosynthLoader>
-
-            <Pagination
-                color="primary"
-                sx={PublicStudiesPageStyles.paginator}
-                onChange={handlePaginationChange}
-                showFirstButton
-                showLastButton
-                page={searchCriteria.pageOfResults}
-                count={getNumTotalPages(searchMetadata?.total_count, searchCriteria.pageSize)}
-            />
-        </>
+            </SearchContainer>
+        </StateHandlerComponent>
     );
 };
 export default PublicStudiesPage;

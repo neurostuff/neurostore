@@ -12,7 +12,9 @@ export interface ITextEdit {
     placeholder?: string;
     label?: string;
     display?: 'row' | 'column-reverse';
-    onSave: (updatedText: string, label: string) => Promise<any> | void;
+    isLoading?: boolean;
+    editIconIsVisible?: boolean;
+    onSave: (updatedText: string, label: string) => void;
 }
 
 const TextEdit: React.FC<ITextEdit> = (props) => {
@@ -25,92 +27,86 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
         placeholder = '',
         label = '',
         display = 'row',
-        onSave = (updatedText: string, label: string) => Promise.resolve(),
+        isLoading = false,
+        onSave = (updatedText: string, label: string) => {},
         children,
+        editIconIsVisible = isAuthenticated,
     } = props;
 
     const [editMode, setEditMode] = useState(false);
     const [editedValue, setEditedValue] = useState(textToEdit);
-    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         setEditedValue(textToEdit);
     }, [textToEdit]);
 
-    return (
-        <>
-            {editMode ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                    <TextField
-                        variant="standard"
-                        multiline={!!multiline}
-                        value={editedValue}
-                        label={label}
-                        placeholder={placeholder}
-                        onChange={(event) => {
-                            setEditedValue(event.target.value);
+    if (editMode) {
+        return (
+            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                <TextField
+                    variant="standard"
+                    multiline={!!multiline}
+                    value={editedValue}
+                    label={label}
+                    placeholder={placeholder}
+                    onChange={(event) => setEditedValue(event.target.value)}
+                    sx={{
+                        '.MuiInputBase-root': { ...sx },
+                        '.MuiInputLabel-root': { ...sx },
+                        maxWidth: '500px',
+                    }}
+                />
+                <Box>
+                    <Button
+                        onClick={async () => {
+                            setEditMode(false);
+                            onSave(editedValue, label);
                         }}
+                    >
+                        Save
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            setEditedValue(textToEdit);
+                            setEditMode(false);
+                        }}
+                        color="secondary"
+                    >
+                        Cancel
+                    </Button>
+                </Box>
+            </Box>
+        );
+    }
+
+    return (
+        <Box sx={{ display: 'flex', flexDirection: display, alignItems: 'center' }}>
+            {children}
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                {isLoading ? (
+                    <ProgressLoader
                         sx={{
-                            '.MuiInputBase-root': { ...sx },
-                            '.MuiInputLabel-root': { ...sx },
-                            maxWidth: '500px',
+                            marginLeft: '5px',
+                            width: '20px !important',
+                            height: '20px !important',
                         }}
                     />
-                    <Box>
-                        <Button
-                            onClick={async () => {
-                                setEditMode(false);
-                                setIsLoading(true);
-                                await onSave(editedValue, label);
-                                setIsLoading(false);
-                            }}
-                        >
-                            Save
-                        </Button>
-                        <Button
-                            onClick={() => {
-                                setEditedValue(textToEdit);
-                                setEditMode(false);
-                            }}
-                            color="secondary"
-                        >
-                            Cancel
-                        </Button>
-                    </Box>
-                </Box>
-            ) : (
-                <Box sx={{ display: 'flex', flexDirection: display, alignItems: 'center' }}>
-                    {children}
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        {isLoading ? (
-                            <ProgressLoader
-                                sx={{
-                                    marginLeft: '5px',
-                                    width: '20px !important',
-                                    height: '20px !important',
-                                }}
-                            />
-                        ) : (
-                            <IconButton
-                                sx={{
-                                    width: '32px',
-                                    height: '32px',
-                                    padding: '4px',
-                                    marginLeft: display === 'row' ? '5px' : '0px',
-                                    display: isAuthenticated ? 'inline' : 'none',
-                                }}
-                                disabled={!isAuthenticated}
-                                onClick={() => {
-                                    setEditMode(true);
-                                }}
-                            >
-                                <EditIcon sx={{ fontSize: '20px' }} color="primary" />
-                            </IconButton>
-                        )}
-                    </Box>
-                </Box>
-            )}
-        </>
+                ) : (
+                    <IconButton
+                        sx={{
+                            width: '32px',
+                            height: '32px',
+                            padding: '4px',
+                            marginLeft: display === 'row' ? '5px' : '0px',
+                            display: editIconIsVisible ? 'inline' : 'none',
+                        }}
+                        onClick={() => setEditMode(true)}
+                    >
+                        <EditIcon sx={{ fontSize: '20px' }} color="primary" />
+                    </IconButton>
+                )}
+            </Box>
+        </Box>
     );
 };
 

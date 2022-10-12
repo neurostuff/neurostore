@@ -17,6 +17,17 @@ interface IMetaAnalysisFinalize extends IMetaAnalysisComponents, IEstimatorCorre
     onNavigate: (button: ENavigationButton) => void;
 }
 
+export const getAnalysisTypeDescription = (name: string | undefined): string => {
+    switch (name) {
+        case EAnalysisType.CBMA:
+            return 'Coordinate Based Meta-Analysis';
+        case EAnalysisType.IBMA:
+            return 'Image Based Meta-Analysis';
+        default:
+            return '';
+    }
+};
+
 const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
     const { createMetaAnalysis, isLoading } = useCreateMetaAnalysis();
     const history = useHistory();
@@ -42,7 +53,7 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
         )
             .then((res) => {
                 enqueueSnackbar('new meta-analysis created successfully', { variant: 'success' });
-                history.push('/usermeta-analyses');
+                history.push(`/meta-analyses/${res?.data?.id}`);
             })
             .catch((err) => {
                 enqueueSnackbar('there was an error creating the meta-analysis', {
@@ -57,12 +68,12 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
 
     return (
         <Box sx={{ marginBottom: '2em' }}>
-            <Typography variant="h5" sx={{ marginBottom: '1rem' }}>
-                Meta-Analysis summary
+            <Typography variant="h6" sx={{ marginBottom: '1rem' }}>
+                Meta-Analysis specification summary
             </Typography>
 
             <Paper elevation={2} sx={MetaAnalysisFinalizeStyles.stepContainer}>
-                <Typography variant="h5" sx={MetaAnalysisFinalizeStyles.title}>
+                <Typography variant="h6" sx={MetaAnalysisFinalizeStyles.title}>
                     Details
                 </Typography>
 
@@ -74,18 +85,14 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
             </Paper>
 
             <Paper elevation={2} sx={MetaAnalysisFinalizeStyles.stepContainer}>
-                <Typography variant="h5" sx={MetaAnalysisFinalizeStyles.title}>
+                <Typography variant="h6" sx={MetaAnalysisFinalizeStyles.title}>
                     Data
                 </Typography>
 
                 <MetaAnalysisSummaryRow
                     title="analysis type"
                     value={props.analysisType || ''}
-                    caption={
-                        props.analysisType === EAnalysisType.IBMA
-                            ? 'Image Based Meta-Analysis'
-                            : 'Coordinate Based Meta-Analysis'
-                    }
+                    caption={getAnalysisTypeDescription(props.analysisType)}
                 />
 
                 <MetaAnalysisSummaryRow
@@ -107,7 +114,7 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
             </Paper>
 
             <Paper elevation={2} sx={MetaAnalysisFinalizeStyles.stepContainer}>
-                <Typography variant="h5" sx={MetaAnalysisFinalizeStyles.title}>
+                <Typography variant="h6" sx={MetaAnalysisFinalizeStyles.title}>
                     Algorithm
                 </Typography>
 

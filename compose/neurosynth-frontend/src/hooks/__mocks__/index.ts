@@ -1,4 +1,4 @@
-import { mockConditions, mockStudy } from 'testing/mockData';
+import { mockAnnotations, mockConditions, mockStudy, mockStudysets } from 'testing/mockData';
 import useInputValidation from 'hooks/useInputValidation'; // don't need to mock this as it isn't making any api calls
 
 const useUpdateAnalysis = jest.fn().mockReturnValue({
@@ -55,6 +55,45 @@ const useCreateMetaAnalysis = jest.fn().mockReturnValue({
     createMetaAnalysis: jest.fn().mockReturnValue(Promise.resolve()),
 });
 
+const useGetStudysets = jest.fn().mockReturnValue({
+    error: undefined,
+    isLoading: false,
+    isError: false,
+    data: {
+        metadata: {
+            total_count: 100,
+            unique_count: 100,
+        },
+        results: mockStudysets(),
+    },
+});
+
+const useCreateStudyset = jest.fn().mockReturnValue({
+    // isLoading: false,
+    // isError: false,
+    // mutate: jest.fn(),
+    isLoading: false,
+    isError: false,
+    mutate: jest.fn(),
+});
+
+const useUpdateStudyset = jest.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    mutate: jest.fn(),
+});
+
+const useUpdateStudy = jest.fn().mockReturnValue({
+    isLoading: false,
+    mutate: jest.fn(),
+});
+
+const useGetAnnotationsByStudysetId = jest.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    data: mockAnnotations(),
+});
+
 const useIsMounted = () => {
     return {
         __esModule: true,
@@ -78,4 +117,9 @@ export {
     useCreateAnalysis,
     useInputValidation,
     useIsMounted,
+    useUpdateStudyset,
+    useCreateStudyset,
+    useGetStudysets,
+    useUpdateStudy,
+    useGetAnnotationsByStudysetId,
 };

@@ -3,16 +3,13 @@ import EditStudyMetadataStyles from './EditStudyMetadata.styles';
 import EditMetadata from 'components/EditMetadata/EditMetadata';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { IMetadataRowModel } from 'components/EditMetadata';
-import React, { useState, useCallback } from 'react';
-import { AxiosError } from 'axios';
-import API from 'utils/api';
-import useIsMounted from 'hooks/useIsMounted';
-import { useSnackbar } from 'notistack';
+import React, { useState, useCallback, useEffect } from 'react';
+import { useUpdateStudy } from 'hooks';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 
 export interface IEditStudyMetadata {
     studyId: string;
     metadata: any;
-    onUpdateStudyMetadata: (metadata: any) => void;
 }
 
 export const arrayToMetadata = (arr: IMetadataRowModel[]): { [key: string]: any } => {
@@ -34,30 +31,46 @@ export const metadataToArray = (
     return transformedArr;
 };
 
+export const sortMetadataArrayFn = (a: string, b: string) => {
+    const lowerCaseA = a.toLocaleLowerCase();
+    const lowerCaseB = b.toLocaleLowerCase();
+
+    return lowerCaseA < lowerCaseB ? -1 : lowerCaseA > lowerCaseB ? 1 : 0;
+};
+
 const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
-    const { enqueueSnackbar } = useSnackbar();
+    const { isLoading, mutate } = useUpdateStudy();
     const [updatedEnabled, setUpdateEnabled] = useState(false);
-    const isMountedRef = useIsMounted();
 
-    const [metadataArr, setMetadataArr] = useState<IMetadataRowModel[]>(
-        metadataToArray(props.metadata)
-    );
+    const [metadataArr, setMetadataArr] = useState<IMetadataRowModel[]>([]);
 
-    const handleOnSave = async (event: React.MouseEvent) => {
+    // we dont need to update the UI as the parent component will always be in sync.
+    // save is the only action that updates the metadata, and that will reflect what is already shown on the page
+    useEffect(() => {
+        if (props.metadata) {
+            const metadataArray = metadataToArray(props.metadata).sort((a, b) =>
+                sortMetadataArrayFn(a.metadataKey, b.metadataKey)
+            );
+            setMetadataArr(metadataArray);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handleOnSave = () => {
         const transformedMetadata = arrayToMetadata(metadataArr);
-
-        API.NeurostoreServices.StudiesService.studiesIdPut(props.studyId, {
-            metadata: transformedMetadata,
-        })
-            .then((_res) => {
-                enqueueSnackbar('study updated successfully', { variant: 'success' });
-                props.onUpdateStudyMetadata(transformedMetadata);
-                if (isMountedRef.current) setUpdateEnabled(false);
-            })
-            .catch((err: Error | AxiosError) => {
-                enqueueSnackbar('there was an error updating the study', { variant: 'error' });
-                console.error(err.message);
-            });
+        mutate(
+            {
+                studyId: props.studyId,
+                study: {
+                    metadata: transformedMetadata,
+                },
+            },
+            {
+                onSuccess: () => {
+                    setUpdateEnabled(false);
+                },
+            }
+        );
     };
 
     const handleMetadataRowEdit = useCallback((updatedRow: IMetadataRowModel) => {
@@ -82,9 +95,9 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
             const updatedMetadata = prevState.filter(
                 (element) => element.metadataKey !== updatedRow.metadataKey
             );
-            setUpdateEnabled(true);
             return updatedMetadata;
         });
+        setUpdateEnabled(true);
     }, []);
 
     const handleMetadataRowAdd = useCallback(
@@ -94,11 +107,10 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
                 return false;
             } else {
                 setMetadataArr((prevState) => {
-                    const updatedState = [...prevState];
-                    updatedState.unshift({ ...row });
-                    setUpdateEnabled(true);
+                    const updatedState = [{ ...row }, ...prevState];
                     return updatedState;
                 });
+                setUpdateEnabled(true);
                 return true;
             }
         },
@@ -106,7 +118,9 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
     );
 
     const handleRevertChanges = (event: React.MouseEvent) => {
-        const tempRevertedChanges = metadataToArray(props.metadata);
+        const tempRevertedChanges = metadataToArray(props.metadata).sort((a, b) =>
+            sortMetadataArrayFn(a.metadataKey, b.metadataKey)
+        );
         setMetadataArr(tempRevertedChanges);
         setUpdateEnabled(false);
     };
@@ -137,15 +151,15 @@ const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
                     metadata={metadataArr}
                 />
             )}
-            <Button
+            <LoadingButton
                 disabled={!updatedEnabled}
                 onClick={handleOnSave}
+                isLoading={isLoading}
                 color="success"
+                text="Save"
                 variant="contained"
                 sx={{ ...EditStudyMetadataStyles.button, marginRight: '15px' }}
-            >
-                Save
-            </Button>
+            />
             <Button
                 disabled={!updatedEnabled}
                 color="secondary"

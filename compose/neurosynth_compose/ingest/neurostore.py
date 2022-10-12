@@ -10,6 +10,9 @@ from ..database import db
 
 
 def ingest_neurostore(url="https://neurostore.xyz", n_studysets=None, study_size_limit=1000):
+    request = requests.get(f"{url}/api/studysets/")
+    if request.status_code != 200:
+        request.raise_for_status()
     studysets = requests.get(f"{url}/api/studysets/").json()['results']
     if n_studysets:
         studysets = studysets[:n_studysets]
