@@ -1,4 +1,4 @@
-# neurosynth
+# neurosynth-compose
 
 Requirements: Docker and docker-compose.
 
@@ -18,13 +18,13 @@ Create the network, build the containers, and start services using the developme
 
 The server should now be running at http://localhost:81
 
-Create the database for neurosynth:
+Create the database for compose:
 
-    docker-compose exec synth_pgsql psql -U postgres -c "create database neurosynth"
+    docker-compose exec compose_pgsql psql -U postgres -c "create database compose"
 
 Next, migrate and upgrade the database migrations.
 
-    docker-compose exec neurosynth \
+    docker-compose exec compose \
         bash -c \
             "flask db merge heads && \
              flask db stamp head && \
@@ -39,24 +39,24 @@ when there are multiple versions from different histories.
 
 
 ## Maintaining docker image and db
-If you make a change to neurosynth, you should be able to simply restart the server.
+If you make a change to compose, you should be able to simply restart the server.
 
-    docker-compose restart neurosynth
+    docker-compose restart compose
 
 If you need to upgrade the db after changing any models:
 
-    docker-compose exec neurosynth flask db migrate
-    docker-compose exec neurosynth flask db upgrade
+    docker-compose exec compose flask db migrate
+    docker-compose exec compose flask db upgrade
 
 
 ## Running tests
 To run tests, after starting services, create a test database:
 
-    docker-compose exec synth_pgsql psql -U postgres -c "create database test_db"
+    docker-compose exec compose_pgsql psql -U postgres -c "create database test_db"
 
 **NOTE**: This command will ask you for the postgres password which is defined
 in the `.env` file.
 
 and execute:
 
-    docker-compose run -e "APP_SETTINGS=neurosynth.config.DockerTestConfig" --rm -w /neurosynth neurosynth python -m pytest neurosynth/tests
+    docker-compose run -e "APP_SETTINGS=neurosynth_compose.config.DockerTestConfig" --rm -w /compose compose python -m pytest compose/tests
