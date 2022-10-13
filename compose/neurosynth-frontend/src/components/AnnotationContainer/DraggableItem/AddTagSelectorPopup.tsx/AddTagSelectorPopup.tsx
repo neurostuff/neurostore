@@ -52,8 +52,6 @@ const AddTagSelectorPopup: React.FC<{
                         );
                         if (selectedTag) {
                             setSelectedValue(newValue);
-                            console.log(selectedTag);
-
                             props.onAddTag(selectedTag);
                         }
                     }

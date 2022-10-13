@@ -1,15 +1,14 @@
 import { DragDropContext, DropResult, ResponderProvided } from '@hello-pangea/dnd';
-import AddCircle from '@mui/icons-material/AddCircle';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import React, { useEffect, useState } from 'react';
 import Column from './Column/Column';
+import { IDraggableItem } from './DraggableItem/DraggableItem';
 
 export interface IAnnotationContainer {
     columnTitle: string;
     columnId: string;
-    itemList: { id: string; title: string; authors: string; tag?: { label: string; id: string } }[];
+    itemList: IDraggableItem[];
 }
 
 const AnnotationContainer: React.FC<{ data: IAnnotationContainer[] }> = (props) => {
@@ -23,11 +22,11 @@ const AnnotationContainer: React.FC<{ data: IAnnotationContainer[] }> = (props) 
 
     const [tags, setTags] = useState<{ label: string; id: string }[]>([
         {
-            label: 'Pubmed Search',
+            label: 'Duplicates',
             id: 'DKvyYv93jI',
         },
         {
-            label: 'Neurostore Search',
+            label: 'Insufficient detail',
             id: 'JLSYm7Cs8O',
         },
     ]);
@@ -68,7 +67,7 @@ const AnnotationContainer: React.FC<{ data: IAnnotationContainer[] }> = (props) 
         });
     };
 
-    const handleCreateTag = (colId: string, itemId: string, tagName: string) => {
+    const handleCreateTag = (tagName: string) => {
         const newTag = {
             label: tagName,
             id: Math.random().toString(36).substr(2, 5),
@@ -81,7 +80,7 @@ const AnnotationContainer: React.FC<{ data: IAnnotationContainer[] }> = (props) 
             return updatedTagList;
         });
 
-        handleAddTag(colId, itemId, newTag);
+        return newTag;
     };
 
     const handleAddTag = (
@@ -122,14 +121,17 @@ const AnnotationContainer: React.FC<{ data: IAnnotationContainer[] }> = (props) 
                 if (!prev) return prev;
                 const updatedState = [...prev];
 
-                const updatedColumn = { ...prev[0] };
+                const colIndex = prev.findIndex((x) => x.columnId === source.droppableId);
+                if (colIndex < 0) return prev;
+
+                const updatedColumn = { ...prev[colIndex] };
 
                 const updatedItems = [...updatedColumn.itemList];
                 const updatedSource = { ...updatedItems[source.index] };
                 updatedItems.splice(source.index, 1);
                 updatedItems.splice(destination.index, 0, updatedSource);
 
-                updatedState[0] = updatedColumn;
+                updatedState[colIndex] = updatedColumn;
                 updatedColumn.itemList = updatedItems;
                 return updatedState;
             });
@@ -161,6 +163,20 @@ const AnnotationContainer: React.FC<{ data: IAnnotationContainer[] }> = (props) 
         }
     };
 
+    const handleUpdateItems = (colId: string, items: IDraggableItem[]) => {
+        setData((prev) => {
+            if (!prev) return prev;
+            const updatedCols = [...prev];
+
+            const colIndex = updatedCols.findIndex((x) => x.columnId === colId);
+            if (colIndex < 0) return prev;
+
+            updatedCols[colIndex].itemList = [...items];
+
+            return updatedCols;
+        });
+    };
+
     return (
         <DragDropContext onDragEnd={handleDragEnd}>
             <Box sx={{ marginBottom: '1.5rem' }}>
@@ -169,8 +185,9 @@ const AnnotationContainer: React.FC<{ data: IAnnotationContainer[] }> = (props) 
                 </Button>
             </Box>
             <Box sx={{ display: 'flex', width: '100%' }}>
-                {(data || []).map((column) => (
+                {(data || []).map((column, index) => (
                     <Column
+                        onUpdateItems={handleUpdateItems}
                         onCreateTag={handleCreateTag}
                         onAddTag={handleAddTag}
                         onDeleteTag={handleDeleteTag}

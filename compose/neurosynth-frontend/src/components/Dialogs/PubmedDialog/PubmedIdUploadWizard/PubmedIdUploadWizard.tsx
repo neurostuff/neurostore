@@ -1,10 +1,10 @@
-import { Step, StepLabel, Stepper } from '@mui/material';
+import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { IPubmedArticle } from 'hooks/requests/useGetPubmedIDs';
 import MetaAnalysisBuilderPageStyles from 'pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage.styles';
 import { useState } from 'react';
+import PubmedWizardCompleteStep from './PubmedWizardCompleteStep/PubmedWizardCompleteStep';
 import PubmedWizardConfirmStep from './PubmedWizardConfirmStep/PubmedWizardConfirmStep';
-import PubmedWizardFilterStep from './PubmedWizardFilterStep/PubmedWizardFilterStep';
 import PubmedWizardUploadStep from './PubmedWizardUploadStep/PubmedWizardUploadStep';
 
 interface IPubmedIdUploadWizard {
@@ -45,23 +45,23 @@ const PubmedIdUploadWizard: React.FC<IPubmedIdUploadWizard> = (props) => {
         reader.readAsText(file);
     };
 
-    const handleArticlesSelected = (selectedArticles: IPubmedArticle[]) => {
-        setSelectedPubmedArticles(selectedArticles);
+    const handleArticlesSelected = (articles: IPubmedArticle[]) => {
+        setSelectedPubmedArticles(articles);
     };
 
     const uploadedIdsToStringArr = uploadedIds.split(/\r?\n/);
 
     return (
-        <>
-            <Stepper sx={{ marginBottom: '1.5rem' }} activeStep={activeStep}>
+        <Box sx={{ padding: '1.5rem 2.5rem 2.5rem 2.5rem' }}>
+            <Stepper sx={{ marginBottom: '2rem' }} activeStep={activeStep}>
                 <Step>
                     <StepLabel sx={MetaAnalysisBuilderPageStyles.step}>Upload</StepLabel>
                 </Step>
                 <Step>
-                    <StepLabel sx={MetaAnalysisBuilderPageStyles.step}>Filter</StepLabel>
+                    <StepLabel sx={MetaAnalysisBuilderPageStyles.step}>Confirm</StepLabel>
                 </Step>
                 <Step>
-                    <StepLabel sx={MetaAnalysisBuilderPageStyles.step}>Confirm</StepLabel>
+                    <StepLabel sx={MetaAnalysisBuilderPageStyles.step}>Complete</StepLabel>
                 </Step>
             </Stepper>
 
@@ -76,21 +76,21 @@ const PubmedIdUploadWizard: React.FC<IPubmedIdUploadWizard> = (props) => {
             )}
 
             {activeStep === 1 && (
-                <PubmedWizardFilterStep
-                    onSelectArticles={handleArticlesSelected}
+                <PubmedWizardConfirmStep
                     onChangeStep={handleNavigation}
+                    onUploadArticles={handleArticlesSelected}
                     pubmedIds={uploadedFile?.uploadedIDs || uploadedIdsToStringArr}
                 />
             )}
 
             {activeStep === 2 && (
-                <PubmedWizardConfirmStep
+                <PubmedWizardCompleteStep
                     onUploadPubmedArticles={props.onUploadIds}
                     onClose={props.onClose}
                     selectedPubmedArticles={selectedPubmedArticles}
                 />
             )}
-        </>
+        </Box>
     );
 };
 

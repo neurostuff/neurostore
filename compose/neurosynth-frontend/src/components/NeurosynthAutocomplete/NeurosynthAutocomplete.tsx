@@ -33,6 +33,7 @@ interface INeurosynthAutocomplete<T> {
     isLoading?: boolean;
     isError?: boolean;
     filterOptions?: (options: T[], state: FilterOptionsState<T>) => T[];
+    noOptionsText?: string;
 }
 
 const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
@@ -54,6 +55,7 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
         isLoading = false,
         isError = false,
         filterOptions = undefined,
+        noOptionsText = undefined,
     } = props;
 
     const handleOnChange = (_event: any, newVal: T | null, _reason: any) => {
@@ -63,6 +65,7 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
 
     return (
         <Autocomplete
+            noOptionsText={noOptionsText}
             loading={isLoading}
             loadingText="Loading..."
             onFocus={handleOnFocus}

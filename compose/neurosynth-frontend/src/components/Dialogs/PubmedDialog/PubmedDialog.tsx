@@ -31,10 +31,10 @@ const PubmedDialog: React.FC<IPubmedDialog> = (props) => {
                 rejectText="Cancel"
                 dialogTitle="Are you sure you want to exit?"
             />
-            <DialogTitle sx={{ width: '600px' }}>
+            <DialogTitle sx={{ minWidth: '600px', padding: '0px 2.5rem', paddingTop: '2.5rem' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', flexGrow: 1 }}>
-                        <Typography alignSelf="center" variant="h6">
+                        <Typography variant="h5" alignSelf="center">
                             Upload PubMed IDs
                         </Typography>
                     </Box>
@@ -45,7 +45,7 @@ const PubmedDialog: React.FC<IPubmedDialog> = (props) => {
                     </Box>
                 </Box>
             </DialogTitle>
-            <DialogContent>
+            <DialogContent sx={{ padding: 0 }}>
                 <PubmedIdUploadWizard
                     onUploadIds={props.onUploadPubmedArticles}
                     onClose={handleClose}

@@ -186,6 +186,11 @@ const StudysetsPage: React.FC = (props) => {
                     return {
                         id: x.PMID.toString(),
                         title: x.title,
+                        pmid: x.PMID,
+                        keywords: x.keywords,
+                        doi: x.DOI,
+                        articleLink: x.articleLink,
+                        abstractText: x.abstractText,
                         authors: authorString,
                         tag: undefined,
                     };
@@ -214,7 +219,7 @@ const StudysetsPage: React.FC = (props) => {
                         isLoading={updateStudysetNameIsLoading}
                         editIconIsVisible={thisUserOwnsthisStudyset}
                         onSave={handleUpdateField}
-                        sx={{ fontSize: '1.5rem' }}
+                        sx={{ fontSize: '2rem' }}
                         label="name"
                         textToEdit={studyset?.name || ''}
                     >
@@ -224,7 +229,7 @@ const StudysetsPage: React.FC = (props) => {
                                     StudysetPageStyles.displayedText,
                                     !studyset?.name ? StudysetPageStyles.noData : {},
                                 ]}
-                                variant="h5"
+                                variant="h4"
                             >
                                 {studyset?.name || 'No name'}
                             </Typography>
@@ -292,7 +297,7 @@ const StudysetsPage: React.FC = (props) => {
                         </Box>
                     </TextEdit>
                 </Box>
-                <Box>
+                <Box sx={{ whiteSpace: 'nowrap' }}>
                     <PubmedDialog
                         onUploadPubmedArticles={handleUploadPubmedArticles}
                         isOpen={pubmedDialogIsOpen}
@@ -300,7 +305,7 @@ const StudysetsPage: React.FC = (props) => {
                         onSubmit={(list) => {}}
                     />
                     <Button
-                        sx={{ marginRight: '2.5rem' }}
+                        sx={{ marginRight: '1.5rem' }}
                         endIcon={<FileUploadIcon />}
                         variant="outlined"
                         color="primary"
