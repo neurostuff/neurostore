@@ -1,6 +1,8 @@
-import { Button, Divider, Link, Paper } from '@mui/material';
+import { Button, Chip, Divider, Link, Paper } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import AddTagSelectorPopup from 'components/AnnotationContainer/DraggableItem/AddTagSelectorPopup.tsx/AddTagSelectorPopup';
+import { ITag } from 'components/AnnotationContainer/DraggableItem/DraggableItem';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { IPubmedArticleItem } from 'components/Dialogs/AnnotateDialog/AnnotateDialog';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
@@ -11,7 +13,11 @@ import { useEffect, useState } from 'react';
 interface IPubmedWizardConfirmStep {
     pubmedIds: string[];
     onChangeStep: (change: ENavigationButton) => void;
-    onUploadArticles: (articles: IPubmedArticle[]) => void;
+    onUploadArticles: (articles: IPubmedArticle[], tags: ITag[]) => void;
+    onUpdateTags: (tags: ITag[]) => void;
+    selectedTags: ITag[];
+    allTags: ITag[];
+    onCreateTag: (tagName: string, isExclusion: boolean) => ITag;
 }
 
 const PubmedWizardConfirmStep: React.FC<IPubmedWizardConfirmStep> = (props) => {
@@ -30,23 +36,54 @@ const PubmedWizardConfirmStep: React.FC<IPubmedWizardConfirmStep> = (props) => {
     }, [data, articles]);
 
     const handleClickNext = (_event: React.MouseEvent) => {
-        props.onUploadArticles(
-            articles.map((x) => {
-                const article = { ...x };
-                delete article.included;
-                return article;
-            })
-        );
-
+        props.onUploadArticles(articles, props.selectedTags);
         props.onChangeStep(ENavigationButton.NEXT);
+    };
+
+    const handleCreateTag = (tagName: string) => {
+        const newTag = props.onCreateTag(tagName, false);
+        props.onUpdateTags([...props.selectedTags, newTag]);
     };
 
     return (
         <StateHandlerComponent isLoading={isLoading} isError={isError}>
-            <Typography sx={{ fontWeight: 'bold' }} variant="h6">
-                Uploading ({(data || []).length}) articles from pubmed
-            </Typography>
-            <Divider sx={{ margin: '1rem 0' }} />
+            <Paper elevation={0} sx={{ position: 'sticky', top: 0, zIndex: 999 }}>
+                <Typography sx={{ fontWeight: 'bold', marginBottom: '0.5rem' }} variant="h6">
+                    Importing ({(data || []).length}) articles from pubmed
+                </Typography>
+
+                <Typography sx={{ marginBottom: '0.5rem' }} variant="body1">
+                    (Optional) Tag all your imported studies
+                </Typography>
+                <Box>
+                    <AddTagSelectorPopup
+                        onCreateTag={handleCreateTag}
+                        onAddTag={(tag) => {
+                            if (props.selectedTags.findIndex((x) => x.id === tag.id) >= 0) return;
+                            const newTags = [...props.selectedTags, tag];
+                            props.onUpdateTags(newTags);
+                        }}
+                        tags={props.allTags}
+                    />
+                    <Box sx={{ marginTop: '1rem' }}>
+                        {props.selectedTags.map((tag) => (
+                            <Chip
+                                sx={{ margin: '0 3px' }}
+                                onDelete={() => {
+                                    const newTags = [...props.selectedTags].filter(
+                                        (x) => x.id !== tag.id
+                                    );
+                                    props.onUpdateTags(newTags);
+                                }}
+                                label={tag.label}
+                                key={tag.id}
+                            />
+                        ))}
+                    </Box>
+                </Box>
+                <Divider sx={{ marginTop: '1rem' }} />
+            </Paper>
+
             <Box>
                 {(data || [])?.map((article, index) => {
                     const authorString = (article?.authors || []).reduce(
@@ -112,7 +149,7 @@ const PubmedWizardConfirmStep: React.FC<IPubmedWizardConfirmStep> = (props) => {
                     previous
                 </Button>
                 <Button color="primary" variant="contained" onClick={handleClickNext}>
-                    upload
+                    next
                 </Button>
             </Paper>
         </StateHandlerComponent>

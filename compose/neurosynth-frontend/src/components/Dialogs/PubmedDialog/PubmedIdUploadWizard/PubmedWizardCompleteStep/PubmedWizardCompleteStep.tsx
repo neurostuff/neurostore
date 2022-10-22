@@ -1,12 +1,14 @@
 import { Box, Button, Typography } from '@mui/material';
+import { ITag } from 'components/AnnotationContainer/DraggableItem/DraggableItem';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { IPubmedArticle } from 'hooks/requests/useGetPubmedIDs';
 import { useEffect, useState } from 'react';
 
 interface IPubmedWizardCompleteStep {
     selectedPubmedArticles: IPubmedArticle[];
-    onUploadPubmedArticles: (articles: IPubmedArticle[]) => void;
+    onUploadPubmedArticles: (articles: IPubmedArticle[], tags: ITag[]) => void;
     onClose: (event: any) => void;
+    selectedTags: ITag[];
 }
 
 const PubmedWizardCompleteStep: React.FC<IPubmedWizardCompleteStep> = (props) => {
@@ -14,7 +16,7 @@ const PubmedWizardCompleteStep: React.FC<IPubmedWizardCompleteStep> = (props) =>
 
     useEffect(() => {
         setTimeout(() => {
-            props.onUploadPubmedArticles(props.selectedPubmedArticles);
+            props.onUploadPubmedArticles(props.selectedPubmedArticles, props.selectedTags);
             setIsLoading(false);
         }, 1500);
     }, []);

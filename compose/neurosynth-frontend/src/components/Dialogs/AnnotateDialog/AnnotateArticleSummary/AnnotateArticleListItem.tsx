@@ -1,8 +1,9 @@
-import { Chip, ListItem, ListItemButton, ListItemText } from '@mui/material';
-import { IDraggableItem } from 'components/AnnotationContainer/DraggableItem/DraggableItem';
+import { Chip, Box, ListItem, ListItemButton, ListItemText, Typography } from '@mui/material';
+import { IDraggableItem, ITag } from 'components/AnnotationContainer/DraggableItem/DraggableItem';
 
 interface IAnnotateStudyListItem {
-    tag: { label: string; id: string } | undefined;
+    exclusion: ITag | undefined;
+    tags: ITag[];
     selected: boolean;
     item: IDraggableItem;
     onSelect: (index: number) => void;
@@ -16,15 +17,24 @@ const AnnotateStudyListItem: React.FC<IAnnotateStudyListItem> = (props) => {
     return (
         <ListItem
             disablePadding
+            divider
             selected={props.selected}
-            sx={{ width: '100%', whiteSpace: 'break-spaces' }}
+            sx={{
+                width: '100%',
+                whiteSpace: 'break-spaces',
+                backgroundColor: props?.exclusion ? '#1ee9001a' : '',
+            }}
         >
             <ListItemButton
                 sx={{ display: 'flex', flexDirection: 'column', alignItems: 'start' }}
                 autoFocus={props.selected}
                 onClick={() => props.onSelect(props.index)}
             >
-                <ListItemText sx={{ color: 'muted.main' }} primary={'(draft)'} />
+                {isDraft && (
+                    <Typography variant="caption" sx={{ color: 'muted.main', padding: 0 }}>
+                        (stub)
+                    </Typography>
+                )}
                 <ListItemText
                     sx={{
                         overflow: 'hidden',
@@ -37,14 +47,21 @@ const AnnotateStudyListItem: React.FC<IAnnotateStudyListItem> = (props) => {
                     }}
                     primary={title}
                 />
-                {props?.item?.tag && (
-                    <Chip
-                        color="error"
-                        variant="filled"
-                        size="small"
-                        label={props.item?.tag?.label || ''}
-                    ></Chip>
+                {props?.exclusion && (
+                    <Typography sx={{ color: 'error.dark' }} variant="body2">
+                        {props.exclusion?.label}
+                    </Typography>
                 )}
+                <Box>
+                    {props.item.tags.map((tag) => (
+                        <Chip
+                            sx={{ maxWidth: '70px', marginRight: '3px', marginTop: '3px' }}
+                            key={tag.id}
+                            size="small"
+                            label={tag.label}
+                        />
+                    ))}
+                </Box>
             </ListItemButton>
         </ListItem>
     );

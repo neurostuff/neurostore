@@ -3,6 +3,7 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import { useState } from 'react';
+import { ITag } from '../DraggableItem';
 
 interface AutoSelectOption {
     id: string;
@@ -18,9 +19,10 @@ const filterOptions = createFilterOptions<AutoSelectOption | undefined>({
 });
 
 const AddTagSelectorPopup: React.FC<{
-    tags: { label: string; id: string }[];
+    label?: string;
+    tags: ITag[];
     onCreateTag: (tagName: string) => void;
-    onAddTag: (tag: { label: string; id: string }) => void;
+    onAddTag: (tag: ITag) => void;
 }> = (props) => {
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption>();
 
@@ -36,7 +38,8 @@ const AddTagSelectorPopup: React.FC<{
                 sx={{ width: '250px' }}
                 value={selectedValue}
                 required={false}
-                label="select tag"
+                size="small"
+                label={props.label || 'select tag'}
                 options={tagOptions}
                 isOptionEqualToValue={(option, value) => option?.id === value?.id}
                 getOptionLabel={(option) => option?.label || ''}
@@ -44,6 +47,10 @@ const AddTagSelectorPopup: React.FC<{
                     if (newValue) {
                         if (newValue.addOptionActualLabel) {
                             props.onCreateTag(newValue.addOptionActualLabel);
+                            setSelectedValue({
+                                ...newValue,
+                                label: newValue.addOptionActualLabel,
+                            });
                             return;
                         }
 
@@ -51,7 +58,7 @@ const AddTagSelectorPopup: React.FC<{
                             (localTag) => localTag.id === newValue?.id
                         );
                         if (selectedTag) {
-                            setSelectedValue(newValue);
+                            setSelectedValue(selectedTag);
                             props.onAddTag(selectedTag);
                         }
                     }

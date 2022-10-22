@@ -1,6 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { Typography, Box, Button, IconButton, Link, TableRow, TableCell } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 import { useHistory } from 'react-router';
@@ -31,6 +31,7 @@ import AnnotationContainer, {
     IAnnotationContainer,
 } from 'components/AnnotationContainer/AnnotationContainer';
 import { IPubmedArticle } from 'hooks/requests/useGetPubmedIDs';
+import { IDraggableItem, ITag } from 'components/AnnotationContainer/DraggableItem/DraggableItem';
 
 const StudysetsPage: React.FC = (props) => {
     const { startTour } = useGetTour('StudysetPage');
@@ -101,48 +102,48 @@ const StudysetsPage: React.FC = (props) => {
         }
     };
 
-    const handleCloseDeleteStudysetDialog = async (confirm: boolean | undefined) => {
-        setDeleteStudysetConfirmationIsOpen(false);
+    // const handleCloseDeleteStudysetDialog = async (confirm: boolean | undefined) => {
+    //     setDeleteStudysetConfirmationIsOpen(false);
 
-        if (studyset?.id && confirm) {
-            deleteStudyset(studyset?.id, {
-                onSuccess: () => history.push('/userstudysets'),
-            });
-        }
-    };
+    //     if (studyset?.id && confirm) {
+    //         deleteStudyset(studyset?.id, {
+    //             onSuccess: () => history.push('/userstudysets'),
+    //         });
+    //     }
+    // };
 
-    const handleCloseDeleteStudyFromStudysetDialog = (confirm: boolean | undefined, data: any) => {
-        if (confirm) {
-            if (studyset && studyset.studies && params.studysetId && data?.studyId) {
-                const updatedStudiesList = (studyset.studies as StudyReturn[]).filter(
-                    (x) => x.id !== data.studyId
-                );
+    // const handleCloseDeleteStudyFromStudysetDialog = (confirm: boolean | undefined, data: any) => {
+    //     if (confirm) {
+    //         if (studyset && studyset.studies && params.studysetId && data?.studyId) {
+    //             const updatedStudiesList = (studyset.studies as StudyReturn[]).filter(
+    //                 (x) => x.id !== data.studyId
+    //             );
 
-                deleteStudyFromStudyset({
-                    studysetId: params.studysetId,
-                    studyset: {
-                        studies: updatedStudiesList.map((x) => x.id || ''),
-                    },
-                });
-            }
-        }
-        setDeleteStudyFromStudysetConfirmationIsOpen({ isOpen: false, data: undefined });
-    };
+    //             deleteStudyFromStudyset({
+    //                 studysetId: params.studysetId,
+    //                 studyset: {
+    //                     studies: updatedStudiesList.map((x) => x.id || ''),
+    //                 },
+    //             });
+    //         }
+    //     }
+    //     setDeleteStudyFromStudysetConfirmationIsOpen({ isOpen: false, data: undefined });
+    // };
 
-    const handleCreateAnnotation = async (name: string, description: string) => {
-        if (studyset && params.studysetId) {
-            createAnnotation({
-                source: 'neurosynth',
-                sourceId: undefined,
-                annotation: {
-                    name,
-                    description,
-                    note_keys: {},
-                    studyset: params.studysetId,
-                },
-            });
-        }
-    };
+    // const handleCreateAnnotation = async (name: string, description: string) => {
+    //     if (studyset && params.studysetId) {
+    //         createAnnotation({
+    //             source: 'neurosynth',
+    //             sourceId: undefined,
+    //             annotation: {
+    //                 name,
+    //                 description,
+    //                 note_keys: {},
+    //                 studyset: params.studysetId,
+    //             },
+    //         });
+    //     }
+    // };
 
     const [data, setData] = useState<IAnnotationContainer[]>([
         {
@@ -167,7 +168,108 @@ const StudysetsPage: React.FC = (props) => {
         },
     ]);
 
-    const handleUploadPubmedArticles = (articles: IPubmedArticle[]) => {
+    const [tags, setTags] = useState<ITag[]>([
+        {
+            label: 'Save study For Later',
+            id: '12rXnaWyk1',
+            isExclusion: false,
+        },
+        {
+            label: 'Favorites',
+            id: '9fhwiabufw',
+            isExclusion: false,
+        },
+        {
+            label: 'Important',
+            id: 'q3uyp4vtq3',
+            isExclusion: false,
+        },
+        {
+            label: 'Duplicate',
+            id: 'DKvyYv93jI',
+            isExclusion: true,
+        },
+        {
+            label: 'Insufficient detail',
+            id: 'JLSYm7Cs8O',
+            isExclusion: true,
+        },
+        {
+            label: 'Irrelevant',
+            id: 'q1el7MBOiW',
+            isExclusion: true,
+        },
+    ]);
+
+    const handleCreateTag = (tagName: string, isExclusion: boolean) => {
+        const newTag = {
+            label: tagName,
+            id: Math.random().toString(36).substr(2, 5),
+            isExclusion,
+        };
+        setTags((prev) => {
+            if (!prev) return [];
+            const updatedTagList = [...prev, newTag];
+            return updatedTagList;
+        });
+
+        return newTag;
+    };
+
+    const handleSetItem = (columnId: string, item: IDraggableItem) => {
+        setData((prev) => {
+            if (!prev) return prev;
+            const colIndex = prev.findIndex((x) => x.columnId === columnId);
+            if (colIndex < 0) return prev;
+
+            const newItemIndex = prev[colIndex].itemList.findIndex((x) => x.id === item.id);
+            if (newItemIndex < 0) return prev;
+
+            const updatedItemList = [...prev[colIndex].itemList];
+            updatedItemList[newItemIndex] = { ...item };
+
+            const newCol = {
+                ...prev[colIndex],
+                itemList: [...updatedItemList],
+            };
+
+            const updatedState = [...prev];
+            updatedState[colIndex] = newCol;
+            return updatedState;
+        });
+    };
+
+    useEffect(() => {
+        setData((prev) => {
+            const firstCol: IAnnotationContainer = {
+                ...prev[0],
+                itemList: [
+                    ...prev[0].itemList,
+                    ...((studyset?.studies || []) as StudyReturn[]).map((study: StudyReturn) => ({
+                        id: study.id || '',
+                        isDraft: false,
+                        title: study.name || '',
+                        authors: study.authors || '',
+                        keywords: [],
+                        pmid: '',
+                        articleYear: study.year || undefined,
+                        doi: study.doi || '',
+                        abstractText: study.description || '',
+                        articleLink: '',
+                        exclusion: undefined,
+                        tags: [],
+                    })),
+                ],
+            };
+
+            const newCols = [...prev];
+            newCols[0] = firstCol;
+
+            return newCols;
+        });
+    }, [studyset]);
+
+    const handleUploadPubmedArticles = (articles: IPubmedArticle[], tags: ITag[]) => {
         setData((prev) => {
             const updatedState = [...prev];
 
@@ -191,8 +293,10 @@ const StudysetsPage: React.FC = (props) => {
                         doi: x.DOI,
                         articleLink: x.articleLink,
                         abstractText: x.abstractText,
+                        articleYear: x.articleYear,
                         authors: authorString,
-                        tag: undefined,
+                        exclusion: undefined,
+                        tags: [...tags],
                     };
                 }),
                 ...updatedFirstCol.itemList,
@@ -202,6 +306,25 @@ const StudysetsPage: React.FC = (props) => {
 
             return updatedState;
         });
+    };
+
+    const handleAddColumn = () => {
+        setData((prev) => {
+            if (!prev) return prev;
+
+            return [
+                ...prev,
+                {
+                    columnTitle: 'New Column',
+                    columnId: Math.random().toString(36).substr(2, 5),
+                    itemList: [],
+                },
+            ];
+        });
+    };
+
+    const handleUpdateAnnotationContainer = (update: IAnnotationContainer[]) => {
+        setData(update);
     };
 
     return (
@@ -299,8 +422,10 @@ const StudysetsPage: React.FC = (props) => {
                 </Box>
                 <Box sx={{ whiteSpace: 'nowrap' }}>
                     <PubmedDialog
+                        allTags={tags}
                         onUploadPubmedArticles={handleUploadPubmedArticles}
                         isOpen={pubmedDialogIsOpen}
+                        onCreateTag={handleCreateTag}
                         onClose={() => setPubmedDialogIsOpen(false)}
                         onSubmit={(list) => {}}
                     />
@@ -311,7 +436,7 @@ const StudysetsPage: React.FC = (props) => {
                         color="primary"
                         onClick={() => setPubmedDialogIsOpen(true)}
                     >
-                        upload pubmed studies
+                        import pubmed studies
                     </Button>
                     <IconButton onClick={() => startTour()} color="primary">
                         <HelpIcon />
@@ -319,327 +444,18 @@ const StudysetsPage: React.FC = (props) => {
                 </Box>
             </Box>
 
-            <Box>{data && <AnnotationContainer data={data} />}</Box>
+            <Box>
+                <AnnotationContainer
+                    onSetItem={handleSetItem}
+                    onCreateTag={handleCreateTag}
+                    onUpdateAnnotationContainer={handleUpdateAnnotationContainer}
+                    onAddColumn={handleAddColumn}
+                    tags={tags}
+                    data={data}
+                />
+            </Box>
         </StateHandlerComponent>
     );
-
-    // return (
-    // <StateHandlerComponent
-    //     isLoading={getStudysetIsLoading}
-    //     isError={getStudysetIsError}
-    //     errorMessage="There was an error getting the studyset"
-    // >
-    //     <Box
-    //         data-tour="StudysetPage-2"
-    //         sx={{ display: 'flex', marginBottom: '1rem', width: '100%' }}
-    //     >
-    //         <Box sx={{ flexGrow: 1 }}>
-    //             <TextEdit
-    //                 isLoading={updateStudysetNameIsLoading}
-    //                 editIconIsVisible={thisUserOwnsthisStudyset}
-    //                 onSave={handleUpdateField}
-    //                 sx={{ fontSize: '1.5rem' }}
-    //                 label="name"
-    //                 textToEdit={studyset?.name || ''}
-    //             >
-    //                 <Box sx={StudysetPageStyles.displayedText}>
-    //                     <Typography
-    //                         sx={[
-    //                             StudysetPageStyles.displayedText,
-    //                             !studyset?.name ? StudysetPageStyles.noData : {},
-    //                         ]}
-    //                         variant="h5"
-    //                     >
-    //                         {studyset?.name || 'No name'}
-    //                     </Typography>
-    //                 </Box>
-    //             </TextEdit>
-    //             <TextEdit
-    //                 isLoading={updateStudysetPublicationIsLoading}
-    //                 editIconIsVisible={thisUserOwnsthisStudyset}
-    //                 sx={{ fontSize: '1.25rem' }}
-    //                 onSave={handleUpdateField}
-    //                 label="publication"
-    //                 textToEdit={studyset?.publication || ''}
-    //             >
-    //                 <Box sx={StudysetPageStyles.displayedText}>
-    //                     <Typography
-    //                         variant="h6"
-    //                         sx={[
-    //                             StudysetPageStyles.displayedText,
-    //                             !studyset?.publication ? StudysetPageStyles.noData : {},
-    //                         ]}
-    //                     >
-    //                         {studyset?.publication || 'No publication'}
-    //                     </Typography>
-    //                 </Box>
-    //             </TextEdit>
-    //             <TextEdit
-    //                 isLoading={updateStudysetDoiIsLoading}
-    //                 editIconIsVisible={thisUserOwnsthisStudyset}
-    //                 sx={{ fontSize: '1.25rem' }}
-    //                 label="doi"
-    //                 onSave={handleUpdateField}
-    //                 textToEdit={studyset?.doi || ''}
-    //             >
-    //                 <Box sx={StudysetPageStyles.displayedText}>
-    //                     <Typography
-    //                         variant="h6"
-    //                         sx={[
-    //                             StudysetPageStyles.displayedText,
-    //                             !studyset?.doi ? StudysetPageStyles.noData : {},
-    //                         ]}
-    //                     >
-    //                         {studyset?.doi || 'No DOI'}
-    //                     </Typography>
-    //                 </Box>
-    //             </TextEdit>
-    //             <TextEdit
-    //                 isLoading={updateStudysetDescriptionIsLoading}
-    //                 editIconIsVisible={thisUserOwnsthisStudyset}
-    //                 sx={{ fontSize: '1.25rem' }}
-    //                 onSave={handleUpdateField}
-    //                 label="description"
-    //                 textToEdit={studyset?.description || ''}
-    //                 multiline
-    //             >
-    //                 <Box
-    //                     sx={{
-    //                         ...StudysetPageStyles.displayedText,
-    //                         ...(!studyset?.description ? StudysetPageStyles.noData : {}),
-    //                     }}
-    //                 >
-    //                     <TextExpansion
-    //                         textSx={{ fontSize: '1.25rem', whiteSpace: 'break-spaces' }}
-    //                         text={studyset?.description || 'No description'}
-    //                     />
-    //                 </Box>
-    //             </TextEdit>
-    //         </Box>
-    //         <Box>
-    //             <Button
-    //                 onClick={}
-    //                 sx={{ marginRight: '2.5rem' }}
-    //                 endIcon={<FileUploadIcon />}
-    //                 color="primary"
-    //             >
-    //                 Download PubMed Studies
-    //             </Button>
-    //             <IconButton onClick={() => startTour()} color="primary">
-    //                 <HelpIcon />
-    //             </IconButton>
-    //         </Box>
-    //     </Box>
-
-    //     <Box data-tour="StudysetPage-4">
-    //         <Box sx={{ marginBottom: '1rem' }}>
-    //             <Box
-    //                 sx={{
-    //                     display: 'flex',
-    //                     justifyContent: 'space-between',
-    //                     marginBottom: '1rem',
-    //                 }}
-    //             >
-    //                 <Typography
-    //                     variant="h6"
-    //                     sx={{
-    //                         marginBottom: '1rem',
-    //                         fontWeight: 'bold',
-    //                         margin: 'auto 0',
-    //                     }}
-    //                 >
-    //                     Annotations for this studyset
-    //                 </Typography>
-    //                 <Button
-    //                     data-tour="StudysetPage-5"
-    //                     onClick={() => setCreateDetailsIsOpen(true)}
-    //                     variant="contained"
-    //                     sx={{ width: '200px' }}
-    //                     startIcon={<AddIcon />}
-    //                     disabled={!isAuthenticated}
-    //                 >
-    //                     new Annotation
-    //                 </Button>
-    //                 <CreateDetailsDialog
-    //                     titleText="Create new Annotation"
-    //                     isOpen={createDetailsIsOpen}
-    //                     onCreate={handleCreateAnnotation}
-    //                     onCloseDialog={() => setCreateDetailsIsOpen(false)}
-    //                 />
-    //             </Box>
-    //             {/* <AnnotationsTable
-    //                 studysetId={params.studysetId}
-    //                 annotations={annotations || []}
-    //             /> */}
-    //             <NeurosynthTable
-    //                 tableConfig={{
-    //                     isLoading: getAnnotationsIsLoading,
-    //                     tableHeaderBackgroundColor: '#b4656f',
-    //                 }}
-    //                 headerCells={[
-    //                     {
-    //                         text: 'Name',
-    //                         key: 'name',
-    //                         styles: { fontWeight: 'bold', color: 'primary.contrastText' },
-    //                     },
-    //                     {
-    //                         text: 'Description',
-    //                         key: 'description',
-    //                         styles: { fontWeight: 'bold', color: 'primary.contrastText' },
-    //                     },
-    //                     {
-    //                         text: 'Owner',
-    //                         key: 'owner',
-    //                         styles: { fontWeight: 'bold', color: 'primary.contrastText' },
-    //                     },
-    //                 ]}
-    //                 rows={(annotations || []).map((annotation, index) => (
-    //                     <TableRow
-    //                         key={annotation?.id || index}
-    //                         onClick={() => history.push(`/annotations/${annotation?.id}`)}
-    //                         sx={NeurosynthTableStyles.tableRow}
-    //                     >
-    //                         <TableCell>
-    //                             {annotation?.name || (
-    //                                 <Box sx={{ color: 'warning.dark' }}>No name</Box>
-    //                             )}
-    //                         </TableCell>
-    //                         <TableCell>
-    //                             {annotation?.description || (
-    //                                 <Box sx={{ color: 'warning.dark' }}>No description</Box>
-    //                             )}
-    //                         </TableCell>
-    //                         <TableCell>
-    //                             {(annotation?.user === user?.sub ? 'Me' : annotation?.user) ||
-    //                                 'Neurosynth-Compose'}
-    //                         </TableCell>
-    //                     </TableRow>
-    //                 ))}
-    //             />
-    //         </Box>
-    //     </Box>
-
-    //     <Box data-tour="StudysetPage-3">
-    //         <Typography variant="h6" sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
-    //             Studies in this studyset
-    //         </Typography>
-    //         <NeurosynthTable
-    //             tableConfig={{
-    //                 isLoading:
-    //                     getStudysetIsLoading ||
-    //                     deleteStudyFromStudysetIsLoading ||
-    //                     isFetching > 0,
-    //                 loaderColor: 'secondary',
-    //                 noDataDisplay: (
-    //                     <Typography sx={{ padding: '1rem' }} color="warning.dark">
-    //                         There are no studies in this studyset yet. Start by{' '}
-    //                         <Link color="primary" exact component={NavLink} to="/studies">
-    //                             adding studies to this studyset
-    //                         </Link>
-    //                     </Typography>
-    //                 ),
-    //             }}
-    //             headerCells={[
-    //                 {
-    //                     text: 'Title',
-    //                     key: 'title',
-    //                     styles: { color: 'primary.contrastText', fontWeight: 'bold' },
-    //                 },
-    //                 {
-    //                     text: 'Authors',
-    //                     key: 'authors',
-    //                     styles: { color: 'primary.contrastText', fontWeight: 'bold' },
-    //                 },
-    //                 {
-    //                     text: 'Journal',
-    //                     key: 'journal',
-    //                     styles: { color: 'primary.contrastText', fontWeight: 'bold' },
-    //                 },
-    //                 {
-    //                     text: '',
-    //                     key: 'deleteStudyFromStudyset',
-    //                     styles: {
-    //                         display:
-    //                             isAuthenticated && thisUserOwnsthisStudyset
-    //                                 ? 'table-cell'
-    //                                 : 'none',
-    //                     },
-    //                 },
-    //             ]}
-    //             rows={((studyset?.studies || []) as StudyReturn[]).map((study, index) => (
-    //                 <TableRow
-    //                     sx={NeurosynthTableStyles.tableRow}
-    //                     key={study?.id || index}
-    //                     onClick={() => history.push(`/studies/${study.id}`)}
-    //                 >
-    //                     <TableCell>
-    //                         {study?.name || <Box sx={{ color: 'warning.dark' }}>No name</Box>}
-    //                     </TableCell>
-    //                     <TableCell>
-    //                         {study?.authors || (
-    //                             <Box sx={{ color: 'warning.dark' }}>No author(s)</Box>
-    //                         )}
-    //                     </TableCell>
-    //                     <TableCell>
-    //                         {study?.publication || (
-    //                             <Box sx={{ color: 'warning.dark' }}>No Journal</Box>
-    //                         )}
-    //                     </TableCell>
-    //                     <TableCell
-    //                         sx={{
-    //                             display:
-    //                                 isAuthenticated && thisUserOwnsthisStudyset
-    //                                     ? 'table-cell'
-    //                                     : 'none',
-    //                         }}
-    //                         data-tour={index === 0 ? 'UserStudiesPage-3' : null}
-    //                     >
-    //                         <IconButton
-    //                             onClick={(event) => {
-    //                                 event.stopPropagation();
-    //                                 setDeleteStudyFromStudysetConfirmationIsOpen({
-    //                                     isOpen: true,
-    //                                     data: { studyId: study.id },
-    //                                 });
-    //                             }}
-    //                         >
-    //                             <RemoveCircleIcon color="error" />
-    //                         </IconButton>
-    //                     </TableCell>
-    //                 </TableRow>
-    //             ))}
-    //         />
-    //         <ConfirmationDialog
-    //             isOpen={deleteStudyFromStudysetConfirmationIsOpen.isOpen}
-    //             dialogTitle="Are you sure you want to remove this study from the studyset?"
-    //             confirmText="Yes"
-    //             data={deleteStudyFromStudysetConfirmationIsOpen.data}
-    //             rejectText="No"
-    //             onCloseDialog={handleCloseDeleteStudyFromStudysetDialog}
-    //         />
-    //     </Box>
-    //     <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-    //         <ConfirmationDialog
-    //             dialogTitle="Are you sure you want to delete the studyset?"
-    //             dialogMessage="You will not be able to undo this action"
-    //             confirmText="Yes"
-    //             rejectText="No"
-    //             isOpen={deleteStudysetConfirmationIsOpen}
-    //             onCloseDialog={handleCloseDeleteStudysetDialog}
-    //         />
-    //         <Button
-    //             data-tour="StudysetPage-6"
-    //             onClick={() => setDeleteStudysetConfirmationIsOpen(true)}
-    //             variant="contained"
-    //             sx={{ width: '200px' }}
-    //             color="error"
-    //             disabled={!isAuthenticated || !thisUserOwnsthisStudyset}
-    //         >
-    //             Delete studyset
-    //         </Button>
-    //     </Box>
-    // </StateHandlerComponent>
-    // );
 };
 
 export default StudysetsPage;

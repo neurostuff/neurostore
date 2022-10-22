@@ -25,6 +25,7 @@ const NavbarToolbarStyles: Style = {
         padding: '0',
         '& span': {
             height: '100%',
+            alignItems: 'center',
         },
         '&:hover': {
             backgroundColor: '#00689e !important',

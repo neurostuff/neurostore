@@ -9,12 +9,15 @@ import React from 'react';
 import ConfirmationDialog from '../ConfirmationDialog/ConfirmationDialog';
 import PubmedIdUploadWizard from './PubmedIdUploadWizard/PubmedIdUploadWizard';
 import { IPubmedArticle } from 'hooks/requests/useGetPubmedIDs';
+import { ITag } from 'components/AnnotationContainer/DraggableItem/DraggableItem';
 
 export interface IPubmedDialog {
     onSubmit: (pubmedIds: string[]) => void;
     onClose: () => void;
     isOpen: boolean;
-    onUploadPubmedArticles: (articles: IPubmedArticle[]) => void;
+    onCreateTag: (tagName: string, isExclusion: boolean) => ITag;
+    allTags: ITag[];
+    onUploadPubmedArticles: (articles: IPubmedArticle[], tags: ITag[]) => void;
 }
 
 const PubmedDialog: React.FC<IPubmedDialog> = (props) => {
@@ -35,7 +38,7 @@ const PubmedDialog: React.FC<IPubmedDialog> = (props) => {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', flexGrow: 1 }}>
                         <Typography variant="h5" alignSelf="center">
-                            Upload PubMed IDs
+                            Import PubMed Studies
                         </Typography>
                     </Box>
                     <Box>
@@ -47,6 +50,8 @@ const PubmedDialog: React.FC<IPubmedDialog> = (props) => {
             </DialogTitle>
             <DialogContent sx={{ padding: 0 }}>
                 <PubmedIdUploadWizard
+                    onCreateTag={props.onCreateTag}
+                    allTags={props.allTags.filter((x) => !x.isExclusion)}
                     onUploadIds={props.onUploadPubmedArticles}
                     onClose={handleClose}
                 />

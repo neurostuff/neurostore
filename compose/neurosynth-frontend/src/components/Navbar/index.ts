@@ -3,7 +3,7 @@
  */
 
 export interface NavOptionsModel {
-    label: string;
+    label: JSX.Element | string;
     path: string;
     disabled?: boolean;
     authenticationRequired?: boolean;
@@ -12,7 +12,7 @@ export interface NavOptionsModel {
 }
 
 export interface NavbarArgs {
-    navOptions: NavOptionsModel[];
+    // navOptions: NavOptionsModel[];
     login: () => void;
     logout: () => void;
 }

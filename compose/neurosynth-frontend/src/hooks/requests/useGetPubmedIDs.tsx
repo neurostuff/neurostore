@@ -157,6 +157,7 @@ export interface IPubmedArticle {
     abstractText: string | { label: string; text: string }[];
     DOI: string;
     PMID: string;
+    articleYear: number | undefined;
     journal: {
         title: string;
         volume: number;
@@ -174,7 +175,7 @@ export interface IPubmedArticle {
 const EFETCH_URL =
     'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=xml&rettype=abstract&id=';
 
-const PUBMED_ARTICLE_URL = 'https://pubmed.ncbi.nlm.nih.gov/';
+export const PUBMED_ARTICLE_URL = 'https://pubmed.ncbi.nlm.nih.gov/';
 
 const useGetPubmedIDs = (pubmedIDs: string[]) => {
     return useQuery(
@@ -237,6 +238,8 @@ const useGetPubmedIDs = (pubmedIDs: string[]) => {
                                 (x) => x?.['#text'] || ''
                             ),
                             PMID: article?.MedlineCitation?.PMID?.['#text'] || '',
+                            articleYear:
+                                article?.MedlineCitation?.Article?.ArticleDate?.Year || undefined,
                             journal: {
                                 title: pubmedArticleRef?.Journal?.Title || '',
                                 volume: pubmedArticleRef?.Journal?.JournalIssue?.Volume || 0,

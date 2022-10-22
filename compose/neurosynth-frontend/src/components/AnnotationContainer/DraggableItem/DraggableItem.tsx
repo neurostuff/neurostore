@@ -1,5 +1,4 @@
 import { Draggable } from '@hello-pangea/dnd';
-import Add from '@mui/icons-material/Add';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -9,6 +8,10 @@ import React, { useRef, useState } from 'react';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import AddTagSelectorPopup from './AddTagSelectorPopup.tsx/AddTagSelectorPopup';
 import Link from '@mui/material/Link';
+import Tooltip from '@mui/material/Tooltip';
+import { IconButton } from '@mui/material';
+import Close from '@mui/icons-material/Close';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 export interface IDraggableItem {
     id: string;
@@ -18,48 +21,70 @@ export interface IDraggableItem {
     keywords: string[];
     pmid: string;
     doi: string;
+    articleYear: number | undefined;
     abstractText: string | { label: string; text: string }[];
     articleLink: string;
-    tag?: { label: string; id: string };
+    exclusion?: ITag;
+    tags: ITag[];
 }
 
-const DraggableItem: React.FC<
-    IDraggableItem & {
-        index: number;
-        onDeleteTag: (id: string) => void;
-        onCreateTag: (itemId: string, tagName: string) => void;
-        onAddTag: (itemId: string, tag: { id: string; label: string }) => void;
-        onSelectItem: (itemId: string) => void;
-        tags: { label: string; id: string }[];
-    }
-> = (props) => {
+export interface ITag {
+    label: string;
+    id: string;
+    isExclusion: boolean;
+}
+
+const DraggableItem: React.FC<{
+    item: IDraggableItem;
+    index: number;
+    isVisible: boolean;
+    onCreateTag: (tagName: string, isExclusion: boolean) => ITag;
+    onSetItem: (item: IDraggableItem) => void;
+    onSelectItem: (itemId: string) => void;
+    allInfoTags: ITag[];
+    allExclusions: ITag[];
+}> = (props) => {
     const anchorRef = useRef<HTMLButtonElement>(null);
     const [isOpen, setIsOpen] = useState(false);
 
-    const handleAddTag = (tag: { label: string; id: string }) => {
+    const handleSetExclusion = (tag: ITag) => {
+        props.onSetItem({
+            ...props.item,
+            exclusion: tag,
+        });
         setIsOpen(false);
-        props.onAddTag(props.id, tag);
     };
 
-    const handleCreateTag = (tagName: string) => {
-        setIsOpen(false);
-        props.onCreateTag(props.id, tagName);
+    const handleCreateExclusion = (tagName: string) => {
+        const newTag = props.onCreateTag(tagName, true);
+        handleSetExclusion(newTag);
     };
 
-    const handleDeleteTag = (id: string) => {
+    const handleRemoveExclusion = () => {
+        props.onSetItem({
+            ...props.item,
+            exclusion: undefined,
+        });
         setIsOpen(false);
-        props.onDeleteTag(id);
     };
 
     return (
-        <Draggable draggableId={props.id} index={props.index}>
+        <Draggable
+            draggableId={props.item.id}
+            index={props.index}
+            isDragDisabled={props.item.exclusion !== undefined}
+        >
             {(provided) => (
                 <Paper
                     elevation={1}
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
                     ref={provided.innerRef}
-                    sx={{ padding: '14px 10px', marginBottom: '10px' }}
+                    sx={{
+                        padding: '10px',
+                        marginBottom: '10px',
+                        display: props.isVisible ? 'block' : 'none',
+                    }}
                 >
                     <Box
                         sx={{
@@ -69,19 +94,15 @@ const DraggableItem: React.FC<
                             marginBottom: '0.25rem',
                         }}
                     >
-                        {(props.isDraft === undefined || props.isDraft === true) && (
-                            <Typography sx={{ color: 'muted.main', marginRight: '1rem' }}>
-                                (draft)
-                            </Typography>
-                        )}
-                        {props.tag ? (
-                            <Chip
-                                sx={{ marginTop: '0.25rem' }}
-                                color="error"
-                                label={props.tag.label}
-                                variant="filled"
-                                onDelete={(event: any) => handleDeleteTag(props.id)}
-                            />
+                        {props.item.exclusion ? (
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Typography variant="body1" sx={{ color: 'error.dark' }}>
+                                    {props.item.exclusion.label}
+                                </Typography>
+                                <IconButton onClick={() => handleRemoveExclusion()}>
+                                    <Close sx={{ fontSize: '1rem', color: 'error.dark' }} />
+                                </IconButton>
+                            </Box>
                         ) : (
                             <>
                                 <NeurosynthPopper
@@ -90,9 +111,9 @@ const DraggableItem: React.FC<
                                     onClickAway={() => setIsOpen(false)}
                                 >
                                     <AddTagSelectorPopup
-                                        tags={props.tags}
-                                        onAddTag={handleAddTag}
-                                        onCreateTag={handleCreateTag}
+                                        tags={props.allExclusions}
+                                        onAddTag={handleSetExclusion}
+                                        onCreateTag={handleCreateExclusion}
                                     />
                                 </NeurosynthPopper>
                                 <Button
@@ -100,17 +121,26 @@ const DraggableItem: React.FC<
                                     onClick={() => {
                                         setIsOpen(true);
                                     }}
-                                    startIcon={<Add />}
+                                    endIcon={<ArrowDropDownIcon />}
                                     size="small"
+                                    sx={{
+                                        // make down arrow closer to button text
+                                        '.MuiButton-iconSizeSmall': {
+                                            marginLeft: '2px',
+                                        },
+                                    }}
                                     color="error"
                                 >
-                                    exclusion
+                                    exclude
                                 </Button>
                             </>
                         )}
+                        {(props.item.isDraft === undefined || props.item.isDraft === true) && (
+                            <Typography sx={{ color: 'muted.main' }}>(stub)</Typography>
+                        )}
                     </Box>
                     <Link
-                        onClick={() => props.onSelectItem(props.id)}
+                        onClick={() => props.onSelectItem(props.item.id)}
                         underline="hover"
                         sx={{ marginBottom: '0.25rem' }}
                     >
@@ -126,23 +156,45 @@ const DraggableItem: React.FC<
                             }}
                             variant="body1"
                         >
-                            {props.title}
+                            {props.item.title}
                         </Typography>
                     </Link>
                     <Typography
-                        variant="body2"
                         sx={{
-                            color: 'muted.main',
                             overflow: 'hidden',
                             textOverflow: 'ellipses',
                             display: '-webkit-box',
                             WebkitLineClamp: 1,
                             WebkitBoxOrient: 'vertical',
                             lineClamp: 1,
+                            cursor: 'pointer',
+                            color: 'muted.main',
+                        }}
+                        variant="caption"
+                    >
+                        {props.item.authors}
+                    </Typography>
+                    <Box
+                        sx={{
+                            padding: '5px 0',
+                            overflowY: 'auto',
                         }}
                     >
-                        {props.authors}
-                    </Typography>
+                        {props.item.tags.map((tag) => (
+                            <Tooltip title={tag.label} key={tag.id}>
+                                <Chip
+                                    sx={{
+                                        marginRight: '4px',
+                                        marginTop: '4px',
+                                        fontSize: '',
+                                        maxWidth: '180px',
+                                    }}
+                                    size="small"
+                                    label={tag.label}
+                                />
+                            </Tooltip>
+                        ))}
+                    </Box>
                 </Paper>
             )}
         </Draggable>

@@ -1,9 +1,9 @@
 import { DragDropContext, DropResult, ResponderProvided } from '@hello-pangea/dnd';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Column from './Column/Column';
-import { IDraggableItem } from './DraggableItem/DraggableItem';
+import { IDraggableItem, ITag } from './DraggableItem/DraggableItem';
 
 export interface IAnnotationContainer {
     columnTitle: string;
@@ -11,104 +11,14 @@ export interface IAnnotationContainer {
     itemList: IDraggableItem[];
 }
 
-const AnnotationContainer: React.FC<{ data: IAnnotationContainer[] }> = (props) => {
-    const [data, setData] = useState<IAnnotationContainer[]>();
-
-    useEffect(() => {
-        if (props.data) {
-            setData(props.data);
-        }
-    }, [props.data]);
-
-    const [tags, setTags] = useState<{ label: string; id: string }[]>([
-        {
-            label: 'Duplicates',
-            id: 'DKvyYv93jI',
-        },
-        {
-            label: 'Insufficient detail',
-            id: 'JLSYm7Cs8O',
-        },
-    ]);
-
-    const handleClickAddColumn = (event: React.MouseEvent) => {
-        setData((prev) => {
-            if (!prev) return [];
-            const updatedColumns = [...prev];
-            updatedColumns.push({
-                columnTitle: 'New Column',
-                columnId: Math.random().toString(36).substr(2, 5),
-                itemList: [],
-            });
-
-            return updatedColumns;
-        });
-    };
-
-    const handleDeleteTag = (colId: string, id: string) => {
-        setData((prev) => {
-            if (!prev) return [];
-            const colIndex = prev.findIndex((x) => x.columnId === colId);
-            if (colIndex < 0) return prev;
-
-            const updatedCol = { ...prev[colIndex] };
-            const itemIndex = updatedCol.itemList.findIndex((x) => x.id === id);
-            if (itemIndex < 0) return prev;
-
-            updatedCol.itemList[itemIndex] = {
-                ...updatedCol.itemList[itemIndex],
-                tag: undefined,
-            };
-
-            const updatedState = [...prev];
-            updatedState[colIndex] = updatedCol;
-
-            return updatedState;
-        });
-    };
-
-    const handleCreateTag = (tagName: string) => {
-        const newTag = {
-            label: tagName,
-            id: Math.random().toString(36).substr(2, 5),
-        };
-        setTags((prev) => {
-            if (!prev) return [];
-
-            const updatedTagList = [...prev, newTag];
-
-            return updatedTagList;
-        });
-
-        return newTag;
-    };
-
-    const handleAddTag = (
-        columnId: string,
-        itemId: string,
-        receivedTag: { label: string; id: string }
-    ) => {
-        setData((prev) => {
-            if (!prev) return [];
-            const colIndex = prev.findIndex((x) => x.columnId === columnId);
-            if (colIndex < 0) return prev;
-
-            const updatedCol = { ...prev[colIndex] };
-            const itemIndex = updatedCol.itemList.findIndex((x) => x.id === itemId);
-            if (itemIndex < 0) return prev;
-
-            updatedCol.itemList[itemIndex] = {
-                ...updatedCol.itemList[itemIndex],
-                tag: { ...receivedTag },
-            };
-
-            const updatedState = [...prev];
-            updatedState[colIndex] = updatedCol;
-
-            return updatedState;
-        });
-    };
-
+const AnnotationContainer: React.FC<{
+    data: IAnnotationContainer[];
+    tags: ITag[];
+    onAddColumn: () => void;
+    onSetItem: (colId: string, item: IDraggableItem) => void;
+    onUpdateAnnotationContainer: (handleUpdateAnnotationContainer: IAnnotationContainer[]) => void;
+    onCreateTag: (tagName: string, isExclusion: boolean) => ITag;
+}> = (props) => {
     const handleDragEnd = (result: DropResult, provided: ResponderProvided) => {
         const { destination, source, draggableId } = result;
 
@@ -117,85 +27,98 @@ const AnnotationContainer: React.FC<{ data: IAnnotationContainer[] }> = (props) 
             return;
 
         if (source.droppableId === destination.droppableId) {
-            setData((prev) => {
-                if (!prev) return prev;
-                const updatedState = [...prev];
+            const prev = props.data;
+            if (!prev) return prev;
+            const updatedState = [...prev];
 
-                const colIndex = prev.findIndex((x) => x.columnId === source.droppableId);
-                if (colIndex < 0) return prev;
+            const colIndex = prev.findIndex((x) => x.columnId === source.droppableId);
+            if (colIndex < 0) return prev;
 
-                const updatedColumn = { ...prev[colIndex] };
+            const updatedColumn = { ...prev[colIndex] };
 
-                const updatedItems = [...updatedColumn.itemList];
-                const updatedSource = { ...updatedItems[source.index] };
-                updatedItems.splice(source.index, 1);
-                updatedItems.splice(destination.index, 0, updatedSource);
+            const updatedItems = [...updatedColumn.itemList];
+            const updatedSource = { ...updatedItems[source.index] };
+            updatedItems.splice(source.index, 1);
+            updatedItems.splice(destination.index, 0, updatedSource);
 
-                updatedState[colIndex] = updatedColumn;
-                updatedColumn.itemList = updatedItems;
-                return updatedState;
-            });
+            updatedState[colIndex] = updatedColumn;
+            updatedColumn.itemList = updatedItems;
+            props.onUpdateAnnotationContainer(updatedState);
         } else {
-            setData((prev) => {
-                if (!prev) return prev;
-                const updatedState = [...prev];
-                const startColIndex = prev.findIndex((x) => x.columnId === source.droppableId);
-                const endColIndex = prev.findIndex((x) => x.columnId === destination.droppableId);
+            const prev = props.data;
+            if (!prev) return prev;
+            const updatedState = [...prev];
+            const startColIndex = prev.findIndex((x) => x.columnId === source.droppableId);
+            const endColIndex = prev.findIndex((x) => x.columnId === destination.droppableId);
 
-                if (startColIndex < 0 || endColIndex < 0) return prev;
+            if (startColIndex < 0 || endColIndex < 0) return prev;
 
-                const updatedStartCol = { ...prev[startColIndex] };
-                const updatedSource = { ...updatedStartCol.itemList[source.index] };
-                const updatedStartColItems = [...updatedStartCol.itemList];
-                updatedStartColItems.splice(source.index, 1);
-                updatedStartCol.itemList = updatedStartColItems;
+            const updatedStartCol = { ...prev[startColIndex] };
+            const updatedSource = { ...updatedStartCol.itemList[source.index] };
+            const updatedStartColItems = [...updatedStartCol.itemList];
+            updatedStartColItems.splice(source.index, 1);
+            updatedStartCol.itemList = updatedStartColItems;
 
-                const updatedEndCol = { ...prev[endColIndex] };
-                const updatedEndColItems = [...updatedEndCol.itemList];
-                updatedEndColItems.splice(destination.index, 0, { ...updatedSource });
-                updatedEndCol.itemList = updatedEndColItems;
+            const updatedEndCol = { ...prev[endColIndex] };
+            const updatedEndColItems = [...updatedEndCol.itemList];
+            updatedEndColItems.splice(destination.index, 0, { ...updatedSource });
+            updatedEndCol.itemList = updatedEndColItems;
 
-                updatedState[startColIndex] = updatedStartCol;
-                updatedState[endColIndex] = updatedEndCol;
+            updatedState[startColIndex] = updatedStartCol;
+            updatedState[endColIndex] = updatedEndCol;
 
-                return updatedState;
-            });
+            props.onUpdateAnnotationContainer(updatedState);
         }
     };
 
-    const handleUpdateItems = (colId: string, items: IDraggableItem[]) => {
-        setData((prev) => {
-            if (!prev) return prev;
-            const updatedCols = [...prev];
+    const handleInclude = (columnId: string, itemId: string) => {
+        const updatedState = [...props.data];
 
-            const colIndex = updatedCols.findIndex((x) => x.columnId === colId);
-            if (colIndex < 0) return prev;
+        // check that source column id exists
+        const sourceColumnIndex = props.data.findIndex((x) => x.columnId === columnId);
+        if (sourceColumnIndex < 0) return;
 
-            updatedCols[colIndex].itemList = [...items];
+        // check that we are not at the last column
+        if (props.data[sourceColumnIndex + 1] === undefined) return;
 
-            return updatedCols;
-        });
+        // check that item id exists within the source column
+        const itemIndex = props.data[sourceColumnIndex].itemList.findIndex((x) => x.id === itemId);
+        if (itemIndex < 0) return;
+
+        const newItemList = [...props.data[sourceColumnIndex].itemList];
+        const removedItem = newItemList.splice(itemIndex, 1);
+
+        updatedState[sourceColumnIndex] = {
+            ...props.data[sourceColumnIndex],
+            itemList: newItemList,
+        };
+
+        updatedState[sourceColumnIndex + 1] = {
+            ...props.data[sourceColumnIndex + 1],
+            itemList: [{ ...removedItem[0] }, ...props.data[sourceColumnIndex + 1].itemList],
+        };
+
+        props.onUpdateAnnotationContainer(updatedState);
     };
 
     return (
         <DragDropContext onDragEnd={handleDragEnd}>
             <Box sx={{ marginBottom: '1.5rem' }}>
-                <Button color="primary" variant="outlined" onClick={handleClickAddColumn}>
+                <Button color="primary" variant="outlined" onClick={() => props.onAddColumn()}>
                     add column
                 </Button>
             </Box>
             <Box sx={{ display: 'flex', width: '100%' }}>
-                {(data || []).map((column, index) => (
+                {(props.data || []).map((column) => (
                     <Column
-                        onUpdateItems={handleUpdateItems}
-                        onCreateTag={handleCreateTag}
-                        onAddTag={handleAddTag}
-                        onDeleteTag={handleDeleteTag}
                         key={column.columnId}
+                        items={column.itemList}
                         columnId={column.columnId}
                         columnTitle={column.columnTitle}
-                        items={column.itemList}
-                        tags={tags}
+                        onCreateTag={props.onCreateTag}
+                        onSetItem={props.onSetItem}
+                        tags={props.tags}
+                        onInclude={handleInclude}
                     />
                 ))}
             </Box>

@@ -20,6 +20,7 @@ import NavbarPopupMenu from '../NavbarPopupMenu/NavbarPopupMenu';
 import React, { useState } from 'react';
 import MenuIcon from '@mui/icons-material/Menu';
 import NavbarPopupMenuStyles from '../NavbarPopupMenu/NavbarPopupMenu.styles';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
 const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
     const { isAuthenticated } = useAuth0();
@@ -53,7 +54,66 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
                     <Typography sx={NavbarToolbarStyles.logoText}>neurosynth compose</Typography>
                 </Badge>
             </Box>
+
             <Box sx={[NavbarToolbarStyles.navLinksContainer, NavbarStyles.mdUp]}>
+                <Button
+                    sx={[
+                        {
+                            color: 'primary.contrastText',
+                            backgroundColor: 'primary.light',
+                        },
+                        NavbarToolbarStyles.button,
+                    ]}
+                    variant="contained"
+                    startIcon={<AddCircleOutlineIcon />}
+                >
+                    new project
+                </Button>
+                <Button
+                    sx={NavbarToolbarStyles.button}
+                    onClick={isAuthenticated ? props.logout : props.login}
+                >
+                    <Typography
+                        variant="subtitle2"
+                        sx={[
+                            NavbarToolbarStyles.link,
+                            isAuthenticated ? {} : { color: 'warning.main' },
+                            NavbarPopupMenuStyles.button,
+                        ]}
+                    >
+                        {isAuthenticated ? 'Logout' : 'Sign in/Sign up'}
+                    </Typography>
+                </Button>
+                <Link
+                    sx={[
+                        NavbarToolbarStyles.button,
+                        { borderRadius: '4px', textDecoration: 'none' },
+                    ]}
+                    target="_blank"
+                    href="https://neurostuff.github.io/neurostore/"
+                >
+                    <Typography
+                        data-tour="AuthenticatedLandingPage-2"
+                        variant="subtitle2"
+                        sx={[NavbarToolbarStyles.link, NavbarPopupMenuStyles.button]}
+                    >
+                        HELP
+                        <OpenInNewIcon sx={{ marginLeft: '8px', fontSize: '1.2rem' }} />
+                    </Typography>
+                </Link>
+                {/* <NavbarPopupMenu
+                    key={navOption.label}
+                    navOption={navOption}
+                    menuPosition={{ vertical: 'bottom', horizontal: 'left' }}
+                    styling={{
+                        ...NavbarToolbarStyles.button,
+                        padding: '0px 8px',
+                        color: 'primary.contrastText',
+                    }}
+                /> */}
+            </Box>
+
+            {/* <Box sx={[NavbarToolbarStyles.navLinksContainer, NavbarStyles.mdUp]}>
                 {props.navOptions.map((navOption) => (
                     <NavbarPopupMenu
                         key={navOption.label}
@@ -155,7 +215,7 @@ const NavbarToolbar: React.FC<NavbarArgs> = (props) => {
                         </Button>
                     </ListItem>
                 </List>
-            </Drawer>
+            </Drawer> */}
         </Toolbar>
     );
 };

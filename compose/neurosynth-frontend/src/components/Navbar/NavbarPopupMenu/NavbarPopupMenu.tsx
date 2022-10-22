@@ -28,7 +28,7 @@ const NavbarPopupMenu: React.FC<INavbarPopupMenu> = (props) => {
         if (shouldSee)
             menuItems.push(
                 <MenuItem
-                    key={navOption.label}
+                    key={navOption.path}
                     to={navOption.path}
                     component={NavLink}
                     exact

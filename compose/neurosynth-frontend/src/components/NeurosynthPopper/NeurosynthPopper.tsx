@@ -13,10 +13,10 @@ const NeurosynthPopper: React.FC<INeurosynthPopper> = (props) => {
     return (
         <Popper
             className="tour-highlighted-popper"
-            style={{ zIndex: 1 }}
+            style={{ zIndex: 1500 }}
             anchorEl={anchorElement}
             open={open}
-            disablePortal
+            // disablePortal
             transition
             placement={placement}
         >

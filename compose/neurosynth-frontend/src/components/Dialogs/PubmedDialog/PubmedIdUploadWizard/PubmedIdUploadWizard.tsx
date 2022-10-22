@@ -1,4 +1,5 @@
 import { Box, Step, StepLabel, Stepper } from '@mui/material';
+import { ITag } from 'components/AnnotationContainer/DraggableItem/DraggableItem';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { IPubmedArticle } from 'hooks/requests/useGetPubmedIDs';
 import MetaAnalysisBuilderPageStyles from 'pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage.styles';
@@ -9,7 +10,9 @@ import PubmedWizardUploadStep from './PubmedWizardUploadStep/PubmedWizardUploadS
 
 interface IPubmedIdUploadWizard {
     onClose: (event: any) => void;
-    onUploadIds: (pubmedIds: IPubmedArticle[]) => void;
+    onCreateTag: (tagName: string, isExclusion: boolean) => ITag;
+    allTags: ITag[];
+    onUploadIds: (pubmedIds: IPubmedArticle[], tags: ITag[]) => void;
 }
 
 const PubmedIdUploadWizard: React.FC<IPubmedIdUploadWizard> = (props) => {
@@ -21,6 +24,11 @@ const PubmedIdUploadWizard: React.FC<IPubmedIdUploadWizard> = (props) => {
 
     // STEP 2
     const [selectedPubmedArticles, setSelectedPubmedArticles] = useState<IPubmedArticle[]>([]); // pubmed articles that have been included
+    const [selectedTags, setSelectedTags] = useState<ITag[]>([]);
+
+    const handleUpdateTags = (tags: ITag[]) => {
+        setSelectedTags(tags);
+    };
 
     const handlePubmedIdsInputted = (inputtedIds: string) => {
         setUploadedIds(inputtedIds);
@@ -77,8 +85,12 @@ const PubmedIdUploadWizard: React.FC<IPubmedIdUploadWizard> = (props) => {
 
             {activeStep === 1 && (
                 <PubmedWizardConfirmStep
+                    allTags={props.allTags}
                     onChangeStep={handleNavigation}
+                    onCreateTag={props.onCreateTag}
                     onUploadArticles={handleArticlesSelected}
+                    selectedTags={selectedTags}
+                    onUpdateTags={handleUpdateTags}
                     pubmedIds={uploadedFile?.uploadedIDs || uploadedIdsToStringArr}
                 />
             )}
@@ -87,6 +99,7 @@ const PubmedIdUploadWizard: React.FC<IPubmedIdUploadWizard> = (props) => {
                 <PubmedWizardCompleteStep
                     onUploadPubmedArticles={props.onUploadIds}
                     onClose={props.onClose}
+                    selectedTags={selectedTags}
                     selectedPubmedArticles={selectedPubmedArticles}
                 />
             )}

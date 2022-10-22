@@ -15,7 +15,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import { IDraggableItem } from 'components/AnnotationContainer/DraggableItem/DraggableItem';
+import { IDraggableItem, ITag } from 'components/AnnotationContainer/DraggableItem/DraggableItem';
 import { IPubmedArticle } from 'hooks/requests/useGetPubmedIDs';
 import React, { useEffect, useState } from 'react';
 import AnnotateArticleListItem from './AnnotateArticleSummary/AnnotateArticleListItem';
@@ -23,13 +23,16 @@ import AnnotateArticleSummary from './AnnotateArticleSummary/AnnotateArticleSumm
 import CloseIcon from '@mui/icons-material/Close';
 
 interface IAnnotateDialog {
+    columnId: string;
     items: IDraggableItem[];
     isOpen: boolean;
     onCloseDialog: () => void;
-    tags: { label: string; id: string }[];
-    onUpdateItems: (items: IDraggableItem[]) => void;
-    onCreateTag: (tag: string) => { label: string; id: string };
+    allExclusions: ITag[];
+    allTags: ITag[];
+    onCreateTag: (tag: string, isExclusion: boolean) => ITag;
+    onSetItem: (columnId: string, item: IDraggableItem) => void;
     selectedItemIndex?: number;
+    onInclude: (columnId: string, itemId: string) => void;
 }
 
 export type IPubmedArticleItem = IPubmedArticle & { included: boolean | undefined };
@@ -51,63 +54,21 @@ const AnnotateDialog: React.FC<IAnnotateDialog> = (props) => {
         }
     }, [props.selectedItemIndex]);
 
-    const [selectedItemIndex, setSelectedItemIndex] = useState<number>(0);
+    const handleSetItem = (item: IDraggableItem) => {
+        props.onSetItem(props.columnId, item);
+    };
+
+    const [selectedItemIndex, setSelectedItemIndex] = useState(0);
     const selectedItem = items[selectedItemIndex];
 
-    const handleUpdate = () => {
-        props.onUpdateItems(items);
-        props.onCloseDialog();
-    };
-
-    const handleAddTag = (
-        itemId: string,
-        tag: {
-            id: string;
-            label: string;
-        }
-    ) => {
-        setItems((prev) => {
-            const updatedItems = [...prev];
-            const itemIndex = updatedItems.findIndex((x) => x.id === itemId);
-
-            if (itemIndex < 0) return prev;
-
-            updatedItems[itemIndex] = {
-                ...updatedItems[itemIndex],
-                tag: tag,
-            };
-
-            return updatedItems;
-        });
-    };
-
-    const handleDeleteTag = (id: string) => {
-        setItems((prev) => {
-            const updatedList = [...prev];
-
-            const itemIndex = updatedList.findIndex((x) => x.id === id);
-            if (itemIndex < 0) return prev;
-
-            updatedList[itemIndex] = {
-                ...updatedList[itemIndex],
-                tag: undefined,
-            };
-
-            return updatedList;
-        });
-    };
-
-    const handleCreateTag = (itemId: string, tagName: string) => {
-        const tag = props.onCreateTag(tagName);
-
-        handleAddTag(itemId, tag);
+    const handleMoveToNextItem = () => {
+        setSelectedItemIndex((prev) => (prev + 1 < items.length ? prev + 1 : prev));
     };
 
     return (
-        <Dialog maxWidth="lg" open={props.isOpen} onClose={() => props.onCloseDialog()}>
+        <Dialog maxWidth="xl" open={props.isOpen} onClose={() => props.onCloseDialog()}>
             <DialogTitle
                 sx={{
-                    minWidth: '600px',
                     padding: '0px 2.5rem',
                     paddingTop: '1.5rem',
                     marginBottom: '1rem',
@@ -127,10 +88,13 @@ const AnnotateDialog: React.FC<IAnnotateDialog> = (props) => {
 
             {items?.length > 0 ? (
                 <DialogContent sx={{ padding: '0 2.5rem', paddingBottom: '2rem' }}>
-                    <Box sx={{ display: 'flex', marginBottom: '2rem', maxHeight: '500px' }}>
-                        <Box sx={{ width: '30%', display: 'flex', flexDirection: 'column' }}>
+                    <Box sx={{ display: 'flex', marginBottom: '2rem', maxHeight: '550px' }}>
+                        <Box sx={{ width: '20%', display: 'flex', flexDirection: 'column' }}>
                             <FormControl sx={{ width: '100%', marginTop: '2px' }}>
-                                <OutlinedInput size="small" endAdornment={<SearchIcon />} />
+                                <OutlinedInput
+                                    size="small"
+                                    endAdornment={<SearchIcon color="primary" />}
+                                />
                             </FormControl>
                             <Divider sx={{ margin: '1rem 0' }} />
                             <Paper elevation={1} sx={{ overflowY: 'scroll', flexGrow: 1 }}>
@@ -142,7 +106,8 @@ const AnnotateDialog: React.FC<IAnnotateDialog> = (props) => {
                                                 (article?.id || null)
                                             }
                                             key={index}
-                                            tag={article.tag}
+                                            exclusion={article.exclusion}
+                                            tags={article.tags}
                                             index={index}
                                             onSelect={(newIndex) => setSelectedItemIndex(newIndex)}
                                             item={article}
@@ -151,22 +116,26 @@ const AnnotateDialog: React.FC<IAnnotateDialog> = (props) => {
                                 </List>
                             </Paper>
                         </Box>
-                        <Box sx={{ width: '70%' }}>
+                        {/* if width is any smaller, it ruins display of elements in the summary page */}
+                        <Box sx={{ width: '80%', minWidth: '565px' }}>
                             <AnnotateArticleSummary
-                                tags={props.tags}
-                                onAddTag={handleAddTag}
-                                onCreateTag={handleCreateTag}
-                                onDeleteTag={handleDeleteTag}
+                                onInclude={(itemId) => props.onInclude(props.columnId, itemId)}
+                                exclusions={props.allExclusions}
+                                allTags={props.allTags}
+                                onCreateTag={props.onCreateTag}
+                                onSetItem={handleSetItem}
                                 item={selectedItem}
+                                onMoveToNextItem={handleMoveToNextItem}
                             />
                         </Box>
                     </Box>
-                    <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
-                        <Button onClick={() => props.onCloseDialog()} color="error" variant="text">
+                    <Box sx={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button
+                            onClick={() => props.onCloseDialog()}
+                            color="error"
+                            variant="contained"
+                        >
                             close
-                        </Button>
-                        <Button variant="contained" onClick={() => handleUpdate()}>
-                            save
                         </Button>
                     </Box>
                 </DialogContent>

@@ -2,10 +2,10 @@ import { Droppable } from '@hello-pangea/dnd';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
-import DraggableItem, { IDraggableItem } from '../DraggableItem/DraggableItem';
+import DraggableItem, { IDraggableItem, ITag } from '../DraggableItem/DraggableItem';
 import Paper from '@mui/material/Paper';
 import { useState } from 'react';
-import { Button } from '@mui/material';
+import { Button, ListItem, ListItemText } from '@mui/material';
 import AnnotateDialog from 'components/Dialogs/AnnotateDialog/AnnotateDialog';
 import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 
@@ -13,26 +13,16 @@ interface IColumn {
     items: IDraggableItem[];
     columnId: string;
     columnTitle: string;
-    onUpdateItems: (colId: string, item: IDraggableItem[]) => void;
-    onDeleteTag: (colId: string, itemId: string) => void;
-    onCreateTag: (tagName: string) => { id: string; label: string };
-    onAddTag: (colId: string, itemId: string, tag: { id: string; label: string }) => void;
-    tags: { label: string; id: string }[];
+    onCreateTag: (tagName: string, isExclusion: boolean) => ITag;
+    onSetItem: (columnId: string, item: IDraggableItem) => void;
+    tags: ITag[];
+    onInclude: (columnId: string, itemId: string) => void;
 }
 
 const Column: React.FC<IColumn> = (props) => {
     const [filterDialogIsOpen, setFilterDialogIsOpen] = useState(false);
     const [initialFilterSelectedItemIndex, setInitialFilterSelectedItemIndex] = useState(0);
-    const [selectedTag, setSelectedTag] = useState<{ id: string; label: string }>();
-
-    const handleAddTag = (itemId: string, tag: { id: string; label: string }) => {
-        props.onAddTag(props.columnId, itemId, tag);
-    };
-
-    const handleCreateTag = (itemId: string, tagName: string) => {
-        const tag = props.onCreateTag(tagName);
-        props.onAddTag(props.columnId, itemId, tag);
-    };
+    const [selectedTag, setSelectedTag] = useState<ITag>();
 
     const handleCloseFilterDialog = () => {
         setFilterDialogIsOpen(false);
@@ -44,6 +34,21 @@ const Column: React.FC<IColumn> = (props) => {
         if (itemIndex < 0) return;
         setInitialFilterSelectedItemIndex(itemIndex);
         setFilterDialogIsOpen(true);
+    };
+
+    const handleShouldDisplayItem = (item: IDraggableItem) => {
+        if (selectedTag === undefined) return true;
+
+        // show uncategorized items
+        if (selectedTag.id === 'fordemopurposesonly') {
+            return item.exclusion === undefined && item.tags.length === 0;
+        }
+
+        if (selectedTag.isExclusion) {
+            return item.exclusion !== undefined && item.exclusion.id === selectedTag.id;
+        } else {
+            return item.tags.length > 0 && item.tags.findIndex((x) => x.id === selectedTag.id) >= 0;
+        }
     };
 
     return (
@@ -68,22 +73,37 @@ const Column: React.FC<IColumn> = (props) => {
             </Button>
 
             <AnnotateDialog
-                onCreateTag={props.onCreateTag}
-                tags={props.tags}
-                onUpdateItems={(items) => props.onUpdateItems(props.columnId, items)}
-                isOpen={filterDialogIsOpen}
-                items={props.items}
-                onCloseDialog={handleCloseFilterDialog}
                 selectedItemIndex={initialFilterSelectedItemIndex}
+                isOpen={filterDialogIsOpen}
+                onCloseDialog={handleCloseFilterDialog}
+                allExclusions={props.tags.filter((x) => x.isExclusion)}
+                allTags={props.tags.filter((x) => !x.isExclusion)}
+                columnId={props.columnId}
+                onCreateTag={props.onCreateTag}
+                onSetItem={props.onSetItem}
+                items={props.items}
+                onInclude={props.onInclude}
             />
 
             <Paper elevation={0} sx={{ width: '100%' }}>
                 <NeurosynthAutocomplete
                     noOptionsText="No tags"
                     required={false}
+                    renderOption={(params, option) => (
+                        <ListItem {...params} key={option?.id}>
+                            <ListItemText
+                                sx={{ color: option.isExclusion ? 'error.dark' : '' }}
+                                primary={option?.label || ''}
+                            />
+                        </ListItem>
+                    )}
                     value={selectedTag}
-                    label="filter by tag"
-                    options={[...props.tags, { label: 'untagged', id: 'fordemopurposesonly' }]}
+                    label="filter"
+                    size="small"
+                    options={[
+                        ...props.tags,
+                        { label: 'untagged', id: 'fordemopurposesonly', isExclusion: false },
+                    ]}
                     isOptionEqualToValue={(option, value) => option?.id === value?.id}
                     getOptionLabel={(option) => option?.label || ''}
                     onChange={(_event, newValue, _reason) => {
@@ -111,14 +131,15 @@ const Column: React.FC<IColumn> = (props) => {
                         )}
                         {props.items.map((item, index) => (
                             <DraggableItem
+                                isVisible={handleShouldDisplayItem(item)}
                                 onSelectItem={handleSelectItem}
-                                onCreateTag={handleCreateTag}
-                                onAddTag={handleAddTag}
-                                tags={props.tags}
-                                onDeleteTag={(id) => props.onDeleteTag(props.columnId, id)}
+                                onCreateTag={props.onCreateTag}
+                                allExclusions={props.tags.filter((x) => x.isExclusion)}
+                                allInfoTags={props.tags.filter((x) => !x.isExclusion)}
+                                onSetItem={(item) => props.onSetItem(props.columnId, item)}
                                 key={item.id}
-                                {...item}
                                 index={index}
+                                item={item}
                             />
                         ))}
                         {provided.placeholder}
