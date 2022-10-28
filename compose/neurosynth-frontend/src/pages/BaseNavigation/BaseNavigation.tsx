@@ -5,6 +5,9 @@ import LandingPage from '../LandingPage/LandingPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import NotFoundPage from 'pages/NotFound/NotFoundPage';
+import ProjectPage from 'pages/Projects/ProjectPage/ProjectPage';
+import CurationPage from 'pages/CurationPage/CurationPage';
+import ProjectsPage from 'pages/Projects/UserProjectsPage/UserProjectsPage';
 
 const EditAnnotationsPage = React.lazy(
     () => import('../Annotations/EditAnnotationsPage/EditAnnotationsPage')
@@ -56,16 +59,36 @@ const BaseNavigation: React.FC = (_props) => {
                 <Route path="/" exact={true}>
                     <LandingPage />
                 </Route>
+                <Route path="/projects" exact={true}>
+                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                        <ProjectsPage />
+                    </Box>
+                </Route>
+                <Route path="/projects/:projectId/curation" exact={true}>
+                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                        <CurationPage />
+                    </Box>
+                </Route>
+                <Route path="/projects/:projectId" exact={true}>
+                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                        <ProjectPage />
+                    </Box>
+                </Route>
+                <Route path="/studies" exact={true}>
+                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                        <PublicStudiesPage />
+                    </Box>
+                </Route>
                 <Route path="/studysets" exact={true}>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <PublicStudysetsPage />
                     </Box>
                 </Route>
-                <Route path="/userstudysets" exact={true}>
+                {/* <Route path="/userstudysets" exact={true}>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <UserStudysetsPage />
                     </Box>
-                </Route>
+                </Route> */}
                 <Route path="/annotations/:annotationId" exact={true}>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <EditAnnotationsPage />
@@ -76,21 +99,16 @@ const BaseNavigation: React.FC = (_props) => {
                         <StudysetPage />
                     </Box>
                 </Route>
-                <Route path="/studies" exact={true}>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <PublicStudiesPage />
-                    </Box>
-                </Route>
-                <Route path="/userstudies" exact={true}>
+                {/* <Route path="/userstudies" exact={true}>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <UserStudiesPage />
                     </Box>
-                </Route>
-                <Route path="/meta-analyses/build" exact={true}>
+                </Route> */}
+                {/* <Route path="/meta-analyses/build" exact={true}>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <MetaAnalysisBuilderPage />
                     </Box>
-                </Route>
+                </Route> */}
                 <Route path="/studies/:studyId" exact={true}>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <StudyPage />
@@ -111,11 +129,11 @@ const BaseNavigation: React.FC = (_props) => {
                         <MetaAnalysisPage />
                     </Box>
                 </Route>
-                <Route path="/usermeta-analyses" exact={true}>
+                {/* <Route path="/usermeta-analyses" exact={true}>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <UserMetaAnalysesPage />
                     </Box>
-                </Route>
+                </Route> */}
                 <Route path="*">
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <NotFoundPage />

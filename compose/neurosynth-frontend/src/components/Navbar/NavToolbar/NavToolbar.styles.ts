@@ -22,6 +22,14 @@ const NavToolbarStyles: Style = {
             xl: '1rem',
         },
     },
+    link: {
+        textDecoration: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        color: 'primary.contrastText',
+        padding: '0 8px',
+        whiteSpace: 'nowrap',
+    },
 };
 
 export default NavToolbarStyles;

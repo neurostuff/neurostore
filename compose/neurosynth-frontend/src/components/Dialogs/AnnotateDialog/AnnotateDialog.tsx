@@ -43,6 +43,10 @@ const AnnotateDialog: React.FC<IAnnotateDialog> = (props) => {
     useEffect(() => {
         if (props.items) {
             setItems(props.items);
+
+            if (selectedItemIndex && selectedItemIndex >= props.items.length) {
+                setSelectedItemIndex((prev) => prev - 1);
+            }
         }
     }, [props.items]);
 
@@ -63,6 +67,10 @@ const AnnotateDialog: React.FC<IAnnotateDialog> = (props) => {
 
     const handleMoveToNextItem = () => {
         setSelectedItemIndex((prev) => (prev + 1 < items.length ? prev + 1 : prev));
+    };
+
+    const handleInclude = (itemId: string) => {
+        props.onInclude(props.columnId, itemId);
     };
 
     return (
@@ -119,7 +127,7 @@ const AnnotateDialog: React.FC<IAnnotateDialog> = (props) => {
                         {/* if width is any smaller, it ruins display of elements in the summary page */}
                         <Box sx={{ width: '80%', minWidth: '565px' }}>
                             <AnnotateArticleSummary
-                                onInclude={(itemId) => props.onInclude(props.columnId, itemId)}
+                                onInclude={handleInclude}
                                 exclusions={props.allExclusions}
                                 allTags={props.allTags}
                                 onCreateTag={props.onCreateTag}

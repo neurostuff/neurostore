@@ -14,7 +14,6 @@ export interface IAnnotationContainer {
 const AnnotationContainer: React.FC<{
     data: IAnnotationContainer[];
     tags: ITag[];
-    onAddColumn: () => void;
     onSetItem: (colId: string, item: IDraggableItem) => void;
     onUpdateAnnotationContainer: (handleUpdateAnnotationContainer: IAnnotationContainer[]) => void;
     onCreateTag: (tagName: string, isExclusion: boolean) => ITag;
@@ -103,11 +102,6 @@ const AnnotationContainer: React.FC<{
 
     return (
         <DragDropContext onDragEnd={handleDragEnd}>
-            <Box sx={{ marginBottom: '1.5rem' }}>
-                <Button color="primary" variant="outlined" onClick={() => props.onAddColumn()}>
-                    add column
-                </Button>
-            </Box>
             <Box sx={{ display: 'flex', width: '100%' }}>
                 {(props.data || []).map((column) => (
                     <Column
