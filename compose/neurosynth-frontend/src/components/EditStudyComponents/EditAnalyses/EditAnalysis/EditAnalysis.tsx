@@ -1,4 +1,4 @@
-import { Tabs, Tab, Box } from '@mui/material';
+import { Tabs, Tab, Box, Typography, Button } from '@mui/material';
 import React, { SyntheticEvent, useState } from 'react';
 import EditAnalysisDetails from './EditAnalysisDetails/EditAnalysisDetails';
 import EditAnalysisPoints from './EditAnalysisPoints/EditAnalysisPoints';
@@ -6,6 +6,8 @@ import EditAnalysisStyles from './EditAnalysis.styles';
 import EditAnalysisConditions from './EditAnalysisConditions/EditAnalysisConditions';
 import EditAnalysisImages from './EditAnalysisImages/EditAnalysisImages';
 import { AnalysisReturn, ConditionReturn, PointReturn } from 'neurostore-typescript-sdk';
+import TextEdit from 'components/TextEdit/TextEdit';
+import EditAnalysisAnnotations from './EditAnalysisAnnotations/EditAnalysisAnnotations';
 
 const EditAnalysis: React.FC<{ analysis: AnalysisReturn | undefined }> = (props) => {
     const [editTab, setEditTab] = useState(0);
@@ -14,24 +16,45 @@ const EditAnalysis: React.FC<{ analysis: AnalysisReturn | undefined }> = (props)
         <>
             {props.analysis && (
                 <>
-                    <Tabs
-                        sx={EditAnalysisStyles.editTabs}
-                        TabScrollButtonProps={{
-                            sx: {
-                                color: 'primary.main',
-                            },
-                        }}
-                        value={editTab}
-                        onChange={(_event: SyntheticEvent, newValue: number) => {
-                            setEditTab(newValue);
-                        }}
-                    >
-                        <Tab sx={[EditAnalysisStyles.tab]} value={0} label="Coordinates" />
-                        <Tab sx={[EditAnalysisStyles.tab]} value={1} label="Conditions" />
-                        <Tab sx={EditAnalysisStyles.tab} value={2} label="Images" />
-                        <Tab sx={[EditAnalysisStyles.tab]} value={3} label="General" />
-                    </Tabs>
                     <Box>
+                        <Box sx={{ marginBottom: '15px' }}>
+                            <TextEdit
+                                sx={{ fontSize: '1.5rem' }}
+                                textToEdit={props.analysis.name || ''}
+                                onSave={() => {}}
+                            >
+                                <Typography color="primary" variant="h5">
+                                    {props.analysis.name}
+                                </Typography>
+                            </TextEdit>
+                            {props.analysis.description && (
+                                <TextEdit
+                                    textToEdit={props.analysis.description || ''}
+                                    onSave={() => {}}
+                                >
+                                    <Typography sx={{ color: 'muted.main' }}>
+                                        {props.analysis.description}
+                                    </Typography>
+                                </TextEdit>
+                            )}
+                        </Box>
+                        <Tabs
+                            sx={EditAnalysisStyles.editTabs}
+                            TabScrollButtonProps={{
+                                sx: {
+                                    color: 'primary.main',
+                                },
+                            }}
+                            value={editTab}
+                            onChange={(_event: SyntheticEvent, newValue: number) => {
+                                setEditTab(newValue);
+                            }}
+                        >
+                            <Tab sx={[EditAnalysisStyles.tab]} value={0} label="Coordinates" />
+                            <Tab sx={[EditAnalysisStyles.tab]} value={1} label="Conditions" />
+                            <Tab sx={[EditAnalysisStyles.tab]} value={2} label="Annotations" />
+                            <Tab sx={EditAnalysisStyles.tab} value={3} label="Images" />
+                        </Tabs>
                         {editTab === 0 && (
                             <EditAnalysisPoints
                                 analysisId={props.analysis.id}
@@ -49,15 +72,12 @@ const EditAnalysis: React.FC<{ analysis: AnalysisReturn | undefined }> = (props)
                                 weights={props.analysis.weights}
                             />
                         )}
-                        {editTab === 2 && <EditAnalysisImages />}
-                        {editTab === 3 && (
-                            <EditAnalysisDetails
-                                studyId={props.analysis.study || ''}
-                                analysisId={props.analysis.id || ''}
-                                name={props.analysis.name || ''}
-                                description={props.analysis.description || ''}
-                            />
-                        )}
+                        {editTab === 2 && <EditAnalysisAnnotations />}
+                        {editTab === 3 && <EditAnalysisImages />}
+
+                        <Button sx={{ marginTop: '1rem' }} variant="contained" color="error">
+                            Delete Analysis
+                        </Button>
                     </Box>
                 </>
             )}

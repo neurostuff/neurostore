@@ -19,14 +19,14 @@ interface INeurosynthAutocomplete<T> {
     required?: boolean;
     label: string;
     shouldDisable?: boolean;
-    isOptionEqualToValue: (option: T, value: T) => boolean;
+    isOptionEqualToValue?: (option: T, value: T) => boolean;
     renderOption?: (
         props: React.HTMLAttributes<HTMLLIElement>,
         option: any,
         state?: AutocompleteRenderOptionState
     ) => React.ReactNode;
     value: T;
-    getOptionLabel: (option: T) => string;
+    getOptionLabel?: (option: T) => string;
     onChange: (_event: any, newVal: T | null, _reason: any) => void;
     options: T[];
     sx?: SystemStyleObject;
@@ -48,10 +48,10 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
         shouldDisable = false,
         renderOption = undefined,
         value,
-        getOptionLabel,
+        getOptionLabel = undefined,
         onChange,
         options,
-        isOptionEqualToValue,
+        isOptionEqualToValue = undefined,
         sx = {},
         isLoading = false,
         isError = false,

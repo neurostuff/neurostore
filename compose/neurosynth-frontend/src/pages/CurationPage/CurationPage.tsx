@@ -11,8 +11,11 @@ import AnnotationContainer, {
 } from 'components/AnnotationContainer/AnnotationContainer';
 import { IPubmedArticle } from 'hooks/requests/useGetPubmedIDs';
 import { IDraggableItem, ITag } from 'components/AnnotationContainer/DraggableItem/DraggableItem';
+import { useHistory } from 'react-router-dom';
+import BackButton from 'components/Buttons/BackButton/BackButton';
 
 const CurationPage: React.FC = (props) => {
+    const history = useHistory();
     const [createDetailsIsOpen, setCreateDetailsIsOpen] = useState(false);
     const [pubmedDialogIsOpen, setPubmedDialogIsOpen] = useState(false);
 
@@ -159,6 +162,15 @@ const CurationPage: React.FC = (props) => {
             isError={false}
             errorMessage="There was an error getting the studyset"
         >
+            <Box sx={{ marginBottom: '1rem' }}>
+                <BackButton
+                    sx={{ fontSize: 'inherit' }}
+                    path="/projects/1"
+                    text="Back"
+                    color="secondary"
+                    variant="outlined"
+                />
+            </Box>
             <Box
                 data-tour="StudysetPage-2"
                 sx={{ display: 'flex', marginBottom: '1rem', width: '100%' }}

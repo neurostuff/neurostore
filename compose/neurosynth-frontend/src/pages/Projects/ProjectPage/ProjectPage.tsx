@@ -14,9 +14,14 @@ import CurationStep from 'components/ProjectComponents/CurationStep/CurationStep
 import ExtractionStep from 'components/ProjectComponents/ExtractionStep/ExtractionStep';
 import FiltrationStep from 'components/ProjectComponents/FiltrationStep/FiltrationStep';
 import AlgorithmStep from 'components/ProjectComponents/AlgorithmStep/AlgorithmStep';
+import { Tabs, Tab } from '@mui/material';
 
 const ProjectPage: React.FC = (props) => {
     const [activeStep, setActiveStep] = useState(0);
+
+    const [extractionIsDisabled, setExtractionIsDisabled] = useState(true);
+    const [filtrationIsDisabled, setFiltrationIsDisabled] = useState(true);
+    const [algorithmIsDisabled, setAlgorithmIsDisabled] = useState(true);
 
     const handleNext = () => {
         setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -39,6 +44,19 @@ const ProjectPage: React.FC = (props) => {
                     textToEdit="My new project demo"
                 >
                     <Typography variant="h4">My new project demo</Typography>
+                    <div style={{ position: 'absolute', right: 0 }}>
+                        <Button onClick={() => setExtractionIsDisabled(false)}>
+                            enable extraction (for demo purposes)
+                        </Button>
+                        <br />
+                        <Button onClick={() => setFiltrationIsDisabled(false)}>
+                            enable filtration (for demo purposes)
+                        </Button>
+                        <br />
+                        <Button onClick={() => setAlgorithmIsDisabled(false)}>
+                            enable algorithm (for demo purposes)
+                        </Button>
+                    </div>
                 </TextEdit>
                 <TextEdit
                     onSave={() => {}}
@@ -52,20 +70,21 @@ const ProjectPage: React.FC = (props) => {
                 </TextEdit>
             </Box>
 
+            <Tabs sx={{ marginBottom: '1rem' }} value={0}>
+                <Tab value={0} label="Build Meta-Analysis" />
+                <Tab value={1} disabled label="View-Meta-Analysis" />
+            </Tabs>
+
             <Stepper
                 activeStep={activeStep}
                 orientation="vertical"
                 sx={{ '.MuiStepConnector-root': { marginLeft: '20px' } }}
             >
                 <CurationStep />
-                <ExtractionStep />
-                <FiltrationStep />
-                <AlgorithmStep />
+                <ExtractionStep disabled={extractionIsDisabled} />
+                <FiltrationStep disabled={filtrationIsDisabled} />
+                <AlgorithmStep disabled={algorithmIsDisabled} />
             </Stepper>
-            {/* <Box>
-                <Button onClick={() => handleBack()}>prev</Button>
-                <Button onClick={() => handleNext()}>next</Button>
-            </Box> */}
         </Box>
     );
 };

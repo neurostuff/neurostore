@@ -7,8 +7,6 @@ import {
     OutlinedInput,
     List,
     Paper,
-    TextField,
-    InputLabel,
     FormControl,
     Typography,
 } from '@mui/material';
@@ -39,6 +37,7 @@ export type IPubmedArticleItem = IPubmedArticle & { included: boolean | undefine
 
 const AnnotateDialog: React.FC<IAnnotateDialog> = (props) => {
     const [items, setItems] = useState(props.items);
+    const [selectedItemIndex, setSelectedItemIndex] = useState(0);
 
     useEffect(() => {
         if (props.items) {
@@ -48,7 +47,7 @@ const AnnotateDialog: React.FC<IAnnotateDialog> = (props) => {
                 setSelectedItemIndex((prev) => prev - 1);
             }
         }
-    }, [props.items]);
+    }, [props.items, selectedItemIndex]);
 
     useEffect(() => {
         if (props.selectedItemIndex) {
@@ -62,7 +61,6 @@ const AnnotateDialog: React.FC<IAnnotateDialog> = (props) => {
         props.onSetItem(props.columnId, item);
     };
 
-    const [selectedItemIndex, setSelectedItemIndex] = useState(0);
     const selectedItem = items[selectedItemIndex];
 
     const handleMoveToNextItem = () => {

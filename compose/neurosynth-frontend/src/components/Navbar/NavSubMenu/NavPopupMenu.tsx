@@ -37,7 +37,12 @@ const NavPopupMenu: React.FC<INavPopupMenu> = (props) => {
             <Menu open={open} onClose={handleCloseNavMenu} anchorEl={anchorEl}>
                 {props.options.map((option) => (
                     <ListItem key={option.label}>
-                        <ListItemButton onClick={() => option.onClick()}>
+                        <ListItemButton
+                            onClick={() => {
+                                option.onClick();
+                                handleCloseNavMenu();
+                            }}
+                        >
                             <ListItemText
                                 primary={option.label}
                                 secondary={option?.secondary || ''}

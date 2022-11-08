@@ -53,7 +53,7 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                             433 studies
                                         </Typography>
                                         <Typography gutterBottom variant="h5">
-                                            Study Curation
+                                            Study Curation Summary
                                         </Typography>
                                         <Box
                                             sx={{

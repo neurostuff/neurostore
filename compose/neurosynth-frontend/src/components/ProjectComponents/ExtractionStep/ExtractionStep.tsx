@@ -14,18 +14,21 @@ import {
 import { useState } from 'react';
 import ProjectComponentsStyles from '../ProjectComponents.styles';
 import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
-import NavPopupMenu from 'components/Navbar/NavSubMenu/NavPopupMenu';
+import { useHistory } from 'react-router-dom';
 
-interface IExtractionStep {}
+interface IExtractionStep {
+    disabled?: boolean;
+}
 
 const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
+    const history = useHistory();
     const [hasStudyset, setHasStudyset] = useState(false);
 
     return (
         <Step {...props} expanded={true} sx={ProjectComponentsStyles.step}>
             <StepLabel>
                 <Typography
-                    sx={{ color: hasStudyset ? 'primary.main' : 'muted.main' }}
+                    sx={{ color: props.disabled ? 'muted.main' : 'primary.main' }}
                     variant="h6"
                 >
                     <b>Extraction & Annotation</b>: Add relevent study data
@@ -44,27 +47,7 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                     </Typography>
 
                     <Box>
-                        {hasStudyset ? (
-                            <Card sx={[ProjectComponentsStyles.stepCard]}>
-                                <CardContent>
-                                    <Typography gutterBottom sx={{ color: 'muted.main' }}>
-                                        43 studies
-                                    </Typography>
-                                    <Typography gutterBottom variant="h5">
-                                        Studyset name
-                                    </Typography>
-                                    <Typography gutterBottom sx={{ color: 'muted.main' }}>
-                                        Lorem ipsum dolor sit amet consectetur, adipisicing elit.
-                                        Non, doloribus ex atque sit rem necessitatibus minima unde
-                                        harum exercitationem quas, autem alias quidem voluptate,
-                                        corrupti ullam repellat accusantium quia vel.
-                                    </Typography>
-                                </CardContent>
-                                <CardActions>
-                                    <Button variant="text">continue editing</Button>
-                                </CardActions>
-                            </Card>
-                        ) : (
+                        {props.disabled ? (
                             <Tooltip
                                 placement="right"
                                 title={
@@ -87,6 +70,34 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                     </Button>
                                 </Box>
                             </Tooltip>
+                        ) : (
+                            <Box sx={[ProjectComponentsStyles.stepCard]}>
+                                <Card>
+                                    <CardContent>
+                                        <Typography gutterBottom sx={{ color: 'muted.main' }}>
+                                            43 studies
+                                        </Typography>
+                                        <Typography gutterBottom variant="h5">
+                                            Studyset name
+                                        </Typography>
+                                        <Typography gutterBottom sx={{ color: 'muted.main' }}>
+                                            Lorem ipsum dolor sit amet consectetur, adipisicing
+                                            elit. Non, doloribus ex atque sit rem necessitatibus
+                                            minima unde harum exercitationem quas, autem alias
+                                            quidem voluptate, corrupti ullam repellat accusantium
+                                            quia vel.
+                                        </Typography>
+                                    </CardContent>
+                                    <CardActions>
+                                        <Button
+                                            onClick={() => history.push('/projects/1/extraction')}
+                                            variant="text"
+                                        >
+                                            continue editing
+                                        </Button>
+                                    </CardActions>
+                                </Card>
+                            </Box>
                         )}
                     </Box>
                 </Box>
@@ -94,5 +105,86 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
         </Step>
     );
 };
+
+{
+    /* <Box sx={[ProjectComponentsStyles.stepCard]}>
+    <Card sx={{ width: '100%', height: '100%' }}>
+        <CardContent>
+            <Typography gutterBottom sx={{ color: 'muted.main' }}>
+                433 studies
+            </Typography>
+            <Typography gutterBottom variant="h5">
+                Study Curation
+            </Typography>
+            <Box
+                sx={{
+                    marginTop: '1.5rem',
+                    display: 'flex',
+                }}
+            >
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                    }}
+                >
+                    <CheckIcon
+                        sx={{
+                            color: 'success.main',
+                            marginBottom: '5px',
+                        }}
+                    />
+                    <Typography sx={{ color: 'success.main' }}>30 included</Typography>
+                </Box>
+                <Box>
+                    <Divider sx={{ margin: '0 20px' }} orientation="vertical" />
+                </Box>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                    }}
+                >
+                    <QuestionMarkIcon
+                        sx={{
+                            color: 'warning.dark',
+                            marginBottom: '5px',
+                        }}
+                    />
+                    <Typography sx={{ color: 'warning.dark' }}>31 Uncategorized</Typography>
+                </Box>
+                <Box>
+                    <Divider sx={{ margin: '0 20px' }} orientation="vertical" />
+                </Box>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                    }}
+                >
+                    <CloseIcon
+                        sx={{
+                            color: 'error.dark',
+                            marginBottom: '5px',
+                        }}
+                    />
+                    <Typography sx={{ color: 'error.dark' }}>372 excluded</Typography>
+                </Box>
+            </Box>
+        </CardContent>
+        <CardActions>
+            <Button
+                onClick={() => history.push(`/projects/${params.projectId}/curation`)}
+                variant="text"
+            >
+                continue editing
+            </Button>
+        </CardActions>
+    </Card>
+</Box>; */
+}
 
 export default ExtractionStep;

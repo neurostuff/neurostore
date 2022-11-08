@@ -174,6 +174,7 @@ const DraggableItem: React.FC<{
                     >
                         {props.item.authors}
                     </Typography>
+                    <Typography variant="caption">{props.item.articleYear}</Typography>
                     <Box
                         sx={{
                             padding: '5px 0',

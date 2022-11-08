@@ -141,14 +141,6 @@ const StudyPage: React.FC = (props) => {
                         </Button>
                     </Box>
                 </Tooltip>
-                <Tooltip placement="top" title="click to add this study to one of your studysets">
-                    <Box sx={{ display: 'inline' }}>
-                        <StudysetsPopupMenu
-                            disabled={!isAuthenticated}
-                            study={data as StudyReturn}
-                        />
-                    </Box>
-                </Tooltip>
 
                 <Box sx={{ marginLeft: 'auto' }}>
                     <IconButton onClick={() => startTour()} color="primary">

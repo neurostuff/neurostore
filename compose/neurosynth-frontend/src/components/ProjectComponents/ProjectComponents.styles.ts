@@ -7,6 +7,7 @@ const ProjectComponentsStyles: Style = {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
+        minHeight: '230px',
     },
     getStartedContainer: {
         height: '230px',

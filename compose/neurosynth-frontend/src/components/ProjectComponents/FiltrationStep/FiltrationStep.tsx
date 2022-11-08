@@ -1,16 +1,35 @@
-import { StepProps, Step, StepLabel, Typography, StepContent, Box } from '@mui/material';
+import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
+import {
+    StepProps,
+    Step,
+    StepLabel,
+    Typography,
+    StepContent,
+    Box,
+    Tooltip,
+    Button,
+    Card,
+    CardContent,
+    CardActions,
+} from '@mui/material';
+import FilterDialog from 'components/Dialogs/FilterDialog/FilterDialog';
 import { useState } from 'react';
 import ProjectComponentsStyles from '../ProjectComponents.styles';
 
-interface IFiltrationStep {}
+interface IFiltrationStep {
+    disabled?: boolean;
+}
 
 const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
-    const [hasFilter, setHasFilter] = useState(false);
+    const [filterDialogIsOpen, setFilterDialogIsOpen] = useState(false);
 
     return (
         <Step {...props} expanded={true} sx={ProjectComponentsStyles.step}>
             <StepLabel>
-                <Typography sx={{ color: hasFilter ? 'primary.main' : 'muted.main' }} variant="h6">
+                <Typography
+                    sx={{ color: props.disabled ? 'muted.main' : 'primary.main' }}
+                    variant="h6"
+                >
                     <b>Filtration</b>: Select the analyses to include
                 </Typography>
             </StepLabel>
@@ -25,6 +44,82 @@ const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
                         In this step, select the analyses from each study that you want to include
                         in the meta-analysis based on your analysis annotations
                     </Typography>
+
+                    {props.disabled ? (
+                        <Tooltip
+                            placement="right"
+                            title={
+                                props.disabled ? 'You must complete the previous step first' : ''
+                            }
+                        >
+                            <Box
+                                sx={[
+                                    ProjectComponentsStyles.stepCard,
+                                    ProjectComponentsStyles.getStartedContainer,
+                                    { borderColor: props.disabled ? 'lightgray' : 'primary.main' },
+                                ]}
+                            >
+                                <Button
+                                    sx={{ width: '100%', height: '100%' }}
+                                    disabled
+                                    endIcon={<KeyboardArrowDown />}
+                                >
+                                    Filtration: get started
+                                </Button>
+                            </Box>
+                        </Tooltip>
+                    ) : (
+                        <Box sx={ProjectComponentsStyles.stepCard}>
+                            <Card sx={{ width: '100%', height: '100%' }}>
+                                <CardContent>
+                                    <Typography gutterBottom variant="h5">
+                                        Filtration Step
+                                    </Typography>
+                                    <Typography gutterBottom sx={{ color: 'muted.main' }}>
+                                        Filtering analyses where{' '}
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                backgroundColor: 'lightgray',
+                                                color: 'white',
+                                                fontWeight: 'bold',
+                                                padding: '3px',
+                                                borderRadius: '8px',
+                                            }}
+                                        >
+                                            included (default)
+                                        </Box>{' '}
+                                        is{' '}
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                backgroundColor: 'lightgray',
+                                                color: 'white',
+                                                fontWeight: 'bold',
+                                                padding: '3px',
+                                                whiteSpace: 'nowrap',
+                                                borderRadius: '8px',
+                                            }}
+                                        >
+                                            equal to true
+                                        </Box>
+                                    </Typography>
+                                    <FilterDialog
+                                        isOpen={filterDialogIsOpen}
+                                        onCloseDialog={() => setFilterDialogIsOpen(false)}
+                                    />
+                                </CardContent>
+                                <CardActions>
+                                    <Button
+                                        onClick={() => setFilterDialogIsOpen(true)}
+                                        variant="text"
+                                    >
+                                        modify filter
+                                    </Button>
+                                </CardActions>
+                            </Card>
+                        </Box>
+                    )}
                 </Box>
             </StepContent>
         </Step>
