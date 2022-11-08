@@ -22,25 +22,27 @@ describe(PAGE_NAME, () => {
         beforeEach(() => {
             cy.intercept('GET', `**/api/studies/*`, {
                 metadata: { total_count: 1000, unique_count: 1000 },
-                results: [...mockStudies(), ...mockStudies(), ...mockStudies()],
+                results: [...mockStudies()],
             }).as('studiesRequest');
         });
 
-        it('should make a correct request after selecting a different page of results', () => {
+        it.only('should make a correct request after selecting a different page of results', () => {
             cy.login('mocked')
                 // ARRANGE
                 .wait('@studiesRequest')
                 .visit(PATH)
                 .wait('@studiesRequest')
                 .get('button')
-                .contains('5')
-                // ACT
-                .click()
-                .click()
-                .wait('@studiesRequest')
-                // ASSERT
-                .its('request.url')
-                .should('contain', 'page=5');
+                .debug();
+
+            // .contains('5')
+            // // ACT
+            // .click()
+            // .click()
+            // .wait('@studiesRequest')
+            // // ASSERT
+            // .its('request.url')
+            // .should('contain', 'page=5');
         });
 
         it('should make a correct request when selecting a different number of items to display on a single page', () => {
