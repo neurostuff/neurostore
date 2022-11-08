@@ -90,6 +90,7 @@ class MetaAnalysis(BaseMixin, db.Model):
     internal_studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
     internal_annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
+    provenance = db.Column(db.JSON)
 
     specification = relationship("Specification", backref=backref("meta_analyses"))
     studyset = relationship("Studyset", backref=backref("meta_analyses"), lazy="joined")
