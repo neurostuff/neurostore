@@ -104,6 +104,7 @@ class AnnotationSchema(BaseSchema):
 class MetaAnalysisSchema(BaseSchema):
     name = fields.String(allow_none=True)
     description = fields.String(allow_none=True)
+    provenance = fields.Dict(allow_none=True)
     specification_id = StringOrNested(SpecificationSchema, data_key="specification")
     studyset = StringOrNested(StudysetSchema, metadata={'pluck': 'neurostore_id'}, dump_only=True)
     annotation = StringOrNested(
