@@ -31,9 +31,8 @@ describe(PAGE_NAME, () => {
             cy.wait('@studysetsRequest');
 
             cy.visit(PATH);
-            // eslint-disable-next-line cypress/no-unnecessary-waiting
-            cy.wait('@studysetsRequest').wait(500);
-            cy.get('button').contains('5');
+            cy.wait('@studysetsRequest');
+            cy.contains('button', '5');
 
             // cy.login('mocked')
             //     // ARRANGE

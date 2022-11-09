@@ -32,7 +32,7 @@ describe(PAGE_NAME, () => {
 
             cy.visit(PATH);
             cy.wait('@studiesRequest');
-            cy.get('button').contains('5');
+            cy.contains('button', '5');
 
             // cy.login('mocked')
             // ARRANGE
@@ -50,26 +50,26 @@ describe(PAGE_NAME, () => {
             //     .should('contain', 'page=5');
         });
 
-        it('should make a correct request when selecting a different number of items to display on a single page', () => {
-            cy.login('mocked')
-                // ARRANGE
-                .wait('@studiesRequest')
-                .visit(PATH)
-                .wait('@studiesRequest')
-                .get('body')
-                .contains('Rows per page')
-                .siblings()
-                .eq(1)
-                // ACT
-                .click()
-                .get('[role="option"]')
-                .contains('99')
-                .click()
-                // ASSERT
-                .wait('@studiesRequest')
-                .its('request.url')
-                .should('contain', 'page_size=99');
-        });
+        // it('should make a correct request when selecting a different number of items to display on a single page', () => {
+        //     cy.login('mocked')
+        //         // ARRANGE
+        //         .wait('@studiesRequest')
+        //         .visit(PATH)
+        //         .wait('@studiesRequest')
+        //         .get('body')
+        //         .contains('Rows per page')
+        //         .siblings()
+        //         .eq(1)
+        //         // ACT
+        //         .click()
+        //         .get('[role="option"]')
+        //         .contains('99')
+        //         .click()
+        //         // ASSERT
+        //         .wait('@studiesRequest')
+        //         .its('request.url')
+        //         .should('contain', 'page_size=99');
+        // });
 
         // it('should make a correct request when searching via the "All" option', () => {
         //     cy.login('mocked')
