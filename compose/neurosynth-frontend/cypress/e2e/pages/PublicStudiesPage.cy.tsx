@@ -32,7 +32,7 @@ describe(PAGE_NAME, () => {
             cy.visit(PATH).wait('@studiesRequest');
 
             cy.get('button').then((buttons) => {
-                cy.log(JSON.stringify(buttons));
+                cy.log(buttons as any);
                 cy.contains('5');
             });
             // cy.login('mocked')
