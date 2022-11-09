@@ -31,10 +31,7 @@ describe(PAGE_NAME, () => {
 
             cy.visit(PATH).wait('@studiesRequest');
 
-            cy.get('button').then((buttons) => {
-                cy.log(buttons as any);
-                cy.contains('5');
-            });
+            cy.get('li').contains('5');
             // cy.login('mocked')
             // ARRANGE
             // .wait('@studiesRequest')
