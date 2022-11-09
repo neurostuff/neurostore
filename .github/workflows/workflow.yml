@@ -457,6 +457,8 @@ jobs:
         CYPRESS_auth0ClientSecret: ${{ secrets.REACT_APP_AUTH0_CLIENT_SECRET }}
         CYPRESS_auth0Domain: ${{ secrets.REACT_APP_AUTH0_DOMAIN }}
         CYPRESS_auth0Audience: localhost
+        CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         REACT_APP_AUTH0_AUDIENCE: localhost
         REACT_APP_AUTH0_CLIENT_ID: ${{ secrets.REACT_APP_AUTH0_CLIENT_ID }}
         REACT_APP_AUTH0_DOMAIN: ${{ secrets.REACT_APP_AUTH0_DOMAIN }}
@@ -465,6 +467,7 @@ jobs:
       with:
         build: npm run build:dev
         start: npm run start-ci:dev
+        record: true
         browser: chrome
         wait-on: http://localhost:3000
         working-directory: /home/runner/work/neurostore/neurostore/compose/neurosynth-frontend
