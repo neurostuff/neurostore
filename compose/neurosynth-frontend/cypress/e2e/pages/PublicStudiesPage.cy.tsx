@@ -26,7 +26,7 @@ describe(PAGE_NAME, () => {
             }).as('studiesRequest');
         });
 
-        it.only('should make a correct request after selecting a different page of results', () => {
+        it('should make a correct request after selecting a different page of results', () => {
             cy.login('mocked')
                 // ARRANGE
                 .wait('@studiesRequest')
