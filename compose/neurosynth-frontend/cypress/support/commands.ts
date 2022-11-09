@@ -175,6 +175,8 @@ Cypress.Commands.add('addToLocalStorage', (key: string, value: string) => {
     });
 });
 
+Cypress.Commands.overwrite('log', (subject, message) => cy.task('log', message));
+
 declare global {
     namespace Cypress {
         interface Chainable {
