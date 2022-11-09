@@ -465,7 +465,6 @@ jobs:
       with:
         build: npm run build:dev
         start: npm run start-ci:dev
-        record: true
         browser: chrome
         wait-on: http://localhost:3000
         working-directory: /home/runner/work/neurostore/neurostore/compose/neurosynth-frontend
