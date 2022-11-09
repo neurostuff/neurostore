@@ -29,11 +29,8 @@ describe(PAGE_NAME, () => {
         it.only('should make a correct request after selecting a different page of results', () => {
             cy.login('mocked').wait('@studiesRequest');
 
-            cy.visit(PATH)
-                .wait('@studiesRequest')
-                .then(() => {
-                    cy.get('button').contains('5');
-                });
+            cy.visit(PATH).wait('@studiesRequest').wait('@studiesRequest');
+            cy.get('button').contains('5');
 
             // cy.login('mocked')
             // ARRANGE
