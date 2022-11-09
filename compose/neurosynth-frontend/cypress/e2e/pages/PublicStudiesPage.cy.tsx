@@ -26,40 +26,48 @@ describe(PAGE_NAME, () => {
             }).as('studiesRequest');
         });
 
-        it('should make a correct request after selecting a different page of results', () => {
-            cy.login('mocked')
-                // ARRANGE
-                .visit(PATH)
-                .get('button')
-                .contains('5')
-                // ACT
-                .click()
-                .click()
-                // ASSERT
-                .its('request.url')
-                .should('contain', 'page=5');
+        it.only('should make a correct request after selecting a different page of results', () => {
+            cy.login('mocked').wait('@studiesRequest');
+
+            cy.visit(PATH).wait('@studiesRequest');
+
+            cy.get('button').contains('5');
+            // cy.login('mocked')
+            // ARRANGE
+            // .wait('@studiesRequest')
+            // cy.visit(PATH)
+            //     .wait('@studiesRequest')
+            //     .get('button')
+            //     .contains('5')
+            //     // ACT
+            //     .click()
+            //     .click()
+            //     .wait('@studiesRequest')
+            //     // ASSERT
+            //     .its('request.url')
+            //     .should('contain', 'page=5');
         });
 
-        // it('should make a correct request when selecting a different number of items to display on a single page', () => {
-        //     cy.login('mocked')
-        //         // ARRANGE
-        //         .wait('@studiesRequest')
-        //         .visit(PATH)
-        //         .wait('@studiesRequest')
-        //         .get('body')
-        //         .contains('Rows per page')
-        //         .siblings()
-        //         .eq(1)
-        //         // ACT
-        //         .click()
-        //         .get('[role="option"]')
-        //         .contains('99')
-        //         .click()
-        //         // ASSERT
-        //         .wait('@studiesRequest')
-        //         .its('request.url')
-        //         .should('contain', 'page_size=99');
-        // });
+        it('should make a correct request when selecting a different number of items to display on a single page', () => {
+            cy.login('mocked')
+                // ARRANGE
+                .wait('@studiesRequest')
+                .visit(PATH)
+                .wait('@studiesRequest')
+                .get('body')
+                .contains('Rows per page')
+                .siblings()
+                .eq(1)
+                // ACT
+                .click()
+                .get('[role="option"]')
+                .contains('99')
+                .click()
+                // ASSERT
+                .wait('@studiesRequest')
+                .its('request.url')
+                .should('contain', 'page_size=99');
+        });
 
         // it('should make a correct request when searching via the "All" option', () => {
         //     cy.login('mocked')

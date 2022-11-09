@@ -5,8 +5,8 @@ import API from 'utils/api';
 const useGetStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: boolean) => {
     return useQuery(
         ['studies', { ...searchCriteria }],
-        () =>
-            API.NeurostoreServices.StudiesService.studiesGet(
+        () => {
+            return API.NeurostoreServices.StudiesService.studiesGet(
                 searchCriteria.genericSearchStr || undefined,
                 searchCriteria.sortBy,
                 searchCriteria.pageOfResults,
@@ -22,7 +22,8 @@ const useGetStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: boolea
                 searchCriteria.userId,
                 searchCriteria.dataType,
                 searchCriteria.studysetOwner || undefined
-            ),
+            );
+        },
         {
             enabled,
             select: (res) => {
