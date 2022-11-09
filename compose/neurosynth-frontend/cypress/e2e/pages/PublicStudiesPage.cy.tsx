@@ -27,10 +27,11 @@ describe(PAGE_NAME, () => {
         });
 
         it.only('should make a correct request after selecting a different page of results', () => {
-            cy.login('mocked').wait('@studiesRequest');
+            cy.login('mocked');
+            cy.wait('@studiesRequest');
 
-            // eslint-disable-next-line cypress/no-unnecessary-waiting
-            cy.visit(PATH).wait(3000);
+            cy.visit(PATH);
+            cy.wait('@studiesRequest');
             cy.get('button').contains('5');
 
             // cy.login('mocked')

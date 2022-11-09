@@ -27,20 +27,28 @@ describe(PAGE_NAME, () => {
         });
 
         it('should make a correct request after selecting a different page of results', () => {
-            cy.login('mocked')
-                // ARRANGE
-                .wait('@studysetsRequest')
-                .visit(PATH)
-                .wait('@studysetsRequest')
-                .get('button')
-                .contains('5')
-                // ACT
-                .click()
-                .click()
-                .wait('@studysetsRequest')
-                // ASSERT
-                .its('request.url')
-                .should('contain', 'page=5');
+            cy.login('mocked');
+            cy.wait('@studysetsRequest');
+
+            cy.visit(PATH);
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
+            cy.wait('@studysetsRequest').wait(500);
+            cy.get('button').contains('5');
+
+            // cy.login('mocked')
+            //     // ARRANGE
+            //     .wait('@studysetsRequest')
+            //     .visit(PATH)
+            //     .wait('@studysetsRequest')
+            //     .get('button')
+            //     .contains('5')
+            //     // ACT
+            //     .click()
+            //     .click()
+            //     .wait('@studysetsRequest')
+            //     // ASSERT
+            //     .its('request.url')
+            //     .should('contain', 'page=5');
         });
 
         it('should make a correct request when selecting a different number of items to display on a single page', () => {
