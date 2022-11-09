@@ -20,9 +20,9 @@ describe(PAGE_NAME, () => {
 
     describe('Search', () => {
         beforeEach(() => {
-            cy.intercept('GET', `**/api/studysets/*`, {
+            cy.intercept('GET', `**/api/studysets/**`, {
                 metadata: { total_count: 1000, unique_count: 1000 },
-                results: [...mockStudysets(), ...mockStudysets(), ...mockStudysets()],
+                results: [...mockStudysets()],
             }).as('studysetsRequest');
         });
 

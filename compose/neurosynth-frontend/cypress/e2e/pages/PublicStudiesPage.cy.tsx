@@ -33,16 +33,14 @@ describe(PAGE_NAME, () => {
                 .visit(PATH)
                 .wait('@studiesRequest')
                 .get('button')
-                .debug();
-
-            // .contains('5')
-            // // ACT
-            // .click()
-            // .click()
-            // .wait('@studiesRequest')
-            // // ASSERT
-            // .its('request.url')
-            // .should('contain', 'page=5');
+                .contains('5')
+                // ACT
+                .click()
+                .click()
+                .wait('@studiesRequest')
+                // ASSERT
+                .its('request.url')
+                .should('contain', 'page=5');
         });
 
         it('should make a correct request when selecting a different number of items to display on a single page', () => {

@@ -5,8 +5,8 @@ import API from 'utils/api';
 const useGetStudysets = (searchCriteria: Partial<SearchCriteria>, enabled?: boolean) => {
     return useQuery(
         ['studysets', { ...searchCriteria }],
-        () =>
-            API.NeurostoreServices.StudySetsService.studysetsGet(
+        () => {
+            return API.NeurostoreServices.StudySetsService.studysetsGet(
                 searchCriteria.genericSearchStr,
                 searchCriteria.sortBy,
                 searchCriteria.pageOfResults,
@@ -20,7 +20,8 @@ const useGetStudysets = (searchCriteria: Partial<SearchCriteria>, enabled?: bool
                 searchCriteria.source,
                 searchCriteria.authorSearch,
                 searchCriteria.userId
-            ),
+            );
+        },
         {
             enabled,
             select: (axiosResponse) => {
