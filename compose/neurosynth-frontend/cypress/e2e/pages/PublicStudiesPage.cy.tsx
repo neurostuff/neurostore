@@ -29,25 +29,14 @@ describe(PAGE_NAME, () => {
         it.only('should make a correct request after selecting a different page of results', () => {
             cy.login('mocked');
             cy.wait('@studiesRequest');
-
+            // ARRANGE
             cy.visit(PATH);
             cy.wait('@studiesRequest');
-            cy.contains('button', '5');
-
-            // cy.login('mocked')
-            // ARRANGE
-            // .wait('@studiesRequest')
-            // cy.visit(PATH)
-            //     .wait('@studiesRequest')
-            //     .get('button')
-            //     .contains('5')
-            //     // ACT
-            //     .click()
-            //     .click()
-            //     .wait('@studiesRequest')
-            //     // ASSERT
-            //     .its('request.url')
-            //     .should('contain', 'page=5');
+            cy.contains('button', '5').click().click();
+            // ACT
+            cy.wait('@studiesRequest');
+            // ASSERT
+            cy.its('request.url').should('contain', 'page=5');
         });
 
         // it('should make a correct request when selecting a different number of items to display on a single page', () => {
