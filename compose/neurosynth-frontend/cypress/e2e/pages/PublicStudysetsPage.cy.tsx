@@ -32,11 +32,10 @@ describe(PAGE_NAME, () => {
             // ARRANGE
             cy.visit(PATH);
             cy.wait('@studysetsRequest');
-            cy.contains('button', '5').click().click();
             // ACT
-            cy.wait('@studysetsRequest');
+            cy.contains('button', '5').click().click();
             // ASSERT
-            cy.its('request.url').should('contain', 'page=5');
+            cy.wait('@studysetsRequest').its('request.url').should('contain', 'page=5');
         });
 
         it('should make a correct request when selecting a different number of items to display on a single page', () => {
