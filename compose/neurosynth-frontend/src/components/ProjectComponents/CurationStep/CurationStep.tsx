@@ -10,6 +10,7 @@ import {
     Button,
     CardActions,
     StepProps,
+    CircularProgress,
 } from '@mui/material';
 import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
 import ProjectComponentsStyles from '../ProjectComponents.styles';
@@ -49,10 +50,32 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                             <Box sx={[ProjectComponentsStyles.stepCard]}>
                                 <Card sx={{ width: '100%', height: '100%' }}>
                                     <CardContent>
-                                        <Typography gutterBottom sx={{ color: 'muted.main' }}>
-                                            433 studies
-                                        </Typography>
-                                        <Typography gutterBottom variant="h5">
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                position: 'relative',
+                                            }}
+                                        >
+                                            <Typography sx={{ color: 'muted.main' }}>
+                                                433 studies
+                                            </Typography>
+                                            <CircularProgress
+                                                sx={{
+                                                    position: 'absolute',
+                                                    right: 0,
+                                                    backgroundColor: '#ededed',
+                                                    borderRadius: '50%',
+                                                }}
+                                                variant="determinate"
+                                                value={Math.round(((30 + 372) / 433) * 100)}
+                                            />
+                                        </Box>
+                                        <Typography
+                                            gutterBottom
+                                            variant="h5"
+                                            sx={{ marginRight: '40px' }}
+                                        >
                                             Study Curation Summary
                                         </Typography>
                                         <Box
@@ -98,7 +121,7 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                                     }}
                                                 />
                                                 <Typography sx={{ color: 'warning.dark' }}>
-                                                    31 Uncategorized
+                                                    31 uncategorized
                                                 </Typography>
                                             </Box>
                                             <Box>

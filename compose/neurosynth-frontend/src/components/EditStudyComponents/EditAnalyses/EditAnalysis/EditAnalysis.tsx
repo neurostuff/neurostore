@@ -75,9 +75,17 @@ const EditAnalysis: React.FC<{ analysis: AnalysisReturn | undefined }> = (props)
                         {editTab === 2 && <EditAnalysisAnnotations />}
                         {editTab === 3 && <EditAnalysisImages />}
 
-                        <Button sx={{ marginTop: '1rem' }} variant="contained" color="error">
-                            Delete Analysis
-                        </Button>
+                        <Box
+                            sx={{
+                                marginTop: '2.5rem',
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                            }}
+                        >
+                            <Button variant="contained" color="error">
+                                Delete Analysis
+                            </Button>
+                        </Box>
                     </Box>
                 </>
             )}

@@ -18,11 +18,13 @@ import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
 
 interface IAlgorithmStep {
     disabled?: boolean;
+    onRunMetaAnalysis: () => void;
 }
 
 const AlgorithmStep: React.FC<IAlgorithmStep & StepProps> = (props) => {
-    const { ...stepProps } = props;
+    const { onRunMetaAnalysis, disabled, ...stepProps } = props;
     const [algorithmDialogIsOpen, setAlgorithmDialogIsOpen] = useState(false);
+    const [hasAlgorithm, setHasAlgorithm] = useState(false);
 
     return (
         <Step {...stepProps} expanded={true} sx={ProjectComponentsStyles.step}>
@@ -47,30 +49,7 @@ const AlgorithmStep: React.FC<IAlgorithmStep & StepProps> = (props) => {
                         iterations, and an associated corrector)
                     </Typography>
 
-                    {props.disabled ? (
-                        <Tooltip
-                            placement="right"
-                            title={
-                                props.disabled ? 'You must complete the previous step first' : ''
-                            }
-                        >
-                            <Box
-                                sx={[
-                                    ProjectComponentsStyles.stepCard,
-                                    ProjectComponentsStyles.getStartedContainer,
-                                    { borderColor: props.disabled ? 'lightgray' : 'primary.main' },
-                                ]}
-                            >
-                                <Button
-                                    sx={{ width: '100%', height: '100%' }}
-                                    disabled
-                                    endIcon={<KeyboardArrowDown />}
-                                >
-                                    Algorithm: get started
-                                </Button>
-                            </Box>
-                        </Tooltip>
-                    ) : (
+                    {hasAlgorithm ? (
                         <Box sx={ProjectComponentsStyles.stepCard}>
                             <Card sx={{ width: '100%' }}>
                                 <CardContent>
@@ -102,7 +81,7 @@ const AlgorithmStep: React.FC<IAlgorithmStep & StepProps> = (props) => {
                                         modify algorithm
                                     </Button>
                                     <Button
-                                        onClick={() => alert('meta-analysis created')}
+                                        onClick={() => props.onRunMetaAnalysis()}
                                         variant="contained"
                                     >
                                         run meta-analysis
@@ -110,6 +89,30 @@ const AlgorithmStep: React.FC<IAlgorithmStep & StepProps> = (props) => {
                                 </CardActions>
                             </Card>
                         </Box>
+                    ) : (
+                        <Tooltip
+                            placement="right"
+                            title={
+                                props.disabled ? 'You must complete the previous step first' : ''
+                            }
+                        >
+                            <Box
+                                sx={[
+                                    ProjectComponentsStyles.stepCard,
+                                    ProjectComponentsStyles.getStartedContainer,
+                                    { borderColor: props.disabled ? 'lightgray' : 'primary.main' },
+                                ]}
+                            >
+                                <Button
+                                    sx={{ width: '100%', height: '100%' }}
+                                    disabled={props.disabled}
+                                    endIcon={<KeyboardArrowDown />}
+                                    onClick={() => setHasAlgorithm(true)}
+                                >
+                                    Algorithm: get started
+                                </Button>
+                            </Box>
+                        </Tooltip>
                     )}
                 </Box>
             </StepContent>

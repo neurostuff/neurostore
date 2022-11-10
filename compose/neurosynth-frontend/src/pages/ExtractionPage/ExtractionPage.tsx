@@ -56,7 +56,11 @@ const ExtractionPage: React.FC = (props) => {
                     <Chip
                         size="medium"
                         onClick={() => {}}
-                        sx={{ marginRight: '8px', color: 'muted.main' }}
+                        sx={{
+                            marginRight: '8px',
+                            color: 'warning.dark',
+                            borderColor: 'warning.dark',
+                        }}
                         variant="outlined"
                         label="Uncategorized"
                     />
@@ -65,10 +69,10 @@ const ExtractionPage: React.FC = (props) => {
                         onClick={() => {}}
                         variant="outlined"
                         sx={{
-                            color: 'warning.dark',
-                            borderColor: 'warning.main',
+                            color: 'muted.main',
+                            borderColor: 'muted.main',
                         }}
-                        icon={<AccessTimeIcon sx={{ color: '#b2a14c !important' }} />}
+                        icon={<AccessTimeIcon sx={{ color: '#9e9e9e !important' }} />}
                         label="Save for later"
                     />
                 </Box>
@@ -120,7 +124,7 @@ const ExtractionPage: React.FC = (props) => {
                                 <CheckCircleOutlineIcon color="success" />
                             </IconButton>
                             <IconButton>
-                                <AccessTimeIcon sx={{ color: 'warning.dark' }} />
+                                <AccessTimeIcon sx={{ color: 'muted.main' }} />
                             </IconButton>
                         </Box>
                     </Box>
@@ -169,7 +173,7 @@ const ExtractionPage: React.FC = (props) => {
                                 <CheckCircleOutlineIcon color="success" />
                             </IconButton>
                             <IconButton>
-                                <AccessTimeIcon sx={{ color: 'warning.dark' }} />
+                                <AccessTimeIcon sx={{ color: 'muted.main' }} />
                             </IconButton>
                         </Box>
                     </Box>
@@ -218,7 +222,7 @@ const ExtractionPage: React.FC = (props) => {
                                 <CheckCircleOutlineIcon color="success" />
                             </IconButton>
                             <IconButton>
-                                <AccessTimeIcon sx={{ color: 'warning.dark' }} />
+                                <AccessTimeIcon sx={{ color: 'muted.main' }} />
                             </IconButton>
                         </Box>
                     </Box>
@@ -271,7 +275,7 @@ const ExtractionPage: React.FC = (props) => {
                                 <CheckCircleOutlineIcon color="success" />
                             </IconButton>
                             <IconButton>
-                                <AccessTimeIcon sx={{ color: 'warning.dark' }} />
+                                <AccessTimeIcon sx={{ color: 'muted.main' }} />
                             </IconButton>
                         </Box>
                     </Box>
@@ -322,7 +326,7 @@ const ExtractionPage: React.FC = (props) => {
                                 <CheckCircleOutlineIcon color="success" />
                             </IconButton>
                             <IconButton>
-                                <AccessTimeIcon sx={{ color: 'warning.dark' }} />
+                                <AccessTimeIcon sx={{ color: 'muted.main' }} />
                             </IconButton>
                         </Box>
                     </Box>

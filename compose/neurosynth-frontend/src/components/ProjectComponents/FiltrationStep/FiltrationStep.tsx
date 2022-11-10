@@ -22,6 +22,7 @@ interface IFiltrationStep {
 
 const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
     const [filterDialogIsOpen, setFilterDialogIsOpen] = useState(false);
+    const [hasFilter, setHasFilter] = useState(false);
 
     return (
         <Step {...props} expanded={true} sx={ProjectComponentsStyles.step}>
@@ -45,30 +46,7 @@ const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
                         in the meta-analysis based on your analysis annotations
                     </Typography>
 
-                    {props.disabled ? (
-                        <Tooltip
-                            placement="right"
-                            title={
-                                props.disabled ? 'You must complete the previous step first' : ''
-                            }
-                        >
-                            <Box
-                                sx={[
-                                    ProjectComponentsStyles.stepCard,
-                                    ProjectComponentsStyles.getStartedContainer,
-                                    { borderColor: props.disabled ? 'lightgray' : 'primary.main' },
-                                ]}
-                            >
-                                <Button
-                                    sx={{ width: '100%', height: '100%' }}
-                                    disabled
-                                    endIcon={<KeyboardArrowDown />}
-                                >
-                                    Filtration: get started
-                                </Button>
-                            </Box>
-                        </Tooltip>
-                    ) : (
+                    {hasFilter ? (
                         <Box sx={ProjectComponentsStyles.stepCard}>
                             <Card sx={{ width: '100%', height: '100%' }}>
                                 <CardContent>
@@ -119,6 +97,30 @@ const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
                                 </CardActions>
                             </Card>
                         </Box>
+                    ) : (
+                        <Tooltip
+                            placement="right"
+                            title={
+                                props.disabled ? 'You must complete the previous step first' : ''
+                            }
+                        >
+                            <Box
+                                sx={[
+                                    ProjectComponentsStyles.stepCard,
+                                    ProjectComponentsStyles.getStartedContainer,
+                                    { borderColor: props.disabled ? 'lightgray' : 'primary.main' },
+                                ]}
+                            >
+                                <Button
+                                    sx={{ width: '100%', height: '100%' }}
+                                    disabled={props.disabled}
+                                    endIcon={<KeyboardArrowDown />}
+                                    onClick={() => setHasFilter(true)}
+                                >
+                                    Filtration: get started
+                                </Button>
+                            </Box>
+                        </Tooltip>
                     )}
                 </Box>
             </StepContent>

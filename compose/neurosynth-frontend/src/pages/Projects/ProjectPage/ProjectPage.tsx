@@ -1,20 +1,14 @@
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Stepper from '@mui/material/Stepper';
-import Step from '@mui/material/Step';
-import StepLabel from '@mui/material/StepLabel';
-import StepContent from '@mui/material/StepContent';
 import TextEdit from 'components/TextEdit/TextEdit';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CardActions from '@mui/material/CardActions';
 import CurationStep from 'components/ProjectComponents/CurationStep/CurationStep';
 import ExtractionStep from 'components/ProjectComponents/ExtractionStep/ExtractionStep';
 import FiltrationStep from 'components/ProjectComponents/FiltrationStep/FiltrationStep';
 import AlgorithmStep from 'components/ProjectComponents/AlgorithmStep/AlgorithmStep';
-import { Tabs, Tab } from '@mui/material';
+import { Tabs, Tab, Divider } from '@mui/material';
 
 const ProjectPage: React.FC = (props) => {
     const [activeStep, setActiveStep] = useState(0);
@@ -22,22 +16,24 @@ const ProjectPage: React.FC = (props) => {
     const [extractionIsDisabled, setExtractionIsDisabled] = useState(true);
     const [filtrationIsDisabled, setFiltrationIsDisabled] = useState(true);
     const [algorithmIsDisabled, setAlgorithmIsDisabled] = useState(true);
+    const [hasMetaAnalysis, setHasMetaAnalysis] = useState(false);
+    const [tab, setTab] = useState(0);
 
-    const handleNext = () => {
-        setActiveStep((prevActiveStep) => prevActiveStep + 1);
-    };
+    useEffect(() => {
+        if (hasMetaAnalysis) {
+            setTab(1);
+        } else {
+            setTab(0);
+        }
+    }, [hasMetaAnalysis]);
 
-    const handleBack = () => {
-        setActiveStep((prevActiveStep) => prevActiveStep - 1);
-    };
-
-    const handleReset = () => {
-        setActiveStep(0);
+    const handleTabChange = (event: any, tab: number) => {
+        setTab(tab);
     };
 
     return (
         <Box>
-            <Box sx={{ marginBottom: '1rem' }}>
+            <Box sx={{ marginBottom: '0.5rem' }}>
                 <TextEdit
                     onSave={() => {}}
                     sx={{ fontSize: '2rem' }}
@@ -70,21 +66,53 @@ const ProjectPage: React.FC = (props) => {
                 </TextEdit>
             </Box>
 
-            <Tabs sx={{ marginBottom: '1rem' }} value={0}>
-                <Tab value={0} label="Build Meta-Analysis" />
-                <Tab value={1} disabled label="View-Meta-Analysis" />
+            <Tabs onChange={handleTabChange} value={tab} sx={{ marginBottom: '2rem' }}>
+                <Tab
+                    value={0}
+                    label="Build Meta-Analysis"
+                    sx={{
+                        fontSize: '1.25rem',
+                        whiteSpace: 'nowrap',
+                        ':hover': { color: 'secondary.main' },
+                    }}
+                />
+                <Tab
+                    value={1}
+                    sx={{
+                        display: hasMetaAnalysis ? 'inherit' : 'none',
+                        fontSize: '1.25rem',
+                        whiteSpace: 'nowrap',
+                        ':hover': { color: 'secondary.main' },
+                    }}
+                    label="View Meta-Analysis"
+                />
             </Tabs>
 
             <Stepper
                 activeStep={activeStep}
                 orientation="vertical"
-                sx={{ '.MuiStepConnector-root': { marginLeft: '20px' } }}
+                sx={{
+                    '.MuiStepConnector-root': { marginLeft: '20px' },
+                    display: tab === 0 ? 'initial' : 'none',
+                }}
             >
                 <CurationStep />
                 <ExtractionStep disabled={extractionIsDisabled} />
                 <FiltrationStep disabled={filtrationIsDisabled} />
-                <AlgorithmStep disabled={algorithmIsDisabled} />
+                <AlgorithmStep
+                    onRunMetaAnalysis={() => setHasMetaAnalysis(true)}
+                    disabled={algorithmIsDisabled}
+                />
             </Stepper>
+            <Box sx={{ display: tab === 1 ? 'initial' : 'none' }}>
+                <Typography variant="h5" sx={{ color: 'warning.dark' }}>
+                    This page is TBD: Your meta-analysis will go here.
+                </Typography>
+                <Typography variant="h5" sx={{ color: 'warning.dark' }}>
+                    Once you run the meta-analysis, this will be the default page when the user
+                    opens this project.
+                </Typography>
+            </Box>
         </Box>
     );
 };
