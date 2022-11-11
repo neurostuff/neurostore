@@ -10,9 +10,3 @@ export interface NavOptionsModel {
     className?: string;
     children: NavOptionsModel[] | null;
 }
-
-export interface NavbarArgs {
-    navOptions: NavOptionsModel[];
-    login: () => void;
-    logout: () => void;
-}
