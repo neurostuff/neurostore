@@ -1,7 +1,7 @@
 import { ListItem, ListItemButton, ListItemText, Menu, Button, ButtonProps } from '@mui/material';
 import { useState } from 'react';
 
-interface INavToolbarPopupSubMenu {
+export interface INavToolbarPopupSubMenu {
     buttonProps: ButtonProps;
     buttonLabel: string;
     options: {

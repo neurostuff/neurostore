@@ -58,20 +58,27 @@ const NavDrawer: React.FC = (props) => {
             </Box>
             <Drawer anchor="right" open={isOpen} onClose={handleCloseDrawer}>
                 <List>
-                    <ListItem>
-                        <ListItemButton>
-                            <ListItemIcon>
-                                <AddCircleOutlineIcon color="secondary" />
-                            </ListItemIcon>
-                            <ListItemText sx={{ color: 'secondary.main' }} primary="NEW PROJECT" />
-                        </ListItemButton>
-                    </ListItem>
-                    <ListItem>
-                        <ListItemButton>
-                            <ListItemIcon />
-                            <ListItemText primary="MY PROJECTS" />
-                        </ListItemButton>
-                    </ListItem>
+                    {isAuthenticated && (
+                        <>
+                            <ListItem>
+                                <ListItemButton>
+                                    <ListItemIcon>
+                                        <AddCircleOutlineIcon color="secondary" />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        sx={{ color: 'secondary.main' }}
+                                        primary="NEW PROJECT"
+                                    />
+                                </ListItemButton>
+                            </ListItem>
+                            <ListItem>
+                                <ListItemButton>
+                                    <ListItemIcon />
+                                    <ListItemText primary="MY PROJECTS" />
+                                </ListItemButton>
+                            </ListItem>
+                        </>
+                    )}
                     <DrawerToggleMenu labelText="EXPLORE">
                         <ListItem>
                             <ListItemButton>
@@ -105,7 +112,7 @@ const NavDrawer: React.FC = (props) => {
                             <ListItemIcon />
                             <ListItemText
                                 sx={{
-                                    color: isAuthenticated ? 'black' : 'warning.dark',
+                                    color: isAuthenticated ? 'orange' : 'warning.dark',
                                 }}
                                 primary={isAuthenticated ? 'LOGOUT' : 'SIGN IN/SIGN UP'}
                             />

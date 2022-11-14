@@ -7,7 +7,7 @@ import { NavLink, useHistory } from 'react-router-dom';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import NavToolbarStyles from './NavToolbar.styles';
-import NavPopupMenu from '../NavSubMenu/NavToolbarPopupSubMenu';
+import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
 import { useState } from 'react';
 
 const NavToolbar: React.FC<{ login: () => void; logout: () => void }> = (props) => {
@@ -66,7 +66,7 @@ const NavToolbar: React.FC<{ login: () => void; logout: () => void }> = (props) 
                         </>
                     )}
 
-                    <NavPopupMenu
+                    <NavToolbarPopupSubMenu
                         buttonProps={{
                             sx: [
                                 NavToolbarStyles.menuItemColor,
