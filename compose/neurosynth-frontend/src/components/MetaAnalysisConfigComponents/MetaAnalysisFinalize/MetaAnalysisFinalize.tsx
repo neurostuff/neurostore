@@ -29,38 +29,38 @@ export const getAnalysisTypeDescription = (name: string | undefined): string => 
 };
 
 const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
-    const { createMetaAnalysis, isLoading } = useCreateMetaAnalysis();
+    // const { createMetaAnalysis, isLoading } = useCreateMetaAnalysis();
     const history = useHistory();
     const hasCorrector = !!props.corrector;
     const { enqueueSnackbar } = useSnackbar();
 
-    const handleCreateMetaAnalysis = async () => {
-        createMetaAnalysis(
-            {
-                analysisType: props.analysisType,
-                estimator: props.estimator,
-                corrector: props.corrector,
-                studyset: props.studyset,
-                annotation: props.annotation,
-                inclusionColumn: props.inclusionColumn,
-                metaAnalysisName: props.metaAnalysisName,
-                metaAnalysisDescription: props.metaAnalysisDescription,
-            },
-            {
-                estimatorArgs: props.estimatorArgs,
-                correctorArgs: props.correctorArgs,
-            }
-        )
-            .then((res) => {
-                enqueueSnackbar('new meta-analysis created successfully', { variant: 'success' });
-                history.push(`/meta-analyses/${res?.data?.id}`);
-            })
-            .catch((err) => {
-                enqueueSnackbar('there was an error creating the meta-analysis', {
-                    variant: 'error',
-                });
-            });
-    };
+    // const handleCreateMetaAnalysis = async () => {
+    //     createMetaAnalysis(
+    //         {
+    //             analysisType: props.analysisType,
+    //             estimator: props.estimator,
+    //             corrector: props.corrector,
+    //             studyset: props.studyset,
+    //             annotation: props.annotation,
+    //             inclusionColumn: props.inclusionColumn,
+    //             metaAnalysisName: props.metaAnalysisName,
+    //             metaAnalysisDescription: props.metaAnalysisDescription,
+    //         },
+    //         {
+    //             estimatorArgs: props.estimatorArgs,
+    //             correctorArgs: props.correctorArgs,
+    //         }
+    //     )
+    //         .then((res) => {
+    //             enqueueSnackbar('new meta-analysis created successfully', { variant: 'success' });
+    //             // history.push(`/meta-analyses/${res?.data?.id}`);
+    //         })
+    //         .catch((err) => {
+    //             enqueueSnackbar('there was an error creating the meta-analysis', {
+    //                 variant: 'error',
+    //             });
+    //         });
+    // };
 
     const handleNavigation = (_event: React.MouseEvent) => {
         props.onNavigate(ENavigationButton.PREV);
@@ -144,10 +144,10 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
                 <LoadingButton
                     sx={{ fontSize: '1rem', width: '250px' }}
                     loaderColor="secondary"
-                    isLoading={isLoading}
+                    isLoading={false}
                     text="create meta-analysis"
                     variant="contained"
-                    onClick={() => handleCreateMetaAnalysis()}
+                    onClick={() => {}}
                 />
             </Box>
         </Box>

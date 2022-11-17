@@ -19,7 +19,7 @@ const Navbar: React.FC = (_props) => {
                 <NavToolbar login={handleLogin} logout={handleLogout} />
             </Box>
             <Box sx={NavbarStyles.mdDown}>
-                <NavDrawer />
+                <NavDrawer login={handleLogin} logout={handleLogout} />
             </Box>
         </AppBar>
     );

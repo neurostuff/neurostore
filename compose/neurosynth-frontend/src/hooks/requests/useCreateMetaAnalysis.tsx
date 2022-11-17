@@ -2,19 +2,20 @@ import { AxiosError, AxiosResponse } from 'axios';
 import { useMutation } from 'react-query';
 import {
     AnnotationPostBody,
+    MetaAnalysis,
     MetaAnalysisPostBody,
     MetaAnalysisReturn,
     SpecificationPostBody,
     SpecificationReturn,
     StudysetPostBody,
     StudysetReturn,
-} from '../../neurosynth-compose-typescript-sdk';
+} from 'neurosynth-compose-typescript-sdk';
 import {
     EAnalysisType,
     IEstimatorCorrectorArgs,
     IMetaAnalysisComponents,
-} from '../../pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
-import API, { NeurostoreAnnotation } from '../../utils/api';
+} from 'pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
+import API, { NeurostoreAnnotation } from 'utils/api';
 
 const useCreateMetaAnalysis = () => {
     const createSpecificationMutation = useMutation<
@@ -38,65 +39,71 @@ const useCreateMetaAnalysis = () => {
         unknown
     >((annotation) => API.NeurosynthServices.AnnotationsService.annotationsPost(annotation));
     const createMetaAnalysisMutation = useMutation<
-        AxiosResponse<MetaAnalysisReturn>,
+        AxiosResponse<MetaAnalysis>,
         AxiosError,
-        MetaAnalysisPostBody,
+        MetaAnalysis,
         unknown
-    >((metaAnalysis: MetaAnalysisPostBody) =>
-        API.NeurosynthServices.MetaAnalysisService.metaAnalysesPost(metaAnalysis)
+    >((metaAnalysis: MetaAnalysis) =>
+        API.NeurosynthServices.MetaAnalysisService.metaAnalysesPost({
+            internal_studyset_id: '',
+            internal_annotation_id: '',
+            specification: {},
+        })
     );
 
-    const createMetaAnalysis = async (
-        metaAnalysisComponents: IMetaAnalysisComponents,
-        estimatorCorrectorArgs: IEstimatorCorrectorArgs
+    const createMetaAnalysis = (
+        metaAnalysisComponents?: IMetaAnalysisComponents,
+        estimatorCorrectorArgs?: IEstimatorCorrectorArgs
     ) => {
-        try {
-            if (!metaAnalysisComponents.studyset?.id) throw new Error('no id from studyset');
-            if (!metaAnalysisComponents.annotation?.id) throw new Error('no id from annotation');
+        return createMetaAnalysisMutation.mutate;
+        // try {
+        //     return createMetaAnalysisMutation;
+        // if (!metaAnalysisComponents.studyset?.id) throw new Error('no id from studyset');
+        // if (!metaAnalysisComponents.annotation?.id) throw new Error('no id from annotation');
 
-            const createdSpec = await createSpecificationMutation.mutateAsync({
-                type: metaAnalysisComponents.analysisType as EAnalysisType,
-                estimator: {
-                    type: metaAnalysisComponents.estimator?.label,
-                    args: estimatorCorrectorArgs.estimatorArgs,
-                },
-                mask: '', // TODO: handle these cases
-                contrast: '', // TODO: handle these cases
-                transformer: '', // TODO: handle these cases
-                corrector: metaAnalysisComponents.corrector
-                    ? {
-                          type: metaAnalysisComponents.corrector?.label,
-                          args: estimatorCorrectorArgs.correctorArgs,
-                      }
-                    : null,
-                filter: metaAnalysisComponents.inclusionColumn,
-            });
-            if (!createdSpec.data.id) throw new Error('no id from created spec');
+        // const createdSpec = await createSpecificationMutation.mutateAsync({
+        //     type: metaAnalysisComponents.analysisType as EAnalysisType,
+        //     estimator: {
+        //         type: metaAnalysisComponents.estimator?.label,
+        //         args: estimatorCorrectorArgs.estimatorArgs,
+        //     },
+        //     mask: '', // TODO: handle these cases
+        //     contrast: '', // TODO: handle these cases
+        //     transformer: '', // TODO: handle these cases
+        //     corrector: metaAnalysisComponents.corrector
+        //         ? {
+        //               type: metaAnalysisComponents.corrector?.label,
+        //               args: estimatorCorrectorArgs.correctorArgs,
+        //           }
+        //         : null,
+        //     filter: metaAnalysisComponents.inclusionColumn,
+        // });
+        // if (!createdSpec.data.id) throw new Error('no id from created spec');
 
-            const createdSynthStudyset = await createSynthStudysetMutation.mutateAsync({
-                neurostore_id: metaAnalysisComponents.studyset?.id,
-            });
-            if (!createdSynthStudyset.data.id) throw new Error('no id from created synth studyset');
+        // const createdSynthStudyset = await createSynthStudysetMutation.mutateAsync({
+        //     neurostore_id: metaAnalysisComponents.studyset?.id,
+        // });
+        // if (!createdSynthStudyset.data.id) throw new Error('no id from created synth studyset');
 
-            const createdSynthAnnotation = await createSynthAnnotationMutation.mutateAsync({
-                neurostore_id: metaAnalysisComponents.annotation.id,
-                internal_studyset_id: createdSynthStudyset.data.id,
-            });
-            if (!createdSynthAnnotation.data.id)
-                throw new Error('no id from created synth annotation');
+        // const createdSynthAnnotation = await createSynthAnnotationMutation.mutateAsync({
+        //     neurostore_id: metaAnalysisComponents.annotation.id,
+        //     internal_studyset_id: createdSynthStudyset.data.id,
+        // });
+        // if (!createdSynthAnnotation.data.id)
+        //     throw new Error('no id from created synth annotation');
 
-            const createdMetaAnalysis = await createMetaAnalysisMutation.mutateAsync({
-                name: metaAnalysisComponents.metaAnalysisName,
-                description: metaAnalysisComponents.metaAnalysisDescription,
-                internal_studyset_id: createdSynthStudyset.data.id,
-                internal_annotation_id: createdSynthAnnotation.data.id,
-                specification: createdSpec.data.id,
-            });
+        // const createdMetaAnalysis = await createMetaAnalysisMutation.mutateAsync({
+        //     name: metaAnalysisComponents.metaAnalysisName,
+        //     description: metaAnalysisComponents.metaAnalysisDescription,
+        //     internal_studyset_id: createdSynthStudyset.data.id,
+        //     internal_annotation_id: createdSynthAnnotation.data.id,
+        //     specification: createdSpec.data.id,
+        // });
 
-            return createdMetaAnalysis;
-        } catch (e) {
-            return Promise.reject(e);
-        }
+        // return createdMetaAnalysis;
+        // } catch (e) {
+        //     return Promise.reject(e);
+        // }
     };
 
     const isLoading =
@@ -117,12 +124,14 @@ const useCreateMetaAnalysis = () => {
         createSynthAnnotationMutation.error ||
         createMetaAnalysisMutation.error;
 
-    return {
-        error,
-        isLoading,
-        isError,
-        createMetaAnalysis,
-    };
+    return createMetaAnalysisMutation;
+
+    // return {
+    //     error,
+    //     isLoading,
+    //     isError,
+    //     createMetaAnalysisMutation,
+    // };
 };
 
 export default useCreateMetaAnalysis;

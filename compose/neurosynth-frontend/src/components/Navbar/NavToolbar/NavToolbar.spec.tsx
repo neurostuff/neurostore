@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import NavToolbar from './NavToolbar';
 
 jest.mock('@auth0/auth0-react');
+jest.mock('hooks');
 jest.mock('components/Dialogs/CreateDetailsDialog/CreateDetailsDialog');
 jest.mock('components/Navbar/NavSubMenu/NavToolbarPopupSubMenu');
 
@@ -29,6 +30,10 @@ describe('NavToolbar Component', () => {
                 <NavToolbar login={mockLogin} logout={mockLogout} />
             </BrowserRouter>
         );
+
+        expect(screen.queryByText('new project')).not.toBeInTheDocument();
+        expect(screen.queryByText('my projects')).not.toBeInTheDocument();
+        expect(screen.queryByText('LOGOUT')).not.toBeInTheDocument();
 
         expect(screen.queryByText('explore')).toBeInTheDocument();
         expect(screen.queryByText('HELP')).toBeInTheDocument();

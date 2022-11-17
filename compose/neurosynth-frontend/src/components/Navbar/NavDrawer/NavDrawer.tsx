@@ -10,25 +10,29 @@ import {
     ListItemButton,
     ListItemIcon,
     ListItemText,
+    Button,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useHistory } from 'react-router-dom';
 import NavbarStyles from '../Navbar.styles';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import DrawerToggleMenu from '../NavSubMenu/DrawerToggleSubMenu';
 import { useAuth0 } from '@auth0/auth0-react';
+import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 
-const NavDrawer: React.FC = (props) => {
+const NavDrawer: React.FC<{ login: () => void; logout: () => void }> = (props) => {
     const { isAuthenticated } = useAuth0();
     const [isOpen, setIsOpen] = useState(false);
+    const [createDetailsDialogIsOpen, setCreateDetailsDialogIsOpen] = useState(false);
+    const history = useHistory();
 
-    const handleOpenDrawer = (event: React.MouseEvent<HTMLElement>) => {
+    const handleOpenDrawer = (_event: React.MouseEvent<HTMLElement>) => {
         setIsOpen(true);
     };
 
-    const handleCloseDrawer = (event: React.MouseEvent) => {
+    const handleCloseDrawer = (_event: React.MouseEvent) => {
         setIsOpen(false);
     };
 
@@ -58,10 +62,18 @@ const NavDrawer: React.FC = (props) => {
             </Box>
             <Drawer anchor="right" open={isOpen} onClose={handleCloseDrawer}>
                 <List>
+                    <CreateDetailsDialog
+                        titleText="Create new project"
+                        isOpen={createDetailsDialogIsOpen}
+                        onCreate={(name: string, description: string) => {
+                            // create project logic here
+                        }}
+                        onCloseDialog={() => setCreateDetailsDialogIsOpen(false)}
+                    />
                     {isAuthenticated && (
                         <>
                             <ListItem>
-                                <ListItemButton>
+                                <ListItemButton onClick={() => setCreateDetailsDialogIsOpen(true)}>
                                     <ListItemIcon>
                                         <AddCircleOutlineIcon color="secondary" />
                                     </ListItemIcon>
@@ -72,7 +84,7 @@ const NavDrawer: React.FC = (props) => {
                                 </ListItemButton>
                             </ListItem>
                             <ListItem>
-                                <ListItemButton>
+                                <ListItemButton onClick={() => history.push('/projects')}>
                                     <ListItemIcon />
                                     <ListItemText primary="MY PROJECTS" />
                                 </ListItemButton>
@@ -80,39 +92,49 @@ const NavDrawer: React.FC = (props) => {
                         </>
                     )}
                     <DrawerToggleMenu labelText="EXPLORE">
-                        <ListItem>
-                            <ListItemButton>
-                                <ListItemIcon />
-                                <ListItemText primary="studies" />
-                            </ListItemButton>
-                        </ListItem>
-                        <ListItem>
-                            <ListItemButton>
-                                <ListItemIcon />
-                                <ListItemText primary="studysets" />
-                            </ListItemButton>
-                        </ListItem>
-                        <ListItem>
-                            <ListItemButton>
-                                <ListItemIcon />
-                                <ListItemText primary="meta-analyses" />
-                            </ListItemButton>
-                        </ListItem>
+                        <List>
+                            <ListItem>
+                                <ListItemButton onClick={() => history.push('/studies')}>
+                                    <ListItemIcon />
+                                    <ListItemText primary="studies" />
+                                </ListItemButton>
+                            </ListItem>
+                            <ListItem>
+                                <ListItemButton onClick={() => history.push('/studysets')}>
+                                    <ListItemIcon />
+                                    <ListItemText primary="studysets" />
+                                </ListItemButton>
+                            </ListItem>
+                            <ListItem>
+                                <ListItemButton onClick={() => history.push('/meta-analyses')}>
+                                    <ListItemIcon />
+                                    <ListItemText primary="meta-analyses" />
+                                </ListItemButton>
+                            </ListItem>
+                        </List>
                     </DrawerToggleMenu>
                     <ListItem>
-                        <ListItemButton>
+                        <Button
+                            sx={{ display: 'flex', padding: '8px 16px', width: '100%' }}
+                            target="_blank"
+                            href="https://neurostuff.github.io/neurostore/"
+                        >
                             <ListItemIcon>
                                 <OpenInNewIcon />
                             </ListItemIcon>
-                            <ListItemText primary="HELP" />
-                        </ListItemButton>
+                            <ListItemText primary="HELP" sx={{ color: 'black' }} />
+                        </Button>
                     </ListItem>
                     <ListItem>
-                        <ListItemButton>
+                        <ListItemButton
+                            onClick={() => {
+                                isAuthenticated ? props.logout() : props.login();
+                            }}
+                        >
                             <ListItemIcon />
                             <ListItemText
                                 sx={{
-                                    color: isAuthenticated ? 'orange' : 'warning.dark',
+                                    color: isAuthenticated ? '' : 'warning.dark',
                                 }}
                                 primary={isAuthenticated ? 'LOGOUT' : 'SIGN IN/SIGN UP'}
                             />

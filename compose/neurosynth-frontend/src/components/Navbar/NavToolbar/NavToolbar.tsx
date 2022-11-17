@@ -9,11 +9,14 @@ import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDe
 import NavToolbarStyles from './NavToolbar.styles';
 import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
 import { useState } from 'react';
+import { useCreateMetaAnalysis } from 'hooks';
 
 const NavToolbar: React.FC<{ login: () => void; logout: () => void }> = (props) => {
     const { isAuthenticated } = useAuth0();
     const [createDetailsDialogIsOpen, setCreateDetailsDialogIsOpen] = useState(false);
     const history = useHistory();
+
+    const { mutate, isError, error, isLoading } = useCreateMetaAnalysis();
 
     return (
         <Toolbar disableGutters>
@@ -38,7 +41,9 @@ const NavToolbar: React.FC<{ login: () => void; logout: () => void }> = (props) 
                         titleText="Create new project"
                         isOpen={createDetailsDialogIsOpen}
                         onCreate={(name: string, description: string) => {
-                            // create project logic here
+                            console.log(name);
+
+                            mutate({});
                         }}
                         onCloseDialog={() => setCreateDetailsDialogIsOpen(false)}
                     />
