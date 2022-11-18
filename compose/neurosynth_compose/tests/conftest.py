@@ -12,7 +12,7 @@ from neurosynth_compose.ingest.neurostore import create_meta_analyses
 from ..database import db as _db
 from ..models import (
     User, Specification, Studyset, Annotation, MetaAnalysis,
-    StudysetReference, AnnotationReference
+    StudysetReference, AnnotationReference, Project
 )
 from auth0.v3.authentication import GetToken
 
@@ -301,7 +301,12 @@ def user_data(session, mock_add_users):
                 annotation=annotation,
             )
 
-            to_commit.extend([studyset, annotation, specification, meta_analysis])
+            project = Project(
+                name=user.id + "'s project",
+                meta_analyses=[meta_analysis]
+            )
+
+            to_commit.extend([studyset, annotation, specification, meta_analysis, project])
 
         session.add_all(to_commit)
         session.commit()

@@ -89,15 +89,25 @@ class MetaAnalysis(BaseMixin, db.Model):
     specification_id = db.Column(db.Text, db.ForeignKey('specifications.id'))
     internal_studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
     internal_annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"))
+    project_id = db.Column(db.Text, db.ForeignKey("projects.id"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     provenance = db.Column(db.JSON)
 
     specification = relationship("Specification", backref=backref("meta_analyses"))
     studyset = relationship("Studyset", backref=backref("meta_analyses"), lazy="joined")
     annotation = relationship("Annotation", backref=backref("meta_analyses"), lazy="joined")
+    project = relationship("Project", backref=backref("meta_analyses"))
     user = relationship("User", backref=backref("meta_analyses"))
 
 
+class Project(BaseMixin, db.Model):
+    __tablename__ = "projects"
+
+    name = db.Column(db.Text)
+    description = db.Column(db.Text)
+    provenance = db.Column(db.JSON)
+
+    user = relationship("User", backref=backref("projects"))
 # class MetaAnalysisImage(db.Model):
 #     __tablename__ = "metaanalysis_images"
 

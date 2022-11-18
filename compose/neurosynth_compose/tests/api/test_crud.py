@@ -1,9 +1,9 @@
 import pytest
 from marshmallow import fields
-from ...models import User, Studyset, Annotation, Specification, MetaAnalysis
+from ...models import User, Studyset, Annotation, Specification, MetaAnalysis, Project
 from ...schemas import (
     StudysetSchema, AnnotationSchema, SpecificationSchema,
-    MetaAnalysisSchema
+    MetaAnalysisSchema, ProjectSchema
 )
 from ...schemas.analysis import StringOrNested
 
@@ -15,6 +15,7 @@ from ...schemas.analysis import StringOrNested
         ("annotations", Annotation, AnnotationSchema),
         ("specifications", Specification, SpecificationSchema),
         ("meta-analyses", MetaAnalysis, MetaAnalysisSchema),
+        ("projects", Project, ProjectSchema),
     ]
 )
 def test_create(auth_client, user_data, endpoint, model, schema):

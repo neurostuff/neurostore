@@ -319,3 +319,7 @@ class StudysetReferencesResource(ObjectView):
 @view_maker
 class AnnotationReferencesResource(ObjectView):
     pass
+
+@view_maker
+class ProjectsView(ObjectView, ListView):
+    pass
