@@ -5,7 +5,7 @@ import { mockMetaAnalyses } from 'testing/mockData';
 export {};
 
 const PATH = '/meta-analyses';
-const PAGE_NAME = 'PublicMetaAnalysesPage';
+const PAGE_NAME = 'MetaAnalysesPage';
 
 describe(PAGE_NAME, () => {
     beforeEach(() => {

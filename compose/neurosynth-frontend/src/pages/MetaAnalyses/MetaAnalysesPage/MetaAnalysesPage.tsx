@@ -8,8 +8,8 @@ import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import { useAuth0 } from '@auth0/auth0-react';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 
-const PublicMetaAnalysesPage: React.FC = (props) => {
-    const { startTour } = useGetTour('PublicMetaAnalysesPage');
+const MetaAnalysesPage: React.FC = (props) => {
+    const { startTour } = useGetTour('MetaAnalysesPage');
     const history = useHistory();
     const { data, isLoading, isError } = useGetMetaAnalyses();
     const { user } = useAuth0();
@@ -22,7 +22,7 @@ const PublicMetaAnalysesPage: React.FC = (props) => {
                     marginBottom: '1rem',
                 }}
             >
-                <Typography variant="h4">Public Meta-Analyses</Typography>
+                <Typography variant="h4">Meta-Analyses</Typography>
                 <IconButton onClick={() => startTour()}>
                     <Help color="primary" />
                 </IconButton>
@@ -33,7 +33,7 @@ const PublicMetaAnalysesPage: React.FC = (props) => {
                 isLoading={false}
                 errorMessage="There was an error fetching meta-analyses"
             >
-                <Box data-tour="PublicMetaAnalysesPage-1">
+                <Box data-tour="MetaAnalysesPage-1">
                     <NeurosynthTable
                         tableConfig={{
                             isLoading: isLoading,
@@ -87,4 +87,4 @@ const PublicMetaAnalysesPage: React.FC = (props) => {
     );
 };
 
-export default PublicMetaAnalysesPage;
+export default MetaAnalysesPage;

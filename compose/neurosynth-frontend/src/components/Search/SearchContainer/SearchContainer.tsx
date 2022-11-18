@@ -1,7 +1,7 @@
 import { Pagination, TablePagination } from '@mui/material';
 import SearchBar from 'components/Search/SearchBar/SearchBar';
 import { Style } from 'index';
-import { SearchBy } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
+import { SearchBy } from 'pages/Studies/StudiesPage/StudiesPage';
 import { ChangeEvent } from 'react';
 import SearchContainerStyles from './SearchContainer.styles';
 

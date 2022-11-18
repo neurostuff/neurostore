@@ -5,7 +5,7 @@ import { mockStudysets } from 'testing/mockData';
 export {};
 
 const PATH = '/studysets';
-const PAGE_NAME = 'PublicStudysetsPage';
+const PAGE_NAME = 'StudysetsPage';
 
 describe(PAGE_NAME, () => {
     beforeEach(() => {

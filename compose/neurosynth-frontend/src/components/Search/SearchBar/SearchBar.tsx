@@ -2,7 +2,7 @@ import { Paper, InputBase, Button, FormControl, Select, MenuItem, Box } from '@m
 import SearchIcon from '@mui/icons-material/Search';
 import React, { useEffect, useState } from 'react';
 import SearchBarStyles from './SearchBar.styles';
-import { SearchBy } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
+import { SearchBy } from 'pages/Studies/StudiesPage/StudiesPage';
 import { useLocation } from 'react-router-dom';
 import { extractSearchedStringFromURL } from 'pages/helpers/utils';
 
@@ -30,7 +30,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
     };
 
     return (
-        <Box data-tour="PublicStudiesPage-2" sx={{ display: 'flex' }}>
+        <Box data-tour="StudiesPage-2" sx={{ display: 'flex' }}>
             <Box component="form" sx={{ width: '100%' }} onSubmit={handleOnSubmit}>
                 <Box sx={SearchBarStyles.searchContainer}>
                     <FormControl variant="outlined">

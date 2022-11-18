@@ -1,4 +1,4 @@
-import { SearchCriteria } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
+import { SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 

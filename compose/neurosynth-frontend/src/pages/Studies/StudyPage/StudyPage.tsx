@@ -10,6 +10,7 @@ import {
     IconButton,
     TableRow,
     TableCell,
+    Paper,
 } from '@mui/material';
 import React, { useState, useEffect, SyntheticEvent } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
@@ -43,14 +44,20 @@ const StudyPage: React.FC = (props) => {
     const [allowEdits, setAllowEdits] = useState(false);
     const history = useHistory();
     const { isAuthenticated, user } = useAuth0();
-    const params: { studyId: string } = useParams();
+    const {
+        projectId,
+        studysetId,
+        studyId,
+    }: { projectId: string; studysetId: string; studyId: string } = useParams();
+
+    console.log(`projectId: ${projectId} | studysetId: ${studysetId} | studyId: ${studyId}`);
 
     const { isLoading: createStudyIsLoading, mutate: createStudy } = useCreateStudy();
     const {
         isLoading: getStudyIsLoading,
         isError: getStudyIsError,
         data,
-    } = useGetStudyById(params.studyId);
+    } = useGetStudyById(studyId);
 
     useEffect(() => {
         if (data) {
@@ -62,7 +69,7 @@ const StudyPage: React.FC = (props) => {
     }, [data]);
 
     const handleCloneStudy = async () => {
-        createStudy(params.studyId, {
+        createStudy(studyId, {
             onSuccess: (res) => {
                 const createdStudyId = res.data.id as string;
                 history.push(`/studies/${createdStudyId}`);
@@ -71,7 +78,7 @@ const StudyPage: React.FC = (props) => {
     };
 
     const handleEditStudy = (event: React.MouseEvent) => {
-        history.push(`/studies/${params.studyId}/edit`);
+        history.push(`/studies/${studyId}/edit`);
     };
 
     const handleSelectAnalysis = (event: SyntheticEvent, newVal: number) => {
@@ -85,12 +92,50 @@ const StudyPage: React.FC = (props) => {
         const userIDAndStudyIDExist = !!user?.sub && !!data?.user;
         const thisUserOwnsThisStudy = (data?.user || null) === (user?.sub || undefined);
         const allowEdit = isAuthenticated && userIDAndStudyIDExist && thisUserOwnsThisStudy;
+        history.push('/projects/1iubegiuber/studysets/2iubf2iufb/studies/5cLR4qwokFqV/edit');
         setAllowEdits(allowEdit);
     }, [isAuthenticated, user?.sub, data?.user]);
 
+    const thisUserOwnsThisStudy = (data?.user || null) === (user?.sub || undefined);
+    const isViewingStudyFromProject = studysetId !== undefined && projectId !== undefined;
+    const showCloneMessage = isViewingStudyFromProject && !thisUserOwnsThisStudy;
+
     return (
         <StateHandlerComponent isLoading={getStudyIsLoading} isError={getStudyIsError}>
-            <Box
+            {showCloneMessage && (
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        backgroundColor: 'secondary.main',
+                        position: 'sticky',
+                        top: '1.5rem',
+                        color: 'white',
+                        padding: '1rem',
+                        zIndex: 10,
+                        marginBottom: '1rem',
+                    }}
+                >
+                    <Box>
+                        <Typography variant="h6">
+                            This study is owned by <b>neurosynth</b> and is <b>read-only</b>
+                        </Typography>
+                        <Typography>
+                            Would you like to make your own clone to edit the study?
+                        </Typography>
+                        <Typography>
+                            Once you clone, your studyset will contain the new study instead of the
+                            current one owned by <b>neurosynth</b>
+                        </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Button size="large" color="primary" variant="contained">
+                            clone and edit
+                        </Button>
+                    </Box>
+                </Box>
+            )}
+            {/* <Box
                 data-tour="StudyPage-8"
                 sx={[StudyPageStyles.actionButtonContainer, StudyPageStyles.spaceBelow]}
             >
@@ -155,7 +200,7 @@ const StudyPage: React.FC = (props) => {
                         <HelpIcon />
                     </IconButton>
                 </Box>
-            </Box>
+            </Box> */}
             <Box data-tour="StudyPage-1">
                 <Typography sx={StudyPageStyles.spaceBelow} variant="h6">
                     <b>{data?.name}</b>

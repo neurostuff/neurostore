@@ -1,4 +1,4 @@
-import { SearchBy, SearchCriteria } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
+import { SearchBy, SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
 
 const getSearchCriteriaFromURL = (locationURL?: string): SearchCriteria => {
     const newSearchCriteria = new SearchCriteria();

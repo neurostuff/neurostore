@@ -1,4 +1,4 @@
-import { SearchBy } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
+import { SearchBy } from 'pages/Studies/StudiesPage/StudiesPage';
 import { ISearchBar } from '../SearchBar';
 
 const mockSearchBar: React.FC<ISearchBar> = (props) => {

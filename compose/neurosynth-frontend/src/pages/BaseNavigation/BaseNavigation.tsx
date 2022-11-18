@@ -5,35 +5,30 @@ import LandingPage from '../LandingPage/LandingPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import NotFoundPage from 'pages/NotFound/NotFoundPage';
+import ProjectPage from 'pages/Projects/ProjectPage/ProjectPage';
 
 const EditAnnotationsPage = React.lazy(
     () => import('../Annotations/EditAnnotationsPage/EditAnnotationsPage')
 );
 const StudysetPage = React.lazy(() => import('../Studysets/StudysetPage/StudysetPage'));
-const PublicStudysetsPage = React.lazy(
-    () => import('../Studysets/PublicStudysetsPage/PublicStudysetsPage')
-);
-const UserStudysetsPage = React.lazy(
-    () => import('../Studysets/UserStudysetsPage/UserStudysetsPage')
-);
+const StudysetsPage = React.lazy(() => import('../Studysets/StudysetsPage/StudysetsPage'));
 const EditStudyPage = React.lazy(() => import('../Studies/EditStudyPage/EditStudyPage'));
-const PublicStudiesPage = React.lazy(
-    () => import('../Studies/PublicStudiesPage/PublicStudiesPage')
-);
+const StudiesPage = React.lazy(() => import('../Studies/StudiesPage/StudiesPage'));
 const StudyPage = React.lazy(() => import('../Studies/StudyPage/StudyPage'));
-const UserStudiesPage = React.lazy(() => import('../Studies/UserStudiesPage/UserStudiesPage'));
 const MetaAnalysisBuilderPage = React.lazy(
     () => import('../MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage')
 );
-const UserMetaAnalysesPage = React.lazy(
-    () => import('../MetaAnalyses/UserMetaAnalysesPage/UserMetaAnalysesPage')
-);
-const PublicMetaAnalysesPage = React.lazy(
-    () => import('../MetaAnalyses/PublicMetaAnalysesPage/PublicMetaAnalysesPage')
+
+const MetaAnalysesPage = React.lazy(
+    () => import('../MetaAnalyses/MetaAnalysesPage/MetaAnalysesPage')
 );
 const MetaAnalysisPage = React.lazy(
     () => import('../MetaAnalyses/MetaAnalysisPage/MetaAnalysisPage')
 );
+
+const ProjectsPage = React.lazy(() => import('../Projects/ProjectsPage/ProjectsPage'));
+
+const CurationPage = React.lazy(() => import('../CurationPage/CurationPage'));
 
 const BaseNavigation: React.FC = (_props) => {
     return (
@@ -56,64 +51,71 @@ const BaseNavigation: React.FC = (_props) => {
                 <Route path="/" exact={true}>
                     <LandingPage />
                 </Route>
-                <Route path="/studysets" exact={true}>
+                <Route path="/projects" exact>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <PublicStudysetsPage />
+                        <ProjectsPage />
                     </Box>
                 </Route>
-                <Route path="/userstudysets" exact={true}>
+                <Route path="/projects/:projectId" exact>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <UserStudysetsPage />
+                        <ProjectPage />
                     </Box>
                 </Route>
-                <Route path="/annotations/:annotationId" exact={true}>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <EditAnnotationsPage />
+                <Route path="/projects/:projectId/curation/:curationId" exact>
+                    <Box>
+                        <CurationPage />
                     </Box>
                 </Route>
-                <Route path="/studysets/:studysetId" exact={true}>
+                <Route path="/studysets" exact>
+                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                        <StudysetsPage />
+                    </Box>
+                </Route>
+                <Route
+                    path={['/studysets/:studysetId', '/projects/:projectId/studysets/:studysetId']}
+                    exact
+                >
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <StudysetPage />
                     </Box>
                 </Route>
-                <Route path="/studies" exact={true}>
+                <Route path="/studies" exact>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <PublicStudiesPage />
+                        <StudiesPage />
                     </Box>
                 </Route>
-                <Route path="/userstudies" exact={true}>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <UserStudiesPage />
-                    </Box>
-                </Route>
-                <Route path="/meta-analyses/build" exact={true}>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <MetaAnalysisBuilderPage />
-                    </Box>
-                </Route>
-                <Route path="/studies/:studyId" exact={true}>
+                <Route
+                    path={[
+                        '/studies/:studyId',
+                        '/projects/:projectId/studysets/:studysetId/studies/:studyId',
+                    ]}
+                    exact={true}
+                >
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <StudyPage />
                     </Box>
                 </Route>
-                <Route path="/studies/:studyId/edit">
+                <Route
+                    path="/projects/:projectId/studysets/:studysetId/studies/:studyId/edit"
+                    exact
+                >
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <EditStudyPage />
                     </Box>
                 </Route>
-                <Route path="/meta-analyses" exact={true}>
+                {/* <Route path="/meta-analyses/build" exact={true}>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <PublicMetaAnalysesPage />
+                        <MetaAnalysisBuilderPage />
+                    </Box>
+                </Route> */}
+                <Route path="/meta-analyses" exact>
+                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                        <MetaAnalysesPage />
                     </Box>
                 </Route>
-                <Route path="/meta-analyses/:metaAnalysisId" exact={true}>
+                <Route path="/meta-analyses/:metaAnalysisId" exact>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <MetaAnalysisPage />
-                    </Box>
-                </Route>
-                <Route path="/usermeta-analyses" exact={true}>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <UserMetaAnalysesPage />
                     </Box>
                 </Route>
                 <Route path="*">

@@ -47,9 +47,9 @@ const TourSteps: { [key: string]: StepType[] } = {
             stepInteraction: true,
         },
     ],
-    PublicStudiesPage: [
+    StudiesPage: [
         {
-            selector: '[data-tour="PublicStudiesPage-none"]',
+            selector: '[data-tour="StudiesPage-none"]',
             position: 'center',
             content: () => (
                 <div>
@@ -61,7 +61,7 @@ const TourSteps: { [key: string]: StepType[] } = {
             ),
         },
         {
-            selector: '[data-tour="PublicStudiesPage-2"]',
+            selector: '[data-tour="StudiesPage-2"]',
             content: () => (
                 <Typography>
                     You can use this searchbar to filter studies by specific criteria.
@@ -69,7 +69,7 @@ const TourSteps: { [key: string]: StepType[] } = {
             ),
         },
         {
-            selector: '[data-tour="PublicStudiesPage-3"]',
+            selector: '[data-tour="StudiesPage-3"]',
             content: () => (
                 <Typography variant="subtitle1">
                     Use this button to add studies to your <b>studyset</b>.
@@ -77,7 +77,7 @@ const TourSteps: { [key: string]: StepType[] } = {
             ),
         },
         {
-            selector: '[data-tour="PublicStudiesPage-4"]',
+            selector: '[data-tour="StudiesPage-4"]',
             content: () => (
                 <div>
                     <Typography variant="subtitle1">
@@ -254,7 +254,7 @@ const TourSteps: { [key: string]: StepType[] } = {
             stepInteraction: true,
         },
     ],
-    PublicStudysetsPage: [
+    StudysetsPage: [
         {
             selector: '[data-tour="StudysetsPage-none"]',
             position: 'center',
@@ -431,9 +431,9 @@ const TourSteps: { [key: string]: StepType[] } = {
             stepInteraction: true,
         },
     ],
-    PublicMetaAnalysesPage: [
+    MetaAnalysesPage: [
         {
-            selector: '[data-tour="PublicMetaAnalysesPage-none"]',
+            selector: '[data-tour="MetaAnalysesPage-none"]',
             content: () => (
                 <div>
                     <Typography variant="h5">Public Meta-Analyses Page</Typography>
@@ -445,7 +445,7 @@ const TourSteps: { [key: string]: StepType[] } = {
             position: 'center',
         },
         {
-            selector: '[data-tour="PublicMetaAnalysesPage-1"]',
+            selector: '[data-tour="MetaAnalysesPage-1"]',
             content: () => (
                 <div>
                     <Typography variant="subtitle1">

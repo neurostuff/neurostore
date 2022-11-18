@@ -9,7 +9,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { useHistory, useLocation } from 'react-router-dom';
 import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
-import { SearchBy, SearchCriteria } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
+import { SearchBy, SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
 import { StudysetList } from 'neurostore-typescript-sdk';
 import {
     addKVPToSearch,
@@ -18,8 +18,8 @@ import {
     getURLFromSearchCriteria,
 } from 'pages/helpers/utils';
 
-const PublicStudysetsPage: React.FC = (props) => {
-    const { startTour } = useGetTour('PublicStudysetsPage');
+const StudysetsPage: React.FC = (props) => {
+    const { startTour } = useGetTour('StudysetsPage');
     const { user, isLoading: authenticationIsLoading } = useAuth0();
     const history = useHistory();
     const location = useLocation();
@@ -101,7 +101,7 @@ const PublicStudysetsPage: React.FC = (props) => {
                 }}
             >
                 <Typography variant="h4">
-                    Public Studysets
+                    Studysets
                     <IconButton color="primary" onClick={() => startTour()}>
                         <HelpIcon />
                     </IconButton>
@@ -191,4 +191,4 @@ const PublicStudysetsPage: React.FC = (props) => {
     );
 };
 
-export default PublicStudysetsPage;
+export default StudysetsPage;

@@ -58,8 +58,8 @@ export class SearchCriteria {
     ) {}
 }
 
-const PublicStudiesPage = () => {
-    const { startTour } = useGetTour('PublicStudiesPage');
+const StudiesPage = () => {
+    const { startTour } = useGetTour('StudiesPage');
     const history = useHistory();
     const location = useLocation();
     const { isAuthenticated, user, isLoading: authenticationIsLoading } = useAuth0();
@@ -149,7 +149,7 @@ const PublicStudiesPage = () => {
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>
             <Box sx={{ display: 'flex' }}>
-                <Typography variant="h4">Public Studies</Typography>
+                <Typography variant="h4">Studies</Typography>
                 <IconButton onClick={() => startTour()} color="primary">
                     <HelpIcon />
                 </IconButton>
@@ -184,11 +184,6 @@ const PublicStudiesPage = () => {
                         }}
                         headerCells={[
                             {
-                                text: '',
-                                key: 'addToStudysetCol',
-                                styles: { display: isAuthenticated ? 'table-cell' : 'none' },
-                            },
-                            {
                                 text: 'Title',
                                 key: 'title',
                                 styles: { color: 'primary.contrastText', fontWeight: 'bold' },
@@ -220,17 +215,11 @@ const PublicStudiesPage = () => {
                         ]}
                         rows={(studyData?.results || []).map((studyrow, index) => (
                             <TableRow
-                                data-tour={index === 0 ? 'PublicStudiesPage-4' : null}
+                                data-tour={index === 0 ? 'StudiesPage-4' : null}
                                 sx={NeurosynthTableStyles.tableRow}
                                 key={studyrow.id || index}
                                 onClick={() => history.push(`/studies/${studyrow.id}`)}
                             >
-                                <TableCell
-                                    data-tour={index === 0 ? 'PublicStudiesPage-3' : null}
-                                    sx={{ display: isAuthenticated ? 'table-cell' : 'none' }}
-                                >
-                                    <StudysetsPopupMenu study={studyrow} />
-                                </TableCell>
                                 <TableCell>
                                     {studyrow?.name || (
                                         <Box sx={{ color: 'warning.dark' }}>No name</Box>
@@ -289,4 +278,4 @@ const PublicStudiesPage = () => {
         </StateHandlerComponent>
     );
 };
-export default PublicStudiesPage;
+export default StudiesPage;
