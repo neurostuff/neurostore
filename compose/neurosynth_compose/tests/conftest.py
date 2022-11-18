@@ -303,7 +303,8 @@ def user_data(session, mock_add_users):
 
             project = Project(
                 name=user.id + "'s project",
-                meta_analyses=[meta_analysis]
+                meta_analyses=[meta_analysis],
+                user=user,
             )
 
             to_commit.extend([studyset, annotation, specification, meta_analysis, project])
