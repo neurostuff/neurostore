@@ -12,7 +12,7 @@ from webargs import fields
 from ..database import db
 from ..models.analysis import (   # noqa E401
     Studyset, Annotation, MetaAnalysis, Specification,
-    StudysetReference, AnnotationReference
+    StudysetReference, AnnotationReference, Project
 )
 from ..models.auth import User
 
@@ -23,6 +23,7 @@ from ..schemas import (  # noqa E401
     SpecificationSchema,
     AnnotationReferenceSchema,
     StudysetReferenceSchema,
+    ProjectSchema,
 
 )
 from .singular import singularize
@@ -320,6 +321,9 @@ class StudysetReferencesResource(ObjectView):
 class AnnotationReferencesResource(ObjectView):
     pass
 
+
 @view_maker
 class ProjectsView(ObjectView, ListView):
-    pass
+    _nested = {
+        "meta_analyses": "MetaAnalysesView",
+    }
