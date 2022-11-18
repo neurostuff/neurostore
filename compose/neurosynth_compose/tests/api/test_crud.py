@@ -1,9 +1,9 @@
 import pytest
 from marshmallow import fields
-from ...models import User, Studyset, Annotation, Specification, MetaAnalysis
+from ...models import User, Studyset, Annotation, Specification, MetaAnalysis, Project
 from ...schemas import (
     StudysetSchema, AnnotationSchema, SpecificationSchema,
-    MetaAnalysisSchema
+    MetaAnalysisSchema, ProjectSchema
 )
 from ...schemas.analysis import StringOrNested
 
@@ -15,6 +15,7 @@ from ...schemas.analysis import StringOrNested
         ("annotations", Annotation, AnnotationSchema),
         ("specifications", Specification, SpecificationSchema),
         ("meta-analyses", MetaAnalysis, MetaAnalysisSchema),
+        ("projects", Project, ProjectSchema),
     ]
 )
 def test_create(auth_client, user_data, endpoint, model, schema):
@@ -27,6 +28,8 @@ def test_create(auth_client, user_data, endpoint, model, schema):
     if payload.get('annotation'):
         del payload['annotation']
         payload['internal_annotation_id'] = example.annotation.id
+    if payload.get('project'):
+        del payload['project']
 
     resp = auth_client.post(f"/api/{endpoint}", data=payload)
 
@@ -48,6 +51,7 @@ def test_create(auth_client, user_data, endpoint, model, schema):
         ("annotations", Annotation, AnnotationSchema),
         ("specifications", Specification, SpecificationSchema),
         ("meta-analyses", MetaAnalysis, MetaAnalysisSchema),
+        ("projects", Project, ProjectSchema),
     ]
 )
 def test_read(auth_client, user_data, endpoint, model, schema):
@@ -79,6 +83,7 @@ def test_read(auth_client, user_data, endpoint, model, schema):
         ("annotations", Annotation, AnnotationSchema, {"snapshot": {"fake": "stuff"}}),
         ("specifications", Specification, SpecificationSchema, {"type": "NEW"}),
         ("meta-analyses", MetaAnalysis, MetaAnalysisSchema, {"name": "my meta"}),
+        ("projects", Project, ProjectSchema, {"name": "my project"}),
     ]
 )
 def test_update(auth_client, db, session, user_data, endpoint, model, schema, update):

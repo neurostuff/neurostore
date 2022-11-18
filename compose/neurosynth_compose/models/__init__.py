@@ -5,6 +5,7 @@ from .analysis import (
     Annotation,
     AnnotationReference,
     MetaAnalysis,
+    Project,
 )
 
 from .auth import (
@@ -18,5 +19,6 @@ __all__ = [
     "Annotation",
     "AnnotationReference",
     "MetaAnalysis",
+    "Project",
     "User",
 ]

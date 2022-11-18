@@ -5,6 +5,7 @@ from .analysis import (
     AnnotationSchema,
     AnnotationReferenceSchema,
     SpecificationSchema,
+    ProjectSchema
 )
 from .users import (
     UserSchema
@@ -18,5 +19,6 @@ __all__ = [
     "AnnotationSchema",
     "AnnotationReferenceSchema",
     "SpecificationSchema",
+    "ProjectSchema",
     "UserSchema",
 ]

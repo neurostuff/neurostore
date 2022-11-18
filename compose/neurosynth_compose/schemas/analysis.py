@@ -31,6 +31,8 @@ class StringOrNested(fields.Nested):
             many = self.schema.many or self.many
             nested_obj = getattr(obj, self.data_key or self.name)
             return self.schema.dump(nested_obj, many=many)
+        elif nested_attr and self.many:
+            return [getattr(v, nested_attr) for v in value]
         elif nested_attr:
             return getattr(value, nested_attr)
         else:
@@ -42,8 +44,13 @@ class StringOrNested(fields.Nested):
             self._test_collection(value)
             return self._load(value, data)
         else:
-            if not isinstance(value, (str, bytes)):
+            if not isinstance(value, (str, bytes, list)):
                 raise self.make_error("invalid")
+            if isinstance(value, list):
+                try:
+                    return [utils.ensure_text_type(v).replace("\x00", "\uFFFD") for v in value]
+                except UnicodeDecodeError as error:
+                    raise self.make_error("invalid_utf8") from error
             try:
                 return utils.ensure_text_type(value).replace("\x00", "\uFFFD")
             except UnicodeDecodeError as error:
@@ -110,9 +117,27 @@ class MetaAnalysisSchema(BaseSchema):
     annotation = StringOrNested(
         AnnotationSchema, metadata={'pluck': 'neurostore_id'}, dump_only=True
     )
+    project = fields.String(allow_none=True)
     internal_studyset_id = fields.Pluck(
         StudysetSchema, "id", load_only=True, attribute="studyset"
     )
     internal_annotation_id = fields.Pluck(
         AnnotationSchema, "id", load_only=True, attribute="annotation"
+    )
+
+
+class ProjectSchema(BaseSchema):
+    name = fields.String(allow_none=True)
+    description = fields.String(allow_none=True)
+    provenance = fields.Dict(allow_none=True)
+    meta_analyses = StringOrNested(
+        MetaAnalysisSchema, metadata={'pluck': 'id'}, dump_only=True, many=True
+    )
+    _meta_analyses = fields.Pluck(
+        MetaAnalysisSchema,
+        "id",
+        data_key='meta_analyses',
+        attribute="meta_analyses",
+        load_only=True,
+        many=True
     )
