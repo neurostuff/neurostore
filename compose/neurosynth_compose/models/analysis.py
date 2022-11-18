@@ -106,6 +106,7 @@ class Project(BaseMixin, db.Model):
     name = db.Column(db.Text)
     description = db.Column(db.Text)
     provenance = db.Column(db.JSON)
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
 
     user = relationship("User", backref=backref("projects"))
 # class MetaAnalysisImage(db.Model):
