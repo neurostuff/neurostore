@@ -11,6 +11,7 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = False
 
+    FILE_DIR = os.environ.get('FILE_DIR')
     POSTGRES_HOST = os.environ.get('POSTGRES_HOST')
     POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', '')
     DB_NAME = 'compose'
@@ -25,6 +26,7 @@ class Config(object):
 
     SECURITY_PASSWORD_HASH = 'pbkdf2_sha512'
     SECURITY_PASSWORD_SALT = 'A_SECRET'
+    NEUROVAULT_ACCESS_TOKEN = os.environ.get('NEUROVAULT_ACCESS_TOKEN')
 
 
 class ProductionConfig(Config):

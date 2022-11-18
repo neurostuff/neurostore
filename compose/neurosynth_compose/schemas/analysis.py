@@ -1,9 +1,21 @@
 from marshmallow import (
     fields,
     Schema,
-    utils
+    utils,
+    ValidationError
 )
 
+
+class BytesField(fields.Field):
+    def _deserialize(self, value, attr, data, **kwargs):
+        if isinstance(value, str):
+            return bytes(value, encoding='latin1')
+        return value
+
+    def _serialize(self, value, obj, **kwargs):
+        if isinstance(value, bytes):
+            return value.decode(encoding='latin1')
+        return value
 
 class PGSQLString(fields.String):
     # https://www.commandprompt.com/blog/null-characters-workarounds-arent-good-enough/
@@ -115,3 +127,28 @@ class MetaAnalysisSchema(BaseSchema):
     internal_annotation_id = fields.Pluck(
         AnnotationSchema, "id", load_only=True, attribute="annotation"
     )
+
+
+class MetaAnalysisResultSchema(BaseSchema):
+    meta_analysis_id = fields.String()
+    cli_version = fields.String()
+    estimator = fields.String()
+    neurovault_collection_id = fields.String()
+
+
+
+class NeurovaultFileSchema(BaseSchema):
+    collection_id = fields.String()
+    image_id = fields.String()
+    path = fields.String()
+    exception = fields.String()
+    status = fields.String()
+    file = BytesField()
+
+class NeurovaultCollectionSchema(BaseSchema):
+    collection_id = fields.String()
+    meta_analysis_id = fields.String()
+    files = fields.Nested(NeurovaultFileSchema, many=True)
+    result = fields.String()
+
+

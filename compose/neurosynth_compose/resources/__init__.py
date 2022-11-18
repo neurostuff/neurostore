@@ -1,5 +1,8 @@
 from .analysis import (
     MetaAnalysesView,
+    MetaAnalysisResultsView,
+    NeurovaultCollectionsView,
+    NeurovaultFilesView,
     AnnotationsView,
     StudysetsView,
     SpecificationsView,
@@ -13,6 +16,9 @@ from .users import (
 
 __all__ = [
     "MetaAnalysesView",
+    "MetaAnalysisResultsView",
+    "NeurovaultCollectionsView",
+    "NeurovaultFilesView",
     "AnnotationsView",
     "StudysetsView",
     "StudysetReferencesResource",

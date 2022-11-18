@@ -12,7 +12,8 @@ from neurosynth_compose.ingest.neurostore import create_meta_analyses
 from ..database import db as _db
 from ..models import (
     User, Specification, Studyset, Annotation, MetaAnalysis,
-    StudysetReference, AnnotationReference
+    StudysetReference, AnnotationReference, MetaAnalysisResult,
+    NeurovaultCollection, NeurovaultFile
 )
 from auth0.v3.authentication import GetToken
 
@@ -55,6 +56,35 @@ def mock_decode_token(token):
         return {'sub': 'user1-id'}
     elif token == encode({"sub": "user2-id"}, "123", algorithm='HS256'):
         return {'sub': 'user2-id'}
+
+class MockPYNVClient:
+
+    def __init__(self, access_token):
+        self.access_token = access_token
+        self.collections = []
+        self.files = []
+    
+    def create_collection(self, *args, **kwargs):
+        import random
+
+        collection_id = random.randint(1, 10000)
+        self.collections.append(collection_id)
+
+        return {'id': collection_id}
+
+    def add_image(self, *args, **kwargs):
+        import random
+
+        image_id = random.randint(1, 10000)
+        self.files.append(image_id)
+
+        return {'id': image_id}
+
+
+
+@pytest.fixture(scope='session')
+def mock_pynv(monkeysession):
+    monkeysession.setattr("pynv.Client", MockPYNVClient)
 
 
 @pytest.fixture(scope="session")
@@ -244,7 +274,7 @@ def add_users(app, db):
 
 
 @pytest.fixture(scope="function")
-def user_data(session, mock_add_users):
+def user_data(app, session, mock_add_users):
     to_commit = []
     neurostore_dset = DATA_PATH / "nimare_test_integration.json"
     neurostore_annot = DATA_PATH / "nimare_test_integration_annotation.json"
@@ -305,6 +335,24 @@ def user_data(session, mock_add_users):
 
         session.add_all(to_commit)
         session.commit()
+
+@pytest.fixture(scope="function")
+def meta_analysis_results(app, session, user_data, mock_add_users, mock_pynv):
+    from ..resources.executor import run_nimare
+    from ..schemas import MetaAnalysisSchema
+    results = {}
+    for user_info in mock_add_users.values():
+        user = User.query.filter_by(id=user_info['id']).first()
+        for meta_analysis in MetaAnalysis.query.filter_by(user=user).all():
+            meta_schema = MetaAnalysisSchema(context={'nested': True}).dump(meta_analysis)
+            results[user_info['id']] = {
+                'meta_analysis_id': meta_analysis.id,
+                'results': run_nimare(meta_schema),
+            }
+    
+    return results
+
+
 
 
 @pytest.fixture(scope="function")

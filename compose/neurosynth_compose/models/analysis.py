@@ -101,33 +101,32 @@ class MetaAnalysis(BaseMixin, db.Model):
 class MetaAnalysisResult(BaseMixin, db.Model):
     __tablename__ = "meta_analysis_results"
     meta_analysis_id = db.Column(
-        db.Text, db.ForeignKey("meta_analyses.id"), primary_key=True
+        db.Text, db.ForeignKey("meta_analyses.id"), unique=True,
     )
-    neurostore_id = db.Column(db.Text, primary_key=True)
+    neurostore_id = db.Column(db.Text, unique=True)
     meta_analysis = relationship("MetaAnalysis", backref=backref("results"))
+    cli_version = db.Column(db.Text)  # neurosynth-compose cli version
+    cli_args = db.Column(db.JSON)  # Dictionary of cli arguments
 
 
-class NeurovaultCollection(db.Model):
+class NeurovaultCollection(BaseMixin, db.Model):
     """ Neurovault collection and upload status """
     __tablename__ = "neurovault_collections"
 
-    id = db.Column(db.Integer, primary_key=True)
     meta_analysis_id = db.Column(db.Text, db.ForeignKey('meta_analyses.id'))
-    uploaded_at = db.Column(db.DateTime, default=func.now())
+    meta_analysis_result_id = db.Column(db.Test, db.ForeignKey('meta_analysis_results.id'))
     collection_id = db.Column(db.Integer, unique=True)
-    cli_version = db.Column(db.Text)  # neurosynth-compose cli version
-    cli_args = db.Column(db.JSONB)  # Dictionary of cli arguments
-
+    result_id = db.Column(db.Text, db.ForeignKey('meta_analysis_results.id'), unique=True)
     files = db.relationship('NeurovaultFile', backref='collection')
     result = db.relationship('MetaAnalysisResult', backref=backref("collection"))
 
 
-class NeurovaultFile(db.Model):
+class NeurovaultFile(BaseMixin, db.Model):
     """ NV file upload """
-    id = db.Column(db.Integer, primary_key=True)
-    nv_collection_id = db.Column(
-        db.Integer, db.ForeignKey('neurovault_collections.id'),
+    collection_id = db.Column(
+        db.Integer, db.ForeignKey('neurovault_collections.collection_id'),
         nullable=False)
+    image_id = db.Column(db.Integer, unique=True)
     path = db.Column(db.Text, nullable=False)
     exception = db.Column(db.Text)
     traceback = db.Column(db.Text)

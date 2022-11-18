@@ -12,7 +12,8 @@ from webargs import fields
 from ..database import db
 from ..models.analysis import (   # noqa E401
     Studyset, Annotation, MetaAnalysis, Specification,
-    StudysetReference, AnnotationReference
+    StudysetReference, AnnotationReference, MetaAnalysisResult,
+    NeurovaultCollection, NeurovaultFile
 )
 from ..models.auth import User
 
@@ -23,7 +24,9 @@ from ..schemas import (  # noqa E401
     SpecificationSchema,
     AnnotationReferenceSchema,
     StudysetReferenceSchema,
-
+    MetaAnalysisResultSchema,
+    NeurovaultCollectionSchema,
+    NeurovaultFileSchema,
 )
 from .singular import singularize
 
@@ -52,6 +55,11 @@ class BaseView(MethodView):
 
     _model = None
     _nested = {}
+
+
+    @classmethod
+    def _external_request(cls, data, id):
+        return None
 
     @classmethod
     def update_or_create(cls, data, id=None, commit=True):
@@ -92,6 +100,11 @@ class BaseView(MethodView):
 
                 return record
 
+        # update data if there is an external request
+        external_data = cls._external_request(data, id)
+        if external_data:
+            data.update(external_data)
+    
         # Update all non-nested attributes
         for k, v in data.items():
             if k not in cls._nested and k not in ["id", "user"]:
@@ -319,3 +332,83 @@ class StudysetReferencesResource(ObjectView):
 @view_maker
 class AnnotationReferencesResource(ObjectView):
     pass
+
+
+@view_maker
+class MetaAnalysisResultsView(ObjectView, ListView):
+    pass
+
+@view_maker
+class NeurovaultCollectionsView(ObjectView, ListView):
+
+    @classmethod
+    def _external_request(cls, data, id):
+        #analysis, cli_version=None,  cli_args=None, 
+        #fmriprep_version=None, estimator=None, force=False):
+        #collection_name = f"{analysis.name} - {analysis.hash_id}"
+        # if force is True:
+        #     timestamp = datetime.datetime.utcnow().strftime(
+        #         '%Y-%m-%d_%H:%M')
+        #     collection_name += f"_{timestamp}"
+        from pathlib import Path
+
+        import flask
+        from pynv import Client
+
+        from ..core import app
+
+        meta_analysis = MetaAnalysis.query.filter_by(id=data['meta_analysis_id']).one()
+        collection_name = meta_analysis.name
+
+        url = f"{flask.request.host_url}"\
+            f"meta-analyses/{meta_analysis.id}"
+        try:
+            api = Client(
+                access_token=app.config['NEUROVAULT_ACCESS_TOKEN']
+            )
+            collection = api.create_collection(
+                collection_name,
+                description=meta_analysis.description,
+                full_dataset_url=url
+            )
+            data['collection_id'] = collection['id']
+        except Exception:
+            abort(422, f"Error creating collection named: {collection_name}, "
+                    "perhaps one with that name already exists?")
+
+
+        upload_dir = Path(
+            app.config['FILE_DIR']) / 'uploads' / str(collection['id'])
+        upload_dir.mkdir(exist_ok=True, parents=True)
+
+        return data
+
+@view_maker
+class NeurovaultFilesView(ObjectView, ListView):
+
+    @classmethod
+    def _external_request(cls, data, id):
+        from pathlib import Path
+
+        from pynv import Client
+
+        from ..core import app
+        
+
+        api = Client(access_token=app.config['NEUROVAULT_ACCESS_TOKEN'])
+
+        try:
+            nv_file = api.add_image(
+                data['collection_id'], data['file'],
+                modality="fMRI-BOLD", map_type='z',
+                analysis_level="G", cognitive_paradigm_cogatlas='None',
+                is_valid=True)
+            
+            data.pop('file') # remove file as it's been uploaded
+            data['image_id'] = nv_file['id']
+        except Exception as e:
+            data['status'] = 'ERROR'
+        else:
+            data['status'] = 'OK'
+        
+        return data

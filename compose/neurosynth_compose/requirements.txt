@@ -28,5 +28,5 @@ scipy~=1.9
 schemathesis~=3.14
 pytest~=7.1
 git+https://github.com/neurostuff/NiMARE.git@455afed#egg=nimare
-pynv
+git+https://github.com/jdkent/pynv.git@enh/allow_bytes#egg=pynv
 git+https://github.com/neurostuff/neurostore-python-sdk.git

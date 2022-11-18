@@ -1,5 +1,8 @@
 from .analysis import (
     MetaAnalysisSchema,
+    MetaAnalysisResultSchema,
+    NeurovaultCollectionSchema,
+    NeurovaultFileSchema,
     StudysetSchema,
     StudysetReferenceSchema,
     AnnotationSchema,
@@ -13,6 +16,9 @@ from .users import (
 
 __all__ = [
     "MetaAnalysisSchema",
+    "MetaAnalysisResultSchema",
+    "NeurovaultCollectionSchema",
+    "NeurovaultFileSchema",
     "StudysetSchema",
     "StudysetReferenceSchema",
     "AnnotationSchema",
