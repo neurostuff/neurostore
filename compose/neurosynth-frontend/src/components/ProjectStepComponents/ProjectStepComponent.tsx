@@ -6,6 +6,7 @@ interface IProjectStepComponent {
     stepTitleElement: JSX.Element;
     descriptionElement: JSX.Element;
     enabledElement: JSX.Element;
+    disabled: boolean;
 }
 
 const ProjectStepComponent: React.FC<IProjectStepComponent & StepProps> = (props) => {
@@ -14,6 +15,7 @@ const ProjectStepComponent: React.FC<IProjectStepComponent & StepProps> = (props
         stepTitleElement = <></>,
         descriptionElement = <></>,
         enabledElement = <></>,
+        disabled = true,
         ...stepProps
     } = props;
 

@@ -1,7 +1,7 @@
 import { useQuery } from 'react-query';
 import { IProject } from './useGetProjects';
 
-const useGetProjectById = (projectId: string) => {
+const useGetProjectById = (projectId: string | undefined) => {
     return useQuery(['projects', projectId], () => {
         const x = new Promise<IProject>((res, rej) => {
             const tempProj: IProject = {

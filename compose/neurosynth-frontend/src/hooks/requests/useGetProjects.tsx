@@ -1,33 +1,15 @@
+import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 import { useQuery } from 'react-query';
 
-interface ITag {
+export interface ITag {
     label: string;
     id: string;
     isExclusionTag: boolean;
 }
 
-interface IStubStudy {
-    id: string;
-    title: string;
-    authors: string;
-    keywords: string[];
-    pmid: string;
-    doi: string;
-    articleYear: number | undefined;
-    abstractText: string | { label: string; text: string }[];
-    articleLink: string;
-    exclusionTag?: ITag;
-    tags: ITag[];
-}
-
-interface ICurationColumn {
-    columnId: string;
-    columnTitle: string;
-    items: IStubStudy[];
-}
-
 export interface ICurationMetadata {
     columns: ICurationColumn[];
+    tags: ITag[];
 }
 
 interface IStudyExtractionStatus {

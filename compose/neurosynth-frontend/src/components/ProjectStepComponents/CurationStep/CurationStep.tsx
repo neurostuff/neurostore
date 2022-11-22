@@ -183,19 +183,19 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                         {
                                             label: 'Simple Workflow',
                                             secondary:
-                                                'workflow for people who just want to run a meta-analysis on all imported studies',
+                                                'Workflow for users that simply want to include all imported studies in their meta-analysi',
                                             onClick: () => {},
                                         },
                                         {
                                             label: 'Custom',
                                             secondary:
-                                                'specify how many columns you want for a custom workflow for inclusion and exclusion',
+                                                'Specify how many columns you want for a custom inclusion/exclusion workflow',
                                             onClick: () => {},
                                         },
                                         {
                                             label: 'Reuse a studyset',
                                             secondary:
-                                                'Skip this step and run a meta-analysis on an existing studyset',
+                                                'Skip the curation step and run a meta-analysis on an existing studyset',
                                             onClick: () => {},
                                         },
                                     ]}

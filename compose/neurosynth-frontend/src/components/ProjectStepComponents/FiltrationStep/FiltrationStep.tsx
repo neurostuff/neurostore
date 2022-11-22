@@ -17,40 +17,42 @@ import {
     Divider,
 } from '@mui/material';
 import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
-import { IExtractionMetadata } from 'hooks/requests/useGetProjects';
 import { useHistory, useParams } from 'react-router-dom';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
 
-interface IExtractionStep {
-    filtrationMetadata: IExtractionStep | undefined;
+interface IFiltrationStep {
+    filter: string | undefined;
     disabled: boolean;
 }
 
-const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
+const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
     const { projectId }: { projectId: string } = useParams();
     const history = useHistory();
-    const { filtrationMetadata, ...stepProps } = props;
+    const { filter, disabled, ...stepProps } = props;
 
-    const filtrationMetadataExists = !!filtrationMetadata;
+    const filterExists = !!filter;
 
     return (
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
             <StepLabel>
-                <Typography color="primary" variant="h6">
-                    <b>Curation</b>: Import, organize, and include studies of interest
+                <Typography sx={{ color: disabled ? 'muted.main' : 'primary.main' }} variant="h6">
+                    <b>Filtration</b>: Select the analyses to include
                 </Typography>
             </StepLabel>
             <StepContent>
                 <Box sx={{ marginLeft: '2rem' }}>
                     <Typography sx={{ color: 'muted.main' }}>
-                        <b>The first step when creating a meta-analysis</b>
+                        <b>
+                            Your studyset's studies now have all the relevant information (i.e.
+                            metadata, coordinates, annotations) needed for a meta-analysis
+                        </b>
                     </Typography>
                     <Typography gutterBottom sx={{ color: 'muted.main' }}>
-                        In this step, import studies from PubMed, tag studies, and either exclude
-                        from or include studies into your meta-analysis
+                        In this step, select the analyses from each study that you want to include
+                        in the meta-analysis based on your analysis annotations
                     </Typography>
                     <Box sx={{ marginTop: '1rem' }}>
-                        {filtrationMetadataExists ? (
+                        {filterExists ? (
                             <Box sx={[ProjectStepComponentsStyles.stepCard]}>
                                 <Card sx={{ width: '100%', height: '100%' }}>
                                     <CardContent>
@@ -170,42 +172,12 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                 sx={[
                                     ProjectStepComponentsStyles.stepCard,
                                     ProjectStepComponentsStyles.getStartedContainer,
-                                    { borderColor: 'primary.main' },
+                                    { borderColor: disabled ? 'muted.main' : 'primary.main' },
                                 ]}
                             >
-                                <NavToolbarPopupSubMenu
-                                    options={[
-                                        {
-                                            label: 'PRISMA Workflow',
-                                            secondary:
-                                                'Standard PRISMA workflow and modal use case. Curation step includes four columns: Identification, Screening, Eligibility, and Included',
-                                            onClick: () => {},
-                                        },
-                                        {
-                                            label: 'Simple Workflow',
-                                            secondary:
-                                                'workflow for people who just want to run a meta-analysis on all imported studies',
-                                            onClick: () => {},
-                                        },
-                                        {
-                                            label: 'Custom',
-                                            secondary:
-                                                'specify how many columns you want for a custom workflow for inclusion and exclusion',
-                                            onClick: () => {},
-                                        },
-                                        {
-                                            label: 'Reuse a studyset',
-                                            secondary:
-                                                'Skip this step and run a meta-analysis on an existing studyset',
-                                            onClick: () => {},
-                                        },
-                                    ]}
-                                    buttonProps={{
-                                        endIcon: <KeyboardArrowDown />,
-                                        sx: { width: '100%', height: '100%' },
-                                    }}
-                                    buttonLabel="curation: get started"
-                                />
+                                <Button disabled={disabled} sx={{ width: '100%', height: '100%' }}>
+                                    filtration: get started
+                                </Button>
                             </Box>
                         )}
                     </Box>
@@ -215,4 +187,4 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
     );
 };
 
-export default ExtractionStep;
+export default FiltrationStep;

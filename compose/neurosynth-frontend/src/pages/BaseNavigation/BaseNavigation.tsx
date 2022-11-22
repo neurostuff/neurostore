@@ -61,8 +61,8 @@ const BaseNavigation: React.FC = (_props) => {
                         <ProjectPage />
                     </Box>
                 </Route>
-                <Route path="/projects/:projectId/curation/:curationId" exact>
-                    <Box>
+                <Route path="/projects/:projectId/curation" exact>
+                    <Box sx={{ margin: '2rem' }}>
                         <CurationPage />
                     </Box>
                 </Route>
@@ -103,11 +103,6 @@ const BaseNavigation: React.FC = (_props) => {
                         <EditStudyPage />
                     </Box>
                 </Route>
-                {/* <Route path="/meta-analyses/build" exact={true}>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <MetaAnalysisBuilderPage />
-                    </Box>
-                </Route> */}
                 <Route path="/meta-analyses" exact>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <MetaAnalysesPage />
