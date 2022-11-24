@@ -9,14 +9,12 @@ import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDe
 import NavToolbarStyles from './NavToolbar.styles';
 import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
 import { useState } from 'react';
-import { useCreateMetaAnalysis } from 'hooks';
+import { INav } from '../Navbar';
 
-const NavToolbar: React.FC<{ login: () => void; logout: () => void }> = (props) => {
+const NavToolbar: React.FC<INav> = (props) => {
     const { isAuthenticated } = useAuth0();
     const [createDetailsDialogIsOpen, setCreateDetailsDialogIsOpen] = useState(false);
     const history = useHistory();
-
-    const { mutate, isError, error, isLoading } = useCreateMetaAnalysis();
 
     return (
         <Toolbar disableGutters>
@@ -40,11 +38,7 @@ const NavToolbar: React.FC<{ login: () => void; logout: () => void }> = (props) 
                     <CreateDetailsDialog
                         titleText="Create new project"
                         isOpen={createDetailsDialogIsOpen}
-                        onCreate={(name: string, description: string) => {
-                            console.log(name);
-
-                            mutate({});
-                        }}
+                        onCreate={props.onCreateProject}
                         onCloseDialog={() => setCreateDetailsDialogIsOpen(false)}
                     />
                     {isAuthenticated && (
@@ -111,9 +105,7 @@ const NavToolbar: React.FC<{ login: () => void; logout: () => void }> = (props) 
                     </Button>
                     <Button
                         variant="outlined"
-                        onClick={() => {
-                            isAuthenticated ? props.logout() : props.login();
-                        }}
+                        onClick={() => (isAuthenticated ? props.onLogout : props.onLogin())}
                         sx={[
                             NavToolbarStyles.menuItemColor,
                             NavToolbarStyles.menuItemPadding,

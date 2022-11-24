@@ -1,16 +1,13 @@
 import { Box, IconButton, Typography, TableRow, TableCell } from '@mui/material';
-import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import HelpIcon from '@mui/icons-material/Help';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import useGetProjects from 'hooks/requests/useGetProjects';
-import { useAuth0 } from '@auth0/auth0-react';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { useHistory } from 'react-router-dom';
 
 const ProjectsPage: React.FC = (props) => {
-    const { data, isError, isLoading } = useGetProjects();
-    const { isAuthenticated } = useAuth0();
+    const { data, isError, isLoading, isFetching } = useGetProjects();
     const history = useHistory();
 
     return (
@@ -26,11 +23,11 @@ const ProjectsPage: React.FC = (props) => {
 
             <NeurosynthTable
                 tableConfig={{
-                    isLoading: isLoading,
+                    isLoading: isLoading || isFetching,
                     loaderColor: 'secondary',
                     tableHeaderBackgroundColor: 'secondary.main',
                     noDataDisplay: (
-                        <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No studies found</Box>
+                        <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No projects found</Box>
                     ),
                 }}
                 headerCells={[
@@ -57,7 +54,7 @@ const ProjectsPage: React.FC = (props) => {
                         </TableCell>
                         <TableCell>
                             {project?.description || (
-                                <Box sx={{ color: 'warning.dark' }}>No author(s)</Box>
+                                <Box sx={{ color: 'warning.dark' }}>No description</Box>
                             )}
                         </TableCell>
                     </TableRow>

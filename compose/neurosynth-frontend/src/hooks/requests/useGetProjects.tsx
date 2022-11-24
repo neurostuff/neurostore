@@ -1,5 +1,7 @@
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
+import { Project, ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { useQuery } from 'react-query';
+import API from 'utils/api';
 
 export interface ITag {
     label: string;
@@ -21,46 +23,24 @@ export interface IExtractionMetadata {
     studyStatusList: IStudyExtractionStatus[];
 }
 
-export interface IProject {
-    id: string;
-    name: string;
-    description: string;
-    provenance: null | {
-        curationMetadata?: ICurationMetadata;
-        extractionMetadata?: IExtractionMetadata;
-    };
-    studysetId: string | null;
-    metaAnalysisId: string | null;
+export interface IProvenance {
+    curationMetadata?: ICurationMetadata;
+    extractionMetadata?: IExtractionMetadata;
+}
+
+// define this interface to overwrite provenance type
+export interface INeurosynthProject extends Omit<Project, 'provenance'> {
+    provenance?: IProvenance;
+}
+
+// define this interface to overwrite provenance type
+export interface INeurosynthProjectReturn extends Omit<ProjectReturn, 'provenance'> {
+    provenance: IProvenance;
 }
 
 const useGetProjects = () => {
-    return useQuery(['projects'], () => {
-        // API.NeurostoreServices.ProjectsService.ProjectsGet
-        const mockProjects: IProject[] = [
-            {
-                id: '129hf8iuse',
-                name: 'my project name',
-                description: 'my project description',
-                provenance: {},
-                studysetId: null,
-                metaAnalysisId: null,
-            },
-            {
-                id: 'nioh0993n42b',
-                name: 'some other test project',
-                description:
-                    'this is a description to talk about a new project that i am making for demo purposes',
-                provenance: {},
-                studysetId: null,
-                metaAnalysisId: null,
-            },
-        ];
-
-        const x = new Promise<IProject[]>((res, rej) => {
-            res(mockProjects);
-        });
-
-        return x;
+    return useQuery('projects', () => API.NeurosynthServices.ProjectsService.projectsGet(), {
+        select: (axiosResponse) => axiosResponse.data.results as INeurosynthProjectReturn[],
     });
 };
 

@@ -20,6 +20,17 @@ import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopup
 import { ICurationMetadata } from 'hooks/requests/useGetProjects';
 import { useHistory, useParams } from 'react-router-dom';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
+import useUpdateProject from 'hooks/requests/useUpdateProject';
+import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
+import { useState } from 'react';
+import CreateCurationBoardDialog from 'components/Dialogs/CreateCurationBoardDialog/CreateCurationBoardDialog';
+
+enum ECurationBoardTypes {
+    PRISMA,
+    SIMPLE,
+    CUSTOM,
+    SKIP,
+}
 
 interface ICurationStep {
     curationMetadata: ICurationMetadata | undefined;
@@ -29,6 +40,54 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
     const { projectId }: { projectId: string } = useParams();
     const history = useHistory();
     const { curationMetadata, ...stepProps } = props;
+    const [dialogIsOpen, setDialogIsOpen] = useState(false);
+    const [curationSummary, setCurationSummary] = useState({
+        total: 0,
+        included: 0,
+        uncategorized: 0,
+        excluded: 0,
+    });
+
+    const { mutate, isLoading, isError } = useUpdateProject();
+
+    const handleCreateCreationBoard = (curationBoardType: ECurationBoardTypes) => {
+        switch (curationBoardType) {
+            case ECurationBoardTypes.PRISMA:
+                createBoard(['identification', 'screening', 'eligibility', 'included']);
+                break;
+            case ECurationBoardTypes.SIMPLE:
+                createBoard(['included']);
+                break;
+            case ECurationBoardTypes.CUSTOM:
+                setDialogIsOpen(true);
+                break;
+            case ECurationBoardTypes.SKIP:
+                // TODO: implement this
+                break;
+            default:
+                return;
+        }
+    };
+
+    const createBoard = (curationBoardInitColumns: string[]) => {
+        const columns: ICurationColumn[] = curationBoardInitColumns.map((col, index) => ({
+            id: `${projectId}_${index}`,
+            name: col,
+            stubStudies: [],
+        }));
+
+        mutate({
+            projectId,
+            project: {
+                provenance: {
+                    curationMetadata: {
+                        columns: columns,
+                        tags: [],
+                    },
+                },
+            },
+        });
+    };
 
     const curationMetadataExists = !!curationMetadata;
 
@@ -45,8 +104,8 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                         <b>The first step when creating a meta-analysis</b>
                     </Typography>
                     <Typography gutterBottom sx={{ color: 'muted.main' }}>
-                        In this step, import studies from PubMed, tag studies, and either exclude
-                        from or include studies into your meta-analysis
+                        In this step, import studies from PubMed, tag studies, and either exclude or
+                        include studies into your meta-analysis
                     </Typography>
                     <Box sx={{ marginTop: '1rem' }}>
                         {curationMetadataExists ? (
@@ -61,7 +120,7 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                             }}
                                         >
                                             <Typography sx={{ color: 'muted.main' }}>
-                                                433 studies
+                                                {curationSummary.total} studies
                                             </Typography>
                                             <CircularProgress
                                                 sx={{
@@ -71,7 +130,13 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                                     borderRadius: '50%',
                                                 }}
                                                 variant="determinate"
-                                                value={Math.round(((30 + 372) / 433) * 100)}
+                                                value={
+                                                    curationSummary.total === 0
+                                                        ? 0
+                                                        : (curationSummary.included +
+                                                              curationSummary.excluded) /
+                                                          curationSummary.total
+                                                }
                                             />
                                         </Box>
                                         <Typography
@@ -101,12 +166,12 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                                     }}
                                                 />
                                                 <Typography sx={{ color: 'success.main' }}>
-                                                    30 included
+                                                    {curationSummary.included} included
                                                 </Typography>
                                             </Box>
                                             <Box>
                                                 <Divider
-                                                    sx={{ margin: '0 20px' }}
+                                                    sx={ProjectStepComponentsStyles.divider}
                                                     orientation="vertical"
                                                 />
                                             </Box>
@@ -124,12 +189,12 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                                     }}
                                                 />
                                                 <Typography sx={{ color: 'warning.dark' }}>
-                                                    31 uncategorized
+                                                    {curationSummary.uncategorized} uncategorized
                                                 </Typography>
                                             </Box>
                                             <Box>
                                                 <Divider
-                                                    sx={{ margin: '0 20px' }}
+                                                    sx={ProjectStepComponentsStyles.divider}
                                                     orientation="vertical"
                                                 />
                                             </Box>
@@ -147,7 +212,7 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                                     }}
                                                 />
                                                 <Typography sx={{ color: 'error.dark' }}>
-                                                    372 excluded
+                                                    {curationSummary.excluded} excluded
                                                 </Typography>
                                             </Box>
                                         </Box>
@@ -172,32 +237,48 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                     { borderColor: 'primary.main' },
                                 ]}
                             >
+                                <CreateCurationBoardDialog
+                                    onCloseDialog={() => setDialogIsOpen(false)}
+                                    onCreateCurationBoard={(curationBoardColumns: string[]) =>
+                                        createBoard(curationBoardColumns)
+                                    }
+                                    isOpen={dialogIsOpen}
+                                />
                                 <NavToolbarPopupSubMenu
                                     options={[
                                         {
                                             label: 'PRISMA Workflow',
                                             secondary:
                                                 'Standard PRISMA workflow and modal use case. Curation step includes four columns: Identification, Screening, Eligibility, and Included',
-                                            onClick: () => {},
+                                            onClick: () =>
+                                                handleCreateCreationBoard(
+                                                    ECurationBoardTypes.PRISMA
+                                                ),
                                         },
                                         {
                                             label: 'Simple Workflow',
                                             secondary:
                                                 'Workflow for users that simply want to include all imported studies in their meta-analysi',
-                                            onClick: () => {},
+                                            onClick: () =>
+                                                handleCreateCreationBoard(
+                                                    ECurationBoardTypes.SIMPLE
+                                                ),
                                         },
                                         {
                                             label: 'Custom',
                                             secondary:
                                                 'Specify how many columns you want for a custom inclusion/exclusion workflow',
-                                            onClick: () => {},
+                                            onClick: () =>
+                                                handleCreateCreationBoard(
+                                                    ECurationBoardTypes.CUSTOM
+                                                ),
                                         },
-                                        {
-                                            label: 'Reuse a studyset',
-                                            secondary:
-                                                'Skip the curation step and run a meta-analysis on an existing studyset',
-                                            onClick: () => {},
-                                        },
+                                        // {
+                                        //     label: 'Reuse a studyset',
+                                        //     secondary:
+                                        //         'Skip the curation step and run a meta-analysis on an existing studyset',
+                                        //     onClick: () => {},
+                                        // },
                                     ]}
                                     buttonProps={{
                                         endIcon: <KeyboardArrowDown />,

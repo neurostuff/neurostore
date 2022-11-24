@@ -16,10 +16,15 @@ describe('NavToolbar Component', () => {
 
     const mockLogin = jest.fn();
     const mockLogout = jest.fn();
+    const mockOnCreateProject = jest.fn();
     it('should render', () => {
         render(
             <BrowserRouter>
-                <NavToolbar login={mockLogin} logout={mockLogout} />
+                <NavToolbar
+                    onCreateProject={mockOnCreateProject}
+                    onLogin={mockLogin}
+                    onLogout={mockLogout}
+                />
             </BrowserRouter>
         );
     });
@@ -27,7 +32,11 @@ describe('NavToolbar Component', () => {
     it('should show limited options when not authenticated', () => {
         render(
             <BrowserRouter>
-                <NavToolbar login={mockLogin} logout={mockLogout} />
+                <NavToolbar
+                    onCreateProject={mockOnCreateProject}
+                    onLogin={mockLogin}
+                    onLogout={mockLogout}
+                />
             </BrowserRouter>
         );
 
@@ -45,7 +54,11 @@ describe('NavToolbar Component', () => {
 
         render(
             <BrowserRouter>
-                <NavToolbar login={mockLogin} logout={mockLogout} />
+                <NavToolbar
+                    onCreateProject={mockOnCreateProject}
+                    onLogin={mockLogin}
+                    onLogout={mockLogout}
+                />
             </BrowserRouter>
         );
 
@@ -59,7 +72,11 @@ describe('NavToolbar Component', () => {
     it('should login', () => {
         render(
             <BrowserRouter>
-                <NavToolbar login={mockLogin} logout={mockLogout} />
+                <NavToolbar
+                    onCreateProject={mockOnCreateProject}
+                    onLogin={mockLogin}
+                    onLogout={mockLogout}
+                />
             </BrowserRouter>
         );
 
@@ -72,7 +89,11 @@ describe('NavToolbar Component', () => {
 
         render(
             <BrowserRouter>
-                <NavToolbar login={mockLogin} logout={mockLogout} />
+                <NavToolbar
+                    onCreateProject={mockOnCreateProject}
+                    onLogin={mockLogin}
+                    onLogout={mockLogout}
+                />
             </BrowserRouter>
         );
 
@@ -85,7 +106,11 @@ describe('NavToolbar Component', () => {
 
         render(
             <BrowserRouter>
-                <NavToolbar login={mockLogin} logout={mockLogout} />
+                <NavToolbar
+                    onCreateProject={mockOnCreateProject}
+                    onLogin={mockLogin}
+                    onLogout={mockLogout}
+                />
             </BrowserRouter>
         );
 
@@ -94,10 +119,34 @@ describe('NavToolbar Component', () => {
         expect(screen.getByTestId('mock-create-details-dialog')).toBeInTheDocument();
     });
 
+    it('should create a new project', () => {
+        useAuth0().isAuthenticated = true;
+
+        render(
+            <BrowserRouter>
+                <NavToolbar
+                    onCreateProject={mockOnCreateProject}
+                    onLogin={mockLogin}
+                    onLogout={mockLogout}
+                />
+            </BrowserRouter>
+        );
+
+        userEvent.click(screen.getByText('new project'));
+        expect(screen.getByTestId('mock-create-details-dialog')).toBeInTheDocument();
+        userEvent.click(screen.getByTestId('mock-create-button'));
+
+        expect(mockOnCreateProject).toHaveBeenCalledWith('test name', 'test description');
+    });
+
     it('should open the navpopup menu with the given menu items', () => {
         render(
             <BrowserRouter>
-                <NavToolbar login={mockLogin} logout={mockLogout} />
+                <NavToolbar
+                    onCreateProject={mockOnCreateProject}
+                    onLogin={mockLogin}
+                    onLogout={mockLogout}
+                />
             </BrowserRouter>
         );
 

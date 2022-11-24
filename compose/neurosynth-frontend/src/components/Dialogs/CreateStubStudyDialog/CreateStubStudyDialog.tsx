@@ -1,11 +1,11 @@
 import { TextField, Box, Button, Typography, Chip } from '@mui/material';
 import TagSelectorPopup from 'components/CurationComponents/TagSelectorPopup/TagSelectorPopup';
-import BaseDialog, { IBaseDialog } from 'components/Dialogs/BaseDialog';
+import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import CreateStubStudyDialogStyles from 'components/Dialogs/CreateStubStudyDialog/CreateStubStudyDialog.styles';
 import { ITag } from 'hooks/requests/useGetProjects';
 import { useState } from 'react';
 
-const CreateStubStudyDialog: React.FC<Omit<IBaseDialog, 'dialogTitle'>> = (props) => {
+const CreateStubStudyDialog: React.FC<Omit<IDialog, 'dialogTitle'>> = (props) => {
     const [tags, setTags] = useState<ITag[]>([]);
 
     return (
@@ -83,7 +83,7 @@ const CreateStubStudyDialog: React.FC<Omit<IBaseDialog, 'dialogTitle'>> = (props
                     <Button color="primary" variant="contained">
                         create
                     </Button>
-                    <Button color="error" variant="text">
+                    <Button onClick={props.onCloseDialog} color="error" variant="text">
                         cancel
                     </Button>
                 </Box>

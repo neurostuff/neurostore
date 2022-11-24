@@ -19,6 +19,7 @@ import {
     MetaAnalysisApi,
     AnnotationApi as NeurosynthAnnotationApi,
     StudysetApi as NeurosynthStudysetApi,
+    DefaultApi as ProjectApi,
 } from '../neurosynth-compose-typescript-sdk';
 
 export type NeurostoreAnnotation = AnnotationBase &
@@ -56,6 +57,7 @@ const NeurosynthServices = {
     SpecificationsService: new SpecificationApi(neurosynthConfig),
     StudysetsService: new NeurosynthStudysetApi(neurosynthConfig),
     AnnotationsService: new NeurosynthAnnotationApi(neurosynthConfig),
+    ProjectsService: new ProjectApi(neurosynthConfig),
 };
 
 const UpdateServicesWithToken = (token: string) => {

@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
-import BaseDialog, { IBaseDialog } from 'components/Dialogs/BaseDialog';
+import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 
-const PubmedImportDialog: React.FC<Omit<IBaseDialog, 'dialogTitle'>> = (props) => {
+const PubmedImportDialog: React.FC<Omit<IDialog, 'dialogTitle'>> = (props) => {
     return (
         <BaseDialog
             onCloseDialog={props.onCloseDialog}

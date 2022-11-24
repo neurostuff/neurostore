@@ -22,6 +22,9 @@ const ProjectStepComponentsStyles: Style = {
             marginLeft: '20px',
         },
     },
+    divider: {
+        margin: '0 20px',
+    },
 };
 
 export default ProjectStepComponentsStyles;

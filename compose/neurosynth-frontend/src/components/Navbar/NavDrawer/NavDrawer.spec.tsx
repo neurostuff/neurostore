@@ -10,15 +10,20 @@ jest.mock('components/Dialogs/CreateDetailsDialog/CreateDetailsDialog');
 describe('NavDrawer component', () => {
     let renderResult: RenderResult;
 
-    const mockLogin = jest.fn();
-    const mockLogout = jest.fn();
+    const mockOnLogin = jest.fn();
+    const mockOnLogout = jest.fn();
+    const mockOnCreateProject = jest.fn();
 
     beforeEach(() => {
         useAuth0().isAuthenticated = false;
 
         renderResult = render(
             <BrowserRouter>
-                <NavDrawer login={mockLogin} logout={mockLogout} />
+                <NavDrawer
+                    onCreateProject={mockOnCreateProject}
+                    onLogin={mockOnLogin}
+                    onLogout={mockOnLogout}
+                />
             </BrowserRouter>
         );
 
@@ -28,7 +33,11 @@ describe('NavDrawer component', () => {
     it('should render', () => {
         render(
             <BrowserRouter>
-                <NavDrawer login={mockLogin} logout={mockLogout} />
+                <NavDrawer
+                    onCreateProject={mockOnCreateProject}
+                    onLogin={mockOnLogin}
+                    onLogout={mockOnLogout}
+                />
             </BrowserRouter>
         );
     });
@@ -52,7 +61,11 @@ describe('NavDrawer component', () => {
 
         renderResult.rerender(
             <BrowserRouter>
-                <NavDrawer login={mockLogin} logout={mockLogout} />
+                <NavDrawer
+                    onCreateProject={mockOnCreateProject}
+                    onLogin={mockOnLogin}
+                    onLogout={mockOnLogout}
+                />
             </BrowserRouter>
         );
 
@@ -67,7 +80,7 @@ describe('NavDrawer component', () => {
         const signInButton = screen.getByText('SIGN IN/SIGN UP');
         userEvent.click(signInButton);
 
-        expect(mockLogin).toHaveBeenCalled();
+        expect(mockOnLogin).toHaveBeenCalled();
     });
 
     it('should logout', () => {
@@ -75,12 +88,16 @@ describe('NavDrawer component', () => {
 
         renderResult.rerender(
             <BrowserRouter>
-                <NavDrawer login={mockLogin} logout={mockLogout} />
+                <NavDrawer
+                    onCreateProject={mockOnCreateProject}
+                    onLogin={mockOnLogin}
+                    onLogout={mockOnLogout}
+                />
             </BrowserRouter>
         );
 
         userEvent.click(screen.getByText('LOGOUT'));
-        expect(mockLogout).toHaveBeenCalled();
+        expect(mockOnLogout).toHaveBeenCalled();
     });
 
     it('should open the dialog when creating a new project', () => {
@@ -88,7 +105,11 @@ describe('NavDrawer component', () => {
 
         renderResult.rerender(
             <BrowserRouter>
-                <NavDrawer login={mockLogin} logout={mockLogout} />
+                <NavDrawer
+                    onCreateProject={mockOnCreateProject}
+                    onLogin={mockOnLogin}
+                    onLogout={mockOnLogout}
+                />
             </BrowserRouter>
         );
 
@@ -96,10 +117,35 @@ describe('NavDrawer component', () => {
 
         expect(screen.getByTestId('mock-create-details-dialog')).toBeInTheDocument();
     });
+
+    it('should create a new project', () => {
+        useAuth0().isAuthenticated = true;
+
+        renderResult.rerender(
+            <BrowserRouter>
+                <NavDrawer
+                    onCreateProject={mockOnCreateProject}
+                    onLogin={mockOnLogin}
+                    onLogout={mockOnLogout}
+                />
+            </BrowserRouter>
+        );
+
+        userEvent.click(screen.getByText('NEW PROJECT'));
+        expect(screen.getByTestId('mock-create-details-dialog')).toBeInTheDocument();
+        userEvent.click(screen.getByTestId('mock-create-button'));
+
+        expect(mockOnCreateProject).toHaveBeenCalledWith('test name', 'test description');
+    });
+
     it('should show the menu with the given menu items', () => {
         render(
             <BrowserRouter>
-                <NavDrawer login={mockLogin} logout={mockLogout} />
+                <NavDrawer
+                    onCreateProject={mockOnCreateProject}
+                    onLogin={mockOnLogin}
+                    onLogout={mockOnLogout}
+                />
             </BrowserRouter>
         );
 
@@ -115,7 +161,11 @@ describe('NavDrawer component', () => {
     it('should hide the menu with the given menu items', () => {
         render(
             <BrowserRouter>
-                <NavDrawer login={mockLogin} logout={mockLogout} />
+                <NavDrawer
+                    onCreateProject={mockOnCreateProject}
+                    onLogin={mockOnLogin}
+                    onLogout={mockOnLogout}
+                />
             </BrowserRouter>
         );
 

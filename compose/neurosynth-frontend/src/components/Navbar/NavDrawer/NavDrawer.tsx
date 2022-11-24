@@ -21,8 +21,9 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import DrawerToggleMenu from '../NavSubMenu/DrawerToggleSubMenu';
 import { useAuth0 } from '@auth0/auth0-react';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
+import { INav } from '../Navbar';
 
-const NavDrawer: React.FC<{ login: () => void; logout: () => void }> = (props) => {
+const NavDrawer: React.FC<INav> = (props) => {
     const { isAuthenticated } = useAuth0();
     const [isOpen, setIsOpen] = useState(false);
     const [createDetailsDialogIsOpen, setCreateDetailsDialogIsOpen] = useState(false);
@@ -65,9 +66,7 @@ const NavDrawer: React.FC<{ login: () => void; logout: () => void }> = (props) =
                     <CreateDetailsDialog
                         titleText="Create new project"
                         isOpen={createDetailsDialogIsOpen}
-                        onCreate={(name: string, description: string) => {
-                            // create project logic here
-                        }}
+                        onCreate={props.onCreateProject}
                         onCloseDialog={() => setCreateDetailsDialogIsOpen(false)}
                     />
                     {isAuthenticated && (
@@ -128,7 +127,7 @@ const NavDrawer: React.FC<{ login: () => void; logout: () => void }> = (props) =
                     <ListItem>
                         <ListItemButton
                             onClick={() => {
-                                isAuthenticated ? props.logout() : props.login();
+                                isAuthenticated ? props.onLogout() : props.onLogin();
                             }}
                         >
                             <ListItemIcon />

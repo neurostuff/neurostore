@@ -1,7 +1,5 @@
 import {
     Box,
-    Tab,
-    Tabs,
     Typography,
     Stepper,
     ToggleButtonGroup,
@@ -9,34 +7,65 @@ import {
     Breadcrumbs,
     Link,
 } from '@mui/material';
+import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 import AlgorithmStep from 'components/ProjectStepComponents/AlgorithmStep/AlgorithmStep';
 import CurationStep from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import ExtractionStep from 'components/ProjectStepComponents/ExtractionStep/ExtractionStep';
 import FiltrationStep from 'components/ProjectStepComponents/FiltrationStep/FiltrationStep';
 import TextEdit from 'components/TextEdit/TextEdit';
-import { useGetMetaAnalysisById } from 'hooks';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
-import { Specification } from 'neurosynth-compose-typescript-sdk';
+import useUpdateProject from 'hooks/requests/useUpdateProject';
 import { useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
 import ProjectPageStyles from './ProjectPage.styles';
 
 const ProjectPage: React.FC = (props) => {
     const { projectId }: { projectId: string } = useParams();
+
+    const { mutate: updateProjectName, isLoading: updateProjectNameIsLoading } = useUpdateProject();
+    const { mutate: updateProjectDescription, isLoading: updateProjectDescriptionIsLoading } =
+        useUpdateProject();
+
     const {
         data: project,
         isError: getProjectIsError,
         isLoading: getProjectIsLoading,
     } = useGetProjectById(projectId);
-    const {
-        data: metaAnalysis,
-        isError: getMetaAnalysisIsError,
-        isLoading: getMetaAnalysisIsLoading,
-    } = useGetMetaAnalysisById(project?.metaAnalysisId || undefined);
 
-    const curationStep = (project?.provenance || {}).curationMetadata;
-    const extractionStep = (project?.provenance || {}).extractionMetadata;
-    const filtrationStep = !!(metaAnalysis?.specification as Specification)?.filter;
+    const getNumUncategorizedStudies = (cols: ICurationColumn[]) => {
+        if (cols.length <= 1) {
+            // only one column, so automatically count this as inclusion colunn
+            return 0;
+        } else {
+            const numUncategorizedStudiesInCols = cols.reduce((acc, col) => {
+                const numStudiesWithouteExtraction = col.stubStudies.filter(
+                    (x) => !x.exclusionTag
+                ).length;
+                return acc + numStudiesWithouteExtraction;
+            }, 0);
+            return numUncategorizedStudiesInCols;
+        }
+    };
+
+    // TODO: for now, we will only be supporting a single meta-analysis, so we only assume there is one. This will change later.
+    // const metaAnalysisId = (project?.meta_analyses as MetaAnalysis[]).
+
+    // const { data: metaAnalysis } = useGetMetaAnalysisById(project?.meta_analyses);
+
+    // variables related to curation
+    const curationStepMetadata = project?.provenance?.curationMetadata;
+    const numUncategorizedStudies = getNumUncategorizedStudies(curationStepMetadata?.columns || []);
+    const numTotalStudies = (curationStepMetadata?.columns || []).reduce(
+        (acc, curr) => acc + curr.stubStudies.length,
+        0
+    );
+
+    const disableExtractionStep = numTotalStudies === 0 || numUncategorizedStudies > 0;
+
+    // variables related to extraction
+    const extractionStepMetadata = project?.provenance?.extractionMetadata;
+
+    const filtrationStep = undefined;
     const metaAnalysisStep = false;
 
     const [tab, setTab] = useState(0);
@@ -48,7 +77,7 @@ const ProjectPage: React.FC = (props) => {
         });
     };
 
-    const activeStep = +!!curationStep + +!!extractionStep + +!!filtrationStep;
+    const activeStep = +!!extractionStepMetadata + +!!filtrationStep;
 
     return (
         <Box sx={{ marginBottom: '4rem' }}>
@@ -68,15 +97,24 @@ const ProjectPage: React.FC = (props) => {
 
             <Box sx={{ marginBottom: '0.5rem' }}>
                 <TextEdit
-                    onSave={() => {}}
+                    onSave={(updatedName, label) =>
+                        updateProjectName({ projectId, project: { name: updatedName } })
+                    }
                     sx={{ fontSize: '2rem' }}
+                    isLoading={updateProjectNameIsLoading}
                     textToEdit={project?.name || ''}
                 >
                     <Typography variant="h4">{project?.name || ''}</Typography>
                 </TextEdit>
                 <TextEdit
-                    onSave={() => {}}
+                    onSave={(updatedDescription, label) =>
+                        updateProjectDescription({
+                            projectId,
+                            project: { description: updatedDescription },
+                        })
+                    }
                     sx={{ fontSize: '1rem' }}
+                    isLoading={updateProjectDescriptionIsLoading}
                     textToEdit={project?.description || ''}
                 >
                     <Typography variant="body1">{project?.description || ''}</Typography>
@@ -105,19 +143,13 @@ const ProjectPage: React.FC = (props) => {
                     orientation="vertical"
                     sx={[ProjectPageStyles.stepper, { display: tab === 0 ? 'initial' : 'none' }]}
                 >
-                    <CurationStep curationMetadata={project?.provenance?.curationMetadata} />
+                    <CurationStep curationMetadata={curationStepMetadata} />
                     <ExtractionStep
-                        disabled={!project?.provenance?.curationMetadata}
-                        extractionMetadata={project?.provenance?.extractionMetadata}
+                        disabled={disableExtractionStep}
+                        extractionMetadata={extractionStepMetadata}
                     />
-                    <FiltrationStep
-                        filter={(metaAnalysis?.specification as Specification)?.filter || undefined}
-                        disabled={!project?.provenance?.extractionMetadata}
-                    />
-                    <AlgorithmStep
-                        specification={(metaAnalysis?.specification as Specification) || undefined}
-                        disabled={!(metaAnalysis?.specification as Specification)?.filter}
-                    />
+                    <FiltrationStep filter={filtrationStep} disabled={!extractionStepMetadata} />
+                    <AlgorithmStep specification={undefined} disabled={!filtrationStep} />
                 </Stepper>
             )}
             {tab === 1 && <div>view meta-analysis</div>}

@@ -16,7 +16,6 @@ import {
     Button,
     Divider,
 } from '@mui/material';
-import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
 import { IExtractionMetadata } from 'hooks/requests/useGetProjects';
 import { useHistory, useParams } from 'react-router-dom';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
