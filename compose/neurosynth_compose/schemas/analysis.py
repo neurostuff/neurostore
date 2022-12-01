@@ -2,6 +2,8 @@ from marshmallow import (
     fields,
     Schema,
     utils,
+    post_load,
+    pre_dump,
     ValidationError
 )
 
@@ -46,6 +48,8 @@ class StringOrNested(fields.Nested):
         elif nested_attr:
             return getattr(value, nested_attr)
         else:
+            if self.many:
+                return [utils.ensure_text_type(v) for v in value]
             return utils.ensure_text_type(value)
 
     def _deserialize(self, value, attr, data, **kwargs):
@@ -68,6 +72,10 @@ class BaseSchema(Schema):
     updated_at = fields.DateTime(allow_none=True)
     user_id = fields.String(data_key="user")
 
+
+class EstimatorSchema(Schema):
+    type = fields.String()
+    args = fields.Dict()
 
 class StudysetReferenceSchema(Schema):
     id = PGSQLString()
@@ -113,6 +121,25 @@ class AnnotationSchema(BaseSchema):
     )
 
 
+class MetaAnalysisResultSchema(BaseSchema):
+    meta_analysis_id = fields.String()
+    cli_version = fields.String()
+    estimator = fields.Nested(EstimatorSchema)
+    neurovault_collection = fields.Nested("NeurovaultCollectionSchema")
+
+    @post_load
+    def propagate_meta_analysis_id(self, data, **kwargs):
+        if data.get("neurovault_collection", None):
+            data['neurovault_collection']['meta_analysis_id'] = data['meta_analysis_id']
+        
+        return data
+    
+    @pre_dump
+    def test_fnc(self, data, **kwargs):
+        return data
+
+
+
 class MetaAnalysisSchema(BaseSchema):
     name = fields.String(allow_none=True)
     description = fields.String(allow_none=True)
@@ -127,14 +154,7 @@ class MetaAnalysisSchema(BaseSchema):
     internal_annotation_id = fields.Pluck(
         AnnotationSchema, "id", load_only=True, attribute="annotation"
     )
-
-
-class MetaAnalysisResultSchema(BaseSchema):
-    meta_analysis_id = fields.String()
-    cli_version = fields.String()
-    estimator = fields.String()
-    neurovault_collection_id = fields.String()
-
+    results = StringOrNested(MetaAnalysisResultSchema, many=True)
 
 
 class NeurovaultFileSchema(BaseSchema):
@@ -144,11 +164,20 @@ class NeurovaultFileSchema(BaseSchema):
     exception = fields.String()
     status = fields.String()
     file = BytesField()
+    name = fields.String()
+    map_type = fields.String()
+    cognitive_contrast_cogatlas = fields.String()
+    cognitive_contrast_cogatlas_id = fields.String()
+    cognitive_paradigm_cogatlas = fields.String()
+    cognitive_paradigm_cogatlas_id = fields.String()
+
 
 class NeurovaultCollectionSchema(BaseSchema):
     collection_id = fields.String()
     meta_analysis_id = fields.String()
     files = fields.Nested(NeurovaultFileSchema, many=True)
-    result = fields.String()
+    result = fields.String(attribute="result_id", dump_only=True)
 
-
+    @pre_dump
+    def test_fnc(self, data, **kwargs):
+        return data

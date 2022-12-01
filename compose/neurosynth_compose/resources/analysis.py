@@ -303,6 +303,7 @@ class MetaAnalysesView(ObjectView, ListView):
     _nested = {
         "studyset": "StudysetsView",
         "annotation": "AnnotationsView",
+        "results": "MetaAnalysisResultsView",
     }
 
 
@@ -336,10 +337,11 @@ class AnnotationReferencesResource(ObjectView):
 
 @view_maker
 class MetaAnalysisResultsView(ObjectView, ListView):
-    pass
+    _nested = {"neurovault_collection": "NeurovaultCollectionsView"}
 
 @view_maker
 class NeurovaultCollectionsView(ObjectView, ListView):
+    _nested = {"files": "NeurovaultFilesView"}
 
     @classmethod
     def _external_request(cls, data, id):
@@ -372,6 +374,9 @@ class NeurovaultCollectionsView(ObjectView, ListView):
                 full_dataset_url=url
             )
             data['collection_id'] = collection['id']
+            for file in data['files']:
+                file['collection_id'] = collection['id']
+
         except Exception:
             abort(422, f"Error creating collection named: {collection_name}, "
                     "perhaps one with that name already exists?")
@@ -392,7 +397,7 @@ class NeurovaultFilesView(ObjectView, ListView):
 
         from pynv import Client
 
-        from ..core import app
+        from ..core import app, celery_app
         
 
         api = Client(access_token=app.config['NEUROVAULT_ACCESS_TOKEN'])
@@ -400,7 +405,7 @@ class NeurovaultFilesView(ObjectView, ListView):
         try:
             nv_file = api.add_image(
                 data['collection_id'], data['file'],
-                modality="fMRI-BOLD", map_type='z',
+                modality="fMRI-BOLD", map_type=data.get("map_type", None),
                 analysis_level="G", cognitive_paradigm_cogatlas='None',
                 is_valid=True)
             
@@ -409,6 +414,6 @@ class NeurovaultFilesView(ObjectView, ListView):
         except Exception as e:
             data['status'] = 'ERROR'
         else:
-            data['status'] = 'OK'
+            data['status'] = 'PENDING'
         
         return data
