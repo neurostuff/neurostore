@@ -100,9 +100,7 @@ class MetaAnalysis(BaseMixin, db.Model):
 
 class MetaAnalysisResult(BaseMixin, db.Model):
     __tablename__ = "meta_analysis_results"
-    meta_analysis_id = db.Column(
-        db.Text, db.ForeignKey("meta_analyses.id"), unique=True,
-    )
+    meta_analysis_id = db.Column(db.Text, db.ForeignKey("meta_analyses.id"))
     neurostore_id = db.Column(db.Text, unique=True)
     meta_analysis = relationship("MetaAnalysis", backref=backref("results"))
     cli_version = db.Column(db.Text)  # neurosynth-compose cli version
@@ -113,12 +111,10 @@ class NeurovaultCollection(BaseMixin, db.Model):
     """ Neurovault collection and upload status """
     __tablename__ = "neurovault_collections"
 
-    meta_analysis_id = db.Column(db.Text, db.ForeignKey('meta_analyses.id'))
-    meta_analysis_result_id = db.Column(db.Test, db.ForeignKey('meta_analysis_results.id'))
     collection_id = db.Column(db.Integer, unique=True)
     result_id = db.Column(db.Text, db.ForeignKey('meta_analysis_results.id'), unique=True)
-    files = db.relationship('NeurovaultFile', backref='collection')
-    result = db.relationship('MetaAnalysisResult', backref=backref("collection"))
+    files = db.relationship('NeurovaultFile', backref='neurovault_collection')
+    result = db.relationship('MetaAnalysisResult', backref=backref("neurovault_collection", uselist=False))
 
 
 class NeurovaultFile(BaseMixin, db.Model):
@@ -127,7 +123,6 @@ class NeurovaultFile(BaseMixin, db.Model):
         db.Integer, db.ForeignKey('neurovault_collections.collection_id'),
         nullable=False)
     image_id = db.Column(db.Integer, unique=True)
-    path = db.Column(db.Text, nullable=False)
     exception = db.Column(db.Text)
     traceback = db.Column(db.Text)
     status = db.Column(db.Text, default='PENDING')
