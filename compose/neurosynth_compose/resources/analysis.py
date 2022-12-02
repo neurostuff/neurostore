@@ -374,7 +374,7 @@ class NeurovaultCollectionsView(ObjectView, ListView):
                 full_dataset_url=url
             )
             data['collection_id'] = collection['id']
-            for file in data['files']:
+            for file in data.get('files', []):
                 file['collection_id'] = collection['id']
 
         except Exception:

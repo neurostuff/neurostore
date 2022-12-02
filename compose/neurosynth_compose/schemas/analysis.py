@@ -54,9 +54,18 @@ class StringOrNested(fields.Nested):
 
     def _deserialize(self, value, attr, data, **kwargs):
         nested = self.context.get("nested")
+        many = self.many
+
         if nested:
-            self._test_collection(value)
-            return self._load(value, data)
+            if many:
+                for v in value:
+                    self._test_collection(v)
+                return [self._load(v, data) for v in value]
+        elif many:
+            try:
+                return [utils.ensure_text_type(v).replace("\x00", "\uFFFD") for v in value]
+            except UnicodeDecodeError as error:
+                raise self.make_error("invalid_utf8") from error
         else:
             if not isinstance(value, (str, bytes)):
                 raise self.make_error("invalid")
