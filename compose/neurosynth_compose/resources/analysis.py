@@ -13,7 +13,7 @@ from ..database import db
 from ..models.analysis import (   # noqa E401
     Studyset, Annotation, MetaAnalysis, Specification,
     StudysetReference, AnnotationReference, MetaAnalysisResult,
-    NeurovaultCollection, NeurovaultFile
+    NeurovaultCollection, NeurovaultFile, Project
 )
 from ..models.auth import User
 
@@ -27,6 +27,7 @@ from ..schemas import (  # noqa E401
     MetaAnalysisResultSchema,
     NeurovaultCollectionSchema,
     NeurovaultFileSchema,
+    ProjectSchema,
 )
 from .singular import singularize
 
@@ -417,3 +418,7 @@ class NeurovaultFilesView(ObjectView, ListView):
             data['status'] = 'PENDING'
         
         return data
+class ProjectsView(ObjectView, ListView):
+    _nested = {
+        "meta_analyses": "MetaAnalysesView",
+    }

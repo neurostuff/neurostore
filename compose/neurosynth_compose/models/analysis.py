@@ -90,11 +90,14 @@ class MetaAnalysis(BaseMixin, db.Model):
     # internal meaning local to the neurosynth-compose database
     internal_studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
     internal_annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"))
+    project_id = db.Column(db.Text, db.ForeignKey("projects.id"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
+    provenance = db.Column(db.JSON)
 
     specification = relationship("Specification", backref=backref("meta_analyses"))
     studyset = relationship("Studyset", backref=backref("meta_analyses"), lazy="joined")
     annotation = relationship("Annotation", backref=backref("meta_analyses"), lazy="joined")
+    project = relationship("Project", backref=backref("meta_analyses"))
     user = relationship("User", backref=backref("meta_analyses"))
 
 
@@ -129,3 +132,38 @@ class NeurovaultFile(BaseMixin, db.Model):
     __table_args__ = (
         db.CheckConstraint(status.in_(['OK', 'FAILED', 'PENDING'])),
         )
+
+
+class Project(BaseMixin, db.Model):
+    __tablename__ = "projects"
+
+    name = db.Column(db.Text)
+    description = db.Column(db.Text)
+    provenance = db.Column(db.JSON)
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
+
+    user = relationship("User", backref=backref("projects"))
+# class MetaAnalysisImage(db.Model):
+#     __tablename__ = "metaanalysis_images"
+
+#     weight = db.Column(db.Float)
+#     metaanalysis_id = db.Column(
+#         db.Text, db.ForeignKey("metaanalyses.id"), primary_key=True
+#     )
+#     image_id = db.Column(db.Text, db.ForeignKey("images.id"), primary_key=True)
+
+#     metaanalysis = relationship("MetaAnalysis", backref=backref("metanalysis_images"))
+#     image = relationship("Image", backref=backref("metaanalysis_images"))
+
+
+# class MetaAnalysisPoint(db.Model):
+#     __tablename__ = "metaanalysis_points"
+
+#     weight = db.Column(db.Float)
+#     metaanalysis_id = db.Column(
+#         db.Text, db.ForeignKey("metaanalyses.id"), primary_key=True
+#     )
+#     point_id = db.Column(db.Text, db.ForeignKey("points.id"), primary_key=True)
+
+#     metaanalysis = relationship("MetaAnalysis", backref=backref("metanalysis_points"))
+#     point = relationship("Point", backref=backref("metaanalysis_points"))

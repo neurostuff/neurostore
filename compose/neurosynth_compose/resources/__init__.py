@@ -7,7 +7,8 @@ from .analysis import (
     StudysetsView,
     SpecificationsView,
     StudysetReferencesResource,
-    AnnotationReferencesResource
+    AnnotationReferencesResource,
+    ProjectsView,
 )
 
 from .users import (
@@ -25,4 +26,5 @@ __all__ = [
     "AnnotationReferencesResource",
     "SpecificationsView",
     "UsersView",
+    "ProjectsView",
 ]

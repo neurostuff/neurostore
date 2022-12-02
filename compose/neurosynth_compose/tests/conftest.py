@@ -13,7 +13,7 @@ from ..database import db as _db
 from ..models import (
     User, Specification, Studyset, Annotation, MetaAnalysis,
     StudysetReference, AnnotationReference, MetaAnalysisResult,
-    NeurovaultCollection, NeurovaultFile
+    NeurovaultCollection, NeurovaultFile, Project
 )
 from auth0.v3.authentication import GetToken
 
@@ -331,7 +331,13 @@ def user_data(app, session, mock_add_users):
                 annotation=annotation,
             )
 
-            to_commit.extend([studyset, annotation, specification, meta_analysis])
+            project = Project(
+                name=user.id + "'s project",
+                meta_analyses=[meta_analysis],
+                user=user,
+            )
+
+            to_commit.extend([studyset, annotation, specification, meta_analysis, project])
 
         session.add_all(to_commit)
         session.commit()
