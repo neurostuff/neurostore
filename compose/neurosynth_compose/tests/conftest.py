@@ -359,8 +359,6 @@ def meta_analysis_results(app, session, user_data, mock_add_users, mock_pynv):
     return results
 
 
-
-
 @pytest.fixture(scope="function")
 def neurostore_data(session, mock_add_users):
     try:
