@@ -25,6 +25,15 @@ const ProjectStepComponentsStyles: Style = {
     divider: {
         margin: '0 20px',
     },
+    statusContainer: {
+        marginTop: '1.5rem',
+        display: 'flex',
+    },
+    statusIconContainer: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+    },
 };
 
 export default ProjectStepComponentsStyles;

@@ -22,7 +22,7 @@ import { useHistory, useParams } from 'react-router-dom';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import CreateCurationBoardDialog from 'components/Dialogs/CreateCurationBoardDialog/CreateCurationBoardDialog';
 
 enum ECurationBoardTypes {
@@ -47,6 +47,36 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
         uncategorized: 0,
         excluded: 0,
     });
+
+    useEffect(() => {
+        if (curationMetadata?.columns && curationMetadata.columns.length > 0) {
+            setCurationSummary((prev) => {
+                const numTotalStudies = curationMetadata.columns.reduce(
+                    (acc, curr) => acc + curr.stubStudies.length,
+                    0
+                );
+
+                // all included studies are in the last column
+                const numIncludedStudes =
+                    curationMetadata.columns[curationMetadata.columns.length - 1].stubStudies
+                        .length;
+                const numExcludedStudies = curationMetadata.columns.reduce(
+                    (acc, curr) =>
+                        acc + curr.stubStudies.filter((study) => !!study.exclusionTag).length,
+                    0
+                );
+                const numUncategorizedStudies =
+                    numTotalStudies - numIncludedStudes - numExcludedStudies;
+
+                return {
+                    total: numTotalStudies,
+                    included: numIncludedStudes,
+                    uncategorized: numUncategorizedStudies,
+                    excluded: numExcludedStudies,
+                };
+            });
+        }
+    }, [curationMetadata]);
 
     const { mutate, isLoading, isError } = useUpdateProject();
 
@@ -146,18 +176,9 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                         >
                                             Study Curation Summary
                                         </Typography>
-                                        <Box
-                                            sx={{
-                                                marginTop: '1.5rem',
-                                                display: 'flex',
-                                            }}
-                                        >
+                                        <Box sx={ProjectStepComponentsStyles.statusContainer}>
                                             <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
-                                                }}
+                                                sx={ProjectStepComponentsStyles.statusIconContainer}
                                             >
                                                 <CheckIcon
                                                     sx={{
@@ -176,11 +197,7 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                                 />
                                             </Box>
                                             <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
-                                                }}
+                                                sx={ProjectStepComponentsStyles.statusIconContainer}
                                             >
                                                 <QuestionMarkIcon
                                                     sx={{
@@ -199,11 +216,7 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                                 />
                                             </Box>
                                             <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
-                                                }}
+                                                sx={ProjectStepComponentsStyles.statusIconContainer}
                                             >
                                                 <CloseIcon
                                                     sx={{

@@ -18,60 +18,65 @@ const CurationPage: React.FC = (props) => {
 
     return (
         <StateHandlerComponent isError={false} isLoading={false}>
-            <Box
-                sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                }}
-            >
-                <Breadcrumbs sx={{ marginBottom: '0.5rem' }}>
-                    <Link
-                        component={NavLink}
-                        to="/projects"
-                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                        underline="hover"
-                    >
-                        Projects
-                    </Link>
-                    <Link
-                        component={NavLink}
-                        to={`/projects/${projectId}`}
-                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                        underline="hover"
-                    >
-                        {data?.name || ''}
-                    </Link>
-                    <Typography color="secondary" sx={{ fontSize: '1.5rem' }}>
-                        Curation
-                    </Typography>
-                </Breadcrumbs>
-                <Box>
-                    <CreateStubStudyDialog
-                        onCloseDialog={() => setCreateStudyDialogIsOpen(false)}
-                        isOpen={createStudyDialogIsOpen}
-                    />
-                    <Button
-                        onClick={() => setCreateStudyDialogIsOpen(true)}
-                        sx={{ marginRight: '1rem' }}
-                        variant="outlined"
-                        endIcon={<AddIcon />}
-                    >
-                        create study
-                    </Button>
-                    <PubmedImportDialog
-                        onCloseDialog={() => setPubMedImportDialogIsOpen(false)}
-                        isOpen={pubmedImportDialogIsOpen}
-                    />
-                    <Button
-                        onClick={() => setPubMedImportDialogIsOpen(true)}
-                        variant="outlined"
-                        endIcon={<FileUploadIcon />}
-                    >
-                        import pubmed studies
-                    </Button>
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        marginBottom: '1rem',
+                        justifyContent: 'space-between',
+                    }}
+                >
+                    <Breadcrumbs>
+                        <Link
+                            component={NavLink}
+                            to="/projects"
+                            sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
+                            underline="hover"
+                        >
+                            Projects
+                        </Link>
+                        <Link
+                            component={NavLink}
+                            to={`/projects/${projectId}`}
+                            sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
+                            underline="hover"
+                        >
+                            {data?.name || ''}
+                        </Link>
+                        <Typography color="secondary" sx={{ fontSize: '1.5rem' }}>
+                            Curation
+                        </Typography>
+                    </Breadcrumbs>
+                    <Box sx={{ marginRight: '1rem' }}>
+                        <CreateStubStudyDialog
+                            onCloseDialog={() => setCreateStudyDialogIsOpen(false)}
+                            isOpen={createStudyDialogIsOpen}
+                        />
+                        <Button
+                            onClick={() => setCreateStudyDialogIsOpen(true)}
+                            sx={{ marginRight: '1rem' }}
+                            variant="outlined"
+                            endIcon={<AddIcon />}
+                        >
+                            create study
+                        </Button>
+                        <PubmedImportDialog
+                            onCloseDialog={() => setPubMedImportDialogIsOpen(false)}
+                            isOpen={pubmedImportDialogIsOpen}
+                        />
+                        <Button
+                            onClick={() => setPubMedImportDialogIsOpen(true)}
+                            variant="outlined"
+                            endIcon={<FileUploadIcon />}
+                        >
+                            import pubmed studies
+                        </Button>
+                    </Box>
+                </Box>
+                <Box sx={{ height: '100%', overflow: 'hidden' }}>
+                    <CurationBoard />
                 </Box>
             </Box>
-            <CurationBoard />
         </StateHandlerComponent>
     );
 };

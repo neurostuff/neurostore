@@ -24,12 +24,18 @@ const CurationColumn: React.FC<ICurationColumn> = (props) => {
 
     const tags = data?.provenance?.curationMetadata?.tags || [];
 
+    const handleSelectStubStudy = () => {};
+
     return (
         <Box sx={CurationColumnStyles.columnContainer}>
             <Button
-                variant="text"
+                variant="contained"
+                disableElevation
                 onClick={() => setCategorizeDialogIsOpen(true)}
-                sx={{ padding: '8px', color: 'rgb(94, 108, 132)', marginBottom: '0.75rem' }}
+                sx={{
+                    padding: '8px',
+                    marginBottom: '0.75rem',
+                }}
             >
                 {props.name} ({props.stubStudies.length})
             </Button>
@@ -51,7 +57,11 @@ const CurationColumn: React.FC<ICurationColumn> = (props) => {
                     size="small"
                     options={[
                         ...tags,
-                        { label: 'untagged', id: 'neurosynth_untagged_id', isExclusionTag: false },
+                        {
+                            label: 'untagged',
+                            id: 'neurosynth_untagged_id',
+                            isExclusionTag: false,
+                        },
                     ]}
                     isOptionEqualToValue={(option, value) => option?.id === value?.id}
                     getOptionLabel={(option) => option?.label || ''}
@@ -66,9 +76,9 @@ const CurationColumn: React.FC<ICurationColumn> = (props) => {
             <Droppable droppableId={props.id}>
                 {(provided) => (
                     <Box
-                        sx={CurationColumnStyles.droppableContainer}
                         ref={provided.innerRef}
                         {...provided.droppableProps}
+                        sx={{ overflowY: 'auto', flexGrow: 1 }}
                     >
                         {props.stubStudies.length === 0 && (
                             <Typography sx={{ marginBottom: '0.5rem' }} color="warning.dark">
@@ -78,6 +88,7 @@ const CurationColumn: React.FC<ICurationColumn> = (props) => {
                         {props?.stubStudies?.map((stubStudy, index) => (
                             <CurationStubStudy
                                 key={stubStudy.id}
+                                onSelectStubStudy={handleSelectStubStudy}
                                 isVisible={true}
                                 index={index}
                                 {...stubStudy}

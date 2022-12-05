@@ -93,8 +93,11 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
                                         <ErrorIcon sx={{ marginLeft: '5px' }} />
                                     </Box>
                                 )}
-                                {isLoading ? <ProgressLoader size={20} /> : null}
-                                {params.InputProps.endAdornment}
+                                {isLoading ? (
+                                    <ProgressLoader sx={{ display: 'block' }} size={20} />
+                                ) : (
+                                    params.InputProps.endAdornment
+                                )}
                             </>
                         ),
                     }}

@@ -11,6 +11,8 @@ export interface INav {
     onCreateProject: (name: string, description: string) => void;
 }
 
+export const NAVBAR_HEIGHT = 64;
+
 const Navbar: React.FC = (_props) => {
     const { loginWithPopup, logout } = useAuth0();
     const { mutate } = useCreateProject();
@@ -26,7 +28,8 @@ const Navbar: React.FC = (_props) => {
     };
 
     return (
-        <AppBar position="static" elevation={0}>
+        // declare size as this is used to calculate height of other views such as the curation board
+        <AppBar sx={{ height: `${NAVBAR_HEIGHT}px` }} position="static" elevation={0}>
             <Box sx={NavbarStyles.mdUp}>
                 <NavToolbar
                     onCreateProject={handleCreateProject}

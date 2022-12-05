@@ -62,7 +62,7 @@ const BaseNavigation: React.FC = (_props) => {
                     </Box>
                 </Route>
                 <Route path="/projects/:projectId/curation" exact>
-                    <Box sx={{ margin: '2rem' }}>
+                    <Box sx={BaseNavigationStyles.curationPageContainer}>
                         <CurationPage />
                     </Box>
                 </Route>

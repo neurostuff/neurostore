@@ -6,6 +6,7 @@ import {
     ToggleButton,
     Breadcrumbs,
     Link,
+    Button,
 } from '@mui/material';
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 import AlgorithmStep from 'components/ProjectStepComponents/AlgorithmStep/AlgorithmStep';
@@ -153,6 +154,16 @@ const ProjectPage: React.FC = (props) => {
                 </Stepper>
             )}
             {tab === 1 && <div>view meta-analysis</div>}
+            <Button
+                onClick={() => {
+                    updateProjectName({ projectId, project: { provenance: {} } });
+                }}
+                sx={{ marginTop: '1rem' }}
+                variant="contained"
+                color="error"
+            >
+                Clear Provenance (FOR DEV PURPOSES ONLY)
+            </Button>
         </Box>
     );
 };

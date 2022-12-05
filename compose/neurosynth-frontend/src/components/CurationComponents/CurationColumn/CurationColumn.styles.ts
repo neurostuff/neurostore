@@ -8,15 +8,10 @@ const CurationColumnStyles: Style = {
         borderRadius: '2px',
         display: 'flex',
         flexDirection: 'column',
-        width: '300px',
-        minWidth: '300px',
+        width: '280px',
+        minWidth: '280px',
         flex: '1 1 0',
-    },
-    droppableContainer: {
-        maxHeight: '800px',
-        overflowY: 'scroll',
-        flexGrow: 1,
-        padding: '0.5rem',
+        marginTop: '0px',
     },
 };
 

@@ -4,7 +4,8 @@ import ListItemText from '@mui/material/ListItemText';
 import { SystemStyleObject } from '@mui/system';
 import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
-import { ITag } from 'hooks/requests/useGetProjects';
+import { IProvenance, ITag } from 'hooks/requests/useGetProjects';
+import useUpdateProject from 'hooks/requests/useUpdateProject';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -21,19 +22,45 @@ const filterOptions = createFilterOptions<AutoSelectOption | undefined>({
     trim: true,
 });
 
+const generateNewTag = (newTag: Omit<ITag, 'id'>, allTags: ITag[]): ITag => {
+    const getNewRandId = () => Math.random().toString(16).slice(2);
+    const idIsBeingUsed = (givenId: string) => allTags.findIndex((tag) => tag.id === givenId) >= 0;
+
+    // toString(x) turns the number into base x
+    let newId = getNewRandId();
+    while (idIsBeingUsed(newId)) newId = getNewRandId();
+
+    return {
+        ...newTag,
+        id: newId,
+    };
+};
+
 interface ITagSelectorPopup {
     label?: string;
-    onCreateTag: (newTag: string) => void;
-    onAddTag: (tag: ITag) => void;
+    isExclusion: boolean;
     sx?: SystemStyleObject;
+    onAddTag: (tag: ITag) => void;
+    onCreateTag?: (tag: ITag) => void;
 }
 
 const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
-    const { data } = useGetProjectById(projectId);
+    const {
+        data,
+        isLoading: getProjectIsLoading,
+        isError: getProjectIsError,
+    } = useGetProjectById(projectId);
+    const {
+        mutate,
+        isLoading: updateProjectIsLoading,
+        isError: updateProjectIsError,
+    } = useUpdateProject();
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption>();
 
-    const tags = data?.provenance?.curationMetadata?.tags || [];
+    const tags = (data?.provenance?.curationMetadata?.tags || []).filter((x) =>
+        props.isExclusion ? x.isExclusionTag : !x.isExclusionTag
+    );
 
     const tagOptions = tags.map((tag) => ({
         id: tag.id || '',
@@ -41,8 +68,38 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
         addOptionActualLabel: null,
     }));
 
+    const handleCreateTag = (tagName: string) => {
+        const updatedProvenance = { ...data?.provenance };
+        if (projectId && updatedProvenance?.curationMetadata?.tags) {
+            const prevTags = updatedProvenance?.curationMetadata?.tags || [];
+
+            const generatedTag = generateNewTag(
+                { label: tagName, isExclusionTag: props.isExclusion },
+                tags
+            );
+
+            updatedProvenance.curationMetadata.tags = [generatedTag, ...prevTags];
+
+            mutate(
+                {
+                    projectId,
+                    project: {
+                        provenance: updatedProvenance,
+                    },
+                },
+                {
+                    onSuccess: () => {
+                        if (props.onCreateTag) props.onCreateTag(generatedTag);
+                    },
+                }
+            );
+        }
+    };
+
     return (
         <NeurosynthAutocomplete
+            isLoading={getProjectIsLoading || updateProjectIsLoading}
+            isError={getProjectIsError || updateProjectIsError}
             sx={props.sx || { width: '250px' }}
             value={selectedValue}
             required={false}
@@ -54,7 +111,7 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
             onChange={(_event, newValue, _reason) => {
                 if (newValue) {
                     if (newValue.addOptionActualLabel) {
-                        props.onCreateTag(newValue.addOptionActualLabel);
+                        handleCreateTag(newValue.addOptionActualLabel);
                         setSelectedValue({
                             ...newValue,
                             label: newValue.addOptionActualLabel,
