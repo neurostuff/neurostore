@@ -418,6 +418,9 @@ class NeurovaultFilesView(ObjectView, ListView):
             data['status'] = 'PENDING'
         
         return data
+
+
+@view_maker
 class ProjectsView(ObjectView, ListView):
     _nested = {
         "meta_analyses": "MetaAnalysesView",
