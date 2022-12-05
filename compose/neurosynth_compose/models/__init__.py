@@ -7,7 +7,7 @@ from .analysis import (
     MetaAnalysis,
     MetaAnalysisResult,
     NeurovaultCollection,
-    NeurovaultFile
+    NeurovaultFile,
     Project,
 )
 

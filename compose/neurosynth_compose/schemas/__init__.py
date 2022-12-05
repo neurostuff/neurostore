@@ -8,7 +8,7 @@ from .analysis import (
     AnnotationSchema,
     AnnotationReferenceSchema,
     SpecificationSchema,
-    ProjectSchema
+    ProjectSchema,
 )
 from .users import (
     UserSchema
