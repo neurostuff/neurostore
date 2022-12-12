@@ -3,7 +3,9 @@ services:
   compose:
     image: compose
     restart: always
-    build: ./neurosynth_compose
+    build: 
+      dockerfile: ./neurosynth_compose/Dockerfile
+      context: ./
     expose:
       - "8000"
     volumes:
@@ -40,17 +42,22 @@ services:
 
   compose_redis:
     image: redis
+    expose:
+      - '6379'
 
-  # worker:
-  #   build: ./neurosynth_compose
-  #   depends_on:
-  #     - compose
-  #     - compose_redis
-  #   entrypoint: celery -A tasks worker --loglevel=info
-  #   volumes:
-  #     - /logs/compose:/logs:rw
-  #   env_file:
-  #     - .env
+  worker:
+    image: worker
+    build:
+      dockerfile: ./neurosynth_compose/Dockerfile
+      context: ./
+    depends_on:
+      - compose
+      - compose_redis
+    entrypoint: celery -A neurosynth_compose.core.celery_app worker --loglevel=info
+    volumes:
+      - /logs/compose:/logs:rw
+    env_file:
+      - .env
 
   # monitor:
   #   build:
