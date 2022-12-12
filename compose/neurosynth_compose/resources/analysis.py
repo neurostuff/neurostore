@@ -59,7 +59,7 @@ class BaseView(MethodView):
 
 
     @classmethod
-    def _external_request(cls, data, id):
+    def _external_request(cls, data, record, id):
         return None
 
     @classmethod
@@ -102,7 +102,7 @@ class BaseView(MethodView):
                 return record
 
         # update data if there is an external request
-        external_data = cls._external_request(data, id)
+        external_data = cls._external_request(data, record, id)
         if external_data:
             data.update(external_data)
     
@@ -345,7 +345,7 @@ class NeurovaultCollectionsView(ObjectView, ListView):
     _nested = {"files": "NeurovaultFilesView"}
 
     @classmethod
-    def _external_request(cls, data, id):
+    def _external_request(cls, data, record, id):
         #analysis, cli_version=None,  cli_args=None, 
         #fmriprep_version=None, estimator=None, force=False):
         #collection_name = f"{analysis.name} - {analysis.hash_id}"
@@ -378,6 +378,12 @@ class NeurovaultCollectionsView(ObjectView, ListView):
             for file in data.get('files', []):
                 file['collection_id'] = collection['id']
 
+            for k, v in data.items():
+                if k not in cls._nested and k not in ["files", "user"]:
+                    setattr(record, k, v)
+
+            db.session.add(record)
+            db.session.commit()
         except Exception:
             abort(422, f"Error creating collection named: {collection_name}, "
                     "perhaps one with that name already exists?")
@@ -393,30 +399,34 @@ class NeurovaultCollectionsView(ObjectView, ListView):
 class NeurovaultFilesView(ObjectView, ListView):
 
     @classmethod
-    def _external_request(cls, data, id):
+    def _external_request(cls, data, record, id):
         from pathlib import Path
 
         from pynv import Client
 
         from ..core import app, celery_app
+
         
+        if record.id is None:
+            for k, v in data.items():
+                if k not in cls._nested and k not in ["file", "user"]:
+                    setattr(record, k, v)
+
+            db.session.add(record)
+            db.session.commit()
 
         api = Client(access_token=app.config['NEUROVAULT_ACCESS_TOKEN'])
 
         try:
-            nv_file = api.add_image(
-                data['collection_id'], data['file'],
-                modality="fMRI-BOLD", map_type=data.get("map_type", None),
-                analysis_level="G", cognitive_paradigm_cogatlas='None',
-                is_valid=True)
-            
-            data.pop('file') # remove file as it's been uploaded
-            data['image_id'] = nv_file['id']
-        except Exception as e:
-            data['status'] = 'ERROR'
-        else:
-            data['status'] = 'PENDING'
-        
+            data['file'] = data['file'].decode('latin1')
+            task = celery_app.send_task(
+                'neurovault.upload',
+                args=[data, record.id]
+            )
+        except:
+            raise
+
+        data.pop('file')
         return data
 
 
