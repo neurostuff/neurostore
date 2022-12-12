@@ -27,6 +27,7 @@ setup(
     install_requires=requirements,
     maintainer="Tal Yarkoni",
     maintainer_email="tyarkoni@gmail.com",
+    include_package_data=True,
     packages=find_packages(exclude=["tests", "test_*"]),
     license="MIT",
 )
