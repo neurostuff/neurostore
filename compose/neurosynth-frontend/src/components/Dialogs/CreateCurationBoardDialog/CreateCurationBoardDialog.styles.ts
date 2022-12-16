@@ -13,6 +13,7 @@ const CreateCurationBoardDialogStyles: Style = {
         border: '2px solid lightgray',
         borderRadius: '4px',
         margin: '0.4rem',
+        maxWidth: '200px',
     },
 };
 

@@ -9,12 +9,13 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { useEffect, useRef, useState } from 'react';
 import BaseDialog, { IDialog } from '../BaseDialog';
 import CreateCurationBoardDialogStyles from './CreateCurationBoardDialog.styles';
 
 const CreateCurationBoardDialog: React.FC<
-    IDialog & { onCreateCurationBoard: (arg: string[]) => void }
+    IDialog & { onCreateCurationBoard: (arg: string[]) => void; createButtonIsLoading: boolean }
 > = (props) => {
     const [numColumns, setNumColumns] = useState<number>(4);
     const itemsRef = useRef<HTMLInputElement[]>([]);
@@ -70,30 +71,45 @@ const CreateCurationBoardDialog: React.FC<
                         </Typography>
                     ) : (
                         Array.from(Array(numColumns)).map((_, index) => (
-                            <Box key={index} sx={CreateCurationBoardDialogStyles.mockColumn}>
-                                <TextField
-                                    inputRef={(el) =>
-                                        (itemsRef.current[index] = el as HTMLInputElement)
-                                    }
-                                    sx={{ marginBottom: '0.5rem' }}
-                                    size="small"
-                                    label={`Column ${index + 1}`}
-                                    required
-                                    fullWidth
-                                />
-                                <Box sx={CreateCurationBoardDialogStyles.mockStubStudy}></Box>
-                                <Box sx={CreateCurationBoardDialogStyles.mockStubStudy}></Box>
-                                <Box sx={CreateCurationBoardDialogStyles.mockStubStudy}></Box>
-                                <Box sx={CreateCurationBoardDialogStyles.mockStubStudy}></Box>
+                            <Box
+                                key={index}
+                                sx={{
+                                    flexGrow: 1,
+                                    justifyContent: 'center',
+                                    display: 'flex',
+                                }}
+                            >
+                                <Box sx={[CreateCurationBoardDialogStyles.mockColumn]}>
+                                    <TextField
+                                        inputRef={(el) =>
+                                            (itemsRef.current[index] = el as HTMLInputElement)
+                                        }
+                                        sx={{ marginBottom: '0.5rem' }}
+                                        size="small"
+                                        label={`Column ${index + 1}`}
+                                        required
+                                        fullWidth
+                                    />
+                                    <Box sx={CreateCurationBoardDialogStyles.mockStubStudy}></Box>
+                                    <Box sx={CreateCurationBoardDialogStyles.mockStubStudy}></Box>
+                                    <Box sx={CreateCurationBoardDialogStyles.mockStubStudy}></Box>
+                                    <Box sx={CreateCurationBoardDialogStyles.mockStubStudy}></Box>
+                                </Box>
                             </Box>
                         ))
                     )}
                 </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem' }}>
-                    <Button onClick={handleCreateCurationBoard} color="primary" variant="contained">
-                        create
-                    </Button>
+                    <LoadingButton
+                        onClick={handleCreateCurationBoard}
+                        color="primary"
+                        isLoading={props.createButtonIsLoading}
+                        variant="contained"
+                        text="create"
+                        loaderColor="secondary"
+                        sx={{ width: '85px' }}
+                    />
                     <Button onClick={() => props.onCloseDialog()} color="error">
                         cancel
                     </Button>

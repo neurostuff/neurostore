@@ -63,7 +63,7 @@ const ConditionSelector: React.FC<{
 
     return (
         <>
-            <NeurosynthAutocomplete
+            {/* <NeurosynthAutocomplete
                 isLoading={getConditionsIsLoading || createConditionIsLoading}
                 isError={getConditionsIsError}
                 value={selectedValue}
@@ -115,7 +115,7 @@ const ConditionSelector: React.FC<{
                     }
                     return filteredValues;
                 }}
-            />
+            /> */}
 
             <CreateDetailsDialog
                 isOpen={dialog.isOpen}

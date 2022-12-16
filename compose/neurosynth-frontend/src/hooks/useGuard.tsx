@@ -15,9 +15,11 @@ const useGuard = (
     useEffect(() => {
         if ((!isAuthenticated && !isLoading) || shouldNotSeePage) {
             history.push(navigationLink || '/');
-            enqueueSnackbar(snackbarMessage, {
-                variant: 'warning',
-            });
+            if (snackbarMessage && snackbarMessage.length > 0) {
+                enqueueSnackbar(snackbarMessage, {
+                    variant: 'warning',
+                });
+            }
         }
     }, [
         isAuthenticated,

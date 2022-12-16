@@ -1,85 +1,110 @@
 import { Box } from '@mui/material';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useParams } from 'react-router-dom';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { DragDropContext, DropResult, ResponderProvided } from '@hello-pangea/dnd';
-import CurationColumn from '../CurationColumn/CurationColumn';
+import CurationColumn, { ICurationColumn } from '../CurationColumn/CurationColumn';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
 import CurationBoardStyles from './CurationBoard.styles';
+import { useEffect, useState } from 'react';
 
 const CurationBoard: React.FC = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
     const { data } = useGetProjectById(projectId);
     const { mutate } = useUpdateProject();
+    const [curationColumns, setCurationColumns] = useState<ICurationColumn[]>([]);
+
+    useEffect(() => {
+        if (data?.provenance?.curationMetadata?.columns) {
+            setCurationColumns(data.provenance.curationMetadata.columns || []);
+        }
+    }, [data]);
 
     const handleDragEnd = (result: DropResult, provided: ResponderProvided) => {
-        if (!data?.provenance?.curationMetadata?.columns) return;
-        if (!projectId) return;
         const { destination, source, draggableId } = result;
-        if (
-            !destination ||
-            (destination.droppableId === source.droppableId && destination.index === source.index)
-        ) {
-            return;
-        }
 
-        const prevColumns = data.provenance.curationMetadata.columns;
+        if (projectId && data?.provenance?.curationMetadata?.columns && curationColumns) {
+            // don't do anything if not dropped to a valid destination, or if the draggable was not moved
+            if (
+                !destination ||
+                (destination.droppableId === source.droppableId &&
+                    destination.index === source.index)
+            ) {
+                return;
+            }
 
-        // drop item in the same column but different place
-        if (source.droppableId === destination.droppableId) {
-            const colIndex = prevColumns.findIndex((col) => col.id === source.droppableId);
-            if (colIndex < 0) return;
+            const columnsUpdate = [...curationColumns];
 
-            const columnUpdate = { ...prevColumns[colIndex] };
-            const updatedStubStudiesList = [...columnUpdate.stubStudies];
-            const updatedSource = updatedStubStudiesList[source.index];
-            updatedStubStudiesList.splice(source.index, 1);
-            updatedStubStudiesList.splice(destination.index, 0, updatedSource);
-            columnUpdate.stubStudies = updatedStubStudiesList;
+            // drop item in the same column but different place
+            if (source.droppableId === destination.droppableId) {
+                const colIndex = columnsUpdate.findIndex((col) => col.id === source.droppableId);
+                if (colIndex < 0) return;
 
-            prevColumns[colIndex] = columnUpdate;
-        } else {
-            // drop item in a different column
-            const startColIndex = prevColumns.findIndex((col) => col.id === source.droppableId);
-            const endColIndex = prevColumns.findIndex((col) => col.id === destination.droppableId);
+                const updatedStubStudiesList = [...columnsUpdate[colIndex].stubStudies];
+                const draggable = updatedStubStudiesList[source.index];
+                updatedStubStudiesList.splice(source.index, 1);
+                updatedStubStudiesList.splice(destination.index, 0, draggable);
+                const columnUpdate = {
+                    ...columnsUpdate[colIndex],
+                    stubStudies: updatedStubStudiesList,
+                };
 
-            if (startColIndex < 0 || endColIndex < 0) return;
+                columnsUpdate[colIndex] = columnUpdate;
+            } else {
+                // drop item in a different column
+                const startColIndex = columnsUpdate.findIndex(
+                    (col) => col.id === source.droppableId
+                );
+                const endColIndex = columnsUpdate.findIndex(
+                    (col) => col.id === destination.droppableId
+                );
 
-            const updatedStartCol = { ...prevColumns[startColIndex] };
-            const updatedSource = { ...updatedStartCol.stubStudies[source.index] };
-            const updatedStartColStubStudiesList = [...updatedStartCol.stubStudies];
-            updatedStartColStubStudiesList.splice(source.index, 1);
-            updatedStartCol.stubStudies = updatedStartColStubStudiesList;
+                if (startColIndex < 0 || endColIndex < 0) return;
 
-            const updatedEndCol = { ...prevColumns[endColIndex] };
-            const updatedEndColStubStudiesList = [...updatedEndCol.stubStudies];
-            updatedEndColStubStudiesList.splice(destination.index, 0, { ...updatedSource });
-            updatedEndCol.stubStudies = updatedEndColStubStudiesList;
+                const updatedStartColStubStudiesList = [
+                    ...columnsUpdate[startColIndex].stubStudies,
+                ];
+                const draggable = updatedStartColStubStudiesList[source.index];
+                updatedStartColStubStudiesList.splice(source.index, 1);
+                const updatedStartCol = {
+                    ...columnsUpdate[startColIndex],
+                    stubStudies: updatedStartColStubStudiesList,
+                };
 
-            prevColumns[startColIndex] = updatedStartCol;
-            prevColumns[endColIndex] = updatedEndCol;
-        }
+                const updatedEndColStubStudiesList = [...columnsUpdate[endColIndex].stubStudies];
+                updatedEndColStubStudiesList.splice(destination.index, 0, draggable);
+                const updatedEndCol = {
+                    ...columnsUpdate[endColIndex],
+                    stubStudies: updatedEndColStubStudiesList,
+                };
 
-        mutate({
-            projectId: projectId,
-            project: {
-                provenance: {
-                    ...data.provenance,
-                    curationMetadata: {
-                        ...data.provenance.curationMetadata,
-                        columns: prevColumns,
+                columnsUpdate[startColIndex] = updatedStartCol;
+                columnsUpdate[endColIndex] = updatedEndCol;
+            }
+
+            // store this in local memory so that we don't get weird behavior and lag when updating via HTTP
+            setCurationColumns(columnsUpdate);
+
+            mutate({
+                projectId: projectId,
+                project: {
+                    provenance: {
+                        ...data.provenance,
+                        curationMetadata: {
+                            ...data.provenance.curationMetadata,
+                            columns: columnsUpdate,
+                        },
                     },
                 },
-            },
-        });
+            });
+        }
     };
 
     return (
         <Box sx={{ height: '100%' }}>
             <DragDropContext onDragEnd={handleDragEnd}>
                 <Box sx={CurationBoardStyles.columnContainer}>
-                    {(data?.provenance?.curationMetadata?.columns || []).map((column) => (
-                        <CurationColumn key={column.id} {...column} />
+                    {curationColumns.map((column, index) => (
+                        <CurationColumn key={column.id} {...column} columnIndex={index} />
                     ))}
                 </Box>
             </DragDropContext>

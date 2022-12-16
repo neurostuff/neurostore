@@ -18,12 +18,19 @@ const useUpdateProject = () => {
             API.NeurosynthServices.ProjectsService.projectsIdPut(args.projectId, args.project),
         {
             onSuccess: () => {
-                queryClient.invalidateQueries('projects');
-                enqueueSnackbar('project updated successfully', { variant: 'success' });
+                const x = queryClient.isMutating({
+                    predicate: (m) => m.options.mutationKey === 'projects',
+                });
+                if (x <= 1) {
+                    console.log('invalidating queries');
+
+                    queryClient.invalidateQueries('projects');
+                }
             },
             onError: () => {
                 enqueueSnackbar('there was an error updating the project', { variant: 'error' });
             },
+            mutationKey: 'projects',
         }
     );
 };

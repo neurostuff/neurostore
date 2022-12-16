@@ -40,7 +40,6 @@ const PubMedWizardUploadStep: React.FC<IPubMedWizardUploadStep> = (props) => {
                     setIds(list);
                     // we have trouble testing string patterns for carriage returns like \r\n, so we replace them here with new \n newlines
                     const replacedText = content.replace(/(?:[\r\n])+/g, '\n');
-                    console.log(JSON.stringify(replacedText));
 
                     setIdText(replacedText);
                 }
@@ -100,7 +99,7 @@ const PubMedWizardUploadStep: React.FC<IPubMedWizardUploadStep> = (props) => {
             <NavigationButtons
                 nextButtonStyle="contained"
                 prevButtonDisabled={true}
-                nextButtonDisabled={ids.length === 0}
+                nextButtonDisabled={!isValid}
                 onButtonClick={handleClickNext}
             />
         </Box>

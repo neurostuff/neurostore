@@ -81,7 +81,7 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                 Select the <b>studyset</b> that you would like to use for your meta-analysis
             </Typography>
 
-            <NeurosynthAutocomplete
+            {/* <NeurosynthAutocomplete
                 label="studyset"
                 isLoading={studysetsIsLoading}
                 isError={studysetsIsError}
@@ -146,7 +146,7 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                     props.onUpdate({ inclusionColumn: newVal });
                 }}
                 options={metadataKeys || []}
-            />
+            /> */}
 
             <NavigationButtons
                 onButtonClick={props.onNext}

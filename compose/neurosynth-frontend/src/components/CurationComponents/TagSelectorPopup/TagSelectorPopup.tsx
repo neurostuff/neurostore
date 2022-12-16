@@ -1,13 +1,16 @@
-import { createFilterOptions } from '@mui/material/Autocomplete';
+import { Box, TextField } from '@mui/material';
+import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { SystemStyleObject } from '@mui/system';
-import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
+import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
-import { IProvenance, ITag } from 'hooks/requests/useGetProjects';
+import { ITag } from 'hooks/requests/useGetProjects';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { v4 as uuidv4 } from 'uuid';
+import ErrorIcon from '@mui/icons-material/Error';
 
 interface AutoSelectOption {
     id: string;
@@ -15,26 +18,12 @@ interface AutoSelectOption {
     addOptionActualLabel?: string | null;
 }
 
-const filterOptions = createFilterOptions<AutoSelectOption | undefined>({
+const filterOptions = createFilterOptions<AutoSelectOption>({
     ignoreAccents: true,
     ignoreCase: true,
     matchFrom: 'any',
     trim: true,
 });
-
-const generateNewTag = (newTag: Omit<ITag, 'id'>, allTags: ITag[]): ITag => {
-    const getNewRandId = () => Math.random().toString(16).slice(2);
-    const idIsBeingUsed = (givenId: string) => allTags.findIndex((tag) => tag.id === givenId) >= 0;
-
-    // toString(x) turns the number into base x
-    let newId = getNewRandId();
-    while (idIsBeingUsed(newId)) newId = getNewRandId();
-
-    return {
-        ...newTag,
-        id: newId,
-    };
-};
 
 interface ITagSelectorPopup {
     label?: string;
@@ -42,6 +31,7 @@ interface ITagSelectorPopup {
     sx?: SystemStyleObject;
     onAddTag: (tag: ITag) => void;
     onCreateTag?: (tag: ITag) => void;
+    isLoading?: boolean;
 }
 
 const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
@@ -56,83 +46,132 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
         isLoading: updateProjectIsLoading,
         isError: updateProjectIsError,
     } = useUpdateProject();
-    const [selectedValue, setSelectedValue] = useState<AutoSelectOption>();
+    const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(null);
 
     const tags = (data?.provenance?.curationMetadata?.tags || []).filter((x) =>
         props.isExclusion ? x.isExclusionTag : !x.isExclusionTag
     );
 
-    const tagOptions = tags.map((tag) => ({
-        id: tag.id || '',
-        label: tag.label || '',
+    const tagOptions: AutoSelectOption[] = tags.map((tag) => ({
+        id: tag.id,
+        label: tag.label,
         addOptionActualLabel: null,
     }));
 
     const handleCreateTag = (tagName: string) => {
-        const updatedProvenance = { ...data?.provenance };
-        if (projectId && updatedProvenance?.curationMetadata?.tags) {
-            const prevTags = updatedProvenance?.curationMetadata?.tags || [];
-
-            const generatedTag = generateNewTag(
-                { label: tagName, isExclusionTag: props.isExclusion },
-                tags
-            );
-
-            updatedProvenance.curationMetadata.tags = [generatedTag, ...prevTags];
+        if (projectId && data?.provenance?.curationMetadata?.tags) {
+            const prevTags = data.provenance.curationMetadata.tags;
+            const newTag = { id: uuidv4(), label: tagName, isExclusionTag: props.isExclusion };
+            const updatedTags = [newTag, ...prevTags];
 
             mutate(
                 {
                     projectId,
                     project: {
-                        provenance: updatedProvenance,
+                        provenance: {
+                            ...data.provenance,
+                            curationMetadata: {
+                                ...data.provenance.curationMetadata,
+                                tags: updatedTags,
+                            },
+                        },
                     },
                 },
                 {
                     onSuccess: () => {
-                        if (props.onCreateTag) props.onCreateTag(generatedTag);
+                        if (props.onCreateTag) {
+                            props.onCreateTag(newTag);
+                            setSelectedValue({
+                                id: newTag.id,
+                                label: newTag.label,
+                                addOptionActualLabel: null,
+                            });
+                        }
                     },
                 }
             );
         }
     };
 
-    return (
-        <NeurosynthAutocomplete
-            isLoading={getProjectIsLoading || updateProjectIsLoading}
-            isError={getProjectIsError || updateProjectIsError}
-            sx={props.sx || { width: '250px' }}
-            value={selectedValue}
-            required={false}
-            size="small"
-            label={props.label || 'select tag'}
-            options={tagOptions}
-            isOptionEqualToValue={(option, value) => option?.id === value?.id}
-            getOptionLabel={(option) => option?.label || ''}
-            onChange={(_event, newValue, _reason) => {
-                if (newValue) {
-                    if (newValue.addOptionActualLabel) {
-                        handleCreateTag(newValue.addOptionActualLabel);
-                        setSelectedValue({
-                            ...newValue,
-                            label: newValue.addOptionActualLabel,
-                        });
-                        return;
-                    }
+    const handleChange = (
+        _event: React.SyntheticEvent<Element, Event>,
+        newValue: string | AutoSelectOption | null
+    ) => {
+        // if user hits enter after typing input, we get a string and handle it here
+        if (typeof newValue === 'string') {
+            const foundValue = tagOptions.find(
+                (tag) => tag.label.toLocaleLowerCase() === newValue.toLocaleLowerCase()
+            );
+            if (foundValue) {
+                // do not create a new tag if an identical label exists
+                setSelectedValue(foundValue);
+                props.onAddTag({
+                    id: foundValue.id,
+                    label: foundValue.label,
+                    isExclusionTag: props.isExclusion,
+                });
+            } else {
+                handleCreateTag(newValue);
+            }
+            // if user selects the "Add ..." option, we get an AutoSelectOption and handle it here
+        } else if (newValue && newValue.addOptionActualLabel) {
+            handleCreateTag(newValue.addOptionActualLabel);
+            // if the user clicks an option, we get an AutoSelectOption and handle it here
+        } else {
+            setSelectedValue(newValue);
+            if (newValue)
+                props.onAddTag({
+                    id: newValue.id,
+                    label: newValue.label,
+                    isExclusionTag: props.isExclusion,
+                });
+        }
+    };
 
-                    const selectedTag = tags?.find((localTag) => localTag.id === newValue?.id);
-                    if (selectedTag) {
-                        setSelectedValue(selectedTag);
-                        props.onAddTag(selectedTag);
-                    }
+    const isLoading = getProjectIsLoading || updateProjectIsLoading || props.isLoading;
+    const isError = getProjectIsError || updateProjectIsError;
+
+    return (
+        <Autocomplete
+            sx={props.sx || { width: '250px' }}
+            value={selectedValue || null}
+            options={tagOptions}
+            freeSolo
+            isOptionEqualToValue={(option, value) => {
+                if (value.addOptionActualLabel === null) {
+                    return false;
+                } else {
+                    return option?.id === value?.id;
                 }
             }}
+            getOptionLabel={(option) => (typeof option === 'string' ? option : option?.label || '')}
+            onChange={handleChange}
             renderOption={(params, option) => (
                 <ListItem {...params} key={option?.id}>
-                    <ListItemText
-                        primary={option?.label || ''}
-                        secondary={option?.description || ''}
-                    />
+                    <ListItemText primary={option?.label || ''} />
                 </ListItem>
+            )}
+            renderInput={(params) => (
+                <TextField
+                    {...params}
+                    error={isError}
+                    InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                            <>
+                                {isError && (
+                                    <Box sx={{ color: 'error.main', display: 'flex' }}>
+                                        There was an error
+                                        <ErrorIcon sx={{ marginLeft: '5px' }} />
+                                    </Box>
+                                )}
+                                {isLoading && <ProgressLoader size={20} />}
+                                {!isError && !isLoading && params.InputProps.endAdornment}
+                            </>
+                        ),
+                    }}
+                    label={props.label || 'select tag'}
+                />
             )}
             filterOptions={(options, params) => {
                 const filteredValues = filterOptions(options, params);

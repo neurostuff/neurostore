@@ -26,8 +26,9 @@ interface INeurosynthAutocomplete<T> {
         state?: AutocompleteRenderOptionState
     ) => React.ReactNode;
     value: T;
-    getOptionLabel: (option: T) => string;
-    onChange: (_event: any, newVal: T | null, _reason: any) => void;
+    freeSolo?: boolean;
+    getOptionLabel: (option: T | string) => string;
+    onChange: (_event: any, newVal: T | string | null, _reason: any) => void;
     options: T[];
     sx?: SystemStyleObject;
     isLoading?: boolean;
@@ -49,6 +50,7 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
         renderOption = undefined,
         value,
         getOptionLabel,
+        freeSolo = false,
         onChange,
         options,
         isOptionEqualToValue,
@@ -60,8 +62,8 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
         size = 'small',
     } = props;
 
-    const handleOnChange = (_event: any, newVal: T | null, _reason: any) => {
-        handleChange(newVal);
+    const handleOnChange = (_event: any, newVal: T | string | null, _reason: any) => {
+        // handleChange(newVal);
         onChange(_event, newVal, _reason);
     };
 
@@ -74,6 +76,7 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
             onBlur={handleOnBlur}
             size={size}
             disabled={shouldDisable}
+            freeSolo={freeSolo}
             isOptionEqualToValue={isOptionEqualToValue}
             renderOption={renderOption}
             sx={sx}
@@ -93,11 +96,8 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
                                         <ErrorIcon sx={{ marginLeft: '5px' }} />
                                     </Box>
                                 )}
-                                {isLoading ? (
-                                    <ProgressLoader sx={{ display: 'block' }} size={20} />
-                                ) : (
-                                    params.InputProps.endAdornment
-                                )}
+                                {isLoading && <ProgressLoader size={20} />}
+                                {!isError && !isLoading && params.InputProps.endAdornment}
                             </>
                         ),
                     }}

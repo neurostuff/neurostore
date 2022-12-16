@@ -50,8 +50,6 @@ const StudyPage: React.FC = (props) => {
         studyId,
     }: { projectId: string; studysetId: string; studyId: string } = useParams();
 
-    console.log(`projectId: ${projectId} | studysetId: ${studysetId} | studyId: ${studyId}`);
-
     const { isLoading: createStudyIsLoading, mutate: createStudy } = useCreateStudy();
     const {
         isLoading: getStudyIsLoading,
@@ -92,12 +90,12 @@ const StudyPage: React.FC = (props) => {
         const userIDAndStudyIDExist = !!user?.sub && !!data?.user;
         const thisUserOwnsThisStudy = (data?.user || null) === (user?.sub || undefined);
         const allowEdit = isAuthenticated && userIDAndStudyIDExist && thisUserOwnsThisStudy;
-        history.push('/projects/1iubegiuber/studysets/2iubf2iufb/studies/5cLR4qwokFqV/edit');
         setAllowEdits(allowEdit);
-    }, [isAuthenticated, user?.sub, data?.user]);
+    }, [isAuthenticated, user?.sub, data?.user, history]);
 
     const thisUserOwnsThisStudy = (data?.user || null) === (user?.sub || undefined);
-    const isViewingStudyFromProject = studysetId !== undefined && projectId !== undefined;
+    const isViewingStudyFromProject =
+        studysetId !== undefined && projectId !== undefined && studysetId !== undefined;
     const showCloneMessage = isViewingStudyFromProject && !thisUserOwnsThisStudy;
 
     return (

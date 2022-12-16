@@ -7,6 +7,10 @@ import { ITag } from 'hooks/requests/useGetProjects';
 import { useRef, useState } from 'react';
 import TagSelectorPopup from 'components/CurationComponents/TagSelectorPopup/TagSelectorPopup';
 import CurationStubStudyStyles from './CurationStubStudy.styles';
+import useUpdateProject from 'hooks/requests/useUpdateProject';
+import { useParams } from 'react-router-dom';
+import useGetProjectById from 'hooks/requests/useGetProjectById';
+import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 
 export interface ICurationStubStudy {
     id: string;
@@ -26,14 +30,85 @@ const CurationStubStudy: React.FC<
     ICurationStubStudy & {
         index: number;
         isVisible: boolean;
+        columnIndex: number;
         onSelectStubStudy: (itemId: string) => void;
     }
 > = (props) => {
+    const { projectId }: { projectId: string | undefined } = useParams();
     const [tagSelectorPopupIsOpen, setTagSelectorPopupIsOpen] = useState(false);
+    const { mutate, isLoading: updateProjectIsLoading } = useUpdateProject();
+    const { data } = useGetProjectById(projectId);
     const anchorRef = useRef<HTMLButtonElement>(null);
 
-    const handleOnAddTag = (tag: ITag) => {
-        setTagSelectorPopupIsOpen(false);
+    const handleOnAddExclusionTag = (tag: ITag) => {
+        if (
+            projectId &&
+            data?.provenance?.curationMetadata?.columns &&
+            data?.provenance?.curationMetadata?.columns.length > 0
+        ) {
+            const updatedColumns = [...data.provenance.curationMetadata.columns];
+            const updatedStubsForColumn = [...updatedColumns[props.columnIndex].stubStudies];
+            updatedStubsForColumn[props.index] = {
+                ...updatedStubsForColumn[props.index],
+                exclusionTag: tag,
+            };
+            updatedColumns[props.columnIndex] = {
+                ...updatedColumns[props.columnIndex],
+                stubStudies: updatedStubsForColumn,
+            };
+
+            mutate(
+                {
+                    projectId,
+                    project: {
+                        provenance: {
+                            ...data.provenance,
+                            curationMetadata: {
+                                ...data.provenance.curationMetadata,
+                                columns: updatedColumns,
+                            },
+                        },
+                    },
+                },
+                {
+                    onSuccess: () => {
+                        setTagSelectorPopupIsOpen(false);
+                    },
+                }
+            );
+        }
+    };
+
+    const handleRemoveExclusionTag = () => {
+        if (
+            projectId &&
+            data?.provenance?.curationMetadata?.columns &&
+            data?.provenance?.curationMetadata?.columns.length > 0
+        ) {
+            const updatedColumns = [...data.provenance.curationMetadata.columns];
+            const updatedStubsForColumn = [...updatedColumns[props.columnIndex].stubStudies];
+            updatedStubsForColumn[props.index] = {
+                ...updatedStubsForColumn[props.index],
+                exclusionTag: undefined,
+            };
+            updatedColumns[props.columnIndex] = {
+                ...updatedColumns[props.columnIndex],
+                stubStudies: updatedStubsForColumn,
+            };
+
+            mutate({
+                projectId,
+                project: {
+                    provenance: {
+                        ...data.provenance,
+                        curationMetadata: {
+                            ...data.provenance.curationMetadata,
+                            columns: updatedColumns,
+                        },
+                    },
+                },
+            });
+        }
     };
 
     return (
@@ -58,11 +133,18 @@ const CurationStubStudy: React.FC<
                     <Box sx={CurationStubStudyStyles.exclusionContainer}>
                         {props.exclusionTag ? (
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <Typography variant="body1" sx={{ color: 'error.dark' }}>
+                                <Typography
+                                    variant="body2"
+                                    sx={{ color: 'error.dark', fontWeight: 'bold' }}
+                                >
                                     {props.exclusionTag.label}
                                 </Typography>
-                                <IconButton onClick={() => {}}>
-                                    <Close sx={{ fontSize: '1rem', color: 'error.dark' }} />
+                                <IconButton onClick={() => handleRemoveExclusionTag()}>
+                                    {updateProjectIsLoading ? (
+                                        <ProgressLoader size={12} />
+                                    ) : (
+                                        <Close sx={{ fontSize: '1rem', color: 'error.dark' }} />
+                                    )}
                                 </IconButton>
                             </Box>
                         ) : (
@@ -73,7 +155,8 @@ const CurationStubStudy: React.FC<
                                     onClickAway={() => setTagSelectorPopupIsOpen(false)}
                                 >
                                     <TagSelectorPopup
-                                        onAddTag={handleOnAddTag}
+                                        isLoading={updateProjectIsLoading}
+                                        onAddTag={handleOnAddExclusionTag}
                                         isExclusion={true}
                                         label="Add exclusion"
                                     />
@@ -92,6 +175,7 @@ const CurationStubStudy: React.FC<
                                         },
                                     }}
                                     color="error"
+                                    disableElevation
                                 >
                                     exclude
                                 </Button>

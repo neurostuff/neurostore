@@ -16,13 +16,14 @@ import FiltrationStep from 'components/ProjectStepComponents/FiltrationStep/Filt
 import TextEdit from 'components/TextEdit/TextEdit';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
+import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
 import ProjectPageStyles from './ProjectPage.styles';
 
 const ProjectPage: React.FC = (props) => {
     const { projectId }: { projectId: string } = useParams();
-
+    const { enqueueSnackbar } = useSnackbar();
     const { mutate: updateProjectName, isLoading: updateProjectNameIsLoading } = useUpdateProject();
     const { mutate: updateProjectDescription, isLoading: updateProjectDescriptionIsLoading } =
         useUpdateProject();
@@ -99,7 +100,16 @@ const ProjectPage: React.FC = (props) => {
             <Box sx={{ marginBottom: '0.5rem' }}>
                 <TextEdit
                     onSave={(updatedName, label) =>
-                        updateProjectName({ projectId, project: { name: updatedName } })
+                        updateProjectName(
+                            { projectId, project: { name: updatedName } },
+                            {
+                                onSuccess: () => {
+                                    enqueueSnackbar('Project updated successfully', {
+                                        variant: 'success',
+                                    });
+                                },
+                            }
+                        )
                     }
                     sx={{ fontSize: '2rem' }}
                     isLoading={updateProjectNameIsLoading}
@@ -109,16 +119,25 @@ const ProjectPage: React.FC = (props) => {
                 </TextEdit>
                 <TextEdit
                     onSave={(updatedDescription, label) =>
-                        updateProjectDescription({
-                            projectId,
-                            project: { description: updatedDescription },
-                        })
+                        updateProjectDescription(
+                            {
+                                projectId,
+                                project: { description: updatedDescription },
+                            },
+                            {
+                                onSuccess: () => {
+                                    enqueueSnackbar('Project updated successfully', {
+                                        variant: 'success',
+                                    });
+                                },
+                            }
+                        )
                     }
-                    sx={{ fontSize: '1rem' }}
+                    sx={{ fontSize: '1.25rem' }}
                     isLoading={updateProjectDescriptionIsLoading}
                     textToEdit={project?.description || ''}
                 >
-                    <Typography variant="body1">{project?.description || ''}</Typography>
+                    <Typography variant="h6">{project?.description || ''}</Typography>
                 </TextEdit>
             </Box>
 

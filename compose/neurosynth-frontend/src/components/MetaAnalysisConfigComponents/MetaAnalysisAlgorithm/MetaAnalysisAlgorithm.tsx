@@ -53,7 +53,7 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
                     Select the <b>algorithm</b> that you would like to use for your meta-analysis
                 </Typography>
 
-                <NeurosynthAutocomplete
+                {/* <NeurosynthAutocomplete
                     sx={{ width: '50%', marginBottom: '1rem' }}
                     label="algorithm"
                     isOptionEqualToValue={(option, value) => option?.label === value?.label}
@@ -74,7 +74,7 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
                         });
                     }}
                     options={getMetaAnalyticAlgorithms}
-                />
+                /> */}
 
                 {props.estimator && (
                     <Box sx={{ margin: '2rem 0' }}>
@@ -108,7 +108,7 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
                     Select the <b>corrector</b> that you would like to use for your meta-analysis
                 </Typography>
 
-                <NeurosynthAutocomplete
+                {/* <NeurosynthAutocomplete
                     sx={{ width: '50%' }}
                     label="corrector (optional)"
                     required={false}
@@ -130,7 +130,7 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
                         props.onArgsUpdate({ correctorArgs: getArgsForKey('CORRECTOR', newVal) });
                     }}
                     options={getCorrectorOptions}
-                />
+                /> */}
 
                 {props.corrector && (
                     <Box sx={{ margin: '2rem 0' }}>

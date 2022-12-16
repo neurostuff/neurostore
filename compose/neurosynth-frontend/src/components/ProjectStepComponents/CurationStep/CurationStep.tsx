@@ -17,13 +17,17 @@ import {
     Divider,
 } from '@mui/material';
 import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
-import { ICurationMetadata } from 'hooks/requests/useGetProjects';
+import { ICurationMetadata, INeurosynthProject } from 'hooks/requests/useGetProjects';
 import { useHistory, useParams } from 'react-router-dom';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 import { useEffect, useState } from 'react';
 import CreateCurationBoardDialog from 'components/Dialogs/CreateCurationBoardDialog/CreateCurationBoardDialog';
+import { MutateOptions } from 'react-query';
+import { AxiosError, AxiosResponse } from 'axios';
+import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
+import { v4 as uuidv4 } from 'uuid';
 
 enum ECurationBoardTypes {
     PRISMA,
@@ -78,7 +82,11 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
         }
     }, [curationMetadata]);
 
-    const { mutate, isLoading, isError } = useUpdateProject();
+    const {
+        mutate,
+        isLoading: updateProjectIsLoading,
+        isError: updateProjectIsError,
+    } = useUpdateProject();
 
     const handleCreateCreationBoard = (curationBoardType: ECurationBoardTypes) => {
         switch (curationBoardType) {
@@ -99,24 +107,63 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
         }
     };
 
-    const createBoard = (curationBoardInitColumns: string[]) => {
+    const createBoard = (
+        curationBoardInitColumns: string[],
+        options?: MutateOptions<
+            AxiosResponse<ProjectReturn>,
+            AxiosError<any>,
+            {
+                projectId: string;
+                project: INeurosynthProject;
+            }
+        >
+    ) => {
         const columns: ICurationColumn[] = curationBoardInitColumns.map((col, index) => ({
             id: `${projectId}_${index}`,
             name: col,
             stubStudies: [],
         }));
 
-        mutate({
-            projectId,
-            project: {
-                provenance: {
-                    curationMetadata: {
-                        columns: columns,
-                        tags: [],
+        mutate(
+            {
+                projectId,
+                project: {
+                    provenance: {
+                        curationMetadata: {
+                            columns: columns,
+                            tags: [
+                                {
+                                    label: 'untagged studies',
+                                    id: 'neurosynth_untagged_studies',
+                                    isExclusionTag: false,
+                                },
+                                {
+                                    id: uuidv4(),
+                                    label: 'Special',
+                                    isExclusionTag: false,
+                                },
+                                {
+                                    id: uuidv4(),
+                                    label: 'Save For Later',
+                                    isExclusionTag: false,
+                                },
+                                {
+                                    id: uuidv4(),
+                                    label: 'Duplicate',
+                                    isExclusionTag: true,
+                                },
+                                {
+                                    id: uuidv4(),
+                                    label: 'Irrelevant',
+                                    isExclusionTag: true,
+                                },
+                            ],
+                        },
                     },
                 },
             },
-        });
+            options
+        );
     };
 
     const curationMetadataExists = !!curationMetadata;
@@ -190,12 +237,6 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                                     {curationSummary.included} included
                                                 </Typography>
                                             </Box>
-                                            <Box>
-                                                <Divider
-                                                    sx={ProjectStepComponentsStyles.divider}
-                                                    orientation="vertical"
-                                                />
-                                            </Box>
                                             <Box
                                                 sx={ProjectStepComponentsStyles.statusIconContainer}
                                             >
@@ -208,12 +249,6 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                                 <Typography sx={{ color: 'warning.dark' }}>
                                                     {curationSummary.uncategorized} uncategorized
                                                 </Typography>
-                                            </Box>
-                                            <Box>
-                                                <Divider
-                                                    sx={ProjectStepComponentsStyles.divider}
-                                                    orientation="vertical"
-                                                />
                                             </Box>
                                             <Box
                                                 sx={ProjectStepComponentsStyles.statusIconContainer}
@@ -252,9 +287,12 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                             >
                                 <CreateCurationBoardDialog
                                     onCloseDialog={() => setDialogIsOpen(false)}
-                                    onCreateCurationBoard={(curationBoardColumns: string[]) =>
-                                        createBoard(curationBoardColumns)
-                                    }
+                                    createButtonIsLoading={updateProjectIsLoading}
+                                    onCreateCurationBoard={(curationBoardColumns: string[]) => {
+                                        createBoard(curationBoardColumns, {
+                                            onSuccess: () => setDialogIsOpen(false),
+                                        });
+                                    }}
                                     isOpen={dialogIsOpen}
                                 />
                                 <NavToolbarPopupSubMenu

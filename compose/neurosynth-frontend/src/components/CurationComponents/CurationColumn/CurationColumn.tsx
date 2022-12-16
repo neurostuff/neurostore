@@ -1,6 +1,15 @@
 import { Droppable } from '@hello-pangea/dnd';
-import { Box, Button, ListItem, ListItemText, Paper, Divider, Typography } from '@mui/material';
-import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
+import {
+    Box,
+    Button,
+    ListItem,
+    ListItemText,
+    Paper,
+    Divider,
+    Typography,
+    Autocomplete,
+    TextField,
+} from '@mui/material';
 import { ITag } from 'hooks/requests/useGetProjects';
 import { useState } from 'react';
 import CurationStubStudy, {
@@ -16,13 +25,18 @@ export interface ICurationColumn {
     stubStudies: ICurationStubStudy[];
 }
 
-const CurationColumn: React.FC<ICurationColumn> = (props) => {
+const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (props) => {
     const [selectedTag, setSelectedTag] = useState<ITag>();
     const { projectId }: { projectId: string } = useParams();
     const { data } = useGetProjectById(projectId);
     const [categorizeDialogIsOpen, setCategorizeDialogIsOpen] = useState(false);
 
-    const tags = data?.provenance?.curationMetadata?.tags || [];
+    // It is expected to return a negative value if the first argument is less than the second argument
+    // zero if they're equal
+    // and a positive value otherwise.
+    const tags = (data?.provenance?.curationMetadata?.tags || []).sort(
+        (a, b) => +b.isExclusionTag - +a.isExclusionTag
+    );
 
     const handleSelectStubStudy = () => {};
 
@@ -41,28 +55,23 @@ const CurationColumn: React.FC<ICurationColumn> = (props) => {
             </Button>
 
             <Paper elevation={0} sx={{ width: '100%' }}>
-                <NeurosynthAutocomplete
+                <Autocomplete
                     noOptionsText="No tags"
-                    required={false}
                     renderOption={(params, option) => (
                         <ListItem {...params} key={option?.id}>
                             <ListItemText
-                                sx={{ color: option.isExclusion ? 'error.dark' : '' }}
+                                sx={{ color: option.isExclusionTag ? 'error.dark' : '' }}
                                 primary={option?.label || ''}
                             />
                         </ListItem>
                     )}
-                    value={selectedTag}
-                    label="filter"
+                    value={selectedTag || null}
                     size="small"
-                    options={[
-                        ...tags,
-                        {
-                            label: 'untagged',
-                            id: 'neurosynth_untagged_id',
-                            isExclusionTag: false,
-                        },
-                    ]}
+                    groupBy={(option) =>
+                        option.isExclusionTag ? 'Exclusion Tags' : 'General Tags'
+                    }
+                    renderInput={(params) => <TextField {...params} label="filter" />}
+                    options={tags}
                     isOptionEqualToValue={(option, value) => option?.id === value?.id}
                     getOptionLabel={(option) => option?.label || ''}
                     onChange={(_event, newValue, _reason) => {
@@ -88,8 +97,13 @@ const CurationColumn: React.FC<ICurationColumn> = (props) => {
                         {props?.stubStudies?.map((stubStudy, index) => (
                             <CurationStubStudy
                                 key={stubStudy.id}
+                                columnIndex={props.columnIndex}
                                 onSelectStubStudy={handleSelectStubStudy}
-                                isVisible={true}
+                                isVisible={
+                                    !selectedTag ||
+                                    stubStudy.tags.some((tag) => tag.id === selectedTag?.id) ||
+                                    selectedTag.id === stubStudy.exclusionTag?.id
+                                }
                                 index={index}
                                 {...stubStudy}
                             />
