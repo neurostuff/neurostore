@@ -18,6 +18,7 @@ import CurationStubStudy, {
 import CurationColumnStyles from './CurationColumn.styles';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { useParams } from 'react-router-dom';
+import CurationDialog from 'components/Dialogs/CurationDialog/CurationDialog';
 
 export interface ICurationColumn {
     name: string;
@@ -29,7 +30,13 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
     const [selectedTag, setSelectedTag] = useState<ITag>();
     const { projectId }: { projectId: string } = useParams();
     const { data } = useGetProjectById(projectId);
-    const [categorizeDialogIsOpen, setCategorizeDialogIsOpen] = useState(false);
+    const [dialogState, setDialogState] = useState<{
+        isOpen: boolean;
+        stubId: string | undefined;
+    }>({
+        isOpen: false,
+        stubId: undefined,
+    });
 
     // It is expected to return a negative value if the first argument is less than the second argument
     // zero if they're equal
@@ -38,20 +45,44 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
         (a, b) => +b.isExclusionTag - +a.isExclusionTag
     );
 
-    const handleSelectStubStudy = () => {};
+    const handleSelectStub = (stubId: string) => {
+        setDialogState({
+            isOpen: true,
+            stubId,
+        });
+    };
+
+    const filteredStudies = selectedTag
+        ? selectedTag.isExclusionTag
+            ? props.stubStudies.filter(
+                  (x) => x.exclusionTag && x.exclusionTag.id === selectedTag.id
+              )
+            : props.stubStudies.filter((x) => x.tags.some((x) => x.id === selectedTag.id))
+        : props.stubStudies;
 
     return (
         <Box sx={CurationColumnStyles.columnContainer}>
+            <CurationDialog
+                onSetSelectedStub={handleSelectStub}
+                selectedStubId={dialogState.stubId}
+                columnIndex={props.columnIndex}
+                stubs={filteredStudies}
+                isOpen={dialogState.isOpen}
+                onCloseDialog={() => setDialogState((prev) => ({ ...prev, isOpen: false }))}
+            />
             <Button
                 variant="contained"
                 disableElevation
-                onClick={() => setCategorizeDialogIsOpen(true)}
+                onClick={() => {
+                    const stubId = filteredStudies.length > 0 ? filteredStudies[0].id : undefined;
+                    setDialogState({ stubId: stubId, isOpen: true });
+                }}
                 sx={{
                     padding: '8px',
                     marginBottom: '0.75rem',
                 }}
             >
-                {props.name} ({props.stubStudies.length})
+                {props.name} ({filteredStudies.length} of {props.stubStudies.length})
             </Button>
 
             <Paper elevation={0} sx={{ width: '100%' }}>
@@ -94,15 +125,16 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
                                 No studies
                             </Typography>
                         )}
-                        {props?.stubStudies?.map((stubStudy, index) => (
+                        {props.stubStudies.map((stubStudy, index) => (
                             <CurationStubStudy
                                 key={stubStudy.id}
                                 columnIndex={props.columnIndex}
-                                onSelectStubStudy={handleSelectStubStudy}
+                                onSelectStubStudy={handleSelectStub}
                                 isVisible={
                                     !selectedTag ||
-                                    stubStudy.tags.some((tag) => tag.id === selectedTag?.id) ||
-                                    selectedTag.id === stubStudy.exclusionTag?.id
+                                    (selectedTag.isExclusionTag
+                                        ? selectedTag.id === stubStudy.exclusionTag?.id
+                                        : stubStudy.tags.some((tag) => tag.id === selectedTag.id))
                                 }
                                 index={index}
                                 {...stubStudy}

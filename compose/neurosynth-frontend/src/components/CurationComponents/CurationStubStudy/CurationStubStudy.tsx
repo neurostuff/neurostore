@@ -31,7 +31,7 @@ const CurationStubStudy: React.FC<
         index: number;
         isVisible: boolean;
         columnIndex: number;
-        onSelectStubStudy: (itemId: string) => void;
+        onSelectStubStudy: (itemIndex: string) => void;
     }
 > = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
@@ -139,11 +139,19 @@ const CurationStubStudy: React.FC<
                                 >
                                     {props.exclusionTag.label}
                                 </Typography>
-                                <IconButton onClick={() => handleRemoveExclusionTag()}>
+                                <IconButton
+                                    sx={{ padding: '2px' }}
+                                    onClick={() => handleRemoveExclusionTag()}
+                                >
                                     {updateProjectIsLoading ? (
                                         <ProgressLoader size={12} />
                                     ) : (
-                                        <Close sx={{ fontSize: '1rem', color: 'error.dark' }} />
+                                        <Close
+                                            sx={{
+                                                fontSize: '1rem',
+                                                color: 'error.dark',
+                                            }}
+                                        />
                                     )}
                                 </IconButton>
                             </Box>
@@ -188,9 +196,7 @@ const CurationStubStudy: React.FC<
                         onClick={() => props.onSelectStubStudy(props.id)}
                         variant="body1"
                     >
-                        <Typography sx={CurationStubStudyStyles.limitText}>
-                            {props.title}
-                        </Typography>
+                        <Typography noWrap>{props.title}</Typography>
                     </Link>
                     <Typography sx={CurationStubStudyStyles.limitText}>{props.authors}</Typography>
                     <Typography variant="caption">{props.articleYear}</Typography>

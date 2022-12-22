@@ -7,9 +7,7 @@ import {
     Divider,
     Typography,
 } from '@mui/material';
-import NavigationButtons, {
-    ENavigationButton,
-} from 'components/Buttons/NavigationButtons/NavigationButtons';
+import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { useState, useEffect } from 'react';
@@ -173,11 +171,20 @@ const PubMedwizardDuplicateStep: React.FC<IPubMedWizardDuplicateStep> = (props) 
                     comprehensive search and independent analysis should be done to make sure
                     duplicates are correctly identified.
                 </Typography>
-                <Box sx={{ marginTop: '1rem' }}>
-                    <NavigationButtons
-                        onButtonClick={(nav) => {
-                            props.onChangeStep(nav);
-                        }}
+                <Box sx={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
+                    <Button
+                        variant="outlined"
+                        onClick={() => props.onChangeStep(ENavigationButton.PREV)}
+                    >
+                        back
+                    </Button>
+                    <LoadingButton
+                        sx={{ width: '164px' }}
+                        loaderColor="secondary"
+                        variant="contained"
+                        text="complete import"
+                        onClick={handleImport}
+                        isLoading={updateProjectIsLoading}
                     />
                 </Box>
             </Box>
@@ -282,8 +289,11 @@ const PubMedwizardDuplicateStep: React.FC<IPubMedWizardDuplicateStep> = (props) 
                     back
                 </Button>
                 <LoadingButton
+                    sx={{ width: '164px' }}
                     variant="contained"
                     text="complete import"
+                    loaderColor="secondary"
+                    isLoading={updateProjectIsLoading}
                     disabled={!canContinue}
                     onClick={handleImport}
                 />

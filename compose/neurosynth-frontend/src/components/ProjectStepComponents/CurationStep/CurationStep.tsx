@@ -14,7 +14,6 @@ import {
     CircularProgress,
     CardActions,
     Button,
-    Divider,
 } from '@mui/material';
 import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
 import { ICurationMetadata, INeurosynthProject } from 'hooks/requests/useGetProjects';
@@ -27,13 +26,21 @@ import CreateCurationBoardDialog from 'components/Dialogs/CreateCurationBoardDia
 import { MutateOptions } from 'react-query';
 import { AxiosError, AxiosResponse } from 'axios';
 import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
-import { v4 as uuidv4 } from 'uuid';
+import { useSnackbar } from 'notistack';
 
 enum ECurationBoardTypes {
     PRISMA,
     SIMPLE,
     CUSTOM,
     SKIP,
+}
+
+export enum ENeurosynthTagIds {
+    UNTAGGED_TAG_ID = 'neurosynth_untagged_tag',
+    SPECIAL_TAG_ID = 'neurosynth_special_tag',
+    SAVE_FOR_LATER_TAG_ID = 'neurosynth_save_for_later_tag',
+    DUPLICATE_EXCLUSION_ID = 'neurosynth_duplicate_exclusion',
+    IRRELEVANT_EXCLUSION_ID = 'neurosynth_irrelevant_exclusion',
 }
 
 interface ICurationStep {
@@ -44,6 +51,7 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
     const { projectId }: { projectId: string } = useParams();
     const history = useHistory();
     const { curationMetadata, ...stepProps } = props;
+    const { enqueueSnackbar } = useSnackbar();
     const [dialogIsOpen, setDialogIsOpen] = useState(false);
     const [curationSummary, setCurationSummary] = useState({
         total: 0,
@@ -91,10 +99,22 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
     const handleCreateCreationBoard = (curationBoardType: ECurationBoardTypes) => {
         switch (curationBoardType) {
             case ECurationBoardTypes.PRISMA:
-                createBoard(['identification', 'screening', 'eligibility', 'included']);
+                createBoard(['identification', 'screening', 'eligibility', 'included'], {
+                    onSuccess: () => {
+                        enqueueSnackbar('Curation board created successfully', {
+                            variant: 'success',
+                        });
+                    },
+                });
                 break;
             case ECurationBoardTypes.SIMPLE:
-                createBoard(['included']);
+                createBoard(['included'], {
+                    onSuccess: () => {
+                        enqueueSnackbar('Curation board created successfully', {
+                            variant: 'success',
+                        });
+                    },
+                });
                 break;
             case ECurationBoardTypes.CUSTOM:
                 setDialogIsOpen(true);
@@ -133,27 +153,27 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                             columns: columns,
                             tags: [
                                 {
+                                    id: 'neurosynth_untagged_tag',
                                     label: 'untagged studies',
-                                    id: 'neurosynth_untagged_studies',
                                     isExclusionTag: false,
                                 },
                                 {
-                                    id: uuidv4(),
+                                    id: 'neurosynth_special_tag',
                                     label: 'Special',
                                     isExclusionTag: false,
                                 },
                                 {
-                                    id: uuidv4(),
+                                    id: 'neurosynth_save_for_later_tag',
                                     label: 'Save For Later',
                                     isExclusionTag: false,
                                 },
                                 {
-                                    id: uuidv4(),
+                                    id: 'neurosynth_duplicate_exclusion',
                                     label: 'Duplicate',
                                     isExclusionTag: true,
                                 },
                                 {
-                                    id: uuidv4(),
+                                    id: 'neurosynth_irrelevant_exclusion',
                                     label: 'Irrelevant',
                                     isExclusionTag: true,
                                 },
@@ -290,7 +310,13 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                     createButtonIsLoading={updateProjectIsLoading}
                                     onCreateCurationBoard={(curationBoardColumns: string[]) => {
                                         createBoard(curationBoardColumns, {
-                                            onSuccess: () => setDialogIsOpen(false),
+                                            onSuccess: () => {
+                                                enqueueSnackbar(
+                                                    'Curation board created successfully',
+                                                    { variant: 'success' }
+                                                );
+                                                setDialogIsOpen(false);
+                                            },
                                         });
                                     }}
                                     isOpen={dialogIsOpen}

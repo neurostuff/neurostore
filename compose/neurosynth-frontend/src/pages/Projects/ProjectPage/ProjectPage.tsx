@@ -13,6 +13,7 @@ import AlgorithmStep from 'components/ProjectStepComponents/AlgorithmStep/Algori
 import CurationStep from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import ExtractionStep from 'components/ProjectStepComponents/ExtractionStep/ExtractionStep';
 import FiltrationStep from 'components/ProjectStepComponents/FiltrationStep/FiltrationStep';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
@@ -82,7 +83,7 @@ const ProjectPage: React.FC = (props) => {
     const activeStep = +!!extractionStepMetadata + +!!filtrationStep;
 
     return (
-        <Box sx={{ marginBottom: '4rem' }}>
+        <StateHandlerComponent isLoading={getProjectIsLoading} isError={getProjectIsError}>
             <Breadcrumbs sx={{ marginBottom: '0.5rem' }}>
                 <Link
                     component={NavLink}
@@ -183,7 +184,7 @@ const ProjectPage: React.FC = (props) => {
             >
                 Clear Provenance (FOR DEV PURPOSES ONLY)
             </Button>
-        </Box>
+        </StateHandlerComponent>
     );
 };
 

@@ -10,7 +10,7 @@ const useDeleteAnnotation = () => {
         {
             onSuccess: () => {
                 queryClient.invalidateQueries('studies');
-                enqueueSnackbar('successfully deleted annotation', { variant: 'success' });
+                enqueueSnackbar('Annotation deleted successfully', { variant: 'success' });
             },
             onError: () => {
                 enqueueSnackbar('there was an error deleting the annotation', { variant: 'error' });

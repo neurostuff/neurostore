@@ -24,7 +24,7 @@ const CurationStubStudyStyles: Style = {
         marginRight: '4px',
         marginTop: '4px',
         fontSize: '',
-        maxWidth: '180px',
+        maxWidth: '80px',
     },
 };
 
