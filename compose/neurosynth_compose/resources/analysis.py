@@ -60,7 +60,7 @@ class BaseView(MethodView):
 
     @classmethod
     def _external_request(cls, data, record, id):
-        return None
+        return False
 
     @classmethod
     def update_or_create(cls, data, id=None, commit=True):
@@ -102,16 +102,15 @@ class BaseView(MethodView):
                 return record
 
         # update data if there is an external request
-        external_data = cls._external_request(data, record, id)
-        if external_data:
-            data.update(external_data)
+        committed = cls._external_request(data, record, id)
     
         # Update all non-nested attributes
-        for k, v in data.items():
-            if k not in cls._nested and k not in ["id", "user"]:
-                setattr(record, k, v)
+        if not committed:
+            for k, v in data.items():
+                if k not in cls._nested and k not in ["id", "user"]:
+                    setattr(record, k, v)
 
-        to_commit.append(record)
+            to_commit.append(record)
 
         # Update nested attributes recursively
         for field, res_name in cls._nested.items():
@@ -384,6 +383,9 @@ class NeurovaultCollectionsView(ObjectView, ListView):
 
             db.session.add(record)
             db.session.commit()
+            db.session.flush()
+
+            committed = True
         except Exception:
             abort(422, f"Error creating collection named: {collection_name}, "
                     "perhaps one with that name already exists?")
@@ -393,18 +395,14 @@ class NeurovaultCollectionsView(ObjectView, ListView):
             app.config['FILE_DIR']) / 'uploads' / str(collection['id'])
         upload_dir.mkdir(exist_ok=True, parents=True)
 
-        return data
+        return committed
 
 @view_maker
 class NeurovaultFilesView(ObjectView, ListView):
 
     @classmethod
     def _external_request(cls, data, record, id):
-        from pathlib import Path
-
-        from pynv import Client
-
-        from ..core import app, celery_app
+        from ..core import celery_app
 
         
         if record.id is None:
@@ -414,8 +412,8 @@ class NeurovaultFilesView(ObjectView, ListView):
 
             db.session.add(record)
             db.session.commit()
-
-        api = Client(access_token=app.config['NEUROVAULT_ACCESS_TOKEN'])
+            db.session.flush()
+        committed = True
 
         try:
             data['file'] = data['file'].decode('latin1')
@@ -427,7 +425,7 @@ class NeurovaultFilesView(ObjectView, ListView):
             raise
 
         data.pop('file')
-        return data
+        return committed
 
 
 @view_maker

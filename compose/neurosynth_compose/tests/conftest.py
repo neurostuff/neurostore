@@ -108,6 +108,7 @@ def app(mock_auth):
     else:
         config = environ['APP_SETTINGS']
     _app.config.from_object(config)
+    _app.config["SQLALCHEMY_ECHO"] = True
 
     # Establish an application context before running the tests.
     ctx = _app.app_context()

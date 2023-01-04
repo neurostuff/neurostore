@@ -1,14 +1,17 @@
-from ..core import celery_app
-from ..database import db
-from ..models import NeurovaultFile
+from ..core import celery_app, db
+from ..models import NeurovaultFile, MetaAnalysis, NeurovaultCollection
 
 
-@celery_app.task(name='neurovault.upload')
-def file_upload_neurovault(data, id):
+@celery_app.task(name='neurovault.upload', bind=True)
+def file_upload_neurovault(self, data, id):
     from pynv import Client
 
     from ..core import app
-
+    meta = MetaAnalysis.query.first()
+    if meta is None:
+        raise ValueError("no meta!")
+    coll = NeurovaultCollection.query.first()
+    
     record = NeurovaultFile.query.filter_by(id=id).one()
     api = Client(access_token=app.config['NEUROVAULT_ACCESS_TOKEN'])
 

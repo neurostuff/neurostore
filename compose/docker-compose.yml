@@ -15,6 +15,25 @@ services:
     env_file:
       - .env
 
+  compose_redis:
+    image: redis
+    expose:
+      - '6379'
+
+  worker:
+    image: worker
+    build:
+      dockerfile: ./neurosynth_compose/Dockerfile
+      context: ./
+    depends_on:
+      - compose
+      - compose_redis
+    entrypoint: celery -A neurosynth_compose.resources.tasks worker --loglevel=info
+    volumes:
+      - /logs/compose:/logs:rw
+    env_file:
+      - .env
+
   compose_nginx:
     image: compose_nginx
     restart: always
@@ -37,25 +56,6 @@ services:
       - postgres_data:/var/lib/postgresql/data
     expose:
       - '5432'
-    env_file:
-      - .env
-
-  compose_redis:
-    image: redis
-    expose:
-      - '6379'
-
-  worker:
-    image: worker
-    build:
-      dockerfile: ./neurosynth_compose/Dockerfile
-      context: ./
-    depends_on:
-      - compose
-      - compose_redis
-    entrypoint: celery -A neurosynth_compose.core.celery_app worker --loglevel=info
-    volumes:
-      - /logs/compose:/logs:rw
     env_file:
       - .env
 
