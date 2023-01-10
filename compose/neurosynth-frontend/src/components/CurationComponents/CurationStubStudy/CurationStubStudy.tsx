@@ -7,10 +7,10 @@ import { ITag } from 'hooks/requests/useGetProjects';
 import { useRef, useState } from 'react';
 import TagSelectorPopup from 'components/CurationComponents/TagSelectorPopup/TagSelectorPopup';
 import CurationStubStudyStyles from './CurationStubStudy.styles';
-import useUpdateProject from 'hooks/requests/useUpdateProject';
 import { useParams } from 'react-router-dom';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
+import useUpdateCuration from 'hooks/requests/useUpdateCuration';
 
 export interface ICurationStubStudy {
     id: string;
@@ -35,81 +35,90 @@ const CurationStubStudy: React.FC<
     }
 > = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
-    const [tagSelectorPopupIsOpen, setTagSelectorPopupIsOpen] = useState(false);
-    const { mutate, isLoading: updateProjectIsLoading } = useUpdateProject();
     const { data } = useGetProjectById(projectId);
+    const { removeExclusion, addExclusion, updateExclusionIsLoading } =
+        useUpdateCuration(projectId);
+    const [tagSelectorPopupIsOpen, setTagSelectorPopupIsOpen] = useState(false);
     const anchorRef = useRef<HTMLButtonElement>(null);
 
     const handleOnAddExclusionTag = (tag: ITag) => {
-        if (
-            projectId &&
-            data?.provenance?.curationMetadata?.columns &&
-            data?.provenance?.curationMetadata?.columns.length > 0
-        ) {
-            const updatedColumns = [...data.provenance.curationMetadata.columns];
-            const updatedStubsForColumn = [...updatedColumns[props.columnIndex].stubStudies];
-            updatedStubsForColumn[props.index] = {
-                ...updatedStubsForColumn[props.index],
-                exclusionTag: tag,
-            };
-            updatedColumns[props.columnIndex] = {
-                ...updatedColumns[props.columnIndex],
-                stubStudies: updatedStubsForColumn,
-            };
-
-            mutate(
-                {
-                    projectId,
-                    project: {
-                        provenance: {
-                            ...data.provenance,
-                            curationMetadata: {
-                                ...data.provenance.curationMetadata,
-                                columns: updatedColumns,
-                            },
-                        },
-                    },
-                },
-                {
-                    onSuccess: () => {
-                        setTagSelectorPopupIsOpen(false);
-                    },
-                }
-            );
-        }
+        addExclusion(props.columnIndex, props.id, tag, {
+            onSuccess: () => {
+                setTagSelectorPopupIsOpen(false);
+            },
+        });
     };
 
     const handleRemoveExclusionTag = () => {
-        if (
-            projectId &&
-            data?.provenance?.curationMetadata?.columns &&
-            data?.provenance?.curationMetadata?.columns.length > 0
-        ) {
-            const updatedColumns = [...data.provenance.curationMetadata.columns];
-            const updatedStubsForColumn = [...updatedColumns[props.columnIndex].stubStudies];
-            updatedStubsForColumn[props.index] = {
-                ...updatedStubsForColumn[props.index],
-                exclusionTag: undefined,
-            };
-            updatedColumns[props.columnIndex] = {
-                ...updatedColumns[props.columnIndex],
-                stubStudies: updatedStubsForColumn,
-            };
-
-            mutate({
-                projectId,
-                project: {
-                    provenance: {
-                        ...data.provenance,
-                        curationMetadata: {
-                            ...data.provenance.curationMetadata,
-                            columns: updatedColumns,
-                        },
-                    },
-                },
-            });
-        }
+        removeExclusion(props.columnIndex, props.id);
     };
+
+    const isLastColumn =
+        (data?.provenance.curationMetadata?.columns || []).length <= props.columnIndex + 1;
+
+    let exclusionTagElement: JSX.Element;
+    if (isLastColumn) {
+        exclusionTagElement = (
+            <Box>
+                <Typography sx={{ color: 'success.main' }}>included</Typography>
+            </Box>
+        );
+    } else if (props.exclusionTag) {
+        exclusionTagElement = (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography variant="body2" sx={{ color: 'error.dark', fontWeight: 'bold' }}>
+                    {props.exclusionTag.label}
+                </Typography>
+                <IconButton sx={{ padding: '2px' }} onClick={() => handleRemoveExclusionTag()}>
+                    {updateExclusionIsLoading ? (
+                        <ProgressLoader size={12} />
+                    ) : (
+                        <Close
+                            sx={{
+                                fontSize: '1rem',
+                                color: 'error.dark',
+                            }}
+                        />
+                    )}
+                </IconButton>
+            </Box>
+        );
+    } else {
+        exclusionTagElement = (
+            <>
+                <NeurosynthPopper
+                    open={tagSelectorPopupIsOpen}
+                    anchorElement={anchorRef.current}
+                    onClickAway={() => setTagSelectorPopupIsOpen(false)}
+                >
+                    <TagSelectorPopup
+                        isLoading={updateExclusionIsLoading}
+                        onAddTag={handleOnAddExclusionTag}
+                        isExclusion={true}
+                        label="Add exclusion"
+                    />
+                </NeurosynthPopper>
+                <Button
+                    ref={anchorRef}
+                    onClick={() => {
+                        setTagSelectorPopupIsOpen(true);
+                    }}
+                    endIcon={<ArrowDropDownIcon />}
+                    size="small"
+                    sx={{
+                        // make down arrow closer to button text
+                        '.MuiButton-iconSizeSmall': {
+                            marginLeft: '2px',
+                        },
+                    }}
+                    color="error"
+                    disableElevation
+                >
+                    exclude
+                </Button>
+            </>
+        );
+    }
 
     return (
         <Draggable
@@ -127,69 +136,11 @@ const CurationStubStudy: React.FC<
                         CurationStubStudyStyles.stubStudyContainer,
                         {
                             display: props.isVisible ? 'block' : 'none',
+                            cursor: props?.exclusionTag !== undefined ? 'not-allowed' : 'pointer',
                         },
                     ]}
                 >
-                    <Box sx={CurationStubStudyStyles.exclusionContainer}>
-                        {props.exclusionTag ? (
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <Typography
-                                    variant="body2"
-                                    sx={{ color: 'error.dark', fontWeight: 'bold' }}
-                                >
-                                    {props.exclusionTag.label}
-                                </Typography>
-                                <IconButton
-                                    sx={{ padding: '2px' }}
-                                    onClick={() => handleRemoveExclusionTag()}
-                                >
-                                    {updateProjectIsLoading ? (
-                                        <ProgressLoader size={12} />
-                                    ) : (
-                                        <Close
-                                            sx={{
-                                                fontSize: '1rem',
-                                                color: 'error.dark',
-                                            }}
-                                        />
-                                    )}
-                                </IconButton>
-                            </Box>
-                        ) : (
-                            <>
-                                <NeurosynthPopper
-                                    open={tagSelectorPopupIsOpen}
-                                    anchorElement={anchorRef.current}
-                                    onClickAway={() => setTagSelectorPopupIsOpen(false)}
-                                >
-                                    <TagSelectorPopup
-                                        isLoading={updateProjectIsLoading}
-                                        onAddTag={handleOnAddExclusionTag}
-                                        isExclusion={true}
-                                        label="Add exclusion"
-                                    />
-                                </NeurosynthPopper>
-                                <Button
-                                    ref={anchorRef}
-                                    onClick={() => {
-                                        setTagSelectorPopupIsOpen(true);
-                                    }}
-                                    endIcon={<ArrowDropDownIcon />}
-                                    size="small"
-                                    sx={{
-                                        // make down arrow closer to button text
-                                        '.MuiButton-iconSizeSmall': {
-                                            marginLeft: '2px',
-                                        },
-                                    }}
-                                    color="error"
-                                    disableElevation
-                                >
-                                    exclude
-                                </Button>
-                            </>
-                        )}
-                    </Box>
+                    <Box sx={CurationStubStudyStyles.exclusionContainer}>{exclusionTagElement}</Box>
                     <Link
                         underline="hover"
                         sx={{ marginBottom: '0.25rem' }}

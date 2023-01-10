@@ -7,7 +7,7 @@ import PubMedwizardDuplicateStep from './PubMedWizardDuplicateStep/PubMedWizardD
 import PubMedWizardTagStep from './PubMedWizardTagStep/PubMedWizardTagStep';
 import PubMedWizardUploadStep from './PubMedWizardUploadStep/PubMedWizardUploadStep';
 
-const PubmedImportDialog: React.FC<Omit<IDialog, 'dialogTitle'>> = (props) => {
+const PubmedImportDialog: React.FC<IDialog> = (props) => {
     const [activeStep, setActiveStep] = useState(0);
 
     // step 1

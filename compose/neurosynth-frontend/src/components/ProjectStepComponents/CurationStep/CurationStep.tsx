@@ -16,17 +16,19 @@ import {
     Button,
 } from '@mui/material';
 import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
-import { ICurationMetadata, INeurosynthProject } from 'hooks/requests/useGetProjects';
+import { INeurosynthProject } from 'hooks/requests/useGetProjects';
 import { useHistory, useParams } from 'react-router-dom';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import CreateCurationBoardDialog from 'components/Dialogs/CreateCurationBoardDialog/CreateCurationBoardDialog';
 import { MutateOptions } from 'react-query';
 import { AxiosError, AxiosResponse } from 'axios';
 import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { useSnackbar } from 'notistack';
+import CurationStepStyles from './CurationStep.style';
+import { ICurationSummary } from 'pages/Projects/ProjectPage/ProjectPage';
 
 enum ECurationBoardTypes {
     PRISMA,
@@ -41,60 +43,29 @@ export enum ENeurosynthTagIds {
     SAVE_FOR_LATER_TAG_ID = 'neurosynth_save_for_later_tag',
     DUPLICATE_EXCLUSION_ID = 'neurosynth_duplicate_exclusion',
     IRRELEVANT_EXCLUSION_ID = 'neurosynth_irrelevant_exclusion',
+    NON_EXCLUDED_ID = 'neurosynth_non_excluded_tag',
 }
 
 interface ICurationStep {
-    curationMetadata: ICurationMetadata | undefined;
+    curationMetadataSummary: ICurationSummary;
+    hasCurationMetadata: boolean;
 }
+
+const getPercentageComplete = (curationSummary: ICurationSummary): number => {
+    if (curationSummary.total === 0) return 0;
+    const percentageComplete =
+        ((curationSummary.included + curationSummary.excluded) / curationSummary.total) * 100;
+    return Math.round(percentageComplete);
+};
 
 const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
     const { projectId }: { projectId: string } = useParams();
     const history = useHistory();
-    const { curationMetadata, ...stepProps } = props;
+    const { curationMetadataSummary, hasCurationMetadata, ...stepProps } = props;
     const { enqueueSnackbar } = useSnackbar();
     const [dialogIsOpen, setDialogIsOpen] = useState(false);
-    const [curationSummary, setCurationSummary] = useState({
-        total: 0,
-        included: 0,
-        uncategorized: 0,
-        excluded: 0,
-    });
 
-    useEffect(() => {
-        if (curationMetadata?.columns && curationMetadata.columns.length > 0) {
-            setCurationSummary((prev) => {
-                const numTotalStudies = curationMetadata.columns.reduce(
-                    (acc, curr) => acc + curr.stubStudies.length,
-                    0
-                );
-
-                // all included studies are in the last column
-                const numIncludedStudes =
-                    curationMetadata.columns[curationMetadata.columns.length - 1].stubStudies
-                        .length;
-                const numExcludedStudies = curationMetadata.columns.reduce(
-                    (acc, curr) =>
-                        acc + curr.stubStudies.filter((study) => !!study.exclusionTag).length,
-                    0
-                );
-                const numUncategorizedStudies =
-                    numTotalStudies - numIncludedStudes - numExcludedStudies;
-
-                return {
-                    total: numTotalStudies,
-                    included: numIncludedStudes,
-                    uncategorized: numUncategorizedStudies,
-                    excluded: numExcludedStudies,
-                };
-            });
-        }
-    }, [curationMetadata]);
-
-    const {
-        mutate,
-        isLoading: updateProjectIsLoading,
-        isError: updateProjectIsError,
-    } = useUpdateProject();
+    const { mutate, isLoading: updateProjectIsLoading } = useUpdateProject();
 
     const handleCreateCreationBoard = (curationBoardType: ECurationBoardTypes) => {
         switch (curationBoardType) {
@@ -153,27 +124,32 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                             columns: columns,
                             tags: [
                                 {
-                                    id: 'neurosynth_untagged_tag',
-                                    label: 'untagged studies',
+                                    id: ENeurosynthTagIds.UNTAGGED_TAG_ID,
+                                    label: 'uncategorized studies',
                                     isExclusionTag: false,
                                 },
                                 {
-                                    id: 'neurosynth_special_tag',
+                                    id: ENeurosynthTagIds.NON_EXCLUDED_ID,
+                                    label: 'Non Excluded Studies',
+                                    isExclusionTag: false,
+                                },
+                                {
+                                    id: ENeurosynthTagIds.SPECIAL_TAG_ID,
                                     label: 'Special',
                                     isExclusionTag: false,
                                 },
                                 {
-                                    id: 'neurosynth_save_for_later_tag',
+                                    id: ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID,
                                     label: 'Save For Later',
                                     isExclusionTag: false,
                                 },
                                 {
-                                    id: 'neurosynth_duplicate_exclusion',
+                                    id: ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID,
                                     label: 'Duplicate',
                                     isExclusionTag: true,
                                 },
                                 {
-                                    id: 'neurosynth_irrelevant_exclusion',
+                                    id: ENeurosynthTagIds.IRRELEVANT_EXCLUSION_ID,
                                     label: 'Irrelevant',
                                     isExclusionTag: true,
                                 },
@@ -185,8 +161,6 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
             options
         );
     };
-
-    const curationMetadataExists = !!curationMetadata;
 
     return (
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
@@ -205,82 +179,58 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                         include studies into your meta-analysis
                     </Typography>
                     <Box sx={{ marginTop: '1rem' }}>
-                        {curationMetadataExists ? (
+                        {props.hasCurationMetadata ? (
                             <Box sx={[ProjectStepComponentsStyles.stepCard]}>
                                 <Card sx={{ width: '100%', height: '100%' }}>
                                     <CardContent>
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                position: 'relative',
-                                            }}
-                                        >
+                                        <Box sx={ProjectStepComponentsStyles.stepTitle}>
                                             <Typography sx={{ color: 'muted.main' }}>
-                                                {curationSummary.total} studies
+                                                {curationMetadataSummary.total} studies
                                             </Typography>
                                             <CircularProgress
-                                                sx={{
-                                                    position: 'absolute',
-                                                    right: 0,
-                                                    backgroundColor: '#ededed',
-                                                    borderRadius: '50%',
-                                                }}
-                                                variant="determinate"
-                                                value={
-                                                    curationSummary.total === 0
-                                                        ? 0
-                                                        : (curationSummary.included +
-                                                              curationSummary.excluded) /
-                                                          curationSummary.total
+                                                color={
+                                                    getPercentageComplete(
+                                                        curationMetadataSummary
+                                                    ) === 100
+                                                        ? 'success'
+                                                        : 'secondary'
                                                 }
+                                                sx={CurationStepStyles.curationStepTitle}
+                                                variant="determinate"
+                                                value={getPercentageComplete(
+                                                    curationMetadataSummary
+                                                )}
                                             />
                                         </Box>
-                                        <Typography
-                                            gutterBottom
-                                            variant="h5"
-                                            sx={{ marginRight: '40px' }}
-                                        >
+                                        <Typography gutterBottom variant="h5">
                                             Study Curation Summary
                                         </Typography>
                                         <Box sx={ProjectStepComponentsStyles.statusContainer}>
                                             <Box
                                                 sx={ProjectStepComponentsStyles.statusIconContainer}
                                             >
-                                                <CheckIcon
-                                                    sx={{
-                                                        color: 'success.main',
-                                                        marginBottom: '5px',
-                                                    }}
-                                                />
+                                                <CheckIcon sx={CurationStepStyles.checkIcon} />
                                                 <Typography sx={{ color: 'success.main' }}>
-                                                    {curationSummary.included} included
+                                                    {curationMetadataSummary.included} included
                                                 </Typography>
                                             </Box>
                                             <Box
                                                 sx={ProjectStepComponentsStyles.statusIconContainer}
                                             >
                                                 <QuestionMarkIcon
-                                                    sx={{
-                                                        color: 'warning.dark',
-                                                        marginBottom: '5px',
-                                                    }}
+                                                    sx={CurationStepStyles.questionMarkIcon}
                                                 />
                                                 <Typography sx={{ color: 'warning.dark' }}>
-                                                    {curationSummary.uncategorized} uncategorized
+                                                    {curationMetadataSummary.uncategorized}{' '}
+                                                    uncategorized
                                                 </Typography>
                                             </Box>
                                             <Box
                                                 sx={ProjectStepComponentsStyles.statusIconContainer}
                                             >
-                                                <CloseIcon
-                                                    sx={{
-                                                        color: 'error.dark',
-                                                        marginBottom: '5px',
-                                                    }}
-                                                />
+                                                <CloseIcon sx={CurationStepStyles.closeIcon} />
                                                 <Typography sx={{ color: 'error.dark' }}>
-                                                    {curationSummary.excluded} excluded
+                                                    {curationMetadataSummary.excluded} excluded
                                                 </Typography>
                                             </Box>
                                         </Box>

@@ -1,4 +1,3 @@
-import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
@@ -19,6 +18,8 @@ import {
 import { IExtractionMetadata } from 'hooks/requests/useGetProjects';
 import { useHistory, useParams } from 'react-router-dom';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
+import { useState } from 'react';
+import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionDialog';
 
 interface IExtractionStep {
     extractionMetadata: IExtractionMetadata | undefined;
@@ -28,6 +29,7 @@ interface IExtractionStep {
 const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
     const { projectId }: { projectId: string } = useParams();
     const history = useHistory();
+    const [moveToExtractionDialog, setMoveToExtractionDialog] = useState(false);
     const { extractionMetadata, disabled, ...stepProps } = props;
 
     const extractionMetadataExists = !!extractionMetadata;
@@ -43,8 +45,8 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                 <Box sx={{ marginLeft: '2rem' }}>
                     <Typography sx={{ color: 'muted.main' }}>
                         <b>
-                            You have completed your study curation, and now have a studyset full of
-                            studies that you would like to include in your meta-analysis
+                            You have completed your study curation, and now have a potential list of
+                            studies to include in your meta-analysis
                         </b>
                     </Typography>
                     <Typography gutterBottom sx={{ color: 'muted.main' }}>
@@ -57,15 +59,9 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                             <Box sx={[ProjectStepComponentsStyles.stepCard]}>
                                 <Card sx={{ width: '100%', height: '100%' }}>
                                     <CardContent>
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                position: 'relative',
-                                            }}
-                                        >
+                                        <Box sx={ProjectStepComponentsStyles.stepTitle}>
                                             <Typography sx={{ color: 'muted.main' }}>
-                                                433 studies
+                                                some title
                                             </Typography>
                                             <CircularProgress
                                                 sx={{
@@ -176,7 +172,15 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                     { borderColor: disabled ? 'muted.main' : 'primary.main' },
                                 ]}
                             >
-                                <Button disabled={disabled} sx={{ width: '100%', height: '100%' }}>
+                                <MoveToExtractionDialog
+                                    isOpen={moveToExtractionDialog}
+                                    onCloseDialog={() => setMoveToExtractionDialog(false)}
+                                />
+                                <Button
+                                    onClick={() => setMoveToExtractionDialog(true)}
+                                    disabled={disabled}
+                                    sx={{ width: '100%', height: '100%' }}
+                                >
                                     extraction: get started
                                 </Button>
                             </Box>

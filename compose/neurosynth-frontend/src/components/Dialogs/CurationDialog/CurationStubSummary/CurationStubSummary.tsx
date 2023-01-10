@@ -12,160 +12,80 @@ import TagSelectorPopup from 'components/CurationComponents/TagSelectorPopup/Tag
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { useParams } from 'react-router-dom';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
-import { ITag } from 'hooks/requests/useGetProjects';
+import { INeurosynthProject, ITag } from 'hooks/requests/useGetProjects';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import StyleIcon from '@mui/icons-material/Style';
 import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
+import { MutateOptions } from 'react-query';
+import { AxiosError, AxiosResponse } from 'axios';
+import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
+import useUpdateCuration from 'hooks/requests/useUpdateCuration';
 
 interface ICurationStubSummary {
     stub: ICurationStubStudy | undefined;
-    onMoveToNextItem: () => void;
     columnIndex: number;
+    onMoveToNextStub: () => void;
 }
 
 const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
     const [exclusionTagSelectorIsOpen, setExclusionTagSelectorIsOpen] = useState(false);
+    const [tagIdBeingUpdated, setTagIdBeingUpdated] = useState('');
     const [tagSelectorIsOpen, setTagSelectorIsOpen] = useState(false);
     const { projectId }: { projectId: string | undefined } = useParams();
+    const {
+        addExclusion,
+        removeExclusion,
+        addTag,
+        removeTag,
+        updateExclusionIsLoading,
+        updateTagsIsLoading,
+    } = useUpdateCuration(projectId);
     const {
         data,
         isLoading: getProjectIsLoading,
         isError: getProjectIsError,
     } = useGetProjectById(projectId);
-    const {
-        mutate,
-        isLoading: updateProjectIsLoading,
-        isError: updateProjectIsError,
-    } = useUpdateProject();
+    const { mutate: updateStubs, isLoading: updateStubsIsLoading } = useUpdateProject();
     const excludeButtonRef = useRef<HTMLButtonElement>(null);
     const addTagsRef = useRef<HTMLButtonElement>(null);
 
-    const handleAddExclusion = (tag: ITag) => {
-        if (
-            projectId &&
-            data?.provenance?.curationMetadata?.columns &&
-            data?.provenance?.curationMetadata?.columns.length > 0
-        ) {
-            const updatedColumns = [...data.provenance.curationMetadata.columns];
-            const updatedStubsForColumn = [...updatedColumns[props.columnIndex].stubStudies];
-
-            const thisStubIndex = updatedStubsForColumn.findIndex((x) => x.id === props?.stub?.id);
-            if (thisStubIndex < 0) return;
-
-            updatedStubsForColumn[thisStubIndex] = {
-                ...updatedStubsForColumn[thisStubIndex],
-                exclusionTag: tag,
-            };
-            updatedColumns[props.columnIndex] = {
-                ...updatedColumns[props.columnIndex],
-                stubStudies: updatedStubsForColumn,
-            };
-
-            mutate(
-                {
-                    projectId,
-                    project: {
-                        provenance: {
-                            ...data.provenance,
-                            curationMetadata: {
-                                ...data.provenance.curationMetadata,
-                                columns: updatedColumns,
-                            },
-                        },
-                    },
-                },
-                {
-                    onSuccess: () => {
-                        setExclusionTagSelectorIsOpen(false);
-                    },
-                }
-            );
-        }
-    };
-
-    const handleRemoveExclusion = () => {
-        if (
-            projectId &&
-            data?.provenance?.curationMetadata?.columns &&
-            data?.provenance?.curationMetadata?.columns.length > 0
-        ) {
-            const updatedColumns = [...data.provenance.curationMetadata.columns];
-            const updatedStubsForColumn = [...updatedColumns[props.columnIndex].stubStudies];
-
-            const thisStubIndex = updatedStubsForColumn.findIndex((x) => x.id === props?.stub?.id);
-            if (thisStubIndex < 0) return;
-
-            updatedStubsForColumn[thisStubIndex] = {
-                ...updatedStubsForColumn[thisStubIndex],
-                exclusionTag: undefined,
-            };
-            updatedColumns[props.columnIndex] = {
-                ...updatedColumns[props.columnIndex],
-                stubStudies: updatedStubsForColumn,
-            };
-
-            mutate({
-                projectId,
-                project: {
-                    provenance: {
-                        ...data.provenance,
-                        curationMetadata: {
-                            ...data.provenance.curationMetadata,
-                            columns: updatedColumns,
-                        },
-                    },
+    const handleAddExclusion = (exclusionTag: ITag) => {
+        if (props.stub?.id) {
+            addExclusion(props.columnIndex, props.stub.id, exclusionTag, {
+                onSuccess: () => {
+                    setExclusionTagSelectorIsOpen(false);
+                    props.onMoveToNextStub();
                 },
             });
         }
     };
 
-    const handleDelete = (id: string) => {};
+    const handleRemoveExclusion = () => {
+        if (props.stub?.id) removeExclusion(props.columnIndex, props.stub.id);
+    };
 
-    const handleAddTag = (tag: ITag) => {
-        if (
-            projectId &&
-            props.stub &&
-            data?.provenance?.curationMetadata?.columns &&
-            data?.provenance?.curationMetadata?.columns.length > 0
-        ) {
-            const tagExists = props.stub.tags.find((x) => x.id === tag.id);
-            if (tagExists) return;
+    const handleRemoveTag = (tagId: string) => {
+        if (props.stub?.id) {
+            setTagIdBeingUpdated(tagId);
+            removeTag(props.columnIndex, props.stub.id, tagId);
+        }
+    };
 
-            const updatedColumns = [...data.provenance.curationMetadata.columns];
-            const updatedStubsForColumn = [...updatedColumns[props.columnIndex].stubStudies];
-
-            const thisStubIndex = updatedStubsForColumn.findIndex((x) => x.id === props?.stub?.id);
-            if (thisStubIndex < 0) return;
-
-            updatedStubsForColumn[thisStubIndex] = {
-                ...updatedStubsForColumn[thisStubIndex],
-                tags: [...updatedStubsForColumn[thisStubIndex].tags, tag],
-            };
-            updatedColumns[props.columnIndex] = {
-                ...updatedColumns[props.columnIndex],
-                stubStudies: updatedStubsForColumn,
-            };
-
-            mutate(
-                {
-                    projectId,
-                    project: {
-                        provenance: {
-                            ...data.provenance,
-                            curationMetadata: {
-                                ...data.provenance.curationMetadata,
-                                columns: updatedColumns,
-                            },
-                        },
-                    },
-                },
-                {
-                    onSuccess: () => {
-                        setTagSelectorIsOpen(false);
-                    },
-                }
-            );
+    const handleAddTag = (
+        tag: ITag,
+        options?: MutateOptions<
+            AxiosResponse<ProjectReturn>,
+            AxiosError<any>,
+            {
+                projectId: string;
+                project: INeurosynthProject;
+            }
+        >
+    ) => {
+        if (props.stub) {
+            setTagIdBeingUpdated(tag.id);
+            addTag(props.columnIndex, props.stub, tag, options);
         }
     };
 
@@ -181,14 +101,92 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
 
             if (!saveForLaterTag || saveForLaterTagExists) return;
 
-            handleAddTag(saveForLaterTag);
+            handleAddTag(saveForLaterTag, {
+                onSuccess: () => {
+                    props.onMoveToNextStub();
+                },
+            });
+        }
+    };
+
+    const handlePromote = () => {
+        if (
+            projectId &&
+            props.stub &&
+            data?.provenance?.curationMetadata?.columns &&
+            data?.provenance?.curationMetadata?.columns.length > 0
+        ) {
+            const nextColumnExists =
+                data.provenance.curationMetadata.columns[props.columnIndex + 1];
+            const sourceIndex = data.provenance.curationMetadata.columns[
+                props.columnIndex
+            ].stubStudies.findIndex((x) => x.id === props.stub?.id);
+
+            if (nextColumnExists && sourceIndex >= 0) {
+                const startColIndex = props.columnIndex;
+                const endColIndex = props.columnIndex + 1;
+
+                const updatedColumns = [...data.provenance.curationMetadata.columns];
+
+                const updatedStartColStubStudiesList = [
+                    ...updatedColumns[startColIndex].stubStudies,
+                ];
+
+                const promotedStub = {
+                    ...updatedStartColStubStudiesList[sourceIndex],
+                };
+
+                updatedStartColStubStudiesList.splice(sourceIndex, 1);
+                const updatedStartCol = {
+                    ...updatedColumns[startColIndex],
+                    stubStudies: updatedStartColStubStudiesList,
+                };
+
+                const updatedEndColStubStudiesList = [...updatedColumns[endColIndex].stubStudies];
+                updatedEndColStubStudiesList.splice(0, 0, promotedStub);
+                const updatedEndCol = {
+                    ...updatedColumns[endColIndex],
+                    stubStudies: updatedEndColStubStudiesList,
+                };
+
+                updatedColumns[startColIndex] = updatedStartCol;
+                updatedColumns[endColIndex] = updatedEndCol;
+
+                updateStubs(
+                    {
+                        projectId: projectId,
+                        project: {
+                            provenance: {
+                                ...data.provenance,
+                                curationMetadata: {
+                                    ...data.provenance.curationMetadata,
+                                    columns: updatedColumns,
+                                },
+                            },
+                        },
+                    },
+                    {
+                        onSuccess: () => {
+                            props.onMoveToNextStub();
+                        },
+                    }
+                );
+            }
         }
     };
 
     if (!props.stub) {
         return (
-            <Box>
+            <Box sx={{ padding: '2rem' }}>
                 <Typography sx={{ color: 'warning.dark' }}>No study</Typography>
+            </Box>
+        );
+    }
+
+    if (getProjectIsError) {
+        return (
+            <Box>
+                <Typography color="error">There was an error</Typography>
             </Box>
         );
     }
@@ -214,99 +212,111 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
             </Box>
         );
 
+    const isLastColumn =
+        (data?.provenance?.curationMetadata?.columns || []).length <= props.columnIndex + 1;
+
+    let actionsHeader: JSX.Element;
+    if (props.stub.exclusionTag) {
+        actionsHeader = (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography sx={{ color: 'error.dark', fontWeight: 'bold' }} variant="h6">
+                    {props.stub.exclusionTag.label}
+                </Typography>
+                <IconButton onClick={handleRemoveExclusion} sx={{ color: 'error.dark' }}>
+                    {updateExclusionIsLoading ? <ProgressLoader size={24} /> : <CloseIcon />}
+                </IconButton>
+            </Box>
+        );
+    } else if (isLastColumn) {
+        actionsHeader = (
+            <Box>
+                <Typography sx={{ color: 'success.main' }} variant="h5">
+                    Included
+                </Typography>
+            </Box>
+        );
+    } else {
+        actionsHeader = (
+            <>
+                <Tooltip
+                    placement="top"
+                    title="Clicking this button will promote the study to the next column"
+                >
+                    {/* have to use fragments, otherwise we get a forwardref error */}
+                    <>
+                        <LoadingButton
+                            text="promote"
+                            isLoading={updateStubsIsLoading}
+                            disabled={isLastColumn}
+                            onClick={handlePromote}
+                            variant="outlined"
+                            color="success"
+                            sx={{ marginRight: '10px', width: '124px' }}
+                            startIcon={<CheckCircleOutlineIcon />}
+                        />
+                    </>
+                </Tooltip>
+                <LoadingButton
+                    onClick={handleSaveForLater}
+                    text="Save For Later"
+                    startIcon={<HelpOutlineIcon />}
+                    variant="outlined"
+                    color="warning"
+                    loaderColor="warning"
+                    isLoading={
+                        updateTagsIsLoading &&
+                        tagIdBeingUpdated === ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID
+                    }
+                    sx={{
+                        borderColor: 'warning.dark',
+                        color: 'warning.dark',
+                        marginRight: '10px',
+                        width: '169px',
+                    }}
+                    disabled={
+                        !!props.stub.tags.find(
+                            (x) => x.id === ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID
+                        ) || isLastColumn
+                    }
+                />
+                <NeurosynthPopper
+                    open={exclusionTagSelectorIsOpen}
+                    anchorElement={excludeButtonRef?.current}
+                    placement="bottom-start"
+                    onClickAway={() => {
+                        setExclusionTagSelectorIsOpen(false);
+                    }}
+                >
+                    <Box sx={{ marginTop: '6px' }}>
+                        <TagSelectorPopup
+                            label="select exclusion reason"
+                            isLoading={updateExclusionIsLoading}
+                            isExclusion={true}
+                            onAddTag={handleAddExclusion}
+                        />
+                    </Box>
+                </NeurosynthPopper>
+                <Button
+                    startIcon={<HighlightOffIcon />}
+                    ref={excludeButtonRef}
+                    onClick={() => {
+                        setExclusionTagSelectorIsOpen(true);
+                    }}
+                    size="medium"
+                    color="error"
+                    disabled={isLastColumn}
+                    variant="outlined"
+                >
+                    exclude
+                </Button>
+            </>
+        );
+    }
+
     return (
         <Box sx={{ padding: '0rem 2rem' }}>
             <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
-                <Box sx={{ display: 'flex' }}>
-                    {props.stub.exclusionTag ? (
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Typography
-                                sx={{ color: 'error.dark', fontWeight: 'bold' }}
-                                variant="h6"
-                            >
-                                {props.stub.exclusionTag.label}
-                            </Typography>
-                            <IconButton
-                                onClick={handleRemoveExclusion}
-                                sx={{ color: 'error.dark' }}
-                            >
-                                {updateProjectIsLoading ? (
-                                    <ProgressLoader size={24} />
-                                ) : (
-                                    <CloseIcon />
-                                )}
-                            </IconButton>
-                        </Box>
-                    ) : (
-                        <>
-                            <Tooltip
-                                placement="top"
-                                title="Clicking this button will promote the study to the next column"
-                            >
-                                {/* have to use fragments, otherwise we get a forwardref error */}
-                                <>
-                                    <LoadingButton
-                                        text="promote"
-                                        onClick={() => {}}
-                                        variant="outlined"
-                                        color="success"
-                                        sx={{ marginRight: '10px', width: '124px' }}
-                                        startIcon={<CheckCircleOutlineIcon />}
-                                    />
-                                </>
-                            </Tooltip>
-                            <LoadingButton
-                                onClick={handleSaveForLater}
-                                text="Save For Later"
-                                startIcon={<HelpOutlineIcon />}
-                                variant="outlined"
-                                isLoading={updateProjectIsLoading}
-                                color="warning"
-                                loaderColor="warning"
-                                sx={{
-                                    borderColor: 'warning.dark',
-                                    color: 'warning.dark',
-                                    marginRight: '10px',
-                                    width: '169px',
-                                }}
-                                disabled={
-                                    !!props.stub.tags.find(
-                                        (x) => x.id === ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID
-                                    )
-                                }
-                            />
-                            <NeurosynthPopper
-                                open={exclusionTagSelectorIsOpen}
-                                anchorElement={excludeButtonRef?.current}
-                                placement="bottom-start"
-                                onClickAway={() => {
-                                    setExclusionTagSelectorIsOpen(false);
-                                }}
-                            >
-                                <Box sx={{ marginTop: '6px' }}>
-                                    <TagSelectorPopup
-                                        label="select exclusion reason"
-                                        isLoading={updateProjectIsLoading}
-                                        isExclusion={true}
-                                        onAddTag={handleAddExclusion}
-                                    />
-                                </Box>
-                            </NeurosynthPopper>
-                            <Button
-                                startIcon={<HighlightOffIcon />}
-                                ref={excludeButtonRef}
-                                onClick={() => {
-                                    setExclusionTagSelectorIsOpen(true);
-                                }}
-                                size="medium"
-                                color="error"
-                                variant="outlined"
-                            >
-                                exclude
-                            </Button>
-                        </>
-                    )}
-                </Box>
+                <Box sx={{ display: 'flex' }}>{actionsHeader}</Box>
                 <NeurosynthPopper
                     open={tagSelectorIsOpen}
                     anchorElement={addTagsRef?.current}
@@ -318,9 +328,15 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                     <Box sx={{ marginTop: '6px' }}>
                         <TagSelectorPopup
                             label="select tag"
-                            isLoading={updateProjectIsLoading}
+                            isLoading={updateTagsIsLoading}
                             isExclusion={false}
-                            onAddTag={handleAddTag}
+                            onAddTag={(tag) =>
+                                handleAddTag(tag, {
+                                    onSuccess: () => {
+                                        setTagSelectorIsOpen(false);
+                                    },
+                                })
+                            }
                         />
                     </Box>
                 </NeurosynthPopper>
@@ -354,7 +370,8 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                     <NeurosynthConfirmationChip
                         sx={{ margin: '3px' }}
                         key={tag.id}
-                        onDelete={() => handleDelete(tag.id)}
+                        isLoading={updateTagsIsLoading && tag.id === tagIdBeingUpdated}
+                        onDelete={() => handleRemoveTag(tag.id)}
                         label={tag.label}
                     />
                 ))}

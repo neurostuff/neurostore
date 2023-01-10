@@ -27,7 +27,7 @@ const CurationStubListItem: React.FC<ICurationStubListItem> = (props) => {
                     </Typography>
                 )}
                 <ListItemText sx={CurationStubStudyStyles.limitText} primary={props.stub.title} />
-                <Box sx={{ display: 'flex' }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
                     {props.stub.tags.map((tag) => (
                         <Chip
                             key={tag.id}

@@ -260,7 +260,7 @@ const PubMedwizardDuplicateStep: React.FC<IPubMedWizardDuplicateStep> = (props) 
                                 </Button>
                             </Box>
                             <Box sx={{ display: 'flex' }}>
-                                <Box sx={{ flexGrow: 1, flexShrink: 1, flexBasis: 0 }}>
+                                <Box sx={{ width: '50%' }}>
                                     <Typography gutterBottom>
                                         <b>This study is being imported</b>
                                     </Typography>
@@ -269,7 +269,7 @@ const PubMedwizardDuplicateStep: React.FC<IPubMedWizardDuplicateStep> = (props) 
                                 <Box sx={{ margin: '0 10px' }}>
                                     <Divider orientation="vertical" />
                                 </Box>
-                                <Box sx={{ flexGrow: 1, flexShrink: 1, flexBasis: 0 }}>
+                                <Box sx={{ width: '50%' }}>
                                     <Typography gutterBottom>
                                         <b>This study already exists in the project</b>
                                     </Typography>

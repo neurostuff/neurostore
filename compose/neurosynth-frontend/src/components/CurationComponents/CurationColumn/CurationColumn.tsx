@@ -19,6 +19,8 @@ import CurationColumnStyles from './CurationColumn.styles';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { useParams } from 'react-router-dom';
 import CurationDialog from 'components/Dialogs/CurationDialog/CurationDialog';
+import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionDialog';
+import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 
 export interface ICurationColumn {
     name: string;
@@ -30,6 +32,7 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
     const [selectedTag, setSelectedTag] = useState<ITag>();
     const { projectId }: { projectId: string } = useParams();
     const { data } = useGetProjectById(projectId);
+    const [lastColExtractionDialogIsOpen, setLastColExtractionDialogIsOpen] = useState(false);
     const [dialogState, setDialogState] = useState<{
         isOpen: boolean;
         stubId: string | undefined;
@@ -52,17 +55,30 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
         });
     };
 
-    const filteredStudies = selectedTag
-        ? selectedTag.isExclusionTag
-            ? props.stubStudies.filter(
-                  (x) => x.exclusionTag && x.exclusionTag.id === selectedTag.id
-              )
-            : props.stubStudies.filter((x) => x.tags.some((x) => x.id === selectedTag.id))
-        : props.stubStudies;
+    const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined): boolean => {
+        let isVisible = false;
+        if (!selectedTag) {
+            isVisible = true;
+        } else if (selectedTag.isExclusionTag) {
+            isVisible = selectedTag.id === stub.exclusionTag?.id;
+        } else if (selectedTag.id === ENeurosynthTagIds.UNTAGGED_TAG_ID) {
+            isVisible = stub.tags.length === 0 && stub?.exclusionTag === undefined;
+        } else {
+            isVisible = stub.tags.some((tag) => tag.id === selectedTag.id);
+        }
+        return isVisible;
+    };
+
+    const filteredStudies = props.stubStudies.filter((stub) => getVisibility(stub, selectedTag));
+    const isLastColumn =
+        (data?.provenance.curationMetadata?.columns || []).length <= props.columnIndex + 1;
+
+    const hasIncludedStudies = isLastColumn && props.stubStudies.length > 0;
 
     return (
         <Box sx={CurationColumnStyles.columnContainer}>
             <CurationDialog
+                selectedFilter={selectedTag?.label || ''}
                 onSetSelectedStub={handleSelectStub}
                 selectedStubId={dialogState.stubId}
                 columnIndex={props.columnIndex}
@@ -84,6 +100,24 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
             >
                 {props.name} ({filteredStudies.length} of {props.stubStudies.length})
             </Button>
+
+            {hasIncludedStudies && (
+                <>
+                    <MoveToExtractionDialog
+                        onCloseDialog={() => setLastColExtractionDialogIsOpen(false)}
+                        isOpen={lastColExtractionDialogIsOpen}
+                    />
+                    <Button
+                        onClick={() => setLastColExtractionDialogIsOpen(true)}
+                        sx={{ marginBottom: '0.75rem' }}
+                        disableElevation
+                        variant="contained"
+                        color="success"
+                    >
+                        create studyset
+                    </Button>
+                </>
+            )}
 
             <Paper elevation={0} sx={{ width: '100%' }}>
                 <Autocomplete
@@ -130,12 +164,7 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
                                 key={stubStudy.id}
                                 columnIndex={props.columnIndex}
                                 onSelectStubStudy={handleSelectStub}
-                                isVisible={
-                                    !selectedTag ||
-                                    (selectedTag.isExclusionTag
-                                        ? selectedTag.id === stubStudy.exclusionTag?.id
-                                        : stubStudy.tags.some((tag) => tag.id === selectedTag.id))
-                                }
+                                isVisible={getVisibility(stubStudy, selectedTag)}
                                 index={index}
                                 {...stubStudy}
                             />

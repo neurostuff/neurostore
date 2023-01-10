@@ -22,6 +22,11 @@ const ProjectStepComponentsStyles: Style = {
             marginLeft: '20px',
         },
     },
+    stepTitle: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        position: 'relative',
+    },
     divider: {
         margin: '0 20px',
     },

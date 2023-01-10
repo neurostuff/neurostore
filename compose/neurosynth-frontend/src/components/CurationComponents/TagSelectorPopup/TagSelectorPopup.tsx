@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import ErrorIcon from '@mui/icons-material/Error';
+import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 
 interface AutoSelectOption {
     id: string;
@@ -49,7 +50,11 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(null);
 
     const tags = (data?.provenance?.curationMetadata?.tags || []).filter((x) =>
-        props.isExclusion ? x.isExclusionTag : !x.isExclusionTag
+        props.isExclusion
+            ? x.isExclusionTag
+            : !x.isExclusionTag &&
+              x.id !== ENeurosynthTagIds.UNTAGGED_TAG_ID &&
+              x.id !== ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID
     );
 
     const tagOptions: AutoSelectOption[] = tags.map((tag) => ({

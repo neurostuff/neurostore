@@ -1,8 +1,11 @@
 import Chip, { ChipProps } from '@mui/material/Chip';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
+import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import { useState } from 'react';
 
-const NeurosynthConfirmationChip: React.FC<ChipProps> = (props) => {
+const NeurosynthConfirmationChip: React.FC<ChipProps & { isLoading?: boolean }> = (props) => {
+    const { isLoading, ...chipProps } = props;
+
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
 
     const handleDelete = () => {
@@ -26,7 +29,11 @@ const NeurosynthConfirmationChip: React.FC<ChipProps> = (props) => {
                 onCloseDialog={handleCloseDialog}
                 isOpen={confirmationDialogIsOpen}
             />
-            <Chip {...props} onDelete={handleDelete} />
+            <Chip
+                {...chipProps}
+                onDelete={handleDelete}
+                deleteIcon={props.isLoading ? <ProgressLoader size={18} /> : props.deleteIcon}
+            />
         </>
     );
 };

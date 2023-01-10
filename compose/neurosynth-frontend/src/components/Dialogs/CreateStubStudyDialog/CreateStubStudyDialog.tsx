@@ -28,7 +28,7 @@ const generateNewStubStudy = (
     };
 };
 
-const CreateStubStudyDialog: React.FC<Omit<IDialog, 'dialogTitle'>> = (props) => {
+const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
     const { projectId }: { projectId: string } = useParams();
     const {
         data: project,
@@ -236,6 +236,9 @@ const CreateStubStudyDialog: React.FC<Omit<IDialog, 'dialogTitle'>> = (props) =>
                 </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Button onClick={props.onCloseDialog} color="error" variant="text">
+                        cancel
+                    </Button>
                     <LoadingButton
                         sx={{ width: '85px' }}
                         isLoading={updateProjectIsLoading}
@@ -245,9 +248,6 @@ const CreateStubStudyDialog: React.FC<Omit<IDialog, 'dialogTitle'>> = (props) =>
                         text="create"
                         loaderColor="secondary"
                     />
-                    <Button onClick={props.onCloseDialog} color="error" variant="text">
-                        cancel
-                    </Button>
                 </Box>
             </Box>
         </BaseDialog>

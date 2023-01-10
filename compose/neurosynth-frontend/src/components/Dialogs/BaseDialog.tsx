@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
-export interface IDialog extends Omit<IBaseDialog, 'dialogTitle' | 'fullwidth' | 'maxWidth'> {}
+export interface IDialog extends Omit<IBaseDialog, 'dialogTitle' | 'fullWidth' | 'maxWidth'> {}
 
 interface IBaseDialog {
     isOpen: boolean;

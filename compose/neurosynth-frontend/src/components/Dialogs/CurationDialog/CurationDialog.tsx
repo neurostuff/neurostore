@@ -7,13 +7,15 @@ import { ICurationStubStudy } from 'components/CurationComponents/CurationStubSt
 
 interface ICurationDialog {
     columnIndex: number;
+    selectedFilter: string;
     selectedStubId: string | undefined;
     stubs: ICurationStubStudy[];
     onSetSelectedStub: (stub: string) => void;
 }
 
-const CurationDialog: React.FC<ICurationDialog & Omit<IDialog, 'dialogTitle'>> = (props) => {
+const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
     const [stubs, setStubs] = useState<ICurationStubStudy[]>(props.stubs);
+    const selectedStub = props.stubs.find((x) => x.id === props.selectedStubId);
 
     useEffect(() => {
         setStubs(props.stubs);
@@ -26,16 +28,25 @@ const CurationDialog: React.FC<ICurationDialog & Omit<IDialog, 'dialogTitle'>> =
                 fullWidth
                 onCloseDialog={props.onCloseDialog}
                 isOpen={props.isOpen}
-                dialogTitle="Curation View"
+                dialogTitle={`Curation View ${
+                    props.selectedFilter ? `(Filtering for ${props.selectedFilter})` : ''
+                }`}
             >
                 <Typography sx={{ color: 'warning.dark' }}>No studies</Typography>
             </BaseDialog>
         );
     }
 
-    const handleMoveToNextItem = () => {};
+    const handleMoveToNextStub = () => {
+        if (selectedStub) {
+            const stubIndex = props.stubs.findIndex((x) => x.id === selectedStub.id);
+            if (stubIndex < 0) return;
 
-    const selectedStub = props.stubs.find((x) => x.id === props.selectedStubId);
+            const nextStub = props.stubs[stubIndex + 1];
+            if (!nextStub) return;
+            props.onSetSelectedStub(nextStub.id);
+        }
+    };
 
     return (
         <BaseDialog
@@ -43,12 +54,15 @@ const CurationDialog: React.FC<ICurationDialog & Omit<IDialog, 'dialogTitle'>> =
             fullWidth
             onCloseDialog={props.onCloseDialog}
             isOpen={props.isOpen}
-            dialogTitle="Curation View"
+            dialogTitle={`Curation View ${
+                props.selectedFilter ? `(Filtering for ${props.selectedFilter})` : ''
+            }`}
         >
             <Box sx={{ display: 'flex', height: '70vh', maxHeight: '70vh' }}>
                 <Box
                     sx={{
                         minWidth: '250px',
+                        maxWidth: '250px',
                         display: 'flex',
                         flexDirection: 'column',
                         height: '100%',
@@ -68,13 +82,11 @@ const CurationDialog: React.FC<ICurationDialog & Omit<IDialog, 'dialogTitle'>> =
                     </Paper>
                 </Box>
                 <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
-                    <Box>
-                        <CurationStubSummary
-                            columnIndex={props.columnIndex}
-                            onMoveToNextItem={handleMoveToNextItem}
-                            stub={selectedStub}
-                        />
-                    </Box>
+                    <CurationStubSummary
+                        onMoveToNextStub={handleMoveToNextStub}
+                        columnIndex={props.columnIndex}
+                        stub={selectedStub}
+                    />
                 </Box>
             </Box>
         </BaseDialog>

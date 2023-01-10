@@ -22,8 +22,6 @@ const useUpdateProject = () => {
                     predicate: (m) => m.options.mutationKey === 'projects',
                 });
                 if (x <= 1) {
-                    console.log('invalidating queries');
-
                     queryClient.invalidateQueries('projects');
                 }
             },
