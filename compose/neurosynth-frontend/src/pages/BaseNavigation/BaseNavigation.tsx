@@ -6,6 +6,7 @@ import BaseNavigationStyles from './BaseNavigation.styles';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import NotFoundPage from 'pages/NotFound/NotFoundPage';
 import ProjectPage from 'pages/Projects/ProjectPage/ProjectPage';
+import ExtractionPage from 'pages/ExtractionPage/ExtractionPage';
 
 const EditAnnotationsPage = React.lazy(
     () => import('../Annotations/EditAnnotationsPage/EditAnnotationsPage')
@@ -64,6 +65,11 @@ const BaseNavigation: React.FC = (_props) => {
                 <Route path="/projects/:projectId/curation" exact>
                     <Box sx={BaseNavigationStyles.curationPageContainer}>
                         <CurationPage />
+                    </Box>
+                </Route>
+                <Route path="/projects/:projectId/extraction" exact>
+                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                        <ExtractionPage />
                     </Box>
                 </Route>
                 <Route path="/studysets" exact>

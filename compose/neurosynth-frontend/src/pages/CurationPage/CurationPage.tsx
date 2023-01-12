@@ -52,7 +52,6 @@ const CurationPage: React.FC = (props) => {
                         </Breadcrumbs>
                         {isFetching + isMutating > 0 && (
                             <Box sx={{ marginLeft: '2rem', display: 'flex' }}>
-                                {/* <ProgressLoader size={25} /> */}
                                 <Typography sx={{ color: 'muted.main', fontSize: '1.5rem' }}>
                                     updating...
                                 </Typography>

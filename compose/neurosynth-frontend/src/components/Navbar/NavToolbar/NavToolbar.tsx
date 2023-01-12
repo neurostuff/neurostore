@@ -105,7 +105,7 @@ const NavToolbar: React.FC<INav> = (props) => {
                     </Button>
                     <Button
                         variant="outlined"
-                        onClick={() => (isAuthenticated ? props.onLogout : props.onLogin())}
+                        onClick={() => (isAuthenticated ? props.onLogout() : props.onLogin())}
                         sx={[
                             NavToolbarStyles.menuItemColor,
                             NavToolbarStyles.menuItemPadding,

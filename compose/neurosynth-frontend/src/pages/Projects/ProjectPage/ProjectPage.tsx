@@ -16,17 +16,11 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import TextEdit from 'components/TextEdit/TextEdit';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
+import useGetCurationSummary from 'hooks/useGetCurationSummary';
 import { useSnackbar } from 'notistack';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
 import ProjectPageStyles from './ProjectPage.styles';
-
-export interface ICurationSummary {
-    total: number;
-    included: number;
-    uncategorized: number;
-    excluded: number;
-}
 
 const ProjectPage: React.FC = (props) => {
     const { projectId }: { projectId: string } = useParams();
@@ -39,50 +33,9 @@ const ProjectPage: React.FC = (props) => {
         isError: getProjectIsError,
         isLoading: getProjectIsLoading,
     } = useGetProjectById(projectId);
+    const curationSummary = useGetCurationSummary(projectId);
 
-    const [curationSummary, setCurationSummary] = useState<ICurationSummary>({
-        total: 0,
-        included: 0,
-        uncategorized: 0,
-        excluded: 0,
-    });
     const [tab, setTab] = useState(0);
-
-    useEffect(() => {
-        setCurationSummary((prev) => {
-            if (
-                !projectId ||
-                !project?.provenance?.curationMetadata?.columns ||
-                project.provenance.curationMetadata.columns.length <= 0
-            ) {
-                return prev;
-            }
-
-            const curationMetadata = project.provenance.curationMetadata;
-            const numTotalStudies = curationMetadata.columns.reduce(
-                (acc, curr) => acc + curr.stubStudies.length,
-                0
-            );
-
-            // all included studies are in the last column
-            const numIncludedStudes =
-                curationMetadata.columns[curationMetadata.columns.length - 1].stubStudies.length;
-            const numExcludedStudies = curationMetadata.columns.reduce(
-                (acc, curr) =>
-                    acc + curr.stubStudies.filter((study) => !!study.exclusionTag).length,
-                0
-            );
-            const numUncategorizedStudies =
-                numTotalStudies - numIncludedStudes - numExcludedStudies;
-
-            return {
-                total: numTotalStudies,
-                included: numIncludedStudes,
-                uncategorized: numUncategorizedStudies,
-                excluded: numExcludedStudies,
-            };
-        });
-    }, [projectId, project]);
 
     // TODO: for now, we will only be supporting a single meta-analysis, so we only assume there is one. This will change later.
     // const metaAnalysisId = (project?.meta_analyses as MetaAnalysis[]).
@@ -93,7 +46,8 @@ const ProjectPage: React.FC = (props) => {
     // variables related to extraction
     const disableExtractionStep =
         curationSummary.total === 0 ||
-        (curationSummary.uncategorized > 0 && curationSummary.included > 0);
+        curationSummary.included === 0 ||
+        curationSummary.uncategorized > 0;
     const extractionStepMetadata = project?.provenance?.extractionMetadata;
 
     const filtrationStep = undefined;
@@ -190,10 +144,7 @@ const ProjectPage: React.FC = (props) => {
                     orientation="vertical"
                     sx={[ProjectPageStyles.stepper, { display: tab === 0 ? 'initial' : 'none' }]}
                 >
-                    <CurationStep
-                        curationMetadataSummary={curationSummary}
-                        hasCurationMetadata={!!curationStepMetadata}
-                    />
+                    <CurationStep hasCurationMetadata={!!curationStepMetadata} />
                     <ExtractionStep
                         disabled={disableExtractionStep}
                         extractionMetadata={extractionStepMetadata}

@@ -21,6 +21,7 @@ interface IStudyExtractionStatus {
 
 export interface IExtractionMetadata {
     studyStatusList: IStudyExtractionStatus[];
+    studysetId: string;
 }
 
 export interface IProvenance {

@@ -54,7 +54,8 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
             ? x.isExclusionTag
             : !x.isExclusionTag &&
               x.id !== ENeurosynthTagIds.UNTAGGED_TAG_ID &&
-              x.id !== ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID
+              x.id !== ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID &&
+              x.id !== ENeurosynthTagIds.NON_EXCLUDED_ID
     );
 
     const tagOptions: AutoSelectOption[] = tags.map((tag) => ({

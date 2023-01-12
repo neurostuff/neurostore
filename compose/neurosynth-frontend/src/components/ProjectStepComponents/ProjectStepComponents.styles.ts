@@ -40,6 +40,12 @@ const ProjectStepComponentsStyles: Style = {
         alignItems: 'center',
         flexGrow: 1,
     },
+    progressCircle: {
+        position: 'absolute',
+        right: 0,
+        backgroundColor: '#ededed',
+        borderRadius: '50%',
+    },
 };
 
 export default ProjectStepComponentsStyles;

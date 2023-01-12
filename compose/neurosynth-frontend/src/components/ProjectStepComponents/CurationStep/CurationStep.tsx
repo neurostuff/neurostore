@@ -1,7 +1,7 @@
 import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import CloseIcon from '@mui/icons-material/Close';
-import CheckIcon from '@mui/icons-material/Check';
+import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 import {
     Box,
     Step,
@@ -28,7 +28,7 @@ import { AxiosError, AxiosResponse } from 'axios';
 import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import CurationStepStyles from './CurationStep.style';
-import { ICurationSummary } from 'pages/Projects/ProjectPage/ProjectPage';
+import useGetCurationSummary, { ICurationSummary } from 'hooks/useGetCurationSummary';
 
 enum ECurationBoardTypes {
     PRISMA,
@@ -47,7 +47,6 @@ export enum ENeurosynthTagIds {
 }
 
 interface ICurationStep {
-    curationMetadataSummary: ICurationSummary;
     hasCurationMetadata: boolean;
 }
 
@@ -60,8 +59,9 @@ const getPercentageComplete = (curationSummary: ICurationSummary): number => {
 
 const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
     const { projectId }: { projectId: string } = useParams();
+    const curationSummary = useGetCurationSummary(projectId);
     const history = useHistory();
-    const { curationMetadataSummary, hasCurationMetadata, ...stepProps } = props;
+    const { hasCurationMetadata, ...stepProps } = props;
     const { enqueueSnackbar } = useSnackbar();
     const [dialogIsOpen, setDialogIsOpen] = useState(false);
 
@@ -125,12 +125,12 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                             tags: [
                                 {
                                     id: ENeurosynthTagIds.UNTAGGED_TAG_ID,
-                                    label: 'uncategorized studies',
+                                    label: 'Untagged studies',
                                     isExclusionTag: false,
                                 },
                                 {
                                     id: ENeurosynthTagIds.NON_EXCLUDED_ID,
-                                    label: 'Non Excluded Studies',
+                                    label: 'Nonexcluded Studies',
                                     isExclusionTag: false,
                                 },
                                 {
@@ -185,21 +185,17 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                     <CardContent>
                                         <Box sx={ProjectStepComponentsStyles.stepTitle}>
                                             <Typography sx={{ color: 'muted.main' }}>
-                                                {curationMetadataSummary.total} studies
+                                                {curationSummary.total} studies
                                             </Typography>
                                             <CircularProgress
                                                 color={
-                                                    getPercentageComplete(
-                                                        curationMetadataSummary
-                                                    ) === 100
+                                                    getPercentageComplete(curationSummary) === 100
                                                         ? 'success'
                                                         : 'secondary'
                                                 }
-                                                sx={CurationStepStyles.curationStepTitle}
+                                                sx={ProjectStepComponentsStyles.progressCircle}
                                                 variant="determinate"
-                                                value={getPercentageComplete(
-                                                    curationMetadataSummary
-                                                )}
+                                                value={getPercentageComplete(curationSummary)}
                                             />
                                         </Box>
                                         <Typography gutterBottom variant="h5">
@@ -209,9 +205,19 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                             <Box
                                                 sx={ProjectStepComponentsStyles.statusIconContainer}
                                             >
-                                                <CheckIcon sx={CurationStepStyles.checkIcon} />
+                                                <PlaylistAddCheckIcon
+                                                    sx={CurationStepStyles.checkIcon}
+                                                />
                                                 <Typography sx={{ color: 'success.main' }}>
-                                                    {curationMetadataSummary.included} included
+                                                    {curationSummary.included} included
+                                                </Typography>
+                                            </Box>
+                                            <Box
+                                                sx={ProjectStepComponentsStyles.statusIconContainer}
+                                            >
+                                                <CloseIcon sx={CurationStepStyles.closeIcon} />
+                                                <Typography sx={{ color: 'error.dark' }}>
+                                                    {curationSummary.excluded} excluded
                                                 </Typography>
                                             </Box>
                                             <Box
@@ -221,16 +227,7 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                                     sx={CurationStepStyles.questionMarkIcon}
                                                 />
                                                 <Typography sx={{ color: 'warning.dark' }}>
-                                                    {curationMetadataSummary.uncategorized}{' '}
-                                                    uncategorized
-                                                </Typography>
-                                            </Box>
-                                            <Box
-                                                sx={ProjectStepComponentsStyles.statusIconContainer}
-                                            >
-                                                <CloseIcon sx={CurationStepStyles.closeIcon} />
-                                                <Typography sx={{ color: 'error.dark' }}>
-                                                    {curationMetadataSummary.excluded} excluded
+                                                    {curationSummary.uncategorized} uncategorized
                                                 </Typography>
                                             </Box>
                                         </Box>

@@ -13,21 +13,43 @@ import {
     CircularProgress,
     CardActions,
     Button,
-    Divider,
 } from '@mui/material';
 import { IExtractionMetadata } from 'hooks/requests/useGetProjects';
 import { useHistory, useParams } from 'react-router-dom';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
 import { useState } from 'react';
 import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionDialog';
+import useGetExtractionSummary, { IExtractionSummary } from 'hooks/useGetExtractionSummary';
+import ExtractionStepStyles from './ExtractionStep.style';
+import { useGetStudysetById } from 'hooks';
+import useGetProjectById from 'hooks/requests/useGetProjectById';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 
 interface IExtractionStep {
     extractionMetadata: IExtractionMetadata | undefined;
     disabled: boolean;
 }
 
+const getPercentageComplete = (extractionSummary: IExtractionSummary): number => {
+    if (extractionSummary.total === 0) return 0;
+    const percentageComplete = (extractionSummary.completed / extractionSummary.total) * 100;
+    return Math.round(percentageComplete);
+};
+
 const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
     const { projectId }: { projectId: string } = useParams();
+    const {
+        data: project,
+        isError: getProjectIsError,
+        isLoading: getProjectIsLoading,
+    } = useGetProjectById(projectId);
+    const {
+        data: studyset,
+        isError: getStudysetIsError,
+        isLoading: getStudysetIsLoading,
+    } = useGetStudysetById(project?.provenance?.extractionMetadata?.studysetId);
+    const extractionSummary = useGetExtractionSummary(projectId);
     const history = useHistory();
     const [moveToExtractionDialog, setMoveToExtractionDialog] = useState(false);
     const { extractionMetadata, disabled, ...stepProps } = props;
@@ -42,151 +64,126 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                 </Typography>
             </StepLabel>
             <StepContent>
-                <Box sx={{ marginLeft: '2rem' }}>
-                    <Typography sx={{ color: 'muted.main' }}>
-                        <b>
-                            You have completed your study curation, and now have a potential list of
-                            studies to include in your meta-analysis
-                        </b>
-                    </Typography>
-                    <Typography gutterBottom sx={{ color: 'muted.main' }}>
-                        In this step, add necessary study data to the studies in your studyset (like
-                        coordinates and metadata) as well as analysis annotations that will be used
-                        to help filter analyses within your studies
-                    </Typography>
-                    <Box sx={{ marginTop: '1rem' }}>
-                        {extractionMetadataExists ? (
-                            <Box sx={[ProjectStepComponentsStyles.stepCard]}>
-                                <Card sx={{ width: '100%', height: '100%' }}>
-                                    <CardContent>
-                                        <Box sx={ProjectStepComponentsStyles.stepTitle}>
-                                            <Typography sx={{ color: 'muted.main' }}>
-                                                some title
-                                            </Typography>
-                                            <CircularProgress
-                                                sx={{
-                                                    position: 'absolute',
-                                                    right: 0,
-                                                    backgroundColor: '#ededed',
-                                                    borderRadius: '50%',
-                                                }}
-                                                variant="determinate"
-                                                value={Math.round(((30 + 372) / 433) * 100)}
-                                            />
-                                        </Box>
-                                        <Typography
-                                            gutterBottom
-                                            variant="h5"
-                                            sx={{ marginRight: '40px' }}
-                                        >
-                                            Study Curation Summary
-                                        </Typography>
-                                        <Box
-                                            sx={{
-                                                marginTop: '1.5rem',
-                                                display: 'flex',
-                                            }}
-                                        >
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
-                                                }}
-                                            >
-                                                <CheckIcon
-                                                    sx={{
-                                                        color: 'success.main',
-                                                        marginBottom: '5px',
-                                                    }}
-                                                />
-                                                <Typography sx={{ color: 'success.main' }}>
-                                                    30 included
+                <StateHandlerComponent
+                    isError={getProjectIsError || getStudysetIsError}
+                    isLoading={getProjectIsLoading || getStudysetIsLoading}
+                >
+                    <Box sx={{ marginLeft: '2rem' }}>
+                        <Typography sx={{ color: 'muted.main' }}>
+                            <b>
+                                You have completed your study curation, and now have a potential
+                                list of studies to include in your meta-analysis
+                            </b>
+                        </Typography>
+                        <Typography gutterBottom sx={{ color: 'muted.main' }}>
+                            In this step, add necessary study data to the studies in your studyset
+                            (like coordinates and metadata) as well as analysis annotations that
+                            will be used to help filter analyses within your studies
+                        </Typography>
+                        <Box sx={{ marginTop: '1rem' }}>
+                            {extractionMetadataExists ? (
+                                <Box sx={[ProjectStepComponentsStyles.stepCard]}>
+                                    <Card sx={{ width: '100%', height: '100%' }}>
+                                        <CardContent>
+                                            <Box sx={ProjectStepComponentsStyles.stepTitle}>
+                                                <Typography
+                                                    gutterBottom
+                                                    variant="h5"
+                                                    sx={{ marginRight: '40px' }}
+                                                >
+                                                    {studyset?.name || ''}
                                                 </Typography>
-                                            </Box>
-                                            <Box>
-                                                <Divider
-                                                    sx={{ margin: '0 20px' }}
-                                                    orientation="vertical"
+                                                <CircularProgress
+                                                    sx={ProjectStepComponentsStyles.progressCircle}
+                                                    variant="determinate"
+                                                    value={getPercentageComplete(extractionSummary)}
+                                                    color={
+                                                        getPercentageComplete(extractionSummary) ===
+                                                        100
+                                                            ? 'success'
+                                                            : 'secondary'
+                                                    }
                                                 />
                                             </Box>
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
-                                                }}
+                                            <Box sx={ProjectStepComponentsStyles.statusContainer}>
+                                                <Box
+                                                    sx={
+                                                        ProjectStepComponentsStyles.statusIconContainer
+                                                    }
+                                                >
+                                                    <CheckIcon
+                                                        sx={ExtractionStepStyles.checkIcon}
+                                                    />
+                                                    <Typography sx={{ color: 'success.main' }}>
+                                                        {extractionSummary.completed} completed
+                                                    </Typography>
+                                                </Box>
+                                                <Box
+                                                    sx={
+                                                        ProjectStepComponentsStyles.statusIconContainer
+                                                    }
+                                                >
+                                                    <BookmarkIcon
+                                                        sx={ExtractionStepStyles.saveForLater}
+                                                    />
+                                                    <Typography sx={{ color: 'warning.dark' }}>
+                                                        {extractionSummary.savedForLater} saved for
+                                                        later
+                                                    </Typography>
+                                                </Box>
+                                                <Box
+                                                    sx={
+                                                        ProjectStepComponentsStyles.statusIconContainer
+                                                    }
+                                                >
+                                                    <QuestionMarkIcon
+                                                        sx={ExtractionStepStyles.closeIcon}
+                                                    />
+                                                    <Typography sx={{ color: 'error.dark' }}>
+                                                        {extractionSummary.uncategorized}{' '}
+                                                        uncategorized
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                        </CardContent>
+                                        <CardActions>
+                                            <Button
+                                                onClick={() =>
+                                                    history.push(
+                                                        `/projects/${projectId}/extraction`
+                                                    )
+                                                }
+                                                variant="text"
                                             >
-                                                <QuestionMarkIcon
-                                                    sx={{
-                                                        color: 'warning.dark',
-                                                        marginBottom: '5px',
-                                                    }}
-                                                />
-                                                <Typography sx={{ color: 'warning.dark' }}>
-                                                    31 uncategorized
-                                                </Typography>
-                                            </Box>
-                                            <Box>
-                                                <Divider
-                                                    sx={{ margin: '0 20px' }}
-                                                    orientation="vertical"
-                                                />
-                                            </Box>
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
-                                                }}
-                                            >
-                                                <CloseIcon
-                                                    sx={{
-                                                        color: 'error.dark',
-                                                        marginBottom: '5px',
-                                                    }}
-                                                />
-                                                <Typography sx={{ color: 'error.dark' }}>
-                                                    372 excluded
-                                                </Typography>
-                                            </Box>
-                                        </Box>
-                                    </CardContent>
-                                    <CardActions>
-                                        <Button
-                                            onClick={() =>
-                                                history.push(`/projects/${projectId}/curation`)
-                                            }
-                                            variant="text"
-                                        >
-                                            continue editing
-                                        </Button>
-                                    </CardActions>
-                                </Card>
-                            </Box>
-                        ) : (
-                            <Box
-                                sx={[
-                                    ProjectStepComponentsStyles.stepCard,
-                                    ProjectStepComponentsStyles.getStartedContainer,
-                                    { borderColor: disabled ? 'muted.main' : 'primary.main' },
-                                ]}
-                            >
-                                <MoveToExtractionDialog
-                                    isOpen={moveToExtractionDialog}
-                                    onCloseDialog={() => setMoveToExtractionDialog(false)}
-                                />
-                                <Button
-                                    onClick={() => setMoveToExtractionDialog(true)}
-                                    disabled={disabled}
-                                    sx={{ width: '100%', height: '100%' }}
+                                                continue editing
+                                            </Button>
+                                        </CardActions>
+                                    </Card>
+                                </Box>
+                            ) : (
+                                <Box
+                                    sx={[
+                                        ProjectStepComponentsStyles.stepCard,
+                                        ProjectStepComponentsStyles.getStartedContainer,
+                                        { borderColor: disabled ? 'muted.main' : 'primary.main' },
+                                    ]}
                                 >
-                                    extraction: get started
-                                </Button>
-                            </Box>
-                        )}
+                                    <MoveToExtractionDialog
+                                        isOpen={moveToExtractionDialog}
+                                        onCloseDialog={() => setMoveToExtractionDialog(false)}
+                                    />
+                                    <Button
+                                        onClick={() => setMoveToExtractionDialog(true)}
+                                        disabled={disabled}
+                                        sx={{ width: '100%', height: '100%' }}
+                                    >
+                                        extraction: get started
+                                    </Button>
+                                </Box>
+                            )}
+                        </Box>
                     </Box>
-                </Box>
+                </StateHandlerComponent>
             </StepContent>
         </Step>
     );

@@ -11,7 +11,7 @@ import {
     TextField,
 } from '@mui/material';
 import { ITag } from 'hooks/requests/useGetProjects';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import CurationStubStudy, {
     ICurationStubStudy,
 } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
@@ -21,6 +21,7 @@ import { useParams } from 'react-router-dom';
 import CurationDialog from 'components/Dialogs/CurationDialog/CurationDialog';
 import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionDialog';
 import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
+import useGetCurationSummary from 'hooks/useGetCurationSummary';
 
 export interface ICurationColumn {
     name: string;
@@ -28,11 +29,29 @@ export interface ICurationColumn {
     stubStudies: ICurationStubStudy[];
 }
 
+const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined): boolean => {
+    let isVisible = false;
+    if (!selectedTag) {
+        isVisible = true;
+    } else if (selectedTag.isExclusionTag) {
+        isVisible = selectedTag.id === stub.exclusionTag?.id;
+    } else if (selectedTag.id === ENeurosynthTagIds.UNTAGGED_TAG_ID) {
+        isVisible = stub.tags.length === 0 && stub?.exclusionTag === undefined;
+    } else if (selectedTag.id === ENeurosynthTagIds.NON_EXCLUDED_ID) {
+        isVisible = stub?.exclusionTag === undefined;
+    } else {
+        isVisible = stub.tags.some((tag) => tag.id === selectedTag.id);
+    }
+    return isVisible;
+};
+
 const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (props) => {
     const [selectedTag, setSelectedTag] = useState<ITag>();
     const { projectId }: { projectId: string } = useParams();
+    const curationSummary = useGetCurationSummary(projectId);
     const { data } = useGetProjectById(projectId);
     const [lastColExtractionDialogIsOpen, setLastColExtractionDialogIsOpen] = useState(false);
+    const [filteredStudies, setFilteredStudies] = useState<ICurationStubStudy[]>(props.stubStudies);
     const [dialogState, setDialogState] = useState<{
         isOpen: boolean;
         stubId: string | undefined;
@@ -41,12 +60,13 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
         stubId: undefined,
     });
 
-    // It is expected to return a negative value if the first argument is less than the second argument
-    // zero if they're equal
-    // and a positive value otherwise.
     const tags = (data?.provenance?.curationMetadata?.tags || []).sort(
         (a, b) => +b.isExclusionTag - +a.isExclusionTag
     );
+
+    useEffect(() => {
+        setFilteredStudies(props.stubStudies.filter((stub) => getVisibility(stub, selectedTag)));
+    }, [props.stubStudies, selectedTag]);
 
     const handleSelectStub = (stubId: string) => {
         setDialogState({
@@ -55,25 +75,11 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
         });
     };
 
-    const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined): boolean => {
-        let isVisible = false;
-        if (!selectedTag) {
-            isVisible = true;
-        } else if (selectedTag.isExclusionTag) {
-            isVisible = selectedTag.id === stub.exclusionTag?.id;
-        } else if (selectedTag.id === ENeurosynthTagIds.UNTAGGED_TAG_ID) {
-            isVisible = stub.tags.length === 0 && stub?.exclusionTag === undefined;
-        } else {
-            isVisible = stub.tags.some((tag) => tag.id === selectedTag.id);
-        }
-        return isVisible;
-    };
-
-    const filteredStudies = props.stubStudies.filter((stub) => getVisibility(stub, selectedTag));
     const isLastColumn =
         (data?.provenance.curationMetadata?.columns || []).length <= props.columnIndex + 1;
 
-    const hasIncludedStudies = isLastColumn && props.stubStudies.length > 0;
+    const showCreateStudysetButton =
+        isLastColumn && props.stubStudies.length > 0 && curationSummary.uncategorized === 0;
 
     return (
         <Box sx={CurationColumnStyles.columnContainer}>
@@ -101,7 +107,7 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
                 {props.name} ({filteredStudies.length} of {props.stubStudies.length})
             </Button>
 
-            {hasIncludedStudies && (
+            {showCreateStudysetButton && (
                 <>
                     <MoveToExtractionDialog
                         onCloseDialog={() => setLastColExtractionDialogIsOpen(false)}

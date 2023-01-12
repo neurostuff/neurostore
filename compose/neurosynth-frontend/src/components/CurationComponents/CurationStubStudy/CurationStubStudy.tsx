@@ -1,4 +1,4 @@
-import { Draggable } from '@hello-pangea/dnd';
+import { Draggable, DraggableStateSnapshot, DraggableStyle } from '@hello-pangea/dnd';
 import Close from '@mui/icons-material/Close';
 import { Box, Button, Chip, IconButton, Link, Paper, Tooltip, Typography } from '@mui/material';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
@@ -25,6 +25,27 @@ export interface ICurationStubStudy {
     exclusionTag?: ITag;
     tags: ITag[];
 }
+
+const handleAnimation = (
+    style: DraggableStyle | undefined,
+    snapshot: DraggableStateSnapshot,
+    isVisible: boolean
+) => {
+    if (!snapshot.isDropAnimating) {
+        return style;
+    }
+
+    console.log(isVisible);
+    if (isVisible) {
+        return { ...style };
+    } else {
+        return {
+            ...style,
+            // cannot be 0, but make it super tiny
+            transitionDuration: `0.001s`,
+        };
+    }
+};
 
 const CurationStubStudy: React.FC<
     ICurationStubStudy & {
@@ -126,7 +147,7 @@ const CurationStubStudy: React.FC<
             index={props.index}
             isDragDisabled={props?.exclusionTag !== undefined}
         >
-            {(provided) => (
+            {(provided, snapshot) => (
                 <Paper
                     elevation={1}
                     {...provided.draggableProps}
@@ -139,6 +160,11 @@ const CurationStubStudy: React.FC<
                             cursor: props?.exclusionTag !== undefined ? 'not-allowed' : 'pointer',
                         },
                     ]}
+                    style={handleAnimation(
+                        provided.draggableProps.style,
+                        snapshot,
+                        props.isVisible
+                    )}
                 >
                     <Box sx={CurationStubStudyStyles.exclusionContainer}>{exclusionTagElement}</Box>
                     <Link

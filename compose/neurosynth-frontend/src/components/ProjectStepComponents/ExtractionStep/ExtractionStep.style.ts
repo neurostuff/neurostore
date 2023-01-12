@@ -1,6 +1,12 @@
 import { Style } from 'index';
 
-const CurationStepStyles: Style = {
+const ExtractionStepStyles: Style = {
+    progressCircle: {
+        position: 'absolute',
+        right: 0,
+        backgroundColor: '#ededed',
+        borderRadius: '50%',
+    },
     checkIcon: {
         color: 'success.main',
         marginBottom: '5px',
@@ -9,10 +15,10 @@ const CurationStepStyles: Style = {
         color: 'error.dark',
         marginBottom: '5px',
     },
-    questionMarkIcon: {
+    saveForLater: {
         color: 'warning.dark',
         marginBottom: '5px',
     },
 };
 
-export default CurationStepStyles;
+export default ExtractionStepStyles;
