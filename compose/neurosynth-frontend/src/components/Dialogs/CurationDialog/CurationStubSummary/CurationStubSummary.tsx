@@ -1,9 +1,8 @@
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import { Typography, Box, Button, IconButton, Tooltip } from '@mui/material';
+import { Typography, Box, Button, IconButton, Tooltip, Link } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
 import NeurosynthConfirmationChip from 'components/NeurosynthConfirmationChip/NeurosynthConfirmationChip';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CloseIcon from '@mui/icons-material/Close';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import React, { useRef, useState } from 'react';
@@ -21,6 +20,7 @@ import { MutateOptions } from 'react-query';
 import { AxiosError, AxiosResponse } from 'axios';
 import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import useUpdateCuration from 'hooks/requests/useUpdateCuration';
+import TextEdit from 'components/TextEdit/TextEdit';
 
 interface ICurationStubSummary {
     stub: ICurationStubStudy | undefined;
@@ -33,14 +33,8 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
     const [tagIdBeingUpdated, setTagIdBeingUpdated] = useState('');
     const [tagSelectorIsOpen, setTagSelectorIsOpen] = useState(false);
     const { projectId }: { projectId: string | undefined } = useParams();
-    const {
-        addExclusion,
-        removeExclusion,
-        addTag,
-        removeTag,
-        updateExclusionIsLoading,
-        updateTagsIsLoading,
-    } = useUpdateCuration(projectId);
+    const { addExclusion, removeExclusion, addTag, removeTag, updateField, ...loadingState } =
+        useUpdateCuration(projectId);
     const {
         data,
         isLoading: getProjectIsLoading,
@@ -175,6 +169,16 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
         }
     };
 
+    const handleUpdateStub = (updatedText: string, label: string) => {
+        if (props.stub?.id)
+            updateField(
+                props.columnIndex,
+                props.stub.id,
+                label as keyof ICurationStubStudy,
+                updatedText
+            );
+    };
+
     if (!props.stub) {
         return (
             <Box sx={{ padding: '2rem' }}>
@@ -191,27 +195,6 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
         );
     }
 
-    const keywordString = (props.stub?.keywords || []).reduce(
-        (prev, curr, index, arr) => `${prev}${curr}${index === arr.length - 1 ? '' : ', '}`,
-        ''
-    );
-
-    const abstractElement =
-        typeof props.stub.abstractText === 'string' ? (
-            <Typography variant="body1">{props.stub.abstractText || ''}</Typography>
-        ) : (
-            <Box>
-                {(props.stub.abstractText || []).map((abstractObj, index) => (
-                    <Box key={index} sx={{ marginBottom: '0.5rem' }}>
-                        <Typography sx={{ fontWeight: 'bold' }} variant="body1">
-                            {abstractObj.label}
-                        </Typography>
-                        <Typography variant="body1">{abstractObj.text}</Typography>
-                    </Box>
-                ))}
-            </Box>
-        );
-
     const isLastColumn =
         (data?.provenance?.curationMetadata?.columns || []).length <= props.columnIndex + 1;
 
@@ -223,7 +206,11 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                     {props.stub.exclusionTag.label}
                 </Typography>
                 <IconButton onClick={handleRemoveExclusion} sx={{ color: 'error.dark' }}>
-                    {updateExclusionIsLoading ? <ProgressLoader size={24} /> : <CloseIcon />}
+                    {loadingState.updateExclusionIsLoading ? (
+                        <ProgressLoader size={24} />
+                    ) : (
+                        <CloseIcon />
+                    )}
                 </IconButton>
             </Box>
         );
@@ -264,7 +251,7 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                     color="warning"
                     loaderColor="warning"
                     isLoading={
-                        updateTagsIsLoading &&
+                        loadingState.updateTagsIsLoading &&
                         tagIdBeingUpdated === ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID
                     }
                     sx={{
@@ -290,7 +277,7 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                     <Box sx={{ marginTop: '6px' }}>
                         <TagSelectorPopup
                             label="select exclusion reason"
-                            isLoading={updateExclusionIsLoading}
+                            isLoading={loadingState.updateExclusionIsLoading}
                             isExclusion={true}
                             onAddTag={handleAddExclusion}
                         />
@@ -314,55 +301,45 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
     }
 
     return (
-        <Box sx={{ padding: '0rem 2rem' }}>
+        <Box sx={{ padding: '0rem 2rem', minWidth: '585px' }}>
             <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
                 <Box sx={{ display: 'flex' }}>{actionsHeader}</Box>
-                <NeurosynthPopper
-                    open={tagSelectorIsOpen}
-                    anchorElement={addTagsRef?.current}
-                    placement="bottom-start"
-                    onClickAway={() => {
-                        setTagSelectorIsOpen(false);
-                    }}
-                >
-                    <Box sx={{ marginTop: '6px' }}>
-                        <TagSelectorPopup
-                            label="select tag"
-                            isLoading={updateTagsIsLoading}
-                            isExclusion={false}
-                            onAddTag={(tag) =>
-                                handleAddTag(tag, {
-                                    onSuccess: () => {
-                                        setTagSelectorIsOpen(false);
-                                    },
-                                })
-                            }
-                        />
-                    </Box>
-                </NeurosynthPopper>
-                <Button
-                    startIcon={<StyleIcon />}
-                    ref={addTagsRef}
-                    onClick={() => {
-                        setTagSelectorIsOpen(true);
-                    }}
-                    size="medium"
-                    sx={{ marginLeft: '30px' }}
-                    variant="outlined"
-                >
-                    add tags
-                </Button>
-                {props.stub.articleLink && (
-                    <Button
-                        href={props.stub.articleLink}
-                        target="_blank"
-                        sx={{ marginLeft: 'auto' }}
-                        endIcon={<OpenInNewIcon />}
-                        variant="text"
+                <Box sx={{ marginLeft: 'auto' }}>
+                    <NeurosynthPopper
+                        open={tagSelectorIsOpen}
+                        anchorElement={addTagsRef?.current}
+                        placement="bottom-start"
+                        onClickAway={() => {
+                            setTagSelectorIsOpen(false);
+                        }}
                     >
-                        View article in PubMed
+                        <Box sx={{ marginTop: '6px' }}>
+                            <TagSelectorPopup
+                                label="select tag"
+                                isLoading={loadingState.updateTagsIsLoading}
+                                isExclusion={false}
+                                onAddTag={(tag) =>
+                                    handleAddTag(tag, {
+                                        onSuccess: () => {
+                                            setTagSelectorIsOpen(false);
+                                        },
+                                    })
+                                }
+                            />
+                        </Box>
+                    </NeurosynthPopper>
+                    <Button
+                        startIcon={<StyleIcon />}
+                        ref={addTagsRef}
+                        onClick={() => {
+                            setTagSelectorIsOpen(true);
+                        }}
+                        size="medium"
+                        variant="outlined"
+                    >
+                        add tags
                     </Button>
-                )}
+                </Box>
             </Box>
 
             <Box sx={{ marginBottom: '6px' }}>
@@ -370,30 +347,157 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                     <NeurosynthConfirmationChip
                         sx={{ margin: '3px' }}
                         key={tag.id}
-                        isLoading={updateTagsIsLoading && tag.id === tagIdBeingUpdated}
+                        isLoading={loadingState.updateTagsIsLoading && tag.id === tagIdBeingUpdated}
                         onDelete={() => handleRemoveTag(tag.id)}
                         label={tag.label}
                     />
                 ))}
             </Box>
-            <Typography color="primary" variant="h5">
-                {props.stub.title}
-            </Typography>
-            <Typography color="secondary" variant="h6">
-                {props.stub.authors}
-            </Typography>
-            <Box sx={{ display: 'flex', color: 'secondary.main' }}>
-                {props.stub?.pmid && (
-                    <Typography variant="h6" sx={{ marginRight: '2rem' }}>
-                        PMID: {props.stub.pmid}
+            <TextEdit
+                sx={{ input: { fontSize: '1.25rem' } }}
+                onSave={handleUpdateStub}
+                label="title"
+                isLoading={loadingState.updatetitleIsLoading}
+                textToEdit={props.stub.title}
+            >
+                {props.stub.articleLink ? (
+                    <Link
+                        rel="noopener"
+                        underline="hover"
+                        color="primary"
+                        target="_blank"
+                        href={props.stub.articleLink}
+                    >
+                        <Typography variant="h6">{props.stub.title}</Typography>
+                    </Link>
+                ) : (
+                    <Typography color="primary" variant="h5">
+                        {props.stub.title}
                     </Typography>
                 )}
-                {props.stub?.doi && <Typography variant="h6">DOI: {props.stub.doi}</Typography>}
+            </TextEdit>
+
+            <TextEdit
+                sx={{ width: '100%', input: { fontSize: '1.25rem' } }}
+                onSave={handleUpdateStub}
+                isLoading={loadingState.updateauthorsIsLoading}
+                label="authors"
+                textToEdit={props.stub.authors}
+            >
+                <Typography
+                    sx={{ color: props.stub.authors ? 'secondary.main' : 'warning.dark' }}
+                    variant="h6"
+                >
+                    {props.stub.authors || 'No Authors'}
+                </Typography>
+            </TextEdit>
+            <Box sx={{ display: 'flex' }}>
+                <TextEdit
+                    sx={{
+                        width: '350px',
+                        input: { padding: 0, fontSize: '1.25rem' },
+                    }}
+                    isLoading={loadingState.updatejournalIsLoading}
+                    label="journal"
+                    textToEdit={props.stub.journal}
+                    onSave={handleUpdateStub}
+                >
+                    <Typography
+                        sx={{ color: props.stub.journal ? 'initial' : 'warning.dark' }}
+                        variant="h6"
+                    >
+                        {props.stub.journal || 'No Journal'}
+                    </Typography>
+                </TextEdit>
             </Box>
-            <Typography gutterBottom sx={{ fontWeight: 'bold' }}>
-                {keywordString}
-            </Typography>
-            {abstractElement}
+            <Box sx={{ display: 'flex' }}>
+                <TextEdit
+                    sx={{
+                        width: '350px',
+                        input: { padding: 0, fontSize: '1.25rem' },
+                    }}
+                    isLoading={loadingState.updatearticleYearIsLoading}
+                    label="articleYear"
+                    textToEdit={props.stub.articleYear || ''}
+                    onSave={handleUpdateStub}
+                >
+                    <Typography
+                        sx={{ color: props.stub.articleYear ? 'initial' : 'warning.dark' }}
+                        variant="h6"
+                    >
+                        {props.stub.articleYear || 'No Year'}
+                    </Typography>
+                </TextEdit>
+            </Box>
+            <Box sx={{ display: 'flex' }}>
+                <Typography sx={{ marginRight: '10px' }} variant="h6">
+                    PMID:
+                </Typography>
+                <TextEdit
+                    sx={{ input: { padding: 0, fontSize: '1.25rem' } }}
+                    textToEdit={props.stub.pmid}
+                    label="pmid"
+                    isLoading={loadingState.updatepmidIsLoading}
+                    onSave={handleUpdateStub}
+                >
+                    <Typography
+                        sx={{ color: props.stub.pmid ? 'initial' : 'warning.dark' }}
+                        variant="h6"
+                    >
+                        {props.stub.pmid || 'No PMID'}
+                    </Typography>
+                </TextEdit>
+            </Box>
+            <Box sx={{ display: 'flex' }}>
+                <Typography sx={{ marginRight: '10px' }} variant="h6">
+                    DOI:
+                </Typography>
+                <TextEdit
+                    sx={{ input: { padding: 0, fontSize: '1.25rem' } }}
+                    onSave={handleUpdateStub}
+                    label="doi"
+                    isLoading={loadingState.updatedoiIsLoading}
+                    textToEdit={props.stub.doi}
+                >
+                    <Typography
+                        sx={{ color: props.stub.doi ? 'initial' : 'warning.dark' }}
+                        variant="h6"
+                    >
+                        {props.stub.doi || 'No DOI'}
+                    </Typography>
+                </TextEdit>
+            </Box>
+
+            <TextEdit
+                label="keywords"
+                onSave={handleUpdateStub}
+                isLoading={loadingState.updatekeywordsIsLoading}
+                textToEdit={props.stub.keywords}
+            >
+                <Typography
+                    sx={{
+                        color: props.stub.keywords ? 'initial' : 'warning.dark',
+                        fontWeight: props.stub.keywords ? 'bold' : 'initial',
+                    }}
+                >
+                    {props.stub.keywords || 'No Keywords'}
+                </Typography>
+            </TextEdit>
+            <TextEdit
+                label="abstractText"
+                onSave={handleUpdateStub}
+                textToEdit={props.stub.abstractText}
+                isLoading={loadingState.updateabstractTextIsLoading}
+                multiline
+            >
+                <Typography
+                    sx={{
+                        color: props.stub.abstractText ? 'initial' : 'warning.dark',
+                    }}
+                >
+                    {props.stub.abstractText || 'No Abstract'}
+                </Typography>
+            </TextEdit>
         </Box>
     );
 };

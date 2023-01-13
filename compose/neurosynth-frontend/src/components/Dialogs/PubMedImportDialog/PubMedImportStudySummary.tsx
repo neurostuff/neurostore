@@ -3,10 +3,21 @@ import { ICurationStubStudy } from 'components/CurationComponents/CurationStubSt
 import TextExpansion from 'components/TextExpansion/TextExpansion';
 
 const PubMedImportStudySummary: React.FC<ICurationStubStudy> = (props) => {
-    const { articleLink, articleYear, title, tags, authors, pmid, doi, abstractText } = props;
+    const {
+        articleLink,
+        articleYear,
+        title,
+        tags,
+        authors,
+        pmid,
+        doi,
+        abstractText,
+        keywords,
+        journal,
+    } = props;
 
     return (
-        <Box sx={{ padding: '0.25rem' }}>
+        <Box sx={{ padding: '0.25rem', paddingBottom: '0.5rem' }}>
             <Link
                 rel="noopener"
                 underline="hover"
@@ -21,13 +32,15 @@ const PubMedImportStudySummary: React.FC<ICurationStubStudy> = (props) => {
             <Box>
                 {tags.map((tag) => (
                     <Chip
-                        sx={{ marginBottom: '4px', marginRight: '5px' }}
+                        sx={{ marginBottom: '4px', marginTop: '4px', marginRight: '5px' }}
                         size="small"
                         key={tag.id}
                         label={tag.label}
                     />
                 ))}
             </Box>
+            <Typography variant="h6">{journal}</Typography>
+            <Typography sx={{ fontWeight: 'bold' }}>{keywords}</Typography>
             <Typography variant="body1">{authors}</Typography>
             <Box sx={{ display: 'flex' }}>
                 <Box sx={{ marginRight: '2rem' }}>
@@ -43,10 +56,7 @@ const PubMedImportStudySummary: React.FC<ICurationStubStudy> = (props) => {
                     </Typography>
                 </Box>
             </Box>
-            <TextExpansion
-                textSx={{ whiteSpace: 'break-spaces' }}
-                text={abstractText as string}
-            ></TextExpansion>
+            <TextExpansion text={abstractText}></TextExpansion>
         </Box>
     );
 };

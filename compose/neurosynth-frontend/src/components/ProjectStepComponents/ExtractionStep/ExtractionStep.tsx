@@ -1,6 +1,6 @@
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
 import {
     Box,
     Step,
@@ -16,7 +16,6 @@ import {
 } from '@mui/material';
 import { IExtractionMetadata } from 'hooks/requests/useGetProjects';
 import { useHistory, useParams } from 'react-router-dom';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
 import { useState } from 'react';
 import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionDialog';
@@ -86,12 +85,8 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                     <Card sx={{ width: '100%', height: '100%' }}>
                                         <CardContent>
                                             <Box sx={ProjectStepComponentsStyles.stepTitle}>
-                                                <Typography
-                                                    gutterBottom
-                                                    variant="h5"
-                                                    sx={{ marginRight: '40px' }}
-                                                >
-                                                    {studyset?.name || ''}
+                                                <Typography sx={{ color: 'muted.main' }}>
+                                                    {studyset?.studies?.length || 0} studies
                                                 </Typography>
                                                 <CircularProgress
                                                     sx={ProjectStepComponentsStyles.progressCircle}
@@ -105,6 +100,14 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                                     }
                                                 />
                                             </Box>
+                                            <Typography
+                                                gutterBottom
+                                                variant="h5"
+                                                sx={{ marginRight: '40px' }}
+                                            >
+                                                {studyset?.name || ''}
+                                            </Typography>
+
                                             <Box sx={ProjectStepComponentsStyles.statusContainer}>
                                                 <Box
                                                     sx={
@@ -126,7 +129,7 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                                     <BookmarkIcon
                                                         sx={ExtractionStepStyles.saveForLater}
                                                     />
-                                                    <Typography sx={{ color: 'warning.dark' }}>
+                                                    <Typography sx={{ color: 'info.main' }}>
                                                         {extractionSummary.savedForLater} saved for
                                                         later
                                                     </Typography>
@@ -137,9 +140,9 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                                     }
                                                 >
                                                     <QuestionMarkIcon
-                                                        sx={ExtractionStepStyles.closeIcon}
+                                                        sx={ExtractionStepStyles.uncategorizedIcon}
                                                     />
-                                                    <Typography sx={{ color: 'error.dark' }}>
+                                                    <Typography sx={{ color: 'warning.dark' }}>
                                                         {extractionSummary.uncategorized}{' '}
                                                         uncategorized
                                                     </Typography>

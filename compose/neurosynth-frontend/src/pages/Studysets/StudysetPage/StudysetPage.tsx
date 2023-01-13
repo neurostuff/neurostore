@@ -151,7 +151,7 @@ const StudysetsPage: React.FC = (props) => {
                         isLoading={updateStudysetNameIsLoading}
                         editIconIsVisible={thisUserOwnsthisStudyset}
                         onSave={handleUpdateField}
-                        sx={{ fontSize: '1.5rem' }}
+                        sx={{ input: { fontSize: '1.5rem' }, width: '50%' }}
                         label="name"
                         textToEdit={studyset?.name || ''}
                     >
@@ -170,7 +170,7 @@ const StudysetsPage: React.FC = (props) => {
                     <TextEdit
                         isLoading={updateStudysetPublicationIsLoading}
                         editIconIsVisible={thisUserOwnsthisStudyset}
-                        sx={{ fontSize: '1.25rem' }}
+                        sx={{ input: { fontSize: '1.25rem' }, width: '50%' }}
                         onSave={handleUpdateField}
                         label="publication"
                         textToEdit={studyset?.publication || ''}
@@ -190,7 +190,7 @@ const StudysetsPage: React.FC = (props) => {
                     <TextEdit
                         isLoading={updateStudysetDoiIsLoading}
                         editIconIsVisible={thisUserOwnsthisStudyset}
-                        sx={{ fontSize: '1.25rem' }}
+                        sx={{ input: { fontSize: '1.25rem' }, width: '50%' }}
                         label="doi"
                         onSave={handleUpdateField}
                         textToEdit={studyset?.doi || ''}
@@ -210,7 +210,7 @@ const StudysetsPage: React.FC = (props) => {
                     <TextEdit
                         isLoading={updateStudysetDescriptionIsLoading}
                         editIconIsVisible={thisUserOwnsthisStudyset}
-                        sx={{ fontSize: '1.25rem' }}
+                        sx={{ input: { fontSize: '1.25rem' }, width: '50%' }}
                         onSave={handleUpdateField}
                         label="description"
                         textToEdit={studyset?.description || ''}

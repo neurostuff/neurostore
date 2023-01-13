@@ -1,6 +1,5 @@
-import { Box, Button, TextField, Typography } from '@mui/material';
+import { Box, TextField, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import NavigationButtons from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { useCreateStudyset } from 'hooks';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
@@ -112,10 +111,11 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                 />
 
                 <LoadingButton
-                    sx={{ marginLeft: 'auto', display: 'block', width: '160px' }}
+                    sx={{ width: '160px' }}
                     disabled={studysetDetails.name.length === 0}
                     text="create studyset"
                     onClick={handleCreateStudyset}
+                    loaderColor="secondary"
                     isLoading={createStudysetIsLoading || updateProjectIsLoading}
                     variant="contained"
                 ></LoadingButton>

@@ -1,6 +1,5 @@
 import { TextField, Box, Button, Typography, Chip } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
 import TagSelectorPopup from 'components/CurationComponents/TagSelectorPopup/TagSelectorPopup';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import CreateStubStudyDialogStyles from 'components/Dialogs/CreateStubStudyDialog/CreateStubStudyDialog.styles';
@@ -9,31 +8,14 @@ import { ITag } from 'hooks/requests/useGetProjects';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
 import React, { ChangeEvent, useState } from 'react';
 import { useParams } from 'react-router-dom';
-
-const generateNewStubStudy = (
-    newStubStudy: Omit<ICurationStubStudy, 'id'>,
-    allStubStudyIdsUsed: string[]
-): ICurationStubStudy => {
-    const getNewRandId = () => Math.random().toString(16).slice(2);
-    const idIsBeingUsed = (givenId: string) =>
-        allStubStudyIdsUsed.findIndex((id) => id === givenId) >= 0;
-
-    // toString(x) turns the number into base x
-    let newId = getNewRandId();
-    while (idIsBeingUsed(newId)) newId = getNewRandId();
-
-    return {
-        ...newStubStudy,
-        id: newId,
-    };
-};
+import { v4 as uuidv4 } from 'uuid';
 
 const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
     const { projectId }: { projectId: string } = useParams();
     const {
         data: project,
         isLoading: getProjectIsLoading,
-        isError: getProejctIsError,
+        isError: getProjectIsError,
     } = useGetProjectById(projectId);
     const {
         mutate: updateProject,
@@ -50,16 +32,20 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
         name: string;
         authors: string;
         pmid: string;
-        articleYear: number;
+        keywords: string;
+        articleYear: string;
         doi: string;
+        journal: string;
         abstract: string;
         tags: ITag[];
     }>({
         name: '',
         authors: '',
         pmid: '',
-        articleYear: 0,
+        keywords: '',
+        articleYear: '',
         doi: '',
+        journal: '',
         abstract: '',
         tags: [],
     });
@@ -102,31 +88,23 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
             const updatedProvenance = { ...project.provenance };
             const updatedColumn = project.provenance.curationMetadata.columns[0];
 
-            // reduce all columns and extract all Ids
-            const allStudyIdsUsed = project.provenance.curationMetadata.columns.reduce<string[]>(
-                (acc, curr) => {
-                    return [...acc, ...curr.stubStudies.map((x) => x.id)];
-                },
-                []
-            );
-
-            const newStubStudy = generateNewStubStudy(
+            updatedColumn.stubStudies = [
                 {
+                    id: uuidv4(),
                     title: form.name,
                     authors: form.authors,
-                    keywords: [],
+                    keywords: form.keywords,
                     pmid: form.pmid,
                     doi: form.doi,
+                    journal: form.journal,
                     articleYear: form.articleYear,
                     abstractText: form.abstract,
-                    articleLink: form.pmid ? `'https://pubmed.ncbi.nlm.nih.gov/${form.pmid}'` : '',
+                    articleLink: form.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${form.pmid}` : '',
                     exclusionTag: undefined,
                     tags: [...form.tags],
                 },
-                allStudyIdsUsed
-            );
-
-            updatedColumn.stubStudies = [newStubStudy, ...updatedColumn.stubStudies];
+                ...updatedColumn.stubStudies,
+            ];
 
             updateProject(
                 {
@@ -195,6 +173,13 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
                 </Box>
                 <TextField
                     onChange={handleUpdateForm}
+                    sx={CreateStubStudyDialogStyles.textInput}
+                    name="journal"
+                    label="Journal"
+                    placeholder="Neuron"
+                />
+                <TextField
+                    onChange={handleUpdateForm}
                     required
                     helperText={
                         formFieldTouched.doi && form.doi.length === 0 ? 'doi cannot be empty' : ''
@@ -204,6 +189,13 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
                     name="doi"
                     label="DOI"
                     placeholder="10.1016/S0896-6273(00)80715-1"
+                />
+                <TextField
+                    onChange={handleUpdateForm}
+                    sx={CreateStubStudyDialogStyles.textInput}
+                    name="keywords"
+                    label="Keywords"
+                    placeholder="cognition, behavior, intelligence"
                 />
                 <TextField
                     onChange={handleUpdateForm}

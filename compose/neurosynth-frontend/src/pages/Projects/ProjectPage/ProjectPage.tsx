@@ -92,7 +92,7 @@ const ProjectPage: React.FC = (props) => {
                             }
                         )
                     }
-                    sx={{ fontSize: '2rem' }}
+                    sx={{ input: { fontSize: '2rem' }, width: '50%' }}
                     isLoading={updateProjectNameIsLoading}
                     textToEdit={project?.name || ''}
                 >
@@ -114,7 +114,7 @@ const ProjectPage: React.FC = (props) => {
                             }
                         )
                     }
-                    sx={{ fontSize: '1.25rem' }}
+                    sx={{ input: { fontSize: '1.25rem' }, width: '50%' }}
                     isLoading={updateProjectDescriptionIsLoading}
                     textToEdit={project?.description || ''}
                 >

@@ -11,12 +11,12 @@ const ExtractionStepStyles: Style = {
         color: 'success.main',
         marginBottom: '5px',
     },
-    closeIcon: {
-        color: 'error.dark',
+    uncategorizedIcon: {
+        color: 'warning.dark',
         marginBottom: '5px',
     },
     saveForLater: {
-        color: 'warning.dark',
+        color: 'info.main',
         marginBottom: '5px',
     },
 };

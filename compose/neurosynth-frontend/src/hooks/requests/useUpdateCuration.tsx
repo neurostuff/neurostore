@@ -10,7 +10,16 @@ const useUpdateCuration = (projectId: string | undefined) => {
     const [loadingState, setLoadingState] = useState({
         updateExclusionIsLoading: false,
         updateTagsIsLoading: false,
+        updatetitleIsLoading: false,
+        updateauthorsIsLoading: false,
+        updatekeywordsIsLoading: false,
+        updatepmidIsLoading: false,
+        updatedoiIsLoading: false,
+        updatearticleYearIsLoading: false,
+        updatejournalIsLoading: false,
+        updateabstractTextIsLoading: false,
     });
+
     const { data } = useGetProjectById(projectId);
     const { mutate } = useUpdateProject();
 
@@ -251,11 +260,73 @@ const useUpdateCuration = (projectId: string | undefined) => {
         }
     };
 
+    const updateField = (
+        columnIndex: number,
+        stubId: string,
+        field: keyof ICurationStubStudy,
+        updatedValue: string | number,
+        options?: MutateOptions<AxiosResponse<any>, any, any, any>
+    ) => {
+        if (
+            projectId &&
+            data?.provenance?.curationMetadata?.columns &&
+            data?.provenance?.curationMetadata?.columns?.length > 0
+        ) {
+            const updatedColumns = [...data.provenance.curationMetadata.columns];
+            const updatedStubsForColumn = [...updatedColumns[columnIndex].stubStudies];
+
+            const stubIndex = updatedStubsForColumn.findIndex((x) => x.id === stubId);
+            if (stubIndex < 0) return;
+
+            const updatedField = `update${field}IsLoading`;
+
+            setLoadingState((prev) => ({
+                ...prev,
+                [updatedField]: true,
+            }));
+
+            updatedStubsForColumn[stubIndex] = {
+                ...updatedStubsForColumn[stubIndex],
+                [field]: updatedValue,
+            };
+
+            updatedColumns[columnIndex] = {
+                ...updatedColumns[columnIndex],
+                stubStudies: updatedStubsForColumn,
+            };
+
+            mutate(
+                {
+                    projectId,
+                    project: {
+                        provenance: {
+                            ...data.provenance,
+                            curationMetadata: {
+                                ...data.provenance.curationMetadata,
+                                columns: updatedColumns,
+                            },
+                        },
+                    },
+                },
+                {
+                    onSettled: () => {
+                        setLoadingState((prev) => ({
+                            ...prev,
+                            [updatedField]: false,
+                        }));
+                    },
+                    ...options,
+                }
+            );
+        }
+    };
+
     return {
         removeExclusion,
         addExclusion,
         addTag,
         removeTag,
+        updateField,
         ...loadingState,
     };
 };

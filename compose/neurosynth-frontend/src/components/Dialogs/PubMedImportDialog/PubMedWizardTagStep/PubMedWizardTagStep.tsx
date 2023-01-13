@@ -35,23 +35,24 @@ const PubMedWizardTagStep: React.FC<IPubMedWizardTagStep> = (props) => {
                         ''
                     );
 
-                    const abstractText =
-                        typeof x?.abstractText === 'string'
-                            ? x.abstractText
-                            : (x?.abstractText || []).reduce(
-                                  (prev, curr) => `${prev}${curr.label}\n${curr.text}\n`,
-                                  ''
-                              );
+                    const keywordsString = (x?.keywords || []).reduce((acc, curr, currIndex) => {
+                        if (currIndex === 0) {
+                            return curr;
+                        } else {
+                            return `${acc}, ${curr}`;
+                        }
+                    }, '');
 
                     return {
                         id: uuidv4(),
                         title: x.title,
                         authors: authorString,
-                        keywords: x.keywords,
+                        keywords: keywordsString,
                         pmid: x.PMID,
                         doi: x.DOI,
+                        journal: x.journal.title,
                         articleYear: x.articleYear,
-                        abstractText: abstractText,
+                        abstractText: x.abstractText,
                         articleLink: x.articleLink,
                         exclusionTag: undefined,
                         tags: [],

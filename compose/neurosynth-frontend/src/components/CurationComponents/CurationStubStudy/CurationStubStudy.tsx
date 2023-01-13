@@ -16,11 +16,12 @@ export interface ICurationStubStudy {
     id: string;
     title: string;
     authors: string;
-    keywords: string[];
+    keywords: string;
     pmid: string;
     doi: string;
-    articleYear: number | undefined;
-    abstractText: string | { label: string; text: string }[];
+    articleYear: string | undefined;
+    journal: string;
+    abstractText: string;
     articleLink: string;
     exclusionTag?: ITag;
     tags: ITag[];
@@ -35,7 +36,6 @@ const handleAnimation = (
         return style;
     }
 
-    console.log(isVisible);
     if (isVisible) {
         return { ...style };
     } else {
@@ -169,14 +169,21 @@ const CurationStubStudy: React.FC<
                     <Box sx={CurationStubStudyStyles.exclusionContainer}>{exclusionTagElement}</Box>
                     <Link
                         underline="hover"
-                        sx={{ marginBottom: '0.25rem' }}
+                        sx={{ marginBottom: '0.25rem', cursor: 'pointer' }}
                         onClick={() => props.onSelectStubStudy(props.id)}
                         variant="body1"
                     >
                         <Typography noWrap>{props.title}</Typography>
                     </Link>
                     <Typography sx={CurationStubStudyStyles.limitText}>{props.authors}</Typography>
-                    <Typography variant="caption">{props.articleYear}</Typography>
+                    <Box sx={{ display: 'flex' }}>
+                        {props.articleYear && (
+                            <Typography sx={{ marginRight: '4px' }} variant="caption">
+                                ({props.articleYear})
+                            </Typography>
+                        )}
+                        <Typography variant="caption">{props.journal}</Typography>
+                    </Box>
                     <Box sx={{ padding: '5px 0', overflow: 'auto' }}>
                         {props.tags.map((tag) => (
                             <Tooltip title={tag.label} key={tag.id}>

@@ -4,7 +4,7 @@ import { useSnackbar } from 'notistack';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
-const useGetStudysetById = (studysetId?: string) => {
+const useGetStudysetById = (studysetId?: string, nested?: boolean) => {
     const { enqueueSnackbar } = useSnackbar();
     const { data, isLoading, isError, error } = useQuery<
         AxiosResponse<StudysetReturn>,
@@ -13,7 +13,11 @@ const useGetStudysetById = (studysetId?: string) => {
         [string, string | undefined]
     >(
         ['studysets', studysetId],
-        () => API.NeurostoreServices.StudySetsService.studysetsIdGet(studysetId || '', true),
+        () =>
+            API.NeurostoreServices.StudySetsService.studysetsIdGet(
+                studysetId || '',
+                nested === undefined ? true : nested
+            ),
         {
             enabled: !!studysetId,
             onError: (err) => {

@@ -160,16 +160,16 @@ export interface INeurosynthParsedPubmedArticle {
         Initials: string;
         LastName: string;
     }[];
-    abstractText: string | { label: string; text: string }[];
+    abstractText: string;
     DOI: string;
     PMID: string;
-    articleYear: number | undefined;
+    articleYear: string | undefined;
     journal: {
         title: string;
         volume: number;
         issue: number;
         date: {
-            year: number;
+            year: string;
             month: string;
         };
     };
@@ -240,14 +240,16 @@ const useGetPubmedIDs = (pubmedIDs: string[]) => {
                                           '#text': string;
                                           '@_Label': string;
                                       }[]
-                                  ).map((x) => ({
-                                      label: x?.['@_Label'] || '',
-                                      text: x?.['#text'] || '',
-                                  }));
+                                  ).reduce(
+                                      (acc, curr) => `${acc}${curr['@_Label']}\n${curr['#text']}\n`,
+                                      ''
+                                  );
 
-                        const year =
+                        const year = (
                             pubmedArticleRef?.Journal?.JournalIssue?.PubDate?.Year ||
-                            pubmedArticleRef?.ArticleDate?.Year;
+                            pubmedArticleRef?.ArticleDate?.Year ||
+                            0
+                        )?.toString();
 
                         return {
                             title: pubmedArticleRef?.ArticleTitle || '',
@@ -257,15 +259,16 @@ const useGetPubmedIDs = (pubmedIDs: string[]) => {
                             keywords: (article?.MedlineCitation?.KeywordList?.Keyword || [])?.map(
                                 (x) => x?.['#text'] || ''
                             ),
-                            PMID: article?.MedlineCitation?.PMID?.['#text'] || '',
+                            PMID: article?.MedlineCitation?.PMID?.['#text']?.toString() || '',
                             articleYear: year,
                             journal: {
                                 title: pubmedArticleRef?.Journal?.Title || '',
                                 volume: pubmedArticleRef?.Journal?.JournalIssue?.Volume || 0,
                                 issue: pubmedArticleRef?.Journal?.JournalIssue?.Issue || 0,
                                 date: {
-                                    year:
-                                        pubmedArticleRef?.Journal?.JournalIssue?.PubDate?.Year || 0,
+                                    year: (
+                                        pubmedArticleRef?.Journal?.JournalIssue?.PubDate?.Year || 0
+                                    ).toString(),
                                     month:
                                         pubmedArticleRef?.Journal?.JournalIssue?.PubDate?.Month ||
                                         '',

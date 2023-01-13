@@ -50,11 +50,7 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                     label={label}
                     placeholder={placeholder}
                     onChange={(event) => setEditedValue(event.target.value)}
-                    sx={{
-                        '.MuiInputBase-root': { ...sx },
-                        '.MuiInputLabel-root': { ...sx },
-                        maxWidth: '500px',
-                    }}
+                    sx={[{ minWidth: '350px' }, sx]}
                 />
                 <Box>
                     <Button
