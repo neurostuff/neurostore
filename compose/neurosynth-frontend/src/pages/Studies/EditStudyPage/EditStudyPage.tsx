@@ -11,7 +11,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { AnalysisReturn } from 'neurostore-typescript-sdk';
 
 const EditStudyPage = () => {
-    const params: { studyId: string } = useParams();
+    const params: { projectId: string; studyId: string } = useParams();
     const { user, isAuthenticated } = useAuth0();
     const { isLoading, data, isError } = useGetStudyById(params.studyId || '');
 
@@ -31,7 +31,7 @@ const EditStudyPage = () => {
                     variant="outlined"
                     sx={EditStudyPageStyles.button}
                     text="return to study view"
-                    path={`/studies/${params.studyId}`}
+                    path={`/projects/${params.projectId}/extraction/studies/${params.studyId}`}
                 />
             </Box>
 

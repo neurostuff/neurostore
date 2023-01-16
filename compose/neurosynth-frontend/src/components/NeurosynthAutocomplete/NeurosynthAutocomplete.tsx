@@ -27,8 +27,8 @@ interface INeurosynthAutocomplete<T> {
     ) => React.ReactNode;
     value: T;
     freeSolo?: boolean;
-    getOptionLabel: (option: T | string) => string;
-    onChange: (_event: any, newVal: T | string | null, _reason: any) => void;
+    getOptionLabel: (option: T) => string;
+    onChange: (_event: any, newVal: T | null, _reason: any) => void;
     options: T[];
     sx?: SystemStyleObject;
     isLoading?: boolean;
@@ -50,7 +50,6 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
         renderOption = undefined,
         value,
         getOptionLabel,
-        freeSolo = false,
         onChange,
         options,
         isOptionEqualToValue,
@@ -62,7 +61,7 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
         size = 'small',
     } = props;
 
-    const handleOnChange = (_event: any, newVal: T | string | null, _reason: any) => {
+    const handleOnChange = (_event: any, newVal: T | null, _reason: any) => {
         // handleChange(newVal);
         onChange(_event, newVal, _reason);
     };
@@ -76,7 +75,6 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
             onBlur={handleOnBlur}
             size={size}
             disabled={shouldDisable}
-            freeSolo={freeSolo}
             isOptionEqualToValue={isOptionEqualToValue}
             renderOption={renderOption}
             sx={sx}

@@ -272,10 +272,6 @@ const StudysetsPage: React.FC = (props) => {
                             onCloseDialog={() => setCreateDetailsIsOpen(false)}
                         />
                     </Box>
-                    {/* <AnnotationsTable
-                        studysetId={params.studysetId}
-                        annotations={annotations || []}
-                    /> */}
                     <NeurosynthTable
                         tableConfig={{
                             isLoading: getAnnotationsIsLoading,
@@ -423,7 +419,7 @@ const StudysetsPage: React.FC = (props) => {
                     onCloseDialog={handleCloseDeleteStudyFromStudysetDialog}
                 />
             </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+            {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
                 <ConfirmationDialog
                     dialogTitle="Are you sure you want to delete the studyset?"
                     dialogMessage="You will not be able to undo this action"
@@ -442,7 +438,7 @@ const StudysetsPage: React.FC = (props) => {
                 >
                     Delete studyset
                 </Button>
-            </Box>
+            </Box> */}
         </StateHandlerComponent>
     );
 };

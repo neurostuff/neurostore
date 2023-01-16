@@ -11,9 +11,12 @@ import {
     TableRow,
     TableCell,
     Paper,
+    Fab,
+    Breadcrumbs,
+    Link,
 } from '@mui/material';
 import React, { useState, useEffect, SyntheticEvent } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import { NavLink, useHistory, useParams } from 'react-router-dom';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
 import DisplayAnalysis from 'components/DisplayAnalysis/DisplayAnalysis';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
@@ -21,6 +24,7 @@ import StudyPageStyles from './StudyPage.styles';
 import HelpIcon from '@mui/icons-material/Help';
 import { useCreateStudy, useGetStudyById, useGetTour } from 'hooks';
 import StudysetsPopupMenu from 'components/StudysetsPopupMenu/StudysetsPopupMenu';
+import EditIcon from '@mui/icons-material/Edit';
 import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
@@ -29,6 +33,7 @@ import NeurosynthTable, { getValue } from 'components/Tables/NeurosynthTable/Neu
 import { getType } from 'components/EditMetadata';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { sortMetadataArrayFn } from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
+import useGetProjectById from 'hooks/requests/useGetProjectById';
 
 const StudyPage: React.FC = (props) => {
     const { startTour } = useGetTour('StudyPage');
@@ -44,11 +49,7 @@ const StudyPage: React.FC = (props) => {
     const [allowEdits, setAllowEdits] = useState(false);
     const history = useHistory();
     const { isAuthenticated, user } = useAuth0();
-    const {
-        projectId,
-        studysetId,
-        studyId,
-    }: { projectId: string; studysetId: string; studyId: string } = useParams();
+    const { projectId, studyId }: { projectId: string; studyId: string } = useParams();
 
     const { isLoading: createStudyIsLoading, mutate: createStudy } = useCreateStudy();
     const {
@@ -56,6 +57,7 @@ const StudyPage: React.FC = (props) => {
         isError: getStudyIsError,
         data,
     } = useGetStudyById(studyId);
+    const { data: project } = useGetProjectById(projectId);
 
     useEffect(() => {
         if (data) {
@@ -76,7 +78,7 @@ const StudyPage: React.FC = (props) => {
     };
 
     const handleEditStudy = (event: React.MouseEvent) => {
-        history.push(`/studies/${studyId}/edit`);
+        history.push(`/projects/${projectId}/extraction/studies/${studyId}/edit`);
     };
 
     const handleSelectAnalysis = (event: SyntheticEvent, newVal: number) => {
@@ -94,12 +96,66 @@ const StudyPage: React.FC = (props) => {
     }, [isAuthenticated, user?.sub, data?.user, history]);
 
     const thisUserOwnsThisStudy = (data?.user || null) === (user?.sub || undefined);
-    const isViewingStudyFromProject =
-        studysetId !== undefined && projectId !== undefined && studysetId !== undefined;
+
+    const isViewingStudyFromProject = projectId !== undefined;
     const showCloneMessage = isViewingStudyFromProject && !thisUserOwnsThisStudy;
 
     return (
         <StateHandlerComponent isLoading={getStudyIsLoading} isError={getStudyIsError}>
+            {isViewingStudyFromProject && (
+                <Box
+                    data-tour="StudyPage-8"
+                    sx={[StudyPageStyles.actionButtonContainer, StudyPageStyles.spaceBelow]}
+                >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                        <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
+                            <Breadcrumbs>
+                                <Link
+                                    component={NavLink}
+                                    to="/projects"
+                                    sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
+                                    underline="hover"
+                                >
+                                    Projects
+                                </Link>
+                                <Link
+                                    component={NavLink}
+                                    to={`/projects/${projectId}`}
+                                    sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
+                                    underline="hover"
+                                >
+                                    {project?.name || ''}
+                                </Link>
+                                <Link
+                                    component={NavLink}
+                                    to={`/projects/${projectId}/extraction`}
+                                    sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
+                                    underline="hover"
+                                >
+                                    Extraction
+                                </Link>
+                                <Typography color="secondary" sx={{ fontSize: '1.5rem' }}>
+                                    {data?.name || ''}
+                                </Typography>
+                            </Breadcrumbs>
+                        </Box>
+                        <Tooltip
+                            placement="top"
+                            title={allowEdits ? '' : 'you can only edit studies you have cloned'}
+                        >
+                            <Fab
+                                size="medium"
+                                disabled={!allowEdits}
+                                onClick={handleEditStudy}
+                                color="primary"
+                                aria-label="add"
+                            >
+                                <EditIcon />
+                            </Fab>
+                        </Tooltip>
+                    </Box>
+                </Box>
+            )}
             {showCloneMessage && (
                 <Box
                     sx={{
@@ -133,72 +189,7 @@ const StudyPage: React.FC = (props) => {
                     </Box>
                 </Box>
             )}
-            {/* <Box
-                data-tour="StudyPage-8"
-                sx={[StudyPageStyles.actionButtonContainer, StudyPageStyles.spaceBelow]}
-            >
-                <Tooltip
-                    placement="top"
-                    title={
-                        !isAuthenticated ? 'log in to clone study' : 'clone a study to edit details'
-                    }
-                >
-                    <Box sx={{ display: 'inline' }}>
-                        <LoadingButton
-                            onClick={() =>
-                                allowEdits ? setDialogIsOpen(true) : handleCloneStudy()
-                            }
-                            disabled={!isAuthenticated}
-                            variant={allowEdits ? 'text' : 'outlined'}
-                            color="primary"
-                            isLoading={createStudyIsLoading}
-                            text="Clone Study"
-                            sx={StudyPageStyles.actionButton}
-                        />
-                    </Box>
-                </Tooltip>
-                <ConfirmationDialog
-                    isOpen={dialogIsOpen}
-                    confirmText="Yes"
-                    rejectText="No"
-                    onCloseDialog={(confirm) => {
-                        if (confirm) handleCloneStudy();
-                        setDialogIsOpen(false);
-                    }}
-                    dialogTitle="Are you sure you want to clone this study?"
-                    dialogMessage="This study is a clone of an existing study."
-                />
-                <Tooltip
-                    placement="top"
-                    title={allowEdits ? '' : 'you can only edit studies you have cloned'}
-                >
-                    <Box sx={{ display: 'inline' }}>
-                        <Button
-                            disabled={!allowEdits}
-                            onClick={handleEditStudy}
-                            variant="outlined"
-                            color="secondary"
-                            sx={StudyPageStyles.actionButton}
-                        >
-                            Edit Study
-                        </Button>
-                    </Box>
-                </Tooltip>
-                <Tooltip placement="top" title="click to add this study to one of your studysets">
-                    <Box sx={{ display: 'inline' }}>
-                        <StudysetsPopupMenu
-                            disabled={!isAuthenticated}
-                            study={data as StudyReturn}
-                        />
-                    </Box>
-                </Tooltip>
 
-                <Box sx={{ marginLeft: 'auto' }}>
-                    <IconButton onClick={() => startTour()} color="primary">
-                        <HelpIcon />
-                    </IconButton>
-                </Box>
-            </Box> */}
             <Box data-tour="StudyPage-1">
                 <Typography sx={StudyPageStyles.spaceBelow} variant="h6">
                     <b>{data?.name}</b>

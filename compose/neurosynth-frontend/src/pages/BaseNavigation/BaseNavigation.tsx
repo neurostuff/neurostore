@@ -77,12 +77,14 @@ const BaseNavigation: React.FC = (_props) => {
                         <StudysetsPage />
                     </Box>
                 </Route>
-                <Route
-                    path={['/studysets/:studysetId', '/projects/:projectId/studysets/:studysetId']}
-                    exact
-                >
+                <Route path="/studysets/:studysetId" exact>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <StudysetPage />
+                    </Box>
+                </Route>
+                <Route path="/annotations/:annotationId" exact>
+                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                        <EditAnnotationsPage />
                     </Box>
                 </Route>
                 <Route path="/studies" exact>
@@ -91,20 +93,14 @@ const BaseNavigation: React.FC = (_props) => {
                     </Box>
                 </Route>
                 <Route
-                    path={[
-                        '/studies/:studyId',
-                        '/projects/:projectId/studysets/:studysetId/studies/:studyId',
-                    ]}
+                    path={['/studies/:studyId', '/projects/:projectId/extraction/studies/:studyId']}
                     exact={true}
                 >
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <StudyPage />
                     </Box>
                 </Route>
-                <Route
-                    path="/projects/:projectId/studysets/:studysetId/studies/:studyId/edit"
-                    exact
-                >
+                <Route path="/projects/:projectId/extraction/studies/:studyId/edit" exact>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <EditStudyPage />
                     </Box>

@@ -9,6 +9,7 @@ export interface ITextEdit {
     textToEdit: string;
     sx?: SystemStyleObject;
     multiline?: boolean;
+    fieldName?: string;
     placeholder?: string;
     label?: string;
     display?: 'row' | 'column-reverse';
@@ -31,6 +32,7 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
         onSave = (updatedText: string, label: string) => {},
         children,
         editIconIsVisible = isAuthenticated,
+        fieldName = '',
     } = props;
 
     const [editMode, setEditMode] = useState(false);
@@ -56,7 +58,7 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                     <Button
                         onClick={async () => {
                             setEditMode(false);
-                            onSave(editedValue, label);
+                            onSave(editedValue, fieldName || label);
                         }}
                     >
                         Save

@@ -417,7 +417,8 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                         input: { padding: 0, fontSize: '1.25rem' },
                     }}
                     isLoading={loadingState.updatearticleYearIsLoading}
-                    label="articleYear"
+                    label="year"
+                    fieldName="articleYear"
                     textToEdit={props.stub.articleYear || ''}
                     onSave={handleUpdateStub}
                 >
@@ -484,8 +485,9 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                 </Typography>
             </TextEdit>
             <TextEdit
-                label="abstractText"
+                label="description"
                 onSave={handleUpdateStub}
+                fieldName="abstractText"
                 textToEdit={props.stub.abstractText}
                 isLoading={loadingState.updateabstractTextIsLoading}
                 multiline

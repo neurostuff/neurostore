@@ -6,6 +6,7 @@ import EditAnalysisStyles from './EditAnalysis.styles';
 import EditAnalysisConditions from './EditAnalysisConditions/EditAnalysisConditions';
 import EditAnalysisImages from './EditAnalysisImages/EditAnalysisImages';
 import { AnalysisReturn, ConditionReturn, PointReturn } from 'neurostore-typescript-sdk';
+import EditAnnotations from './EditAnnotations/EditAnnotations';
 
 const EditAnalysis: React.FC<{ analysis: AnalysisReturn | undefined }> = (props) => {
     const [editTab, setEditTab] = useState(0);
@@ -26,20 +27,23 @@ const EditAnalysis: React.FC<{ analysis: AnalysisReturn | undefined }> = (props)
                             setEditTab(newValue);
                         }}
                     >
-                        <Tab sx={[EditAnalysisStyles.tab]} value={0} label="Coordinates" />
-                        <Tab sx={[EditAnalysisStyles.tab]} value={1} label="Conditions" />
-                        <Tab sx={EditAnalysisStyles.tab} value={2} label="Images" />
-                        <Tab sx={[EditAnalysisStyles.tab]} value={3} label="General" />
+                        <Tab sx={[EditAnalysisStyles.tab]} value={0} label="Annotations" />
+                        <Tab sx={[EditAnalysisStyles.tab]} value={1} label="Coordinates" />
+                        <Tab sx={[EditAnalysisStyles.tab]} value={2} label="Conditions" />
+                        <Tab sx={EditAnalysisStyles.tab} value={3} label="Images" />
+                        <Tab sx={[EditAnalysisStyles.tab]} value={4} label="General" />
                     </Tabs>
                     <Box>
-                        {editTab === 0 && (
+                        {editTab === 0 && <EditAnnotations />}
+
+                        {editTab === 1 && (
                             <EditAnalysisPoints
                                 analysisId={props.analysis.id}
                                 studyId={props.analysis.study}
                                 points={props.analysis.points as PointReturn[] | undefined}
                             />
                         )}
-                        {editTab === 1 && (
+                        {editTab === 2 && (
                             <EditAnalysisConditions
                                 studyId={props.analysis.study}
                                 analysisId={props.analysis.id || ''}
@@ -49,8 +53,8 @@ const EditAnalysis: React.FC<{ analysis: AnalysisReturn | undefined }> = (props)
                                 weights={props.analysis.weights}
                             />
                         )}
-                        {editTab === 2 && <EditAnalysisImages />}
-                        {editTab === 3 && (
+                        {editTab === 3 && <EditAnalysisImages />}
+                        {editTab === 4 && (
                             <EditAnalysisDetails
                                 studyId={props.analysis.study || ''}
                                 analysisId={props.analysis.id || ''}
