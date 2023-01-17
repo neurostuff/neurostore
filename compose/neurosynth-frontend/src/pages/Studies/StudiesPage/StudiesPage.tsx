@@ -203,15 +203,6 @@ const StudiesPage = () => {
                                 key: 'owner',
                                 styles: { color: 'primary.contrastText', fontWeight: 'bold' },
                             },
-                            {
-                                text: 'Studysets',
-                                key: 'studysets',
-                                styles: {
-                                    display: isAuthenticated ? 'table-cell' : 'none',
-                                    color: 'primary.contrastText',
-                                    fontWeight: 'bold',
-                                },
-                            },
                         ]}
                         rows={(studyData?.results || []).map((studyrow, index) => (
                             <TableRow
@@ -238,37 +229,6 @@ const StudiesPage = () => {
                                 <TableCell>
                                     {(studyrow?.user === user?.sub ? 'Me' : studyrow?.user) ||
                                         'Neurosynth-Compose'}
-                                </TableCell>
-                                <TableCell
-                                    sx={{ display: isAuthenticated ? 'table-cell' : 'none' }}
-                                    onClick={(event) => {
-                                        event.stopPropagation();
-                                    }}
-                                >
-                                    {(studyrow.studysets || []).map((studyset, index) => (
-                                        <Tooltip
-                                            key={studyset?.id || index}
-                                            title={studyset?.name || ''}
-                                            placement="top"
-                                        >
-                                            <Chip
-                                                onClick={(event) => {
-                                                    event.stopPropagation();
-                                                    history.push(`/studysets/${studyset.id || ''}`);
-                                                }}
-                                                size="small"
-                                                sx={{
-                                                    backgroundColor: stringToColor(
-                                                        studyset?.id || ''
-                                                    ),
-                                                    color: 'white',
-                                                    margin: '0.1rem',
-                                                    maxWidth: '80px',
-                                                }}
-                                                label={studyset?.name || ''}
-                                            />
-                                        </Tooltip>
-                                    ))}
                                 </TableCell>
                             </TableRow>
                         ))}

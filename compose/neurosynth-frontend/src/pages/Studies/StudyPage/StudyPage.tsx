@@ -22,7 +22,7 @@ import DisplayAnalysis from 'components/DisplayAnalysis/DisplayAnalysis';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import StudyPageStyles from './StudyPage.styles';
 import HelpIcon from '@mui/icons-material/Help';
-import { useCreateStudy, useGetStudyById, useGetTour } from 'hooks';
+import { useCreateStudy, useGetAnnotationById, useGetStudyById, useGetTour } from 'hooks';
 import StudysetsPopupMenu from 'components/StudysetsPopupMenu/StudysetsPopupMenu';
 import EditIcon from '@mui/icons-material/Edit';
 import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
@@ -50,6 +50,7 @@ const StudyPage: React.FC = (props) => {
     const history = useHistory();
     const { isAuthenticated, user } = useAuth0();
     const { projectId, studyId }: { projectId: string; studyId: string } = useParams();
+    const { data: annotation } = useGetAnnotationById(projectId);
 
     const { isLoading: createStudyIsLoading, mutate: createStudy } = useCreateStudy();
     const {
@@ -292,7 +293,10 @@ const StudyPage: React.FC = (props) => {
                             </Tabs>
                         </Box>
                         <Box sx={StudyPageStyles.heightDefiningSibling}>
-                            <DisplayAnalysis {...selectedAnalysis.analysis} />
+                            <DisplayAnalysis
+                                {...selectedAnalysis.analysis}
+                                annotation={annotation}
+                            />
                         </Box>
                     </Box>
                 )}

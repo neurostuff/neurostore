@@ -7,16 +7,22 @@ import {
     Breadcrumbs,
     Link,
     Button,
+    Step,
+    StepLabel,
+    StepContent,
 } from '@mui/material';
 import AlgorithmStep from 'components/ProjectStepComponents/AlgorithmStep/AlgorithmStep';
 import CurationStep from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import ExtractionStep from 'components/ProjectStepComponents/ExtractionStep/ExtractionStep';
 import FiltrationStep from 'components/ProjectStepComponents/FiltrationStep/FiltrationStep';
+import ProjectStepComponentsStyles from 'components/ProjectStepComponents/ProjectStepComponents.styles';
+import RunMetaAnalysisStep from 'components/ProjectStepComponents/RunMetaAnalysisStep/RunMetaAnalysisStep';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
 import useGetCurationSummary from 'hooks/useGetCurationSummary';
+import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
@@ -34,6 +40,7 @@ const ProjectPage: React.FC = (props) => {
         isLoading: getProjectIsLoading,
     } = useGetProjectById(projectId);
     const curationSummary = useGetCurationSummary(projectId);
+    const extractionSummary = useGetExtractionSummary(projectId);
 
     const [tab, setTab] = useState(0);
 
@@ -50,8 +57,13 @@ const ProjectPage: React.FC = (props) => {
         curationSummary.uncategorized > 0;
     const extractionStepMetadata = project?.provenance?.extractionMetadata;
 
-    const filtrationStep = undefined;
-    const metaAnalysisStep = false;
+    const disableFiltrationStep =
+        extractionSummary?.total === 0 || extractionSummary.total !== extractionSummary.completed;
+
+    const filtrationMetadata = project?.provenance?.filtrationMetadata;
+    const algorithmMetadata = project?.provenance?.algorithmMetadata;
+
+    const disableRunMetaAnalysisStep = !project?.provenance?.algorithmMetadata?.specificationId;
 
     const handleTabChange = (event: any, tab: number) => {
         setTab((prev) => {
@@ -60,7 +72,7 @@ const ProjectPage: React.FC = (props) => {
         });
     };
 
-    const activeStep = +!!extractionStepMetadata + +!!filtrationStep;
+    const activeStep = +!!extractionStepMetadata + +!!filtrationMetadata + +!!algorithmMetadata;
 
     return (
         <StateHandlerComponent isLoading={getProjectIsLoading} isError={getProjectIsError}>
@@ -96,7 +108,12 @@ const ProjectPage: React.FC = (props) => {
                     isLoading={updateProjectNameIsLoading}
                     textToEdit={project?.name || ''}
                 >
-                    <Typography variant="h4">{project?.name || ''}</Typography>
+                    <Typography
+                        sx={{ color: project?.name ? 'initial' : 'warning.dark' }}
+                        variant="h4"
+                    >
+                        {project?.name || 'No name'}
+                    </Typography>
                 </TextEdit>
                 <TextEdit
                     onSave={(updatedDescription, label) =>
@@ -118,7 +135,12 @@ const ProjectPage: React.FC = (props) => {
                     isLoading={updateProjectDescriptionIsLoading}
                     textToEdit={project?.description || ''}
                 >
-                    <Typography variant="h6">{project?.description || ''}</Typography>
+                    <Typography
+                        sx={{ color: project?.description ? 'initial' : 'warning.dark' }}
+                        variant="h6"
+                    >
+                        {project?.description || 'No description'}
+                    </Typography>
                 </TextEdit>
             </Box>
 
@@ -133,7 +155,7 @@ const ProjectPage: React.FC = (props) => {
                 <ToggleButton onClick={() => setTab(0)} color="primary" value={0}>
                     Build Meta-Analysis
                 </ToggleButton>
-                <ToggleButton sx={{ display: metaAnalysisStep ? 'initial' : 'none' }} value={1}>
+                <ToggleButton sx={{ display: algorithmMetadata ? 'initial' : 'none' }} value={1}>
                     View Meta-Analysis
                 </ToggleButton>
             </ToggleButtonGroup>
@@ -149,8 +171,15 @@ const ProjectPage: React.FC = (props) => {
                         disabled={disableExtractionStep}
                         extractionMetadata={extractionStepMetadata}
                     />
-                    <FiltrationStep filter={filtrationStep} disabled={!extractionStepMetadata} />
-                    <AlgorithmStep specification={undefined} disabled={!filtrationStep} />
+                    <FiltrationStep
+                        filtrationMetadata={filtrationMetadata}
+                        disabled={disableFiltrationStep}
+                    />
+                    <AlgorithmStep
+                        algorithmMetadata={algorithmMetadata}
+                        disabled={!filtrationMetadata?.filter}
+                    />
+                    <RunMetaAnalysisStep disabled={disableRunMetaAnalysisStep} />
                 </Stepper>
             )}
             {tab === 1 && <div>view meta-analysis</div>}

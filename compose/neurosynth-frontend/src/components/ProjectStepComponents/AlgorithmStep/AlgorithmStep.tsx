@@ -1,4 +1,3 @@
-import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
@@ -16,22 +15,24 @@ import {
     Button,
     Divider,
 } from '@mui/material';
-import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
 import { useHistory, useParams } from 'react-router-dom';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
-import { Specification } from 'neurosynth-compose-typescript-sdk';
+import { IAlgorithmMetadata } from 'hooks/requests/useGetProjects';
+import { useState } from 'react';
+import AlgorithmDialog from 'components/Dialogs/AlgorithmDialog/AlgorithmDialog';
 
 interface IAlgorithmStep {
-    specification: Specification | undefined;
+    algorithmMetadata: IAlgorithmMetadata | undefined;
     disabled: boolean;
 }
 
 const FiltrationStep: React.FC<IAlgorithmStep & StepProps> = (props) => {
     const { projectId }: { projectId: string } = useParams();
     const history = useHistory();
-    const { specification, disabled, ...stepProps } = props;
+    const [algorithmDialogIsOpen, setAlgorithmDialogIsOpen] = useState(false);
+    const { algorithmMetadata, disabled, ...stepProps } = props;
 
-    const algorithmExists = !!specification?.estimator;
+    const algorithmExists = !!algorithmMetadata;
 
     return (
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
@@ -54,6 +55,10 @@ const FiltrationStep: React.FC<IAlgorithmStep & StepProps> = (props) => {
                         as well as associated configurations (kernel size, number of iterations, or
                         associated corrector)
                     </Typography>
+                    <AlgorithmDialog
+                        isOpen={algorithmDialogIsOpen}
+                        onCloseDialog={() => setAlgorithmDialogIsOpen(false)}
+                    />
                     <Box sx={{ marginTop: '1rem' }}>
                         {algorithmExists ? (
                             <Box sx={[ProjectStepComponentsStyles.stepCard]}>
@@ -178,7 +183,11 @@ const FiltrationStep: React.FC<IAlgorithmStep & StepProps> = (props) => {
                                     { borderColor: disabled ? 'muted.main' : 'primary.main' },
                                 ]}
                             >
-                                <Button disabled={disabled} sx={{ width: '100%', height: '100%' }}>
+                                <Button
+                                    onClick={() => setAlgorithmDialogIsOpen(true)}
+                                    disabled={disabled}
+                                    sx={{ width: '100%', height: '100%' }}
+                                >
                                     algorithm: get started
                                 </Button>
                             </Box>

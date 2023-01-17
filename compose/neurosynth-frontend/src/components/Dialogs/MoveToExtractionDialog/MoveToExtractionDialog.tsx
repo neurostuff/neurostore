@@ -1,6 +1,6 @@
 import { Box, TextField, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import { useCreateStudyset } from 'hooks';
+import { useCreateAnnotation, useCreateStudyset } from 'hooks';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
 import { useSnackbar } from 'notistack';
@@ -12,6 +12,8 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
     const { data } = useGetProjectById(projectId);
     const { mutateAsync: createStudyset, isLoading: createStudysetIsLoading } = useCreateStudyset();
+    const { mutateAsync: createAnnotation, isLoading: createAnnotationIsLoading } =
+        useCreateAnnotation();
     const { mutateAsync: updateProject, isLoading: updateProjectIsLoading } = useUpdateProject();
     const { enqueueSnackbar } = useSnackbar();
     const history = useHistory();
@@ -30,9 +32,23 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                 const newStudyset = await createStudyset({ ...studysetDetails });
 
                 const newStudysetId = newStudyset.data.id;
-
                 if (!newStudysetId)
                     throw new Error('expected a studyset id but did not receive one');
+
+                const newAnnotation = await createAnnotation({
+                    source: 'neurosynth',
+                    sourceId: undefined,
+                    annotation: {
+                        name: `${studysetDetails.name} Annotation`,
+                        description: `Annotation for studyset: ${studysetDetails.name}`,
+                        note_keys: {},
+                        studyset: newStudysetId,
+                    },
+                });
+
+                const newAnnotationId = newAnnotation.data.id;
+                if (!newAnnotationId)
+                    throw new Error('expected an annotation id but did not receive one');
 
                 await updateProject({
                     projectId: projectId,
@@ -41,6 +57,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                             ...data.provenance,
                             extractionMetadata: {
                                 studysetId: newStudysetId,
+                                annotationId: newAnnotationId,
                                 studyStatusList: [],
                             },
                         },

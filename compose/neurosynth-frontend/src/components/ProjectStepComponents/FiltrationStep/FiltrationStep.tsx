@@ -16,21 +16,26 @@ import {
     Button,
     Divider,
 } from '@mui/material';
-import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
 import { useHistory, useParams } from 'react-router-dom';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
+import { IFiltrationMetadata } from 'hooks/requests/useGetProjects';
+import { useState } from 'react';
+import FiltrationDialog from 'components/Dialogs/FiltrationDialog/FiltrationDialog';
+import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
+import { getType } from 'components/EditMetadata';
 
 interface IFiltrationStep {
-    filter: string | undefined;
+    filtrationMetadata: IFiltrationMetadata | undefined;
     disabled: boolean;
 }
 
 const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
     const { projectId }: { projectId: string } = useParams();
     const history = useHistory();
-    const { filter, disabled, ...stepProps } = props;
+    const [filtrationDialogIsOpen, setFiltrationDialogIsOpen] = useState(false);
+    const { filtrationMetadata, disabled, ...stepProps } = props;
 
-    const filterExists = !!filter;
+    const filterExists = !!filtrationMetadata;
 
     return (
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
@@ -51,108 +56,33 @@ const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
                         In this step, select the analyses from each study that you want to include
                         in the meta-analysis based on your analysis annotations
                     </Typography>
+                    <FiltrationDialog
+                        isOpen={filtrationDialogIsOpen}
+                        onCloseDialog={() => setFiltrationDialogIsOpen(false)}
+                    />
                     <Box sx={{ marginTop: '1rem' }}>
                         {filterExists ? (
                             <Box sx={[ProjectStepComponentsStyles.stepCard]}>
                                 <Card sx={{ width: '100%', height: '100%' }}>
                                     <CardContent>
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                position: 'relative',
-                                            }}
-                                        >
-                                            <Typography sx={{ color: 'muted.main' }}>
-                                                433 studies
-                                            </Typography>
-                                            <CircularProgress
-                                                sx={{
-                                                    position: 'absolute',
-                                                    right: 0,
-                                                    backgroundColor: '#ededed',
-                                                    borderRadius: '50%',
-                                                }}
-                                                variant="determinate"
-                                                value={Math.round(((30 + 372) / 433) * 100)}
-                                            />
-                                        </Box>
                                         <Typography
                                             gutterBottom
                                             variant="h5"
                                             sx={{ marginRight: '40px' }}
                                         >
-                                            Study Curation Summary
+                                            Filter:
                                         </Typography>
-                                        <Box
-                                            sx={{
-                                                marginTop: '1.5rem',
-                                                display: 'flex',
-                                            }}
-                                        >
-                                            <Box
+                                        <Box>
+                                            <Typography
+                                                variant="h5"
                                                 sx={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
+                                                    color: NeurosynthTableStyles[
+                                                        getType(filtrationMetadata?.filter?.type)
+                                                    ],
                                                 }}
                                             >
-                                                <CheckIcon
-                                                    sx={{
-                                                        color: 'success.main',
-                                                        marginBottom: '5px',
-                                                    }}
-                                                />
-                                                <Typography sx={{ color: 'success.main' }}>
-                                                    30 included
-                                                </Typography>
-                                            </Box>
-                                            <Box>
-                                                <Divider
-                                                    sx={{ margin: '0 20px' }}
-                                                    orientation="vertical"
-                                                />
-                                            </Box>
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
-                                                }}
-                                            >
-                                                <QuestionMarkIcon
-                                                    sx={{
-                                                        color: 'warning.dark',
-                                                        marginBottom: '5px',
-                                                    }}
-                                                />
-                                                <Typography sx={{ color: 'warning.dark' }}>
-                                                    31 uncategorized
-                                                </Typography>
-                                            </Box>
-                                            <Box>
-                                                <Divider
-                                                    sx={{ margin: '0 20px' }}
-                                                    orientation="vertical"
-                                                />
-                                            </Box>
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
-                                                }}
-                                            >
-                                                <CloseIcon
-                                                    sx={{
-                                                        color: 'error.dark',
-                                                        marginBottom: '5px',
-                                                    }}
-                                                />
-                                                <Typography sx={{ color: 'error.dark' }}>
-                                                    372 excluded
-                                                </Typography>
-                                            </Box>
+                                                {filtrationMetadata?.filter?.filtrationKey}
+                                            </Typography>
                                         </Box>
                                     </CardContent>
                                     <CardActions>
@@ -162,7 +92,7 @@ const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
                                             }
                                             variant="text"
                                         >
-                                            continue editing
+                                            update filter
                                         </Button>
                                     </CardActions>
                                 </Card>
@@ -175,7 +105,11 @@ const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
                                     { borderColor: disabled ? 'muted.main' : 'primary.main' },
                                 ]}
                             >
-                                <Button disabled={disabled} sx={{ width: '100%', height: '100%' }}>
+                                <Button
+                                    onClick={() => setFiltrationDialogIsOpen(true)}
+                                    disabled={disabled}
+                                    sx={{ width: '100%', height: '100%' }}
+                                >
                                     filtration: get started
                                 </Button>
                             </Box>

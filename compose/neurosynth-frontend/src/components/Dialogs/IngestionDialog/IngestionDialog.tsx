@@ -1,10 +1,16 @@
 import { Box, Typography, Stepper, Step, StepLabel, Button } from '@mui/material';
 import { useState } from 'react';
 import BaseDialog, { IDialog } from '../BaseDialog';
+import IngestionCompleteStep from './IngestionCompleteStep/IngestionCompleteStep';
 import IngestionStep from './IngestionStep/IngestionStep';
 
 const IngestionDialog: React.FC<IDialog> = (props) => {
     const [activeStep, setActiveStep] = useState(0);
+
+    const handleOnComplete = () => {
+        setActiveStep(0);
+        props.onCloseDialog();
+    };
 
     return (
         <BaseDialog
@@ -54,6 +60,7 @@ const IngestionDialog: React.FC<IDialog> = (props) => {
                 )}
 
                 {activeStep === 1 && <IngestionStep />}
+                {activeStep === 2 && <IngestionCompleteStep onComplete={handleOnComplete} />}
             </Box>
         </BaseDialog>
     );

@@ -1,4 +1,4 @@
-import { Typography, Box } from '@mui/material';
+import { Typography, Box, TableRow, TableCell } from '@mui/material';
 import { useEffect, useState } from 'react';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
 import Visualizer from 'components/Visualizer/Visualizer';
@@ -9,13 +9,19 @@ import {
     AnalysisReturn,
     ConditionReturn,
     ImageReturn,
+    NoteCollectionReturn,
     PointReturn,
 } from 'neurostore-typescript-sdk';
 import { ROW_HEIGHT } from 'components/EditStudyComponents/EditAnalyses/EditAnalysis/EditAnalysisPoints/EditAnalysisPoints';
-import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
+import NeurosynthTable, { getValue } from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import DisplayImageTableRow from 'components/Tables/DisplayImageTableRow/DisplayImageTableRow';
+import { NeurostoreAnnotation } from 'utils/api';
+import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
+import { getType } from 'components/EditMetadata';
 
-const DisplayAnalysis: React.FC<AnalysisReturn | undefined> = (props) => {
+const DisplayAnalysis: React.FC<
+    (AnalysisReturn | undefined) & { annotation: NeurostoreAnnotation | undefined }
+> = (props) => {
     const [selectedImage, setSelectedImage] = useState<ImageReturn | undefined>(undefined);
 
     useEffect(() => {
@@ -44,6 +50,11 @@ const DisplayAnalysis: React.FC<AnalysisReturn | undefined> = (props) => {
     if (!props || Object.keys(props).length === 0) {
         return <Box sx={{ color: 'warning.dark', padding: '1rem' }}>No analysis</Box>;
     }
+
+    const annotationsForThisAnalysis = (
+        (props.annotation?.notes as NoteCollectionReturn[]) || []
+    ).find((x) => x?.analysis === props.id);
+    const annotationRows = annotationsForThisAnalysis ? annotationsForThisAnalysis.note : {};
 
     const conditionRows = ((props?.conditions as ConditionReturn[]) || []).map(
         (condition, index) => ({
@@ -81,6 +92,38 @@ const DisplayAnalysis: React.FC<AnalysisReturn | undefined> = (props) => {
                     sx={DisplayAnalysisStyles.spaceBelow}
                     text={props.description || ''}
                 />
+                <Box sx={[DisplayAnalysisStyles.spaceBelow, { width: '100%' }]}>
+                    <NeurosynthAccordion
+                        TitleElement={<Typography>Annotations</Typography>}
+                        defaultExpanded={Object.keys(annotationRows as object).length > 0}
+                        elevation={2}
+                    >
+                        <Box sx={{ maxHeight: '600px' }}>
+                            <NeurosynthTable
+                                tableConfig={{
+                                    tableHeaderBackgroundColor: 'white',
+                                    tableElevation: 0,
+                                }}
+                                headerCells={[
+                                    { text: 'Name', key: 'name', styles: { fontWeight: 'bold' } },
+                                    { text: 'Value', key: 'value', styles: { fontWeight: 'bold' } },
+                                ]}
+                                rows={Object.entries(annotationRows || {}).map(([key, value]) => (
+                                    <TableRow key={key}>
+                                        <TableCell>{key}</TableCell>
+                                        <TableCell
+                                            sx={{
+                                                color: NeurosynthTableStyles[getType(value)],
+                                            }}
+                                        >
+                                            {getValue(value)}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            />
+                        </Box>
+                    </NeurosynthAccordion>
+                </Box>
                 <Box
                     data-tour="StudyPage-4"
                     sx={[DisplayAnalysisStyles.spaceBelow, { width: '100%' }]}

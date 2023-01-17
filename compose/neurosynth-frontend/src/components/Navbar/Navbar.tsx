@@ -4,6 +4,7 @@ import NavToolbar from './NavToolbar/NavToolbar';
 import NavDrawer from './NavDrawer/NavDrawer';
 import NavbarStyles from './Navbar.styles';
 import useCreateProject from 'hooks/requests/useCreateProject';
+import { useHistory } from 'react-router-dom';
 
 export interface INav {
     onLogin: () => Promise<void>;
@@ -16,6 +17,7 @@ export const NAVBAR_HEIGHT = 64;
 const Navbar: React.FC = (_props) => {
     const { loginWithPopup, logout } = useAuth0();
     const { mutate } = useCreateProject();
+    const history = useHistory();
 
     const handleLogin = async () => {
         await loginWithPopup();
@@ -24,7 +26,14 @@ const Navbar: React.FC = (_props) => {
     const handleLogout = () => logout({ returnTo: window.location.origin });
 
     const handleCreateProject = (name: string, description: string) => {
-        mutate({ name, description });
+        mutate(
+            { name, description },
+            {
+                onSuccess: (arg) => {
+                    history.push(`/projects/${arg.data.id || ''}`);
+                },
+            }
+        );
     };
 
     return (

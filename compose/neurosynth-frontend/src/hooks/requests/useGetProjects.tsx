@@ -1,4 +1,5 @@
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
+import { EPropertyType } from 'components/EditMetadata';
 import { Project, ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
@@ -7,6 +8,17 @@ export interface ITag {
     label: string;
     id: string;
     isExclusionTag: boolean;
+}
+
+export interface IAlgorithmMetadata {
+    specificationId: string;
+}
+
+export interface IFiltrationMetadata {
+    filter: {
+        filtrationKey: string;
+        type: EPropertyType;
+    };
 }
 
 export interface ICurationMetadata {
@@ -21,12 +33,15 @@ interface IStudyExtractionStatus {
 
 export interface IExtractionMetadata {
     studyStatusList: IStudyExtractionStatus[];
+    annotationId?: string;
     studysetId: string;
 }
 
 export interface IProvenance {
     curationMetadata?: ICurationMetadata;
     extractionMetadata?: IExtractionMetadata;
+    filtrationMetadata?: IFiltrationMetadata;
+    algorithmMetadata?: IAlgorithmMetadata;
 }
 
 // define this interface to overwrite provenance type
