@@ -59,7 +59,9 @@ const IngestionDialog: React.FC<IDialog> = (props) => {
                     </Box>
                 )}
 
-                {activeStep === 1 && <IngestionStep />}
+                {activeStep === 1 && (
+                    <IngestionStep onNext={() => setActiveStep((prev) => prev + 1)} />
+                )}
                 {activeStep === 2 && <IngestionCompleteStep onComplete={handleOnComplete} />}
             </Box>
         </BaseDialog>

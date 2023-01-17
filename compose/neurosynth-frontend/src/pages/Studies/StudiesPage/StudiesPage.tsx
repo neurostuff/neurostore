@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Typography, Box, IconButton, TableRow, TableCell, Tooltip, Chip } from '@mui/material';
+import { Typography, Box, IconButton, TableRow, TableCell } from '@mui/material';
 import HelpIcon from '@mui/icons-material/Help';
 import useGetTour from 'hooks/useGetTour';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -8,14 +8,12 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import { useHistory, useLocation } from 'react-router-dom';
 import { StudyList } from 'neurostore-typescript-sdk';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
-import StudysetsPopupMenu from 'components/StudysetsPopupMenu/StudysetsPopupMenu';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
 import {
     addKVPToSearch,
     getSearchCriteriaFromURL,
     getURLFromSearchCriteria,
-    stringToColor,
 } from 'pages/helpers/utils';
 
 export enum SortBy {

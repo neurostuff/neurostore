@@ -7,7 +7,7 @@ import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-const EditAnnotations: React.FC<{ analysisId?: string }> = (props) => {
+const EditAnalysisAnnotation: React.FC<{ analysisId?: string }> = (props) => {
     const { projectId }: { projectId: string } = useParams();
     const [update, setUpdate] = useState<IMetadataRowModel>();
     const [confirmationDialogState, setConfirmationDialogState] = useState<{
@@ -223,4 +223,4 @@ const EditAnnotations: React.FC<{ analysisId?: string }> = (props) => {
     );
 };
 
-export default EditAnnotations;
+export default EditAnalysisAnnotation;

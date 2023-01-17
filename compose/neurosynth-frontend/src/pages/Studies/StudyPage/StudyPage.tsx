@@ -22,7 +22,14 @@ import DisplayAnalysis from 'components/DisplayAnalysis/DisplayAnalysis';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import StudyPageStyles from './StudyPage.styles';
 import HelpIcon from '@mui/icons-material/Help';
-import { useCreateStudy, useGetAnnotationById, useGetStudyById, useGetTour } from 'hooks';
+import {
+    useCreateStudy,
+    useGetAnnotationById,
+    useGetStudyById,
+    useGetStudysetById,
+    useGetTour,
+    useUpdateStudyset,
+} from 'hooks';
 import StudysetsPopupMenu from 'components/StudysetsPopupMenu/StudysetsPopupMenu';
 import EditIcon from '@mui/icons-material/Edit';
 import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
@@ -52,13 +59,17 @@ const StudyPage: React.FC = (props) => {
     const { projectId, studyId }: { projectId: string; studyId: string } = useParams();
     const { data: annotation } = useGetAnnotationById(projectId);
 
-    const { isLoading: createStudyIsLoading, mutate: createStudy } = useCreateStudy();
+    const { isLoading: createStudyIsLoading, mutateAsync: createStudy } = useCreateStudy();
     const {
         isLoading: getStudyIsLoading,
         isError: getStudyIsError,
         data,
     } = useGetStudyById(studyId);
     const { data: project } = useGetProjectById(projectId);
+    const { data: studyset } = useGetStudysetById(
+        project?.provenance?.extractionMetadata?.studysetId
+    );
+    const { mutateAsync: updateStudyset } = useUpdateStudyset();
 
     useEffect(() => {
         if (data) {
@@ -70,12 +81,38 @@ const StudyPage: React.FC = (props) => {
     }, [data]);
 
     const handleCloneStudy = async () => {
-        createStudy(studyId, {
-            onSuccess: (res) => {
-                const createdStudyId = res.data.id as string;
-                history.push(`/studies/${createdStudyId}`);
-            },
-        });
+        if (studyset?.studies && project?.provenance?.extractionMetadata?.studysetId) {
+            try {
+                const createdStudy = await createStudy(studyId, {
+                    onSuccess: (res) => {
+                        const createdStudyId = res.data.id as string;
+                        history.push(`/studies/${createdStudyId}`);
+                    },
+                });
+
+                if (!createdStudy.data?.id)
+                    throw new Error('did not find id for newly created study');
+
+                const allStudies = (studyset?.studies as StudyReturn[]).map((x) => x.id || '');
+                const thisStudyIndex = allStudies.findIndex((x) => x === data?.id || '');
+                if (thisStudyIndex < 0) throw new Error('could not find study');
+
+                allStudies[thisStudyIndex] = createdStudy.data.id;
+
+                await updateStudyset({
+                    studysetId: project.provenance.extractionMetadata.studysetId,
+                    studyset: {
+                        studies: allStudies,
+                    },
+                });
+
+                history.push(
+                    `/projects/${projectId}/extraction/studies/${createdStudy.data.id}/edit`
+                );
+            } catch (e) {
+                // handle
+            }
+        }
     };
 
     const handleEditStudy = (event: React.MouseEvent) => {
@@ -144,15 +181,17 @@ const StudyPage: React.FC = (props) => {
                             placement="top"
                             title={allowEdits ? '' : 'you can only edit studies you have cloned'}
                         >
-                            <Fab
-                                size="medium"
-                                disabled={!allowEdits}
-                                onClick={handleEditStudy}
-                                color="primary"
-                                aria-label="add"
-                            >
-                                <EditIcon />
-                            </Fab>
+                            <Box>
+                                <Fab
+                                    size="medium"
+                                    disabled={!allowEdits}
+                                    onClick={handleEditStudy}
+                                    color="primary"
+                                    aria-label="add"
+                                >
+                                    <EditIcon />
+                                </Fab>
+                            </Box>
                         </Tooltip>
                     </Box>
                 </Box>
@@ -184,7 +223,12 @@ const StudyPage: React.FC = (props) => {
                         </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Button size="large" color="primary" variant="contained">
+                        <Button
+                            onClick={handleCloneStudy}
+                            size="large"
+                            color="primary"
+                            variant="contained"
+                        >
                             clone and edit
                         </Button>
                     </Box>

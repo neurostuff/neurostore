@@ -7,16 +7,29 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { useEffect, useRef, useState } from 'react';
-import { NavLink, useParams } from 'react-router-dom';
+import { NavLink, useHistory, useLocation, useParams } from 'react-router-dom';
 import IngestionDialog from 'components/Dialogs/IngestionDialog/IngestionDialog';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import StudyListItem from 'components/ExtractionComponents/StudyListItem';
 
 enum ESelectedChip {
-    'COMPLETED',
-    'SAVEDFORLATER',
-    'UNCATEGORIZED',
+    'COMPLETED' = 'completed',
+    'SAVEDFORLATER' = 'savedforlater',
+    'UNCATEGORIZED' = 'uncategorized',
 }
+
+const getSelectedFromURL = (pathname: string | undefined): ESelectedChip => {
+    if (!pathname) return ESelectedChip.UNCATEGORIZED;
+    console.log(pathname);
+
+    if (pathname.includes(ESelectedChip.COMPLETED)) {
+        return ESelectedChip.COMPLETED;
+    } else if (pathname.includes(ESelectedChip.SAVEDFORLATER)) {
+        return ESelectedChip.SAVEDFORLATER;
+    } else {
+        return ESelectedChip.UNCATEGORIZED;
+    }
+};
 
 const ExtractionPage: React.FC = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
@@ -48,8 +61,12 @@ const ExtractionPage: React.FC = (props) => {
     } = useGetStudysetById(project?.provenance?.extractionMetadata?.studysetId, true);
     const [fieldBeingUpdated, setFieldBeingUpdated] = useState('');
     const { mutate } = useUpdateStudyset();
+    const location = useLocation();
+    const history = useHistory();
 
-    const [currentChip, setCurrentChip] = useState<ESelectedChip>(ESelectedChip.UNCATEGORIZED);
+    const [currentChip, setCurrentChip] = useState<ESelectedChip>(
+        getSelectedFromURL(location.search)
+    );
     const [ingestionDialogIsOpen, setIngestionDialogIsOpen] = useState(false);
 
     useEffect(() => {
@@ -59,11 +76,7 @@ const ExtractionPage: React.FC = (props) => {
     }, [studyset, studyset?.studies, getStudysetIsLoading]);
 
     useEffect(() => {
-        if (
-            project?.provenance?.extractionMetadata?.studyStatusList &&
-            project.provenance.extractionMetadata.studyStatusList.length > 0 &&
-            studyset?.studies
-        ) {
+        if (project?.provenance?.extractionMetadata?.studyStatusList && studyset?.studies) {
             const completeSet = new Set<string>();
             const savedForLaterSet = new Set<string>();
 
@@ -110,6 +123,7 @@ const ExtractionPage: React.FC = (props) => {
 
     const handleSelectChip = (arg: ESelectedChip) => {
         setCurrentChip(arg);
+        history.push(`/projects/${projectId}/extraction?${arg}`);
     };
 
     const handleUpdateStudyset = (updatedText: string, fieldName: string) => {

@@ -15,6 +15,9 @@ import {
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import DynamicForm from 'components/MetaAnalysisConfigComponents/MetaAnalysisAlgorithm/DynamicForm/DynamicForm';
 import { useState } from 'react';
+import useGetProjectById from 'hooks/requests/useGetProjectById';
+import { useParams } from 'react-router-dom';
+import useUpdateProject from 'hooks/requests/useUpdateProject';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 
@@ -39,6 +42,10 @@ const getArgsForKey = (
 };
 
 const AlgorithmDialog: React.FC<IDialog> = (props) => {
+    const { mutate } = useUpdateProject();
+
+    const handleSetAlgorithm = () => {};
+
     const [algorithmSpec, setAlgorithmSpec] = useState<{
         estimator: IAutocompleteObject | undefined | null;
         corrector: IAutocompleteObject | undefined | null;

@@ -19,7 +19,7 @@ const EditAnalyses: React.FC<{ analyses: AnalysisReturn[] | undefined; studyId: 
         // we need to cache the analyses into an intermediate state in order to make sure that we do a check first
         // so that our tab is not selecting an analysis that was just deleted
         useEffect(() => {
-            if (!props.analyses) {
+            if (!props.analyses || props.analyses.length === 0) {
                 setAnalyses([]);
             } else {
                 if (props.analyses.length === selectedAnalysis) {

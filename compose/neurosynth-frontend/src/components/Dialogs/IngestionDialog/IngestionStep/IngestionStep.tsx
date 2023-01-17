@@ -13,7 +13,7 @@ import { useQueryClient } from 'react-query';
 import { useParams } from 'react-router-dom';
 import API from 'utils/api';
 
-const IngestionStep: React.FC = (props) => {
+const IngestionStep: React.FC<{ onNext: () => void }> = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
     const queryClient = useQueryClient();
     const {
@@ -232,7 +232,7 @@ const IngestionStep: React.FC = (props) => {
                         Ingestion Complete
                     </Typography>
                     <NavigationButtons
-                        onButtonClick={() => {}}
+                        onButtonClick={props.onNext}
                         prevButtonDisabled
                         nextButtonStyle="outlined"
                     />

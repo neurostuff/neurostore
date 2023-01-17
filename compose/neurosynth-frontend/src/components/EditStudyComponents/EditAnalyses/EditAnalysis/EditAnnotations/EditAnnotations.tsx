@@ -1,5 +1,7 @@
+import EditAnalysisAnnotation from '../EditAnalysisAnnotations/EditAnalysisAnnotations';
+
 const EditAnnotations: React.FC = (props) => {
-    return <div></div>;
+    return <EditAnalysisAnnotation />;
 };
 
 export default EditAnnotations;
