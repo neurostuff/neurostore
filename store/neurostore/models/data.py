@@ -333,26 +333,27 @@ def create_blank_notes(studyset, annotation, initiator):
 
 
 def add_necessary_annotation_analyses(studyset, studies, collection_adapter):
-    new_studies = set(studies) - set(studyset.studies)
+    all_analyses = [analysis for study in studies for analysis in study.analyses]
+    existing_analyses = [analysis for study in studyset.studies for analysis in study.analyses]
+    new_analyses = set(all_analyses) - set(existing_analyses)
     new_aas = []
     for annot in studyset.annotations:
-        for study in new_studies:
-            for analysis in study.analyses:
-                if annot.annotation_analyses:
-                    keys = list(annot.annotation_analyses[0].note.keys())
-                else:
-                    keys = None
-                new_aas.append(
-                    AnnotationAnalysis(
-                        study_id=study.id,
-                        studyset_id=studyset.id,
-                        annotation_id=annot.id,
-                        analysis_id=analysis.id,
-                        note={} if not keys else {k: None for k in keys},
-                        analysis=analysis,
-                        annotation=annot,
-                    )
+        for analysis in new_analyses:
+            if annot.annotation_analyses:
+                keys = list(annot.annotation_analyses[0].note.keys())
+            else:
+                keys = None
+            new_aas.append(
+                AnnotationAnalysis(
+                    study_id=analysis.study_id,
+                    studyset_id=studyset.id,
+                    annotation_id=annot.id,
+                    analysis_id=analysis.id,
+                    note={} if not keys else {k: None for k in keys},
+                    analysis=analysis,
+                    annotation=annot,
                 )
+            )
     if new_aas:
         db.session.add_all(new_aas)
 
