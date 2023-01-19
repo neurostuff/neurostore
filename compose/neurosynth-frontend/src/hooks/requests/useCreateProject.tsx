@@ -18,6 +18,7 @@ const useCreateProject = () => {
             onError: () => {
                 enqueueSnackbar('There was an error creating the project', { variant: 'error' });
             },
+            mutationKey: 'create-project',
         }
     );
 };

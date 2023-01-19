@@ -120,7 +120,7 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
         }
     };
 
-    const disableCreateButton = form.name.length === 0 || form.doi.length === 0;
+    const disableCreateButton = form.name.length === 0 || form.pmid.length === 0;
 
     return (
         <BaseDialog
@@ -158,6 +158,7 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
                         sx={[{ marginRight: '0.5rem' }]}
                         label="PMID"
                         name="pmid"
+                        required
                         fullWidth
                         placeholder="2393823"
                     />
@@ -180,7 +181,6 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
                 />
                 <TextField
                     onChange={handleUpdateForm}
-                    required
                     helperText={
                         formFieldTouched.doi && form.doi.length === 0 ? 'doi cannot be empty' : ''
                     }

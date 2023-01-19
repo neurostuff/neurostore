@@ -4,17 +4,27 @@ import CreateDetailsDialog from '../../Dialogs/CreateDetailsDialog/CreateDetails
 import EditAnalysesStyles from './EditAnalyses.styles';
 import EditAnalysis from './EditAnalysis/EditAnalysis';
 import AddIcon from '@mui/icons-material/Add';
-import { useCreateAnalysis } from 'hooks';
+import { useCreateAnalysis, useGetAnnotationById, useUpdateAnnotationById } from 'hooks';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import { AnalysisReturn } from 'neurostore-typescript-sdk';
+import { AnalysisReturn, NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import { useParams } from 'react-router-dom';
+import useGetProjectById from 'hooks/requests/useGetProjectById';
+import { getStartValFromType } from 'components/EditMetadata/EditMetadataRow/AddMetadataRow';
 
 const EditAnalyses: React.FC<{ analyses: AnalysisReturn[] | undefined; studyId: string }> =
     React.memo((props) => {
         const [analyses, setAnalyses] = useState<AnalysisReturn[]>(props.analyses || []);
         const [selectedAnalysis, setSelectedAnalysis] = useState(0);
         const [createDetailsDialogIsOpen, setCreateDetailsDialogIsOpen] = useState(false);
-
-        const { isLoading, mutate } = useCreateAnalysis();
+        const { isLoading, mutateAsync: createAnalysis } = useCreateAnalysis();
+        const { projectId }: { projectId: string } = useParams();
+        const { data: project } = useGetProjectById(projectId);
+        const { data: annotation } = useGetAnnotationById(
+            project?.provenance?.extractionMetadata?.annotationId
+        );
+        const { mutateAsync: updateAnnotation } = useUpdateAnnotationById(
+            project?.provenance?.extractionMetadata?.annotationId
+        );
 
         // we need to cache the analyses into an intermediate state in order to make sure that we do a check first
         // so that our tab is not selecting an analysis that was just deleted
@@ -34,12 +44,55 @@ const EditAnalyses: React.FC<{ analyses: AnalysisReturn[] | undefined; studyId: 
             setSelectedAnalysis(newVal);
         };
 
-        const handleCreateAnalysis = (name: string, description: string) => {
-            mutate({
-                name,
-                description,
-                study: props.studyId,
-            });
+        const handleCreateAnalysis = async (name: string, description: string) => {
+            if (project?.provenance?.extractionMetadata?.annotationId && projectId && annotation) {
+                // TODO: the backend should update this
+                try {
+                    const createdAnalysis = await createAnalysis({
+                        name,
+                        description,
+                        study: props.studyId,
+                    });
+
+                    if (!createdAnalysis.data?.id)
+                        throw new Error('could not get id of created analysis');
+
+                    const updatedNotes = [
+                        ...((annotation?.notes as NoteCollectionReturn[]) || []),
+                    ].map((note) => ({
+                        note: note.note,
+                        analysis: note.analysis,
+                        study: note.study,
+                    }));
+
+                    // create a new note that is instantiated from note keys for this new analysis
+                    const newNote = Object.entries(annotation?.note_keys || {}).reduce(
+                        (acc, [string, value]) => {
+                            const temp = { ...acc } as {
+                                [key: string]: string | boolean | number | null;
+                            };
+                            temp[string] = getStartValFromType(value);
+                            return temp;
+                        },
+                        {}
+                    );
+
+                    updatedNotes.push({
+                        note: newNote,
+                        analysis: createdAnalysis.data?.id,
+                        study: props.studyId,
+                    });
+
+                    await updateAnnotation({
+                        argAnnotationId: project.provenance.extractionMetadata.annotationId,
+                        annotation: {
+                            notes: updatedNotes,
+                        },
+                    });
+                } catch (e) {
+                    // handle error
+                }
+            }
         };
 
         const hasAnalyses = !!analyses && analyses.length > 0;

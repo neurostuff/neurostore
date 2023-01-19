@@ -6,7 +6,7 @@ import EditAnalysisStyles from './EditAnalysis.styles';
 import EditAnalysisConditions from './EditAnalysisConditions/EditAnalysisConditions';
 import EditAnalysisImages from './EditAnalysisImages/EditAnalysisImages';
 import { AnalysisReturn, ConditionReturn, PointReturn } from 'neurostore-typescript-sdk';
-import EditAnnotations from './EditAnnotations/EditAnnotations';
+import EditAnalysisAnnotation from './EditAnalysisAnnotations/EditAnalysisAnnotations';
 
 const EditAnalysis: React.FC<{ analysis: AnalysisReturn | undefined }> = (props) => {
     const [editTab, setEditTab] = useState(0);
@@ -34,7 +34,7 @@ const EditAnalysis: React.FC<{ analysis: AnalysisReturn | undefined }> = (props)
                         <Tab sx={[EditAnalysisStyles.tab]} value={4} label="General" />
                     </Tabs>
                     <Box>
-                        {editTab === 0 && <EditAnnotations />}
+                        {editTab === 0 && <EditAnalysisAnnotation analysisId={props.analysis.id} />}
 
                         {editTab === 1 && (
                             <EditAnalysisPoints

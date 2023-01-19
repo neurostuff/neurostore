@@ -18,19 +18,18 @@ const EditAnalysisAnnotation: React.FC<{ analysisId?: string }> = (props) => {
         data: undefined,
     });
     const { data: project } = useGetProjectById(projectId);
-    const { data: studyset } = useGetStudysetById(
-        project?.provenance?.extractionMetadata?.studysetId
-    );
     const { data: annotation } = useGetAnnotationById(
         project?.provenance?.extractionMetadata?.annotationId
     );
-    const { mutate } = useUpdateAnnotationById(annotation?.id);
+    const { mutate } = useUpdateAnnotationById(
+        project?.provenance?.extractionMetadata?.annotationId
+    );
     const [annotationList, setAnnotationList] = useState<IMetadataRowModel[]>([]);
 
     useEffect(() => {
-        if (annotation && annotation?.notes && props.analysisId) {
+        if (annotation && props.analysisId) {
             setAnnotationList((prev) => {
-                const annotationNotes = annotation.notes as NoteCollectionReturn[];
+                const annotationNotes = (annotation.notes as NoteCollectionReturn[]) || [];
 
                 const thisAnalysisNoteIndex = annotationNotes.findIndex(
                     (annotationNote) => annotationNote.analysis === props.analysisId

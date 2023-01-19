@@ -7,15 +7,11 @@ import {
     Breadcrumbs,
     Link,
     Button,
-    Step,
-    StepLabel,
-    StepContent,
 } from '@mui/material';
 import AlgorithmStep from 'components/ProjectStepComponents/AlgorithmStep/AlgorithmStep';
 import CurationStep from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import ExtractionStep from 'components/ProjectStepComponents/ExtractionStep/ExtractionStep';
 import FiltrationStep from 'components/ProjectStepComponents/FiltrationStep/FiltrationStep';
-import ProjectStepComponentsStyles from 'components/ProjectStepComponents/ProjectStepComponents.styles';
 import RunMetaAnalysisStep from 'components/ProjectStepComponents/RunMetaAnalysisStep/RunMetaAnalysisStep';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
@@ -57,10 +53,12 @@ const ProjectPage: React.FC = (props) => {
         curationSummary.uncategorized > 0;
     const extractionStepMetadata = project?.provenance?.extractionMetadata;
 
+    // variables related to filtration
     const disableFiltrationStep =
         extractionSummary?.total === 0 || extractionSummary.total !== extractionSummary.completed;
-
     const filtrationMetadata = project?.provenance?.filtrationMetadata;
+
+    // variables realted to algorithm
     const algorithmMetadata = project?.provenance?.algorithmMetadata;
 
     const disableRunMetaAnalysisStep = !project?.provenance?.algorithmMetadata?.specificationId;

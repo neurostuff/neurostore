@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { ChangeEvent, useEffect, useState } from 'react';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 
 export interface ICreateDetailsDialog {
     isOpen: boolean;
@@ -89,23 +90,22 @@ const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Button
                         sx={{ width: '150px' }}
-                        onClick={() => {
-                            props.onCreate(newDetails.name, newDetails.description);
-                            handleOnClose();
-                        }}
-                        variant="contained"
-                        disabled={newDetails.name.length === 0}
-                    >
-                        Create
-                    </Button>
-                    <Button
-                        sx={{ width: '150px' }}
                         onClick={handleOnClose}
                         variant="outlined"
                         color="error"
                     >
                         Cancel
                     </Button>
+                    <LoadingButton
+                        variant="contained"
+                        sx={{ width: '150px' }}
+                        disabled={newDetails.name.length === 0}
+                        text="create"
+                        onClick={() => {
+                            props.onCreate(newDetails.name, newDetails.description);
+                            handleOnClose();
+                        }}
+                    />
                 </Box>
             </DialogContent>
         </Dialog>

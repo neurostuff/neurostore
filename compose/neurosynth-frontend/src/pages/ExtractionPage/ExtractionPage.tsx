@@ -20,8 +20,6 @@ enum ESelectedChip {
 
 const getSelectedFromURL = (pathname: string | undefined): ESelectedChip => {
     if (!pathname) return ESelectedChip.UNCATEGORIZED;
-    console.log(pathname);
-
     if (pathname.includes(ESelectedChip.COMPLETED)) {
         return ESelectedChip.COMPLETED;
     } else if (pathname.includes(ESelectedChip.SAVEDFORLATER)) {

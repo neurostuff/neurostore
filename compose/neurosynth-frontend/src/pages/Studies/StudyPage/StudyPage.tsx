@@ -7,10 +7,8 @@ import {
     Tabs,
     Box,
     Divider,
-    IconButton,
     TableRow,
     TableCell,
-    Paper,
     Fab,
     Breadcrumbs,
     Link,
@@ -57,7 +55,10 @@ const StudyPage: React.FC = (props) => {
     const history = useHistory();
     const { isAuthenticated, user } = useAuth0();
     const { projectId, studyId }: { projectId: string; studyId: string } = useParams();
-    const { data: annotation } = useGetAnnotationById(projectId);
+    const { data: project } = useGetProjectById(projectId);
+    const { data: annotation } = useGetAnnotationById(
+        project?.provenance?.extractionMetadata?.annotationId
+    );
 
     const { isLoading: createStudyIsLoading, mutateAsync: createStudy } = useCreateStudy();
     const {
@@ -65,7 +66,6 @@ const StudyPage: React.FC = (props) => {
         isError: getStudyIsError,
         data,
     } = useGetStudyById(studyId);
-    const { data: project } = useGetProjectById(projectId);
     const { data: studyset } = useGetStudysetById(
         project?.provenance?.extractionMetadata?.studysetId
     );

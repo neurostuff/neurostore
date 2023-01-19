@@ -1,7 +1,3 @@
-import KeyboardArrowDown from '@mui/icons-material/KeyboardArrowDown';
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-import CloseIcon from '@mui/icons-material/Close';
-import CheckIcon from '@mui/icons-material/Check';
 import {
     Box,
     Step,
@@ -11,10 +7,8 @@ import {
     Typography,
     Card,
     CardContent,
-    CircularProgress,
     CardActions,
     Button,
-    Divider,
 } from '@mui/material';
 import { useHistory, useParams } from 'react-router-dom';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
@@ -22,7 +16,7 @@ import { IFiltrationMetadata } from 'hooks/requests/useGetProjects';
 import { useState } from 'react';
 import FiltrationDialog from 'components/Dialogs/FiltrationDialog/FiltrationDialog';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import { getType } from 'components/EditMetadata';
+import { EPropertyType } from 'components/EditMetadata';
 
 interface IFiltrationStep {
     filtrationMetadata: IFiltrationMetadata | undefined;
@@ -30,12 +24,12 @@ interface IFiltrationStep {
 }
 
 const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
-    const { projectId }: { projectId: string } = useParams();
-    const history = useHistory();
     const [filtrationDialogIsOpen, setFiltrationDialogIsOpen] = useState(false);
     const { filtrationMetadata, disabled, ...stepProps } = props;
 
     const filterExists = !!filtrationMetadata;
+
+    console.log(filtrationMetadata?.filter?.type);
 
     return (
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
@@ -68,7 +62,7 @@ const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
                                         <Typography
                                             gutterBottom
                                             variant="h5"
-                                            sx={{ marginRight: '40px' }}
+                                            sx={{ marginBottom: '1.5rem' }}
                                         >
                                             Filter:
                                         </Typography>
@@ -76,8 +70,10 @@ const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
                                             <Typography
                                                 variant="h5"
                                                 sx={{
+                                                    fontWeight: 'bold',
                                                     color: NeurosynthTableStyles[
-                                                        getType(filtrationMetadata?.filter?.type)
+                                                        filtrationMetadata?.filter?.type ||
+                                                            EPropertyType.NONE
                                                     ],
                                                 }}
                                             >
@@ -87,9 +83,7 @@ const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
                                     </CardContent>
                                     <CardActions>
                                         <Button
-                                            onClick={() =>
-                                                history.push(`/projects/${projectId}/curation`)
-                                            }
+                                            onClick={() => setFiltrationDialogIsOpen(true)}
                                             variant="text"
                                         >
                                             update filter

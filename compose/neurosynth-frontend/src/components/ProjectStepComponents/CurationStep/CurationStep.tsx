@@ -26,9 +26,9 @@ import CreateCurationBoardDialog from 'components/Dialogs/CreateCurationBoardDia
 import { MutateOptions } from 'react-query';
 import { AxiosError, AxiosResponse } from 'axios';
 import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
-import { useSnackbar } from 'notistack';
 import CurationStepStyles from './CurationStep.style';
 import useGetCurationSummary, { ICurationSummary } from 'hooks/useGetCurationSummary';
+import { useSnackbar } from 'notistack';
 
 enum ECurationBoardTypes {
     PRISMA,
@@ -58,11 +58,11 @@ const getPercentageComplete = (curationSummary: ICurationSummary): number => {
 };
 
 const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
+    const { enqueueSnackbar } = useSnackbar();
     const { projectId }: { projectId: string } = useParams();
     const curationSummary = useGetCurationSummary(projectId);
     const history = useHistory();
     const { hasCurationMetadata, ...stepProps } = props;
-    const { enqueueSnackbar } = useSnackbar();
     const [dialogIsOpen, setDialogIsOpen] = useState(false);
 
     const { mutate, isLoading: updateProjectIsLoading } = useUpdateProject();
@@ -70,22 +70,10 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
     const handleCreateCreationBoard = (curationBoardType: ECurationBoardTypes) => {
         switch (curationBoardType) {
             case ECurationBoardTypes.PRISMA:
-                createBoard(['identification', 'screening', 'eligibility', 'included'], {
-                    onSuccess: () => {
-                        enqueueSnackbar('Curation board created successfully', {
-                            variant: 'success',
-                        });
-                    },
-                });
+                createBoard(['identification', 'screening', 'eligibility', 'included'], true);
                 break;
             case ECurationBoardTypes.SIMPLE:
-                createBoard(['included'], {
-                    onSuccess: () => {
-                        enqueueSnackbar('Curation board created successfully', {
-                            variant: 'success',
-                        });
-                    },
-                });
+                createBoard(['included'], false);
                 break;
             case ECurationBoardTypes.CUSTOM:
                 setDialogIsOpen(true);
@@ -100,6 +88,7 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
 
     const createBoard = (
         curationBoardInitColumns: string[],
+        isPRISMA: boolean,
         options?: MutateOptions<
             AxiosResponse<ProjectReturn>,
             AxiosError<any>,
@@ -122,6 +111,7 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                     provenance: {
                         curationMetadata: {
                             columns: columns,
+                            isPRISMA: isPRISMA,
                             tags: [
                                 {
                                     id: ENeurosynthTagIds.UNTAGGED_TAG_ID,
@@ -158,7 +148,13 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                     },
                 },
             },
-            options
+            {
+                onSuccess: () => {
+                    history.push(`/projects/${projectId}/curation`);
+                    enqueueSnackbar('curation board create successfully', { variant: 'success' });
+                },
+                ...options,
+            }
         );
     };
 
@@ -256,15 +252,7 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                     onCloseDialog={() => setDialogIsOpen(false)}
                                     createButtonIsLoading={updateProjectIsLoading}
                                     onCreateCurationBoard={(curationBoardColumns: string[]) => {
-                                        createBoard(curationBoardColumns, {
-                                            onSuccess: () => {
-                                                enqueueSnackbar(
-                                                    'Curation board created successfully',
-                                                    { variant: 'success' }
-                                                );
-                                                setDialogIsOpen(false);
-                                            },
-                                        });
+                                        createBoard(curationBoardColumns, false);
                                     }}
                                     isOpen={dialogIsOpen}
                                 />

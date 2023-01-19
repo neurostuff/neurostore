@@ -1,5 +1,5 @@
 import { Box, Button, ListItem, ListItemText, Typography } from '@mui/material';
-import { EPropertyType, getType } from 'components/EditMetadata';
+import { EPropertyType } from 'components/EditMetadata';
 import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { useGetAnnotationById } from 'hooks';
@@ -83,7 +83,9 @@ const FiltrationDialog: React.FC<IDialog> = (props) => {
                     renderOption={(params, option) => (
                         <ListItem {...params} key={option.key}>
                             <ListItemText
-                                sx={{ color: NeurosynthTableStyles[getType(option.type)] }}
+                                sx={{
+                                    color: NeurosynthTableStyles[option.type || EPropertyType.NONE],
+                                }}
                                 primary={option?.key || ''}
                             />
                         </ListItem>

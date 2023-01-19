@@ -16,7 +16,7 @@ export const NAVBAR_HEIGHT = 64;
 
 const Navbar: React.FC = (_props) => {
     const { loginWithPopup, logout } = useAuth0();
-    const { mutate } = useCreateProject();
+    const { mutate, isLoading } = useCreateProject();
     const history = useHistory();
 
     const handleLogin = async () => {

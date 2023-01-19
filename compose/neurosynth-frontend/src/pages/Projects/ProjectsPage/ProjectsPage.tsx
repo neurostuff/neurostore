@@ -5,10 +5,14 @@ import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import useGetProjects from 'hooks/requests/useGetProjects';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { useHistory } from 'react-router-dom';
+import { useIsMutating } from 'react-query';
 
 const ProjectsPage: React.FC = (props) => {
     const { data, isError, isLoading, isFetching } = useGetProjects();
+    const createProjectIsFetchingNum = useIsMutating('create-project');
     const history = useHistory();
+
+    const createProjectIsFetching = createProjectIsFetchingNum > 0;
 
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>
@@ -23,7 +27,7 @@ const ProjectsPage: React.FC = (props) => {
 
             <NeurosynthTable
                 tableConfig={{
-                    isLoading: isLoading || isFetching,
+                    isLoading: isLoading || isFetching || createProjectIsFetching,
                     loaderColor: 'secondary',
                     tableHeaderBackgroundColor: 'secondary.main',
                     noDataDisplay: (

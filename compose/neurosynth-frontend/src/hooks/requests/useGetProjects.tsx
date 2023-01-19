@@ -23,6 +23,7 @@ export interface IFiltrationMetadata {
 
 export interface ICurationMetadata {
     columns: ICurationColumn[];
+    isPRISMA: boolean;
     tags: ITag[];
 }
 

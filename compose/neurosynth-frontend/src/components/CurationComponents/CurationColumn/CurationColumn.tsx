@@ -120,7 +120,7 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
                         variant="contained"
                         color="success"
                     >
-                        create studyset
+                        move to next phase (extraction)
                     </Button>
                 </>
             )}
