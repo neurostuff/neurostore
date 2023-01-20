@@ -138,6 +138,34 @@ def test_study_addition_to_studyset(auth_client, session, user_data):
     assert (len(annotation.json['notes']) + 1) == (len(updated_annotation.json['notes']))
 
 
+def test_analysis_addition_to_studyset(auth_client, session, user_data):
+    user = User.query.filter_by(name="user1").first()
+    # get relevant studyset
+    studysets = auth_client.get(f"/api/studysets/?user_id={user.external_id}")
+    studyset_id = studysets.json['results'][0]['id']
+    studyset = auth_client.get(f"/api/studysets/{studyset_id}")
+    # get relevant annotation
+    annotations = auth_client.get(f"/api/annotations/?studyset_id={studyset_id}")
+    annotation_id = annotations.json['results'][0]['id']
+    annotation = auth_client.get(f"/api/annotations/{annotation_id}")
+    # add a new analysis
+    study_id = studyset.json['studies'][0]
+    analysis = {'id': auth_client.get(f"/api/studies/{study_id}").json['analyses'][0]}
+    analysis_new = {'name': 'new_analysis'}
+    analyses = [analysis, analysis_new]
+    updated_study = auth_client.put(
+        f"/api/studies/{study_id}",
+        data={'analyses': [analysis, analysis_new]}
+    )
+    assert len(updated_study.json['analyses']) == len(analyses)
+
+    # test if annotations were updated
+    updated_annotation = auth_client.get(f"/api/annotations/{annotation_id}")
+
+    assert updated_annotation.status_code == 200
+    assert (len(annotation.json['notes']) + 1) == (len(updated_annotation.json['notes']))
+
+
 def test_mismatched_notes(auth_client, ingest_neurosynth):
     dset = Studyset.query.first()
     # y for x in non_flat for y in x

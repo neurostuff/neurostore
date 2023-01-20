@@ -332,21 +332,40 @@ def create_blank_notes(studyset, annotation, initiator):
         db.session.add_all(annotation_analyses)
 
 
-def add_necessary_annotation_analyses(studyset, studies, collection_adapter):
+def add_annotation_analyses_studyset(studyset, studies, collection_adapter):
     all_analyses = [analysis for study in studies for analysis in study.analyses]
     existing_analyses = [analysis for study in studyset.studies for analysis in study.analyses]
     new_analyses = set(all_analyses) - set(existing_analyses)
     new_aas = []
     for annot in studyset.annotations:
         for analysis in new_analyses:
-            if annot.annotation_analyses:
-                keys = list(annot.annotation_analyses[0].note.keys())
-            else:
-                keys = None
+            keys = annot.note_keys.keys()
             new_aas.append(
                 AnnotationAnalysis(
                     study_id=analysis.study_id,
                     studyset_id=studyset.id,
+                    annotation_id=annot.id,
+                    analysis_id=analysis.id,
+                    note={} if not keys else {k: None for k in keys},
+                    analysis=analysis,
+                    annotation=annot,
+                )
+            )
+    if new_aas:
+        db.session.add_all(new_aas)
+
+
+def add_annotation_analyses_study(study, analyses, collection_adapter):
+    new_analyses = set(analyses) - set([a for a in study.analyses])
+    all_annotations = [aa.annotation for a in study.analyses for aa in a.annotation_analyses]
+    new_aas = []
+    for analysis in new_analyses:
+        for annot in all_annotations:
+            keys = annot.note_keys.keys()
+            new_aas.append(
+                AnnotationAnalysis(
+                    study_id=study.id,
+                    studyset_id=annot.studyset_id,
                     annotation_id=annot.id,
                     analysis_id=analysis.id,
                     note={} if not keys else {k: None for k in keys},
@@ -380,4 +399,6 @@ event.listen(Studyset.annotations, 'append', create_blank_notes)
 
 
 # ensure new annotation_analyses are added when study is added to studyset
-event.listen(Studyset.studies, 'bulk_replace', add_necessary_annotation_analyses)
+event.listen(Studyset.studies, 'bulk_replace', add_annotation_analyses_studyset)
+
+event.listen(Study.analyses, 'bulk_replace', add_annotation_analyses_study)
