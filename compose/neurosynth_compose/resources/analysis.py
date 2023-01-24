@@ -357,7 +357,7 @@ class NeurovaultCollectionsView(ObjectView, ListView):
         import flask
         from pynv import Client
 
-        from ..core import app
+        from flask import current_app as app
 
         meta_analysis = MetaAnalysis.query.filter_by(id=data['meta_analysis_id']).one()
         collection_name = meta_analysis.name
@@ -402,7 +402,7 @@ class NeurovaultFilesView(ObjectView, ListView):
 
     @classmethod
     def _external_request(cls, data, record, id):
-        from ..core import celery_app
+        from .tasks import celery_app
 
         
         if record.id is None:

@@ -5,7 +5,7 @@ from functools import partialmethod
 class Client(object):
     def __init__(self, token, test_client=None, prepend="", username=None):
         if test_client is None:
-            from ..core import app
+            from flask import current_app as app
 
             test_client = app.test_client()
             self.client_flask = True

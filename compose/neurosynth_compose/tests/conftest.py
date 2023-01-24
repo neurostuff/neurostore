@@ -101,7 +101,9 @@ Session / db managment tools
 @pytest.fixture(scope="session")
 def app(mock_auth):
     """Session-wide test `Flask` application."""
-    from ..core import app as _app
+    from .. import create_app
+
+    _app = create_app()
 
     if "APP_SETTINGS" not in environ:
         config = 'neurosynth_compose.config.TestingConfig'
@@ -130,6 +132,12 @@ def db(app):
     _db.session.remove()
     sa.orm.close_all_sessions()
     _db.drop_all()
+
+
+@pytest.fixture(scope="session")
+def celery_app(app, db):
+    from .. import make_celery
+    return make_celery(app)
 
 
 @pytest.fixture(scope="function", autouse=True)

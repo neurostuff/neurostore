@@ -4,7 +4,7 @@ from urllib.request import urlopen
 from flask import jsonify, request
 from jose import jwt
 
-from ..core import app
+from flask import current_app as app
 
 
 # Error handler

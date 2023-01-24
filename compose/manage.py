@@ -6,9 +6,13 @@ import os
 import click
 from flask_migrate import Migrate
 
-from neurosynth_compose.core import app, db
+from neurosynth_compose import create_app
+app = create_app()
+
+from neurosynth_compose.database import db
 from neurosynth_compose import models
 from neurosynth_compose.ingest import neurostore as ingest_nstore
+
 
 app.config.from_object(os.environ["APP_SETTINGS"])
 
