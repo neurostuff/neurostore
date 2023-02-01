@@ -412,7 +412,6 @@ class NeurovaultFilesView(ObjectView, ListView):
 
             db.session.add(record)
             db.session.commit()
-            db.session.flush()
         committed = True
 
         try:
@@ -422,7 +421,7 @@ class NeurovaultFilesView(ObjectView, ListView):
                 args=[data, record.id]
             )
         except:
-            raise
+            setattr(record, "status", "FAILED")
 
         data.pop('file')
         return committed
