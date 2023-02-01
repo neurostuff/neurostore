@@ -139,6 +139,39 @@ def celery_app(app, db):
     from .. import make_celery
     return make_celery(app)
 
+# @pytest.fixture(scope='function', params=[{'real': False}], autouse=True)
+# def use_real_session(db, request):
+#     if request.param.get('real', False):
+#         yield db.session
+
+#         db.drop_all()
+#         db.create_all()
+#     else:
+#         connection = db.engine.connect()
+#         transaction = connection.begin()
+
+#         options = dict(bind=connection, binds={})
+#         session = db.create_scoped_session(options=options)
+
+#         session.begin_nested()
+
+#         # session is actually a scoped_session
+#         # for the `after_transaction_end` event, we need a session instance to
+#         # listen for, hence the `session()` call
+#         @sa.event.listens_for(session(), "after_transaction_end")
+#         def resetart_savepoint(sess, trans):
+#             if trans.nested and not trans._parent.nested:
+#                 session.expire_all()
+#                 session.begin_nested()
+
+#         db.session = session
+
+#         yield session
+
+#         session.remove()
+#         transaction.rollback()
+#         connection.close()
+
 
 @pytest.fixture(scope="function", autouse=True)
 def session(db):
@@ -283,7 +316,7 @@ def add_users(app, db):
 
 
 @pytest.fixture(scope="function")
-def user_data(app, session, mock_add_users):
+def user_data(app, db, mock_add_users):
     to_commit = []
     neurostore_dset = DATA_PATH / "nimare_test_integration.json"
     neurostore_annot = DATA_PATH / "nimare_test_integration_annotation.json"
@@ -294,7 +327,7 @@ def user_data(app, session, mock_add_users):
     with open(neurostore_annot, 'r') as data_file:
         serialized_annotation = json.load(data_file)
 
-    with session.no_autoflush:
+    with db.session.no_autoflush:
         ss_ref = StudysetReference(id=serialized_studyset['id'])
         annot_ref = AnnotationReference(id=serialized_annotation['id'])
         for user_info in mock_add_users.values():
@@ -348,11 +381,11 @@ def user_data(app, session, mock_add_users):
 
             to_commit.extend([studyset, annotation, specification, meta_analysis, project])
 
-        session.add_all(to_commit)
-        session.commit()
+        db.session.add_all(to_commit)
+        db.session.commit()
 
 @pytest.fixture(scope="function")
-def meta_analysis_results(app, session, user_data, mock_add_users, mock_pynv):
+def meta_analysis_results(app, db, user_data, mock_add_users):
     from ..resources.executor import run_nimare
     from ..schemas import MetaAnalysisSchema
     results = {}
@@ -369,7 +402,7 @@ def meta_analysis_results(app, session, user_data, mock_add_users, mock_pynv):
 
 
 @pytest.fixture(scope="function")
-def neurostore_data(session, mock_add_users):
+def neurostore_data(db, mock_add_users):
     try:
         create_meta_analyses(url="https://neurostore.xyz")
     except HTTPError:
