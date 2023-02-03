@@ -1,3 +1,10 @@
+// https://guides.lib.unc.edu/systematic-reviews/write
+// https://www.bmj.com/content/372/bmj.n71
+// https://www.prisma-statement.org/
+// https://docs.google.com/document/d/1pV_JFIXsTIGNbkKpST4nJ0-sl6Fu0Hvo/edit
+
+implement this via reactflow
+
 export interface IPRISMAWorkflow {
     identification: {
         recordsIdentified: {
