@@ -7,6 +7,7 @@ import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import NotFoundPage from 'pages/NotFound/NotFoundPage';
 import ProjectPage from 'pages/Projects/ProjectPage/ProjectPage';
 import ExtractionPage from 'pages/ExtractionPage/ExtractionPage';
+import PrismaComponent from 'components/PrismaComponent/PrismaComponent';
 
 const EditAnnotationsPage = React.lazy(
     () => import('../Annotations/EditAnnotationsPage/EditAnnotationsPage')
@@ -113,6 +114,13 @@ const BaseNavigation: React.FC = (_props) => {
                 <Route path="/meta-analyses/:metaAnalysisId" exact>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <MetaAnalysisPage />
+                    </Box>
+                </Route>
+                <Route path="/prisma">
+                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                        <Box sx={{ height: '600px', width: '100%' }}>
+                            <PrismaComponent />
+                        </Box>
                     </Box>
                 </Route>
                 <Route path="*">

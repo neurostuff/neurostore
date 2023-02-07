@@ -96,9 +96,6 @@ const CurationPage: React.FC = (props) => {
                 <Box sx={{ height: '100%', overflow: 'hidden' }}>
                     <CurationBoard />
                 </Box>
-                <Box>
-                    <PrismaComponent />
-                </Box>
             </Box>
         </StateHandlerComponent>
     );
