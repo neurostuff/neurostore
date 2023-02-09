@@ -223,6 +223,7 @@ jobs:
         AUTH0_BASE_URL: ${{ secrets.AUTH0_BASE_URL }}
         AUTH0_ACCESS_TOKEN_URL: ${{ secrets.AUTH0_ACCESS_TOKEN_URL }}
         AUTH0_AUTH_URL: ${{ secrets.AUTH0_AUTH_URL }}
+        NEUROVAULT_ACCESS_TOKEN: ${{ secrets.NEUROVAULT_ACCESS_TOKEN }}
       run: |
         docker-compose run \
           -e "APP_SETTINGS=neurosynth_compose.config.DockerTestConfig" \
@@ -231,9 +232,10 @@ jobs:
           -e "AUTH0_BASE_URL=${AUTH0_BASE_URL}" \
           -e "AUTH0_ACCESS_TOKEN_URL=${AUTH0_ACCESS_TOKEN_URL}" \
           -e "AUTH0_AUTH_URL=${AUTH0_AUTH_URL}" \
+          -e "NEUROVAULT_ACCESS_TOKEN=${NEUROVAULT_ACCESS_TOKEN}" \
           --rm -w /compose \
           compose \
-          python -m pytest neurosynth_compose/tests
+          bash -c "python -m pytest neurosynth_compose/tests && python -m pytest --celery neurosynth_compose/tests/api/celery_tests"
 
   style_check:
     runs-on: ubuntu-latest
