@@ -27,8 +27,18 @@ def pytest_addoption(parser):
         default=False,
         help="Run schemathesis tests",
     )
+    parser.addoption(
+        "--celery",
+        action="store_true",
+        default=False,
+        help="Run celery tests",
+    )
 
 
+celery_test = pytest.mark.skipif(
+    "not config.getoption('--celery')",
+    reason="Only run when --celery is given",
+)
 schemathesis_test = pytest.mark.skipif(
     "not config.getoption('--schemathesis')",
     reason="Only run when --schemathesis is given",
@@ -110,7 +120,7 @@ def app(mock_auth):
     else:
         config = environ['APP_SETTINGS']
     _app.config.from_object(config)
-    _app.config["SQLALCHEMY_ECHO"] = True
+    # _app.config["SQLALCHEMY_ECHO"] = True
 
     # Establish an application context before running the tests.
     ctx = _app.app_context()

@@ -9,7 +9,6 @@ def db(app):
     _db.init_app(app)
     _db.drop_all() # in case test function exited in a weird state
     _db.create_all()
-
     yield _db
 
     _db.session.remove()
