@@ -10,6 +10,10 @@ class Config(object):
     MIGRATIONS_DIR = '/migrations/migrations'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = False
+    CELERY_CONFIG = {
+        'CELERY_BROKER_URL': os.environ['CELERY_BROKER_URL'],
+        'CELERY_RESULT_BACKEND': os.environ['CELERY_RESULT_BACKEND']
+    }
 
     FILE_DIR = os.environ.get('FILE_DIR')
     POSTGRES_HOST = os.environ.get('POSTGRES_HOST')
