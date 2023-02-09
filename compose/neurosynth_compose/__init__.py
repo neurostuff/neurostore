@@ -40,9 +40,9 @@ def create_app():
     )
 
     # Enable CORS
-    cors = CORS(app)
+    cors = CORS(app)  # noqa: F841
 
-    auth0 = oauth.register(
+    auth0 = oauth.register(  # noqa: F841
         "auth0",
         client_id=os.environ["AUTH0_CLIENT_ID"],
         client_secret=os.environ["AUTH0_CLIENT_SECRET"],

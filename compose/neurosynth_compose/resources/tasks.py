@@ -48,7 +48,7 @@ def file_upload_neurovault(self, data, id):
         # remove directory and file
         shutil.rmtree(tmp_dir)
 
-    except:
+    except:  # noqa: E722
         data["status"] = "FAILED"
 
     for k, v in data.items():
@@ -56,7 +56,7 @@ def file_upload_neurovault(self, data, id):
 
     try:
         db.session.add(record)
-    except:
+    except:  # noqa: E722
         db.session.rollback()
         raise
     else:
@@ -96,4 +96,5 @@ def more_complex_db(self, meta_analysis_id):
 
 #     neurostore_study = ApiClient.studies_post(name=meta_analysis.name or meta_analysis.id)
 
-#     meta_result = MetaAnalysisResult(meta_analysis_id=meta_analysis_id, neurostore_id=neurostore_study)
+#     meta_result = MetaAnalysisResult(
+#         meta_analysis_id=meta_analysis_id, neurostore_id=neurostore_study)

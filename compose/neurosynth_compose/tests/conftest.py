@@ -18,9 +18,6 @@ from ..models import (
     MetaAnalysis,
     StudysetReference,
     AnnotationReference,
-    MetaAnalysisResult,
-    NeurovaultCollection,
-    NeurovaultFile,
     Project,
 )
 from auth0.v3.authentication import GetToken

@@ -1,4 +1,4 @@
-from marshmallow import fields, Schema, utils, post_load, pre_dump, ValidationError
+from marshmallow import fields, Schema, utils, post_load, pre_dump
 
 
 class BytesField(fields.Field):

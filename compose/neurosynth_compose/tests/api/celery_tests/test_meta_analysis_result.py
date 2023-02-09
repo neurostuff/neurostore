@@ -1,5 +1,3 @@
-import pytest
-
 from ...conftest import celery_test
 from ....models import (
     MetaAnalysis,
@@ -96,7 +94,7 @@ def test_send_task_file_upload_neurovault(
     submit_data = data["neurovault_collection"]["files"][0]
     submit_data["collection_id"] = coll_id
 
-    task = celery_app.send_task("neurovault.upload", args=[submit_data, nv_file.id])
+    task = celery_app.send_task("neurovault.upload", args=[submit_data, nv_file.id])  # noqa: F841
     import time
 
     time.sleep(5)

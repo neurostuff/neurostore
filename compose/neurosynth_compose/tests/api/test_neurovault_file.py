@@ -1,6 +1,4 @@
-from pathlib import Path
-
-from ...models import MetaAnalysis, MetaAnalysisResult, NeurovaultCollection, User
+from ...models import MetaAnalysis, User
 
 
 def test_neurovault_file(auth_client, user_data, mock_pynv, meta_analysis_results):
@@ -16,3 +14,4 @@ def test_neurovault_file(auth_client, user_data, mock_pynv, meta_analysis_result
         "file": str(z_stat.to_bytes().decode("latin1")),
     }
     post_file = auth_client.post("/api/neurovault-files", data=file_data)
+    assert post_file.status_code == 200
