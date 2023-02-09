@@ -26,3 +26,6 @@ def session(db):
     yield db.session
 
     db.session.rollback()
+    # reset database for next test
+    db.drop_all() 
+    db.create_all()
