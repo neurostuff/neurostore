@@ -9,6 +9,7 @@ from connexion.resolver import MethodViewResolver
 
 from .database import db
 
+
 def create_app():
     connexion_app = connexion.FlaskApp(
         __name__, specification_dir="openapi/", debug=True
@@ -42,14 +43,14 @@ def create_app():
     cors = CORS(app)
 
     auth0 = oauth.register(
-        'auth0',
-        client_id=os.environ['AUTH0_CLIENT_ID'],
-        client_secret=os.environ['AUTH0_CLIENT_SECRET'],
-        api_base_url=app.config['AUTH0_BASE_URL'],
-        access_token_url=app.config['AUTH0_ACCESS_TOKEN_URL'],
-        authorize_url=app.config['AUTH0_AUTH_URL'],
+        "auth0",
+        client_id=os.environ["AUTH0_CLIENT_ID"],
+        client_secret=os.environ["AUTH0_CLIENT_SECRET"],
+        api_base_url=app.config["AUTH0_BASE_URL"],
+        access_token_url=app.config["AUTH0_ACCESS_TOKEN_URL"],
+        authorize_url=app.config["AUTH0_AUTH_URL"],
         client_kwargs={
-            'scope': 'openid profile email',
+            "scope": "openid profile email",
         },
     )
     return app

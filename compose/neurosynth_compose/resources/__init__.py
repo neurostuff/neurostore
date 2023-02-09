@@ -11,9 +11,7 @@ from .analysis import (
     ProjectsView,
 )
 
-from .users import (
-    UsersView
-)
+from .users import UsersView
 
 __all__ = [
     "MetaAnalysesView",

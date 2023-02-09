@@ -1,23 +1,17 @@
-from marshmallow import (
-    fields,
-    Schema,
-    utils,
-    post_load,
-    pre_dump,
-    ValidationError
-)
+from marshmallow import fields, Schema, utils, post_load, pre_dump, ValidationError
 
 
 class BytesField(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
         if isinstance(value, str):
-            return bytes(value, encoding='latin1')
+            return bytes(value, encoding="latin1")
         return value
 
     def _serialize(self, value, obj, **kwargs):
         if isinstance(value, bytes):
-            return value.decode(encoding='latin1')
+            return value.decode(encoding="latin1")
         return value
+
 
 class PGSQLString(fields.String):
     # https://www.commandprompt.com/blog/null-characters-workarounds-arent-good-enough/
@@ -29,7 +23,6 @@ class PGSQLString(fields.String):
 
 
 class StringOrNested(fields.Nested):
-
     #: Default error messages.
     default_error_messages = {
         "invalid": "Not a valid string.",
@@ -40,7 +33,7 @@ class StringOrNested(fields.Nested):
         if value is None:
             return None
         nested = self.context.get("nested")
-        nested_attr = self.metadata.get('pluck')
+        nested_attr = self.metadata.get("pluck")
         if nested:
             many = self.schema.many or self.many
             nested_obj = getattr(obj, self.data_key or self.name)
@@ -65,7 +58,9 @@ class StringOrNested(fields.Nested):
                 return [self._load(v, data) for v in value]
         elif many:
             try:
-                return [utils.ensure_text_type(v).replace("\x00", "\uFFFD") for v in value]
+                return [
+                    utils.ensure_text_type(v).replace("\x00", "\uFFFD") for v in value
+                ]
             except UnicodeDecodeError as error:
                 raise self.make_error("invalid_utf8") from error
         else:
@@ -73,7 +68,10 @@ class StringOrNested(fields.Nested):
                 raise self.make_error("invalid")
             if isinstance(value, list):
                 try:
-                    return [utils.ensure_text_type(v).replace("\x00", "\uFFFD") for v in value]
+                    return [
+                        utils.ensure_text_type(v).replace("\x00", "\uFFFD")
+                        for v in value
+                    ]
                 except UnicodeDecodeError as error:
                     raise self.make_error("invalid_utf8") from error
             try:
@@ -92,6 +90,7 @@ class BaseSchema(Schema):
 class EstimatorSchema(Schema):
     type = fields.String()
     args = fields.Dict()
+
 
 class StudysetReferenceSchema(Schema):
     id = PGSQLString()
@@ -118,18 +117,14 @@ class SpecificationSchema(BaseSchema):
 class StudysetSchema(BaseSchema):
     snapshot = fields.Dict()
     neurostore_id = fields.Pluck(
-        StudysetReferenceSchema,
-        "id",
-        attribute="studyset_reference"
+        StudysetReferenceSchema, "id", attribute="studyset_reference"
     )
 
 
 class AnnotationSchema(BaseSchema):
     snapshot = fields.Dict()
     neurostore_id = fields.Pluck(
-        AnnotationReferenceSchema,
-        "id",
-        attribute="annotation_reference"
+        AnnotationReferenceSchema, "id", attribute="annotation_reference"
     )
     studyset = fields.Pluck(StudysetSchema, "neurostore_id", dump_only=True)
     internal_studyset_id = fields.Pluck(
@@ -146,14 +141,13 @@ class MetaAnalysisResultSchema(BaseSchema):
     @post_load
     def propagate_meta_analysis_id(self, data, **kwargs):
         if data.get("neurovault_collection", None):
-            data['neurovault_collection']['meta_analysis_id'] = data['meta_analysis_id']
-        
+            data["neurovault_collection"]["meta_analysis_id"] = data["meta_analysis_id"]
+
         return data
-    
+
     @pre_dump
     def test_fnc(self, data, **kwargs):
         return data
-
 
 
 class MetaAnalysisSchema(BaseSchema):
@@ -161,9 +155,11 @@ class MetaAnalysisSchema(BaseSchema):
     description = fields.String(allow_none=True)
     provenance = fields.Dict(allow_none=True)
     specification_id = StringOrNested(SpecificationSchema, data_key="specification")
-    studyset = StringOrNested(StudysetSchema, metadata={'pluck': 'neurostore_id'}, dump_only=True)
+    studyset = StringOrNested(
+        StudysetSchema, metadata={"pluck": "neurostore_id"}, dump_only=True
+    )
     annotation = StringOrNested(
-        AnnotationSchema, metadata={'pluck': 'neurostore_id'}, dump_only=True
+        AnnotationSchema, metadata={"pluck": "neurostore_id"}, dump_only=True
     )
     project = fields.String(allow_none=True)
     internal_studyset_id = fields.Pluck(
@@ -206,13 +202,13 @@ class ProjectSchema(BaseSchema):
     description = fields.String(allow_none=True)
     provenance = fields.Dict(allow_none=True)
     meta_analyses = StringOrNested(
-        MetaAnalysisSchema, metadata={'pluck': 'id'}, dump_only=True, many=True
+        MetaAnalysisSchema, metadata={"pluck": "id"}, dump_only=True, many=True
     )
     _meta_analyses = fields.Pluck(
         MetaAnalysisSchema,
         "id",
-        data_key='meta_analyses',
+        data_key="meta_analyses",
         attribute="meta_analyses",
         load_only=True,
-        many=True
+        many=True,
     )

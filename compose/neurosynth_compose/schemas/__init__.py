@@ -10,9 +10,7 @@ from .analysis import (
     SpecificationSchema,
     ProjectSchema,
 )
-from .users import (
-    UserSchema
-)
+from .users import UserSchema
 
 
 __all__ = [

@@ -11,9 +11,7 @@ from .analysis import (
     Project,
 )
 
-from .auth import (
-    User
-)
+from .auth import User
 
 __all__ = [
     "Specification",
