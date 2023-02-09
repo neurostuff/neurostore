@@ -10,6 +10,6 @@ services:
     command: /usr/local/bin/gunicorn -w 2 -b :8000 neurosynth_compose.core:app --log-level debug --timeout 300 --reload
     restart: "no"
   
-  worker:
+  compose_worker:
     volumes:
       - ./neurosynth_compose:/usr/local/lib/python3.10/site-packages/neurosynth_compose

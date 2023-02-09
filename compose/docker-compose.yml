@@ -20,15 +20,15 @@ services:
     expose:
       - '6379'
 
-  worker:
-    image: worker
+  compose_worker:
+    image: compose_worker
     build:
       dockerfile: ./neurosynth_compose/Dockerfile
       context: ./
     depends_on:
       - compose
       - compose_redis
-    entrypoint: celery -A neurosynth_compose.resources.tasks worker --loglevel=info
+    entrypoint: celery -A neurosynth_compose.resources.tasks.celery_app worker --loglevel=debug
     volumes:
       - /logs/compose:/logs:rw
     env_file:
@@ -59,17 +59,19 @@ services:
     env_file:
       - .env
 
-  # monitor:
+  # compose_monitor:
+  #   image: compose_monitor
   #   build:
+  #     dockerfile: ./neurosynth_compose/Dockerfile
   #     context: ./
-  #     dockerfile: celery_worker/Dockerfile
   #   ports:
   #    - "5555:5555"
   #   entrypoint: celery -A tasks flower --auth="jamesdkent21@gmail.com" --url-prefix=flower
   #   volumes:
-  #     - ./celery_worker:/celery_worker
+  #     - ./neurosynth_compose:/neurosynth_compose
   #   depends_on:
   #     - compose_redis
+  #     - compose
   #   env_file:
   #      - .env
 
