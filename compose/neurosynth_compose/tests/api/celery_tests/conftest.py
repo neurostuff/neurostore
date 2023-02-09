@@ -27,5 +27,5 @@ def session(db):
 
     db.session.rollback()
     # reset database for next test
-    db.drop_all() 
+    db.drop_all()
     db.create_all()
