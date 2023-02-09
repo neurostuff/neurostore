@@ -2,20 +2,25 @@ from pathlib import Path
 import shutil
 from tempfile import mkdtemp
 
+from celery import Celery
 from nibabel import Nifti1Image
 
-from ..core import celery_app
-from ..database import init_db
-from ..models import NeurovaultFile, MetaAnalysis, NeurovaultCollection
+
+from ..__init__ import create_app
+from ..database import db
+from ..models import NeurovaultFile, MetaAnalysis
+
+app = create_app()
+celery_app = Celery(app.import_name)
+app.app_context().push()
 
 
 @celery_app.task(name='neurovault.upload', bind=True)
 def file_upload_neurovault(self, data, id):
     from pynv import Client
-    from flask import current_app as app
-
-    db = init_db(app)
     record = NeurovaultFile.query.filter_by(id=id).one()
+
+    # record = NeurovaultFile.query.filter_by(id=id).one()
     api = Client(access_token=app.config['NEUROVAULT_ACCESS_TOKEN'])
 
     try:
@@ -44,5 +49,45 @@ def file_upload_neurovault(self, data, id):
     for k, v in data.items():
         setattr(record, k, v)
     
-    db.session.add(record)
+    try:
+        db.session.add(record)
+    except:
+        db.session.rollback()
+        raise
+    else:
+        db.session.commit()
+
+
+@celery_app.task(name='complex_db', bind=True)
+def more_complex_db(self, meta_analysis_id):
+    # rdb.set_trace()
+    meta_analysis = MetaAnalysis.query.filter_by(id=meta_analysis_id).one()
+    meta_analysis.description = "different"
+    # meta_analysis_result = MetaAnalysisResult(meta_analysis=meta_analysis)
+    # coll_id = 12345
+
+    # nv_coll = NeurovaultCollection(collection_id=coll_id, result=meta_analysis_result)
+    # nv_file = NeurovaultFile(neurovault_collection=nv_coll)
+    db.session.add_all([
+        meta_analysis,
+        #meta_analysis_result,
+        # nv_coll,
+        # nv_file,
+    ])
     db.session.commit()
+
+# def upload_neurostore(flask_app, filenames, meta_analysis_id):
+#     """
+#     0. create neurostore result
+#     1. create meta-analysis result
+#     2. attach to meta-analysis
+#     3. create new neurovault collection
+#     4. add files to neurovault collection
+#     """
+#     meta_analysis = MetaAnalysis.query.filter_by(id=meta_analysis_id).one()
+    
+#     neurostore_study = ApiClient.studies_post(name=meta_analysis.name or meta_analysis.id)
+
+#     meta_result = MetaAnalysisResult(meta_analysis_id=meta_analysis_id, neurostore_id=neurostore_study)
+
+    
