@@ -1,26 +1,27 @@
 import os
 
-import flask
 from flask_cors import CORS
-from celery import Celery
+
 
 from authlib.integrations.flask_client import OAuth
 import connexion
 from connexion.resolver import MethodViewResolver
-from .database import init_db
 
+from .database import db
 
 def create_app():
     connexion_app = connexion.FlaskApp(
         __name__, specification_dir="openapi/", debug=True
     )
+
     app = connexion_app.app
+
+    # initialize db
+    db.init_app(app)
 
     app.config.from_object(os.environ["APP_SETTINGS"])
 
     oauth = OAuth(app)
-
-    db = init_db(app)
 
     # setup authentication
     # jwt = JWTManager(app)
@@ -52,46 +53,3 @@ def create_app():
         },
     )
     return app
-
-
-def make_celery(app):
-
-    app.config.update(
-        CELERY_BROKER_URL=os.environ['CELERY_BROKER_URL'],
-        CELERY_RESULT_BACKEND=os.environ['CELERY_RESULT_BACKEND'],
-    )
-    celery_app = FlaskCelery()
-    celery_app.init_app(app)
-
-    return celery_app
-
-
-class FlaskCelery(Celery):
-
-    def __init__(self, *args, **kwargs):
-
-        super(FlaskCelery, self).__init__(*args, **kwargs)
-        self.patch_task()
-
-        if 'app' in kwargs:
-            self.init_app(kwargs['app'])
-
-    def patch_task(self):
-        TaskBase = self.Task
-        _celery = self
-
-        class ContextTask(TaskBase):
-            abstract = True
-
-            def __call__(self, *args, **kwargs):
-                if flask.has_app_context():
-                    return TaskBase.__call__(self, *args, **kwargs)
-                else:
-                    with _celery.app.app_context():
-                        return TaskBase.__call__(self, *args, **kwargs)
-
-        self.Task = ContextTask
-
-    def init_app(self, app):
-        self.app = app
-        self.config_from_object(app.config)
