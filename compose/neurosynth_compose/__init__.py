@@ -17,10 +17,10 @@ def create_app():
 
     app = connexion_app.app
 
+    app.config.from_object(os.environ["APP_SETTINGS"])
+
     # initialize db
     db.init_app(app)
-
-    app.config.from_object(os.environ["APP_SETTINGS"])
 
     oauth = OAuth(app)
 
