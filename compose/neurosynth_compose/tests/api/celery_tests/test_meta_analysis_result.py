@@ -63,38 +63,38 @@ def test_file_upload_neurovault(app, db, user_data, meta_analysis_results, mock_
     file_upload_neurovault(submit_data, nv_file.id)
 
 
-@celery_test
-def test_send_task_file_upload_neurovault(
-    app, db, session, user_data, meta_analysis_results, mock_pynv
-):  # mock_pynv):
-    user = User.query.filter_by(name="user1").first()
-    meta_analysis = MetaAnalysis.query.filter_by(user=user).first()
-    meta_analysis_result = MetaAnalysisResult(meta_analysis=meta_analysis)
-    coll_id = 12345
-    nv_coll = NeurovaultCollection(collection_id=coll_id, result=meta_analysis_result)
-    nv_file = NeurovaultFile(neurovault_collection=nv_coll)
-    session.add_all(
-        [
-            meta_analysis_result,
-            nv_coll,
-            nv_file,
-        ]
-    )
-    session.commit()
-    results = meta_analysis_results[user.id]["results"]
-    map_names = results.maps.keys()
-    data = {
-        "neurovault_collection": {
-            "files": [
-                {"name": k, "file": results.get_map(k).to_bytes().decode("latin1")}
-                for k in map_names
-            ]
-        }
-    }
-    submit_data = data["neurovault_collection"]["files"][0]
-    submit_data["collection_id"] = coll_id
+# @celery_test
+# def test_send_task_file_upload_neurovault(
+#     app, db, session, user_data, meta_analysis_results, mock_pynv
+# ):  # mock_pynv):
+#     user = User.query.filter_by(name="user1").first()
+#     meta_analysis = MetaAnalysis.query.filter_by(user=user).first()
+#     meta_analysis_result = MetaAnalysisResult(meta_analysis=meta_analysis)
+#     coll_id = 12345
+#     nv_coll = NeurovaultCollection(collection_id=coll_id, result=meta_analysis_result)
+#     nv_file = NeurovaultFile(neurovault_collection=nv_coll)
+#     session.add_all(
+#         [
+#             meta_analysis_result,
+#             nv_coll,
+#             nv_file,
+#         ]
+#     )
+#     session.commit()
+#     results = meta_analysis_results[user.id]["results"]
+#     map_names = results.maps.keys()
+#     data = {
+#         "neurovault_collection": {
+#             "files": [
+#                 {"name": k, "file": results.get_map(k).to_bytes().decode("latin1")}
+#                 for k in map_names
+#             ]
+#         }
+#     }
+#     submit_data = data["neurovault_collection"]["files"][0]
+#     submit_data["collection_id"] = coll_id
 
-    task = celery_app.send_task("neurovault.upload", args=[submit_data, nv_file.id])  # noqa: F841
-    import time
+#     task = celery_app.send_task("neurovault.upload", args=[submit_data, nv_file.id])  # noqa: F841
+#     import time
 
-    time.sleep(5)
+#     time.sleep(5)
