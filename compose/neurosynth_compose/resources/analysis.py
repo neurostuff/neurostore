@@ -273,7 +273,7 @@ class ListView(BaseView):
         #     q = q.join(*attr.attr)
         q = q.order_by(getattr(attr, desc)())
 
-        records = q.paginate(args["page"], args["page_size"], False).items
+        records = q.paginate(page=args["page"], per_page=args["page_size"], error_out=False).items
         # check if results should be nested
         nested = True if args.get("nested") else False
         content = self.__class__._schema(
