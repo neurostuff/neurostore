@@ -3,13 +3,14 @@ import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
-import TagSelectorPopup from 'components/CurationComponents/TagSelectorPopup/TagSelectorPopup';
+import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { ITag } from 'hooks/requests/useGetProjects';
+import { ISource, ITag } from 'hooks/requests/useGetProjects';
 import useGetPubmedIDs from 'hooks/requests/useGetPubMedIds';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import PubMedImportStudySummary from 'components/Dialogs/PubMedImportDialog/PubMedImportStudySummary';
+import { ENeurosynthSourceIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 
 interface IPubMedWizardTagStep {
     ids: string[];
@@ -43,6 +44,11 @@ const PubMedWizardTagStep: React.FC<IPubMedWizardTagStep> = (props) => {
                         }
                     }, '');
 
+                    const pubmedIdentificationSource: ISource = {
+                        id: ENeurosynthSourceIds.PUBMED,
+                        label: 'PubMed',
+                    };
+
                     return {
                         id: uuidv4(),
                         title: x.title,
@@ -54,8 +60,9 @@ const PubMedWizardTagStep: React.FC<IPubMedWizardTagStep> = (props) => {
                         articleYear: x.articleYear,
                         abstractText: x.abstractText,
                         articleLink: x.articleLink,
-                        exclusionTag: undefined,
+                        exclusionTag: null,
                         tags: [],
+                        identificationSource: pubmedIdentificationSource,
                     };
                 })
             );
@@ -105,7 +112,6 @@ const PubMedWizardTagStep: React.FC<IPubMedWizardTagStep> = (props) => {
                     <Box>
                         <TagSelectorPopup
                             sx={{ width: '380px' }}
-                            isExclusion={false}
                             onAddTag={handleAddTag}
                             onCreateTag={handleAddTag}
                         />

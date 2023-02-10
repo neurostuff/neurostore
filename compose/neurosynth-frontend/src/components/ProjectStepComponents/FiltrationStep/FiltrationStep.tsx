@@ -29,8 +29,6 @@ const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
 
     const filterExists = !!filtrationMetadata;
 
-    console.log(filtrationMetadata?.filter?.type);
-
     return (
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
             <StepLabel>

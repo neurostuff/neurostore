@@ -8,6 +8,12 @@ export interface ITag {
     label: string;
     id: string;
     isExclusionTag: boolean;
+    isAssignable: boolean; // whether or not this tag can be attached to a study
+}
+
+export interface ISource {
+    label: string;
+    id: string;
 }
 
 export interface IAlgorithmMetadata {
@@ -21,10 +27,25 @@ export interface IFiltrationMetadata {
     };
 }
 
+export interface IPRISMAConfig {
+    isPrisma: boolean;
+    identification: {
+        exclusionTags: ITag[];
+    };
+    screening: {
+        exclusionTags: ITag[];
+    };
+    eligibility: {
+        exclusionTags: ITag[];
+    };
+}
+
 export interface ICurationMetadata {
     columns: ICurationColumn[];
-    isPRISMA: boolean;
-    tags: ITag[];
+    prismaConfig: IPRISMAConfig;
+    infoTags: ITag[];
+    exclusionTags: ITag[]; // for non prisma workflows, we ignore prismaConfig and use exclusionTags. This property will not be used for the prisma workflow.
+    identificationSources: ISource[];
 }
 
 interface IStudyExtractionStatus {
@@ -54,6 +75,21 @@ export interface INeurosynthProject extends Omit<Project, 'provenance'> {
 export interface INeurosynthProjectReturn extends Omit<ProjectReturn, 'provenance'> {
     provenance: IProvenance;
 }
+
+export const indexToPRISMAMapping = (
+    index: number
+): 'identification' | 'screening' | 'eligibility' | null => {
+    switch (index) {
+        case 0:
+            return 'identification';
+        case 1:
+            return 'screening';
+        case 2:
+            return 'eligibility';
+        default:
+            return null;
+    }
+};
 
 const useGetProjects = () => {
     return useQuery('projects', () => API.NeurosynthServices.ProjectsService.projectsGet(), {

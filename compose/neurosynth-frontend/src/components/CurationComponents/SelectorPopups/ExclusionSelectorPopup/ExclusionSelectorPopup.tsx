@@ -5,13 +5,23 @@ import ListItemText from '@mui/material/ListItemText';
 import { SystemStyleObject } from '@mui/system';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
-import { ITag } from 'hooks/requests/useGetProjects';
+import { indexToPRISMAMapping, INeurosynthProject, ITag } from 'hooks/requests/useGetProjects';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import ErrorIcon from '@mui/icons-material/Error';
-import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
+import { useQueryClient } from 'react-query';
+
+interface IExclusionSelectorPopup {
+    label?: string;
+    sx?: SystemStyleObject;
+    onAddExclusion: (tag: ITag) => void;
+    onCreateExclusion?: (tag: ITag) => void;
+    isLoading?: boolean;
+    size?: 'small' | 'medium';
+    columnIndex: number;
+}
 
 interface AutoSelectOption {
     id: string;
@@ -26,17 +36,9 @@ const filterOptions = createFilterOptions<AutoSelectOption>({
     trim: true,
 });
 
-interface ITagSelectorPopup {
-    label?: string;
-    isExclusion: boolean;
-    sx?: SystemStyleObject;
-    onAddTag: (tag: ITag) => void;
-    onCreateTag?: (tag: ITag) => void;
-    isLoading?: boolean;
-}
-
-const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
+const ExclusionSelectorPopup: React.FC<IExclusionSelectorPopup> = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
+    const queryClient = useQueryClient();
     const {
         data,
         isLoading: getProjectIsLoading,
@@ -48,50 +50,108 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
         isError: updateProjectIsError,
     } = useUpdateProject();
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(null);
+    const [exclusions, setExclusions] = useState<AutoSelectOption[]>([]);
 
-    const tags = (data?.provenance?.curationMetadata?.tags || []).filter((x) =>
-        props.isExclusion
-            ? x.isExclusionTag
-            : !x.isExclusionTag &&
-              x.id !== ENeurosynthTagIds.UNTAGGED_TAG_ID &&
-              x.id !== ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID &&
-              x.id !== ENeurosynthTagIds.NON_EXCLUDED_ID
-    );
+    useEffect(() => {
+        if (data?.provenance?.curationMetadata?.prismaConfig) {
+            if (data.provenance.curationMetadata.prismaConfig.isPrisma) {
+                const phase = indexToPRISMAMapping(props.columnIndex);
+                const filteredExclusions = phase
+                    ? data.provenance.curationMetadata.prismaConfig[phase].exclusionTags
+                    : [];
 
-    const tagOptions: AutoSelectOption[] = tags.map((tag) => ({
-        id: tag.id,
-        label: tag.label,
-        addOptionActualLabel: null,
-    }));
+                const exclusionOptions: AutoSelectOption[] = filteredExclusions.map(
+                    (exclusion) => ({
+                        id: exclusion.id,
+                        label: exclusion.label,
+                        addOptionActualLabel: null,
+                    })
+                );
+                setExclusions(exclusionOptions);
+            } else {
+                setExclusions(data.provenance.curationMetadata.exclusionTags);
+            }
+        }
+    }, [
+        data?.provenance?.curationMetadata?.prismaConfig,
+        data?.provenance?.curationMetadata?.exclusionTags,
+        props.columnIndex,
+    ]);
 
-    const handleCreateTag = (tagName: string) => {
-        if (projectId && data?.provenance?.curationMetadata?.tags) {
-            const prevTags = data.provenance.curationMetadata.tags;
-            const newTag = { id: uuidv4(), label: tagName, isExclusionTag: props.isExclusion };
-            const updatedTags = [newTag, ...prevTags];
+    const handleCreateExclusion = (exclusionName: string) => {
+        if (
+            projectId &&
+            data?.provenance?.curationMetadata?.prismaConfig &&
+            data?.provenance?.curationMetadata?.exclusionTags
+        ) {
+            let project: INeurosynthProject;
+            let newExclusion: ITag;
+            const phase = indexToPRISMAMapping(props.columnIndex);
+            if (data.provenance.curationMetadata.prismaConfig.isPrisma && phase) {
+                const prevExclusions = phase
+                    ? data.provenance.curationMetadata.prismaConfig[phase].exclusionTags
+                    : [];
+                newExclusion = {
+                    id: uuidv4(),
+                    label: exclusionName,
+                    isExclusionTag: true,
+                    isAssignable: true,
+                };
+                const updatedExclusions = [newExclusion, ...prevExclusions];
+
+                project = {
+                    provenance: {
+                        ...data.provenance,
+                        curationMetadata: {
+                            ...data.provenance.curationMetadata,
+                            prismaConfig: {
+                                ...data.provenance.curationMetadata.prismaConfig,
+                                [phase]: {
+                                    ...data.provenance.curationMetadata.prismaConfig[phase],
+                                    exclusionTags: updatedExclusions,
+                                },
+                            },
+                        },
+                    },
+                };
+            } else {
+                const prevExclusions = data.provenance.curationMetadata.exclusionTags;
+                newExclusion = {
+                    id: uuidv4(),
+                    label: exclusionName,
+                    isExclusionTag: true,
+                    isAssignable: true,
+                };
+                const updatedExclusions = [newExclusion, ...prevExclusions];
+
+                project = {
+                    provenance: {
+                        ...data.provenance,
+                        curationMetadata: {
+                            ...data.provenance.curationMetadata,
+                            exclusionTags: updatedExclusions,
+                        },
+                    },
+                };
+            }
 
             mutate(
                 {
                     projectId,
-                    project: {
-                        provenance: {
-                            ...data.provenance,
-                            curationMetadata: {
-                                ...data.provenance.curationMetadata,
-                                tags: updatedTags,
-                            },
-                        },
-                    },
+                    project: project,
                 },
                 {
-                    onSuccess: () => {
-                        if (props.onCreateTag) {
-                            props.onCreateTag(newTag);
-                            setSelectedValue({
-                                id: newTag.id,
-                                label: newTag.label,
-                                addOptionActualLabel: null,
-                            });
+                    onSuccess: (res) => {
+                        if (res && res.status >= 200 && res.status < 300) {
+                            queryClient.setQueryData(['projects', res.data.id], res);
+                            if (props.onCreateExclusion) {
+                                props.onCreateExclusion(newExclusion);
+                                setSelectedValue({
+                                    id: newExclusion.id,
+                                    label: newExclusion.label,
+                                    addOptionActualLabel: null,
+                                });
+                            }
                         }
                     },
                 }
@@ -105,31 +165,33 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
     ) => {
         // if user hits enter after typing input, we get a string and handle it here
         if (typeof newValue === 'string') {
-            const foundValue = tagOptions.find(
+            const foundValue = exclusions.find(
                 (tag) => tag.label.toLocaleLowerCase() === newValue.toLocaleLowerCase()
             );
             if (foundValue) {
                 // do not create a new tag if an identical label exists
                 setSelectedValue(foundValue);
-                props.onAddTag({
+                props.onAddExclusion({
                     id: foundValue.id,
                     label: foundValue.label,
-                    isExclusionTag: props.isExclusion,
+                    isExclusionTag: true,
+                    isAssignable: true,
                 });
             } else {
-                handleCreateTag(newValue);
+                handleCreateExclusion(newValue);
             }
             // if user selects the "Add ..." option, we get an AutoSelectOption and handle it here
         } else if (newValue && newValue.addOptionActualLabel) {
-            handleCreateTag(newValue.addOptionActualLabel);
+            handleCreateExclusion(newValue.addOptionActualLabel);
             // if the user clicks an option, we get an AutoSelectOption and handle it here
         } else {
             setSelectedValue(newValue);
             if (newValue)
-                props.onAddTag({
+                props.onAddExclusion({
                     id: newValue.id,
                     label: newValue.label,
-                    isExclusionTag: props.isExclusion,
+                    isExclusionTag: true,
+                    isAssignable: true,
                 });
         }
     };
@@ -141,7 +203,7 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
         <Autocomplete
             sx={props.sx || { width: '250px' }}
             value={selectedValue || null}
-            options={tagOptions}
+            options={exclusions}
             freeSolo
             isOptionEqualToValue={(option, value) => {
                 if (value.addOptionActualLabel === null) {
@@ -161,6 +223,7 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
                 <TextField
                     {...params}
                     error={isError}
+                    size={props.size}
                     InputProps={{
                         ...params.InputProps,
                         endAdornment: (
@@ -201,4 +264,4 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
     );
 };
 
-export default TagSelectorPopup;
+export default ExclusionSelectorPopup;

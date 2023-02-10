@@ -19,6 +19,8 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { useSnackbar } from 'notistack';
+import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
+import { ITag } from 'hooks/requests/useGetProjects';
 
 interface IPubMedWizardDuplicateStep {
     stubs: ICurationStubStudy[];
@@ -92,15 +94,23 @@ const PubMedwizardDuplicateStep: React.FC<IPubMedWizardDuplicateStep> = (props) 
     const handleImport = () => {
         if (
             projectId &&
-            data?.provenance?.curationMetadata?.tags &&
-            data?.provenance?.curationMetadata?.tags.length > 0 &&
+            data?.provenance?.curationMetadata?.infoTags &&
+            data?.provenance?.curationMetadata?.infoTags.length > 0 &&
             data?.provenance?.curationMetadata?.columns &&
             data?.provenance?.curationMetadata?.columns.length > 0 &&
             data?.provenance?.curationMetadata?.columns.every((col) => !!col.stubStudies)
         ) {
-            const duplicateTag = data.provenance.curationMetadata.tags.find(
-                (x) => x.label === 'Duplicate'
-            );
+            let duplicateTag: ITag | undefined;
+            if (data?.provenance?.curationMetadata?.prismaConfig?.isPrisma) {
+                duplicateTag =
+                    data.provenance.curationMetadata.prismaConfig.identification.exclusionTags.find(
+                        (x) => x.id === ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID
+                    );
+            } else {
+                duplicateTag = data.provenance.curationMetadata.exclusionTags.find(
+                    (x) => x.id === ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID
+                );
+            }
             if (!duplicateTag) return;
 
             const newStubsToAdd = [...props.stubs];
@@ -110,11 +120,11 @@ const PubMedwizardDuplicateStep: React.FC<IPubMedWizardDuplicateStep> = (props) 
                 if (duplicate.resolution === 'existingStub') {
                     updatedProvenanceColumns[duplicate.existingStub.colIndex].stubStudies[
                         duplicate.existingStub.studyIndex
-                    ].exclusionTag = duplicateTag;
+                    ].exclusionTag = duplicateTag as ITag;
                 } else if (duplicate.resolution === 'newStub') {
                     const stub = newStubsToAdd.find((stub) => stub.id === duplicate.newStub.id);
                     if (!stub) return;
-                    stub.exclusionTag = duplicateTag;
+                    stub.exclusionTag = duplicateTag as ITag;
                 }
             });
 

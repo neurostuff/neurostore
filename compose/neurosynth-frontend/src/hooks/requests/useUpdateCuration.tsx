@@ -1,9 +1,9 @@
 import { AxiosResponse } from 'axios';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
 import { useState } from 'react';
-import { MutateOptions } from 'react-query';
+import { MutateOptions, useQueryClient } from 'react-query';
 import useGetProjectById from './useGetProjectById';
-import { ITag } from './useGetProjects';
+import { INeurosynthProjectReturn, ISource, ITag } from './useGetProjects';
 import useUpdateProject from './useUpdateProject';
 
 const useUpdateCuration = (projectId: string | undefined) => {
@@ -18,10 +18,12 @@ const useUpdateCuration = (projectId: string | undefined) => {
         updatearticleYearIsLoading: false,
         updatejournalIsLoading: false,
         updateabstractTextIsLoading: false,
+        updateidentificationSourceIsLoading: false,
     });
 
     const { data } = useGetProjectById(projectId);
     const { mutate } = useUpdateProject();
+    const queryClient = useQueryClient();
 
     const removeExclusion = (
         columnIndex: number,
@@ -46,7 +48,7 @@ const useUpdateCuration = (projectId: string | undefined) => {
 
             updatedStubsForColumn[thisStubIndex] = {
                 ...updatedStubsForColumn[thisStubIndex],
-                exclusionTag: undefined,
+                exclusionTag: null,
             };
             updatedColumns[columnIndex] = {
                 ...updatedColumns[columnIndex],
@@ -85,12 +87,18 @@ const useUpdateCuration = (projectId: string | undefined) => {
         tag: ITag,
         options?: MutateOptions<AxiosResponse<any>, any, any, any>
     ) => {
+        // addExclusion can be called immediately after a new exclusion has been created.
+        // because of this, we need to grab the latest data in the cache directly so that the exclusions are up to date
+        const newestData = queryClient.getQueryData(['projects', projectId]) as
+            | AxiosResponse<INeurosynthProjectReturn>
+            | undefined;
+
         if (
             projectId &&
-            data?.provenance?.curationMetadata?.columns &&
-            data.provenance.curationMetadata.columns.length > 0
+            newestData?.data?.provenance?.curationMetadata?.columns &&
+            newestData?.data.provenance.curationMetadata.columns.length > 0
         ) {
-            const updatedColumns = [...data.provenance.curationMetadata.columns];
+            const updatedColumns = [...newestData?.data.provenance.curationMetadata.columns];
             const updatedStubsForColumn = [...updatedColumns[columnIndex].stubStudies];
 
             const thisStubIndex = updatedStubsForColumn.findIndex((x) => x.id === stubId);
@@ -115,9 +123,9 @@ const useUpdateCuration = (projectId: string | undefined) => {
                     projectId,
                     project: {
                         provenance: {
-                            ...data.provenance,
+                            ...newestData.data.provenance,
                             curationMetadata: {
-                                ...data.provenance.curationMetadata,
+                                ...newestData.data.provenance.curationMetadata,
                                 columns: updatedColumns,
                             },
                         },
@@ -142,11 +150,16 @@ const useUpdateCuration = (projectId: string | undefined) => {
         tag: ITag,
         options?: MutateOptions<AxiosResponse<any>, any, any, any>
     ) => {
+        // addTag can be called immediately after a new tag has been created.
+        // because of this, we need to grab the latest data in the cache directly so that the infoTags are up to date
+        const newestData = queryClient.getQueryData(['projects', projectId]) as
+            | AxiosResponse<INeurosynthProjectReturn>
+            | undefined;
         if (
             projectId &&
             stub.tags &&
-            data?.provenance?.curationMetadata?.columns &&
-            data?.provenance?.curationMetadata?.columns.length > 0
+            newestData?.data?.provenance?.curationMetadata?.columns &&
+            newestData?.data?.provenance?.curationMetadata?.columns.length > 0
         ) {
             const tagExists = stub.tags.find((x) => x.id === tag.id);
             if (tagExists) return;
@@ -155,7 +168,7 @@ const useUpdateCuration = (projectId: string | undefined) => {
                 updateTagsIsLoading: true,
             }));
 
-            const updatedColumns = [...data.provenance.curationMetadata.columns];
+            const updatedColumns = [...newestData.data.provenance.curationMetadata.columns];
             const updatedStubsForColumn = [...updatedColumns[columnIndex].stubStudies];
 
             const thisStubIndex = updatedStubsForColumn.findIndex((x) => x.id === stub.id);
@@ -175,16 +188,16 @@ const useUpdateCuration = (projectId: string | undefined) => {
                     projectId,
                     project: {
                         provenance: {
-                            ...data.provenance,
+                            ...newestData.data.provenance,
                             curationMetadata: {
-                                ...data.provenance.curationMetadata,
+                                ...newestData.data.provenance.curationMetadata,
                                 columns: updatedColumns,
                             },
                         },
                     },
                 },
                 {
-                    onSettled: () => {
+                    onSettled: (res) => {
                         setLoadingState((prev) => ({
                             ...prev,
                             updateTagsIsLoading: false,
@@ -264,7 +277,7 @@ const useUpdateCuration = (projectId: string | undefined) => {
         columnIndex: number,
         stubId: string,
         field: keyof ICurationStubStudy,
-        updatedValue: string | number,
+        updatedValue: string | number | ISource,
         options?: MutateOptions<AxiosResponse<any>, any, any, any>
     ) => {
         if (

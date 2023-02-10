@@ -116,13 +116,6 @@ const BaseNavigation: React.FC = (_props) => {
                         <MetaAnalysisPage />
                     </Box>
                 </Route>
-                <Route path="/prisma">
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <Box sx={{ height: '600px', width: '100%' }}>
-                            <PrismaComponent />
-                        </Box>
-                    </Box>
-                </Route>
                 <Route path="*">
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <NotFoundPage />

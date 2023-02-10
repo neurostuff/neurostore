@@ -1,8 +1,18 @@
 import { Box } from '@mui/material';
+import { Style } from 'index';
 import { Handle, Position } from 'reactflow';
 
+export interface INeurosynthNodeData {
+    label?: string;
+    bottomHandleId?: string;
+    rightHandleId?: string;
+    leftHandleId?: string;
+    topHandleId?: string;
+    sx?: Style;
+}
+
 const NeurosynthNode: React.FC<{
-    data: { label?: string; bottomHandleId: string; rightHandleId: string; topHandleId: string };
+    data: INeurosynthNodeData;
 }> = (props) => {
     return (
         <>
@@ -13,15 +23,23 @@ const NeurosynthNode: React.FC<{
                     alignItems: 'center',
                     justifyContent: 'start',
                     textAlign: 'start',
-                    height: '100%',
-                    padding: '10px',
                     fontSize: '12px',
+                    height: '100%',
+                    fontWeight: 'bold',
                     whiteSpace: 'pre-line',
+                    zIndex: 99,
+                    backgroundColor: 'white',
+                    border: '1px solid black',
+                    borderRadius: '4px',
+                    ...(props?.data?.sx || {}),
                 }}
             >
-                {props?.data?.label || ''}
+                <Box component="span" sx={{ padding: '10px' }}>
+                    {props?.data?.label || ''}
+                </Box>
             </Box>
             <Handle type="source" id={props.data.bottomHandleId} position={Position.Bottom} />
+            <Handle type="target" id={props.data.leftHandleId} position={Position.Left} />
             <Handle type="source" id={props.data.rightHandleId} position={Position.Right} />
         </>
     );

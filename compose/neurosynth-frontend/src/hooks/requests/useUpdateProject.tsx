@@ -17,7 +17,7 @@ const useUpdateProject = () => {
         (args) =>
             API.NeurosynthServices.ProjectsService.projectsIdPut(args.projectId, args.project),
         {
-            onSuccess: () => {
+            onSuccess: (res) => {
                 const x = queryClient.isMutating({
                     predicate: (m) => m.options.mutationKey === 'projects',
                 });

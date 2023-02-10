@@ -10,15 +10,18 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import CreateStubStudyDialog from 'components/Dialogs/CreateStubStudyDialog/CreateStubStudyDialog';
 import PubmedImportDialog from 'components/Dialogs/PubMedImportDialog/PubMedImportDialog';
 import { useIsFetching, useIsMutating } from 'react-query';
-import PrismaComponent from 'components/PrismaComponent/PrismaComponent';
+import PrismaDialog from 'components/Dialogs/PrismaDialog/PrismaDialog';
 
 const CurationPage: React.FC = (props) => {
     const [createStudyDialogIsOpen, setCreateStudyDialogIsOpen] = useState(false);
     const [pubmedImportDialogIsOpen, setPubMedImportDialogIsOpen] = useState(false);
+    const [prismaIsOpen, setPrismaIsOpen] = useState(false);
     const isFetching = useIsFetching('projects');
     const { projectId }: { projectId: string | undefined } = useParams();
     const isMutating = useIsMutating([`projects`]);
     const { data, isLoading, isError } = useGetProjectById(projectId);
+
+    const isPrisma = data?.provenance?.curationMetadata?.prismaConfig?.isPrisma || false;
 
     return (
         <StateHandlerComponent isError={isError} isLoading={isLoading}>
@@ -61,12 +64,17 @@ const CurationPage: React.FC = (props) => {
                         )}
                     </Box>
                     <Box sx={{ marginRight: '1rem' }}>
+                        <PubmedImportDialog
+                            onCloseDialog={() => setPubMedImportDialogIsOpen(false)}
+                            isOpen={pubmedImportDialogIsOpen}
+                        />
                         <Button
-                            sx={{ marginRight: '1rem' }}
+                            onClick={() => setPubMedImportDialogIsOpen(true)}
                             variant="outlined"
-                            endIcon={<SchemaIcon />}
+                            sx={{ marginRight: '1rem' }}
+                            endIcon={<FileUploadIcon />}
                         >
-                            PRISMA diagram
+                            import pubmed studies
                         </Button>
                         <CreateStubStudyDialog
                             onCloseDialog={() => setCreateStudyDialogIsOpen(false)}
@@ -80,17 +88,21 @@ const CurationPage: React.FC = (props) => {
                         >
                             create study
                         </Button>
-                        <PubmedImportDialog
-                            onCloseDialog={() => setPubMedImportDialogIsOpen(false)}
-                            isOpen={pubmedImportDialogIsOpen}
-                        />
-                        <Button
-                            onClick={() => setPubMedImportDialogIsOpen(true)}
-                            variant="outlined"
-                            endIcon={<FileUploadIcon />}
-                        >
-                            import pubmed studies
-                        </Button>
+                        {isPrisma && (
+                            <>
+                                <PrismaDialog
+                                    onCloseDialog={() => setPrismaIsOpen(false)}
+                                    isOpen={prismaIsOpen}
+                                />
+                                <Button
+                                    onClick={() => setPrismaIsOpen(true)}
+                                    variant="outlined"
+                                    endIcon={<SchemaIcon />}
+                                >
+                                    PRISMA diagram
+                                </Button>
+                            </>
+                        )}
                     </Box>
                 </Box>
                 <Box sx={{ height: '100%', overflow: 'hidden' }}>

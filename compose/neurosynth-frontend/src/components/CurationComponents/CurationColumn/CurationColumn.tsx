@@ -10,7 +10,7 @@ import {
     Autocomplete,
     TextField,
 } from '@mui/material';
-import { ITag } from 'hooks/requests/useGetProjects';
+import { indexToPRISMAMapping, ITag } from 'hooks/requests/useGetProjects';
 import { useEffect, useState } from 'react';
 import CurationStubStudy, {
     ICurationStubStudy,
@@ -36,9 +36,9 @@ const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined):
     } else if (selectedTag.isExclusionTag) {
         isVisible = selectedTag.id === stub.exclusionTag?.id;
     } else if (selectedTag.id === ENeurosynthTagIds.UNTAGGED_TAG_ID) {
-        isVisible = stub.tags.length === 0 && stub?.exclusionTag === undefined;
-    } else if (selectedTag.id === ENeurosynthTagIds.NON_EXCLUDED_ID) {
-        isVisible = stub?.exclusionTag === undefined;
+        isVisible = stub.tags.length === 0 && stub?.exclusionTag === null;
+    } else if (selectedTag.id === ENeurosynthTagIds.UNCATEGORIZED_ID) {
+        isVisible = stub?.exclusionTag === null;
     } else {
         isVisible = stub.tags.some((tag) => tag.id === selectedTag.id);
     }
@@ -52,6 +52,7 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
     const { data } = useGetProjectById(projectId);
     const [lastColExtractionDialogIsOpen, setLastColExtractionDialogIsOpen] = useState(false);
     const [filteredStudies, setFilteredStudies] = useState<ICurationStubStudy[]>(props.stubStudies);
+    const [tags, setTags] = useState<ITag[]>([]);
     const [dialogState, setDialogState] = useState<{
         isOpen: boolean;
         stubId: string | undefined;
@@ -60,9 +61,48 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
         stubId: undefined,
     });
 
-    const tags = (data?.provenance?.curationMetadata?.tags || []).sort(
-        (a, b) => +b.isExclusionTag - +a.isExclusionTag
-    );
+    useEffect(() => {
+        if (data?.provenance?.curationMetadata?.prismaConfig) {
+            if (data?.provenance?.curationMetadata?.prismaConfig?.isPrisma) {
+                const infoTags = data.provenance.curationMetadata.infoTags;
+                const phase = indexToPRISMAMapping(props.columnIndex);
+                const exclusionTagsForThisColumn = phase
+                    ? data.provenance.curationMetadata.prismaConfig[phase]?.exclusionTags
+                    : [];
+                setTags(
+                    [...infoTags, ...exclusionTagsForThisColumn].sort((a, b) => {
+                        if (a.isExclusionTag && b.isExclusionTag) {
+                            return a.label.localeCompare(b.label);
+                        } else if (!a.isExclusionTag && !b.isExclusionTag) {
+                            return +a.isAssignable - +b.isAssignable;
+                        } else {
+                            return +b.isExclusionTag - +a.isExclusionTag;
+                        }
+                    })
+                );
+            } else {
+                setTags(
+                    [
+                        ...data.provenance.curationMetadata.infoTags,
+                        ...data.provenance.curationMetadata.exclusionTags,
+                    ].sort((a, b) => {
+                        if (a.isExclusionTag && b.isExclusionTag) {
+                            return a.label.localeCompare(b.label);
+                        } else if (!a.isExclusionTag && !b.isExclusionTag) {
+                            return +a.isAssignable - +b.isAssignable;
+                        } else {
+                            return +b.isExclusionTag - +a.isExclusionTag;
+                        }
+                    })
+                );
+            }
+        }
+    }, [
+        data?.provenance.curationMetadata?.exclusionTags,
+        data?.provenance.curationMetadata?.infoTags,
+        data?.provenance.curationMetadata?.prismaConfig,
+        props.columnIndex,
+    ]);
 
     useEffect(() => {
         setFilteredStudies(props.stubStudies.filter((stub) => getVisibility(stub, selectedTag)));
@@ -138,9 +178,13 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
                     )}
                     value={selectedTag || null}
                     size="small"
-                    groupBy={(option) =>
-                        option.isExclusionTag ? 'Exclusion Tags' : 'General Tags'
-                    }
+                    groupBy={(option) => {
+                        return option.isExclusionTag
+                            ? 'Exclusion Tags'
+                            : option.isAssignable
+                            ? 'General Tags'
+                            : 'Default Tags';
+                    }}
                     renderInput={(params) => <TextField {...params} label="filter" />}
                     options={tags}
                     isOptionEqualToValue={(option, value) => option?.id === value?.id}

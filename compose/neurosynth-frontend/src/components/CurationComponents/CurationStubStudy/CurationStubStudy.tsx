@@ -1,11 +1,7 @@
 import { Draggable, DraggableStateSnapshot, DraggableStyle } from '@hello-pangea/dnd';
 import Close from '@mui/icons-material/Close';
-import { Box, Button, Chip, IconButton, Link, Paper, Tooltip, Typography } from '@mui/material';
-import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { ITag } from 'hooks/requests/useGetProjects';
-import { useRef, useState } from 'react';
-import TagSelectorPopup from 'components/CurationComponents/TagSelectorPopup/TagSelectorPopup';
+import { Box, Chip, IconButton, Link, Paper, Tooltip, Typography } from '@mui/material';
+import { ISource, ITag } from 'hooks/requests/useGetProjects';
 import CurationStubStudyStyles from './CurationStubStudy.styles';
 import { useParams } from 'react-router-dom';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
@@ -23,7 +19,8 @@ export interface ICurationStubStudy {
     journal: string;
     abstractText: string;
     articleLink: string;
-    exclusionTag?: ITag;
+    exclusionTag: ITag | null;
+    identificationSource: ISource;
     tags: ITag[];
 }
 
@@ -57,18 +54,7 @@ const CurationStubStudy: React.FC<
 > = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
     const { data } = useGetProjectById(projectId);
-    const { removeExclusion, addExclusion, updateExclusionIsLoading } =
-        useUpdateCuration(projectId);
-    const [tagSelectorPopupIsOpen, setTagSelectorPopupIsOpen] = useState(false);
-    const anchorRef = useRef<HTMLButtonElement>(null);
-
-    const handleOnAddExclusionTag = (tag: ITag) => {
-        addExclusion(props.columnIndex, props.id, tag, {
-            onSuccess: () => {
-                setTagSelectorPopupIsOpen(false);
-            },
-        });
-    };
+    const { removeExclusion, updateExclusionIsLoading } = useUpdateCuration(projectId);
 
     const handleRemoveExclusionTag = () => {
         removeExclusion(props.columnIndex, props.id);
@@ -106,38 +92,11 @@ const CurationStubStudy: React.FC<
         );
     } else {
         exclusionTagElement = (
-            <>
-                <NeurosynthPopper
-                    open={tagSelectorPopupIsOpen}
-                    anchorElement={anchorRef.current}
-                    onClickAway={() => setTagSelectorPopupIsOpen(false)}
-                >
-                    <TagSelectorPopup
-                        isLoading={updateExclusionIsLoading}
-                        onAddTag={handleOnAddExclusionTag}
-                        isExclusion={true}
-                        label="Add exclusion"
-                    />
-                </NeurosynthPopper>
-                <Button
-                    ref={anchorRef}
-                    onClick={() => {
-                        setTagSelectorPopupIsOpen(true);
-                    }}
-                    endIcon={<ArrowDropDownIcon />}
-                    size="small"
-                    sx={{
-                        // make down arrow closer to button text
-                        '.MuiButton-iconSizeSmall': {
-                            marginLeft: '2px',
-                        },
-                    }}
-                    color="error"
-                    disableElevation
-                >
-                    exclude
-                </Button>
-            </>
+            <Box>
+                <Typography variant="body2" sx={{ color: 'warning.dark' }}>
+                    uncategorized
+                </Typography>
+            </Box>
         );
     }
 
@@ -145,7 +104,7 @@ const CurationStubStudy: React.FC<
         <Draggable
             draggableId={props.id}
             index={props.index}
-            isDragDisabled={props?.exclusionTag !== undefined}
+            isDragDisabled={!!props?.exclusionTag}
         >
             {(provided, snapshot) => (
                 <Paper
@@ -157,7 +116,7 @@ const CurationStubStudy: React.FC<
                         CurationStubStudyStyles.stubStudyContainer,
                         {
                             display: props.isVisible ? 'block' : 'none',
-                            cursor: props?.exclusionTag !== undefined ? 'not-allowed' : 'pointer',
+                            cursor: props.exclusionTag ? 'not-allowed' : 'pointer',
                         },
                     ]}
                     style={handleAnimation(

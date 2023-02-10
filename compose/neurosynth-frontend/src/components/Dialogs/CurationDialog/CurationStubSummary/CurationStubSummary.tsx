@@ -7,20 +7,22 @@ import CloseIcon from '@mui/icons-material/Close';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import React, { useRef, useState } from 'react';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
-import TagSelectorPopup from 'components/CurationComponents/TagSelectorPopup/TagSelectorPopup';
+import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { useParams } from 'react-router-dom';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
-import { INeurosynthProject, ITag } from 'hooks/requests/useGetProjects';
+import { INeurosynthProject, ISource, ITag } from 'hooks/requests/useGetProjects';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import StyleIcon from '@mui/icons-material/Style';
 import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
-import { MutateOptions } from 'react-query';
+import { MutateOptions, useQueryClient } from 'react-query';
 import { AxiosError, AxiosResponse } from 'axios';
 import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import useUpdateCuration from 'hooks/requests/useUpdateCuration';
 import TextEdit from 'components/TextEdit/TextEdit';
+import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
+import ExclusionSelectorPopup from 'components/CurationComponents/SelectorPopups/ExclusionSelectorPopup/ExclusionSelectorPopup';
 
 interface ICurationStubSummary {
     stub: ICurationStubStudy | undefined;
@@ -43,6 +45,7 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
     const { mutate: updateStubs, isLoading: updateStubsIsLoading } = useUpdateProject();
     const excludeButtonRef = useRef<HTMLButtonElement>(null);
     const addTagsRef = useRef<HTMLButtonElement>(null);
+    const queryClient = useQueryClient();
 
     const handleAddExclusion = (exclusionTag: ITag) => {
         if (props.stub?.id) {
@@ -84,8 +87,8 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
     };
 
     const handleSaveForLater = () => {
-        if (projectId && data?.provenance?.curationMetadata?.tags && props.stub) {
-            const saveForLaterTag = data.provenance.curationMetadata.tags.find(
+        if (projectId && data?.provenance?.curationMetadata?.infoTags && props.stub) {
+            const saveForLaterTag = data.provenance.curationMetadata.infoTags.find(
                 (x) => x.id === ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID
             );
 
@@ -169,7 +172,7 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
         }
     };
 
-    const handleUpdateStub = (updatedText: string, label: string) => {
+    const handleUpdateStub = (updatedText: string | number | ISource, label: string) => {
         if (props.stub?.id)
             updateField(
                 props.columnIndex,
@@ -275,11 +278,12 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                     }}
                 >
                     <Box sx={{ marginTop: '6px' }}>
-                        <TagSelectorPopup
+                        <ExclusionSelectorPopup
                             label="select exclusion reason"
                             isLoading={loadingState.updateExclusionIsLoading}
-                            isExclusion={true}
-                            onAddTag={handleAddExclusion}
+                            onAddExclusion={(exclusion) => handleAddExclusion(exclusion)}
+                            onCreateExclusion={(exclusion) => handleAddExclusion(exclusion)}
+                            columnIndex={props.columnIndex}
                         />
                     </Box>
                 </NeurosynthPopper>
@@ -317,8 +321,14 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                             <TagSelectorPopup
                                 label="select tag"
                                 isLoading={loadingState.updateTagsIsLoading}
-                                isExclusion={false}
                                 onAddTag={(tag) =>
+                                    handleAddTag(tag, {
+                                        onSuccess: () => {
+                                            setTagSelectorIsOpen(false);
+                                        },
+                                    })
+                                }
+                                onCreateTag={(tag) =>
                                     handleAddTag(tag, {
                                         onSuccess: () => {
                                             setTagSelectorIsOpen(false);
@@ -353,6 +363,17 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                     />
                 ))}
             </Box>
+
+            <Box sx={{ margin: '0.5rem 0', marginTop: '1rem' }}>
+                <IdentificationSourcePopup
+                    isLoading={loadingState.updateidentificationSourceIsLoading}
+                    onAddSource={(source) => handleUpdateStub(source, 'identificationSource')}
+                    onCreateSource={(source) => handleUpdateStub(source, 'identificationSource')}
+                    initialValue={props.stub.identificationSource}
+                    size="small"
+                />
+            </Box>
+
             <TextEdit
                 sx={{ input: { fontSize: '1.25rem' } }}
                 onSave={handleUpdateStub}

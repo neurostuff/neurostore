@@ -16,7 +16,7 @@ import {
     Button,
 } from '@mui/material';
 import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
-import { INeurosynthProject } from 'hooks/requests/useGetProjects';
+import { INeurosynthProject, ISource, ITag } from 'hooks/requests/useGetProjects';
 import { useHistory, useParams } from 'react-router-dom';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
@@ -38,17 +38,59 @@ enum ECurationBoardTypes {
 }
 
 export enum ENeurosynthTagIds {
-    UNTAGGED_TAG_ID = 'neurosynth_untagged_tag',
-    SPECIAL_TAG_ID = 'neurosynth_special_tag',
-    SAVE_FOR_LATER_TAG_ID = 'neurosynth_save_for_later_tag',
-    DUPLICATE_EXCLUSION_ID = 'neurosynth_duplicate_exclusion',
-    IRRELEVANT_EXCLUSION_ID = 'neurosynth_irrelevant_exclusion',
-    NON_EXCLUDED_ID = 'neurosynth_non_excluded_tag',
+    UNTAGGED_TAG_ID = 'neurosynth_untagged_tag', // default info tag
+    SAVE_FOR_LATER_TAG_ID = 'neurosynth_save_for_later_tag', // default info tag
+    UNCATEGORIZED_ID = 'neurosynth_uncategorized_tag', // default info tag
+
+    DUPLICATE_EXCLUSION_ID = 'neurosynth_duplicate_exclusion', // default exclusion
+    IRRELEVANT_EXCLUSION_ID = 'neurosynth_irrelevant_exclusion', // default exclusion
+    REPORTS_NOT_RETRIEVED_EXCLUSION_ID = 'neurosynth_reports_not_retrieved_exclusion', // default exclusion
+    EXCLUDE_EXCLUSION_ID = 'neurosynth_exclude_exclusion', // default exclusion
+    OUT_OF_SCOPE_EXCLUSION_ID = 'neurosynth_out_of_scope_exclusion', // default exclusion
+    INSUFFICIENT_DETAIL_EXCLUSION_ID = 'neurosynth_insufficient_detail_exclusion', // default exclusion
+    LIMITED_RIGOR_EXCLUSION_ID = 'neurosynth_limited_rigor', // default exclusion
+}
+
+export enum ENeurosynthSourceIds {
+    NEUROSTORE = 'neurosynth_neurostore_id_source',
+    PUBMED = 'neurosynth_pubmed_id_source',
 }
 
 interface ICurationStep {
     hasCurationMetadata: boolean;
 }
+
+const defaultIdentificationSources: ISource[] = [
+    {
+        id: ENeurosynthSourceIds.NEUROSTORE,
+        label: 'Neurostore',
+    },
+    {
+        id: ENeurosynthSourceIds.PUBMED,
+        label: 'PubMed',
+    },
+];
+
+const defaultInfoTags: ITag[] = [
+    {
+        id: ENeurosynthTagIds.UNTAGGED_TAG_ID,
+        label: 'Untagged studies',
+        isExclusionTag: false,
+        isAssignable: false,
+    },
+    {
+        id: ENeurosynthTagIds.UNCATEGORIZED_ID,
+        label: 'Uncategorized Studies',
+        isExclusionTag: false,
+        isAssignable: false,
+    },
+    {
+        id: ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID,
+        label: 'Save For Later',
+        isExclusionTag: false,
+        isAssignable: false,
+    },
+];
 
 const getPercentageComplete = (curationSummary: ICurationSummary): number => {
     if (curationSummary.total === 0) return 0;
@@ -104,49 +146,86 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
             stubStudies: [],
         }));
 
+        const newProject: INeurosynthProject = {
+            provenance: {
+                curationMetadata: {
+                    columns: columns,
+                    prismaConfig: {
+                        isPrisma: isPRISMA,
+                        identification: { exclusionTags: [] },
+                        screening: { exclusionTags: [] },
+                        eligibility: { exclusionTags: [] },
+                    },
+                    exclusionTags: [
+                        {
+                            id: ENeurosynthTagIds.EXCLUDE_EXCLUSION_ID,
+                            label: 'Exclude',
+                            isExclusionTag: true,
+                            isAssignable: true,
+                        },
+                        {
+                            id: ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID,
+                            label: 'Duplicate',
+                            isExclusionTag: true,
+                            isAssignable: true,
+                        },
+                    ],
+                    infoTags: defaultInfoTags,
+                    identificationSources: defaultIdentificationSources,
+                },
+            },
+        };
+
+        if (isPRISMA && newProject?.provenance?.curationMetadata) {
+            const prismaConfig = newProject.provenance.curationMetadata.prismaConfig;
+            prismaConfig.identification.exclusionTags = [
+                {
+                    id: ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID,
+                    label: 'Duplicate',
+                    isExclusionTag: true,
+                    isAssignable: true,
+                },
+            ];
+            prismaConfig.screening.exclusionTags = [
+                {
+                    id: ENeurosynthTagIds.REPORTS_NOT_RETRIEVED_EXCLUSION_ID,
+                    label: 'Reports not retrieved',
+                    isExclusionTag: true,
+                    isAssignable: true,
+                },
+                {
+                    id: ENeurosynthTagIds.IRRELEVANT_EXCLUSION_ID,
+                    label: 'Irrelevant',
+                    isExclusionTag: true,
+                    isAssignable: true,
+                },
+            ];
+            prismaConfig.eligibility.exclusionTags = [
+                {
+                    id: ENeurosynthTagIds.INSUFFICIENT_DETAIL_EXCLUSION_ID,
+                    label: 'Insufficient Details',
+                    isExclusionTag: true,
+                    isAssignable: true,
+                },
+                {
+                    id: ENeurosynthTagIds.LIMITED_RIGOR_EXCLUSION_ID,
+                    label: 'Limited Rigor',
+                    isExclusionTag: true,
+                    isAssignable: true,
+                },
+                {
+                    id: ENeurosynthTagIds.OUT_OF_SCOPE_EXCLUSION_ID,
+                    label: 'Out of scope',
+                    isExclusionTag: true,
+                    isAssignable: true,
+                },
+            ];
+        }
+
         mutate(
             {
                 projectId,
-                project: {
-                    provenance: {
-                        curationMetadata: {
-                            columns: columns,
-                            isPRISMA: isPRISMA,
-                            tags: [
-                                {
-                                    id: ENeurosynthTagIds.UNTAGGED_TAG_ID,
-                                    label: 'Untagged studies',
-                                    isExclusionTag: false,
-                                },
-                                {
-                                    id: ENeurosynthTagIds.NON_EXCLUDED_ID,
-                                    label: 'Nonexcluded Studies',
-                                    isExclusionTag: false,
-                                },
-                                {
-                                    id: ENeurosynthTagIds.SPECIAL_TAG_ID,
-                                    label: 'Special',
-                                    isExclusionTag: false,
-                                },
-                                {
-                                    id: ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID,
-                                    label: 'Save For Later',
-                                    isExclusionTag: false,
-                                },
-                                {
-                                    id: ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID,
-                                    label: 'Duplicate',
-                                    isExclusionTag: true,
-                                },
-                                {
-                                    id: ENeurosynthTagIds.IRRELEVANT_EXCLUSION_ID,
-                                    label: 'Irrelevant',
-                                    isExclusionTag: true,
-                                },
-                            ],
-                        },
-                    },
-                },
+                project: newProject,
             },
             {
                 onSuccess: () => {

@@ -101,6 +101,9 @@ const CreateCurationBoardDialog: React.FC<
                 </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem' }}>
+                    <Button onClick={() => props.onCloseDialog()} color="error">
+                        cancel
+                    </Button>
                     <LoadingButton
                         onClick={handleCreateCurationBoard}
                         color="primary"
@@ -110,9 +113,6 @@ const CreateCurationBoardDialog: React.FC<
                         loaderColor="secondary"
                         sx={{ width: '85px' }}
                     />
-                    <Button onClick={() => props.onCloseDialog()} color="error">
-                        cancel
-                    </Button>
                 </Box>
             </Box>
         </BaseDialog>

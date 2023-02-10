@@ -1,12 +1,13 @@
-import { TextField, Box, Button, Typography, Chip } from '@mui/material';
+import { TextField, Box, Button, Chip } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import TagSelectorPopup from 'components/CurationComponents/TagSelectorPopup/TagSelectorPopup';
+import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
+import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import CreateStubStudyDialogStyles from 'components/Dialogs/CreateStubStudyDialog/CreateStubStudyDialog.styles';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
-import { ITag } from 'hooks/requests/useGetProjects';
+import { ISource, ITag } from 'hooks/requests/useGetProjects';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
-import React, { ChangeEvent, useState } from 'react';
+import React, { ChangeEvent, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -37,6 +38,7 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
         doi: string;
         journal: string;
         abstract: string;
+        identificationSource: ISource | null;
         tags: ITag[];
     }>({
         name: '',
@@ -48,6 +50,7 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
         journal: '',
         abstract: '',
         tags: [],
+        identificationSource: null,
     });
 
     const handleUpdateForm = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -76,6 +79,13 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
             }));
     };
 
+    const handleAddSource = (source: ISource) => {
+        setForm((prev) => ({
+            ...prev,
+            identificationSource: source,
+        }));
+    };
+
     const handleDeleteTag = (tag: ITag) => {
         setForm((prev) => ({
             ...prev,
@@ -84,9 +94,12 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
     };
 
     const handleCreateStudy = () => {
-        if (project?.provenance?.curationMetadata?.columns[0]?.stubStudies) {
-            const updatedProvenance = { ...project.provenance };
-            const updatedColumn = project.provenance.curationMetadata.columns[0];
+        if (
+            form.identificationSource &&
+            project?.provenance?.curationMetadata?.columns[0]?.stubStudies
+        ) {
+            const updatedCurationMetadata = { ...project.provenance.curationMetadata };
+            const updatedColumn = { ...project.provenance.curationMetadata.columns[0] };
 
             updatedColumn.stubStudies = [
                 {
@@ -100,40 +113,71 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
                     articleYear: form.articleYear,
                     abstractText: form.abstract,
                     articleLink: form.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${form.pmid}` : '',
-                    exclusionTag: undefined,
+                    exclusionTag: null,
                     tags: [...form.tags],
+                    identificationSource: form.identificationSource as ISource,
                 },
                 ...updatedColumn.stubStudies,
             ];
 
+            updatedCurationMetadata.columns[0] = updatedColumn;
+
             updateProject(
                 {
                     projectId: projectId,
-                    project: { provenance: updatedProvenance },
+                    project: {
+                        provenance: {
+                            ...project.provenance,
+                            curationMetadata: updatedCurationMetadata,
+                        },
+                    },
                 },
                 {
                     onSuccess: () => {
-                        props.onCloseDialog();
+                        handleCloseDialog();
                     },
                 }
             );
         }
     };
 
-    const disableCreateButton = form.name.length === 0 || form.pmid.length === 0;
+    const handleCloseDialog = () => {
+        setForm({
+            name: '',
+            authors: '',
+            pmid: '',
+            keywords: '',
+            articleYear: '',
+            doi: '',
+            journal: '',
+            abstract: '',
+            tags: [],
+            identificationSource: null,
+        });
+        setFormFieldTouched({
+            name: false,
+            doi: false,
+        });
+        props.onCloseDialog();
+    };
+
+    const disableCreateButton =
+        form.name.length === 0 || form.pmid.length === 0 || !form.identificationSource;
 
     return (
         <BaseDialog
             fullWidth
             maxWidth="sm"
-            onCloseDialog={props.onCloseDialog}
+            onCloseDialog={handleCloseDialog}
             isOpen={props.isOpen}
             dialogTitle="Create new study"
         >
             <Box sx={{ padding: '10px 0' }}>
                 <TextField
+                    size="small"
                     onChange={handleUpdateForm}
                     required
+                    value={form.name}
                     helperText={
                         formFieldTouched.name && form.name.length === 0
                             ? 'study name cannot be empty'
@@ -146,6 +190,8 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
                     placeholder="My study name"
                 />
                 <TextField
+                    size="small"
+                    value={form.authors}
                     onChange={handleUpdateForm}
                     sx={CreateStubStudyDialogStyles.textInput}
                     label="Authors"
@@ -154,17 +200,21 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
                 />
                 <Box sx={[{ display: 'flex' }, CreateStubStudyDialogStyles.textInput]}>
                     <TextField
+                        size="small"
                         onChange={handleUpdateForm}
                         sx={[{ marginRight: '0.5rem' }]}
                         label="PMID"
+                        value={form.pmid}
                         name="pmid"
                         required
                         fullWidth
                         placeholder="2393823"
                     />
                     <TextField
+                        size="small"
                         onChange={handleUpdateForm}
                         sx={[{ marginLeft: '0.5rem' }]}
+                        value={form.articleYear}
                         label="Article Year"
                         name="articleYear"
                         type="number"
@@ -173,13 +223,17 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
                     />
                 </Box>
                 <TextField
+                    size="small"
                     onChange={handleUpdateForm}
                     sx={CreateStubStudyDialogStyles.textInput}
                     name="journal"
+                    value={form.journal}
                     label="Journal"
                     placeholder="Neuron"
                 />
                 <TextField
+                    size="small"
+                    value={form.doi}
                     onChange={handleUpdateForm}
                     helperText={
                         formFieldTouched.doi && form.doi.length === 0 ? 'doi cannot be empty' : ''
@@ -191,29 +245,44 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
                     placeholder="10.1016/S0896-6273(00)80715-1"
                 />
                 <TextField
+                    size="small"
                     onChange={handleUpdateForm}
                     sx={CreateStubStudyDialogStyles.textInput}
                     name="keywords"
+                    value={form.keywords}
                     label="Keywords"
                     placeholder="cognition, behavior, intelligence"
                 />
+                <Box sx={{ marginBottom: '1rem' }}>
+                    <IdentificationSourcePopup
+                        required
+                        size="small"
+                        initialValue={form.identificationSource || undefined}
+                        onAddSource={handleAddSource}
+                        onCreateSource={handleAddSource}
+                        sx={{ width: '100%' }}
+                        label="select study source"
+                    />
+                </Box>
                 <TextField
+                    size="small"
                     onChange={handleUpdateForm}
                     sx={CreateStubStudyDialogStyles.textInput}
                     label="Abstract Text"
                     multiline
                     rows={3}
+                    value={form.abstract}
                     name="abstract"
                     placeholder="Lorem Ipsum..."
                 />
 
                 <Box sx={{ marginBottom: '0.5rem' }}>
-                    <Typography gutterBottom>Tag this study</Typography>
                     <TagSelectorPopup
+                        size="small"
                         onCreateTag={handleAddTag}
                         onAddTag={handleAddTag}
-                        isExclusion={false}
                         sx={{ width: '100%' }}
+                        label="tag this study"
                     />
                     <Box sx={{ margin: '1rem 0' }}>
                         {form.tags.map((tag) => (

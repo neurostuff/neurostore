@@ -23,6 +23,7 @@
         "body-scroll-lock": "^4.0.0-beta.0",
         "fast-xml-parser": "^4.0.12",
         "handsontable": "^12.1.2",
+        "html-to-image": "^1.11.11",
         "notistack": "^2.0.5",
         "react": "^17.0.2",
         "react-dom": "^17.0.2",
