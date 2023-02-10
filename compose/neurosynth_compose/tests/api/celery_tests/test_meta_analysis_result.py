@@ -6,7 +6,6 @@ from ....models import (
     NeurovaultCollection,
     User,
 )
-from ....resources.tasks import file_upload_neurovault, celery_app
 
 
 @celery_test
@@ -67,6 +66,7 @@ def test_file_upload_neurovault(app, db, user_data, meta_analysis_results, mock_
 # def test_send_task_file_upload_neurovault(
 #     app, db, session, user_data, meta_analysis_results, mock_pynv
 # ):  # mock_pynv):
+#     from ....resources.tasks import file_upload_neurovault, celery_app
 #     user = User.query.filter_by(name="user1").first()
 #     meta_analysis = MetaAnalysis.query.filter_by(user=user).first()
 #     meta_analysis_result = MetaAnalysisResult(meta_analysis=meta_analysis)
