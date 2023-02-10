@@ -94,7 +94,7 @@ def test_file_upload_neurovault(app, db, user_data, meta_analysis_results, mock_
 #     submit_data = data["neurovault_collection"]["files"][0]
 #     submit_data["collection_id"] = coll_id
 
-#     task = celery_app.send_task("neurovault.upload", args=[submit_data, nv_file.id])  # noqa: F841
+#     task = celery_app.send_task("neurovault.upload", args=[submit_data, nv_file.id])
 #     import time
 
 #     time.sleep(5)
