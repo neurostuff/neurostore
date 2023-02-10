@@ -20,7 +20,7 @@ class Config(object):
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
     DB_NAME = "compose"
     SQLALCHEMY_DATABASE_URI = (
-        f"postgres://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+        f"postgresql://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
     )
     PROPAGATE_EXCEPTIONS = True
 
