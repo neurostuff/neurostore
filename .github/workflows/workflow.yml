@@ -201,6 +201,7 @@ jobs:
             compose.cache-from=type=gha,scope=cached-compose
             compose_nginx.cache-from=type=gha,scope=cached-compose-nginx
             compose_pgsql.cache-from=type=gha,scope=cached-compose-pgsql
+            compose_worker.cache-from=type=gha,scope=cached-compose-worker
     -
       name: Spin up backend
       run: |
@@ -290,6 +291,7 @@ jobs:
             compose.cache-from=type=gha,scope=cached-compose
             compose_nginx.cache-from=type=gha,scope=cached-compose-nginx
             compose_pgsql.cache-from=type=gha,scope=cached-compose-pgsql
+            compose_worker.cache-from=type=gha,scope=cached-compose-worker
     -
       name: Spin up backend
       run: |
@@ -373,6 +375,7 @@ jobs:
             compose.cache-from=type=gha,scope=cached-compose
             compose_nginx.cache-from=type=gha,scope=cached-compose-nginx
             compose_pgsql.cache-from=type=gha,scope=cached-compose-pgsql
+            compose_worker.cache-from=type=gha,scope=cached-compose-worker
     -
       name: load store images
       uses: docker/bake-action@master
