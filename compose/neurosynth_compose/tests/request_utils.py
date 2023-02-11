@@ -5,7 +5,7 @@ from functools import partialmethod
 class Client(object):
     def __init__(self, token, test_client=None, prepend="", username=None):
         if test_client is None:
-            from ..core import app
+            from flask import current_app as app
 
             test_client = app.test_client()
             self.client_flask = True
@@ -19,7 +19,7 @@ class Client(object):
 
     def _get_headers(self):
         if self.token is not None:
-            return {'Authorization': 'Bearer %s' % self.token}
+            return {"Authorization": "Bearer %s" % self.token}
         else:
             return None
 
@@ -33,7 +33,7 @@ class Client(object):
         content_type=None,
         json_dump=True,
     ):
-        """ Generic request handler """
+        """Generic request handler"""
         request_function = getattr(self.client, request)
         headers = headers or self._get_headers()
 
