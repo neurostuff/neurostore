@@ -23,9 +23,12 @@ def session(db):
     Actually commits to database for sharing data between images
     for celery integration testing.
     """
+    db.create_all()
+
     yield db.session
 
-    db.session.rollback()
     # reset database for next test
+    db.session.remove()
+    sa.orm.close_all_sessions()
     db.drop_all()
     db.create_all()
