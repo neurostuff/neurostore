@@ -141,7 +141,6 @@ def app(mock_auth):
 @pytest.fixture(scope="session")
 def db(app):
     """Session-wide test database."""
-    _db.init_app(app)
     _db.create_all()
 
     yield _db

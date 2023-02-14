@@ -7,7 +7,6 @@ from ....database import db as _db
 @pytest.fixture(scope="session")
 def db(app):
     """Session-wide test database."""
-    _db.init_app(app)
     _db.drop_all()  # in case test function exited in a weird state
     _db.create_all()
     yield _db
@@ -23,6 +22,7 @@ def session(db):
     Actually commits to database for sharing data between images
     for celery integration testing.
     """
+    db.drop_all()
     db.create_all()
 
     yield db.session

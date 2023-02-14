@@ -11,6 +11,8 @@ from ....resources.tasks import file_upload_neurovault
 
 @celery_test
 def test_meta_analysis_result(app, auth_client, user_data, meta_analysis_results):
+    import time
+
     user = User.query.filter_by(name="user1").first()
     meta_analysis = MetaAnalysis.query.filter_by(user=user).first()
     results = meta_analysis_results[user.id]["results"]
@@ -26,6 +28,7 @@ def test_meta_analysis_result(app, auth_client, user_data, meta_analysis_results
     data["meta_analysis_id"] = meta_analysis.id
     post_result = auth_client.post("/api/meta-analysis-results", data=data)
     assert post_result.status_code == 200
+    time.sleep(10)  # wait for celery to finish
     assert len(data["neurovault_collection"]["files"]) == len(
         post_result.json["neurovault_collection"]["files"]
     )
