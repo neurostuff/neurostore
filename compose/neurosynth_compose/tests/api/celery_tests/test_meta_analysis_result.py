@@ -28,7 +28,7 @@ def test_meta_analysis_result(app, auth_client, user_data, meta_analysis_results
     data["meta_analysis_id"] = meta_analysis.id
     post_result = auth_client.post("/api/meta-analysis-results", data=data)
     assert post_result.status_code == 200
-    time.sleep(5) # wait for celery to finish
+    time.sleep(10)  # wait for celery to finish
     assert len(data["neurovault_collection"]["files"]) == len(
         post_result.json["neurovault_collection"]["files"]
     )
