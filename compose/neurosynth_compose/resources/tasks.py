@@ -21,7 +21,7 @@ def file_upload_neurovault(self, data, id):
 
     try:
         record = NeurovaultFile.query.filter_by(id=id).one()
-    except:
+    except:  # noqa: E722
         db.session.rollback()
         record = NeurovaultFile.query.filter_by(id=id).one()
 
