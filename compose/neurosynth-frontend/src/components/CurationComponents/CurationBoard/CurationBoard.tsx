@@ -12,12 +12,25 @@ const CurationBoard: React.FC = (props) => {
     const { data } = useGetProjectById(projectId);
     const { mutate } = useUpdateProject();
     const [curationColumns, setCurationColumns] = useState<ICurationColumn[]>([]);
+    const [initialLoad, setInitialLoad] = useState(false);
 
     useEffect(() => {
-        if (data?.provenance?.curationMetadata?.columns) {
+        if (data?.provenance?.curationMetadata?.columns && !initialLoad) {
+            console.log(initialLoad);
+            setInitialLoad(true);
             setCurationColumns(data.provenance.curationMetadata.columns || []);
         }
-    }, [data]);
+    }, [data, initialLoad]);
+
+    useEffect(() => {
+        const debounceTimeout = setTimeout(() => {
+            console.log('curation columns changed');
+        }, 5000);
+
+        return () => {
+            clearTimeout(debounceTimeout);
+        };
+    }, [curationColumns]);
 
     const handleDragEnd = (result: DropResult, provided: ResponderProvided) => {
         const { destination, source, draggableId } = result;
@@ -84,18 +97,18 @@ const CurationBoard: React.FC = (props) => {
             // store this in local memory so that we don't get weird behavior and lag when updating via HTTP
             setCurationColumns(columnsUpdate);
 
-            mutate({
-                projectId: projectId,
-                project: {
-                    provenance: {
-                        ...data.provenance,
-                        curationMetadata: {
-                            ...data.provenance.curationMetadata,
-                            columns: columnsUpdate,
-                        },
-                    },
-                },
-            });
+            // mutate({
+            //     projectId: projectId,
+            //     project: {
+            //         provenance: {
+            //             ...data.provenance,
+            //             curationMetadata: {
+            //                 ...data.provenance.curationMetadata,
+            //                 columns: columnsUpdate,
+            //             },
+            //         },
+            //     },
+            // });
         }
     };
 

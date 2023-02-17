@@ -6,7 +6,7 @@ import CurationStubStudyStyles from './CurationStubStudy.styles';
 import { useParams } from 'react-router-dom';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
-import useUpdateCuration from 'hooks/requests/useUpdateCuration';
+import useUpdateCurationStub from 'hooks/requests/useUpdateCurationStub';
 
 export interface ICurationStubStudy {
     id: string;
@@ -54,7 +54,7 @@ const CurationStubStudy: React.FC<
 > = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
     const { data } = useGetProjectById(projectId);
-    const { removeExclusion, updateExclusionIsLoading } = useUpdateCuration(projectId);
+    const { removeExclusion, updateExclusionIsLoading } = useUpdateCurationStub(projectId);
 
     const handleRemoveExclusionTag = () => {
         removeExclusion(props.columnIndex, props.id);

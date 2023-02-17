@@ -1,26 +1,31 @@
-import { Box, TextField } from '@mui/material';
+import { Box, Button, ButtonGroup, TextField } from '@mui/material';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
-import { SystemStyleObject } from '@mui/system';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { indexToPRISMAMapping, INeurosynthProject, ITag } from 'hooks/requests/useGetProjects';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import ErrorIcon from '@mui/icons-material/Error';
+import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import { useQueryClient } from 'react-query';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
+import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 
 interface IExclusionSelectorPopup {
-    label?: string;
-    sx?: SystemStyleObject;
     onAddExclusion: (tag: ITag) => void;
     onCreateExclusion?: (tag: ITag) => void;
+    onClosePopup: () => void;
+    onOpenPopup: () => void;
     isLoading?: boolean;
-    size?: 'small' | 'medium';
+    disabled?: boolean;
     columnIndex: number;
+    popupIsOpen: boolean;
 }
 
 interface AutoSelectOption {
@@ -38,6 +43,7 @@ const filterOptions = createFilterOptions<AutoSelectOption>({
 
 const ExclusionSelectorPopup: React.FC<IExclusionSelectorPopup> = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
+    const excludeButtonRef = useRef<any>(null);
     const queryClient = useQueryClient();
     const {
         data,
@@ -51,6 +57,7 @@ const ExclusionSelectorPopup: React.FC<IExclusionSelectorPopup> = (props) => {
     } = useUpdateProject();
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(null);
     const [exclusions, setExclusions] = useState<AutoSelectOption[]>([]);
+    const [defaultExclusion, setDefaultExclusion] = useState<AutoSelectOption>();
 
     useEffect(() => {
         if (data?.provenance?.curationMetadata?.prismaConfig) {
@@ -68,6 +75,21 @@ const ExclusionSelectorPopup: React.FC<IExclusionSelectorPopup> = (props) => {
                     })
                 );
                 setExclusions(exclusionOptions);
+
+                // identification and screening phases only have a single exclusion
+                if (phase === 'identification') {
+                    setDefaultExclusion({
+                        id: ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID,
+                        label: 'Duplicate',
+                        addOptionActualLabel: null,
+                    });
+                } else if (phase === 'screening') {
+                    setDefaultExclusion({
+                        id: ENeurosynthTagIds.IRRELEVANT_EXCLUSION_ID,
+                        label: 'Irrelevant',
+                        addOptionActualLabel: null,
+                    });
+                }
             } else {
                 setExclusions(data.provenance.curationMetadata.exclusionTags);
             }
@@ -196,71 +218,116 @@ const ExclusionSelectorPopup: React.FC<IExclusionSelectorPopup> = (props) => {
         }
     };
 
+    const handleSelectDefaultExclusion = (option?: AutoSelectOption) => {
+        if (!option) return;
+
+        props.onAddExclusion({
+            id: option.id,
+            label: option.label,
+            isExclusionTag: true,
+            isAssignable: true,
+        });
+    };
+
     const isLoading = getProjectIsLoading || updateProjectIsLoading || props.isLoading;
     const isError = getProjectIsError || updateProjectIsError;
 
     return (
-        <Autocomplete
-            sx={props.sx || { width: '250px' }}
-            value={selectedValue || null}
-            options={exclusions}
-            freeSolo
-            isOptionEqualToValue={(option, value) => {
-                if (value.addOptionActualLabel === null) {
-                    return false;
-                } else {
-                    return option?.id === value?.id;
-                }
-            }}
-            getOptionLabel={(option) => (typeof option === 'string' ? option : option?.label || '')}
-            onChange={handleChange}
-            renderOption={(params, option) => (
-                <ListItem {...params} key={option?.id}>
-                    <ListItemText primary={option?.label || ''} />
-                </ListItem>
-            )}
-            renderInput={(params) => (
-                <TextField
-                    {...params}
-                    error={isError}
-                    size={props.size}
-                    InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                            <>
-                                {isError && (
-                                    <Box sx={{ color: 'error.main', display: 'flex' }}>
-                                        There was an error
-                                        <ErrorIcon sx={{ marginLeft: '5px' }} />
-                                    </Box>
-                                )}
-                                {isLoading && <ProgressLoader size={20} />}
-                                {!isError && !isLoading && params.InputProps.endAdornment}
-                            </>
-                        ),
-                    }}
-                    label={props.label || 'select tag'}
-                />
-            )}
-            filterOptions={(options, params) => {
-                const filteredValues = filterOptions(options, params);
+        <>
+            <NeurosynthPopper
+                open={props.popupIsOpen}
+                anchorElement={excludeButtonRef?.current}
+                placement="bottom-start"
+                onClickAway={() => props.onClosePopup()}
+            >
+                <Box sx={{ marginTop: '6px' }}>
+                    <Autocomplete
+                        sx={{ width: '250px' }}
+                        value={selectedValue || null}
+                        options={exclusions}
+                        freeSolo
+                        isOptionEqualToValue={(option, value) => {
+                            if (value.addOptionActualLabel === null) {
+                                return false;
+                            } else {
+                                return option?.id === value?.id;
+                            }
+                        }}
+                        getOptionLabel={(option) =>
+                            typeof option === 'string' ? option : option?.label || ''
+                        }
+                        onChange={handleChange}
+                        renderOption={(params, option) => (
+                            <ListItem {...params} key={option?.id}>
+                                <ListItemText primary={option?.label || ''} />
+                            </ListItem>
+                        )}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                error={isError}
+                                placeholder="start typing to create exclusion"
+                                InputProps={{
+                                    ...params.InputProps,
+                                    endAdornment: (
+                                        <>
+                                            {isError && (
+                                                <Box sx={{ color: 'error.main', display: 'flex' }}>
+                                                    There was an error
+                                                    <ErrorIcon sx={{ marginLeft: '5px' }} />
+                                                </Box>
+                                            )}
+                                            {isLoading && <ProgressLoader size={20} />}
+                                            {!isError &&
+                                                !isLoading &&
+                                                params.InputProps.endAdornment}
+                                        </>
+                                    ),
+                                }}
+                                label="select exclusion reason"
+                            />
+                        )}
+                        filterOptions={(options, params) => {
+                            const filteredValues = filterOptions(options, params);
 
-                const optionExists = options.some(
-                    (option) =>
-                        params.inputValue.toLocaleLowerCase() ===
-                        (option?.label || '').toLocaleLowerCase()
-                );
+                            const optionExists = options.some(
+                                (option) =>
+                                    params.inputValue.toLocaleLowerCase() ===
+                                    (option?.label || '').toLocaleLowerCase()
+                            );
 
-                if (params.inputValue !== '' && !optionExists) {
-                    filteredValues.push({
-                        id: '',
-                        label: `Add "${params.inputValue}"`,
-                        addOptionActualLabel: params.inputValue,
-                    });
-                }
-                return filteredValues;
-            }}
-        />
+                            if (params.inputValue !== '' && !optionExists) {
+                                filteredValues.push({
+                                    id: '',
+                                    label: `Add "${params.inputValue}"`,
+                                    addOptionActualLabel: params.inputValue,
+                                });
+                            }
+                            return filteredValues;
+                        }}
+                    />
+                </Box>
+            </NeurosynthPopper>
+            <ButtonGroup disabled={!!props.disabled} color="error" ref={excludeButtonRef}>
+                {defaultExclusion && (
+                    <LoadingButton
+                        variant="outlined"
+                        startIcon={<HighlightOffIcon />}
+                        sx={{ width: '210px' }}
+                        text={`Exclude: ${defaultExclusion?.label}`}
+                        isLoading={props.isLoading && !props.popupIsOpen}
+                        onClick={() => handleSelectDefaultExclusion(defaultExclusion)}
+                    />
+                )}
+                <Button
+                    startIcon={defaultExclusion ? undefined : <HighlightOffIcon />}
+                    size="small"
+                    onClick={() => props.onOpenPopup()}
+                >
+                    {defaultExclusion ? <ArrowDropDownIcon /> : 'exclude'}
+                </Button>
+            </ButtonGroup>
+        </>
     );
 };
 

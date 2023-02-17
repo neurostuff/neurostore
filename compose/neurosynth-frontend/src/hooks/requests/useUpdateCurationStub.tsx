@@ -6,7 +6,7 @@ import useGetProjectById from './useGetProjectById';
 import { INeurosynthProjectReturn, ISource, ITag } from './useGetProjects';
 import useUpdateProject from './useUpdateProject';
 
-const useUpdateCuration = (projectId: string | undefined) => {
+const useUpdateCurationStub = (projectId: string | undefined) => {
     const [loadingState, setLoadingState] = useState({
         updateExclusionIsLoading: false,
         updateTagsIsLoading: false,
@@ -344,4 +344,4 @@ const useUpdateCuration = (projectId: string | undefined) => {
     };
 };
 
-export default useUpdateCuration;
+export default useUpdateCurationStub;

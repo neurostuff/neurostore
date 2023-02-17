@@ -49,7 +49,14 @@ const PrismaComponent: React.FC<{ prisma?: INeurosynthProject }> = (props) => {
     }, [project]);
 
     return (
-        <Box style={{ height: height, width: '100%' }}>
+        <Box
+            style={{
+                height: height,
+                width: '750px',
+                border: '2px solid lightgray',
+                borderRadius: '4px',
+            }}
+        >
             <ReactFlow
                 nodeTypes={nodeTypes}
                 defaultViewport={{ x: 20, y: 20, zoom: 0.85 }}

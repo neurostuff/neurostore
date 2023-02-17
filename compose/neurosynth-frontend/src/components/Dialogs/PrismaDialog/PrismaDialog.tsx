@@ -13,7 +13,6 @@ import {
 import PrismaComponent from 'components/PrismaComponent/PrismaComponent';
 import CloseIcon from '@mui/icons-material/Close';
 import { IDialog } from '../BaseDialog';
-import * as htmlToImage from 'html-to-image';
 import { toSvg, toPng, toJpeg } from 'html-to-image';
 import { useRef, useState } from 'react';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
@@ -117,7 +116,7 @@ const PrismaDialog: React.FC<IDialog> = (props) => {
                             </MenuList>
                         </Box>
                     </NeurosynthPopper>
-                    <ButtonGroup ref={anchorRef}>
+                    <ButtonGroup sx={{ marginRight: '15px' }} ref={anchorRef}>
                         <Button size="small" onClick={handleClick}>
                             Download PRISMA Diagram as {selectedOption}
                         </Button>

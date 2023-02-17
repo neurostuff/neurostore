@@ -22,12 +22,12 @@ export interface IPRISMAScreening {
     numRecordsToScreen: number; // number of records identified minus number from duplicates removed
     // excluded based on title and abstract - not english, not relevant, etc
     exclusions: IPRISMAExclusion[];
-    recordsSoughtForRetrieval: number; // number of numRecordsToScreen minus number of excluded records
-    recordsNotRetrieved: number; // number of records where user is unable to retrieve full text
     numUncategorized: number;
 }
 
 export interface IPRISMAEligibility {
+    recordsNotRetrieved: number; // number of records where user is unable to retrieve full text
+    recordsSoughtForRetrieval: number; // number of numRecordsToScreen minus number of excluded records
     recordsAssessedForEligibility: number; // number of recordsSoughtForRetrieval minus recordsNotRetrieved
     exclusions: IPRISMAExclusion[];
     numUncategorized: number;
@@ -58,12 +58,12 @@ export class CPRISMAWorkflow {
         this.screening = {
             numRecordsToScreen: 0,
             exclusions: [],
-            recordsSoughtForRetrieval: 0,
-            recordsNotRetrieved: 0,
             numUncategorized: 0,
         };
 
         this.eligibility = {
+            recordsNotRetrieved: 0,
+            recordsSoughtForRetrieval: 0,
             recordsAssessedForEligibility: 0,
             exclusions: [],
             numUncategorized: 0,
@@ -384,7 +384,6 @@ class NeurosynthPRISMAHelper {
         if (!prevGroupNode) throw new Error('previous group node not found');
         const nodes: Node[] = [];
         const screeningGroupParentNode = 'screening-group';
-        const distanceBetweenTopAndBottomNode = 40;
 
         // node height in pixels.
         // 30 for the initial text and 40 for each subsequent text (two lines)
@@ -425,42 +424,13 @@ class NeurosynthPRISMAHelper {
         );
         nodes.push(rightTopNode);
 
-        const bottomNodeHeight = 70;
-        const leftBottomNode = this.getNode(
-            'screening-node-3',
-            'node',
-            { x: 80, y: 20 + topNodeHeight + distanceBetweenTopAndBottomNode },
-            { height: 70 },
-            screeningGroupParentNode,
-            {
-                label: `Reports sought for retrieval\n(n = ${screening.recordsSoughtForRetrieval})`,
-                rightHandleId: 'screening-node-3-right-source',
-                bottomHandleId: 'screening-node-3-bottom-source',
-                topHandleId: 'screening-node-3-top-target',
-            }
-        );
-        nodes.push(leftBottomNode);
-
-        const rightBottomNode = this.getNode(
-            'screening-node-4',
-            'node',
-            { x: 420, y: 20 + topNodeHeight + distanceBetweenTopAndBottomNode },
-            { height: 70 },
-            screeningGroupParentNode,
-            {
-                label: `Reports not retrieved\n(n = ${screening.recordsNotRetrieved})`,
-                leftHandleId: 'screening-node-4-left-target',
-            }
-        );
-        nodes.push(rightBottomNode);
-
         if (screening.numUncategorized > 0) {
             const noStudiesNode = this.getNode(
                 'screening-no-studies-node-1',
                 'warning-node',
                 { x: 720, y: 20 },
                 {
-                    height: topNodeHeight + distanceBetweenTopAndBottomNode + bottomNodeHeight,
+                    height: topNodeHeight,
                 },
                 screeningGroupParentNode,
                 {
@@ -476,16 +446,11 @@ class NeurosynthPRISMAHelper {
             'screening-label',
             'label',
             {
-                x:
-                    -30 -
-                    topNodeHeight -
-                    bottomNodeHeight -
-                    distanceBetweenTopAndBottomNode -
-                    prevPosition,
+                x: -30 - topNodeHeight - prevPosition,
                 y: 10 - prevPosition,
             },
             {
-                width: topNodeHeight + distanceBetweenTopAndBottomNode + bottomNodeHeight,
+                width: topNodeHeight,
             },
             screeningGroupParentNode,
             {
@@ -499,7 +464,7 @@ class NeurosynthPRISMAHelper {
             'group',
             { x: 0, y: prevPosition + 10 },
             {
-                height: topNodeHeight + distanceBetweenTopAndBottomNode + bottomNodeHeight + 40,
+                height: topNodeHeight + 40,
             },
             undefined,
             undefined
@@ -520,28 +485,9 @@ class NeurosynthPRISMAHelper {
             'screening-node-2',
             'screening-node-2-left-target'
         );
-        const topLeftToBottomLeftEdge = this.getEdge(
-            'screening-edge-2',
-            'screening-node-1',
-            'screening-node-1-bottom-source',
-            'screening-node-3',
-            'screening-node-3-top-target'
-        );
 
-        const bottomLeftToBottomRightEdge = this.getEdge(
-            'screening-edge-3',
-            'screening-node-3',
-            'screening-node-3-right-source',
-            'screening-node-4',
-            'screening-node-4-left-target'
-        );
         return {
-            edges: [
-                bottomLeftToBottomRightEdge,
-                topLeftToTopRightEdge,
-                topLeftToBottomLeftEdge,
-                identificationToScreeningNodeEdge,
-            ],
+            edges: [topLeftToTopRightEdge, identificationToScreeningNodeEdge],
             nodes: nodes,
         };
     };
@@ -553,41 +499,74 @@ class NeurosynthPRISMAHelper {
         if (!prevGroupNode) throw new Error('previous group node not found');
         const nodes: Node[] = [];
         const eligibilityGroupParentNode = 'eligibility-group';
+        const topNodeHeight = 70;
+        const distanceBetweenTopAndBottomNode = 40;
 
-        const leftNodeHeight = 50 + 40;
-        const rightNodeHeight = 50 + eligibility.exclusions.length * 40;
-        let nodeHeight = leftNodeHeight >= rightNodeHeight ? leftNodeHeight : rightNodeHeight;
-
-        const leftNode = this.getNode(
-            `eligibility-node-1`,
+        const leftTopNode = this.getNode(
+            'eligibility-node-1',
             'node',
             { x: 80, y: 20 },
-            { height: nodeHeight },
+            { height: topNodeHeight },
+            eligibilityGroupParentNode,
+            {
+                label: `Reports sought for retrieval\n(n = ${eligibility.recordsSoughtForRetrieval})`,
+                rightHandleId: 'eligibility-node-1-right-source',
+                bottomHandleId: 'eligibility-node-1-bottom-source',
+                topHandleId: 'eligibility-node-1-top-target',
+            }
+        );
+        nodes.push(leftTopNode);
+
+        const rightTopNode = this.getNode(
+            'eligibility-node-2',
+            'node',
+            { x: 420, y: 20 },
+            { height: topNodeHeight },
+            eligibilityGroupParentNode,
+            {
+                label: `Reports not retrieved\n(n = ${eligibility.recordsNotRetrieved})`,
+                leftHandleId: 'eligibility-node-2-left-target',
+            }
+        );
+        nodes.push(rightTopNode);
+
+        const leftBottomNodeHeight = 50 + 40;
+        const rightBottomNodeHeight = 50 + eligibility.exclusions.length * 40;
+        let bottomNodeHeight =
+            leftBottomNodeHeight >= rightBottomNodeHeight
+                ? leftBottomNodeHeight
+                : rightBottomNodeHeight;
+
+        const leftBottomNode = this.getNode(
+            `eligibility-node-3`,
+            'node',
+            { x: 80, y: 20 + topNodeHeight + distanceBetweenTopAndBottomNode },
+            { height: bottomNodeHeight },
             eligibilityGroupParentNode,
             {
                 label: `Reports assessed for eligibility\n(n = ${eligibility.recordsAssessedForEligibility})`,
-                topHandleId: 'eligibility-node-1-top-target',
-                rightHandleId: 'eligibility-node-1-right-source',
-                bottomHandleId: 'eligibility-node-1-bottom-source',
+                topHandleId: 'eligibility-node-3-top-target',
+                rightHandleId: 'eligibility-node-3-right-source',
+                bottomHandleId: 'eligibility-node-3-bottom-source',
             }
         );
-        nodes.push(leftNode);
+        nodes.push(leftBottomNode);
 
-        const rightNode = this.getNode(
-            `eligibility-node-2`,
+        const rightBottomNode = this.getNode(
+            `eligibility-node-4`,
             'node',
-            { x: 420, y: 20 },
-            { height: nodeHeight },
+            { x: 420, y: 20 + topNodeHeight + distanceBetweenTopAndBottomNode },
+            { height: bottomNodeHeight },
             eligibilityGroupParentNode,
             {
                 label: eligibility.exclusions.reduce(
                     (acc, curr) => `${acc}\n${curr.label}\n(n = ${curr.numRecords})`,
                     'Reports excluded:\n'
                 ),
-                leftHandleId: 'eligibility-node-2-left-target',
+                leftHandleId: 'eligibility-node-4-left-target',
             }
         );
-        nodes.push(rightNode);
+        nodes.push(rightBottomNode);
 
         if (eligibility.numUncategorized > 0) {
             const noStudiesNode = this.getNode(
@@ -595,7 +574,7 @@ class NeurosynthPRISMAHelper {
                 'warning-node',
                 { x: 720, y: 20 },
                 {
-                    height: nodeHeight,
+                    height: bottomNodeHeight + distanceBetweenTopAndBottomNode + topNodeHeight,
                 },
                 eligibilityGroupParentNode,
                 {
@@ -610,8 +589,16 @@ class NeurosynthPRISMAHelper {
         const labelNode = this.getNode(
             `eligibility-label`,
             'label',
-            { x: -30 - nodeHeight - prevPosition, y: 10 - prevPosition },
-            { width: nodeHeight },
+            {
+                x:
+                    -30 -
+                    bottomNodeHeight -
+                    prevPosition -
+                    distanceBetweenTopAndBottomNode -
+                    topNodeHeight,
+                y: 10 - prevPosition,
+            },
+            { width: bottomNodeHeight + distanceBetweenTopAndBottomNode + topNodeHeight },
             eligibilityGroupParentNode,
             {
                 label: `Eligibility`,
@@ -622,7 +609,7 @@ class NeurosynthPRISMAHelper {
             eligibilityGroupParentNode,
             'group',
             { x: 0, y: prevPosition + 10 },
-            { height: nodeHeight + 40 },
+            { height: bottomNodeHeight + distanceBetweenTopAndBottomNode + topNodeHeight + 40 },
             undefined,
             undefined
         );
@@ -630,21 +617,40 @@ class NeurosynthPRISMAHelper {
 
         const screeningToEligibilityEdge = this.getEdge(
             'screening-eligibility-edge-1',
-            'screening-node-3',
-            'screening-node-3-bottom-source',
+            'screening-node-1',
+            'screening-node-1-bottom-source',
             'eligibility-node-1',
             'eligibility-node-1-top-target'
         );
-        const leftToRightEdge = this.getEdge(
+        const topLeftToTopRightEdge = this.getEdge(
             'eligibility-edge-1',
             'eligibility-node-1',
             'eligibility-node-1-right-source',
             'eligibility-node-2',
             'eligibility-node-2-left-target'
         );
+        const topLeftToBottomLeftEdge = this.getEdge(
+            'eligibility-edge-2',
+            'eligibility-node-1',
+            'eligibility-node-1-bottom-source',
+            'eligibility-node-3',
+            'eligibility-node-3-top-target'
+        );
+        const bottomLeftToBottomRightEdge = this.getEdge(
+            'eligibility-edge-3',
+            'eligibility-node-3',
+            'eligibility-node-3-right-source',
+            'eligibility-node-4',
+            'eligibility-node-4-left-target'
+        );
 
         return {
-            edges: [screeningToEligibilityEdge, leftToRightEdge],
+            edges: [
+                screeningToEligibilityEdge,
+                topLeftToTopRightEdge,
+                topLeftToBottomLeftEdge,
+                bottomLeftToBottomRightEdge,
+            ],
             nodes: nodes,
         };
     };
@@ -694,8 +700,8 @@ class NeurosynthPRISMAHelper {
 
         const eligibilityToIncludedEdge = this.getEdge(
             'eligibility-included-edge-1',
-            'eligibility-node-1',
-            'eligibility-node-1-bottom-source',
+            'eligibility-node-3',
+            'eligibility-node-3-bottom-source',
             'included-node-1',
             'included-node-1-top-target'
         );
@@ -712,64 +718,78 @@ class NeurosynthPRISMAHelper {
         const { curationMetadata } = project.provenance;
 
         if (curationMetadata && curationMetadata.columns && curationMetadata.columns.length > 0) {
-            // identification step
+            // IDENTIFICATION STEP
+            // predefine variables
+            const identificationColumn = curationMetadata.columns[0];
+
+            // set values
             prismaWorkflow.identification.recordsIdentified = this.getRecordIdentificationSources(
                 curationMetadata.columns
             );
-            prismaWorkflow.identification.exclusions = this.getExclusionsFromCol(
-                curationMetadata.columns[0]
-            );
+            prismaWorkflow.identification.exclusions =
+                this.getExclusionsFromCol(identificationColumn);
             prismaWorkflow.identification.numUncategorized =
-                curationMetadata.columns[0].stubStudies.filter((x) => !x.exclusionTag).length;
-            const numRecordsIdentified = prismaWorkflow.identification.recordsIdentified.reduce(
-                (acc, curr) => acc + curr.numRecords,
-                0
-            );
-            const identificationNumRecordsExcluded =
-                prismaWorkflow.identification.exclusions.reduce(
-                    (acc, curr) => acc + curr.numRecords,
-                    0
-                );
+                identificationColumn.stubStudies.filter((x) => !x.exclusionTag).length;
 
-            // screening step
-            prismaWorkflow.screening.exclusions = this.getExclusionsFromCol(
-                curationMetadata.columns[1]
-            ).filter(
-                (exclusion) => exclusion.id !== ENeurosynthTagIds.REPORTS_NOT_RETRIEVED_EXCLUSION_ID
-            );
-            const screeningStepNumRecordsExcluded = prismaWorkflow.screening.exclusions.reduce(
+            // SCREENING STEP
+            // predefined variables
+            const { recordsIdentified, exclusions: identificationExclusions } =
+                prismaWorkflow.identification;
+            const numRecordsIdentified = recordsIdentified.reduce(
                 (acc, curr) => acc + curr.numRecords,
                 0
             );
+            const numIdentificationRecordsExcluded = identificationExclusions.reduce(
+                (acc, curr) => acc + curr.numRecords,
+                0
+            );
+            const screeningCol = curationMetadata.columns[1];
+
+            // set values
+            prismaWorkflow.screening.exclusions = this.getExclusionsFromCol(screeningCol);
             prismaWorkflow.screening.numRecordsToScreen =
-                numRecordsIdentified - identificationNumRecordsExcluded;
-            prismaWorkflow.screening.recordsSoughtForRetrieval =
-                prismaWorkflow.screening.numRecordsToScreen - screeningStepNumRecordsExcluded;
-            prismaWorkflow.screening.recordsNotRetrieved = (
-                curationMetadata.columns[1].stubStudies.filter(
+                numRecordsIdentified - numIdentificationRecordsExcluded;
+            prismaWorkflow.screening.numUncategorized = screeningCol.stubStudies.filter(
+                (x) => !x.exclusionTag
+            ).length;
+
+            // ELIGIBILITY STEP
+            // predefine variables
+            const { exclusions: screeningExclusions, numRecordsToScreen } =
+                prismaWorkflow.screening;
+            const screeningStepNumRecordsExcluded = screeningExclusions.reduce(
+                (acc, curr) => acc + curr.numRecords,
+                0
+            );
+            const eligibilityCol = curationMetadata.columns[2];
+
+            // set values
+            prismaWorkflow.eligibility.recordsSoughtForRetrieval =
+                numRecordsToScreen - screeningStepNumRecordsExcluded;
+            prismaWorkflow.eligibility.recordsNotRetrieved = (
+                eligibilityCol.stubStudies.filter(
                     (x) =>
                         x.exclusionTag?.id === ENeurosynthTagIds.REPORTS_NOT_RETRIEVED_EXCLUSION_ID
                 ) || []
             ).length;
-            prismaWorkflow.screening.numUncategorized =
-                curationMetadata.columns[1].stubStudies.filter((x) => !x.exclusionTag).length;
-
-            // eligibility step
-            const { recordsNotRetrieved, recordsSoughtForRetrieval } = prismaWorkflow.screening;
             prismaWorkflow.eligibility.recordsAssessedForEligibility =
-                recordsSoughtForRetrieval - recordsNotRetrieved;
+                prismaWorkflow.eligibility.recordsSoughtForRetrieval -
+                prismaWorkflow.eligibility.recordsNotRetrieved;
             prismaWorkflow.eligibility.exclusions = this.getExclusionsFromCol(
-                curationMetadata.columns[2]
-            );
+                eligibilityCol
+            ).filter((x) => x.id !== ENeurosynthTagIds.REPORTS_NOT_RETRIEVED_EXCLUSION_ID);
+            prismaWorkflow.eligibility.numUncategorized =
+                curationMetadata.columns[2].stubStudies.filter((x) => !x.exclusionTag).length;
+
+            // INCLUDED STEP
+            // predefine variables
             const eligibilityNumRecordsExcluded = prismaWorkflow.eligibility.exclusions.reduce(
                 (acc, curr) => acc + curr.numRecords,
                 0
             );
-            prismaWorkflow.eligibility.numUncategorized =
-                curationMetadata.columns[2].stubStudies.filter((x) => !x.exclusionTag).length;
-
-            // included step
             const { recordsAssessedForEligibility } = prismaWorkflow.eligibility;
+
+            // set values
             prismaWorkflow.included.recordsIncluded =
                 recordsAssessedForEligibility - eligibilityNumRecordsExcluded;
         }

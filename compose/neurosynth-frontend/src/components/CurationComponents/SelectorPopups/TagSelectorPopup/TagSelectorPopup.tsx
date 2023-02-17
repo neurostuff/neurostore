@@ -179,6 +179,7 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
                     {...params}
                     error={isError}
                     size={props.size}
+                    placeholder="start typing to create a tag"
                     InputProps={{
                         ...params.InputProps,
                         endAdornment: (

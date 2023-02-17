@@ -58,7 +58,7 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
                 props.selectedFilter ? `(Filtering for ${props.selectedFilter})` : ''
             }`}
         >
-            <Box sx={{ display: 'flex', height: '70vh', maxHeight: '70vh' }}>
+            <Box sx={{ display: 'flex', height: '60vh' }}>
                 <Box
                     sx={{
                         minWidth: '250px',

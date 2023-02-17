@@ -51,7 +51,7 @@ const NavDrawer: React.FC<INav> = (props) => {
                 />
                 <Badge
                     color="warning"
-                    badgeContent={<Typography variant="caption">beta</Typography>}
+                    badgeContent={<Typography variant="caption">alpha</Typography>}
                 >
                     <Typography sx={NavbarStyles.logoText}>neurosynth compose</Typography>
                 </Badge>

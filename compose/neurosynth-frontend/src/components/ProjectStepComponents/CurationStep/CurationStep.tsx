@@ -188,12 +188,6 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
             ];
             prismaConfig.screening.exclusionTags = [
                 {
-                    id: ENeurosynthTagIds.REPORTS_NOT_RETRIEVED_EXCLUSION_ID,
-                    label: 'Reports not retrieved',
-                    isExclusionTag: true,
-                    isAssignable: true,
-                },
-                {
                     id: ENeurosynthTagIds.IRRELEVANT_EXCLUSION_ID,
                     label: 'Irrelevant',
                     isExclusionTag: true,
@@ -201,6 +195,12 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                 },
             ];
             prismaConfig.eligibility.exclusionTags = [
+                {
+                    id: ENeurosynthTagIds.REPORTS_NOT_RETRIEVED_EXCLUSION_ID,
+                    label: 'Reports not retrieved',
+                    isExclusionTag: true,
+                    isAssignable: true,
+                },
                 {
                     id: ENeurosynthTagIds.INSUFFICIENT_DETAIL_EXCLUSION_ID,
                     label: 'Insufficient Details',
