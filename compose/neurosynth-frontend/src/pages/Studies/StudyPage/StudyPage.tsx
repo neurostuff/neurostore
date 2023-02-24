@@ -67,7 +67,7 @@ const StudyPage: React.FC = (props) => {
         data,
     } = useGetStudyById(studyId);
     const { data: studyset } = useGetStudysetById(
-        project?.provenance?.extractionMetadata?.studysetId
+        project?.provenance?.extractionMetadata?.studysetId || undefined
     );
     const { mutateAsync: updateStudyset } = useUpdateStudyset();
 

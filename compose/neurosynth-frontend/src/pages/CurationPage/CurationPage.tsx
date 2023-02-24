@@ -4,27 +4,55 @@ import AddIcon from '@mui/icons-material/Add';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import SchemaIcon from '@mui/icons-material/Schema';
 import CurationBoard from 'components/CurationComponents/CurationBoard/CurationBoard';
-import { useState } from 'react';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
+import { useEffect, useState } from 'react';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import CreateStubStudyDialog from 'components/Dialogs/CreateStubStudyDialog/CreateStubStudyDialog';
 import PubmedImportDialog from 'components/Dialogs/PubMedImportDialog/PubMedImportDialog';
-import { useIsFetching, useIsMutating } from 'react-query';
 import PrismaDialog from 'components/Dialogs/PrismaDialog/PrismaDialog';
+import {
+    useProjectName,
+    useProjectCurationIsPrisma,
+    useProjectId,
+    useInitStore,
+} from 'pages/Projects/ProjectPage/ProjectStore';
 
 const CurationPage: React.FC = (props) => {
     const [createStudyDialogIsOpen, setCreateStudyDialogIsOpen] = useState(false);
     const [pubmedImportDialogIsOpen, setPubMedImportDialogIsOpen] = useState(false);
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
-    const isFetching = useIsFetching('projects');
     const { projectId }: { projectId: string | undefined } = useParams();
-    const isMutating = useIsMutating([`projects`]);
-    const { data, isLoading, isError } = useGetProjectById(projectId);
 
-    const isPrisma = data?.provenance?.curationMetadata?.prismaConfig?.isPrisma || false;
+    const isPrisma = useProjectCurationIsPrisma();
+    const projectName = useProjectName();
+    const initStore = useInitStore();
+    const storeProjectId = useProjectId();
+
+    const [curationIsLoading, setCurationIsLoading] = useState(false);
+
+    useEffect(() => {
+        initStore(projectId);
+    }, [initStore, projectId, storeProjectId]);
+
+    useEffect(() => {
+        function onStorageUpdate() {
+            const isLoading = localStorage.getItem(`updateCurationIsLoading`) === 'true';
+            if (isLoading) {
+                window.onbeforeunload = () => {
+                    return '';
+                };
+            } else {
+                window.onbeforeunload = null;
+            }
+            setCurationIsLoading(isLoading);
+        }
+        window.addEventListener('storage', onStorageUpdate);
+        return () => {
+            window.removeEventListener('storage', onStorageUpdate);
+        };
+    }, []);
 
     return (
-        <StateHandlerComponent isError={isError} isLoading={isLoading}>
+        <StateHandlerComponent isError={false} isLoading={false}>
             <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <Box
                     sx={{
@@ -49,13 +77,13 @@ const CurationPage: React.FC = (props) => {
                                 sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
                                 underline="hover"
                             >
-                                {data?.name || ''}
+                                {projectName || ''}
                             </Link>
                             <Typography color="secondary" sx={{ fontSize: '1.5rem' }}>
                                 Curation
                             </Typography>
                         </Breadcrumbs>
-                        {isFetching + isMutating > 0 && (
+                        {curationIsLoading && (
                             <Box sx={{ marginLeft: '2rem', display: 'flex' }}>
                                 <Typography sx={{ color: 'muted.main', fontSize: '1.5rem' }}>
                                     updating...

@@ -11,30 +11,31 @@ import ReactFlow from 'reactflow';
 import 'reactflow/dist/style.css';
 import NeurosynthNode from './NeurosynthNode';
 import { INeurosynthProject } from 'hooks/requests/useGetProjects';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
-import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import NeurosynthPRISMAHelper, { IPrismaGroup } from './PrismaHelpers';
+import {
+    useProjectCurationColumns,
+    useProjectCurationIsPrisma,
+    useProjectProvenance,
+} from 'pages/Projects/ProjectPage/ProjectStore';
 
 const nodeTypes = { NeurosynthNode: NeurosynthNode };
 
 const PrismaComponent: React.FC<{ prisma?: INeurosynthProject }> = (props) => {
-    const { projectId }: { projectId: string } = useParams();
-    const { data: project } = useGetProjectById(projectId);
     const [height, setHeight] = useState(700);
     const [prisma, setPrisma] = useState<IPrismaGroup>({
         nodes: [],
         edges: [],
     });
 
+    const columns = useProjectCurationColumns();
+    const isPrisma = useProjectCurationIsPrisma();
+    const provenance = useProjectProvenance();
+
     useEffect(() => {
-        if (
-            project?.provenance?.curationMetadata?.columns?.length &&
-            project.provenance.curationMetadata.prismaConfig.isPrisma
-        ) {
+        if (columns.length && isPrisma) {
             const prismaHelper = new NeurosynthPRISMAHelper();
-            console.log(project);
-            const convertedProjectToPrisma = prismaHelper.convertProjectToPRISMA(project);
+            const convertedProjectToPrisma = prismaHelper.convertProjectToPRISMA(provenance);
             const prismaNodes = prismaHelper.buildPRISMA(convertedProjectToPrisma);
             setPrisma(prismaNodes);
             const includedGroupNode = prismaNodes.nodes.find(
@@ -46,7 +47,7 @@ const PrismaComponent: React.FC<{ prisma?: INeurosynthProject }> = (props) => {
                 );
             }
         }
-    }, [project]);
+    }, [columns, provenance, isPrisma]);
 
     return (
         <Box

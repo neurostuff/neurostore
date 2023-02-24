@@ -9,18 +9,19 @@ import {
 } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 import PubMedImportStudySummary from 'components/Dialogs/PubMedImportDialog/PubMedImportStudySummary';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import useUpdateProject from 'hooks/requests/useUpdateProject';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { useSnackbar } from 'notistack';
 import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import { ITag } from 'hooks/requests/useGetProjects';
+import {
+    useProjectCurationColumns,
+    useUpdateCurationColumns,
+} from 'pages/Projects/ProjectPage/ProjectStore';
 
 interface IPubMedWizardDuplicateStep {
     stubs: ICurationStubStudy[];
@@ -35,24 +36,16 @@ interface IDuplicateStub {
 }
 
 const PubMedwizardDuplicateStep: React.FC<IPubMedWizardDuplicateStep> = (props) => {
-    const { projectId }: { projectId: string | undefined } = useParams();
     const { enqueueSnackbar } = useSnackbar();
-    const {
-        data,
-        isLoading: getProjectIsLoading,
-        isError: getProjectIsError,
-    } = useGetProjectById(projectId);
-    const {
-        mutate,
-        isLoading: updateProjectIsLoading,
-        isError: updateProjectIsError,
-    } = useUpdateProject();
 
     const [duplicates, setDuplicates] = useState<IDuplicateStub[]>([]);
     const [expanded, setExpanded] = useState(0);
 
+    const columns = useProjectCurationColumns();
+    const updateCurationColumns = useUpdateCurationColumns();
+
     useEffect(() => {
-        const allExistingStubs = (data?.provenance?.curationMetadata?.columns || []).reduce(
+        const allExistingStubs = (columns || []).reduce(
             (acc, curr, currIndex) => [
                 ...acc,
                 ...curr.stubStudies.map((study, studyIndex) => ({
@@ -64,96 +57,66 @@ const PubMedwizardDuplicateStep: React.FC<IPubMedWizardDuplicateStep> = (props) 
             [] as (ICurationStubStudy & { colIndex: number; studyIndex: number })[] // we need to typecast as typescript infers this type as never[]
         );
 
-        if (props.stubs.length > 0 && allExistingStubs.length > 0) {
-            const duplicates: IDuplicateStub[] = [];
+        if (props.stubs.length <= 0 || allExistingStubs.length <= 0) return;
 
-            const pmidSet = new Set(allExistingStubs.map((x) => x.pmid));
-            const doiSet = new Set(allExistingStubs.map((x) => x.doi));
+        const duplicates: IDuplicateStub[] = [];
+        const pmidHashMap = allExistingStubs.reduce((acc, curr) => {
+            acc.set(curr.pmid, curr);
+            return acc;
+        }, new Map<string, ICurationStubStudy & { colIndex: number; studyIndex: number }>());
+        const doiHashMap = allExistingStubs.reduce((acc, curr) => {
+            acc.set(curr.pmid, curr);
+            return acc;
+        }, new Map<string, ICurationStubStudy & { colIndex: number; studyIndex: number }>());
 
-            props.stubs.forEach((stub) => {
-                if (pmidSet.has(stub.pmid) || doiSet.has(stub.doi)) {
-                    const duplicatedPmid = pmidSet.has(stub.pmid);
-                    const existingStub = allExistingStubs.find((x) =>
-                        duplicatedPmid ? x.pmid === stub.pmid : x.doi === stub.doi
-                    );
-                    if (existingStub) {
-                        duplicates.push({
-                            existingStub: existingStub,
-                            newStub: stub,
-                            resolution: undefined,
-                        });
-                    }
+        props.stubs.forEach((stub) => {
+            if (pmidHashMap.has(stub.pmid) || doiHashMap.has(stub.doi)) {
+                const existingStub = pmidHashMap.get(stub.pmid) || doiHashMap.get(stub.doi);
+                if (existingStub) {
+                    duplicates.push({
+                        existingStub: existingStub,
+                        newStub: stub,
+                        resolution: undefined,
+                    });
                 }
-            });
-
-            setDuplicates(duplicates);
-        }
-    }, [data, props.stubs]);
+            }
+        });
+        setDuplicates(duplicates);
+    }, [columns, props.stubs]);
 
     // mark the duplicates and save the new stubs into the project
     const handleImport = () => {
-        if (
-            projectId &&
-            data?.provenance?.curationMetadata?.infoTags &&
-            data?.provenance?.curationMetadata?.infoTags.length > 0 &&
-            data?.provenance?.curationMetadata?.columns &&
-            data?.provenance?.curationMetadata?.columns.length > 0 &&
-            data?.provenance?.curationMetadata?.columns.every((col) => !!col.stubStudies)
-        ) {
-            let duplicateTag: ITag | undefined;
-            if (data?.provenance?.curationMetadata?.prismaConfig?.isPrisma) {
-                duplicateTag =
-                    data.provenance.curationMetadata.prismaConfig.identification.exclusionTags.find(
-                        (x) => x.id === ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID
-                    );
-            } else {
-                duplicateTag = data.provenance.curationMetadata.exclusionTags.find(
-                    (x) => x.id === ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID
-                );
+        const duplicateTag: ITag = {
+            id: ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID,
+            label: 'Duplicate',
+            isAssignable: true,
+            isExclusionTag: true,
+        };
+
+        const newStubsToAdd = [...props.stubs];
+        const updatedCurationColumns = [...columns];
+
+        duplicates.forEach((duplicate) => {
+            if (duplicate.resolution === 'existingStub') {
+                updatedCurationColumns[duplicate.existingStub.colIndex].stubStudies[
+                    duplicate.existingStub.studyIndex
+                ].exclusionTag = duplicateTag as ITag;
+            } else if (duplicate.resolution === 'newStub') {
+                const stub = newStubsToAdd.find((stub) => stub.id === duplicate.newStub.id);
+                if (!stub) return;
+                stub.exclusionTag = duplicateTag as ITag;
             }
-            if (!duplicateTag) return;
+        });
 
-            const newStubsToAdd = [...props.stubs];
-            const updatedProvenanceColumns = [...data.provenance.curationMetadata.columns];
+        updatedCurationColumns[0].stubStudies = [
+            ...newStubsToAdd,
+            ...updatedCurationColumns[0].stubStudies,
+        ];
 
-            duplicates.forEach((duplicate) => {
-                if (duplicate.resolution === 'existingStub') {
-                    updatedProvenanceColumns[duplicate.existingStub.colIndex].stubStudies[
-                        duplicate.existingStub.studyIndex
-                    ].exclusionTag = duplicateTag as ITag;
-                } else if (duplicate.resolution === 'newStub') {
-                    const stub = newStubsToAdd.find((stub) => stub.id === duplicate.newStub.id);
-                    if (!stub) return;
-                    stub.exclusionTag = duplicateTag as ITag;
-                }
-            });
+        updateCurationColumns(updatedCurationColumns);
 
-            updatedProvenanceColumns[0].stubStudies = [
-                ...newStubsToAdd,
-                ...updatedProvenanceColumns[0].stubStudies,
-            ];
-
-            mutate(
-                {
-                    projectId: projectId,
-                    project: {
-                        provenance: {
-                            ...data.provenance,
-                            curationMetadata: {
-                                ...data.provenance.curationMetadata,
-                                columns: updatedProvenanceColumns,
-                            },
-                        },
-                    },
-                },
-                {
-                    onSuccess: () => {
-                        enqueueSnackbar('imported studies successfully', { variant: 'success' });
-                        props.onCompleteImport();
-                    },
-                }
-            );
-        }
+        enqueueSnackbar('imported studies successfully', { variant: 'success' });
+        props.onCompleteImport();
     };
 
     const handleMarkDuplicate = (
@@ -194,7 +157,6 @@ const PubMedwizardDuplicateStep: React.FC<IPubMedWizardDuplicateStep> = (props) 
                         variant="contained"
                         text="complete import"
                         onClick={handleImport}
-                        isLoading={updateProjectIsLoading}
                     />
                 </Box>
             </Box>
@@ -303,7 +265,6 @@ const PubMedwizardDuplicateStep: React.FC<IPubMedWizardDuplicateStep> = (props) 
                     variant="contained"
                     text="complete import"
                     loaderColor="secondary"
-                    isLoading={updateProjectIsLoading}
                     disabled={!canContinue}
                     onClick={handleImport}
                 />

@@ -5,6 +5,7 @@ import NavDrawer from './NavDrawer/NavDrawer';
 import NavbarStyles from './Navbar.styles';
 import useCreateProject from 'hooks/requests/useCreateProject';
 import { useHistory } from 'react-router-dom';
+import { EPropertyType } from 'components/EditMetadata';
 
 export interface INav {
     onLogin: () => Promise<void>;
@@ -27,7 +28,44 @@ const Navbar: React.FC = (_props) => {
 
     const handleCreateProject = (name: string, description: string) => {
         mutate(
-            { name, description },
+            {
+                name,
+                description,
+                provenance: {
+                    curationMetadata: {
+                        columns: [],
+                        prismaConfig: {
+                            isPrisma: false,
+                            identification: {
+                                exclusionTags: [],
+                            },
+                            screening: {
+                                exclusionTags: [],
+                            },
+                            eligibility: {
+                                exclusionTags: [],
+                            },
+                        },
+                        infoTags: [],
+                        exclusionTags: [],
+                        identificationSources: [],
+                    },
+                    extractionMetadata: {
+                        studysetId: null,
+                        annotationId: null,
+                        studyStatusList: [],
+                    },
+                    filtrationMetadata: {
+                        filter: {
+                            filtrationKey: null,
+                            type: EPropertyType.NONE,
+                        },
+                    },
+                    algorithmMetadata: {
+                        specificationId: null,
+                    },
+                },
+            },
             {
                 onSuccess: (arg) => {
                     history.push(`/projects/${arg.data.id || ''}`);

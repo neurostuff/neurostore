@@ -1,5 +1,5 @@
+import { useProjectCurationColumns } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useEffect, useState } from 'react';
-import useGetProjectById from './requests/useGetProjectById';
 
 export interface ICurationSummary {
     total: number;
@@ -8,8 +8,8 @@ export interface ICurationSummary {
     excluded: number;
 }
 
-const useGetCurationSummary = (projectId: string) => {
-    const { data: project } = useGetProjectById(projectId);
+const useGetCurationSummary = () => {
+    const columns = useProjectCurationColumns();
 
     const [curationSummary, setCurationSummary] = useState<ICurationSummary>({
         total: 0,
@@ -20,24 +20,17 @@ const useGetCurationSummary = (projectId: string) => {
 
     useEffect(() => {
         setCurationSummary((prev) => {
-            if (
-                !projectId ||
-                !project?.provenance?.curationMetadata?.columns ||
-                project.provenance.curationMetadata.columns.length <= 0
-            ) {
-                return prev;
-            }
-
-            const curationMetadata = project.provenance.curationMetadata;
-            const numTotalStudies = curationMetadata.columns.reduce(
+            const numTotalStudies = (columns || []).reduce(
                 (acc, curr) => acc + curr.stubStudies.length,
                 0
             );
 
             // all included studies are in the last column
-            const numIncludedStudes =
-                curationMetadata.columns[curationMetadata.columns.length - 1].stubStudies.length;
-            const numExcludedStudies = curationMetadata.columns.reduce(
+            const includedStudiesCol = columns[columns.length - 1];
+            const numIncludedStudes = !includedStudiesCol
+                ? 0
+                : includedStudiesCol.stubStudies.length;
+            const numExcludedStudies = columns.reduce(
                 (acc, curr) =>
                     acc + curr.stubStudies.filter((study) => !!study.exclusionTag).length,
                 0
@@ -52,7 +45,7 @@ const useGetCurationSummary = (projectId: string) => {
                 excluded: numExcludedStudies,
             };
         });
-    }, [project, projectId, setCurationSummary]);
+    }, [columns]);
 
     return { ...curationSummary };
 };

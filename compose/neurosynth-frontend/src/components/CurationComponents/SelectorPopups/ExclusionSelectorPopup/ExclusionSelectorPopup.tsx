@@ -2,20 +2,19 @@ import { Box, Button, ButtonGroup, TextField } from '@mui/material';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
-import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
-import { indexToPRISMAMapping, INeurosynthProject, ITag } from 'hooks/requests/useGetProjects';
-import useUpdateProject from 'hooks/requests/useUpdateProject';
+import { indexToPRISMAMapping, ITag } from 'hooks/requests/useGetProjects';
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import ErrorIcon from '@mui/icons-material/Error';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
-import { useQueryClient } from 'react-query';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import {
+    useCreateNewExclusion,
+    useProjectCurationExclusionTags,
+    useProjectCurationPrismaConfig,
+} from 'pages/Projects/ProjectPage/ProjectStore';
 
 interface IExclusionSelectorPopup {
     onAddExclusion: (tag: ITag) => void;
@@ -42,143 +41,58 @@ const filterOptions = createFilterOptions<AutoSelectOption>({
 });
 
 const ExclusionSelectorPopup: React.FC<IExclusionSelectorPopup> = (props) => {
-    const { projectId }: { projectId: string | undefined } = useParams();
     const excludeButtonRef = useRef<any>(null);
-    const queryClient = useQueryClient();
-    const {
-        data,
-        isLoading: getProjectIsLoading,
-        isError: getProjectIsError,
-    } = useGetProjectById(projectId);
-    const {
-        mutate,
-        isLoading: updateProjectIsLoading,
-        isError: updateProjectIsError,
-    } = useUpdateProject();
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(null);
     const [exclusions, setExclusions] = useState<AutoSelectOption[]>([]);
     const [defaultExclusion, setDefaultExclusion] = useState<AutoSelectOption>();
 
+    const prismaConfig = useProjectCurationPrismaConfig();
+    const genericExclusionTags = useProjectCurationExclusionTags();
+    const createExclusion = useCreateNewExclusion();
+
     useEffect(() => {
-        if (data?.provenance?.curationMetadata?.prismaConfig) {
-            if (data.provenance.curationMetadata.prismaConfig.isPrisma) {
-                const phase = indexToPRISMAMapping(props.columnIndex);
-                const filteredExclusions = phase
-                    ? data.provenance.curationMetadata.prismaConfig[phase].exclusionTags
-                    : [];
+        if (prismaConfig.isPrisma) {
+            const phase = indexToPRISMAMapping(props.columnIndex);
+            const filteredExclusions = phase ? prismaConfig[phase].exclusionTags : [];
 
-                const exclusionOptions: AutoSelectOption[] = filteredExclusions.map(
-                    (exclusion) => ({
-                        id: exclusion.id,
-                        label: exclusion.label,
-                        addOptionActualLabel: null,
-                    })
-                );
-                setExclusions(exclusionOptions);
+            const exclusionOptions: AutoSelectOption[] = filteredExclusions.map((exclusion) => ({
+                id: exclusion.id,
+                label: exclusion.label,
+                addOptionActualLabel: null,
+            }));
+            setExclusions(exclusionOptions);
 
-                // identification and screening phases only have a single exclusion
-                if (phase === 'identification') {
-                    setDefaultExclusion({
-                        id: ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID,
-                        label: 'Duplicate',
-                        addOptionActualLabel: null,
-                    });
-                } else if (phase === 'screening') {
-                    setDefaultExclusion({
-                        id: ENeurosynthTagIds.IRRELEVANT_EXCLUSION_ID,
-                        label: 'Irrelevant',
-                        addOptionActualLabel: null,
-                    });
-                }
-            } else {
-                setExclusions(data.provenance.curationMetadata.exclusionTags);
+            // identification and screening phases only have a single exclusion
+            if (phase === 'identification') {
+                setDefaultExclusion({
+                    id: ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID,
+                    label: 'Duplicate',
+                    addOptionActualLabel: null,
+                });
+            } else if (phase === 'screening') {
+                setDefaultExclusion({
+                    id: ENeurosynthTagIds.IRRELEVANT_EXCLUSION_ID,
+                    label: 'Irrelevant',
+                    addOptionActualLabel: null,
+                });
             }
+        } else {
+            setExclusions(genericExclusionTags);
         }
-    }, [
-        data?.provenance?.curationMetadata?.prismaConfig,
-        data?.provenance?.curationMetadata?.exclusionTags,
-        props.columnIndex,
-    ]);
+    }, [prismaConfig, genericExclusionTags, props.columnIndex]);
 
     const handleCreateExclusion = (exclusionName: string) => {
-        if (
-            projectId &&
-            data?.provenance?.curationMetadata?.prismaConfig &&
-            data?.provenance?.curationMetadata?.exclusionTags
-        ) {
-            let project: INeurosynthProject;
-            let newExclusion: ITag;
-            const phase = indexToPRISMAMapping(props.columnIndex);
-            if (data.provenance.curationMetadata.prismaConfig.isPrisma && phase) {
-                const prevExclusions = phase
-                    ? data.provenance.curationMetadata.prismaConfig[phase].exclusionTags
-                    : [];
-                newExclusion = {
-                    id: uuidv4(),
-                    label: exclusionName,
-                    isExclusionTag: true,
-                    isAssignable: true,
-                };
-                const updatedExclusions = [newExclusion, ...prevExclusions];
+        const phase = indexToPRISMAMapping(props.columnIndex);
+        const newExclusion = {
+            id: uuidv4(),
+            label: exclusionName,
+            isExclusionTag: true,
+            isAssignable: true,
+        };
 
-                project = {
-                    provenance: {
-                        ...data.provenance,
-                        curationMetadata: {
-                            ...data.provenance.curationMetadata,
-                            prismaConfig: {
-                                ...data.provenance.curationMetadata.prismaConfig,
-                                [phase]: {
-                                    ...data.provenance.curationMetadata.prismaConfig[phase],
-                                    exclusionTags: updatedExclusions,
-                                },
-                            },
-                        },
-                    },
-                };
-            } else {
-                const prevExclusions = data.provenance.curationMetadata.exclusionTags;
-                newExclusion = {
-                    id: uuidv4(),
-                    label: exclusionName,
-                    isExclusionTag: true,
-                    isAssignable: true,
-                };
-                const updatedExclusions = [newExclusion, ...prevExclusions];
+        createExclusion(newExclusion, phase);
 
-                project = {
-                    provenance: {
-                        ...data.provenance,
-                        curationMetadata: {
-                            ...data.provenance.curationMetadata,
-                            exclusionTags: updatedExclusions,
-                        },
-                    },
-                };
-            }
-
-            mutate(
-                {
-                    projectId,
-                    project: project,
-                },
-                {
-                    onSuccess: (res) => {
-                        if (res && res.status >= 200 && res.status < 300) {
-                            queryClient.setQueryData(['projects', res.data.id], res);
-                            if (props.onCreateExclusion) {
-                                props.onCreateExclusion(newExclusion);
-                                setSelectedValue({
-                                    id: newExclusion.id,
-                                    label: newExclusion.label,
-                                    addOptionActualLabel: null,
-                                });
-                            }
-                        }
-                    },
-                }
-            );
-        }
+        if (props.onCreateExclusion) props.onCreateExclusion(newExclusion);
     };
 
     const handleChange = (
@@ -229,9 +143,6 @@ const ExclusionSelectorPopup: React.FC<IExclusionSelectorPopup> = (props) => {
         });
     };
 
-    const isLoading = getProjectIsLoading || updateProjectIsLoading || props.isLoading;
-    const isError = getProjectIsError || updateProjectIsError;
-
     return (
         <>
             <NeurosynthPopper
@@ -265,25 +176,7 @@ const ExclusionSelectorPopup: React.FC<IExclusionSelectorPopup> = (props) => {
                         renderInput={(params) => (
                             <TextField
                                 {...params}
-                                error={isError}
                                 placeholder="start typing to create exclusion"
-                                InputProps={{
-                                    ...params.InputProps,
-                                    endAdornment: (
-                                        <>
-                                            {isError && (
-                                                <Box sx={{ color: 'error.main', display: 'flex' }}>
-                                                    There was an error
-                                                    <ErrorIcon sx={{ marginLeft: '5px' }} />
-                                                </Box>
-                                            )}
-                                            {isLoading && <ProgressLoader size={20} />}
-                                            {!isError &&
-                                                !isLoading &&
-                                                params.InputProps.endAdornment}
-                                        </>
-                                    ),
-                                }}
                                 label="select exclusion reason"
                             />
                         )}

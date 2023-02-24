@@ -12,7 +12,7 @@ export interface IExtractionSummary {
 const useGetExtractionSummary = (projectId: string) => {
     const { data: project } = useGetProjectById(projectId);
     const { data: studyset } = useGetStudysetById(
-        project?.provenance?.extractionMetadata?.studysetId
+        project?.provenance?.extractionMetadata?.studysetId || undefined
     );
     const [extractionSummary, setExtractionSummary] = useState<IExtractionSummary>({
         savedForLater: 0,

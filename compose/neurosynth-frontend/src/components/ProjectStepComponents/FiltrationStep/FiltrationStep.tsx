@@ -10,24 +10,23 @@ import {
     CardActions,
     Button,
 } from '@mui/material';
-import { useHistory, useParams } from 'react-router-dom';
-import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
-import { IFiltrationMetadata } from 'hooks/requests/useGetProjects';
 import { useState } from 'react';
 import FiltrationDialog from 'components/Dialogs/FiltrationDialog/FiltrationDialog';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { EPropertyType } from 'components/EditMetadata';
+import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
+import { useProjectFiltrationMetadata } from 'pages/Projects/ProjectPage/ProjectStore';
 
 interface IFiltrationStep {
-    filtrationMetadata: IFiltrationMetadata | undefined;
+    filtrationStepHasBeenInitialized: boolean;
     disabled: boolean;
 }
 
 const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
     const [filtrationDialogIsOpen, setFiltrationDialogIsOpen] = useState(false);
-    const { filtrationMetadata, disabled, ...stepProps } = props;
+    const { filtrationStepHasBeenInitialized, disabled, ...stepProps } = props;
 
-    const filterExists = !!filtrationMetadata;
+    const filter = useProjectFiltrationMetadata().filter;
 
     return (
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
@@ -53,7 +52,7 @@ const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
                         onCloseDialog={() => setFiltrationDialogIsOpen(false)}
                     />
                     <Box sx={{ marginTop: '1rem' }}>
-                        {filterExists ? (
+                        {filtrationStepHasBeenInitialized ? (
                             <Box sx={[ProjectStepComponentsStyles.stepCard]}>
                                 <Card sx={{ width: '100%', height: '100%' }}>
                                     <CardContent>
@@ -70,12 +69,11 @@ const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
                                                 sx={{
                                                     fontWeight: 'bold',
                                                     color: NeurosynthTableStyles[
-                                                        filtrationMetadata?.filter?.type ||
-                                                            EPropertyType.NONE
+                                                        filter.type || EPropertyType.NONE
                                                     ],
                                                 }}
                                             >
-                                                {filtrationMetadata?.filter?.filtrationKey}
+                                                {filter.filtrationKey || ''}
                                             </Typography>
                                         </Box>
                                     </CardContent>

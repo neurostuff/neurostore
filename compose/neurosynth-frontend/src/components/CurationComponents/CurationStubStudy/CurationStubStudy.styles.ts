@@ -2,14 +2,19 @@ import { Style } from 'index';
 
 const CurationStubStudyStyles: Style = {
     stubStudyContainer: {
+        display: 'flex',
         padding: '10px',
         marginBottom: '10px',
+        userSelect: 'none',
+        cursor: 'pointer',
+        ':hover': {
+            backgroundColor: '#f5f5f5',
+        },
     },
     exclusionContainer: {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: '0.25rem',
     },
     limitText: {
         overflow: 'hidden',

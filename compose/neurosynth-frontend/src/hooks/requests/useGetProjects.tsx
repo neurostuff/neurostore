@@ -17,12 +17,12 @@ export interface ISource {
 }
 
 export interface IAlgorithmMetadata {
-    specificationId: string;
+    specificationId: string | undefined;
 }
 
 export interface IFiltrationMetadata {
     filter: {
-        filtrationKey: string;
+        filtrationKey: string | undefined;
         type: EPropertyType;
     };
 }
@@ -55,20 +55,20 @@ interface IStudyExtractionStatus {
 
 export interface IExtractionMetadata {
     studyStatusList: IStudyExtractionStatus[];
-    annotationId?: string;
-    studysetId: string;
+    annotationId: string | undefined;
+    studysetId: string | undefined;
 }
 
 export interface IProvenance {
-    curationMetadata?: ICurationMetadata;
-    extractionMetadata?: IExtractionMetadata;
-    filtrationMetadata?: IFiltrationMetadata;
-    algorithmMetadata?: IAlgorithmMetadata;
+    curationMetadata: ICurationMetadata;
+    extractionMetadata: IExtractionMetadata;
+    filtrationMetadata: IFiltrationMetadata;
+    algorithmMetadata: IAlgorithmMetadata;
 }
 
 // define this interface to overwrite provenance type
 export interface INeurosynthProject extends Omit<Project, 'provenance'> {
-    provenance?: IProvenance;
+    provenance: IProvenance;
 }
 
 // define this interface to overwrite provenance type
@@ -78,7 +78,7 @@ export interface INeurosynthProjectReturn extends Omit<ProjectReturn, 'provenanc
 
 export const indexToPRISMAMapping = (
     index: number
-): 'identification' | 'screening' | 'eligibility' | null => {
+): keyof Omit<IPRISMAConfig, 'isPrisma'> | undefined => {
     switch (index) {
         case 0:
             return 'identification';
@@ -87,7 +87,7 @@ export const indexToPRISMAMapping = (
         case 2:
             return 'eligibility';
         default:
-            return null;
+            return undefined;
     }
 };
 

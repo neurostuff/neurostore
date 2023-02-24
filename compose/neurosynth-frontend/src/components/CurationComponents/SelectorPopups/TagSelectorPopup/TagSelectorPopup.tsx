@@ -1,18 +1,16 @@
-import { Box, TextField } from '@mui/material';
+import { TextField } from '@mui/material';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { SystemStyleObject } from '@mui/system';
-import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { ITag } from 'hooks/requests/useGetProjects';
-import useUpdateProject from 'hooks/requests/useUpdateProject';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import ErrorIcon from '@mui/icons-material/Error';
 import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
-import { useQueryClient } from 'react-query';
+import {
+    useCreateNewCurationInfoTag,
+    useProjectCurationInfoTags,
+} from 'pages/Projects/ProjectPage/ProjectStore';
 
 interface AutoSelectOption {
     id: string;
@@ -37,81 +35,44 @@ interface ITagSelectorPopup {
 }
 
 const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
-    const { projectId }: { projectId: string | undefined } = useParams();
-    const queryClient = useQueryClient();
-    const {
-        data,
-        isLoading: getProjectIsLoading,
-        isError: getProjectIsError,
-    } = useGetProjectById(projectId);
-    const {
-        mutate,
-        isLoading: updateProjectIsLoading,
-        isError: updateProjectIsError,
-    } = useUpdateProject();
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(null);
-    const [infoTags, setInfoTags] = useState<AutoSelectOption[]>([]);
+    const [tagOption, setTagOptions] = useState<AutoSelectOption[]>([]);
+
+    const infoTags = useProjectCurationInfoTags();
+    const createNewInfoTag = useCreateNewCurationInfoTag();
 
     useEffect(() => {
-        if (data?.provenance?.curationMetadata?.infoTags) {
-            const filteredTags = data.provenance.curationMetadata.infoTags.filter(
+        const filteredTagOptions = infoTags
+            .filter(
                 (x) =>
                     x.id !== ENeurosynthTagIds.UNTAGGED_TAG_ID &&
                     x.id !== ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID &&
                     x.id !== ENeurosynthTagIds.UNCATEGORIZED_ID
-            );
-
-            const tagOptions: AutoSelectOption[] = filteredTags.map((tag) => ({
+            )
+            .map((tag) => ({
                 id: tag.id,
                 label: tag.label,
                 addOptionActualLabel: null,
             }));
 
-            setInfoTags(tagOptions);
-        }
-    }, [data?.provenance?.curationMetadata?.infoTags]);
+        setTagOptions(filteredTagOptions);
+    }, [infoTags]);
 
     const handleCreateTag = (tagName: string) => {
-        if (projectId && data?.provenance?.curationMetadata?.infoTags) {
-            const prevTags = data.provenance.curationMetadata.infoTags;
-            const newTag: ITag = {
-                id: uuidv4(),
-                label: tagName,
-                isExclusionTag: false,
-                isAssignable: true,
-            };
-            const updatedTags = [newTag, ...prevTags];
+        const newTag: ITag = {
+            id: uuidv4(),
+            label: tagName,
+            isExclusionTag: false,
+            isAssignable: true,
+        };
 
-            mutate(
-                {
-                    projectId,
-                    project: {
-                        provenance: {
-                            ...data.provenance,
-                            curationMetadata: {
-                                ...data.provenance.curationMetadata,
-                                infoTags: updatedTags,
-                            },
-                        },
-                    },
-                },
-                {
-                    onSuccess: (res) => {
-                        if (res && res.status >= 200 && res.status < 300) {
-                            queryClient.setQueryData(['projects', res.data.id], res);
-                            if (props.onCreateTag) {
-                                props.onCreateTag(newTag);
-                                setSelectedValue({
-                                    id: newTag.id,
-                                    label: newTag.label,
-                                    addOptionActualLabel: null,
-                                });
-                            }
-                        }
-                    },
-                }
-            );
-        }
+        createNewInfoTag(newTag);
+        setSelectedValue({
+            id: newTag.id,
+            label: newTag.label,
+            addOptionActualLabel: null,
+        });
+        if (props.onCreateTag) props.onCreateTag(newTag);
     };
 
     const handleChange = (
@@ -120,7 +81,7 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
     ) => {
         // if user hits enter after typing input, we get a string and handle it here
         if (typeof newValue === 'string') {
-            const foundValue = infoTags.find(
+            const foundValue = tagOption.find(
                 (tag) => tag.label.toLocaleLowerCase() === newValue.toLocaleLowerCase()
             );
             if (foundValue) {
@@ -151,14 +112,14 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
         }
     };
 
-    const isLoading = getProjectIsLoading || updateProjectIsLoading || props.isLoading;
-    const isError = getProjectIsError || updateProjectIsError;
+    // const isLoading = getProjectIsLoading || updateProjectIsLoading || props.isLoading;
+    // const isError = getProjectIsError || updateProjectIsError;
 
     return (
         <Autocomplete
             sx={props.sx || { width: '250px' }}
             value={selectedValue || null}
-            options={infoTags}
+            options={tagOption}
             freeSolo
             isOptionEqualToValue={(option, value) => {
                 if (value.addOptionActualLabel === null) {
@@ -177,24 +138,8 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
             renderInput={(params) => (
                 <TextField
                     {...params}
-                    error={isError}
                     size={props.size}
                     placeholder="start typing to create a tag"
-                    InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                            <>
-                                {isError && (
-                                    <Box sx={{ color: 'error.main', display: 'flex' }}>
-                                        There was an error
-                                        <ErrorIcon sx={{ marginLeft: '5px' }} />
-                                    </Box>
-                                )}
-                                {isLoading && <ProgressLoader size={20} />}
-                                {!isError && !isLoading && params.InputProps.endAdornment}
-                            </>
-                        ),
-                    }}
                     label={props.label || 'select tag'}
                 />
             )}

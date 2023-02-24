@@ -4,25 +4,13 @@ import IdentificationSourcePopup from 'components/CurationComponents/SelectorPop
 import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import CreateStubStudyDialogStyles from 'components/Dialogs/CreateStubStudyDialog/CreateStubStudyDialog.styles';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { ISource, ITag } from 'hooks/requests/useGetProjects';
-import useUpdateProject from 'hooks/requests/useUpdateProject';
-import React, { ChangeEvent, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useAddNewCurationStubs } from 'pages/Projects/ProjectPage/ProjectStore';
+import React, { ChangeEvent, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
-    const { projectId }: { projectId: string } = useParams();
-    const {
-        data: project,
-        isLoading: getProjectIsLoading,
-        isError: getProjectIsError,
-    } = useGetProjectById(projectId);
-    const {
-        mutate: updateProject,
-        isLoading: updateProjectIsLoading,
-        isError: updateProjectIsError,
-    } = useUpdateProject();
+    const addNewStubs = useAddNewCurationStubs();
 
     const [formFieldTouched, setFormFieldTouched] = useState({
         name: false,
@@ -94,51 +82,27 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
     };
 
     const handleCreateStudy = () => {
-        if (
-            form.identificationSource &&
-            project?.provenance?.curationMetadata?.columns[0]?.stubStudies
-        ) {
-            const updatedCurationMetadata = { ...project.provenance.curationMetadata };
-            const updatedColumn = { ...project.provenance.curationMetadata.columns[0] };
+        if (!form.identificationSource) return;
 
-            updatedColumn.stubStudies = [
-                {
-                    id: uuidv4(),
-                    title: form.name,
-                    authors: form.authors,
-                    keywords: form.keywords,
-                    pmid: form.pmid,
-                    doi: form.doi,
-                    journal: form.journal,
-                    articleYear: form.articleYear,
-                    abstractText: form.abstract,
-                    articleLink: form.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${form.pmid}` : '',
-                    exclusionTag: null,
-                    tags: [...form.tags],
-                    identificationSource: form.identificationSource as ISource,
-                },
-                ...updatedColumn.stubStudies,
-            ];
+        addNewStubs([
+            {
+                id: uuidv4(),
+                title: form.name,
+                authors: form.authors,
+                keywords: form.keywords,
+                pmid: form.pmid,
+                doi: form.doi,
+                journal: form.journal,
+                articleYear: form.articleYear,
+                abstractText: form.abstract,
+                articleLink: form.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${form.pmid}` : '',
+                exclusionTag: null,
+                tags: [...form.tags],
+                identificationSource: form.identificationSource as ISource,
+            },
+        ]);
 
-            updatedCurationMetadata.columns[0] = updatedColumn;
-
-            updateProject(
-                {
-                    projectId: projectId,
-                    project: {
-                        provenance: {
-                            ...project.provenance,
-                            curationMetadata: updatedCurationMetadata,
-                        },
-                    },
-                },
-                {
-                    onSuccess: () => {
-                        handleCloseDialog();
-                    },
-                }
-            );
-        }
+        handleCloseDialog();
     };
 
     const handleCloseDialog = () => {
@@ -302,7 +266,6 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
                     </Button>
                     <LoadingButton
                         sx={{ width: '85px' }}
-                        isLoading={updateProjectIsLoading}
                         disabled={disableCreateButton}
                         variant="contained"
                         onClick={handleCreateStudy}

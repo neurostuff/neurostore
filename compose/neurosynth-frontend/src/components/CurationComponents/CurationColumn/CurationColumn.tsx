@@ -16,12 +16,16 @@ import CurationStubStudy, {
     ICurationStubStudy,
 } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
 import CurationColumnStyles from './CurationColumn.styles';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
-import { useParams } from 'react-router-dom';
 import CurationDialog from 'components/Dialogs/CurationDialog/CurationDialog';
 import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionDialog';
 import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import useGetCurationSummary from 'hooks/useGetCurationSummary';
+import {
+    useProjectCurationColumns,
+    useProjectCurationExclusionTags,
+    useProjectCurationInfoTags,
+    useProjectCurationPrismaConfig,
+} from 'pages/Projects/ProjectPage/ProjectStore';
 
 export interface ICurationColumn {
     name: string;
@@ -47,79 +51,74 @@ const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined):
 
 const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (props) => {
     const [selectedTag, setSelectedTag] = useState<ITag>();
-    const { projectId }: { projectId: string } = useParams();
-    const curationSummary = useGetCurationSummary(projectId);
-    const { data } = useGetProjectById(projectId);
+    const curationSummary = useGetCurationSummary();
     const [lastColExtractionDialogIsOpen, setLastColExtractionDialogIsOpen] = useState(false);
     const [filteredStudies, setFilteredStudies] = useState<ICurationStubStudy[]>(props.stubStudies);
     const [tags, setTags] = useState<ITag[]>([]);
     const [dialogState, setDialogState] = useState<{
         isOpen: boolean;
         stubId: string | undefined;
+        stubIndex: number;
     }>({
         isOpen: false,
         stubId: undefined,
+        stubIndex: 0,
     });
 
+    const prismaConfig = useProjectCurationPrismaConfig();
+    const infoTags = useProjectCurationInfoTags();
+    const exclusionTags = useProjectCurationExclusionTags();
+
+    const curationColumns = useProjectCurationColumns();
+    const canMoveToExtractionPhase =
+        curationColumns.length === props.columnIndex + 1 && // we are at the last column
+        props.stubStudies.length > 0 && // there are stubs within this column
+        curationSummary.uncategorized === 0; // there are no uncategorized studies in this project
+
     useEffect(() => {
-        if (data?.provenance?.curationMetadata?.prismaConfig) {
-            if (data?.provenance?.curationMetadata?.prismaConfig?.isPrisma) {
-                const infoTags = data.provenance.curationMetadata.infoTags;
-                const phase = indexToPRISMAMapping(props.columnIndex);
-                const exclusionTagsForThisColumn = phase
-                    ? data.provenance.curationMetadata.prismaConfig[phase]?.exclusionTags
-                    : [];
-                setTags(
-                    [...infoTags, ...exclusionTagsForThisColumn].sort((a, b) => {
-                        if (a.isExclusionTag && b.isExclusionTag) {
-                            return a.label.localeCompare(b.label);
-                        } else if (!a.isExclusionTag && !b.isExclusionTag) {
-                            return +a.isAssignable - +b.isAssignable;
-                        } else {
-                            return +b.isExclusionTag - +a.isExclusionTag;
-                        }
-                    })
-                );
-            } else {
-                setTags(
-                    [
-                        ...data.provenance.curationMetadata.infoTags,
-                        ...data.provenance.curationMetadata.exclusionTags,
-                    ].sort((a, b) => {
-                        if (a.isExclusionTag && b.isExclusionTag) {
-                            return a.label.localeCompare(b.label);
-                        } else if (!a.isExclusionTag && !b.isExclusionTag) {
-                            return +a.isAssignable - +b.isAssignable;
-                        } else {
-                            return +b.isExclusionTag - +a.isExclusionTag;
-                        }
-                    })
-                );
-            }
+        if (prismaConfig.isPrisma) {
+            const phase = indexToPRISMAMapping(props.columnIndex);
+            const exclusionTagsForThisColumn = phase ? prismaConfig[phase]?.exclusionTags : [];
+            setTags(
+                [...infoTags, ...exclusionTagsForThisColumn].sort((a, b) => {
+                    if (a.isExclusionTag && b.isExclusionTag) {
+                        return a.label.localeCompare(b.label);
+                    } else if (!a.isExclusionTag && !b.isExclusionTag) {
+                        return +a.isAssignable - +b.isAssignable;
+                    } else {
+                        return +b.isExclusionTag - +a.isExclusionTag;
+                    }
+                })
+            );
+        } else {
+            setTags(
+                [...infoTags, ...exclusionTags].sort((a, b) => {
+                    if (a.isExclusionTag && b.isExclusionTag) {
+                        return a.label.localeCompare(b.label);
+                    } else if (!a.isExclusionTag && !b.isExclusionTag) {
+                        return +a.isAssignable - +b.isAssignable;
+                    } else {
+                        return +b.isExclusionTag - +a.isExclusionTag;
+                    }
+                })
+            );
         }
-    }, [
-        data?.provenance.curationMetadata?.exclusionTags,
-        data?.provenance.curationMetadata?.infoTags,
-        data?.provenance.curationMetadata?.prismaConfig,
-        props.columnIndex,
-    ]);
+    }, [exclusionTags, infoTags, prismaConfig, props.columnIndex]);
 
     useEffect(() => {
         setFilteredStudies(props.stubStudies.filter((stub) => getVisibility(stub, selectedTag)));
     }, [props.stubStudies, selectedTag]);
 
     const handleSelectStub = (stubId: string) => {
+        const foundIndex = filteredStudies.findIndex((stub) => stub.id === stubId);
+        if (foundIndex < 0) return;
+
         setDialogState({
             isOpen: true,
             stubId,
+            stubIndex: foundIndex,
         });
     };
-
-    const isLastColumn =
-        (data?.provenance.curationMetadata?.columns || []).length <= props.columnIndex + 1;
-
-    const showCreateStudysetButton =
-        isLastColumn && props.stubStudies.length > 0 && curationSummary.uncategorized === 0;
 
     return (
         <Box sx={CurationColumnStyles.columnContainer}>
@@ -127,6 +126,7 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
                 selectedFilter={selectedTag?.label || ''}
                 onSetSelectedStub={handleSelectStub}
                 selectedStubId={dialogState.stubId}
+                selectedStubIndex={dialogState.stubIndex}
                 columnIndex={props.columnIndex}
                 stubs={filteredStudies}
                 isOpen={dialogState.isOpen}
@@ -137,7 +137,7 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
                 disableElevation
                 onClick={() => {
                     const stubId = filteredStudies.length > 0 ? filteredStudies[0].id : undefined;
-                    setDialogState({ stubId: stubId, isOpen: true });
+                    setDialogState({ stubId: stubId, isOpen: true, stubIndex: 0 });
                 }}
                 sx={{
                     padding: '8px',
@@ -147,7 +147,7 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
                 {props.name} ({filteredStudies.length} of {props.stubStudies.length})
             </Button>
 
-            {showCreateStudysetButton && (
+            {canMoveToExtractionPhase && (
                 <>
                     <MoveToExtractionDialog
                         onCloseDialog={() => setLastColExtractionDialogIsOpen(false)}
@@ -182,7 +182,7 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
                         return option.isExclusionTag
                             ? 'Exclusion Tags'
                             : option.isAssignable
-                            ? 'General Tags'
+                            ? 'Your Tags'
                             : 'Default Tags';
                     }}
                     renderInput={(params) => <TextField {...params} label="filter" />}
@@ -202,7 +202,7 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
                     <Box
                         ref={provided.innerRef}
                         {...provided.droppableProps}
-                        sx={{ overflowY: 'auto', flexGrow: 1 }}
+                        sx={{ overflowY: 'auto', flexGrow: 1, overflowX: 'hidden' }}
                     >
                         {props.stubStudies.length === 0 && (
                             <Typography sx={{ marginBottom: '0.5rem' }} color="warning.dark">

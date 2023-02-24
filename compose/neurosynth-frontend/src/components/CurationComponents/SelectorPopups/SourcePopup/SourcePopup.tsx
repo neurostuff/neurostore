@@ -1,16 +1,16 @@
-import { Box, TextField } from '@mui/material';
+import { TextField } from '@mui/material';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { SystemStyleObject } from '@mui/system';
-import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { ISource } from 'hooks/requests/useGetProjects';
-import useUpdateProject from 'hooks/requests/useUpdateProject';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import ErrorIcon from '@mui/icons-material/Error';
+import {
+    useCreateCurationSource,
+    useProjectCurationSources,
+} from 'pages/Projects/ProjectPage/ProjectStore';
 
 interface AutoSelectOption {
     id: string;
@@ -38,16 +38,6 @@ interface ISourceSelectorPopup {
 
 const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
-    const {
-        data,
-        isLoading: getProjectIsLoading,
-        isError: getProjectIsError,
-    } = useGetProjectById(projectId);
-    const {
-        mutate,
-        isLoading: updateProjectIsLoading,
-        isError: updateProjectIsError,
-    } = useUpdateProject();
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(
         props.initialValue || null
     );
@@ -56,7 +46,8 @@ const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
         setSelectedValue(props.initialValue || null);
     }, [props.initialValue]);
 
-    const sources = data?.provenance?.curationMetadata?.identificationSources || [];
+    const sources = useProjectCurationSources();
+    const createNewSource = useCreateCurationSource();
 
     const sourceOptions: AutoSelectOption[] = sources.map((source) => ({
         id: source.id,
@@ -65,37 +56,21 @@ const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
     }));
 
     const handleCreateSource = (sourceName: string) => {
-        if (projectId && data?.provenance?.curationMetadata?.identificationSources) {
-            const prevSources = data.provenance.curationMetadata.identificationSources;
-            const newSource = { id: uuidv4(), label: sourceName };
-            const updatedSources = [newSource, ...prevSources];
+        if (projectId && sources) {
+            const newSource: ISource = {
+                id: uuidv4(),
+                label: sourceName,
+            };
 
-            mutate(
-                {
-                    projectId,
-                    project: {
-                        provenance: {
-                            ...data.provenance,
-                            curationMetadata: {
-                                ...data.provenance.curationMetadata,
-                                identificationSources: updatedSources,
-                            },
-                        },
-                    },
-                },
-                {
-                    onSuccess: () => {
-                        if (props.onCreateSource) {
-                            props.onCreateSource(newSource);
-                            setSelectedValue({
-                                id: newSource.id,
-                                label: newSource.label,
-                                addOptionActualLabel: null,
-                            });
-                        }
-                    },
-                }
-            );
+            createNewSource(newSource);
+
+            setSelectedValue({
+                id: newSource.id,
+                label: newSource.label,
+                addOptionActualLabel: null,
+            });
+
+            if (props.onCreateSource) props.onCreateSource(newSource);
         }
     };
 
@@ -133,14 +108,12 @@ const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
         }
     };
 
-    const isLoading = getProjectIsLoading || updateProjectIsLoading || props.isLoading;
-    const isError = getProjectIsError || updateProjectIsError;
-
     return (
         <Autocomplete
             sx={props.sx || { width: '250px' }}
             value={selectedValue || null}
             options={sourceOptions}
+            freeSolo
             disableClearable={!!selectedValue}
             isOptionEqualToValue={(option, value) => {
                 return option?.id === value?.id;
@@ -157,22 +130,6 @@ const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
                     {...params}
                     required={props.required}
                     size={props.size}
-                    error={isError}
-                    InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                            <>
-                                {isError && (
-                                    <Box sx={{ color: 'error.main', display: 'flex' }}>
-                                        There was an error
-                                        <ErrorIcon sx={{ marginLeft: '5px' }} />
-                                    </Box>
-                                )}
-                                {isLoading && <ProgressLoader size={20} />}
-                                {!isError && !isLoading && params.InputProps.endAdornment}
-                            </>
-                        ),
-                    }}
                     label={props.label || 'select source'}
                 />
             )}

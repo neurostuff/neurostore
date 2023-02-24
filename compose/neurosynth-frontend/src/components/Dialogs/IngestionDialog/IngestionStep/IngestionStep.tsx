@@ -25,7 +25,7 @@ const IngestionStep: React.FC<{ onNext: () => void }> = (props) => {
         data: studyset,
         isLoading: getStudysetIsLoading,
         isError: getStudysetIsError,
-    } = useGetStudysetById(project?.provenance?.extractionMetadata?.studysetId, false);
+    } = useGetStudysetById(project?.provenance?.extractionMetadata?.studysetId || undefined, false);
     const { mutateAsync } = useUpdateStudyset();
     const { enqueueSnackbar } = useSnackbar();
 

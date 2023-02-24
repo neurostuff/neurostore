@@ -17,12 +17,11 @@ import {
 } from '@mui/material';
 import { useHistory, useParams } from 'react-router-dom';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
-import { IAlgorithmMetadata } from 'hooks/requests/useGetProjects';
 import { useState } from 'react';
 import AlgorithmDialog from 'components/Dialogs/AlgorithmDialog/AlgorithmDialog';
 
 interface IAlgorithmStep {
-    algorithmMetadata: IAlgorithmMetadata | undefined;
+    algorithmStepHasBeenInitialized: boolean;
     disabled: boolean;
 }
 
@@ -30,9 +29,7 @@ const FiltrationStep: React.FC<IAlgorithmStep & StepProps> = (props) => {
     const { projectId }: { projectId: string } = useParams();
     const history = useHistory();
     const [algorithmDialogIsOpen, setAlgorithmDialogIsOpen] = useState(false);
-    const { algorithmMetadata, disabled, ...stepProps } = props;
-
-    const algorithmExists = !!algorithmMetadata;
+    const { algorithmStepHasBeenInitialized, disabled, ...stepProps } = props;
 
     return (
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
@@ -60,7 +57,7 @@ const FiltrationStep: React.FC<IAlgorithmStep & StepProps> = (props) => {
                         onCloseDialog={() => setAlgorithmDialogIsOpen(false)}
                     />
                     <Box sx={{ marginTop: '1rem' }}>
-                        {algorithmExists ? (
+                        {algorithmStepHasBeenInitialized ? (
                             <Box sx={[ProjectStepComponentsStyles.stepCard]}>
                                 <Card sx={{ width: '100%', height: '100%' }}>
                                     <CardContent>

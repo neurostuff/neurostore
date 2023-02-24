@@ -1,16 +1,15 @@
 import { Box, TextField, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { useCreateAnnotation, useCreateStudyset } from 'hooks';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
 import { useSnackbar } from 'notistack';
+import { useProjectProvenance } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import BaseDialog, { IDialog } from '../BaseDialog';
 
 const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
-    const { data } = useGetProjectById(projectId);
     const { mutateAsync: createStudyset, isLoading: createStudysetIsLoading } = useCreateStudyset();
     const { mutateAsync: createAnnotation, isLoading: createAnnotationIsLoading } =
         useCreateAnnotation();
@@ -22,12 +21,14 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
         description: '',
     });
 
+    const provenance = useProjectProvenance();
+
     const handleCloseDialog = () => {
         props.onCloseDialog();
     };
 
     const handleCreateStudyset = async () => {
-        if (studysetDetails.name.length > 0 && projectId && data) {
+        if (studysetDetails.name.length > 0 && projectId) {
             try {
                 const newStudyset = await createStudyset({ ...studysetDetails });
 
@@ -54,11 +55,11 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                     projectId: projectId,
                     project: {
                         provenance: {
-                            ...data.provenance,
+                            ...provenance,
                             extractionMetadata: {
+                                ...provenance.extractionMetadata,
                                 studysetId: newStudysetId,
                                 annotationId: newAnnotationId,
-                                studyStatusList: [],
                             },
                         },
                     },

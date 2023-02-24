@@ -16,7 +16,7 @@ const IngestionCompleteStep: React.FC<{ onComplete: () => void }> = (props) => {
         data: studyset,
         isLoading: getStudysetIsLoading,
         isError: getStudysetIsError,
-    } = useGetStudysetById(project?.provenance?.extractionMetadata?.studysetId, false);
+    } = useGetStudysetById(project?.provenance?.extractionMetadata?.studysetId || undefined, false);
     return (
         <StateHandlerComponent
             isLoading={getProjectIsLoading || getStudysetIsLoading}

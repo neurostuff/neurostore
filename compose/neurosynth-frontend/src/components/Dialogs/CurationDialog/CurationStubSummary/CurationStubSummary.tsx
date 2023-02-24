@@ -1,13 +1,15 @@
 import { Typography, Box, Link } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
 import React from 'react';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
-import { useParams } from 'react-router-dom';
-import useUpdateCurationStub from 'hooks/requests/useUpdateCurationStub';
 import TextEdit from 'components/TextEdit/TextEdit';
 import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
 import { ISource } from 'hooks/requests/useGetProjects';
 import CurationStubSummaryHeader from './CurationStubSummaryHeader';
+import {
+    useProjectCurationColumns,
+    useUpdateStubField,
+} from 'pages/Projects/ProjectPage/ProjectStore';
+import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
 
 interface ICurationStubSummary {
     stub: ICurationStubStudy | undefined;
@@ -16,24 +18,28 @@ interface ICurationStubSummary {
 }
 
 const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
-    const { projectId }: { projectId: string | undefined } = useParams();
-    const { addExclusion, removeExclusion, addTag, removeTag, updateField, ...loadingState } =
-        useUpdateCurationStub(projectId);
-    const {
-        data,
-        isLoading: getProjectIsLoading,
-        isError: getProjectIsError,
-    } = useGetProjectById(projectId);
+    const updateStubField = useUpdateStubField();
+    const curationColumns = useProjectCurationColumns();
 
     const handleUpdateStub = (updatedText: string | number | ISource, label: string) => {
-        if (props.stub?.id)
-            updateField(
-                props.columnIndex,
-                props.stub.id,
-                label as keyof ICurationStubStudy,
-                updatedText
-            );
+        const stubKey = label as unknown as keyof ICurationStubStudy;
+
+        if (props.stub?.id) {
+            // update the article link is PMID is being updated
+            if (stubKey === 'pmid' && props.stub.articleLink.includes(PUBMED_ARTICLE_URL_PREFIX)) {
+                updateStubField(
+                    props.columnIndex,
+                    props.stub.id,
+                    'articleLink',
+                    `${PUBMED_ARTICLE_URL_PREFIX}${updatedText}`
+                );
+            }
+
+            updateStubField(props.columnIndex, props.stub.id, stubKey, updatedText);
+        }
     };
+
+    const isLastColumn = curationColumns.length - 1 === props.columnIndex;
 
     if (!props.stub) {
         return (
@@ -42,17 +48,6 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
             </Box>
         );
     }
-
-    if (getProjectIsError) {
-        return (
-            <Box>
-                <Typography color="error">There was an error</Typography>
-            </Box>
-        );
-    }
-
-    const isLastColumn =
-        (data?.provenance?.curationMetadata?.columns || []).length - 1 === props.columnIndex;
 
     return (
         <Box sx={{ padding: '0rem 2rem', minWidth: '585px' }}>
@@ -65,7 +60,6 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
 
             <Box sx={{ margin: '0.5rem 0', marginTop: '1rem' }}>
                 <IdentificationSourcePopup
-                    isLoading={loadingState.updateidentificationSourceIsLoading}
                     onAddSource={(source) => handleUpdateStub(source, 'identificationSource')}
                     onCreateSource={(source) => handleUpdateStub(source, 'identificationSource')}
                     initialValue={props.stub.identificationSource}
@@ -77,7 +71,6 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                 sx={{ input: { fontSize: '1.25rem' } }}
                 onSave={handleUpdateStub}
                 label="title"
-                isLoading={loadingState.updatetitleIsLoading}
                 textToEdit={props.stub.title}
             >
                 {props.stub.articleLink ? (
@@ -100,7 +93,6 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
             <TextEdit
                 sx={{ width: '100%', input: { fontSize: '1.25rem' } }}
                 onSave={handleUpdateStub}
-                isLoading={loadingState.updateauthorsIsLoading}
                 label="authors"
                 textToEdit={props.stub.authors}
             >
@@ -117,7 +109,6 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                         width: '350px',
                         input: { padding: 0, fontSize: '1.25rem' },
                     }}
-                    isLoading={loadingState.updatejournalIsLoading}
                     label="journal"
                     textToEdit={props.stub.journal}
                     onSave={handleUpdateStub}
@@ -136,7 +127,6 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                         width: '350px',
                         input: { padding: 0, fontSize: '1.25rem' },
                     }}
-                    isLoading={loadingState.updatearticleYearIsLoading}
                     label="year"
                     fieldName="articleYear"
                     textToEdit={props.stub.articleYear || ''}
@@ -158,7 +148,6 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                     sx={{ input: { padding: 0, fontSize: '1.25rem' } }}
                     textToEdit={props.stub.pmid}
                     label="pmid"
-                    isLoading={loadingState.updatepmidIsLoading}
                     onSave={handleUpdateStub}
                 >
                     <Typography
@@ -177,7 +166,6 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                     sx={{ input: { padding: 0, fontSize: '1.25rem' } }}
                     onSave={handleUpdateStub}
                     label="doi"
-                    isLoading={loadingState.updatedoiIsLoading}
                     textToEdit={props.stub.doi}
                 >
                     <Typography
@@ -189,12 +177,7 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                 </TextEdit>
             </Box>
 
-            <TextEdit
-                label="keywords"
-                onSave={handleUpdateStub}
-                isLoading={loadingState.updatekeywordsIsLoading}
-                textToEdit={props.stub.keywords}
-            >
+            <TextEdit label="keywords" onSave={handleUpdateStub} textToEdit={props.stub.keywords}>
                 <Typography
                     sx={{
                         color: props.stub.keywords ? 'initial' : 'warning.dark',
@@ -209,7 +192,6 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                 onSave={handleUpdateStub}
                 fieldName="abstractText"
                 textToEdit={props.stub.abstractText}
-                isLoading={loadingState.updateabstractTextIsLoading}
                 multiline
             >
                 <Typography

@@ -18,18 +18,18 @@ const FiltrationDialog: React.FC<IDialog> = (props) => {
     const { mutate } = useUpdateProject();
 
     const [selectedValue, setSelectedValue] = useState<
-        { key: string; type: EPropertyType } | undefined
+        { filtrationKey: string; type: EPropertyType } | undefined
     >(
-        project?.provenance?.filtrationMetadata?.filter
+        project?.provenance?.filtrationMetadata?.filter?.filtrationKey
             ? {
-                  key: project.provenance.filtrationMetadata.filter.filtrationKey,
-                  type: project.provenance.filtrationMetadata.filter.type,
+                  filtrationKey: project?.provenance?.filtrationMetadata?.filter?.filtrationKey,
+                  type: project?.provenance?.filtrationMetadata?.filter?.type,
               }
             : undefined
     );
 
     const options = Object.entries(annotation?.note_keys || {}).map(([key, value]) => ({
-        key: key,
+        filtrationKey: key,
         type: value as EPropertyType,
     }));
 
@@ -43,7 +43,7 @@ const FiltrationDialog: React.FC<IDialog> = (props) => {
                             ...project.provenance,
                             filtrationMetadata: {
                                 filter: {
-                                    filtrationKey: selectedValue.key,
+                                    filtrationKey: selectedValue.filtrationKey,
                                     type: selectedValue.type as EPropertyType,
                                 },
                             },
@@ -76,7 +76,9 @@ const FiltrationDialog: React.FC<IDialog> = (props) => {
                 <NeurosynthAutocomplete
                     label="Inclusion Column"
                     shouldDisable={false}
-                    isOptionEqualToValue={(option, value) => option?.key === value?.key}
+                    isOptionEqualToValue={(option, value) =>
+                        option?.filtrationKey === value?.filtrationKey
+                    }
                     value={selectedValue}
                     size="medium"
                     required={false}
@@ -90,7 +92,7 @@ const FiltrationDialog: React.FC<IDialog> = (props) => {
                             />
                         </ListItem>
                     )}
-                    getOptionLabel={(option) => option?.key || ''}
+                    getOptionLabel={(option) => option?.filtrationKey || ''}
                     onChange={(_event, newVal, _reason) => setSelectedValue(newVal || undefined)}
                     options={options}
                 />

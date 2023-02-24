@@ -9,13 +9,14 @@ interface ICurationDialog {
     columnIndex: number;
     selectedFilter: string;
     selectedStubId: string | undefined;
+    selectedStubIndex: number;
     stubs: ICurationStubStudy[];
     onSetSelectedStub: (stub: string) => void;
 }
 
 const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
     const [stubs, setStubs] = useState<ICurationStubStudy[]>(props.stubs);
-    const selectedStub = props.stubs.find((x) => x.id === props.selectedStubId);
+    const selectedStub: ICurationStubStudy | undefined = props.stubs[props.selectedStubIndex];
 
     useEffect(() => {
         setStubs(props.stubs);
@@ -70,11 +71,11 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
                 >
                     <Paper elevation={1} sx={{ overflowY: 'scroll', height: '100%' }}>
                         <List disablePadding sx={{ width: '100%' }}>
-                            {stubs.map((stub) => (
+                            {stubs.map((stub, index) => (
                                 <CurationStubListItem
                                     key={stub.id}
                                     stub={stub}
-                                    selected={stub.id === props.selectedStubId}
+                                    selected={index === props.selectedStubIndex}
                                     onSelect={() => props.onSetSelectedStub(stub.id)}
                                 />
                             ))}

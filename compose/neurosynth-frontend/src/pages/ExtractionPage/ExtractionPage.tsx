@@ -56,7 +56,7 @@ const ExtractionPage: React.FC = (props) => {
         data: studyset,
         isLoading: getStudysetIsLoading,
         isError: getStudysetIsError,
-    } = useGetStudysetById(project?.provenance?.extractionMetadata?.studysetId, true);
+    } = useGetStudysetById(project?.provenance?.extractionMetadata?.studysetId || undefined, true);
     const [fieldBeingUpdated, setFieldBeingUpdated] = useState('');
     const { mutate } = useUpdateStudyset();
     const location = useLocation();

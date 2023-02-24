@@ -1,12 +1,9 @@
 import { Draggable, DraggableStateSnapshot, DraggableStyle } from '@hello-pangea/dnd';
-import Close from '@mui/icons-material/Close';
-import { Box, Chip, IconButton, Link, Paper, Tooltip, Typography } from '@mui/material';
+import { Box, Chip, Paper, Tooltip, Typography } from '@mui/material';
 import { ISource, ITag } from 'hooks/requests/useGetProjects';
 import CurationStubStudyStyles from './CurationStubStudy.styles';
-import { useParams } from 'react-router-dom';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
-import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
-import useUpdateCurationStub from 'hooks/requests/useUpdateCurationStub';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import { useProjectCurationColumns } from 'pages/Projects/ProjectPage/ProjectStore';
 
 export interface ICurationStubStudy {
     id: string;
@@ -24,24 +21,15 @@ export interface ICurationStubStudy {
     tags: ITag[];
 }
 
-const handleAnimation = (
-    style: DraggableStyle | undefined,
-    snapshot: DraggableStateSnapshot,
-    isVisible: boolean
-) => {
+const handleAnimation = (style: DraggableStyle | undefined, snapshot: DraggableStateSnapshot) => {
     if (!snapshot.isDropAnimating) {
         return style;
     }
-
-    if (isVisible) {
-        return { ...style };
-    } else {
-        return {
-            ...style,
-            // cannot be 0, but make it super tiny
-            transitionDuration: `0.001s`,
-        };
-    }
+    return {
+        ...style,
+        // cannot be 0, but make it super tiny
+        transitionDuration: `0.001s`,
+    };
 };
 
 const CurationStubStudy: React.FC<
@@ -49,56 +37,12 @@ const CurationStubStudy: React.FC<
         index: number;
         isVisible: boolean;
         columnIndex: number;
-        onSelectStubStudy: (itemIndex: string) => void;
+        onSelectStubStudy: (stubId: string) => void;
     }
 > = (props) => {
-    const { projectId }: { projectId: string | undefined } = useParams();
-    const { data } = useGetProjectById(projectId);
-    const { removeExclusion, updateExclusionIsLoading } = useUpdateCurationStub(projectId);
+    const columns = useProjectCurationColumns();
 
-    const handleRemoveExclusionTag = () => {
-        removeExclusion(props.columnIndex, props.id);
-    };
-
-    const isLastColumn =
-        (data?.provenance.curationMetadata?.columns || []).length <= props.columnIndex + 1;
-
-    let exclusionTagElement: JSX.Element;
-    if (isLastColumn) {
-        exclusionTagElement = (
-            <Box>
-                <Typography sx={{ color: 'success.main' }}>included</Typography>
-            </Box>
-        );
-    } else if (props.exclusionTag) {
-        exclusionTagElement = (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography variant="body2" sx={{ color: 'error.dark', fontWeight: 'bold' }}>
-                    {props.exclusionTag.label}
-                </Typography>
-                <IconButton sx={{ padding: '2px' }} onClick={() => handleRemoveExclusionTag()}>
-                    {updateExclusionIsLoading ? (
-                        <ProgressLoader size={12} />
-                    ) : (
-                        <Close
-                            sx={{
-                                fontSize: '1rem',
-                                color: 'error.dark',
-                            }}
-                        />
-                    )}
-                </IconButton>
-            </Box>
-        );
-    } else {
-        exclusionTagElement = (
-            <Box>
-                <Typography variant="body2" sx={{ color: 'warning.dark' }}>
-                    uncategorized
-                </Typography>
-            </Box>
-        );
-    }
+    const isLastColumn = columns.length <= props.columnIndex + 1;
 
     return (
         <Draggable
@@ -108,51 +52,72 @@ const CurationStubStudy: React.FC<
         >
             {(provided, snapshot) => (
                 <Paper
+                    onClick={() => props.onSelectStubStudy(props.id)}
                     elevation={1}
                     {...provided.draggableProps}
-                    {...provided.dragHandleProps}
                     ref={provided.innerRef}
                     sx={[
                         CurationStubStudyStyles.stubStudyContainer,
                         {
-                            display: props.isVisible ? 'block' : 'none',
-                            cursor: props.exclusionTag ? 'not-allowed' : 'pointer',
+                            display: props.isVisible ? 'flex' : 'none',
                         },
                     ]}
-                    style={handleAnimation(
-                        provided.draggableProps.style,
-                        snapshot,
-                        props.isVisible
-                    )}
+                    style={handleAnimation(provided.draggableProps.style, snapshot)}
                 >
-                    <Box sx={CurationStubStudyStyles.exclusionContainer}>{exclusionTagElement}</Box>
-                    <Link
-                        underline="hover"
-                        sx={{ marginBottom: '0.25rem', cursor: 'pointer' }}
-                        onClick={() => props.onSelectStubStudy(props.id)}
-                        variant="body1"
-                    >
-                        <Typography noWrap>{props.title}</Typography>
-                    </Link>
-                    <Typography sx={CurationStubStudyStyles.limitText}>{props.authors}</Typography>
-                    <Box sx={{ display: 'flex' }}>
-                        {props.articleYear && (
-                            <Typography sx={{ marginRight: '4px' }} variant="caption">
-                                ({props.articleYear})
-                            </Typography>
-                        )}
-                        <Typography variant="caption">{props.journal}</Typography>
-                    </Box>
-                    <Box sx={{ padding: '5px 0', overflow: 'auto' }}>
-                        {props.tags.map((tag) => (
-                            <Tooltip title={tag.label} key={tag.id}>
-                                <Chip
-                                    sx={CurationStubStudyStyles.tag}
-                                    size="small"
-                                    label={tag.label}
-                                />
-                            </Tooltip>
-                        ))}
+                    {!props?.exclusionTag ? (
+                        <Box
+                            {...provided.dragHandleProps}
+                            sx={{ display: 'flex', alignItems: 'center', width: '30px' }}
+                        >
+                            <Box>
+                                <DragIndicatorIcon sx={{ color: 'gray' }} />
+                            </Box>
+                        </Box>
+                    ) : (
+                        <Box sx={{ width: '30px' }}></Box>
+                    )}
+                    <Box sx={{ width: 'calc(100% - 30px)' }}>
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                fontWeight: props.exclusionTag ? 'bold' : undefined,
+                                marginBottom: '0',
+                                color: isLastColumn
+                                    ? 'success.main'
+                                    : props.exclusionTag
+                                    ? 'error.dark'
+                                    : 'warning.main',
+                            }}
+                        >
+                            {isLastColumn
+                                ? 'included'
+                                : props.exclusionTag
+                                ? props.exclusionTag.label
+                                : 'uncategorized'}
+                        </Typography>
+                        <Typography noWrap variant="body1" color="primary">
+                            {props.title}
+                        </Typography>
+                        <Typography noWrap>{props.authors}</Typography>
+                        <Box sx={{ display: 'flex' }}>
+                            {props.articleYear && (
+                                <Typography sx={{ marginRight: '4px' }} variant="caption">
+                                    ({props.articleYear})
+                                </Typography>
+                            )}
+                            <Typography variant="caption">{props.journal}</Typography>
+                        </Box>
+                        <Box sx={{ padding: '5px 0', overflow: 'auto' }}>
+                            {props.tags.map((tag) => (
+                                <Tooltip title={tag.label} key={tag.id}>
+                                    <Chip
+                                        sx={CurationStubStudyStyles.tag}
+                                        size="small"
+                                        label={tag.label}
+                                    />
+                                </Tooltip>
+                            ))}
+                        </Box>
                     </Box>
                 </Paper>
             )}

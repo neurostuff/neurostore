@@ -4,7 +4,7 @@ import { INeurosynthNodeData } from 'components/PrismaComponent/NeurosynthNode';
 import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import { CSSProperties } from 'react';
 import { Edge, MarkerType, Node } from 'reactflow';
-import { INeurosynthProject, ISource, ITag } from 'hooks/requests/useGetProjects';
+import { INeurosynthProject, IProvenance, ISource, ITag } from 'hooks/requests/useGetProjects';
 
 type IPRISMAExclusion = ITag & { numRecords: number };
 
@@ -712,10 +712,9 @@ class NeurosynthPRISMAHelper {
         };
     };
 
-    convertProjectToPRISMA = (project?: INeurosynthProject): CPRISMAWorkflow => {
+    convertProjectToPRISMA = (provenance: IProvenance): CPRISMAWorkflow => {
         const prismaWorkflow = new CPRISMAWorkflow();
-        if (!project?.provenance) return prismaWorkflow;
-        const { curationMetadata } = project.provenance;
+        const { curationMetadata } = provenance;
 
         if (curationMetadata && curationMetadata.columns && curationMetadata.columns.length > 0) {
             // IDENTIFICATION STEP

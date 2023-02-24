@@ -14,7 +14,6 @@ import {
     CardActions,
     Button,
 } from '@mui/material';
-import { IExtractionMetadata } from 'hooks/requests/useGetProjects';
 import { useHistory, useParams } from 'react-router-dom';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
 import { useState } from 'react';
@@ -26,7 +25,7 @@ import useGetProjectById from 'hooks/requests/useGetProjectById';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 
 interface IExtractionStep {
-    extractionMetadata: IExtractionMetadata | undefined;
+    extractionStepHasBeenInitialized: boolean;
     disabled: boolean;
 }
 
@@ -47,13 +46,11 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
         data: studyset,
         isError: getStudysetIsError,
         isLoading: getStudysetIsLoading,
-    } = useGetStudysetById(project?.provenance?.extractionMetadata?.studysetId);
+    } = useGetStudysetById(project?.provenance?.extractionMetadata?.studysetId || undefined);
     const extractionSummary = useGetExtractionSummary(projectId);
     const history = useHistory();
     const [moveToExtractionDialog, setMoveToExtractionDialog] = useState(false);
-    const { extractionMetadata, disabled, ...stepProps } = props;
-
-    const extractionMetadataExists = !!extractionMetadata;
+    const { extractionStepHasBeenInitialized, disabled, ...stepProps } = props;
 
     return (
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
@@ -80,7 +77,7 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                             will be used to help filter analyses within your studies
                         </Typography>
                         <Box sx={{ marginTop: '1rem' }}>
-                            {extractionMetadataExists ? (
+                            {extractionStepHasBeenInitialized ? (
                                 <Box sx={[ProjectStepComponentsStyles.stepCard]}>
                                     <Card sx={{ width: '100%', height: '100%' }}>
                                         <CardContent>

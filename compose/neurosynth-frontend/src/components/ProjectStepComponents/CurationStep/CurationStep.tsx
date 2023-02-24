@@ -16,19 +16,14 @@ import {
     Button,
 } from '@mui/material';
 import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
-import { INeurosynthProject, ISource, ITag } from 'hooks/requests/useGetProjects';
 import { useHistory, useParams } from 'react-router-dom';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
-import useUpdateProject from 'hooks/requests/useUpdateProject';
-import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 import { useState } from 'react';
 import CreateCurationBoardDialog from 'components/Dialogs/CreateCurationBoardDialog/CreateCurationBoardDialog';
-import { MutateOptions } from 'react-query';
-import { AxiosError, AxiosResponse } from 'axios';
-import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import CurationStepStyles from './CurationStep.style';
 import useGetCurationSummary, { ICurationSummary } from 'hooks/useGetCurationSummary';
 import { useSnackbar } from 'notistack';
+import { useInitCuration } from 'pages/Projects/ProjectPage/ProjectStore';
 
 enum ECurationBoardTypes {
     PRISMA,
@@ -56,42 +51,6 @@ export enum ENeurosynthSourceIds {
     PUBMED = 'neurosynth_pubmed_id_source',
 }
 
-interface ICurationStep {
-    hasCurationMetadata: boolean;
-}
-
-const defaultIdentificationSources: ISource[] = [
-    {
-        id: ENeurosynthSourceIds.NEUROSTORE,
-        label: 'Neurostore',
-    },
-    {
-        id: ENeurosynthSourceIds.PUBMED,
-        label: 'PubMed',
-    },
-];
-
-const defaultInfoTags: ITag[] = [
-    {
-        id: ENeurosynthTagIds.UNTAGGED_TAG_ID,
-        label: 'Untagged studies',
-        isExclusionTag: false,
-        isAssignable: false,
-    },
-    {
-        id: ENeurosynthTagIds.UNCATEGORIZED_ID,
-        label: 'Uncategorized Studies',
-        isExclusionTag: false,
-        isAssignable: false,
-    },
-    {
-        id: ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID,
-        label: 'Save For Later',
-        isExclusionTag: false,
-        isAssignable: false,
-    },
-];
-
 const getPercentageComplete = (curationSummary: ICurationSummary): number => {
     if (curationSummary.total === 0) return 0;
     const percentageComplete =
@@ -99,15 +58,19 @@ const getPercentageComplete = (curationSummary: ICurationSummary): number => {
     return Math.round(percentageComplete);
 };
 
+interface ICurationStep {
+    curationStepHasBeenInitialized: boolean;
+}
+
 const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
     const { enqueueSnackbar } = useSnackbar();
     const { projectId }: { projectId: string } = useParams();
-    const curationSummary = useGetCurationSummary(projectId);
+    const curationSummary = useGetCurationSummary();
     const history = useHistory();
-    const { hasCurationMetadata, ...stepProps } = props;
     const [dialogIsOpen, setDialogIsOpen] = useState(false);
+    const { curationStepHasBeenInitialized, ...stepProps } = props;
 
-    const { mutate, isLoading: updateProjectIsLoading } = useUpdateProject();
+    const initCuration = useInitCuration();
 
     const handleCreateCreationBoard = (curationBoardType: ECurationBoardTypes) => {
         switch (curationBoardType) {
@@ -128,113 +91,11 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
         }
     };
 
-    const createBoard = (
-        curationBoardInitColumns: string[],
-        isPRISMA: boolean,
-        options?: MutateOptions<
-            AxiosResponse<ProjectReturn>,
-            AxiosError<any>,
-            {
-                projectId: string;
-                project: INeurosynthProject;
-            }
-        >
-    ) => {
-        const columns: ICurationColumn[] = curationBoardInitColumns.map((col, index) => ({
-            id: `${projectId}_${index}`,
-            name: col,
-            stubStudies: [],
-        }));
+    const createBoard = (curationBoardInitColumns: string[], isPRISMA: boolean) => {
+        if (!projectId) return;
 
-        const newProject: INeurosynthProject = {
-            provenance: {
-                curationMetadata: {
-                    columns: columns,
-                    prismaConfig: {
-                        isPrisma: isPRISMA,
-                        identification: { exclusionTags: [] },
-                        screening: { exclusionTags: [] },
-                        eligibility: { exclusionTags: [] },
-                    },
-                    exclusionTags: [
-                        {
-                            id: ENeurosynthTagIds.EXCLUDE_EXCLUSION_ID,
-                            label: 'Exclude',
-                            isExclusionTag: true,
-                            isAssignable: true,
-                        },
-                        {
-                            id: ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID,
-                            label: 'Duplicate',
-                            isExclusionTag: true,
-                            isAssignable: true,
-                        },
-                    ],
-                    infoTags: defaultInfoTags,
-                    identificationSources: defaultIdentificationSources,
-                },
-            },
-        };
-
-        if (isPRISMA && newProject?.provenance?.curationMetadata) {
-            const prismaConfig = newProject.provenance.curationMetadata.prismaConfig;
-            prismaConfig.identification.exclusionTags = [
-                {
-                    id: ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID,
-                    label: 'Duplicate',
-                    isExclusionTag: true,
-                    isAssignable: true,
-                },
-            ];
-            prismaConfig.screening.exclusionTags = [
-                {
-                    id: ENeurosynthTagIds.IRRELEVANT_EXCLUSION_ID,
-                    label: 'Irrelevant',
-                    isExclusionTag: true,
-                    isAssignable: true,
-                },
-            ];
-            prismaConfig.eligibility.exclusionTags = [
-                {
-                    id: ENeurosynthTagIds.REPORTS_NOT_RETRIEVED_EXCLUSION_ID,
-                    label: 'Reports not retrieved',
-                    isExclusionTag: true,
-                    isAssignable: true,
-                },
-                {
-                    id: ENeurosynthTagIds.INSUFFICIENT_DETAIL_EXCLUSION_ID,
-                    label: 'Insufficient Details',
-                    isExclusionTag: true,
-                    isAssignable: true,
-                },
-                {
-                    id: ENeurosynthTagIds.LIMITED_RIGOR_EXCLUSION_ID,
-                    label: 'Limited Rigor',
-                    isExclusionTag: true,
-                    isAssignable: true,
-                },
-                {
-                    id: ENeurosynthTagIds.OUT_OF_SCOPE_EXCLUSION_ID,
-                    label: 'Out of scope',
-                    isExclusionTag: true,
-                    isAssignable: true,
-                },
-            ];
-        }
-
-        mutate(
-            {
-                projectId,
-                project: newProject,
-            },
-            {
-                onSuccess: () => {
-                    history.push(`/projects/${projectId}/curation`);
-                    enqueueSnackbar('curation board create successfully', { variant: 'success' });
-                },
-                ...options,
-            }
-        );
+        initCuration(curationBoardInitColumns, isPRISMA);
+        history.push(`/projects/${projectId}/curation`);
     };
 
     return (
@@ -254,7 +115,7 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                         include studies into your meta-analysis
                     </Typography>
                     <Box sx={{ marginTop: '1rem' }}>
-                        {props.hasCurationMetadata ? (
+                        {curationStepHasBeenInitialized ? (
                             <Box sx={[ProjectStepComponentsStyles.stepCard]}>
                                 <Card sx={{ width: '100%', height: '100%' }}>
                                     <CardContent>
@@ -329,7 +190,7 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                             >
                                 <CreateCurationBoardDialog
                                     onCloseDialog={() => setDialogIsOpen(false)}
-                                    createButtonIsLoading={updateProjectIsLoading}
+                                    createButtonIsLoading={false}
                                     onCreateCurationBoard={(curationBoardColumns: string[]) => {
                                         createBoard(curationBoardColumns, false);
                                     }}
