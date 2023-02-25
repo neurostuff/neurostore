@@ -1,7 +1,7 @@
 import { Box, Button, CircularProgress, Link, Typography } from '@mui/material';
 import { AxiosResponse } from 'axios';
 import NavigationButtons from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
+import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import PubMedImportStudySummary from 'components/Dialogs/PubMedImportDialog/PubMedImportStudySummary';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';

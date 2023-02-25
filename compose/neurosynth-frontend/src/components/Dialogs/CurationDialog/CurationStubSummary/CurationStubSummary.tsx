@@ -1,5 +1,5 @@
 import { Typography, Box, Link } from '@mui/material';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
+import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import React from 'react';
 import TextEdit from 'components/TextEdit/TextEdit';
 import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';

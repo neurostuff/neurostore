@@ -22,8 +22,9 @@ import {
     setExclusionForStubHelper,
 } from './ProjectStore.helpers';
 import { persist } from 'zustand/middleware';
-import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
+import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumnDroppableContainer';
+import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import useGetCurationSummary from 'hooks/useGetCurationSummary';
 
 type ProjectStoreActions = {
     updateProjectName: (name: string) => void;
@@ -423,8 +424,29 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
 export const useProjectName = () => useProjectStore((state) => state.name);
 export const useProjectDescription = () => useProjectStore((state) => state.description);
 export const useProjectProvenance = () => useProjectStore((state) => state.provenance);
+
 export const useProjectCurationColumns = () =>
     useProjectStore((state) => state.provenance.curationMetadata.columns);
+export const useProjectCurationIsLastColumn = (columnIndex: number) =>
+    useProjectStore((state) => state.provenance.curationMetadata.columns.length <= columnIndex + 1);
+export const useProjectNumCurationColumns = () =>
+    useProjectStore((state) => state.provenance.curationMetadata.columns.length);
+export const useProjectCurationColumn = (columnIndex: number) =>
+    useProjectStore((state) => state.provenance.curationMetadata.columns[columnIndex]);
+export const useCanMoveToExtractionPhase = (columnIndex: number) => {
+    const curationSummary = useGetCurationSummary();
+    const numCols = useProjectNumCurationColumns();
+    const curationColumn = useProjectCurationColumn(columnIndex);
+
+    return useProjectStore((state) => {
+        return (
+            numCols === columnIndex + 1 && // we are at the last column
+            curationColumn.stubStudies.length > 0 && // there are stubs within this column
+            curationSummary.uncategorized === 0 // there are no uncategorized studies in this project
+        );
+    });
+};
+
 export const useProjectCurationSources = () =>
     useProjectStore((state) => state.provenance.curationMetadata.identificationSources);
 export const useProjectExtractionMetadata = () =>

@@ -1,14 +1,15 @@
 import { Box, Chip, ListItem, ListItemButton, ListItemText, Typography } from '@mui/material';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
+import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import CurationStubStudyStyles from 'components/CurationComponents/CurationStubStudy/CurationStubStudy.styles';
+import React from 'react';
 
 interface ICurationStubListItem {
     selected: boolean;
     stub: ICurationStubStudy;
-    onSelect: () => void;
+    onSetSelectedStub: (stubId: string) => void;
 }
 
-const CurationStubListItem: React.FC<ICurationStubListItem> = (props) => {
+const CurationStubListItem: React.FC<ICurationStubListItem> = React.memo((props) => {
     return (
         <ListItem
             sx={{ backgroundColor: props.stub.exclusionTag ? '#fff3f3' : '' }}
@@ -16,7 +17,7 @@ const CurationStubListItem: React.FC<ICurationStubListItem> = (props) => {
             divider
         >
             <ListItemButton
-                onClick={() => props.onSelect()}
+                onClick={() => props.onSetSelectedStub(props.stub.id || '')}
                 selected={props.selected}
                 sx={{ display: 'flex', flexDirection: 'column', alignItems: 'start' }}
                 autoFocus={props.selected}
@@ -40,6 +41,6 @@ const CurationStubListItem: React.FC<ICurationStubListItem> = (props) => {
             </ListItemButton>
         </ListItem>
     );
-};
+});
 
 export default CurationStubListItem;

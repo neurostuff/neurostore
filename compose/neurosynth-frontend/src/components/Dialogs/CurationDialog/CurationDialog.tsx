@@ -3,20 +3,21 @@ import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import { useEffect, useState } from 'react';
 import CurationStubSummary from 'components/Dialogs/CurationDialog/CurationStubSummary/CurationStubSummary';
 import CurationStubListItem from './CurationStubListItem/CurationStubListItem';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
+import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 
 interface ICurationDialog {
     columnIndex: number;
     selectedFilter: string;
     selectedStubId: string | undefined;
-    selectedStubIndex: number;
     stubs: ICurationStubStudy[];
     onSetSelectedStub: (stub: string) => void;
 }
 
 const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
     const [stubs, setStubs] = useState<ICurationStubStudy[]>(props.stubs);
-    const selectedStub: ICurationStubStudy | undefined = props.stubs[props.selectedStubIndex];
+    const selectedStub: ICurationStubStudy | undefined = props.stubs.find(
+        (stub) => stub.id === props.selectedStubId
+    );
 
     useEffect(() => {
         setStubs(props.stubs);
@@ -75,8 +76,8 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
                                 <CurationStubListItem
                                     key={stub.id}
                                     stub={stub}
-                                    selected={index === props.selectedStubIndex}
-                                    onSelect={() => props.onSetSelectedStub(stub.id)}
+                                    selected={stub.id === props.selectedStubId}
+                                    onSetSelectedStub={props.onSetSelectedStub}
                                 />
                             ))}
                         </List>

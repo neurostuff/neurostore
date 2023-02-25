@@ -1,4 +1,4 @@
-import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
+import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumnDroppableContainer';
 import { EPropertyType } from 'components/EditMetadata';
 import { Project, ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { useQuery } from 'react-query';

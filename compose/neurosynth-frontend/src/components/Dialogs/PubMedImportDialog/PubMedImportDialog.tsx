@@ -1,6 +1,6 @@
 import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
+import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import { useState } from 'react';
 import PubMedwizardDuplicateStep from './PubMedWizardDuplicateStep/PubMedWizardDuplicateStep';

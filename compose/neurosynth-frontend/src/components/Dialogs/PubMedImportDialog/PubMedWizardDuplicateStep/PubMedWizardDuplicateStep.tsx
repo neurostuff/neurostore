@@ -8,7 +8,7 @@ import {
     Typography,
 } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
+import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import { useState, useEffect } from 'react';
 import PubMedImportStudySummary from 'components/Dialogs/PubMedImportDialog/PubMedImportStudySummary';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';

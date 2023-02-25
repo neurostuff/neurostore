@@ -15,6 +15,7 @@ import {
     useProjectId,
     useInitStore,
 } from 'pages/Projects/ProjectPage/ProjectStore';
+import CurationPageLoadingText from './CurationPageLoadingText';
 
 const CurationPage: React.FC = (props) => {
     const [createStudyDialogIsOpen, setCreateStudyDialogIsOpen] = useState(false);
@@ -27,29 +28,9 @@ const CurationPage: React.FC = (props) => {
     const initStore = useInitStore();
     const storeProjectId = useProjectId();
 
-    const [curationIsLoading, setCurationIsLoading] = useState(false);
-
     useEffect(() => {
         initStore(projectId);
     }, [initStore, projectId, storeProjectId]);
-
-    useEffect(() => {
-        function onStorageUpdate() {
-            const isLoading = localStorage.getItem(`updateCurationIsLoading`) === 'true';
-            if (isLoading) {
-                window.onbeforeunload = () => {
-                    return '';
-                };
-            } else {
-                window.onbeforeunload = null;
-            }
-            setCurationIsLoading(isLoading);
-        }
-        window.addEventListener('storage', onStorageUpdate);
-        return () => {
-            window.removeEventListener('storage', onStorageUpdate);
-        };
-    }, []);
 
     return (
         <StateHandlerComponent isError={false} isLoading={false}>
@@ -83,13 +64,7 @@ const CurationPage: React.FC = (props) => {
                                 Curation
                             </Typography>
                         </Breadcrumbs>
-                        {curationIsLoading && (
-                            <Box sx={{ marginLeft: '2rem', display: 'flex' }}>
-                                <Typography sx={{ color: 'muted.main', fontSize: '1.5rem' }}>
-                                    updating...
-                                </Typography>
-                            </Box>
-                        )}
+                        <CurationPageLoadingText />
                     </Box>
                     <Box sx={{ marginRight: '1rem' }}>
                         <PubmedImportDialog
