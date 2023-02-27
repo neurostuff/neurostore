@@ -10,9 +10,17 @@ from webargs.flaskparser import parser
 from webargs import fields
 
 from ..database import db
-from ..models.analysis import (   # noqa E401
-    Studyset, Annotation, MetaAnalysis, Specification,
-    StudysetReference, AnnotationReference, Project
+from ..models.analysis import (  # noqa E401
+    Studyset,
+    Annotation,
+    MetaAnalysis,
+    Specification,
+    StudysetReference,
+    AnnotationReference,
+    MetaAnalysisResult,
+    NeurovaultCollection,
+    NeurovaultFile,
+    Project,
 )
 from ..models.auth import User
 
@@ -23,22 +31,24 @@ from ..schemas import (  # noqa E401
     SpecificationSchema,
     AnnotationReferenceSchema,
     StudysetReferenceSchema,
+    MetaAnalysisResultSchema,
+    NeurovaultCollectionSchema,
+    NeurovaultFileSchema,
     ProjectSchema,
-
 )
 from .singular import singularize
 
 
 def get_current_user():
-    user = connexion.context.get('user')
+    user = connexion.context.get("user")
     if user:
-        return User.query.filter_by(external_id=connexion.context['user']).first()
+        return User.query.filter_by(external_id=connexion.context["user"]).first()
     return None
 
 
 def view_maker(cls):
-    proc_name = cls.__name__.removesuffix('View').removesuffix('Resource')
-    basename = singularize(proc_name, custom={"MetaAnalyses": 'MetaAnalysis'})
+    proc_name = cls.__name__.removesuffix("View").removesuffix("Resource")
+    basename = singularize(proc_name, custom={"MetaAnalyses": "MetaAnalysis"})
 
     class ClassView(cls):
         _model = globals()[basename]
@@ -50,9 +60,12 @@ def view_maker(cls):
 
 
 class BaseView(MethodView):
-
     _model = None
     _nested = {}
+
+    @classmethod
+    def _external_request(cls, data, record, id):
+        return False
 
     @classmethod
     def update_or_create(cls, data, id=None, commit=True):
@@ -63,21 +76,23 @@ class BaseView(MethodView):
         if not current_user:
             # user signed up with auth0, but has not made any queries yet...
             # should have endpoint to "create user" after sign on with auth0
-            current_user = User(external_id=connexion.context['user'])
+            current_user = User(external_id=connexion.context["user"])
             db.session.add(current_user)
             db.session.commit()
 
         id = id or data.get("id", None)  # want to handle case of {"id": "asdfasf"}
 
-        only_ids = set(data.keys()) - set(['id']) == set()
+        only_ids = set(data.keys()) - set(["id"]) == set()
 
         if id is None:
             record = cls._model()
             record.user = current_user
         else:
             record = cls._model.query.filter_by(id=id).first()
-            if record is None and \
-                    cls._model in (StudysetReference, AnnotationReference):
+            if record is None and cls._model in (
+                StudysetReference,
+                AnnotationReference,
+            ):
                 record = cls._model(id=id)
                 to_commit.append(record)
             elif record is None:
@@ -93,12 +108,16 @@ class BaseView(MethodView):
 
                 return record
 
-        # Update all non-nested attributes
-        for k, v in data.items():
-            if k not in cls._nested and k not in ["id", "user"]:
-                setattr(record, k, v)
+        # update data if there is an external request
+        committed = cls._external_request(data, record, id)
 
-        to_commit.append(record)
+        # Update all non-nested attributes
+        if not committed:
+            for k, v in data.items():
+                if k not in cls._nested and k not in ["id", "user"]:
+                    setattr(record, k, v)
+
+            to_commit.append(record)
 
         # Update nested attributes recursively
         for field, res_name in cls._nested.items():
@@ -129,7 +148,9 @@ class ObjectView(BaseView):
         record = self._model.query.filter_by(id=id).first_or_404()
         args = parser.parse(self._user_args, request, location="query")
 
-        return self.__class__._schema(context={'nested': args.get("nested")}).dump(record)
+        return self.__class__._schema(context={"nested": args.get("nested")}).dump(
+            record
+        )
 
     def put(self, id):
         id = id.replace("\x00", "\uFFFD")
@@ -155,7 +176,7 @@ class ObjectView(BaseView):
                 description=(
                     f"user {current_user.external_id} cannot change "
                     f"record owned by {record.user_id}."
-                )
+                ),
             )
         else:
             db.session.delete(record)
@@ -186,7 +207,6 @@ LIST_USER_ARGS = {
 
 
 class ListView(BaseView):
-
     _only = None
     _search_fields = []
     _multi_search = None
@@ -214,13 +234,13 @@ class ListView(BaseView):
             q = q.filter(m.user_id == args.get("user_id"))
 
         # query items that are public and/or you own them
-        if hasattr(m, 'public'):
+        if hasattr(m, "public"):
             current_user = get_current_user()
             q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
 
         # query annotations for a specific dataset
-        if args.get('dataset_id'):
-            q = q.filter(m.dataset_id == args.get('dataset_id'))
+        if args.get("dataset_id"):
+            q = q.filter(m.dataset_id == args.get("dataset_id"))
 
         # For multi-column search, default to using search fields
         if s is not None and self._fulltext_fields:
@@ -253,15 +273,15 @@ class ListView(BaseView):
         #     q = q.join(*attr.attr)
         q = q.order_by(getattr(attr, desc)())
 
-        records = q.paginate(args["page"], args["page_size"], False).items
+        records = q.paginate(page=args["page"], per_page=args["page_size"], error_out=False).items
         # check if results should be nested
         nested = True if args.get("nested") else False
         content = self.__class__._schema(
-            only=self._only, many=True, context={'nested': nested}
+            only=self._only, many=True, context={"nested": nested}
         ).dump(records)
         response = {
-            'metadata': {},
-            'results': content,
+            "metadata": {},
+            "results": content,
         }
         return jsonify(response), 200
 
@@ -291,6 +311,7 @@ class MetaAnalysesView(ObjectView, ListView):
     _nested = {
         "studyset": "StudysetsView",
         "annotation": "AnnotationsView",
+        "results": "MetaAnalysisResultsView",
     }
 
 
@@ -320,6 +341,93 @@ class StudysetReferencesResource(ObjectView):
 @view_maker
 class AnnotationReferencesResource(ObjectView):
     pass
+
+
+@view_maker
+class MetaAnalysisResultsView(ObjectView, ListView):
+    _nested = {"neurovault_collection": "NeurovaultCollectionsView"}
+
+
+@view_maker
+class NeurovaultCollectionsView(ObjectView, ListView):
+    _nested = {"files": "NeurovaultFilesView"}
+
+    @classmethod
+    def _external_request(cls, data, record, id):
+        # analysis, cli_version=None,  cli_args=None,
+        # fmriprep_version=None, estimator=None, force=False):
+        # collection_name = f"{analysis.name} - {analysis.hash_id}"
+        # if force is True:
+        #     timestamp = datetime.datetime.utcnow().strftime(
+        #         '%Y-%m-%d_%H:%M')
+        #     collection_name += f"_{timestamp}"
+        from pathlib import Path
+
+        import flask
+        from pynv import Client
+
+        from flask import current_app as app
+
+        meta_analysis = MetaAnalysis.query.filter_by(id=data["meta_analysis_id"]).one()
+        collection_name = meta_analysis.name
+
+        url = f"{flask.request.host_url}" f"meta-analyses/{meta_analysis.id}"
+        try:
+            api = Client(access_token=app.config["NEUROVAULT_ACCESS_TOKEN"])
+            collection = api.create_collection(
+                collection_name,
+                description=meta_analysis.description,
+                full_dataset_url=url,
+            )
+            data["collection_id"] = collection["id"]
+            for file in data.get("files", []):
+                file["collection_id"] = collection["id"]
+
+            for k, v in data.items():
+                if k not in cls._nested and k not in ["files", "user"]:
+                    setattr(record, k, v)
+
+            db.session.add(record)
+            db.session.commit()
+            db.session.flush()
+
+            committed = True
+        except Exception:
+            abort(
+                422,
+                f"Error creating collection named: {collection_name}, "
+                "perhaps one with that name already exists?",
+            )
+
+        upload_dir = Path(app.config["FILE_DIR"]) / "uploads" / str(collection["id"])
+        upload_dir.mkdir(exist_ok=True, parents=True)
+
+        return committed
+
+
+@view_maker
+class NeurovaultFilesView(ObjectView, ListView):
+    @classmethod
+    def _external_request(cls, data, record, id):
+        from .tasks import celery_app
+
+        if record.id is None:
+            for k, v in data.items():
+                if k not in cls._nested and k not in ["file", "user"]:
+                    setattr(record, k, v)
+
+            db.session.add(record)
+            db.session.commit()
+        committed = True
+
+        try:
+            data["file"] = data["file"].decode("latin1")
+            task = celery_app.send_task("neurovault.upload", args=[data, record.id])  # noqa: F841
+        except:  # noqa: E722
+            setattr(record, "status", "FAILED")
+
+        data.pop("file")
+        return committed
 
 
 @view_maker

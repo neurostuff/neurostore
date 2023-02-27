@@ -2,8 +2,11 @@ import pytest
 from marshmallow import fields
 from ...models import User, Studyset, Annotation, Specification, MetaAnalysis, Project
 from ...schemas import (
-    StudysetSchema, AnnotationSchema, SpecificationSchema,
-    MetaAnalysisSchema, ProjectSchema
+    StudysetSchema,
+    AnnotationSchema,
+    SpecificationSchema,
+    MetaAnalysisSchema,
+    ProjectSchema,
 )
 from ...schemas.analysis import StringOrNested
 
@@ -16,20 +19,20 @@ from ...schemas.analysis import StringOrNested
         ("specifications", Specification, SpecificationSchema),
         ("meta-analyses", MetaAnalysis, MetaAnalysisSchema),
         ("projects", Project, ProjectSchema),
-    ]
+    ],
 )
 def test_create(auth_client, user_data, endpoint, model, schema):
     user = User.query.filter_by(name="user1").first()
     example = model.query.filter_by(user=user).first()
     payload = schema().dump(example)
-    if payload.get('studyset'):
-        del payload['studyset']
-        payload['internal_studyset_id'] = example.studyset.id
-    if payload.get('annotation'):
-        del payload['annotation']
-        payload['internal_annotation_id'] = example.annotation.id
-    if payload.get('project'):
-        del payload['project']
+    if payload.get("studyset"):
+        del payload["studyset"]
+        payload["internal_studyset_id"] = example.studyset.id
+    if payload.get("annotation"):
+        del payload["annotation"]
+        payload["internal_annotation_id"] = example.annotation.id
+    if payload.get("project"):
+        del payload["project"]
 
     resp = auth_client.post(f"/api/{endpoint}", data=payload)
 
@@ -39,7 +42,8 @@ def test_create(auth_client, user_data, endpoint, model, schema):
     d_key_sf = {(sf[k].data_key if sf[k].data_key else k): v for k, v in sf.items()}
     for k, v in payload.items():
         if not isinstance(
-            d_key_sf.get(k), (StringOrNested, fields.Nested),
+            d_key_sf.get(k),
+            (StringOrNested, fields.Nested),
         ):
             assert v == resp.json[k]
 
@@ -52,7 +56,7 @@ def test_create(auth_client, user_data, endpoint, model, schema):
         ("specifications", Specification, SpecificationSchema),
         ("meta-analyses", MetaAnalysis, MetaAnalysisSchema),
         ("projects", Project, ProjectSchema),
-    ]
+    ],
 )
 def test_read(auth_client, user_data, endpoint, model, schema):
     user = User.query.filter_by(name="user1").first()
@@ -65,10 +69,10 @@ def test_read(auth_client, user_data, endpoint, model, schema):
     resp = auth_client.get(f"/api/{endpoint}")
 
     assert resp.status_code == 200
-    assert len(expected_results) == len(resp.json['results'])
+    assert len(expected_results) == len(resp.json["results"])
 
     query_ids = set([res.id for res in expected_results])
-    resp_ids = set([res['id'] for res in resp.json['results']])
+    resp_ids = set([res["id"] for res in resp.json["results"]])
     assert query_ids == resp_ids
 
     # view one item
@@ -84,7 +88,7 @@ def test_read(auth_client, user_data, endpoint, model, schema):
         ("specifications", Specification, SpecificationSchema, {"type": "NEW"}),
         ("meta-analyses", MetaAnalysis, MetaAnalysisSchema, {"name": "my meta"}),
         ("projects", Project, ProjectSchema, {"name": "my project"}),
-    ]
+    ],
 )
 def test_update(auth_client, db, session, user_data, endpoint, model, schema, update):
     user = User.query.filter_by(name="user1").first()
