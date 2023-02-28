@@ -22,13 +22,13 @@ def create_app():
     with app.app_context():
         connexion_app.add_api(
             "neurosynth-compose-openapi.yml",
-        base_path="/api",
-        options=options,
-        arguments={"title": "NeuroSynth API"},
-        resolver=MethodViewResolver("neurosynth_compose.resources"),
-        strict_validation=True,
-        validate_responses=True,
-    )
+            base_path="/api",
+            options=options,
+            arguments={"title": "NeuroSynth API"},
+            resolver=MethodViewResolver("neurosynth_compose.resources"),
+            strict_validation=True,
+            validate_responses=True,
+        )
 
     oauth = OAuth(app)
     auth0 = oauth.register(  # noqa: F841
