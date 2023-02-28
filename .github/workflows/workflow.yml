@@ -2,6 +2,20 @@ name: Testing Workflow
 on: [workflow_dispatch,push]
 
 jobs:
+  clean:
+    strategy:
+      matrix:
+        package: ['neurosynth_compose', 'compose_nginx', 'compose_pgsql', 'compose_worker', 'neurostore', 'store_nginx', 'store_pgsql']
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/delete-package-versions@v4
+        with: 
+          package-name: ${{ matrix.package }}
+          package-type: 'container'
+          min-versions-to-keep: 10
+          delete-only-pre-release-versions: "true"
+
   build_neurosynth_compose:
    runs-on: ubuntu-latest
    defaults:
