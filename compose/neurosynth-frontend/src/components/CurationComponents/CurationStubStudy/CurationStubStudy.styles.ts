@@ -2,9 +2,6 @@ import { Style } from 'index';
 
 const CurationStubStudyStyles: Style = {
     stubStudyContainer: {
-        display: 'flex',
-        padding: '10px',
-        marginBottom: '10px',
         userSelect: 'none',
         cursor: 'pointer',
         ':hover': {
@@ -27,9 +24,9 @@ const CurationStubStudyStyles: Style = {
     },
     tag: {
         marginRight: '4px',
-        marginTop: '4px',
-        fontSize: '',
-        maxWidth: '80px',
+        flex: '1 1 0px',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
     },
 };
 

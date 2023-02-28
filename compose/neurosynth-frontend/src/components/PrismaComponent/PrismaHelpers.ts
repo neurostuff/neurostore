@@ -1,4 +1,4 @@
-import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumnDroppableContainer';
+import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import { INeurosynthNodeData } from 'components/PrismaComponent/NeurosynthNode';
 import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';

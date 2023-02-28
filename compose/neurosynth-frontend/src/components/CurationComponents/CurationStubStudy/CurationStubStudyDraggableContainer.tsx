@@ -1,4 +1,4 @@
-import { Draggable, DraggableStateSnapshot, DraggableStyle } from '@hello-pangea/dnd';
+import { DraggableProvided, DraggableStateSnapshot, DraggableStyle } from '@hello-pangea/dnd';
 import { Box, Paper } from '@mui/material';
 import { ISource, ITag } from 'hooks/requests/useGetProjects';
 import CurationStubStudyStyles from './CurationStubStudy.styles';
@@ -38,47 +38,51 @@ const CurationStubStudyDraggableContainer: React.FC<
         index: number;
         isVisible: boolean;
         columnIndex: number;
+        provided: DraggableProvided;
+        snapshot: DraggableStateSnapshot;
+        style: React.CSSProperties;
         onSelectStubStudy: (stubId: string) => void;
     }
-> = React.memo((props) => {
-    console.log('re render');
+> = (props) => {
     return (
-        <Draggable
-            draggableId={props.id}
-            index={props.index}
-            isDragDisabled={!!props?.exclusionTag}
+        <Paper
+            onClick={() => props.onSelectStubStudy(props.id)}
+            elevation={1}
+            {...props.provided.draggableProps}
+            ref={props.provided.innerRef}
+            style={{
+                ...handleAnimation(props.provided.draggableProps.style, props.snapshot),
+                ...props.style,
+                ...{
+                    display: props.isVisible ? 'flex' : 'none',
+                    height: props.isVisible
+                        ? props.snapshot.isDragging
+                            ? '132px'
+                            : '120px'
+                        : '0px',
+                    paddingTop: '7px',
+                    paddingBottom: props.snapshot.isDragging ? '0px' : '5px',
+                    marginBottom: props.snapshot.isDragging ? '0px' : '8px',
+                    backgroundColor: props.snapshot.isDragging ? 'lightgray' : '',
+                },
+            }}
+            sx={CurationStubStudyStyles.stubStudyContainer}
         >
-            {(provided, snapshot) => (
-                <Paper
-                    onClick={() => props.onSelectStubStudy(props.id)}
-                    elevation={1}
-                    {...provided.draggableProps}
-                    ref={provided.innerRef}
-                    sx={[
-                        CurationStubStudyStyles.stubStudyContainer,
-                        {
-                            display: props.isVisible ? 'flex' : 'none',
-                        },
-                    ]}
-                    style={handleAnimation(provided.draggableProps.style, snapshot)}
+            {!props?.exclusionTag ? (
+                <Box
+                    {...props.provided.dragHandleProps}
+                    sx={{ display: 'flex', alignItems: 'center', width: '30px' }}
                 >
-                    {!props?.exclusionTag ? (
-                        <Box
-                            {...provided.dragHandleProps}
-                            sx={{ display: 'flex', alignItems: 'center', width: '30px' }}
-                        >
-                            <Box>
-                                <DragIndicatorIcon sx={{ color: 'gray' }} />
-                            </Box>
-                        </Box>
-                    ) : (
-                        <Box sx={{ width: '30px' }}></Box>
-                    )}
-                    <CurationStubStudy {...props} />
-                </Paper>
+                    <Box>
+                        <DragIndicatorIcon sx={{ color: 'gray' }} />
+                    </Box>
+                </Box>
+            ) : (
+                <Box sx={{ width: '30px' }}></Box>
             )}
-        </Draggable>
+            <CurationStubStudy {...props} />
+        </Paper>
     );
-});
+};
 
 export default CurationStubStudyDraggableContainer;

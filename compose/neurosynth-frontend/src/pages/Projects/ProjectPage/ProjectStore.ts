@@ -22,7 +22,7 @@ import {
     setExclusionForStubHelper,
 } from './ProjectStore.helpers';
 import { persist } from 'zustand/middleware';
-import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumnDroppableContainer';
+import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import useGetCurationSummary from 'hooks/useGetCurationSummary';
 

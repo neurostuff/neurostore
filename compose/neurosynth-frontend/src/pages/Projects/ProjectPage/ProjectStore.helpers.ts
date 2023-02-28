@@ -1,6 +1,6 @@
 import { DropResult, ResponderProvided } from '@hello-pangea/dnd';
 import { ICurationMetadata, IPRISMAConfig, ISource, ITag } from 'hooks/requests/useGetProjects';
-import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumnDroppableContainer';
+import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 import {
     ENeurosynthSourceIds,
     ENeurosynthTagIds,

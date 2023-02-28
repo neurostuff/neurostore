@@ -1,6 +1,6 @@
 import { Box } from '@mui/material';
 import { DragDropContext } from '@hello-pangea/dnd';
-import CurationColumnDroppableContainer from '../CurationColumn/CurationColumnDroppableContainer';
+import CurationColumn from '../CurationColumn/CurationColumn';
 import CurationBoardStyles from './CurationBoard.styles';
 import {
     useHandleCurationDrag,
@@ -12,14 +12,12 @@ const CurationBoard: React.FC = (props) => {
     const numColumns = useProjectNumCurationColumns();
     const columnArr = [...Array(numColumns).keys()];
 
-    console.log('curation board');
-
     return (
         <Box sx={{ height: '100%' }}>
             <DragDropContext onDragEnd={handleDrag}>
                 <Box sx={CurationBoardStyles.columnContainer}>
                     {columnArr.map((column) => (
-                        <CurationColumnDroppableContainer key={column} columnIndex={column} />
+                        <CurationColumn key={column} columnIndex={column} />
                     ))}
                 </Box>
             </DragDropContext>
