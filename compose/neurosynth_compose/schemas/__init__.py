@@ -1,19 +1,23 @@
 from .analysis import (
     MetaAnalysisSchema,
+    MetaAnalysisResultSchema,
+    NeurovaultCollectionSchema,
+    NeurovaultFileSchema,
     StudysetSchema,
     StudysetReferenceSchema,
     AnnotationSchema,
     AnnotationReferenceSchema,
     SpecificationSchema,
-    ProjectSchema
+    ProjectSchema,
 )
-from .users import (
-    UserSchema
-)
+from .users import UserSchema
 
 
 __all__ = [
     "MetaAnalysisSchema",
+    "MetaAnalysisResultSchema",
+    "NeurovaultCollectionSchema",
+    "NeurovaultFileSchema",
     "StudysetSchema",
     "StudysetReferenceSchema",
     "AnnotationSchema",

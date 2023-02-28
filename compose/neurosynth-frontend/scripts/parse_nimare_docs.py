@@ -11,7 +11,9 @@ import nimare.meta.kernel as nikern
 import nimare.correct as crrct
 import nimare
 
-PARAM_OPTIONAL_REGEX = re.compile(r"(?:\:obj\:`)?(?P<type>.*?)`?(?:, optional|\(optional\))?$")
+PARAM_OPTIONAL_REGEX = re.compile(
+    r"(?:\:obj\:`)?(?P<type>.*?)`?(?:, optional|\(optional\))?$"
+)
 
 NIMARE_CORRECTORS = [
     ("FDRCorrector", getattr(crrct, "FDRCorrector")),
@@ -21,8 +23,9 @@ NIMARE_CORRECTORS = [
 NIMARE_COORDINATE_ALGORITHMS = inspect.getmembers(nicoords, inspect.isclass)
 
 NIMARE_IMAGE_ALGORITHMS = [
-    cls for cls in inspect.getmembers(niimgs, inspect.isclass) if cls[0] not in
-    ["NiftiMasker", "MetaEstimator"]
+    cls
+    for cls in inspect.getmembers(niimgs, inspect.isclass)
+    if cls[0] not in ["NiftiMasker", "MetaEstimator"]
 ]
 
 
@@ -54,7 +57,7 @@ config = {
 
 def _derive_type(type_name):
     if "or" in type_name:
-        spl = type_name.split(' ')
+        spl = type_name.split(" ")
         type_name, _ = spl[0], spl[1:]
     optional_type = PARAM_OPTIONAL_REGEX.match(type_name)
     if optional_type:
@@ -66,26 +69,35 @@ for algo, cls in NIMARE_COORDINATE_ALGORITHMS:
     docs = ClassDoc(cls)
     cls_signature = inspect.signature(cls)
     config["CBMA"][algo] = {
-        "summary": ' '.join(docs._parsed_data["Summary"]),
+        "summary": " ".join(docs._parsed_data["Summary"]),
         "parameters": {
             param.name: {
-                "description": ' '.join(param.desc),
+                "description": " ".join(param.desc),
                 "type": _derive_type(param.type) or None,
-                "default": getattr(cls_signature.parameters.get(param.name), "default", None),
-            } for param in docs._parsed_data["Parameters"] if param.name not in BLACKLIST_PARAMS
-        }
+                "default": getattr(
+                    cls_signature.parameters.get(param.name), "default", None
+                ),
+            }
+            for param in docs._parsed_data["Parameters"]
+            if param.name not in BLACKLIST_PARAMS
+        },
     }
 
     kern_cls = getattr(nikern, DEFAULT_KERNELS[algo])
     kern_docs = ClassDoc(kern_cls)
     kern_cls_signature = inspect.signature(kern_cls)
-    config["CBMA"][algo]['parameters'].update(
+    config["CBMA"][algo]["parameters"].update(
         {
-            "kernel__" + param.name: {
-                "description": ' '.join(param.desc),
+            "kernel__"
+            + param.name: {
+                "description": " ".join(param.desc),
                 "type": _derive_type(param.type),
-                "default":  getattr(kern_cls_signature.parameters.get(param.name), "default", None),
-            } for param in kern_docs._parsed_data["Parameters"] if param.name not in BLACKLIST_PARAMS
+                "default": getattr(
+                    kern_cls_signature.parameters.get(param.name), "default", None
+                ),
+            }
+            for param in kern_docs._parsed_data["Parameters"]
+            if param.name not in BLACKLIST_PARAMS
         }
     )
 
@@ -93,14 +105,18 @@ for corrector, cls in NIMARE_CORRECTORS:
     docs = ClassDoc(cls)
     cls_signature = inspect.signature(cls)
     config["CORRECTOR"][corrector] = {
-        "summary": ' '.join(docs._parsed_data["Summary"]),
+        "summary": " ".join(docs._parsed_data["Summary"]),
         "parameters": {
             param.name: {
-                "description": ' '.join(param.desc),
+                "description": " ".join(param.desc),
                 "type": _derive_type(param.type) or None,
-                "default": getattr(cls_signature.parameters.get(param.name), "default", None),
-            } for param in docs._parsed_data["Parameters"] if param.name not in BLACKLIST_PARAMS
-        }
+                "default": getattr(
+                    cls_signature.parameters.get(param.name), "default", None
+                ),
+            }
+            for param in docs._parsed_data["Parameters"]
+            if param.name not in BLACKLIST_PARAMS
+        },
     }
 
 
@@ -108,19 +124,29 @@ for algo, cls in NIMARE_IMAGE_ALGORITHMS:
     docs = ClassDoc(cls)
     cls_signature = inspect.signature(cls)
     config["IBMA"][algo] = {
-        "summary": ' '.join(docs._parsed_data["Summary"]),
+        "summary": " ".join(docs._parsed_data["Summary"]),
         "parameters": {
             param.name: {
-                "description": ' '.join(param.desc),
+                "description": " ".join(param.desc),
                 "type": _derive_type(param.type) or None,
-                "default": getattr(cls_signature.parameters.get(param.name), "default", None),
-            } for param in docs._parsed_data["Parameters"] if param.name not in BLACKLIST_PARAMS
-        }
+                "default": getattr(
+                    cls_signature.parameters.get(param.name), "default", None
+                ),
+            }
+            for param in docs._parsed_data["Parameters"]
+            if param.name not in BLACKLIST_PARAMS
+        },
     }
 
 
 # save config file
-fname = Path(__file__).parent.parent / "src" / "assets" / "config" / "meta_analysis_params.json"
+fname = (
+    Path(__file__).parent.parent
+    / "src"
+    / "assets"
+    / "config"
+    / "meta_analysis_params.json"
+)
 
 with open(fname, "w+") as c:
     json.dump(config, c, indent=4)
