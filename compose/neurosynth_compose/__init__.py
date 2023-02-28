@@ -1,8 +1,6 @@
 import os
 
 from flask_cors import CORS
-from flask import current_app
-
 
 from authlib.integrations.flask_client import OAuth
 import connexion
