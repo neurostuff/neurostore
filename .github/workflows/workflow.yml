@@ -2,6 +2,20 @@ name: Testing Workflow
 on: [workflow_dispatch,push]
 
 jobs:
+  clean:
+    strategy:
+      matrix:
+        package: ['neurosynth_compose', 'compose_nginx', 'compose_pgsql', 'compose_worker', 'neurostore', 'store_nginx', 'store_pgsql']
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Delete Package
+        uses: actions/delete-package-versions@v3
+        with: 
+          package-name: ${{ matrix.package }}
+          min-versions-to-keep: 10
+          delete-only-pre-release-versions: "true"
+
   build_neurosynth_compose:
    runs-on: ubuntu-latest
    defaults:
@@ -27,38 +41,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - 
-        name: Delete old neurosynth_compose packages
-        uses: actions/delete-package-versions@v4
-        with:
-          package-name: 'neurosynth_compose'
-          package-type: 'container'
-          min-versions-to-keep: 10
-          delete-only-pre-release-versions: "true"
-      - 
-        name: Delete old compose_nginx packages
-        uses: actions/delete-package-versions@v4
-        with:
-          package-name: 'compose_nginx'
-          package-type: 'container'
-          min-versions-to-keep: 10
-          delete-only-pre-release-versions: "true"
-      - 
-        name: Delete old compose_pgsql packages
-        uses: actions/delete-package-versions@v4
-        with:
-          package-name: 'compose_pgsql'
-          package-type: 'container'
-          min-versions-to-keep: 10
-          delete-only-pre-release-versions: "true"
-      - 
-        name: Delete old compose_worker packages
-        uses: actions/delete-package-versions@v4
-        with:
-          package-name: 'compose_worker'
-          package-type: 'container'
-          min-versions-to-keep: 10
-          delete-only-pre-release-versions: "true"
       -
         name: Build and push
         uses: docker/bake-action@master
