@@ -185,7 +185,6 @@ const ProjectPage: React.FC = (props) => {
             <Button
                 onClick={() => {
                     clearProvenance();
-                    // updateProjectName({ projectId, project: {} });
                 }}
                 sx={{ marginTop: '1rem' }}
                 variant="contained"

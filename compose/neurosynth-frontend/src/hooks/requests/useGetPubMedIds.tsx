@@ -44,7 +44,7 @@ interface IPubMedArticle {
         Article?: {
             '@_PubModel'?: string;
             Abstract?: {
-                AbstractText?: string | IPubmedAbstractText | IPubmedAbstractText[];
+                AbstractText?: string[] | IPubmedAbstractText[];
             };
             ArticleDate?: {
                 '@_DateType'?: string;
@@ -55,7 +55,7 @@ interface IPubMedArticle {
             ArticleTitle?: string | IPubmedTitle;
             AuthorList?: {
                 '@_CompleteYN'?: PubMedYN;
-                Author?: IPubmedAuthor | IPubmedAuthor[];
+                Author?: IPubmedAuthor[];
             };
             ELocationID?: {
                 '#text'?: string;
@@ -103,7 +103,7 @@ interface IPubMedArticle {
         };
         KeywordList?: {
             '@_Owner'?: string;
-            Keyword?: string | IPubmedKeyword | IPubmedKeyword[];
+            Keyword?: string[] | IPubmedKeyword[];
         };
         MedlineJournalInfo: {
             Country?: string;
@@ -132,7 +132,7 @@ interface IPubMedArticle {
     };
     PubmedData?: {
         ArticleIdList?: {
-            ArticleId?: IPubMedArticleId | IPubMedArticleId[];
+            ArticleId?: IPubMedArticleId[];
         };
         History: {
             PubMedPubDate: {
@@ -162,7 +162,7 @@ interface IArticleListFromPubmed {
         '@_version': string;
     };
     PubmedArticleSet?: {
-        PubmedArticle?: IPubMedArticle | IPubMedArticle[];
+        PubmedArticle?: IPubMedArticle[];
     };
 }
 
@@ -190,15 +190,8 @@ export interface INeurosynthParsedPubmedArticle {
     articleLink: string;
 }
 
-const transformIntoArrayHelper = <T,>(arg: T): T | T[] => {
-    if (!arg) return [];
-    return Array.isArray(arg) ? arg : [arg];
-};
-
-const extractAuthorsHelper = (
-    authors: IPubmedAuthor | IPubmedAuthor[] | undefined
-): IPubmedAuthor[] => {
-    const authorList = (transformIntoArrayHelper(authors) as IPubmedAuthor[]) || [];
+const extractAuthorsHelper = (authors: IPubmedAuthor[] | undefined): IPubmedAuthor[] => {
+    const authorList = authors || [];
     return authorList.map((author) => ({
         ForeName: author?.ForeName || '',
         Initials: author?.Initials || '',
@@ -206,10 +199,8 @@ const extractAuthorsHelper = (
     }));
 };
 
-const extractDOIHelper = (
-    articleIds: IPubMedArticleId | IPubMedArticleId[] | undefined
-): string => {
-    const articleIdList = (transformIntoArrayHelper(articleIds) as IPubMedArticleId[]) || [];
+const extractDOIHelper = (articleIds: IPubMedArticleId[] | undefined): string => {
+    const articleIdList = articleIds || [];
 
     const doiArticleId = articleIdList.find(
         (article) => (article['@_IdType'] || '').toLocaleLowerCase() === 'doi'
@@ -222,11 +213,11 @@ const extractDOIHelper = (
 
 const extractPMIDHelper = (
     medlineCitationPmid: string | undefined | number,
-    articleIds: IPubMedArticleId | IPubMedArticleId[] | undefined
+    articleIds: IPubMedArticleId[] | undefined
 ): string => {
     if (medlineCitationPmid) return medlineCitationPmid.toString();
 
-    const articleIdList = (transformIntoArrayHelper(articleIds) as IPubMedArticleId[]) || [];
+    const articleIdList = articleIds || [];
 
     const pmidArticleId = articleIdList.find(
         (article) => (article['@_IdType'] || '').toLocaleLowerCase() === 'pubmed'
@@ -238,35 +229,27 @@ const extractPMIDHelper = (
 };
 
 const extractAbstractHelper = (
-    abstractTextSections: string | IPubmedAbstractText | IPubmedAbstractText[] | undefined
+    abstractTextSections: string[] | IPubmedAbstractText[] | undefined
 ): string => {
-    if (typeof abstractTextSections === 'string') {
-        return abstractTextSections;
-    } else if (typeof abstractTextSections === 'object') {
-        const abstractSectionArr = transformIntoArrayHelper(abstractTextSections) as {
-            '@_Label': string;
-            '#text': string;
-        }[];
+    if (!abstractTextSections || abstractTextSections.length === 0) return '';
 
-        return abstractSectionArr.reduce(
+    if (typeof abstractTextSections[0] === 'string') {
+        return (abstractTextSections as string[]).reduce((acc, curr) => `${acc}\n${curr}`, '');
+    } else {
+        return (abstractTextSections as IPubmedAbstractText[]).reduce(
             (acc, curr) => `${acc}${curr['@_Label'] || ''}\n${curr['#text'] || ''}\n`,
             ''
         );
-    } else {
-        return '';
     }
 };
 
-const extractKeywordsHelper = (
-    keywords: string | IPubmedKeyword | IPubmedKeyword[] | undefined
-): string[] => {
-    if (typeof keywords === 'string') {
-        return [keywords];
-    } else if (typeof keywords === 'object') {
-        const keywordsList = transformIntoArrayHelper(keywords) as IPubmedKeyword[];
-        return keywordsList.map((x) => x?.['#text'] || '');
+const extractKeywordsHelper = (keywords: string[] | IPubmedKeyword[] | undefined): string[] => {
+    if (!keywords || keywords.length === 0) return [];
+
+    if (typeof keywords[0] === 'string') {
+        return keywords as string[];
     } else {
-        return [];
+        return (keywords as IPubmedKeyword[]).map((x) => x?.['#text'] || '') as string[];
     }
 };
 
@@ -288,13 +271,14 @@ const hexCodeToHTMLEntity = (hexCode: string): string => {
 };
 
 // Documentation: https://dataguide.nlm.nih.gov/eutilities/utilities.html#efetch
-
 const EFETCH_URL =
     'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=xml&rettype=abstract&id=';
 
 export const PUBMED_ARTICLE_URL_PREFIX = 'https://pubmed.ncbi.nlm.nih.gov/';
+
 const parser = new XMLParser({
     ignoreAttributes: false,
+    ignoreDeclaration: true,
     tagValueProcessor(tagName, tagValue, jPath, hasAttributes, isLeafNode) {
         // by default, pubmed gives us hex codes in the XML for special characters. We need to modify them here
         if (
@@ -310,10 +294,15 @@ const parser = new XMLParser({
             return hexCodeToHTMLEntity(tagValue);
         }
     },
-    // TODO: implement isArray so I can get rid of the transformIntoArrayHelper
-    // isArray(tagName, jPath, isLeafNode, isAttribute) {
-    //     return true;
-    // },
+    isArray(tagName, jPath, isLeafNode, isAttribute) {
+        return [
+            `PubmedArticleSet.PubmedArticle.MedlineCitation.Article.AuthorList.Author`,
+            `PubmedArticleSet.PubmedArticle`,
+            `PubmedArticleSet.PubmedArticle.PubmedData.ArticleIdList.ArticleId`,
+            `PubmedArticleSet.PubmedArticle.MedlineCitation.Article.Abstract.AbstractText`,
+            `PubmedArticleSet.PubmedArticle.MedlineCitation.KeywordList.Keyword`,
+        ].includes(jPath);
+    },
 });
 
 const useGetPubmedIDs = (pubmedIDs: string[]) => {
@@ -331,14 +320,14 @@ const useGetPubmedIDs = (pubmedIDs: string[]) => {
         {
             enabled: pubmedIDs.length > 0,
             select: (res) => {
-                const parsedJSON = parser.parse(res.data) as IArticleListFromPubmed;
+                if (!res.data) return [];
+                const withoutItalics = (res.data as string).replaceAll(/<\/?i>/g, '');
+                const parsedJSON = parser.parse(withoutItalics) as IArticleListFromPubmed;
 
                 if (parsedJSON?.PubmedArticleSet?.PubmedArticle) {
-                    const articleList = transformIntoArrayHelper(
-                        parsedJSON.PubmedArticleSet.PubmedArticle
-                    ) as IPubMedArticle[];
+                    const articleList = parsedJSON.PubmedArticleSet.PubmedArticle;
 
-                    const x = articleList.map((article) => {
+                    return articleList.map((article) => {
                         const pubmedArticleRef = article?.MedlineCitation?.Article;
                         const pubmedArticleIdRef = article?.PubmedData?.ArticleIdList;
 
@@ -391,7 +380,6 @@ const useGetPubmedIDs = (pubmedIDs: string[]) => {
                             articleLink: `${PUBMED_ARTICLE_URL_PREFIX}${pmid}`,
                         } as INeurosynthParsedPubmedArticle;
                     });
-                    return x;
                 }
 
                 return [];

@@ -61,7 +61,7 @@ const CurationPage: React.FC = (props) => {
                                 {projectName || ''}
                             </Link>
                             <Typography color="secondary" sx={{ fontSize: '1.5rem' }}>
-                                Curation
+                                Search & Curate
                             </Typography>
                         </Breadcrumbs>
                         <CurationPageLoadingText />

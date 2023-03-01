@@ -56,7 +56,7 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
             <StepLabel>
                 <Typography sx={{ color: disabled ? 'muted.main' : 'primary.main' }} variant="h6">
-                    <b>Extraction & Annotation</b>: Add relevant study data
+                    <b>Extract & Annotate</b>: Add relevant study data
                 </Typography>
             </StepLabel>
             <StepContent>

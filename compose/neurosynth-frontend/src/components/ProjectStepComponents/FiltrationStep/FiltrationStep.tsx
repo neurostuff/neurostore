@@ -32,7 +32,7 @@ const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
             <StepLabel>
                 <Typography sx={{ color: disabled ? 'muted.main' : 'primary.main' }} variant="h6">
-                    <b>Filtration</b>: Select the analyses to include
+                    <b>Select</b>: Select the analyses to include
                 </Typography>
             </StepLabel>
             <StepContent>

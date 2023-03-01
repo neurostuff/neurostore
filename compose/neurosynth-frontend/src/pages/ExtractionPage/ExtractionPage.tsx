@@ -5,12 +5,18 @@ import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import CheckIcon from '@mui/icons-material/Check';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useHistory, useLocation, useParams } from 'react-router-dom';
 import IngestionDialog from 'components/Dialogs/IngestionDialog/IngestionDialog';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import StudyListItem from 'components/ExtractionComponents/StudyListItem';
+import {
+    useProjectExtractionAnnotationId,
+    useProjectExtractionStudysetId,
+    useProjectExtractionStudyStatusList,
+    useProjectId,
+    useProjectName,
+} from 'pages/Projects/ProjectPage/ProjectStore';
 
 enum ESelectedChip {
     'COMPLETED' = 'completed',
@@ -30,12 +36,6 @@ const getSelectedFromURL = (pathname: string | undefined): ESelectedChip => {
 };
 
 const ExtractionPage: React.FC = (props) => {
-    const { projectId }: { projectId: string | undefined } = useParams();
-    const {
-        data: project,
-        isLoading: getProjectIsLoading,
-        isError: getProjectIsError,
-    } = useGetProjectById(projectId);
     const [studiesDisplayed, setStudiesDisplayed] = useState<{
         uncategorized: StudyReturn[];
         saveForLater: StudyReturn[];
@@ -52,11 +52,17 @@ const ExtractionPage: React.FC = (props) => {
         completeSet: new Set<string>(),
         savedForLaterSet: new Set<string>(),
     });
+
+    const projectId = useProjectId();
+    const projectName = useProjectName();
+    const studysetId = useProjectExtractionStudysetId();
+    const studyStatusList = useProjectExtractionStudyStatusList();
+
     const {
         data: studyset,
         isLoading: getStudysetIsLoading,
         isError: getStudysetIsError,
-    } = useGetStudysetById(project?.provenance?.extractionMetadata?.studysetId || undefined, true);
+    } = useGetStudysetById(studysetId, true);
     const [fieldBeingUpdated, setFieldBeingUpdated] = useState('');
     const { mutate } = useUpdateStudyset();
     const location = useLocation();
@@ -74,17 +80,15 @@ const ExtractionPage: React.FC = (props) => {
     }, [studyset, studyset?.studies, getStudysetIsLoading]);
 
     useEffect(() => {
-        if (project?.provenance?.extractionMetadata?.studyStatusList && studyset?.studies) {
+        if (studyStatusList && studyset?.studies) {
             const completeSet = new Set<string>();
             const savedForLaterSet = new Set<string>();
 
-            (project?.provenance?.extractionMetadata?.studyStatusList || []).forEach(
-                (studyStatus) => {
-                    studyStatus.status === 'COMPLETE'
-                        ? completeSet.add(studyStatus.id)
-                        : savedForLaterSet.add(studyStatus.id);
-                }
-            );
+            studyStatusList.forEach((studyStatus) => {
+                studyStatus.status === 'COMPLETE'
+                    ? completeSet.add(studyStatus.id)
+                    : savedForLaterSet.add(studyStatus.id);
+            });
 
             studysetCategories.current = {
                 completeSet: completeSet,
@@ -117,19 +121,21 @@ const ExtractionPage: React.FC = (props) => {
                 };
             });
         }
-    }, [project?.provenance?.extractionMetadata?.studyStatusList, studyset?.studies]);
+    }, [studyStatusList, studyset?.studies]);
 
     const handleSelectChip = (arg: ESelectedChip) => {
-        setCurrentChip(arg);
-        history.push(`/projects/${projectId}/extraction?${arg}`);
+        if (projectId) {
+            setCurrentChip(arg);
+            history.push(`/projects/${projectId}/extraction?${arg}`);
+        }
     };
 
     const handleUpdateStudyset = (updatedText: string, fieldName: string) => {
-        if (project?.provenance?.extractionMetadata?.studysetId) {
+        if (studysetId) {
             setFieldBeingUpdated(fieldName);
             mutate(
                 {
-                    studysetId: project.provenance.extractionMetadata.studysetId,
+                    studysetId: studysetId,
                     studyset: {
                         [fieldName]: updatedText,
                     },
@@ -144,10 +150,7 @@ const ExtractionPage: React.FC = (props) => {
     };
 
     return (
-        <StateHandlerComponent
-            isError={getProjectIsError || getStudysetIsError}
-            isLoading={getProjectIsLoading || getStudysetIsLoading}
-        >
+        <StateHandlerComponent isError={false} isLoading={getStudysetIsLoading}>
             <IngestionDialog
                 isOpen={ingestionDialogIsOpen}
                 onCloseDialog={() => setIngestionDialogIsOpen(false)}
@@ -169,7 +172,7 @@ const ExtractionPage: React.FC = (props) => {
                             sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
                             underline="hover"
                         >
-                            {project?.name || ''}
+                            {projectName || ''}
                         </Link>
                         <Typography color="secondary" sx={{ fontSize: '1.5rem' }}>
                             Extraction

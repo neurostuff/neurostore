@@ -102,13 +102,13 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
             <StepLabel>
                 <Typography color="primary" variant="h6">
-                    <b>Curation</b>: Import, organize, and include studies of interest
+                    <b>Search & Curate</b>: Import, exclude, and include studies of interest
                 </Typography>
             </StepLabel>
             <StepContent>
                 <Box sx={{ marginLeft: '2rem' }}>
                     <Typography sx={{ color: 'muted.main' }}>
-                        <b>The first step when creating a meta-analysis</b>
+                        <b>The first step in creating a meta-analysis</b>
                     </Typography>
                     <Typography gutterBottom sx={{ color: 'muted.main' }}>
                         In this step, import studies from PubMed, tag studies, and either exclude or
