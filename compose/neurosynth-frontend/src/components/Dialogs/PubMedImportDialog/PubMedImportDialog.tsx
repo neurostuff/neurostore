@@ -4,7 +4,8 @@ import { ICurationStubStudy } from 'components/CurationComponents/CurationStubSt
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import { useState } from 'react';
 import PubMedwizardDuplicateStep from './PubMedWizardDuplicateStep/PubMedWizardDuplicateStep';
-import PubMedWizardTagStep from './PubMedWizardTagStep/PubMedWizardTagStep';
+import PubMedWizardTagStep from './PubmedWizardTagStepContainer/PubMedWizardTagStep/PubMedWizardTagStep';
+import PubmedWizardTagStepContainer from './PubmedWizardTagStepContainer/PubmedWizardTagStepContainer';
 import PubMedWizardUploadStep from './PubMedWizardUploadStep/PubMedWizardUploadStep';
 
 const PubmedImportDialog: React.FC<IDialog> = (props) => {
@@ -69,7 +70,7 @@ const PubmedImportDialog: React.FC<IDialog> = (props) => {
                         />
                     )}
                     {activeStep === 1 && (
-                        <PubMedWizardTagStep
+                        <PubmedWizardTagStepContainer
                             ids={ids}
                             stubs={stubStudies}
                             onChangeStep={(navigation, stubs) => {

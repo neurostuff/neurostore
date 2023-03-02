@@ -6,31 +6,33 @@ import { ICurationStubStudy } from 'components/CurationComponents/CurationStubSt
 import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { ISource, ITag } from 'hooks/requests/useGetProjects';
-import useGetPubmedIDs from 'hooks/requests/useGetPubMedIds';
+import { INeurosynthParsedPubmedArticle } from 'hooks/requests/useGetPubMedIds';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import PubMedImportStudySummary from 'components/Dialogs/PubMedImportDialog/PubMedImportStudySummary';
 import { ENeurosynthSourceIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
+import React from 'react';
 
-interface IPubMedWizardTagStep {
+export interface IPubMedWizardTagStep {
     ids: string[];
     stubs: ICurationStubStudy[];
     onChangeStep: (arg: ENavigationButton, stubs: ICurationStubStudy[]) => void;
 }
 
-const PubMedWizardTagStep: React.FC<IPubMedWizardTagStep> = (props) => {
-    console.log('re render');
-    const results = useGetPubmedIDs(props.ids || []);
+const PubMedWizardTagStep: React.FC<
+    IPubMedWizardTagStep & {
+        queryResults: INeurosynthParsedPubmedArticle[][];
+        isLoading: boolean;
+        isError: boolean;
+    }
+> = (props) => {
     const [stubs, setStubs] = useState<ICurationStubStudy[]>([]);
-
-    const isLoading = results.some((x) => x.isLoading);
-    const isError = results.some((x) => x.isError);
 
     useEffect(() => {
         if (props.stubs && props.stubs.length > 0) {
             setStubs(props.stubs);
-        } else if (results && results.length > 0) {
-            const transformedData = results.map((x) => x.data || []).flat();
+        } else if (props.queryResults && props.queryResults.length > 0) {
+            const transformedData = props.queryResults.flat();
 
             setStubs(
                 transformedData.map((x) => {
@@ -73,7 +75,7 @@ const PubMedWizardTagStep: React.FC<IPubMedWizardTagStep> = (props) => {
                 })
             );
         }
-    }, [results, props.stubs]);
+    }, [props.queryResults, props.stubs]);
 
     const handleAddTag = (tag: ITag) => {
         setStubs((prev) => {
@@ -104,7 +106,7 @@ const PubMedWizardTagStep: React.FC<IPubMedWizardTagStep> = (props) => {
 
     return (
         <>
-            <StateHandlerComponent isLoading={isLoading} isError={isError}>
+            <StateHandlerComponent isLoading={props.isLoading} isError={props.isError}>
                 <Typography gutterBottom sx={{ fontWeight: 'bold' }} variant="h6">
                     Importing {stubs.length} articles from pubmed
                 </Typography>
@@ -143,7 +145,6 @@ const PubMedWizardTagStep: React.FC<IPubMedWizardTagStep> = (props) => {
             <Paper elevation={0} sx={{ position: 'sticky', bottom: '-20px', padding: '1rem 0' }}>
                 <NavigationButtons
                     nextButtonStyle="contained"
-                    nextButtonDisabled={isLoading || isError || props.stubs.length === 0}
                     onButtonClick={(button) => props.onChangeStep(button, stubs)}
                 />
             </Paper>
