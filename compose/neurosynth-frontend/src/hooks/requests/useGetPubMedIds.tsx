@@ -1,5 +1,5 @@
-import axios from 'axios';
-import { useQuery } from 'react-query';
+import axios, { AxiosError, AxiosResponse } from 'axios';
+import { QueryKey, useQueries, useQuery, UseQueryOptions } from 'react-query';
 import * as fxparser from 'fast-xml-parser';
 const { XMLParser } = fxparser;
 
@@ -271,8 +271,7 @@ const hexCodeToHTMLEntity = (hexCode: string): string => {
 };
 
 // Documentation: https://dataguide.nlm.nih.gov/eutilities/utilities.html#efetch
-const EFETCH_URL =
-    'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&retmode=xml&rettype=abstract&id=';
+const EFETCH_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi';
 
 export const PUBMED_ARTICLE_URL_PREFIX = 'https://pubmed.ncbi.nlm.nih.gov/';
 
@@ -305,87 +304,115 @@ const parser = new XMLParser({
     },
 });
 
-const useGetPubmedIDs = (pubmedIDs: string[]) => {
-    return useQuery(
-        ['pubmed', pubmedIDs],
-        () => {
-            // adds a comma in between each id except for the last one
-            const appendedIdStr = pubmedIDs.reduce(
-                (prev, curr, index, arr) => `${prev}${curr}${index === arr.length - 1 ? '' : ','}`,
-                ''
-            );
-
-            return axios.post(`${EFETCH_URL}${appendedIdStr}`);
-        },
+const getQueryFn = (ids: string, startIndex: number) =>
+    axios.post(
+        `${EFETCH_URL}`,
+        `db=pubmed&rettype=abstract&retmode=xml&retmax=500&retstart=${startIndex}&id=${ids}`,
         {
-            enabled: pubmedIDs.length > 0,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            },
+        }
+    );
+
+const splitIdsIntoSeparateRequests = (
+    pubmedIds: string[]
+): UseQueryOptions<
+    AxiosResponse<any>,
+    AxiosError<any>,
+    INeurosynthParsedPubmedArticle[],
+    ['pubmed', string, number]
+>[] => {
+    if (pubmedIds.length > 1500 || pubmedIds.length === 0) return [];
+
+    // adds a comma in between each id except for the last one
+    const appendedIdStr = pubmedIds.reduce(
+        (prev, curr, index, arr) => `${prev}${curr}${index === arr.length - 1 ? '' : ','}`,
+        ''
+    );
+
+    const queries: UseQueryOptions<
+        AxiosResponse<any>,
+        AxiosError<any>,
+        INeurosynthParsedPubmedArticle[],
+        ['pubmed', string, number]
+    >[] = [];
+
+    for (let i = 0; i < pubmedIds.length; i += 500) {
+        queries.push({
+            queryKey: ['pubmed', appendedIdStr, i],
+            queryFn: ({ queryKey }) => getQueryFn(queryKey[1], queryKey[2]),
+            enabled: pubmedIds.length > 0,
             select: (res) => {
                 if (!res.data) return [];
                 const withoutItalics = (res.data as string).replaceAll(/<\/?i>/g, '');
                 const parsedJSON = parser.parse(withoutItalics) as IArticleListFromPubmed;
 
-                if (parsedJSON?.PubmedArticleSet?.PubmedArticle) {
-                    const articleList = parsedJSON.PubmedArticleSet.PubmedArticle;
+                if (!parsedJSON?.PubmedArticleSet?.PubmedArticle) return [];
 
-                    return articleList.map((article) => {
-                        const pubmedArticleRef = article?.MedlineCitation?.Article;
-                        const pubmedArticleIdRef = article?.PubmedData?.ArticleIdList;
+                const articleList = parsedJSON.PubmedArticleSet.PubmedArticle;
 
-                        const title = extractTitleHelper(pubmedArticleRef?.ArticleTitle);
+                return articleList.map((article) => {
+                    const pubmedArticleRef = article?.MedlineCitation?.Article;
+                    const pubmedArticleIdRef = article?.PubmedData?.ArticleIdList;
 
-                        const authors = extractAuthorsHelper(pubmedArticleRef?.AuthorList?.Author);
+                    const title = extractTitleHelper(pubmedArticleRef?.ArticleTitle);
+                    const authors = extractAuthorsHelper(pubmedArticleRef?.AuthorList?.Author);
+                    const doi = extractDOIHelper(pubmedArticleIdRef?.ArticleId);
+                    const pmid = extractPMIDHelper(
+                        article?.MedlineCitation?.PMID?.['#text'],
+                        pubmedArticleIdRef?.ArticleId
+                    );
+                    const abstract = extractAbstractHelper(
+                        pubmedArticleRef?.Abstract?.AbstractText
+                    );
+                    const year = (
+                        pubmedArticleRef?.Journal?.JournalIssue?.PubDate?.Year ||
+                        pubmedArticleRef?.ArticleDate?.Year ||
+                        0
+                    )?.toString();
+                    const keywords = extractKeywordsHelper(
+                        article?.MedlineCitation?.KeywordList?.Keyword
+                    );
 
-                        const doi = extractDOIHelper(pubmedArticleIdRef?.ArticleId);
-
-                        const pmid = extractPMIDHelper(
-                            article?.MedlineCitation?.PMID?.['#text'],
-                            pubmedArticleIdRef?.ArticleId
-                        );
-
-                        const abstract = extractAbstractHelper(
-                            pubmedArticleRef?.Abstract?.AbstractText
-                        );
-
-                        const year = (
-                            pubmedArticleRef?.Journal?.JournalIssue?.PubDate?.Year ||
-                            pubmedArticleRef?.ArticleDate?.Year ||
-                            0
-                        )?.toString();
-
-                        const keywords = extractKeywordsHelper(
-                            article?.MedlineCitation?.KeywordList?.Keyword
-                        );
-
-                        return {
-                            title: title,
-                            authors: authors,
-                            abstractText: abstract,
-                            DOI: doi,
-                            keywords: keywords,
-                            PMID: pmid,
-                            articleYear: year,
-                            journal: {
-                                title: pubmedArticleRef?.Journal?.Title || '',
-                                volume: pubmedArticleRef?.Journal?.JournalIssue?.Volume || 0,
-                                issue: pubmedArticleRef?.Journal?.JournalIssue?.Issue || 0,
-                                date: {
-                                    year: (
-                                        pubmedArticleRef?.Journal?.JournalIssue?.PubDate?.Year || 0
-                                    ).toString(),
-                                    month:
-                                        pubmedArticleRef?.Journal?.JournalIssue?.PubDate?.Month ||
-                                        '',
-                                },
+                    return {
+                        title: title,
+                        authors: authors,
+                        abstractText: abstract,
+                        DOI: doi,
+                        keywords: keywords,
+                        PMID: pmid,
+                        articleYear: year,
+                        journal: {
+                            title: pubmedArticleRef?.Journal?.Title || '',
+                            volume: pubmedArticleRef?.Journal?.JournalIssue?.Volume || 0,
+                            issue: pubmedArticleRef?.Journal?.JournalIssue?.Issue || 0,
+                            date: {
+                                year: (
+                                    pubmedArticleRef?.Journal?.JournalIssue?.PubDate?.Year || 0
+                                ).toString(),
+                                month:
+                                    pubmedArticleRef?.Journal?.JournalIssue?.PubDate?.Month || '',
                             },
-                            articleLink: `${PUBMED_ARTICLE_URL_PREFIX}${pmid}`,
-                        } as INeurosynthParsedPubmedArticle;
-                    });
-                }
-
-                return [];
+                        },
+                        articleLink: `${PUBMED_ARTICLE_URL_PREFIX}${pmid}`,
+                    } as INeurosynthParsedPubmedArticle;
+                });
             },
-        }
-    );
+        });
+    }
+
+    return queries;
+};
+
+const useGetPubmedIDs = (pubmedIds: string[]) => {
+    // the pubmed API only supports 500 ids per request and only 3 requests per second.
+    // TODO: for those with a valid API key, this increases to 10 requests per second. We should
+    // allow the user to optionally include an API key.
+
+    const requests = splitIdsIntoSeparateRequests(pubmedIds);
+
+    return useQueries(requests);
 };
 
 export default useGetPubmedIDs;

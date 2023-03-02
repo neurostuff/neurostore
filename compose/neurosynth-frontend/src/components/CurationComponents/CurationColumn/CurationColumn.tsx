@@ -19,6 +19,7 @@ import CurationDialog from 'components/Dialogs/CurationDialog/CurationDialog';
 import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionDialog';
 import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import {
+    useCanMoveToExtractionPhase,
     useProjectCurationColumn,
     useProjectCurationExclusionTags,
     useProjectCurationInfoTags,
@@ -87,14 +88,12 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
     const prismaConfig = useProjectCurationPrismaConfig();
     const infoTags = useProjectCurationInfoTags();
     const exclusionTags = useProjectCurationExclusionTags();
+    const canMoveToExtractionPhase = useCanMoveToExtractionPhase(props.columnIndex);
 
     const [selectedTag, setSelectedTag] = useState<ITag>();
     // 212 roughly represents the space taken up by other components above the column like buttons and headers
     const [windowHeight, setWindowHeight] = useState(window.innerHeight - 212 || 600);
     const [lastColExtractionDialogIsOpen, setLastColExtractionDialogIsOpen] = useState(false);
-    // const [filteredStudies, setFilteredStudies] = useState<ICurationStubStudy[]>(
-    //     column.stubStudies
-    // );
     const [tags, setTags] = useState<ITag[]>([]);
     const [dialogState, setDialogState] = useState<{
         isOpen: boolean;
@@ -190,7 +189,7 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
                 {column.name} ({filteredStudies.length} of {column.stubStudies.length})
             </Button>
 
-            {false && (
+            {canMoveToExtractionPhase && (
                 <>
                     <MoveToExtractionDialog
                         onCloseDialog={() => setLastColExtractionDialogIsOpen(false)}

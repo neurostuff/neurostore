@@ -10,7 +10,7 @@ interface IPubMedWizardUploadStep {
 }
 
 enum EValidationReason {
-    EMPTY = 'PubMed ID format is empty',
+    EMPTY = 'PubMed ID input is empty',
     INCORRECT = 'PubMed ID format is incorrect',
     TOO_BIG = 'Please limit uploads to 1500 PMIDs at a time',
 }
@@ -28,6 +28,13 @@ const PubMedWizardUploadStep: React.FC<IPubMedWizardUploadStep> = (props) => {
     });
 
     useEffect(() => {
+        if (idText.length === 0) {
+            setValidState({
+                isValid: false,
+                validationReason: EValidationReason.EMPTY,
+            });
+            return;
+        }
         // testing for PMIDs - we expect any number of numbers followed by a newline
         const regex = /^(?:[0-9]+(?:\\[rn]|[\r\n]|$))+$/;
         const isValid = regex.test(idText);
@@ -41,7 +48,7 @@ const PubMedWizardUploadStep: React.FC<IPubMedWizardUploadStep> = (props) => {
         }
 
         const textIdsToStringArr = idText.split(/\r?\n/);
-        if (textIdsToStringArr.length > 500) {
+        if (textIdsToStringArr.length > 1500) {
             setValidState({
                 isValid: false,
                 validationReason: EValidationReason.TOO_BIG,

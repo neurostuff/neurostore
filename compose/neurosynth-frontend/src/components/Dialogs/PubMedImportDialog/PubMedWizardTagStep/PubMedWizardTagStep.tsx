@@ -19,15 +19,21 @@ interface IPubMedWizardTagStep {
 }
 
 const PubMedWizardTagStep: React.FC<IPubMedWizardTagStep> = (props) => {
-    const { data, isLoading, isError } = useGetPubmedIDs(props.ids || []);
+    console.log('re render');
+    const results = useGetPubmedIDs(props.ids || []);
     const [stubs, setStubs] = useState<ICurationStubStudy[]>([]);
+
+    const isLoading = results.some((x) => x.isLoading);
+    const isError = results.some((x) => x.isError);
 
     useEffect(() => {
         if (props.stubs && props.stubs.length > 0) {
             setStubs(props.stubs);
-        } else if (data && data.length > 0) {
+        } else if (results && results.length > 0) {
+            const transformedData = results.map((x) => x.data || []).flat();
+
             setStubs(
-                data.map((x) => {
+                transformedData.map((x) => {
                     const authorString = (x?.authors || []).reduce(
                         (prev, curr, index, arr) =>
                             `${prev}${curr.ForeName} ${curr.LastName}${
@@ -67,7 +73,7 @@ const PubMedWizardTagStep: React.FC<IPubMedWizardTagStep> = (props) => {
                 })
             );
         }
-    }, [data, props.stubs]);
+    }, [results, props.stubs]);
 
     const handleAddTag = (tag: ITag) => {
         setStubs((prev) => {
@@ -100,7 +106,7 @@ const PubMedWizardTagStep: React.FC<IPubMedWizardTagStep> = (props) => {
         <>
             <StateHandlerComponent isLoading={isLoading} isError={isError}>
                 <Typography gutterBottom sx={{ fontWeight: 'bold' }} variant="h6">
-                    Importing {(data || []).length} articles from pubmed
+                    Importing {stubs.length} articles from pubmed
                 </Typography>
                 <Paper
                     elevation={0}
@@ -137,6 +143,7 @@ const PubMedWizardTagStep: React.FC<IPubMedWizardTagStep> = (props) => {
             <Paper elevation={0} sx={{ position: 'sticky', bottom: '-20px', padding: '1rem 0' }}>
                 <NavigationButtons
                     nextButtonStyle="contained"
+                    nextButtonDisabled={isLoading || isError || props.stubs.length === 0}
                     onButtonClick={(button) => props.onChangeStep(button, stubs)}
                 />
             </Paper>
