@@ -6,7 +6,7 @@ import {
     ENeurosynthTagIds,
 } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import { v4 as uuidv4 } from 'uuid';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
+import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 
 export const defaultIdentificationSources: ISource[] = [
     {
@@ -80,12 +80,11 @@ export const handleDragEndHelper = (
         const draggable = updatedStubStudiesList[source.index];
         updatedStubStudiesList.splice(source.index, 1);
         updatedStubStudiesList.splice(destination.index, 0, draggable);
-        const columnUpdate = {
+
+        updatedState[colIndex] = {
             ...updatedState[colIndex],
             stubStudies: updatedStubStudiesList,
         };
-
-        updatedState[colIndex] = columnUpdate;
     } else {
         // drop item in a different column
         const startColIndex = updatedState.findIndex((col) => col.id === source.droppableId);

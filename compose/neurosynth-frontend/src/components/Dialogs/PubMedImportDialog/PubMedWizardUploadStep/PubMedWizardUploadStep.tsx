@@ -9,22 +9,50 @@ interface IPubMedWizardUploadStep {
     onChangeStep: (change: ENavigationButton, ids: string[]) => void;
 }
 
+enum EValidationReason {
+    EMPTY = 'PubMed ID format is empty',
+    INCORRECT = 'PubMed ID format is incorrect',
+    TOO_BIG = 'Please limit uploads to 1500 PMIDs at a time',
+}
+
 const PubMedWizardUploadStep: React.FC<IPubMedWizardUploadStep> = (props) => {
     const [ids, setIds] = useState<string[]>([]);
     const [file, setFile] = useState<File>();
     const [idText, setIdText] = useState('');
-    const [isValid, setIsValid] = useState(false);
+    const [validState, setValidState] = useState<{
+        isValid: boolean;
+        validationReason: EValidationReason | null;
+    }>({
+        isValid: false,
+        validationReason: EValidationReason.EMPTY,
+    });
 
     useEffect(() => {
         // testing for PMIDs - we expect any number of numbers followed by a newline
         const regex = /^(?:[0-9]+(?:\\[rn]|[\r\n]|$))+$/;
         const isValid = regex.test(idText);
 
-        if (isValid) {
-            const textIdsToStringArr = idText.split(/\r?\n/);
-            setIds(textIdsToStringArr);
+        if (!isValid) {
+            setValidState({
+                isValid: false,
+                validationReason: EValidationReason.INCORRECT,
+            });
+            return;
         }
-        setIsValid(isValid);
+
+        const textIdsToStringArr = idText.split(/\r?\n/);
+        if (textIdsToStringArr.length > 500) {
+            setValidState({
+                isValid: false,
+                validationReason: EValidationReason.TOO_BIG,
+            });
+            return;
+        }
+        setIds(textIdsToStringArr);
+        setValidState({
+            isValid: true,
+            validationReason: null,
+        });
     }, [idText]);
 
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,8 +117,8 @@ const PubMedWizardUploadStep: React.FC<IPubMedWizardUploadStep> = (props) => {
                         onChange={handleInputIds}
                         rows={8}
                         multiline
-                        helperText={isValid ? '' : 'PubMed ID format is incorrect or empty'}
-                        error={!isValid}
+                        helperText={validState.validationReason || ''}
+                        error={!validState.isValid}
                         sx={{ width: '400px' }}
                     />
                 </Box>
@@ -99,7 +127,7 @@ const PubMedWizardUploadStep: React.FC<IPubMedWizardUploadStep> = (props) => {
             <NavigationButtons
                 nextButtonStyle="contained"
                 prevButtonDisabled={true}
-                nextButtonDisabled={!isValid}
+                nextButtonDisabled={!validState.isValid}
                 onButtonClick={handleClickNext}
             />
         </Box>

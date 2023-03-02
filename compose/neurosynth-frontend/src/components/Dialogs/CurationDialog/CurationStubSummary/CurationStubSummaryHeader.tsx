@@ -1,7 +1,7 @@
 import { Box, Button, IconButton, Tooltip, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import StyleIcon from '@mui/icons-material/Style';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
+import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import ExclusionSelectorPopup from 'components/CurationComponents/SelectorPopups/ExclusionSelectorPopup/ExclusionSelectorPopup';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
@@ -18,6 +18,7 @@ import {
     useSetExclusionFromStub,
     useRemoveTagFromStub,
 } from 'pages/Projects/ProjectPage/ProjectStore';
+import React from 'react';
 
 interface ICurationStubSummaryHeader {
     type: 'excluded' | 'included' | 'default';
@@ -26,7 +27,7 @@ interface ICurationStubSummaryHeader {
     onMoveToNextStub: () => void;
 }
 
-const CurationStubSummaryHeader: React.FC<ICurationStubSummaryHeader> = (props) => {
+const CurationStubSummaryHeader: React.FC<ICurationStubSummaryHeader> = React.memo((props) => {
     const addTagsRef = useRef<HTMLButtonElement>(null);
 
     const [exclusionTagSelectorIsOpen, setExclusionTagSelectorIsOpen] = useState(false);
@@ -61,16 +62,11 @@ const CurationStubSummaryHeader: React.FC<ICurationStubSummaryHeader> = (props) 
     const handlePromote = () => {
         if (props.stub.id) {
             promoteStub(props.columnIndex, props.stub.id);
+            props.onMoveToNextStub();
         }
     };
 
     const handleSaveForLater = () => {
-        const studyHasSaveForLaterTag = props.stub.tags.find(
-            (tag) => tag.id === ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID
-        );
-
-        if (studyHasSaveForLaterTag) return;
-
         handleAddTag({
             id: ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID,
             label: 'Save For Later',
@@ -199,6 +195,6 @@ const CurationStubSummaryHeader: React.FC<ICurationStubSummaryHeader> = (props) 
             </Box>
         </Box>
     );
-};
+});
 
 export default CurationStubSummaryHeader;

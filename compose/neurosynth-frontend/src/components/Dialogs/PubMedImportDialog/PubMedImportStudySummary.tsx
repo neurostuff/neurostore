@@ -1,5 +1,5 @@
 import { Box, Link, Typography, Chip } from '@mui/material';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
+import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
 
 const PubMedImportStudySummary: React.FC<ICurationStubStudy> = (props) => {

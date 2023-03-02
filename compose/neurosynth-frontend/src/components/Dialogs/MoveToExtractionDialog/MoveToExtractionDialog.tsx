@@ -3,7 +3,10 @@ import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { useCreateAnnotation, useCreateStudyset } from 'hooks';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
 import { useSnackbar } from 'notistack';
-import { useProjectProvenance } from 'pages/Projects/ProjectPage/ProjectStore';
+import {
+    useProjectProvenance,
+    useUpdateExtractionMetadata,
+} from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import BaseDialog, { IDialog } from '../BaseDialog';
@@ -21,6 +24,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
         description: '',
     });
 
+    const updateExtractionMetadata = useUpdateExtractionMetadata();
     const provenance = useProjectProvenance();
 
     const handleCloseDialog = () => {
@@ -51,18 +55,10 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                 if (!newAnnotationId)
                     throw new Error('expected an annotation id but did not receive one');
 
-                await updateProject({
-                    projectId: projectId,
-                    project: {
-                        provenance: {
-                            ...provenance,
-                            extractionMetadata: {
-                                ...provenance.extractionMetadata,
-                                studysetId: newStudysetId,
-                                annotationId: newAnnotationId,
-                            },
-                        },
-                    },
+                updateExtractionMetadata({
+                    studysetId: newStudysetId,
+                    annotationId: newAnnotationId,
+                    studyStatusList: [],
                 });
 
                 history.push(`/projects/${projectId}/extraction`);

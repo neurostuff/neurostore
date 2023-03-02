@@ -1,4 +1,4 @@
-import { Droppable } from '@hello-pangea/dnd';
+import { Draggable, Droppable } from '@hello-pangea/dnd';
 import {
     Box,
     Button,
@@ -6,26 +6,26 @@ import {
     ListItemText,
     Paper,
     Divider,
-    Typography,
     Autocomplete,
     TextField,
 } from '@mui/material';
 import { indexToPRISMAMapping, ITag } from 'hooks/requests/useGetProjects';
-import { useEffect, useState } from 'react';
-import CurationStubStudy, {
+import { useEffect, useMemo, useState } from 'react';
+import CurationStubStudyDraggableContainer, {
     ICurationStubStudy,
-} from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
+} from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import CurationColumnStyles from './CurationColumn.styles';
 import CurationDialog from 'components/Dialogs/CurationDialog/CurationDialog';
 import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionDialog';
 import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
-import useGetCurationSummary from 'hooks/useGetCurationSummary';
 import {
-    useProjectCurationColumns,
+    useProjectCurationColumn,
     useProjectCurationExclusionTags,
     useProjectCurationInfoTags,
     useProjectCurationPrismaConfig,
 } from 'pages/Projects/ProjectPage/ProjectStore';
+import React from 'react';
+import { FixedSizeList, ListChildComponentProps } from 'react-window';
 
 export interface ICurationColumn {
     name: string;
@@ -33,7 +33,7 @@ export interface ICurationColumn {
     stubStudies: ICurationStubStudy[];
 }
 
-const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined): boolean => {
+export const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined): boolean => {
     let isVisible = false;
     if (!selectedTag) {
         isVisible = true;
@@ -49,31 +49,76 @@ const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined):
     return isVisible;
 };
 
-const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (props) => {
-    const [selectedTag, setSelectedTag] = useState<ITag>();
-    const curationSummary = useGetCurationSummary();
-    const [lastColExtractionDialogIsOpen, setLastColExtractionDialogIsOpen] = useState(false);
-    const [filteredStudies, setFilteredStudies] = useState<ICurationStubStudy[]>(props.stubStudies);
-    const [tags, setTags] = useState<ITag[]>([]);
-    const [dialogState, setDialogState] = useState<{
-        isOpen: boolean;
-        stubId: string | undefined;
-        stubIndex: number;
-    }>({
-        isOpen: false,
-        stubId: undefined,
-        stubIndex: 0,
-    });
+const FixedSizeListRow: React.FC<
+    ListChildComponentProps<{
+        stubs: ICurationStubStudy[];
+        columnIndex: number;
+        onSelectStub: (stubId: string) => void;
+        selectedTag: ITag | undefined;
+    }>
+> = (props) => {
+    const stub = props.data.stubs[props.index];
 
+    return (
+        <Draggable
+            draggableId={stub.id}
+            index={props.index}
+            isDragDisabled={!!stub?.exclusionTag}
+            key={stub.id}
+        >
+            {(provided, snapshot) => (
+                <CurationStubStudyDraggableContainer
+                    {...stub}
+                    provided={provided}
+                    snapshot={snapshot}
+                    index={props.index}
+                    style={props.style}
+                    isVisible={getVisibility(stub, props.data.selectedTag)}
+                    onSelectStubStudy={props.data.onSelectStub}
+                    columnIndex={props.data.columnIndex}
+                />
+            )}
+        </Draggable>
+    );
+};
+
+const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => {
+    const column = useProjectCurationColumn(props.columnIndex);
     const prismaConfig = useProjectCurationPrismaConfig();
     const infoTags = useProjectCurationInfoTags();
     const exclusionTags = useProjectCurationExclusionTags();
 
-    const curationColumns = useProjectCurationColumns();
-    const canMoveToExtractionPhase =
-        curationColumns.length === props.columnIndex + 1 && // we are at the last column
-        props.stubStudies.length > 0 && // there are stubs within this column
-        curationSummary.uncategorized === 0; // there are no uncategorized studies in this project
+    const [selectedTag, setSelectedTag] = useState<ITag>();
+    // 212 roughly represents the space taken up by other components above the column like buttons and headers
+    const [windowHeight, setWindowHeight] = useState(window.innerHeight - 212 || 600);
+    const [lastColExtractionDialogIsOpen, setLastColExtractionDialogIsOpen] = useState(false);
+    // const [filteredStudies, setFilteredStudies] = useState<ICurationStubStudy[]>(
+    //     column.stubStudies
+    // );
+    const [tags, setTags] = useState<ITag[]>([]);
+    const [dialogState, setDialogState] = useState<{
+        isOpen: boolean;
+        stubId: string | undefined;
+    }>({
+        isOpen: false,
+        stubId: undefined,
+    });
+
+    useEffect(() => {
+        const handleResize = () => {
+            const currentWindowSize = window.innerHeight;
+            if (currentWindowSize) {
+                setWindowHeight(currentWindowSize - 212);
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        handleResize();
+
+        // remove listeners on cleanup
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, [windowHeight]);
 
     useEffect(() => {
         if (prismaConfig.isPrisma) {
@@ -105,20 +150,19 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
         }
     }, [exclusionTags, infoTags, prismaConfig, props.columnIndex]);
 
-    useEffect(() => {
-        setFilteredStudies(props.stubStudies.filter((stub) => getVisibility(stub, selectedTag)));
-    }, [props.stubStudies, selectedTag]);
-
-    const handleSelectStub = (stubId: string) => {
-        const foundIndex = filteredStudies.findIndex((stub) => stub.id === stubId);
-        if (foundIndex < 0) return;
-
+    const handleSelectStub = React.useCallback((stubId: string) => {
         setDialogState({
             isOpen: true,
             stubId,
-            stubIndex: foundIndex,
         });
-    };
+    }, []);
+
+    // This logic was previously in a useEffect hook, but was removed because it caused
+    // visual flickering as the filteredStudies took noticable milliseconds to get updated
+    const filteredStudies = useMemo(() => {
+        console.log('re running');
+        return column.stubStudies.filter((stub) => getVisibility(stub, selectedTag));
+    }, [column.stubStudies, selectedTag]);
 
     return (
         <Box sx={CurationColumnStyles.columnContainer}>
@@ -126,7 +170,6 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
                 selectedFilter={selectedTag?.label || ''}
                 onSetSelectedStub={handleSelectStub}
                 selectedStubId={dialogState.stubId}
-                selectedStubIndex={dialogState.stubIndex}
                 columnIndex={props.columnIndex}
                 stubs={filteredStudies}
                 isOpen={dialogState.isOpen}
@@ -137,17 +180,17 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
                 disableElevation
                 onClick={() => {
                     const stubId = filteredStudies.length > 0 ? filteredStudies[0].id : undefined;
-                    setDialogState({ stubId: stubId, isOpen: true, stubIndex: 0 });
+                    setDialogState({ stubId: stubId, isOpen: true });
                 }}
                 sx={{
                     padding: '8px',
                     marginBottom: '0.75rem',
                 }}
             >
-                {props.name} ({filteredStudies.length} of {props.stubStudies.length})
+                {column.name} ({filteredStudies.length} of {column.stubStudies.length})
             </Button>
 
-            {canMoveToExtractionPhase && (
+            {false && (
                 <>
                     <MoveToExtractionDialog
                         onCloseDialog={() => setLastColExtractionDialogIsOpen(false)}
@@ -197,34 +240,45 @@ const CurationColumn: React.FC<ICurationColumn & { columnIndex: number }> = (pro
 
             <Divider sx={{ margin: '1rem 0' }} />
 
-            <Droppable droppableId={props.id}>
-                {(provided) => (
-                    <Box
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        sx={{ overflowY: 'auto', flexGrow: 1, overflowX: 'hidden' }}
+            <Droppable
+                mode="virtual"
+                droppableId={column.id}
+                renderClone={(provided, snapshot, rubric) => (
+                    <CurationStubStudyDraggableContainer
+                        {...column.stubStudies[rubric.source.index]}
+                        index={rubric.source.index}
+                        provided={provided}
+                        snapshot={snapshot}
+                        style={{}}
+                        isVisible={true}
+                        onSelectStubStudy={handleSelectStub}
+                        columnIndex={props.columnIndex}
+                    />
+                )}
+            >
+                {(provided, snapshot) => (
+                    <FixedSizeList
+                        height={windowHeight}
+                        outerRef={provided.innerRef}
+                        itemCount={filteredStudies.length}
+                        width="100%"
+                        itemSize={140}
+                        itemKey={(index, data) => data.stubs[index]?.id}
+                        layout="vertical"
+                        itemData={{
+                            stubs: filteredStudies,
+                            columnIndex: props.columnIndex,
+                            onSelectStub: handleSelectStub,
+                            selectedTag: selectedTag,
+                        }}
+                        overscanCount={3}
                     >
-                        {props.stubStudies.length === 0 && (
-                            <Typography sx={{ marginBottom: '0.5rem' }} color="warning.dark">
-                                No studies
-                            </Typography>
-                        )}
-                        {props.stubStudies.map((stubStudy, index) => (
-                            <CurationStubStudy
-                                key={stubStudy.id}
-                                columnIndex={props.columnIndex}
-                                onSelectStubStudy={handleSelectStub}
-                                isVisible={getVisibility(stubStudy, selectedTag)}
-                                index={index}
-                                {...stubStudy}
-                            />
-                        ))}
-                        {provided.placeholder}
-                    </Box>
+                        {FixedSizeListRow}
+                    </FixedSizeList>
                 )}
             </Droppable>
         </Box>
     );
-};
+});
 
 export default CurationColumn;

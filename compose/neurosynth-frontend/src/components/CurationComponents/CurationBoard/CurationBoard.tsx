@@ -4,19 +4,20 @@ import CurationColumn from '../CurationColumn/CurationColumn';
 import CurationBoardStyles from './CurationBoard.styles';
 import {
     useHandleCurationDrag,
-    useProjectCurationColumns,
+    useProjectNumCurationColumns,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 
 const CurationBoard: React.FC = (props) => {
     const handleDrag = useHandleCurationDrag();
-    const curationColumns = useProjectCurationColumns();
+    const numColumns = useProjectNumCurationColumns();
+    const columnArr = [...Array(numColumns).keys()];
 
     return (
         <Box sx={{ height: '100%' }}>
             <DragDropContext onDragEnd={handleDrag}>
                 <Box sx={CurationBoardStyles.columnContainer}>
-                    {curationColumns.map((column, index) => (
-                        <CurationColumn key={column.id} {...column} columnIndex={index} />
+                    {columnArr.map((column) => (
+                        <CurationColumn key={column} columnIndex={column} />
                     ))}
                 </Box>
             </DragDropContext>

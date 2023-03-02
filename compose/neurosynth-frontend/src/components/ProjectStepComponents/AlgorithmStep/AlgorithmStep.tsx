@@ -35,7 +35,7 @@ const FiltrationStep: React.FC<IAlgorithmStep & StepProps> = (props) => {
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
             <StepLabel>
                 <Typography sx={{ color: disabled ? 'muted.main' : 'primary.main' }} variant="h6">
-                    <b>Algorithm</b>: Select the desired algorithm and associated arguments
+                    <b>Specify</b>: Specify the desired algorithm and associated arguments
                 </Typography>
             </StepLabel>
             <StepContent>

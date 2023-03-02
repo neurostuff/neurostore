@@ -2,7 +2,7 @@ import { Box, Chip, Divider, Paper, Typography } from '@mui/material';
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudy';
+import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { ISource, ITag } from 'hooks/requests/useGetProjects';
