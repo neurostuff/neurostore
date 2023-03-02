@@ -116,7 +116,7 @@ const NavDrawer: React.FC<INav> = (props) => {
                         <Button
                             sx={{ display: 'flex', padding: '8px 16px', width: '100%' }}
                             target="_blank"
-                            href="https://neurostuff.github.io/neurostore/"
+                            href="https://neurostuff.github.io/compose-docs/"
                         >
                             <ListItemIcon>
                                 <OpenInNewIcon />

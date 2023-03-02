@@ -98,7 +98,7 @@ const NavToolbar: React.FC<INav> = (props) => {
                         ]}
                         variant="outlined"
                         target="_blank"
-                        href="https://neurostuff.github.io/neurostore/"
+                        href="https://neurostuff.github.io/compose-docs/"
                     >
                         HELP
                         <OpenInNewIcon sx={{ marginLeft: '8px', fontSize: '1.2rem' }} />
