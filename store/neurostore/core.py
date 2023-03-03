@@ -11,7 +11,9 @@ from .resolver import MethodListViewResolver
 from .database import init_db
 
 
-connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/", debug=True)
+connexion_app = connexion.FlaskApp(
+    __name__, specification_dir="openapi/",
+    debug=os.getenv("DEBUG", False) == "True")
 
 app = connexion_app.app
 
