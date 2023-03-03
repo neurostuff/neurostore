@@ -27,6 +27,7 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import React from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
+import useGetWindowHeight from 'hooks/useGetWindowHeight';
 
 export interface ICurationColumn {
     name: string;
@@ -91,8 +92,7 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
     const canMoveToExtractionPhase = useCanMoveToExtractionPhase(props.columnIndex);
 
     const [selectedTag, setSelectedTag] = useState<ITag>();
-    // 212 roughly represents the space taken up by other components above the column like buttons and headers
-    const [windowHeight, setWindowHeight] = useState(window.innerHeight - 212 || 600);
+    const windowHeight = useGetWindowHeight();
     const [lastColExtractionDialogIsOpen, setLastColExtractionDialogIsOpen] = useState(false);
     const [tags, setTags] = useState<ITag[]>([]);
     const [dialogState, setDialogState] = useState<{
@@ -102,22 +102,6 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
         isOpen: false,
         stubId: undefined,
     });
-
-    useEffect(() => {
-        const handleResize = () => {
-            const currentWindowSize = window.innerHeight;
-            if (currentWindowSize) {
-                setWindowHeight(currentWindowSize - 212);
-            }
-        };
-        window.addEventListener('resize', handleResize);
-        handleResize();
-
-        // remove listeners on cleanup
-        return () => {
-            window.removeEventListener('resize', handleResize);
-        };
-    }, [windowHeight]);
 
     useEffect(() => {
         if (prismaConfig.isPrisma) {
@@ -257,7 +241,8 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
             >
                 {(provided, snapshot) => (
                     <FixedSizeList
-                        height={windowHeight}
+                        // 212 roughly represents the space taken up by other components above the column like buttons and headers
+                        height={windowHeight - 212 < 0 ? 0 : windowHeight - 212}
                         outerRef={provided.innerRef}
                         itemCount={filteredStudies.length}
                         width="100%"

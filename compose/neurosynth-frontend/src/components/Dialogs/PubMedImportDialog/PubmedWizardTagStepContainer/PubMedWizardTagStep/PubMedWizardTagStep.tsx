@@ -145,6 +145,7 @@ const PubMedWizardTagStep: React.FC<
             <Paper elevation={0} sx={{ position: 'sticky', bottom: '-20px', padding: '1rem 0' }}>
                 <NavigationButtons
                     nextButtonStyle="contained"
+                    nextButtonDisabled={props.isError || props.isLoading || stubs.length === 0}
                     onButtonClick={(button) => props.onChangeStep(button, stubs)}
                 />
             </Paper>

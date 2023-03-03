@@ -1,5 +1,5 @@
 import { Box, Breadcrumbs, Button, Link, Typography } from '@mui/material';
-import { useParams, NavLink } from 'react-router-dom';
+import { useParams, NavLink, useHistory } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import SchemaIcon from '@mui/icons-material/Schema';
@@ -16,12 +16,14 @@ import {
     useInitStore,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import CurationPageLoadingText from './CurationPageLoadingText';
+import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
 
 const CurationPage: React.FC = (props) => {
     const [createStudyDialogIsOpen, setCreateStudyDialogIsOpen] = useState(false);
     const [pubmedImportDialogIsOpen, setPubMedImportDialogIsOpen] = useState(false);
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
     const { projectId }: { projectId: string | undefined } = useParams();
+    const history = useHistory();
 
     const isPrisma = useProjectCurationIsPrisma();
     const projectName = useProjectName();
@@ -71,25 +73,13 @@ const CurationPage: React.FC = (props) => {
                             onCloseDialog={() => setPubMedImportDialogIsOpen(false)}
                             isOpen={pubmedImportDialogIsOpen}
                         />
+
                         <Button
-                            onClick={() => setPubMedImportDialogIsOpen(true)}
                             variant="outlined"
                             sx={{ marginRight: '1rem' }}
-                            endIcon={<FileUploadIcon />}
+                            onClick={() => history.push(`/projects/${projectId}/curation/import`)}
                         >
-                            import pubmed studies
-                        </Button>
-                        <CreateStubStudyDialog
-                            onCloseDialog={() => setCreateStudyDialogIsOpen(false)}
-                            isOpen={createStudyDialogIsOpen}
-                        />
-                        <Button
-                            onClick={() => setCreateStudyDialogIsOpen(true)}
-                            sx={{ marginRight: '1rem' }}
-                            variant="outlined"
-                            endIcon={<AddIcon />}
-                        >
-                            create study
+                            import studies
                         </Button>
                         {isPrisma && (
                             <>

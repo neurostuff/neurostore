@@ -63,7 +63,6 @@ interface ICurationStep {
 }
 
 const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
-    const { enqueueSnackbar } = useSnackbar();
     const { projectId }: { projectId: string } = useParams();
     const curationSummary = useGetCurationSummary();
     const history = useHistory();

@@ -34,6 +34,8 @@ interface ISourceSelectorPopup {
     required?: boolean;
     size?: 'small' | 'medium';
     initialValue?: ISource;
+    isError?: boolean;
+    helperText?: string;
 }
 
 const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
@@ -113,7 +115,6 @@ const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
             sx={props.sx || { width: '250px' }}
             value={selectedValue || null}
             options={sourceOptions}
-            freeSolo
             disableClearable={!!selectedValue}
             isOptionEqualToValue={(option, value) => {
                 return option?.id === value?.id;
@@ -131,6 +132,8 @@ const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
                     required={props.required}
                     size={props.size}
                     label={props.label || 'select source'}
+                    error={props.isError}
+                    helperText={props.helperText}
                 />
             )}
             filterOptions={(options, params) => {

@@ -4,6 +4,9 @@
     "private": true,
     "dependencies": {
         "@auth0/auth0-react": "^1.6.0",
+        "@citation-js/plugin-bibtex": "^0.6.6",
+        "@citation-js/plugin-enw": "^0.1.1",
+        "@citation-js/plugin-ris": "^0.6.5",
         "@emotion/react": "^11.9.0",
         "@emotion/styled": "^11.8.1",
         "@handsontable/react": "^12.1.2",
@@ -22,6 +25,7 @@
         "@types/uuid": "^9.0.0",
         "axios": "^0.21.1",
         "body-scroll-lock": "^4.0.0-beta.0",
+        "citation-js": "^0.6.7",
         "fast-xml-parser": "^4.0.12",
         "handsontable": "^12.1.2",
         "html-to-image": "^1.11.11",

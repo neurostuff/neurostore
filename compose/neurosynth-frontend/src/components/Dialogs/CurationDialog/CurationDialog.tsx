@@ -63,14 +63,17 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
             <Box sx={{ display: 'flex', height: '60vh' }}>
                 <Box
                     sx={{
-                        minWidth: '250px',
-                        maxWidth: '250px',
+                        minWidth: '260px',
+                        maxWidth: '260px',
                         display: 'flex',
                         flexDirection: 'column',
                         height: '100%',
                     }}
                 >
-                    <Paper elevation={1} sx={{ overflowY: 'scroll', height: '100%' }}>
+                    <Paper
+                        elevation={1}
+                        sx={{ overflowY: 'scroll', overflowX: 'hidden', height: '100%' }}
+                    >
                         <List disablePadding sx={{ width: '100%' }}>
                             {stubs.map((stub, index) => (
                                 <CurationStubListItem

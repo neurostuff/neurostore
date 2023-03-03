@@ -8,6 +8,7 @@ import NotFoundPage from 'pages/NotFound/NotFoundPage';
 import ProjectPage from 'pages/Projects/ProjectPage/ProjectPage';
 import ExtractionPage from 'pages/ExtractionPage/ExtractionPage';
 import PrismaComponent from 'components/PrismaComponent/PrismaComponent';
+import CurationImportPage from 'pages/CurationPage/CurationImportPage';
 
 const EditAnnotationsPage = React.lazy(
     () => import('../Annotations/EditAnnotationsPage/EditAnnotationsPage')
@@ -66,6 +67,11 @@ const BaseNavigation: React.FC = (_props) => {
                 <Route path="/projects/:projectId/curation" exact>
                     <Box sx={BaseNavigationStyles.curationPageContainer}>
                         <CurationPage />
+                    </Box>
+                </Route>
+                <Route path="/projects/:projectId/curation/import" exact>
+                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                        <CurationImportPage />
                     </Box>
                 </Route>
                 <Route path="/projects/:projectId/extraction" exact>
