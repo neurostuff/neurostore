@@ -4,10 +4,10 @@ from pathlib import Path
 from authlib.integrations.flask_client import OAuth
 import connexion
 from connexion.json_schema import default_handlers as json_schema_handlers
+from connexion.resolver import MethodViewResolver
 from flask_cors import CORS
 
 from .or_json import ORJSONDecoder, ORJSONEncoder
-from .resolver import MethodListViewResolver
 from .database import init_db
 
 
@@ -38,7 +38,7 @@ connexion_app.add_api(
     base_path="/api",
     options=options,
     arguments={"title": "NeuroStore API"},
-    resolver=MethodListViewResolver("neurostore.resources"),
+    resolver=MethodViewResolver("neurostore.resources"),
     strict_validation=os.getenv("DEBUG", False) == "True",
     validate_responses=os.getenv("DEBUG", False) == "True",
 )
