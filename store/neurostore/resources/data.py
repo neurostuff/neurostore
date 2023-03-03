@@ -23,123 +23,38 @@ from ..schemas import (  # noqa E401
 
 
 __all__ = [
-    "StudysetView",
-    "AnnotationView",
-    "StudyView",
-    "AnalysisView",
-    "ConditionView",
-    "ImageView",
-    "PointView",
-    "PointListView",
-    "PointValueView",
-    "StudyListView",
-    "AnnotationListView",
-    "AnalysisListView",
-    "ImageListView",
-    "StudysetListView",
-    "ConditionListView",
+    "StudysetsView",
+    "AnnotationsView",
+    "StudiesView",
+    "AnalysesView",
+    "ConditionsView",
+    "ImagesView",
+    "PointsView",
 ]
 
 # Individual resource views
 
 
 @view_maker
-class StudysetView(ObjectView):
+class StudysetsView(ObjectView, ListView):
     _nested = {
-        "studies": "StudyView",
+        "studies": "StudiesView",
     }
     _linked = {
-        "annotations": "AnnotationView",
-    }
-
-
-@view_maker
-class AnnotationView(ObjectView):
-    _nested = {
-        "annotation_analyses": "AnnotationAnalysisResource"
-    }
-    _linked = {
-        "studyset": "StudysetView",
-    }
-
-    def insert_data(self, id, data):
-        if not data.get('studyset'):
-            with db.session.no_autoflush:
-                data['studyset'] = self._model.query.filter_by(id=id).first().studyset.id
-        return data
-
-
-@view_maker
-class StudyView(ObjectView):
-    _nested = {
-        "analyses": "AnalysisView",
-    }
-    _linked = {
-        "studyset": "StudysetView",
-    }
-
-
-@view_maker
-class AnalysisView(ObjectView):
-    _nested = {
-        "images": "ImageView",
-        "points": "PointView",
-        "analysis_conditions": "AnalysisConditionResource"
-    }
-    _parent = {
-        "study": "StudyView",
-    }
-
-
-@view_maker
-class ConditionView(ObjectView):
-    pass
-
-
-@view_maker
-class ImageView(ObjectView):
-    _parent = {
-        "analysis": "AnalysisView",
-    }
-
-
-@view_maker
-class PointView(ObjectView):
-    _nested = {
-        "values": "PointValueView",
-        "entities": "EntityResource",
-    }
-    _parent = {
-        "analysis": "AnalysisView",
-    }
-
-
-@view_maker
-class PointValueView(ObjectView):
-    pass
-
-
-# List resource views
-
-@view_maker
-class StudysetListView(ListView):
-    _nested = {
-        "studies": "StudyView",
-    }
-    _linked = {
-        "annotations": "AnnotationView",
+        "annotations": "AnnotationsView",
     }
     _search_fields = ("name", "description", "publication", "doi", "pmid")
 
 
 @view_maker
-class AnnotationListView(ListView):
+class AnnotationsView(ObjectView, ListView):
     _nested = {
-        "annotation_analyses": "AnnotationAnalysisResource",
+        "annotation_analyses": "AnnotationAnalysesResource"
     }
     _linked = {
-        "studyset": "StudysetView",
+        "studyset": "StudysetsView",
     }
+
     _search_fields = ("name", "description")
 
     def insert_data(self, id, data):
@@ -182,14 +97,16 @@ class AnnotationListView(ListView):
 
 
 @view_maker
-class StudyListView(ListView):
+class StudiesView(ObjectView, ListView):
     _nested = {
-        "analyses": "AnalysisView",
+        "analyses": "AnalysesView",
     }
     _linked = {
-        "studyset": "StudysetView",
+        "studyset": "StudysetsView",
     }
-    _search_fields = ("name", "description", "source_id", "source", "authors", "publication")
+    _search_fields = (
+        "name", "description", "source_id", "source", "authors", "publication", "doi", "pmid"
+    )
 
     @classmethod
     def _load_from_source(cls, source, source_id):
@@ -230,72 +147,74 @@ class StudyListView(ListView):
 
 
 @view_maker
-class AnalysisListView(ListView):
+class AnalysesView(ObjectView, ListView):
     _nested = {
-        "images": "ImageView",
-        "points": "PointView",
-        "analysis_conditions": "AnalysisConditionResource"
+        "images": "ImagesView",
+        "points": "PointsView",
+        "analysis_conditions": "AnalysisConditionsResource"
     }
-
     _parent = {
-        "study": "StudyView",
+        "study": "StudiesView",
     }
-
     _search_fields = ("name", "description")
 
 
 @view_maker
-class ConditionListView(ListView):
+class ConditionsView(ObjectView, ListView):
     _search_fields = ("name", "description")
 
 
 @view_maker
-class ImageListView(ListView):
+class ImagesView(ObjectView, ListView):
     _parent = {
-        "analysis": "AnalysisView",
-    }
-    _nested = {
-        "entities": "EntityResource",
+        "analysis": "AnalysesView",
     }
     _search_fields = ("filename", "space", "value_type", "analysis_name")
 
 
 @view_maker
-class PointListView(ListView):
+class PointsView(ObjectView, ListView):
     _nested = {
-        "values": "PointValueView",
+        "values": "PointValuesView",
+        "entities": "EntitiesResource",
     }
     _parent = {
-        "analysis": "AnalysisView",
+        "analysis": "AnalysesView",
     }
+    _search_fields = ("space", "analysis_name")
+
+
+@view_maker
+class PointValuesView(ObjectView, ListView):
+    pass
 
 
 # Utility resources for updating data
-class AnalysisConditionResource(BaseView):
-    _nested = {'condition': 'ConditionView'}
-    _parent = {'analysis': "AnalysisView"}
+class AnalysisConditionsResource(BaseView):
+    _nested = {'condition': 'ConditionsView'}
+    _parent = {'analysis': "AnalysesView"}
     _model = AnalysisConditions
     _schema = AnalysisConditionSchema
     _composite_key = {}
 
 
-class AnnotationAnalysisResource(BaseView):
+class AnnotationAnalysesResource(BaseView):
     _parent = {
-        'annotation': "AnnotationView",
+        'annotation': "AnnotationsView",
     }
     _linked = {
-        'analysis': "AnalysisView",
-        'studyset_study': "StudysetStudyResource",
+        'analysis': "AnalysesView",
+        'studyset_study': "StudysetStudiesResource",
     }
     _model = AnnotationAnalysis
     _schema = AnnotationAnalysisSchema
     _composite_key = {}
 
 
-class StudysetStudyResource(BaseView):
+class StudysetStudiesResource(BaseView):
     _parent = {
-        'studyset': "StudysetView",
-        'study': "StudyView",
+        'studyset': "StudysetsView",
+        'study': "StudiesView",
     }
     _composite_key = {
         'studyset_id': Studyset,
@@ -305,10 +224,10 @@ class StudysetStudyResource(BaseView):
     _schema = StudysetStudySchema
 
 
-class EntityResource(BaseView):
+class EntitiesResource(BaseView):
     _parent = {
-        'image': "ImageView",
-        'point': "PointView",
+        'image': "ImagesView",
+        'point': "PointsView",
     }
 
     _model = Entity

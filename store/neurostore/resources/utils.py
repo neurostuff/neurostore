@@ -7,6 +7,7 @@ import connexion
 
 from .. import models
 from .. import schemas
+from .singular import singularize
 
 
 # https://www.geeksforgeeks.org/python-split-camelcase-string-to-individual-strings/
@@ -22,7 +23,8 @@ def get_current_user():
 
 
 def view_maker(cls):
-    basename = camel_case_split(cls.__name__)[0]
+    proc_name = cls.__name__.removesuffix("View").removesuffix("Resource")
+    basename = singularize(proc_name, custom={"MetaAnalyses": "MetaAnalysis"})
 
     class ClassView(cls):
         _model = getattr(models, basename)

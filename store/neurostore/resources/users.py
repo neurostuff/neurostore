@@ -8,7 +8,7 @@ from ..schemas import UserSchema # noqa E401
 from ..database import db
 
 
-class UserListView(ListView):
+class UsersView(ObjectView, ListView):
     _model = User
     _schema = UserSchema
 
@@ -28,11 +28,6 @@ class UserListView(ListView):
         db.session.commit()
 
         return self.__class__._schema().dump(record)
-
-
-class UserView(ObjectView):
-    _model = User
-    _schema = UserSchema
 
     def put(self, id):
         current_user = User.query.filter_by(external_id=connexion.context['user']).first()
