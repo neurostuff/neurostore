@@ -2,7 +2,6 @@ import os
 
 from flask_cors import CORS
 
-
 from authlib.integrations.flask_client import OAuth
 import connexion
 from connexion.resolver import MethodViewResolver
@@ -17,12 +16,19 @@ def create_app():
         debug=os.getenv(key="DEBUG", default=False) == "True",
     )
 
+    options = {"swagger_ui": True}
     app = connexion_app.app
-
     app.config.from_object(os.environ["APP_SETTINGS"])
-
-    # initialize db
-    db.init_app(app)
+    with app.app_context():
+        connexion_app.add_api(
+            "neurosynth-compose-openapi.yml",
+            base_path="/api",
+            options=options,
+            arguments={"title": "NeuroSynth API"},
+            resolver=MethodViewResolver("neurosynth_compose.resources"),
+            strict_validation=True,
+            validate_responses=True,
+        )
 
     # use application context for connexion to work with app variables
     options = {"swagger_ui": True}
@@ -38,14 +44,6 @@ def create_app():
         )
 
     oauth = OAuth(app)
-
-    # setup authentication
-    # jwt = JWTManager(app)
-    app.secret_key = app.config["JWT_SECRET_KEY"]
-
-    # Enable CORS
-    cors = CORS(app)  # noqa: F841
-
     auth0 = oauth.register(  # noqa: F841
         "auth0",
         client_id=os.environ["AUTH0_CLIENT_ID"],
@@ -57,4 +55,15 @@ def create_app():
             "scope": "openid profile email",
         },
     )
+
+    # initialize db
+    db.init_app(app)
+
+    # setup authentication
+    # jwt = JWTManager(app)
+    app.secret_key = app.config["JWT_SECRET_KEY"]
+
+    # Enable CORS
+    cors = CORS(app)  # noqa: F841
+
     return app
