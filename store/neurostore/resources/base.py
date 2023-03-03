@@ -188,7 +188,7 @@ LIST_USER_ARGS = {
     "sort": fields.String(missing="created_at"),
     "page": fields.Int(missing=1),
     "desc": fields.Boolean(missing=True),
-    "page_size": fields.Int(missing=20, validate=lambda val: val < 100),
+    "page_size": fields.Int(missing=20, validate=lambda val: val < 30000),
     "source_id": fields.String(missing=None),
     "source": fields.String(missing=None),
     "unique": fields.Boolean(missing=False),
