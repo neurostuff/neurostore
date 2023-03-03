@@ -12,8 +12,9 @@ from .database import db
 
 def create_app():
     connexion_app = connexion.FlaskApp(
-        __name__, specification_dir="openapi/",
-        debug=os.getenv(key="DEBUG", default=False) == "True"
+        __name__,
+        specification_dir="openapi/",
+        debug=os.getenv(key="DEBUG", default=False) == "True",
     )
 
     app = connexion_app.app
@@ -23,7 +24,8 @@ def create_app():
     # initialize db
     db.init_app(app)
 
-    # 
+    # use application context for connexion to work with app variables
+    options = {"swagger_ui": True}
     with app.app_context():
         connexion_app.add_api(
             "neurosynth-compose-openapi.yml",
@@ -40,17 +42,6 @@ def create_app():
     # setup authentication
     # jwt = JWTManager(app)
     app.secret_key = app.config["JWT_SECRET_KEY"]
-
-    options = {"swagger_ui": True}
-    connexion_app.add_api(
-        "neurosynth-compose-openapi.yml",
-        base_path="/api",
-        options=options,
-        arguments={"title": "NeuroSynth API"},
-        resolver=MethodViewResolver("neurosynth_compose.resources"),
-        strict_validation=True,
-        validate_responses=True,
-    )
 
     # Enable CORS
     cors = CORS(app)  # noqa: F841
