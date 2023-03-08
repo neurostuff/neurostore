@@ -1,14 +1,14 @@
-import { Pagination, TablePagination } from '@mui/material';
+import { Box, Pagination, TablePagination, Typography } from '@mui/material';
 import SearchBar from 'components/Search/SearchBar/SearchBar';
 import { Style } from 'index';
-import { SearchBy } from 'pages/Studies/StudiesPage/StudiesPage';
+import { SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
 import { ChangeEvent } from 'react';
 import SearchContainerStyles from './SearchContainer.styles';
 
 export interface ISearchContainer {
     onPageChange: (newPage: number) => void;
     onRowsPerPageChange: (newRowsPerPage: number) => void;
-    onSearch: (searchedString: string, searchBy: SearchBy) => void;
+    onSearch: (searchArgs: Partial<SearchCriteria>) => void;
     totalCount: number | undefined;
     pageSize: number;
     pageOfResults: number;
@@ -54,16 +54,21 @@ const SearchContainer: React.FC<ISearchContainer> = (props) => {
         <>
             <SearchBar searchButtonColor={searchButtonColor} onSearch={onSearch} />
 
-            <Pagination
-                siblingCount={2}
-                boundaryCount={2}
-                sx={[SearchContainerStyles.paginator, paginationSelectorStyles]}
-                onChange={(_event, page) => handlePaginationChange(page)}
-                showFirstButton
-                showLastButton
-                page={totalCount === undefined ? 0 : pageOfResults}
-                count={getNumTotalPages(totalCount, pageSize)}
-            />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Pagination
+                    siblingCount={2}
+                    boundaryCount={2}
+                    sx={[SearchContainerStyles.paginator, paginationSelectorStyles]}
+                    onChange={(_event, page) => handlePaginationChange(page)}
+                    showFirstButton
+                    showLastButton
+                    page={totalCount === undefined ? 0 : pageOfResults}
+                    count={getNumTotalPages(totalCount, pageSize)}
+                />
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="h6">{totalCount} results</Typography>
+                </Box>
+            </Box>
             {children}
             <TablePagination
                 rowsPerPage={pageSize}

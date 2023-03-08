@@ -8,7 +8,7 @@ import CurationImportTag from './CurationImportTag/CurationImportTag';
 
 const CurationImportBase: React.FC = (props) => {
     const [activeStep, setActiveStep] = useState(0);
-    const [importMode, setImportMode] = useState<EImportMode>(EImportMode.PUBMED_IMPORT);
+    const [importMode, setImportMode] = useState<EImportMode>(EImportMode.NEUROSTORE_IMPORT);
     const [stubs, setStubs] = useState<ICurationStubStudy[]>([]);
 
     const handleChangeImportMode = (newImportMode: EImportMode) => {
@@ -28,6 +28,7 @@ const CurationImportBase: React.FC = (props) => {
     };
 
     const handleImportStubs = (stubs: ICurationStubStudy[]) => {
+        console.log(stubs);
         setStubs(stubs);
         setActiveStep((prev) => prev + 1);
     };

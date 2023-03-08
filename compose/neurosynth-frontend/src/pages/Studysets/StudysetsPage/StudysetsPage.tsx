@@ -9,7 +9,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { useHistory, useLocation } from 'react-router-dom';
 import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
-import { SearchBy, SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
+import { SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
 import { StudysetList } from 'neurostore-typescript-sdk';
 import {
     addKVPToSearch,
@@ -87,9 +87,9 @@ const StudysetsPage: React.FC = (props) => {
         history.push(`/studysets?${searchURL}`);
     };
 
-    const handleSearch = (searchString: string, searchBy: SearchBy) => {
-        const searchURL = getURLFromSearchCriteria({ [searchBy]: searchString });
-        history.push(`/studysets?${searchURL}`);
+    const handleSearch = (search: Partial<SearchCriteria>) => {
+        // const searchURL = getURLFromSearchCriteria({ [searchBy]: searchString });
+        // history.push(`/studysets?${searchURL}`);
     };
 
     return (

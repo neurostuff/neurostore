@@ -127,9 +127,6 @@ const UploadPMIDs: React.FC<{
                 or
             </Box>
             <Box>
-                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                    <Typography>Enter list of pubmed IDs separated by a newline</Typography>
-                </Box>
                 <Box
                     sx={{
                         display: 'flex',
@@ -141,13 +138,14 @@ const UploadPMIDs: React.FC<{
                         onChange={handleInputIds}
                         rows={10}
                         multiline
+                        placeholder="Enter list of pubmed IDs separated by a newline"
                         helperText={uploadState.validationReason || ''}
                         error={!uploadState.isValid}
                         sx={{ width: '400px' }}
                     />
                 </Box>
             </Box>
-            <Box>
+            <Box sx={{ marginTop: '1rem' }}>
                 <NavigationButtons
                     nextButtonStyle="contained"
                     nextButtonDisabled={uploadState.parsedIdList.length === 0}

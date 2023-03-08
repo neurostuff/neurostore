@@ -1,8 +1,11 @@
-import { SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
+import { SearchCriteria, Source } from 'pages/Studies/StudiesPage/StudiesPage';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
-const useGetStudysets = (searchCriteria: Partial<SearchCriteria>, enabled?: boolean) => {
+const useGetStudysets = (
+    searchCriteria: Partial<Omit<SearchCriteria, 'dataType'>>,
+    enabled?: boolean
+) => {
     return useQuery(
         ['studysets', { ...searchCriteria }],
         () => {
@@ -17,7 +20,7 @@ const useGetStudysets = (searchCriteria: Partial<SearchCriteria>, enabled?: bool
                 searchCriteria.descriptionSearch,
                 undefined,
                 searchCriteria.showUnique,
-                searchCriteria.source,
+                searchCriteria.source === Source.ALL ? undefined : searchCriteria.source,
                 searchCriteria.authorSearch,
                 searchCriteria.userId
             );

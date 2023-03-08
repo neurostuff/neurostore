@@ -1,6 +1,6 @@
-import { Style } from '../../..';
+import { Style } from '../../../..';
 
-const SearchBarStyles: Style = {
+const SimpleSearchStyles: Style = {
     textfield: {
         flexGrow: 1,
         padding: '5px 15px',
@@ -19,12 +19,10 @@ const SearchBarStyles: Style = {
         display: 'flex',
         flexDirection: 'row',
         width: '100%',
-        margin: '1% 0',
     },
     paper: {
         flexGrow: 1,
-        borderTopLeftRadius: '0 !important',
-        borderBottomLeftRadius: '0 !important',
+        borderRadius: 0,
         borderLeft: 'none !important',
         justifyContent: 'center',
         display: 'flex',
@@ -35,4 +33,4 @@ const SearchBarStyles: Style = {
     },
 };
 
-export default SearchBarStyles;
+export default SimpleSearchStyles;

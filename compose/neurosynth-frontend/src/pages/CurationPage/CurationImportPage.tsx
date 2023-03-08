@@ -1,14 +1,11 @@
-import { Box, Breadcrumbs, Link, Step, StepLabel, Stepper, Typography } from '@mui/material';
+import { Box, Breadcrumbs, Link, Typography } from '@mui/material';
 import CurationImportBase from 'components/CurationComponents/CurationImport/CurationImportBase';
 import { useProjectId, useProjectName } from 'pages/Projects/ProjectPage/ProjectStore';
-import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 
 const CurationImportPage: React.FC = (props) => {
     const projectId = useProjectId();
     const projectName = useProjectName();
-
-    const [activeStep, setActiveStep] = useState(0);
 
     return (
         <Box>

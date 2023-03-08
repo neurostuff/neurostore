@@ -1,4 +1,3 @@
-import { Box } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import CreateStubStudy from './CreateStubStudy/CreateStubStudy';
@@ -28,7 +27,12 @@ const CurationImport: React.FC<{
             <CreateStubStudy onImportStubs={props.onImportStubs} onNavigate={props.onNavigate} />
         );
     } else {
-        return <ImportStandardFormat />;
+        return (
+            <ImportStandardFormat
+                onImportStubs={props.onImportStubs}
+                onNavigate={props.onNavigate}
+            />
+        );
     }
 };
 

@@ -17,10 +17,12 @@ import {
 } from 'pages/helpers/utils';
 
 export enum SortBy {
-    NAME = 'name',
+    TITLE = 'name',
     AUTHORS = 'authors',
     DESCRIPTION = 'description',
     CREATEDAT = 'created_at',
+    SOURCE = 'source',
+    PUBLICATION = 'publication',
 }
 
 export enum Source {
@@ -29,18 +31,32 @@ export enum Source {
     PUBMED = 'pubmed',
     NEUROSYNTH = 'neurosynth',
     NEUROQUERY = 'neuroquery',
+    ALL = 'all_sources',
 }
 export enum SearchBy {
-    NAME = 'nameSearch',
-    DESCRIPTION = 'descriptionSearch',
-    AUTHORS = 'authorSearch',
-    ALL = 'genericSearchStr',
+    TITLE = 'title',
+    DESCRIPTION = 'description',
+    AUTHORS = 'authors',
+    ALL = 'all fields',
 }
+
+export enum SearchDataType {
+    COORDINATE = 'coordinate',
+    IMAGE = 'image',
+    BOTH = 'both',
+}
+
+export const SearchByMapping = {
+    [SearchBy.ALL]: 'genericSearchStr',
+    [SearchBy.AUTHORS]: 'authorSearch',
+    [SearchBy.DESCRIPTION]: 'descriptionSearch',
+    [SearchBy.TITLE]: 'nameSearch',
+};
 
 export class SearchCriteria {
     constructor(
         public genericSearchStr: string | undefined = undefined,
-        public sortBy: SortBy = SortBy.NAME,
+        public sortBy: SortBy = SortBy.TITLE,
         public pageOfResults: number = 1,
         public descOrder: boolean = true,
         public pageSize: number = 10,
@@ -48,10 +64,10 @@ export class SearchCriteria {
         public nameSearch: string | undefined = undefined,
         public descriptionSearch: string | undefined = undefined,
         public authorSearch: string | undefined = undefined,
-        public showUnique: boolean = false,
+        public showUnique: boolean = true,
         public source: Source | undefined = undefined,
         public userId: string | undefined = undefined,
-        public dataType: 'coordinate' | 'image' | 'both' = 'coordinate',
+        public dataType: SearchDataType = SearchDataType.COORDINATE,
         public studysetOwner: string | undefined = undefined
     ) {}
 }
@@ -60,7 +76,7 @@ const StudiesPage = () => {
     const { startTour } = useGetTour('StudiesPage');
     const history = useHistory();
     const location = useLocation();
-    const { isAuthenticated, user, isLoading: authenticationIsLoading } = useAuth0();
+    const { user, isLoading: authenticationIsLoading } = useAuth0();
 
     // cached data returned from the api
     const [studyData, setStudyData] = useState<StudyList>();
@@ -72,7 +88,8 @@ const StudiesPage = () => {
     });
 
     // state of the search to the API (separated from searchCriteria to allow for debouncing)
-    const [apiSearch, setApiSearch] = useState<SearchCriteria>(searchCriteria);
+    const [debouncedSearchCriteria, setDebouncedSearchCriteria] =
+        useState<SearchCriteria>(searchCriteria);
 
     /**
      * This query will not be made until authentication has finished loading. The user?.sub property
@@ -80,7 +97,7 @@ const StudiesPage = () => {
      * with the studysetOwner set (if logged in) and undefined otherwise
      */
     const { data, isLoading, isError, isFetching } = useGetStudies(
-        { ...apiSearch, studysetOwner: user?.sub },
+        { ...debouncedSearchCriteria, studysetOwner: user?.sub },
         !authenticationIsLoading
     );
 
@@ -112,10 +129,11 @@ const StudiesPage = () => {
         });
     }, [location.search]);
 
-    // runs for any change in study query, add set timeout and clear timeout for debounce.
+    // runs for any change in study query
+    // debounces above useEffect
     useEffect(() => {
         const timeout = setTimeout(async () => {
-            setApiSearch(searchCriteria);
+            setDebouncedSearchCriteria(searchCriteria);
         }, 200);
 
         return () => {
@@ -123,10 +141,10 @@ const StudiesPage = () => {
         };
     }, [searchCriteria]);
 
-    const handleSearch = (searchString: string, searchBy: SearchBy) => {
+    const handleSearch = (searchArgs: Partial<SearchCriteria>) => {
         // when we search, we want to reset the search criteria as we dont know the
         // page number of number of results in advance
-        const searchURL = getURLFromSearchCriteria({ [searchBy]: searchString });
+        const searchURL = getURLFromSearchCriteria(searchArgs);
         history.push(`/studies?${searchURL}`);
     };
 
@@ -146,7 +164,7 @@ const StudiesPage = () => {
 
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>
-            <Box sx={{ display: 'flex' }}>
+            <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
                 <Typography variant="h4">Studies</Typography>
                 <IconButton onClick={() => startTour()} color="primary">
                     <HelpIcon />

@@ -10,6 +10,9 @@ const getSearchCriteriaFromURL = (locationURL?: string): SearchCriteria => {
             if (key === 'pageOfResults' || key === 'pageSize') {
                 const parsedValue = parseInt(value);
                 if (!isNaN(parsedValue)) searchCriteriaObj[key] = parsedValue;
+            } else if (key === 'descOrder' || key === 'showUnique') {
+                const parsedValue = value === 'true';
+                searchCriteriaObj[key] = parsedValue;
             } else if (key in newSearchCriteria) {
                 searchCriteriaObj[key] = value;
             }
@@ -25,6 +28,7 @@ const getSearchCriteriaFromURL = (locationURL?: string): SearchCriteria => {
 const getURLFromSearchCriteria = (searchCriteria: Partial<SearchCriteria>) => {
     let stringifiedValueSearch: Record<string, string> = {};
     for (let [key, value] of Object.entries(searchCriteria)) {
+        if (value === undefined) continue;
         stringifiedValueSearch[key] = `${value}`;
     }
     const search = new URLSearchParams(stringifiedValueSearch);
@@ -35,27 +39,6 @@ const addKVPToSearch = (locationURL: string, key: string, value: string) => {
     const search = new URLSearchParams(locationURL);
     search.has(key) ? search.set(key, value) : search.append(key, value);
     return search.toString();
-};
-
-const extractSearchedStringFromURL = (
-    locationURL: string
-): { searchedString: string; searchBy: SearchBy } => {
-    const search = new URLSearchParams(locationURL);
-
-    for (const searchByString in SearchBy) {
-        const key = SearchBy[searchByString as keyof typeof SearchBy];
-        if (search.has(key)) {
-            return {
-                searchBy: key,
-                searchedString: search.get(key) || '',
-            };
-        }
-    }
-
-    return {
-        searchBy: SearchBy.ALL,
-        searchedString: '',
-    };
 };
 
 /**
@@ -95,7 +78,6 @@ export {
     getSearchCriteriaFromURL,
     getURLFromSearchCriteria,
     addKVPToSearch,
-    extractSearchedStringFromURL,
     stringToColor,
     getNumStudiesString,
 };
