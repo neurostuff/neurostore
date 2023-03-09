@@ -4,7 +4,20 @@ from webargs import fields
 from .utils import view_maker
 from .base import BaseView, ObjectView, ListView
 from ..database import db
-from ..models import Studyset, Study, Analysis, Condition, Image, Point, PointValue, AnalysisConditions, User, AnnotationAnalysis, Annotation, Entity  # noqa E401
+from ..models import (
+    Studyset,
+    Study,
+    Analysis,
+    Condition,
+    Image,
+    Point,
+    PointValue,
+    AnalysisConditions,
+    User,
+    AnnotationAnalysis,
+    Annotation,
+    Entity,
+)  # noqa E401
 from ..models.data import StudysetStudy
 
 from ..schemas import (  # noqa E401
@@ -65,12 +78,8 @@ class StudysetsView(ObjectView, ListView):
 
 @view_maker
 class AnnotationsView(ObjectView, ListView):
-    _view_fields = {
-        "studyset_id": fields.String(missing=None)
-    }
-    _nested = {
-        "annotation_analyses": "AnnotationAnalysesResource"
-    }
+    _view_fields = {"studyset_id": fields.String(missing=None)}
+    _nested = {"annotation_analyses": "AnnotationAnalysesResource"}
     _linked = {
         "studyset": "StudysetsView",
     }
@@ -78,9 +87,11 @@ class AnnotationsView(ObjectView, ListView):
     _search_fields = ("name", "description")
 
     def insert_data(self, id, data):
-        if not data.get('studyset'):
+        if not data.get("studyset"):
             with db.session.no_autoflush:
-                data['studyset'] = self._model.query.filter_by(id=id).first().studyset.id
+                data["studyset"] = (
+                    self._model.query.filter_by(id=id).first().studyset.id
+                )
         return data
 
     @classmethod
@@ -93,34 +104,34 @@ class AnnotationsView(ObjectView, ListView):
         annotation = cls._model.query.filter_by(id=source_id).first_or_404()
         parent_source_id = annotation.source_id
         parent_source = annotation.source
-        while parent_source_id is not None and parent_source == 'neurostore':
+        while parent_source_id is not None and parent_source == "neurostore":
             source_id = parent_source_id
-            parent = cls._model.query.filter_by(
-                id=source_id
-            ).first_or_404()
+            parent = cls._model.query.filter_by(id=source_id).first_or_404()
             parent_source = parent.source
             parent_source_id = parent.source_id
 
         schema = cls._schema(copy=True)
         tmp_data = schema.dump(annotation)
-        for note in tmp_data['notes']:
-            note.pop('analysis_name')
-            note.pop('study_name')
-            note.pop('study_year')
-            note.pop('publication')
-            note.pop('authors')
+        for note in tmp_data["notes"]:
+            note.pop("analysis_name")
+            note.pop("study_name")
+            note.pop("study_year")
+            note.pop("publication")
+            note.pop("authors")
         data = schema.load(tmp_data)
-        data['source'] = "neurostore"
-        data['source_id'] = source_id
-        data['source_updated_at'] = annotation.updated_at or annotation.created_at
+        data["source"] = "neurostore"
+        data["source_id"] = source_id
+        data["source_updated_at"] = annotation.updated_at or annotation.created_at
         return data
 
 
 @view_maker
 class StudiesView(ObjectView, ListView):
-    _view_fields =  {
-        **{"data_type": fields.String(missing=None),
-           "studyset_owner": fields.String(missing=None)},
+    _view_fields = {
+        **{
+            "data_type": fields.String(missing=None),
+            "studyset_owner": fields.String(missing=None),
+        },
         **LIST_NESTED_ARGS,
         **LIST_CLONE_ARGS,
     }
@@ -131,7 +142,14 @@ class StudiesView(ObjectView, ListView):
         "studyset": "StudysetsView",
     }
     _search_fields = (
-        "name", "description", "source_id", "source", "authors", "publication", "doi", "pmid"
+        "name",
+        "description",
+        "source_id",
+        "source",
+        "authors",
+        "publication",
+        "doi",
+        "pmid",
     )
 
     @classmethod
@@ -148,19 +166,17 @@ class StudiesView(ObjectView, ListView):
         study = cls._model.query.filter_by(id=source_id).first_or_404()
         parent_source_id = study.source_id
         parent_source = study.source
-        while parent_source_id is not None and parent_source == 'neurostore':
+        while parent_source_id is not None and parent_source == "neurostore":
             source_id = parent_source_id
-            parent = cls._model.query.filter_by(
-                id=source_id
-            ).first_or_404()
+            parent = cls._model.query.filter_by(id=source_id).first_or_404()
             parent_source = parent.source
             parent_source_id = parent.source_id
 
         schema = cls._schema(copy=True)
         data = schema.load(schema.dump(study), unknown=EXCLUDE)
-        data['source'] = "neurostore"
-        data['source_id'] = source_id
-        data['source_updated_at'] = study.updated_at or study.created_at
+        data["source"] = "neurostore"
+        data["source_id"] = source_id
+        data["source_updated_at"] = study.updated_at or study.created_at
         return data
 
     @classmethod
@@ -174,13 +190,11 @@ class StudiesView(ObjectView, ListView):
 
 @view_maker
 class AnalysesView(ObjectView, ListView):
-    _view_fields = {
-        **LIST_NESTED_ARGS
-    }
+    _view_fields = {**LIST_NESTED_ARGS}
     _nested = {
         "images": "ImagesView",
         "points": "PointsView",
-        "analysis_conditions": "AnalysisConditionsResource"
+        "analysis_conditions": "AnalysisConditionsResource",
     }
     _parent = {
         "study": "StudiesView",
@@ -220,8 +234,8 @@ class PointValuesView(ObjectView, ListView):
 
 # Utility resources for updating data
 class AnalysisConditionsResource(BaseView):
-    _nested = {'condition': 'ConditionsView'}
-    _parent = {'analysis': "AnalysesView"}
+    _nested = {"condition": "ConditionsView"}
+    _parent = {"analysis": "AnalysesView"}
     _model = AnalysisConditions
     _schema = AnalysisConditionSchema
     _composite_key = {}
@@ -229,11 +243,11 @@ class AnalysisConditionsResource(BaseView):
 
 class AnnotationAnalysesResource(BaseView):
     _parent = {
-        'annotation': "AnnotationsView",
+        "annotation": "AnnotationsView",
     }
     _linked = {
-        'analysis': "AnalysesView",
-        'studyset_study': "StudysetStudiesResource",
+        "analysis": "AnalysesView",
+        "studyset_study": "StudysetStudiesResource",
     }
     _model = AnnotationAnalysis
     _schema = AnnotationAnalysisSchema
@@ -242,12 +256,12 @@ class AnnotationAnalysesResource(BaseView):
 
 class StudysetStudiesResource(BaseView):
     _parent = {
-        'studyset': "StudysetsView",
-        'study': "StudiesView",
+        "studyset": "StudysetsView",
+        "study": "StudiesView",
     }
     _composite_key = {
-        'studyset_id': Studyset,
-        'study_id': Study,
+        "studyset_id": Studyset,
+        "study_id": Study,
     }
     _model = StudysetStudy
     _schema = StudysetStudySchema
@@ -255,8 +269,8 @@ class StudysetStudiesResource(BaseView):
 
 class EntitiesResource(BaseView):
     _parent = {
-        'image': "ImagesView",
-        'point': "PointsView",
+        "image": "ImagesView",
+        "point": "PointsView",
     }
 
     _model = Entity

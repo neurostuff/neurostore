@@ -19,15 +19,12 @@ class StringOrNested(fields.Nested):
 
     def __init__(self, nested, **kwargs):
         super().__init__(nested, **kwargs)
-        self.use_nested = kwargs.get('use_nested', True)
+        self.use_nested = kwargs.get("use_nested", True)
 
     def _serialize(self, value, attr, obj, **ser_kwargs):
         if value is None:
             return None
-        if (
-            self.use_nested and
-            (self.context.get('nested') or self.context.get('copy'))
-        ):
+        if self.use_nested and (self.context.get("nested") or self.context.get("copy")):
             nested_schema = self.nested(context=self.context)
             return nested_schema.dump(value, many=self.many)
         else:
@@ -58,21 +55,23 @@ class BaseSchemaOpts(SchemaOpts):
 
 
 class BaseSchema(Schema):
-
     def __init__(self, copy=None, *args, **kwargs):
         exclude = list(kwargs.pop("exclude", []))
-        if copy is None and kwargs.get('context') and kwargs.get('context').get('copy'):
-            copy = kwargs.get('context').get('copy')
+        if copy is None and kwargs.get("context") and kwargs.get("context").get("copy"):
+            copy = kwargs.get("context").get("copy")
 
-        if kwargs.get('context'):
-            kwargs['context']['copy'] = copy
+        if kwargs.get("context"):
+            kwargs["context"]["copy"] = copy
         else:
-            kwargs['context'] = {'copy': copy}
+            kwargs["context"] = {"copy": copy}
         if copy:
-            exclude.extend([
-                field for field, f_obj in self._declared_fields.items()
-                if f_obj.metadata.get("db_only")
-            ])
+            exclude.extend(
+                [
+                    field
+                    for field, f_obj in self._declared_fields.items()
+                    if f_obj.metadata.get("db_only")
+                ]
+            )
         super().__init__(*args, exclude=exclude, **kwargs)
 
     OPTIONS_CLASS = BaseSchemaOpts
@@ -80,13 +79,10 @@ class BaseSchema(Schema):
     id_key = "id"
 
     _id = fields.String(
-        attribute="id",
-        data_key=id_key,
-        dump_only=True,
-        metadata={'db_only': True}
+        attribute="id", data_key=id_key, dump_only=True, metadata={"db_only": True}
     )
-    created_at = fields.DateTime(dump_only=True, metadata={'db_only': True})
-    updated_at = fields.DateTime(dump_only=True, metadata={'db_only': True})
+    created_at = fields.DateTime(dump_only=True, metadata={"db_only": True})
+    updated_at = fields.DateTime(dump_only=True, metadata={"db_only": True})
 
     id = fields.String(load_only=True)
 
@@ -97,7 +93,9 @@ class BaseSchema(Schema):
 
 
 class BaseDataSchema(BaseSchema):
-    user = fields.String(attribute="user_id", dump_only=True, metadata={'db_only': True})
+    user = fields.String(
+        attribute="user_id", dump_only=True, metadata={"db_only": True}
+    )
 
 
 class ConditionSchema(BaseDataSchema):
@@ -114,11 +112,10 @@ class EntitySchema(BaseDataSchema):
 
 
 class ImageSchema(BaseDataSchema):
-
     # serialization
     analysis = StringOrNested("AnalysisSchema", use_nested=False)
-    analysis_name = fields.String(dump_only=True, metadata={'db_only': True})
-    add_date = fields.DateTime(dump_only=True, metadata={'db_only': True})
+    analysis_name = fields.String(dump_only=True, metadata={"db_only": True})
+    add_date = fields.DateTime(dump_only=True, metadata={"db_only": True})
 
     class Meta:
         additional = ("url", "filename", "space", "value_type")
@@ -174,7 +171,6 @@ class StudysetStudySchema(BaseDataSchema):
 
 
 class AnalysisSchema(BaseDataSchema):
-
     # serialization
     study = StringOrNested("StudySchema", use_nested=False)
     conditions = StringOrNested(ConditionSchema, many=True, dump_only=True)
@@ -193,12 +189,14 @@ class AnalysisSchema(BaseDataSchema):
         # conditions/weights need special processing
         if data.get("conditions") is not None and data.get("weights") is not None:
             assert len(data.get("conditions")) == len(data.get("weights"))
-            data['analysis_conditions'] = [
-                {"condition": c, "weight": w} for c, w in
-                zip(data.get("conditions"), data.get("weights"))
+            data["analysis_conditions"] = [
+                {"condition": c, "weight": w}
+                for c, w in zip(data.get("conditions"), data.get("weights"))
             ]
         elif data.get("conditions") is not None:
-            data['analysis_conditions'] = [{"condition": cond} for cond in data.get("conditions")]
+            data["analysis_conditions"] = [
+                {"condition": cond} for cond in data.get("conditions")
+            ]
 
         data.pop("conditions", None)
         data.pop("weights", None)
@@ -207,7 +205,7 @@ class AnalysisSchema(BaseDataSchema):
     @post_dump
     def dump_values(self, data, **kwargs):
         if data.get("analysis_conditions") is not None:
-            data['conditions'] = [ac['condition'] for ac in data['analysis_conditions']]
+            data["conditions"] = [ac["condition"] for ac in data["analysis_conditions"]]
         data.pop("analysis_conditions", None)
 
         return data
@@ -220,30 +218,46 @@ class StudySetStudyInfoSchema(Schema):
 
 
 class StudySchema(BaseDataSchema):
-
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
     analyses = StringOrNested(AnalysisSchema, many=True)
-    source = fields.String(dump_only=True, metadata={'db_only': True}, allow_none=True)
-    source_id = fields.String(dump_only=True, metadata={'db_only': True}, allow_none=True)
+    source = fields.String(dump_only=True, metadata={"db_only": True}, allow_none=True)
+    source_id = fields.String(
+        dump_only=True, metadata={"db_only": True}, allow_none=True
+    )
     studysets = fields.Nested(
-        "StudySetStudyInfoSchema",
-        dump_only=True,
-        metadata={'db_only': True},
-        many=True
+        "StudySetStudyInfoSchema", dump_only=True, metadata={"db_only": True}, many=True
     )
     source_updated_at = fields.DateTime(
-        dump_only=True, metadata={'db_only': True}, allow_none=True
+        dump_only=True, metadata={"db_only": True}, allow_none=True
     )
 
     class Meta:
-        additional = ("name", "description", "publication", "doi", "pmid", "authors", "year")
-        allow_none = ("name", "description", "publication", "doi", "pmid", "authors", "year")
+        additional = (
+            "name",
+            "description",
+            "publication",
+            "doi",
+            "pmid",
+            "authors",
+            "year",
+        )
+        allow_none = (
+            "name",
+            "description",
+            "publication",
+            "doi",
+            "pmid",
+            "authors",
+            "year",
+        )
 
 
 class StudysetSchema(BaseDataSchema):
     # serialize
-    studies = StringOrNested(StudySchema, many=True)  # This needs to be nested, but not cloned
+    studies = StringOrNested(
+        StudySchema, many=True
+    )  # This needs to be nested, but not cloned
 
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")
@@ -256,21 +270,31 @@ class AnnotationAnalysisSchema(BaseDataSchema):
     analysis_id = fields.String(data_key="analysis")
     study_id = fields.String(data_key="study")
     studyset_id = fields.String(data_key="studyset", load_only=True)
-    study_name = fields.Function(lambda aa: aa.studyset_study.study.name, dump_only=True)
+    study_name = fields.Function(
+        lambda aa: aa.studyset_study.study.name, dump_only=True
+    )
     analysis_name = fields.Function(lambda aa: aa.analysis.name, dump_only=True)
     studyset_study = fields.Nested(StudysetStudySchema, load_only=True)
-    study_year = fields.Function(lambda aa: aa.studyset_study.study.year, dump_only=True)
-    authors = fields.Function(lambda aa: aa.studyset_study.study.authors, dump_only=True)
-    publication = fields.Function(lambda aa: aa.studyset_study.study.publication, dump_only=True)
+    study_year = fields.Function(
+        lambda aa: aa.studyset_study.study.year, dump_only=True
+    )
+    authors = fields.Function(
+        lambda aa: aa.studyset_study.study.authors, dump_only=True
+    )
+    publication = fields.Function(
+        lambda aa: aa.studyset_study.study.publication, dump_only=True
+    )
 
     @post_load
     def add_id(self, data, **kwargs):
-        if isinstance(data['analysis_id'], str):
-            data['analysis'] = {'id': data.pop('analysis_id')}
-        if isinstance(data.get('study_id'), str) and isinstance(data.get('studyset_id'), str):
-            data['studyset_study'] = {
-                'study': {'id': data.pop('study_id')},
-                'studyset': {'id': data.pop('studyset_id')}
+        if isinstance(data["analysis_id"], str):
+            data["analysis"] = {"id": data.pop("analysis_id")}
+        if isinstance(data.get("study_id"), str) and isinstance(
+            data.get("studyset_id"), str
+        ):
+            data["studyset_study"] = {
+                "study": {"id": data.pop("study_id")},
+                "studyset": {"id": data.pop("studyset_id")},
             }
 
         return data
@@ -278,14 +302,18 @@ class AnnotationAnalysisSchema(BaseDataSchema):
 
 class AnnotationSchema(BaseDataSchema):
     # serialization
-    studyset_id = fields.String(data_key='studyset')
-    annotation_analyses = fields.Nested(AnnotationAnalysisSchema, data_key="notes", many=True)
+    studyset_id = fields.String(data_key="studyset")
+    annotation_analyses = fields.Nested(
+        AnnotationAnalysisSchema, data_key="notes", many=True
+    )
     annotation = fields.String(dump_only=True)
     annotation_csv = fields.String(dump_only=True)
-    source = fields.String(dump_only=True, metadata={'db_only': True}, allow_none=True)
-    source_id = fields.String(dump_only=True, metadata={'db_only': True}, allow_none=True)
+    source = fields.String(dump_only=True, metadata={"db_only": True}, allow_none=True)
+    source_id = fields.String(
+        dump_only=True, metadata={"db_only": True}, allow_none=True
+    )
     source_updated_at = fields.DateTime(
-        dump_only=True, metadata={'db_only': True}, allow_none=True
+        dump_only=True, metadata={"db_only": True}, allow_none=True
     )
 
     note_keys = fields.Dict()
@@ -299,22 +327,19 @@ class AnnotationSchema(BaseDataSchema):
 
     @pre_load
     def add_studyset_id(self, data, **kwargs):
-        if data.get("studyset") and data.get('notes'):
-            for note in data['notes']:
-                note['studyset'] = data['studyset']
+        if data.get("studyset") and data.get("notes"):
+            for note in data["notes"]:
+                note["studyset"] = data["studyset"]
 
         return data
 
     @pre_dump
     def export_annotations(self, data, **kwargs):
-        if getattr(data, "annotation_analyses") and self.context.get('export'):
+        if getattr(data, "annotation_analyses") and self.context.get("export"):
             annotations = pd.DataFrame.from_records(
                 [
-                    {
-                        "study_id": aa.study_id,
-                        "analysis_id": aa.analysis_id,
-                        **aa.note
-                    } for aa in data.annotation_analyses
+                    {"study_id": aa.study_id, "analysis_id": aa.analysis_id, **aa.note}
+                    for aa in data.annotation_analyses
                 ]
             ).to_csv(index=False)
             metadata = {
@@ -323,10 +348,7 @@ class AnnotationSchema(BaseDataSchema):
                 "created_at": data.created_at,
             }
             metadata = {**metadata, **data.metadata_} if data.metadata_ else metadata
-            export_data = {
-                "metadata_": metadata,
-                "annotation_csv": annotations
-            }
+            export_data = {"metadata_": metadata, "annotation_csv": annotations}
 
             return export_data
 
@@ -334,8 +356,8 @@ class AnnotationSchema(BaseDataSchema):
 
     @post_load
     def add_id(self, data, **kwargs):
-        if isinstance(data.get('studyset_id'), str):
-            data['studyset'] = {'id': data.pop('studyset_id')}
+        if isinstance(data.get("studyset_id"), str):
+            data["studyset"] = {"id": data.pop("studyset_id")}
         return data
 
 
@@ -393,38 +415,38 @@ class StudysetSnapshot(object):
 
     def dump(self, studyset):
         return {
-            'id': studyset.id,
-            'name': studyset.name,
-            'user': studyset.user_id,
-            'description': studyset.description,
-            'publication': studyset.publication,
-            'doi': studyset.doi,
-            'pmid': studyset.pmid,
-            'created_at': self._serialize_dt(studyset.created_at),
-            'updated_at': self._serialize_dt(studyset.updated_at),
-            'studies': [
+            "id": studyset.id,
+            "name": studyset.name,
+            "user": studyset.user_id,
+            "description": studyset.description,
+            "publication": studyset.publication,
+            "doi": studyset.doi,
+            "pmid": studyset.pmid,
+            "created_at": self._serialize_dt(studyset.created_at),
+            "updated_at": self._serialize_dt(studyset.updated_at),
+            "studies": [
                 {
-                    'id': s.id,
-                    'created_at': self._serialize_dt(s.created_at),
-                    'updated_at': self._serialize_dt(s.updated_at),
-                    'user': s.user_id,
-                    'name': s.name,
-                    'description': s.description,
-                    'publication': s.publication,
-                    'doi': s.doi,
-                    'pmid': s.pmid,
-                    'authors': s.authors,
-                    'year': s.year,
-                    'metadata': s.metadata_,
-                    'source': s.source,
-                    'source_id': s.source_id,
-                    'source_updated_at': self._serialize_dt(s.source_updated_at),
-                    'analyses': [
+                    "id": s.id,
+                    "created_at": self._serialize_dt(s.created_at),
+                    "updated_at": self._serialize_dt(s.updated_at),
+                    "user": s.user_id,
+                    "name": s.name,
+                    "description": s.description,
+                    "publication": s.publication,
+                    "doi": s.doi,
+                    "pmid": s.pmid,
+                    "authors": s.authors,
+                    "year": s.year,
+                    "metadata": s.metadata_,
+                    "source": s.source,
+                    "source_id": s.source_id,
+                    "source_updated_at": self._serialize_dt(s.source_updated_at),
+                    "analyses": [
                         {
-                            'id': a.id,
-                            'created_at': self._serialize_dt(a.created_at),
-                            'updated_at': self._serialize_dt(a.updated_at),
-                            'user': a.user_id,
+                            "id": a.id,
+                            "created_at": self._serialize_dt(a.created_at),
+                            "updated_at": self._serialize_dt(a.updated_at),
+                            "user": a.user_id,
                             "study": s.id,
                             "name": a.name,
                             "description": a.description,
@@ -434,17 +456,22 @@ class StudysetSnapshot(object):
                                     "user": ac.condition.user_id,
                                     "name": ac.condition.name,
                                     "description": ac.condition.description,
-                                    "created_at": self._serialize_dt(ac.condition.created_at),
-                                    "updated_at": self._serialize_dt(ac.condition.updated_at),
-                                } for ac in a.analysis_conditions
+                                    "created_at": self._serialize_dt(
+                                        ac.condition.created_at
+                                    ),
+                                    "updated_at": self._serialize_dt(
+                                        ac.condition.updated_at
+                                    ),
+                                }
+                                for ac in a.analysis_conditions
                             ],
                             "weights": list(a.weights),
                             "points": [
                                 {
-                                    'id': p.id,
-                                    'created_at': self._serialize_dt(p.created_at),
-                                    'updated_at': self._serialize_dt(p.updated_at),
-                                    'user': p.user_id,
+                                    "id": p.id,
+                                    "created_at": self._serialize_dt(p.created_at),
+                                    "updated_at": self._serialize_dt(p.updated_at),
+                                    "user": p.user_id,
                                     "coordinates": p.coordinates,
                                     "analysis": a.id,
                                     "kind": p.kind,
@@ -454,56 +481,69 @@ class StudysetSnapshot(object):
                                     "entities": [
                                         {
                                             "id": e.id,
-                                            'created_at': self._serialize_dt(e.created_at),
-                                            'updated_at': self._serialize_dt(e.updated_at),
+                                            "created_at": self._serialize_dt(
+                                                e.created_at
+                                            ),
+                                            "updated_at": self._serialize_dt(
+                                                e.updated_at
+                                            ),
                                             "level": e.level,
                                             "label": e.label,
                                             "analysis": a.id,
-                                        } for e in p.entities
+                                        }
+                                        for e in p.entities
                                     ],
                                     "values": [
                                         {
                                             "kind": v.kind,
                                             "value": v.value,
-                                        } for v in p.values
+                                        }
+                                        for v in p.values
                                     ],
-                                } for p in a.points
+                                }
+                                for p in a.points
                             ],
                             "images": [
                                 {
                                     "id": i.id,
-                                    'created_at': self._serialize_dt(i.created_at),
-                                    'updated_at': self._serialize_dt(i.updated_at),
-                                    'user': i.user_id,
+                                    "created_at": self._serialize_dt(i.created_at),
+                                    "updated_at": self._serialize_dt(i.updated_at),
+                                    "user": i.user_id,
                                     "analysis": a.id,
                                     "analysis_name": a.name,
                                     "entities": [
                                         {
                                             "id": i.id,
-                                            'created_at': self._serialize_dt(i.created_at),
-                                            'updated_at': self._serialize_dt(i.updated_at),
+                                            "created_at": self._serialize_dt(
+                                                i.created_at
+                                            ),
+                                            "updated_at": self._serialize_dt(
+                                                i.updated_at
+                                            ),
                                             "level": e.level,
                                             "label": e.label,
                                             "analysis": a.id,
-                                        } for e in i.entities
+                                        }
+                                        for e in i.entities
                                     ],
                                     "url": i.url,
                                     "space": i.space,
                                     "value_type": i.value_type,
                                     "filename": i.filename,
                                     "add_date": i.add_date,
-                                } for i in a.images
+                                }
+                                for i in a.images
                             ],
-                        } for a in s.analyses
-                    ]
-                } for s in studyset.studies
-            ]
+                        }
+                        for a in s.analyses
+                    ],
+                }
+                for s in studyset.studies
+            ],
         }
 
     def serialize(self, studyset_dict):
         return json.dumps(studyset_dict)
 
     def dump_and_serialize(self, studyset):
-        return self.serialize(
-            self.dump(studyset)
-        )
+        return self.serialize(self.dump(studyset))

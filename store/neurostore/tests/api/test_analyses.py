@@ -7,7 +7,7 @@ def test_get_analyses(auth_client, ingest_neurosynth):
     # List of analyses
     resp = auth_client.get("/api/analyses/")
     assert resp.status_code == 200
-    analysis_list = decode_json(resp)['results']
+    analysis_list = decode_json(resp)["results"]
     assert type(analysis_list) == list
 
     assert len(analysis_list) == Analysis.query.count()
@@ -63,7 +63,7 @@ def test_delete_coordinate_analyses(auth_client, ingest_neurosynth, session):
 
     auth_client.delete(f"/api/analyses/{analysis_db.id}")
 
-    for point in analysis['points']:
+    for point in analysis["points"]:
         assert Point.query.filter_by(id=point).first() is None
 
 
@@ -78,7 +78,7 @@ def test_delete_image_analyses(auth_client, ingest_neurovault, session):
 
     auth_client.delete(f"/api/analyses/{analysis_db.id}")
 
-    for image in analysis['images']:
+    for image in analysis["images"]:
         assert Image.query.filter_by(id=image).first() is None
 
 
@@ -91,11 +91,11 @@ def test_update_points_analyses(auth_client, ingest_neurovault, session):
     session.add(analysis_db)
     session.commit()
 
-    points = analysis['points']
+    points = analysis["points"]
 
     payload = {"points": points[:-1]}
 
     update_points = auth_client.put(f"/api/analyses/{analysis_db.id}", data=payload)
 
     assert update_points.status_code == 200
-    assert payload['points'] == update_points.json['points']
+    assert payload["points"] == update_points.json["points"]

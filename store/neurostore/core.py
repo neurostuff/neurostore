@@ -12,8 +12,8 @@ from .database import init_db
 
 
 connexion_app = connexion.FlaskApp(
-    __name__, specification_dir="openapi/",
-    debug=os.getenv("DEBUG", False) == "True")
+    __name__, specification_dir="openapi/", debug=os.getenv("DEBUG", False) == "True"
+)
 
 app = connexion_app.app
 
@@ -29,8 +29,8 @@ app.secret_key = app.config["JWT_SECRET_KEY"]
 options = {"swagger_ui": True}
 
 # https://github.com/spec-first/connexion/issues/254#issuecomment-1133843523
-json_schema_handlers[''] = lambda uri: (
-    json_schema_handlers['file'](str(connexion_app.specification_dir / uri))
+json_schema_handlers[""] = lambda uri: (
+    json_schema_handlers["file"](str(connexion_app.specification_dir / uri))
 )
 
 connexion_app.add_api(
@@ -47,14 +47,14 @@ connexion_app.add_api(
 cors = CORS(app)
 
 auth0 = oauth.register(
-    'auth0',
-    client_id=os.environ['AUTH0_CLIENT_ID'],
-    client_secret=os.environ['AUTH0_CLIENT_SECRET'],
-    api_base_url=app.config['AUTH0_BASE_URL'],
-    access_token_url=app.config['AUTH0_ACCESS_TOKEN_URL'],
-    authorize_url=app.config['AUTH0_AUTH_URL'],
+    "auth0",
+    client_id=os.environ["AUTH0_CLIENT_ID"],
+    client_secret=os.environ["AUTH0_CLIENT_SECRET"],
+    api_base_url=app.config["AUTH0_BASE_URL"],
+    access_token_url=app.config["AUTH0_ACCESS_TOKEN_URL"],
+    authorize_url=app.config["AUTH0_AUTH_URL"],
     client_kwargs={
-        'scope': 'openid profile email',
+        "scope": "openid profile email",
     },
 )
 

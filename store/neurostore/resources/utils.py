@@ -12,13 +12,15 @@ from .singular import singularize
 
 # https://www.geeksforgeeks.org/python-split-camelcase-string-to-individual-strings/
 def camel_case_split(str):
-    return re.findall(r'[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))', str)
+    return re.findall(r"[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))", str)
 
 
 def get_current_user():
-    user = connexion.context.get('user')
+    user = connexion.context.get("user")
     if user:
-        return models.User.query.filter_by(external_id=connexion.context['user']).first()
+        return models.User.query.filter_by(
+            external_id=connexion.context["user"]
+        ).first()
     return None
 
 
