@@ -189,15 +189,7 @@ LIST_USER_ARGS = {
     "page": fields.Int(missing=1),
     "desc": fields.Boolean(missing=True),
     "page_size": fields.Int(missing=20, validate=lambda val: val < 30000),
-    "source_id": fields.String(missing=None),
-    "source": fields.String(missing=None),
-    "unique": fields.Boolean(missing=False),
-    "nested": fields.Boolean(missing=False),
     "user_id": fields.String(missing=None),
-    "studyset_id": fields.String(missing=None),
-    "export": fields.Boolean(missing=False),
-    "data_type": fields.String(missing=None),
-    "studyset_owner": fields.String(missing=None),
 }
 
 
@@ -206,12 +198,14 @@ class ListView(BaseView):
     _only = None
     _search_fields = []
     _multi_search = None
+    _view_fields = {}
 
     def __init__(self):
         # Initialize expected arguments based on class attributes
         self._fulltext_fields = self._multi_search or self._search_fields
         self._user_args = {
             **LIST_USER_ARGS,
+            **self._view_fields,
             **{f: fields.Str() for f in self._fulltext_fields},
         }
 

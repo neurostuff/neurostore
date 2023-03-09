@@ -1,4 +1,5 @@
 from marshmallow import EXCLUDE
+from webargs import fields
 
 from .utils import view_maker
 from .base import BaseView, ObjectView, ListView
@@ -32,11 +33,27 @@ __all__ = [
     "PointsView",
 ]
 
+LIST_CLONE_ARGS = {
+    "source_id": fields.String(missing=None),
+    "source": fields.String(missing=None),
+    "unique": fields.Boolean(missing=False),
+}
+
+LIST_NESTED_ARGS = {
+    "nested": fields.Boolean(missing=False),
+}
+
+
 # Individual resource views
 
 
 @view_maker
 class StudysetsView(ObjectView, ListView):
+    _view_fields = {
+        **LIST_CLONE_ARGS,
+        **LIST_NESTED_ARGS,
+    }
+
     _nested = {
         "studies": "StudiesView",
     }
@@ -48,6 +65,9 @@ class StudysetsView(ObjectView, ListView):
 
 @view_maker
 class AnnotationsView(ObjectView, ListView):
+    _view_fields = {
+        "studyset_id": fields.String(missing=None)
+    }
     _nested = {
         "annotation_analyses": "AnnotationAnalysesResource"
     }
@@ -98,6 +118,12 @@ class AnnotationsView(ObjectView, ListView):
 
 @view_maker
 class StudiesView(ObjectView, ListView):
+    _view_fields =  {
+        **{"data_type": fields.String(missing=None),
+           "studyset_owner": fields.String(missing=None)},
+        **LIST_NESTED_ARGS,
+        **LIST_CLONE_ARGS,
+    }
     _nested = {
         "analyses": "AnalysesView",
     }
@@ -148,6 +174,9 @@ class StudiesView(ObjectView, ListView):
 
 @view_maker
 class AnalysesView(ObjectView, ListView):
+    _view_fields = {
+        **LIST_NESTED_ARGS
+    }
     _nested = {
         "images": "ImagesView",
         "points": "PointsView",
