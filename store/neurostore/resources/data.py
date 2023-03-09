@@ -1,8 +1,12 @@
 from marshmallow import EXCLUDE
 from webargs import fields
+import sqlalchemy.sql.expression as sae
+from sqlalchemy import func
+
 
 from .utils import view_maker
 from .base import BaseView, ObjectView, ListView
+from .nested import nested_load
 from ..database import db
 from ..models import (
     Studyset,
@@ -34,7 +38,7 @@ from ..schemas import (  # noqa E401
     StudysetStudySchema,
     EntitySchema,
 )
-
+from ..schemas.data import StudysetSnapshot
 
 __all__ = [
     "StudysetsView",
@@ -75,7 +79,22 @@ class StudysetsView(ObjectView, ListView):
     }
     _search_fields = ("name", "description", "publication", "doi", "pmid")
 
+    def view_search(self, q, args):
+        # check if results should be nested
+        nested = True if args.get("nested") else False
+        if nested:
+            q = q.options(nested_load(self))
+        
+        return q
 
+    def preprocess_content(self):
+        snapshot = StudysetSnapshot()
+        content = [snapshot.dump(r) for r in records]
+            response = {
+                "metadata": {"total_count": count, "unique_count": unique_count},
+                "results": content,
+            }
+            return response, 200
 @view_maker
 class AnnotationsView(ObjectView, ListView):
     _view_fields = {"studyset_id": fields.String(missing=None)}
@@ -86,7 +105,17 @@ class AnnotationsView(ObjectView, ListView):
 
     _search_fields = ("name", "description")
 
+    def view_search(self, q, args):
+        q = q.options(nested_load(self))
+
+        # query annotations for a specific studyset
+        if args.get("studyset_id"):
+            q = q.filter(self._model.studyset_id == args.get("studyset_id"))
+        
+        return q
+
     def insert_data(self, id, data):
+        """Automatically insert Studyset if Annotation is being updated."""
         if not data.get("studyset"):
             with db.session.no_autoflush:
                 data["studyset"] = (
@@ -151,6 +180,36 @@ class StudiesView(ObjectView, ListView):
         "doi",
         "pmid",
     )
+
+    def view_search(self, q, args):
+        # search studies for data_type
+        if args.get("data_type"):
+            if args["data_type"] == "coordinate":
+                q = q.filter(self._model.analyses.any(Analysis.points.any()))
+            elif args["data_type"] == "image":
+                q = q.filter(self._model.analyses.any(Analysis.images.any()))
+            elif args["data_type"] == "both":
+                q = q.filter(
+                    sae.or_(
+                        self._model.analyses.any(Analysis.images.any()),
+                        self._model.analyses.any(Analysis.points.any()),
+                    )
+                )
+
+        # only return unique studies
+        if args.get("unique"):  
+            # q.group_by(self._model.doi)
+            q = q.filter(self._model.source == None) # noqa E711
+        return q
+    
+    def serialize_records(self, records, args):
+        if args.get("studyset_owner"):
+            for study in records:
+                study.studysets = study.studysets.filter(
+                    Studyset.user_id == args.get("studyset_owner")
+                ).all()
+
+        return super().serialize_records(records, args)
 
     @classmethod
     def _load_from_source(cls, source, source_id):

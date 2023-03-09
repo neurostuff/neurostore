@@ -16,7 +16,7 @@ from webargs import fields
 from ..database import db
 from .utils import get_current_user
 from .nested import nested_load
-from ..models import Studyset, Study, Analysis, User, Annotation
+from ..models import Studyset, User, Annotation
 from ..schemas.data import StudysetSnapshot
 from . import data as viewdata
 
@@ -38,9 +38,9 @@ class BaseView(MethodView):
           a. studies are linked to a studyset, so create a new studyset with same links
         3. cloning an annotation
           a. annotations are linked to studysets, update when studyset updates
-        2. creating an analysis
+        4. creating an analysis
           a. I should have to own all (relevant) parent objects
-        3. creating an annotation
+        5. creating an annotation
             a. I should not have to own the studyset to create an annotation
         """
 
@@ -211,6 +211,20 @@ class ListView(BaseView):
             **{f: fields.Str() for f in self._fulltext_fields},
         }
 
+    def view_search(self, q, args):
+        return q
+
+    def serialize_records(self, records, args):
+        """serialize records from search"""
+        content = self.__class__._schema(
+                only=self._only, many=True,
+            ).dump(records)
+        return content
+
+    def create_metadata(self, q):
+        count = q.count()
+        return {'total_count': count}
+
     def search(self):
         # Parse arguments using webargs
         args = parser.parse(self._user_args, request, location="query")
@@ -221,11 +235,6 @@ class ListView(BaseView):
         # Search
         s = args["search"]
 
-        # check if results should be nested
-        nested = True if args.get("nested") else False
-        if m is Annotation or nested:
-            q = q.options(nested_load(self))
-
         # query items that are owned by a user_id
         if args.get("user_id"):
             q = q.filter(m.user_id == args.get("user_id"))
@@ -234,24 +243,6 @@ class ListView(BaseView):
         if hasattr(m, "public"):
             current_user = get_current_user()
             q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
-
-        # query annotations for a specific studyset
-        if args.get("studyset_id"):
-            q = q.filter(m.studyset_id == args.get("studyset_id"))
-
-        # search studies for data_type
-        if args.get("data_type"):
-            if args["data_type"] == "coordinate":
-                q = q.filter(m.analyses.any(Analysis.points.any()))
-            elif args["data_type"] == "image":
-                q = q.filter(m.analyses.any(Analysis.images.any()))
-            elif args["data_type"] == "both":
-                q = q.filter(
-                    sae.or_(
-                        m.analyses.any(Analysis.images.any()),
-                        m.analyses.any(Analysis.points.any()),
-                    )
-                )
 
         # For multi-column search, default to using search fields
         if s is not None and self._fulltext_fields:
@@ -284,72 +275,16 @@ class ListView(BaseView):
         #     q = q.join(*attr.attr)
         q = q.order_by(getattr(attr, desc)())
 
-        if args.get("unique"):
-            if hasattr(m, "source_id"):
-                q = q.filter(
-                    (Study.source != "neurostore") | (Study.source_id == None)
-                )  # noqa E711
-            elif hasattr(m, "study"):
-                q = q.join(Study).filter(
-                    (Study.source != "neurostore")
-                    | (Study.source_id == None)  # noqa E711
-                )
-            elif hasattr(m, "analysis"):
-                q = (
-                    q.join(Analysis)
-                    .join(Study)
-                    .filter(
-                        (Study.source != "neurostore")
-                        | (Study.source_id == None)  # noqa E711
-                    )
-                )
-            else:
-                # nothing to do here
-                pass
-            unique_count = count = q.count()
-        else:
-            # unique_count may need to represent user clones
-            # instead of original studies
-            # (e.g., a clone may have a different number of points
-            # than the original)
-            count = q.count()
-            if hasattr(m, "source_id"):
-                unique_count = q.filter_by(source_id=None).count()
-            elif hasattr(m, "study"):
-                unique_count = q.join(Study).filter_by(source_id=None).count()
-            elif hasattr(m, "analysis"):
-                unique_count = (
-                    q.join(Analysis).join(Study).filter_by(source_id=None).count()
-                )
-            else:
-                unique_count = count
-
         records = q.paginate(
             page=args["page"], per_page=args["page_size"], error_out=False
         ).items
-        if m is Study and args.get("studyset_owner"):
-            for study in records:
-                study.studysets = study.studysets.filter(
-                    Studyset.user_id == args.get("studyset_owner")
-                ).all()
-
-        if m is Studyset and nested:
-            snapshot = StudysetSnapshot()
-            content = [snapshot.dump(r) for r in records]
-            response = {
-                "metadata": {"total_count": count, "unique_count": unique_count},
+        content = self.serialize_records(records, args)
+        metadata = self.create_metadata(q)
+        response = {
+                "metadata": metadata,
                 "results": content,
-            }
-            return response, 200
-        else:
-            content = self.__class__._schema(
-                only=self._only, many=True, context={"nested": nested}
-            ).dump(records)
-            response = {
-                "metadata": {"total_count": count, "unique_count": unique_count},
-                "results": content,
-            }
-            return response, 200
+        }
+        return response, 200
 
     def post(self):
         # TODO: check to make sure current user hasn't already created a
