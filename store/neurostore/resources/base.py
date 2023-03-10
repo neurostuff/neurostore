@@ -216,8 +216,9 @@ class ListView(BaseView):
 
     def serialize_records(self, records, args):
         """serialize records from search"""
+        nested = bool(args.get("nested"))
         content = self.__class__._schema(
-                only=self._only, many=True,
+                only=self._only, many=True, context={'nested': nested},
             ).dump(records)
         return content
 
@@ -257,6 +258,7 @@ class ListView(BaseView):
             if s is not None:
                 q = q.filter(getattr(m, field).ilike(f"%{s}%"))
 
+        q = self.view_search(q, args)
         # Sort
         sort_col = args["sort"]
         desc = False if sort_col != "created_at" else args["desc"]

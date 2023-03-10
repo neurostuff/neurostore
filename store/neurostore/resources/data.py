@@ -1,8 +1,6 @@
-from marshmallow import EXCLUDE
+from marshmallow import EXCLUDE, fields as field_base
 from webargs import fields
 import sqlalchemy.sql.expression as sae
-from sqlalchemy import func
-
 
 from .utils import view_maker
 from .base import BaseView, ObjectView, ListView
@@ -50,10 +48,28 @@ __all__ = [
     "PointsView",
 ]
 
+
+class BooleanOrString(field_base.Field):
+    def __init__(self, *args, **kwargs):
+        self.bool_field = fields.Boolean(*args, **kwargs)
+        self.string_field = fields.String(*args, **kwargs)
+        super().__init__()
+
+    def _serialize(self, value, attr, obj, **kwargs):
+        if isinstance(value, bool):
+            return self.bool_field._serialize(value, attr, obj **kwargs)
+        return self.string_field._serialize(value, attr, obj, **kwargs)
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if value in ["true", "false"]:
+            return self.bool_field._deserialize(value, attr, data, **kwargs)
+        return self.string_field._deserialize(value, attr, data, **kwargs)
+
+
 LIST_CLONE_ARGS = {
     "source_id": fields.String(missing=None),
     "source": fields.String(missing=None),
-    "unique": fields.Boolean(missing=False),
+    "unique": BooleanOrString(missing=False),
 }
 
 LIST_NESTED_ARGS = {
@@ -84,20 +100,23 @@ class StudysetsView(ObjectView, ListView):
         nested = True if args.get("nested") else False
         if nested:
             q = q.options(nested_load(self))
-        
+
         return q
 
-    def preprocess_content(self):
-        snapshot = StudysetSnapshot()
-        content = [snapshot.dump(r) for r in records]
-            response = {
-                "metadata": {"total_count": count, "unique_count": unique_count},
-                "results": content,
-            }
-            return response, 200
+    def serialize_records(self, records, args):
+        if args.get("nested"):
+            snapshot = StudysetSnapshot()
+            content = [snapshot.dump(r) for r in records]
+            return content
+        return super().serialize_records(records, args)
+
+
 @view_maker
 class AnnotationsView(ObjectView, ListView):
-    _view_fields = {"studyset_id": fields.String(missing=None)}
+    _view_fields = {
+        **LIST_CLONE_ARGS,
+        "studyset_id": fields.String(missing=None)
+        }
     _nested = {"annotation_analyses": "AnnotationAnalysesResource"}
     _linked = {
         "studyset": "StudysetsView",
@@ -111,7 +130,7 @@ class AnnotationsView(ObjectView, ListView):
         # query annotations for a specific studyset
         if args.get("studyset_id"):
             q = q.filter(self._model.studyset_id == args.get("studyset_id"))
-        
+
         return q
 
     def insert_data(self, id, data):
@@ -197,11 +216,16 @@ class StudiesView(ObjectView, ListView):
                 )
 
         # only return unique studies
-        if args.get("unique"):  
-            # q.group_by(self._model.doi)
-            q = q.filter(self._model.source == None) # noqa E711
+        unique_col = args.get("unique")
+        # doi is the default uniquefier
+        unique_col = 'doi' if isinstance(unique_col, bool) and unique_col else unique_col
+        if unique_col:
+            q_null = q.filter(getattr(self._model, unique_col).is_(None))
+            q_distinct = q.distinct(getattr(self._model, unique_col))
+            q = q.union(q_null, q_distinct)
+            q = q.order_by(getattr(self._model, unique_col))
         return q
-    
+
     def serialize_records(self, records, args):
         if args.get("studyset_owner"):
             for study in records:
