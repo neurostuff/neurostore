@@ -11,12 +11,15 @@ from .database import db
 
 def create_app():
     connexion_app = connexion.FlaskApp(
-        __name__, specification_dir="openapi/", debug=True
+        __name__,
+        specification_dir="openapi/",
+        debug=os.getenv(key="DEBUG", default=False) == "True",
     )
 
     options = {"swagger_ui": True}
     app = connexion_app.app
     app.config.from_object(os.environ["APP_SETTINGS"])
+    # use application context for connexion to work with app variables
     with app.app_context():
         connexion_app.add_api(
             "neurosynth-compose-openapi.yml",
@@ -24,8 +27,8 @@ def create_app():
             options=options,
             arguments={"title": "NeuroSynth API"},
             resolver=MethodViewResolver("neurosynth_compose.resources"),
-            strict_validation=True,
-            validate_responses=True,
+            strict_validation=os.getenv(key="DEBUG", default=False) == "True",
+            validate_responses=os.getenv(key="DEBUG", default=False) == "True",
         )
 
     oauth = OAuth(app)
