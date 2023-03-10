@@ -1,6 +1,5 @@
-import { Box, Link, Typography, Chip, Paper } from '@mui/material';
+import { Box, Link, Typography, Chip } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import TextExpansion from 'components/TextExpansion/TextExpansion';
 
 const CurationImportTagStudyItem: React.FC<ICurationStubStudy & { style: React.CSSProperties }> = (
     props
@@ -14,6 +13,7 @@ const CurationImportTagStudyItem: React.FC<ICurationStubStudy & { style: React.C
         pmid,
         doi,
         abstractText,
+        exclusionTag,
         keywords,
         journal,
         style,
@@ -25,7 +25,7 @@ const CurationImportTagStudyItem: React.FC<ICurationStubStudy & { style: React.C
                 ...style,
                 ...{
                     borderRadius: '4px',
-                    border: '1px solid #ebebeb',
+                    border: exclusionTag ? '1px solid red' : '1px solid #ebebeb',
                     height: '178px',
                     padding: '10px 10px',
                     marginBottom: '10px',

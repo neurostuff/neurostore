@@ -1,8 +1,9 @@
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import CreateStubStudy from './CreateStubStudy/CreateStubStudy';
+import BaseImportFromNeurostore from './ImportFromNeurostore/ImportFromNeurostore';
 import BaseImportPMIDs from './ImportPMIDs/BaseImportPMIDs';
-import ImportStandardFormat from './ImportStandardFormat/ImportStandardFormat';
+import BaseImportStandardFormat from './ImportStandardFormat/BaseImportStandardFormat';
 
 export enum EImportMode {
     NEUROSTORE_IMPORT = 'NEUROSTORE_IMPORT',
@@ -11,13 +12,23 @@ export enum EImportMode {
     FILE_IMPORT = 'FILE_IMPORT',
 }
 
+export interface IImportArgs {
+    onNavigate: (button: ENavigationButton) => void;
+    onImportStubs: (stubs: ICurationStubStudy[]) => void;
+}
+
 const CurationImport: React.FC<{
     mode: EImportMode;
     onImportStubs: (stubs: ICurationStubStudy[]) => void;
     onNavigate: (button: ENavigationButton) => void;
 }> = (props) => {
     if (props.mode === EImportMode.NEUROSTORE_IMPORT) {
-        return <div>tbd</div>;
+        return (
+            <BaseImportFromNeurostore
+                onImportStubs={props.onImportStubs}
+                onNavigate={props.onNavigate}
+            />
+        );
     } else if (props.mode === EImportMode.PUBMED_IMPORT) {
         return (
             <BaseImportPMIDs onImportStubs={props.onImportStubs} onNavigate={props.onNavigate} />
@@ -28,7 +39,7 @@ const CurationImport: React.FC<{
         );
     } else {
         return (
-            <ImportStandardFormat
+            <BaseImportStandardFormat
                 onImportStubs={props.onImportStubs}
                 onNavigate={props.onNavigate}
             />

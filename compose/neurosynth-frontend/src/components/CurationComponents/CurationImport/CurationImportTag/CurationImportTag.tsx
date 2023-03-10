@@ -87,6 +87,9 @@ const CurationImportTag: React.FC<{
                 <Divider sx={{ marginTop: '0.5rem' }} />
             </Paper>
             <Box sx={{ margin: '1rem 0' }}>
+                <Typography sx={{ color: 'gray', fontStyle: 'italic' }}>
+                    Studies marked as "Duplicate" have a red border
+                </Typography>
                 <FixedSizeList
                     height={fixedListHeight}
                     itemCount={stubs.length}

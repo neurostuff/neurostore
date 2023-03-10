@@ -12,7 +12,7 @@ enum EValidationReason {
 }
 
 const UploadPMIDs: React.FC<{
-    onFetchPubmedStudies: (parsedIds: string[]) => void;
+    onPubmedIdsUploaded: (parsedIds: string[]) => void;
     onNavigate: (button: ENavigationButton) => void;
 }> = (props) => {
     const [uploadState, setUploadState] = useState<{
@@ -105,7 +105,7 @@ const UploadPMIDs: React.FC<{
         if (button === ENavigationButton.PREV) {
             props.onNavigate(button);
         } else {
-            props.onFetchPubmedStudies(uploadState.parsedIdList);
+            props.onPubmedIdsUploaded(uploadState.parsedIdList);
         }
     };
 

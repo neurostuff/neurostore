@@ -2,18 +2,15 @@ import { Box, Chip, TextField } from '@mui/material';
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
 import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';
 import { ISource, ITag } from 'hooks/requests/useGetProjects';
 import { ChangeEvent, useState } from 'react';
 import CreateStubStudyStyles from './CreateStubStudy.styles';
 import { v4 as uuidv4 } from 'uuid';
+import { IImportArgs } from '../CurationImport';
 
-const CreateStubStudy: React.FC<{
-    onNavigate: (button: ENavigationButton) => void;
-    onImportStubs: (stubs: ICurationStubStudy[]) => void;
-}> = (props) => {
+const CreateStubStudy: React.FC<IImportArgs> = (props) => {
     const [formFieldTouched, setFormFieldTouched] = useState({
         name: false,
         doi: false,
@@ -29,7 +26,6 @@ const CreateStubStudy: React.FC<{
         journal: string;
         abstract: string;
         identificationSource: ISource | null;
-        tags: ITag[];
     }>({
         name: '',
         authors: '',
@@ -39,7 +35,6 @@ const CreateStubStudy: React.FC<{
         doi: '',
         journal: '',
         abstract: '',
-        tags: [],
         identificationSource: null,
     });
 
@@ -61,25 +56,10 @@ const CreateStubStudy: React.FC<{
         });
     };
 
-    const handleAddTag = (tag: ITag) => {
-        if (form.tags.findIndex((formTag) => formTag.id === tag.id) < 0)
-            setForm((prev) => ({
-                ...prev,
-                tags: [...prev.tags, tag],
-            }));
-    };
-
     const handleAddSource = (source: ISource) => {
         setForm((prev) => ({
             ...prev,
             identificationSource: source,
-        }));
-    };
-
-    const handleDeleteTag = (tag: ITag) => {
-        setForm((prev) => ({
-            ...prev,
-            tags: [...prev.tags.filter((formTag) => formTag.id !== tag.id)],
         }));
     };
 
@@ -101,7 +81,7 @@ const CreateStubStudy: React.FC<{
                     abstractText: form.abstract,
                     articleLink: form.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${form.pmid}` : '',
                     exclusionTag: null,
-                    tags: [...form.tags],
+                    tags: [],
                     identificationSource: form.identificationSource as ISource,
                 },
             ]);
@@ -211,25 +191,6 @@ const CreateStubStudy: React.FC<{
                 name="abstract"
                 placeholder="Lorem Ipsum..."
             />
-
-            <Box sx={{ marginBottom: '0.5rem' }}>
-                <TagSelectorPopup
-                    onCreateTag={handleAddTag}
-                    onAddTag={handleAddTag}
-                    sx={{ width: '100%' }}
-                    label="tag this study"
-                />
-                <Box sx={{ margin: '1rem 0' }}>
-                    {form.tags.map((tag) => (
-                        <Chip
-                            sx={{ margin: '0 3px', marginBottom: '5px' }}
-                            onDelete={() => handleDeleteTag(tag)}
-                            label={tag.label}
-                            key={tag.id}
-                        />
-                    ))}
-                </Box>
-            </Box>
             <Box sx={{ margin: '2rem 0' }}>
                 <NavigationButtons
                     onButtonClick={handleButtonClick}

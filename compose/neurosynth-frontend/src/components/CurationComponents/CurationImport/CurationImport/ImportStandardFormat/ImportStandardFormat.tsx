@@ -225,7 +225,9 @@ const ImportStandardFormat: React.FC<{
             <Box sx={{ marginTop: '1rem' }}>
                 <NavigationButtons
                     nextButtonStyle="contained"
-                    nextButtonDisabled={!source && uploadState.stubs.length === 0}
+                    nextButtonDisabled={
+                        !source || uploadState.stubs.length === 0 || !uploadState.isValid
+                    }
                     onButtonClick={handleButtonClick}
                 />
             </Box>

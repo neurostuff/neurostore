@@ -22,7 +22,6 @@ import { useState } from 'react';
 import CreateCurationBoardDialog from 'components/Dialogs/CreateCurationBoardDialog/CreateCurationBoardDialog';
 import CurationStepStyles from './CurationStep.style';
 import useGetCurationSummary, { ICurationSummary } from 'hooks/useGetCurationSummary';
-import { useSnackbar } from 'notistack';
 import { useInitCuration } from 'pages/Projects/ProjectPage/ProjectStore';
 
 enum ECurationBoardTypes {
