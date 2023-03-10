@@ -166,3 +166,9 @@ def test_getting_studysets_by_owner(auth_clients, user_data):
         for studyset in study["studysets"]:
             assert studyset["id"] in [us_db.id for us_db in user_studysets_db]
             assert studyset["id"] not in [nus_db.id for nus_db in non_user_studysets_db]
+
+
+@pytest.mark.parametrize("param", ["true", "false", "doi", "name", "pmid"])
+def test_get_unique_studies(auth_client, user_data, param):
+    resp = auth_client.get(f"/api/studies/?unique={param}")
+    assert resp.status_code == 200
