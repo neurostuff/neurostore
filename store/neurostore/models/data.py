@@ -1,3 +1,4 @@
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import event, ForeignKeyConstraint
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.exc import SQLAlchemyError
@@ -40,7 +41,7 @@ class Studyset(BaseMixin, db.Model):
     description = db.Column(db.String)
     publication = db.Column(db.String)
     authors = db.Column(db.String)
-    metadata_ = db.Column(db.JSON)
+    metadata_ = db.Column(JSONB)
     source = db.Column(db.String)
     source_id = db.Column(db.String)
     source_updated_at = db.Column(db.DateTime(timezone=True))
@@ -68,9 +69,9 @@ class Annotation(BaseMixin, db.Model):
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("annotations"))
     studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
-    metadata_ = db.Column(db.JSON)
+    metadata_ = db.Column(JSONB)
     public = db.Column(db.Boolean, default=True)
-    note_keys = db.Column(MutableDict.as_mutable(db.JSON))
+    note_keys = db.Column(MutableDict.as_mutable(JSONB))
     annotation_analyses = relationship(
         "AnnotationAnalysis",
         backref=backref("annotation"),
@@ -97,7 +98,7 @@ class AnnotationAnalysis(db.Model):
     analysis_id = db.Column(
         db.Text, db.ForeignKey("analyses.id"), index=True, primary_key=True
     )
-    note = db.Column(MutableDict.as_mutable(db.JSON))
+    note = db.Column(MutableDict.as_mutable(JSONB))
 
 
 class Study(BaseMixin, db.Model):
@@ -111,7 +112,7 @@ class Study(BaseMixin, db.Model):
     authors = db.Column(db.String)
     year = db.Column(db.Integer)
     public = db.Column(db.Boolean, default=True)
-    metadata_ = db.Column(db.JSON)
+    metadata_ = db.Column(JSONB)
     source = db.Column(db.String)
     source_id = db.Column(db.String)
     source_updated_at = db.Column(db.DateTime(timezone=True))
@@ -230,7 +231,7 @@ class Entity(BaseMixin, db.Model):
     label = db.Column(db.String)  # bids-entity
     # constrained enumeration (bids-entity, run, session, subject, group, meta)
     level = db.Column(db.String)
-    data = db.Column(db.JSON)  # metadata (participants.tsv, or something else)
+    data = db.Column(JSONB)  # metadata (participants.tsv, or something else)
     analysis = relationship("Analysis", backref=backref("entities"))
 
 
@@ -265,7 +266,7 @@ class Image(BaseMixin, db.Model):
     space = db.Column(db.String)
     value_type = db.Column(db.String)
     analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"))
-    data = db.Column(db.JSON)
+    data = db.Column(JSONB)
     add_date = db.Column(db.DateTime(timezone=True))
 
     analysis_name = association_proxy("analysis", "name")
