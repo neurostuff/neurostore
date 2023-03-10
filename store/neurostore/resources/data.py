@@ -57,7 +57,7 @@ class BooleanOrString(field_base.Field):
 
     def _serialize(self, value, attr, obj, **kwargs):
         if isinstance(value, bool):
-            return self.bool_field._serialize(value, attr, obj **kwargs)
+            return self.bool_field._serialize(value, attr, obj**kwargs)
         return self.string_field._serialize(value, attr, obj, **kwargs)
 
     def _deserialize(self, value, attr, data, **kwargs):
@@ -113,10 +113,7 @@ class StudysetsView(ObjectView, ListView):
 
 @view_maker
 class AnnotationsView(ObjectView, ListView):
-    _view_fields = {
-        **LIST_CLONE_ARGS,
-        "studyset_id": fields.String(missing=None)
-        }
+    _view_fields = {**LIST_CLONE_ARGS, "studyset_id": fields.String(missing=None)}
     _nested = {"annotation_analyses": "AnnotationAnalysesResource"}
     _linked = {
         "studyset": "StudysetsView",
@@ -218,7 +215,9 @@ class StudiesView(ObjectView, ListView):
         # only return unique studies
         unique_col = args.get("unique")
         # doi is the default uniquefier
-        unique_col = 'doi' if isinstance(unique_col, bool) and unique_col else unique_col
+        unique_col = (
+            "doi" if isinstance(unique_col, bool) and unique_col else unique_col
+        )
         if unique_col:
             q_null = q.filter(getattr(self._model, unique_col).is_(None))
             q_distinct = q.distinct(getattr(self._model, unique_col))

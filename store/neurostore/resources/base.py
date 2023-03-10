@@ -218,13 +218,15 @@ class ListView(BaseView):
         """serialize records from search"""
         nested = bool(args.get("nested"))
         content = self.__class__._schema(
-                only=self._only, many=True, context={'nested': nested},
-            ).dump(records)
+            only=self._only,
+            many=True,
+            context={"nested": nested},
+        ).dump(records)
         return content
 
     def create_metadata(self, q):
         count = q.count()
-        return {'total_count': count}
+        return {"total_count": count}
 
     def search(self):
         # Parse arguments using webargs
@@ -283,8 +285,8 @@ class ListView(BaseView):
         content = self.serialize_records(records, args)
         metadata = self.create_metadata(q)
         response = {
-                "metadata": metadata,
-                "results": content,
+            "metadata": metadata,
+            "results": content,
         }
         return response, 200
 
