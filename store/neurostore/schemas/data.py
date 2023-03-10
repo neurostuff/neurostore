@@ -13,6 +13,23 @@ from pyld import jsonld
 import pandas as pd
 
 
+class BooleanOrString(fields.Field):
+    def __init__(self, *args, **kwargs):
+        self.bool_field = fields.Boolean(*args, **kwargs)
+        self.string_field = fields.String(*args, **kwargs)
+        super().__init__()
+
+    def _serialize(self, value, attr, obj, **kwargs):
+        if isinstance(value, bool):
+            return self.bool_field._serialize(value, attr, obj, **kwargs)
+        return self.string_field._serialize(value, attr, obj, **kwargs)
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if value in ["true", "false"]:
+            return self.bool_field._deserialize(value, attr, data, **kwargs)
+        return self.string_field._deserialize(value, attr, data, **kwargs)
+
+
 class StringOrNested(fields.Nested):
     """Custom Field that serializes a nested object as either a string
     or a full object, depending on "nested" or "source" request argument"""

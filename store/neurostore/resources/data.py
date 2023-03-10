@@ -1,4 +1,4 @@
-from marshmallow import EXCLUDE, fields as field_base
+from marshmallow import EXCLUDE
 from webargs import fields
 import sqlalchemy.sql.expression as sae
 
@@ -10,27 +10,14 @@ from ..models import (
     Studyset,
     Study,
     Analysis,
-    Condition,
-    Image,
-    Point,
-    PointValue,
     AnalysisConditions,
-    User,
     AnnotationAnalysis,
-    Annotation,
     Entity,
-)  # noqa E401
+)
 from ..models.data import StudysetStudy
 
-from ..schemas import (  # noqa E401
-    StudysetSchema,
-    AnnotationSchema,
-    StudySchema,
-    AnalysisSchema,
-    ConditionSchema,
-    ImageSchema,
-    PointSchema,
-    PointValueSchema,
+from ..schemas import (
+    BooleanOrString,
     AnalysisConditionSchema,
     AnnotationAnalysisSchema,
     StudysetStudySchema,
@@ -47,24 +34,6 @@ __all__ = [
     "ImagesView",
     "PointsView",
 ]
-
-
-class BooleanOrString(field_base.Field):
-    def __init__(self, *args, **kwargs):
-        self.bool_field = fields.Boolean(*args, **kwargs)
-        self.string_field = fields.String(*args, **kwargs)
-        super().__init__()
-
-    def _serialize(self, value, attr, obj, **kwargs):
-        if isinstance(value, bool):
-            return self.bool_field._serialize(value, attr, obj**kwargs)
-        return self.string_field._serialize(value, attr, obj, **kwargs)
-
-    def _deserialize(self, value, attr, data, **kwargs):
-        if value in ["true", "false"]:
-            return self.bool_field._deserialize(value, attr, data, **kwargs)
-        return self.string_field._deserialize(value, attr, data, **kwargs)
-
 
 LIST_CLONE_ARGS = {
     "source_id": fields.String(missing=None),
