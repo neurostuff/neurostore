@@ -1,60 +1,25 @@
 import {
     Box,
     Typography,
+    Button,
     Accordion,
     AccordionSummary,
     AccordionDetails,
-    Button,
     ToggleButtonGroup,
     ToggleButton,
 } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import { useEffect, useState } from 'react';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
+import { defaultExclusionTags } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
+import { createDuplicateMap } from '../../helpers/utils';
 import PubMedImportStudySummary from 'components/Dialogs/PubMedImportDialog/PubMedImportStudySummary';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
-type IResolveImportCurationStubStudy = ICurationStubStudy & {
-    columnIndex?: number;
-    studyIndex?: number;
+type IResolveImportDuplicatesCurationStubStudy = ICurationStubStudy & {
     resolution?: 'duplicate' | 'not-duplicate';
-};
-
-// a study is defined as a duplicate if it has either a matching PMID, DOI, or title.
-// We must account for the case where a study has a missing PMID, DOI, or title as well.
-export const extractDuplicates = (
-    stubs: IResolveImportCurationStubStudy[]
-): IResolveImportCurationStubStudy[][] => {
-    if (stubs.length <= 0) return [];
-    const map = new Map<string, ICurationStubStudy[]>();
-    const duplicatesList: ICurationStubStudy[][] = [];
-
-    stubs.forEach((stub) => {
-        const formattedTitle = stub.title.toLocaleLowerCase().trim();
-        if (stub.doi && map.has(stub.doi)) {
-            const duplicatedStubs = map.get(stub.doi);
-            duplicatedStubs!.push(stub);
-        } else if (stub.pmid && map.has(stub.pmid)) {
-            const duplicatedStubs = map.get(stub.pmid);
-            duplicatedStubs!.push(stub);
-        } else if (stub.title && map.has(formattedTitle)) {
-            // in the future, this title search can be replaced with a fuzzier search via a string comparison algorithm
-            const duplicatedStubs = map.get(formattedTitle);
-            duplicatedStubs!.push(stub);
-        } else {
-            const newDuplicatedStubsList: ICurationStubStudy[] = [];
-            newDuplicatedStubsList.push(stub);
-            duplicatesList.push(newDuplicatedStubsList);
-            if (stub.doi) map.set(stub.doi, newDuplicatedStubsList);
-            if (stub.pmid) map.set(stub.pmid, newDuplicatedStubsList);
-            if (formattedTitle) map.set(formattedTitle, newDuplicatedStubsList);
-        }
-    });
-
-    return duplicatesList.filter((x) => x.length > 1);
 };
 
 const ResolveImportDuplicates: React.FC<{
@@ -62,7 +27,7 @@ const ResolveImportDuplicates: React.FC<{
     onResolveStubs: (stubs: ICurationStubStudy[]) => void;
     onNavigate: (button: ENavigationButton) => void;
 }> = (props) => {
-    const [duplicates, setDuplicates] = useState<IResolveImportCurationStubStudy[][]>([]);
+    const [duplicates, setDuplicates] = useState<IResolveImportDuplicatesCurationStubStudy[][]>([]);
     const [isValid, setIsValid] = useState(false);
     const [currStub, setCurrStub] = useState(0);
 
@@ -72,13 +37,14 @@ const ResolveImportDuplicates: React.FC<{
 
     useEffect(() => {
         if (props.stubs.length === 0) return;
-        const extractedDuplicates = extractDuplicates(props.stubs);
-        setDuplicates(extractedDuplicates);
+        const { duplicatesList } = createDuplicateMap(props.stubs);
+        const duplicates = duplicatesList.filter((x) => x.length > 1);
+        setDuplicates(duplicates);
     }, [props.stubs]);
 
     const handleResolveDuplicate = (
         duplicateListIndex: number,
-        studyIndex: number,
+        duplicateStubIndex: number,
         resolution?: 'duplicate' | 'not-duplicate'
     ) => {
         if (!resolution) return;
@@ -87,18 +53,10 @@ const ResolveImportDuplicates: React.FC<{
             const update = [...prev];
 
             const duplicateList = [...update[duplicateListIndex]];
-            duplicateList[studyIndex] = {
-                ...duplicateList[studyIndex],
+            duplicateList[duplicateStubIndex] = {
+                ...duplicateList[duplicateStubIndex],
                 resolution: resolution,
-                exclusionTag:
-                    resolution === 'duplicate'
-                        ? {
-                              id: ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID,
-                              label: 'Duplicate',
-                              isAssignable: true,
-                              isExclusionTag: true,
-                          }
-                        : null,
+                exclusionTag: resolution === 'duplicate' ? defaultExclusionTags.duplicate : null,
             };
             update[duplicateListIndex] = duplicateList;
 
@@ -139,14 +97,14 @@ const ResolveImportDuplicates: React.FC<{
             </Typography>
 
             <Box>
-                {duplicates.map((duplicate, duplicateIndex) => {
-                    const isResolved = duplicate.every((x) => x.resolution);
+                {duplicates.map((duplicateList, duplicateIndex) => {
+                    const isResolved = duplicateList.every((x) => x.resolution);
 
                     return (
                         <Accordion
                             elevation={0}
                             key={duplicateIndex}
-                            expanded={currStub === duplicateIndex}
+                            expanded={duplicateIndex === currStub}
                             onChange={() => setCurrStub(duplicateIndex)}
                         >
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -165,7 +123,7 @@ const ResolveImportDuplicates: React.FC<{
                                 </Typography>
                             </AccordionSummary>
                             <AccordionDetails>
-                                {duplicate.map((stub, stubIndex) => (
+                                {duplicateList.map((stub, duplicateStubIndex) => (
                                     <Box key={stub.id} sx={{ display: 'flex' }}>
                                         <Box
                                             sx={{
@@ -183,12 +141,12 @@ const ResolveImportDuplicates: React.FC<{
                                                 value={stub.resolution}
                                                 onChange={(
                                                     _,
-                                                    newVal: 'duplicate' | 'not-duplicate' | null
+                                                    resolution: 'duplicate' | 'not-duplicate' | null
                                                 ) =>
                                                     handleResolveDuplicate(
                                                         duplicateIndex,
-                                                        stubIndex,
-                                                        newVal ? newVal : undefined
+                                                        duplicateStubIndex,
+                                                        resolution ? resolution : undefined
                                                     )
                                                 }
                                             >

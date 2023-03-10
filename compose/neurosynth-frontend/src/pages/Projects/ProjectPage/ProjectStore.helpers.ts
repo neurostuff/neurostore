@@ -8,52 +8,52 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 
-export const defaultIdentificationSources: ISource[] = [
-    {
+export const defaultIdentificationSources = {
+    neurostore: {
         id: ENeurosynthSourceIds.NEUROSTORE,
         label: 'Neurostore',
     },
-    {
+    pubmed: {
         id: ENeurosynthSourceIds.PUBMED,
         label: 'PubMed',
     },
-];
+};
 
-const defaultExclusionTags: ITag[] = [
-    {
+export const defaultExclusionTags = {
+    exclusion: {
         id: ENeurosynthTagIds.EXCLUDE_EXCLUSION_ID,
         label: 'Exclude',
         isExclusionTag: true,
         isAssignable: true,
     },
-    {
+    duplicate: {
         id: ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID,
         label: 'Duplicate',
         isExclusionTag: true,
         isAssignable: true,
     },
-];
+};
 
-export const defaultInfoTags: ITag[] = [
-    {
+export const defaultInfoTags = {
+    untagged: {
         id: ENeurosynthTagIds.UNTAGGED_TAG_ID,
         label: 'Untagged studies',
         isExclusionTag: false,
         isAssignable: false,
     },
-    {
+    uncategorized: {
         id: ENeurosynthTagIds.UNCATEGORIZED_ID,
         label: 'Uncategorized Studies',
         isExclusionTag: false,
         isAssignable: false,
     },
-    {
+    saveForLater: {
         id: ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID,
         label: 'Save For Later',
         isExclusionTag: false,
         isAssignable: false,
     },
-];
+};
 
 export const handleDragEndHelper = (
     state: ICurationColumn[],
@@ -129,20 +129,17 @@ export const initCurationHelper = (cols: string[], isPrisma: boolean): ICuration
             screening: { exclusionTags: [] },
             eligibility: { exclusionTags: [] },
         },
-        exclusionTags: defaultExclusionTags,
-        infoTags: defaultInfoTags,
-        identificationSources: defaultIdentificationSources,
+        exclusionTags: Object.entries(defaultExclusionTags).map(([key, value]) => ({
+            ...value,
+        })),
+        infoTags: Object.entries(defaultInfoTags).map(([key, value]) => ({ ...value })),
+        identificationSources: Object.entries(defaultIdentificationSources).map(([key, value]) => ({
+            ...value,
+        })),
     };
 
     if (isPrisma) {
-        curation.prismaConfig.identification.exclusionTags = [
-            {
-                id: ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID,
-                label: 'Duplicate',
-                isExclusionTag: true,
-                isAssignable: true,
-            },
-        ];
+        curation.prismaConfig.identification.exclusionTags = [defaultExclusionTags.duplicate];
         curation.prismaConfig.screening.exclusionTags = [
             {
                 id: ENeurosynthTagIds.IRRELEVANT_EXCLUSION_ID,

@@ -18,6 +18,7 @@ import {
 } from 'pages/helpers/utils';
 import { useProjectId } from 'pages/Projects/ProjectPage/ProjectStore';
 import { IImportArgs } from '../CurationImport';
+import { studiesToStubs } from './helpers/utils';
 
 const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
     const { user, isLoading: authenticationIsLoading } = useAuth0();
@@ -54,7 +55,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
         isError: allDataForSearchIsError,
         isFetching: allDataForSearchIsFetching,
     } = useGetStudies(
-        { ...debouncedSearchCriteria, studysetOwner: user?.sub, pageSize: 30000 },
+        { ...debouncedSearchCriteria, studysetOwner: user?.sub, pageSize: 29999 }, // backend checks for less than 30000
         !authenticationIsLoading
     );
 
@@ -121,11 +122,16 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
 
     const handleButtonClick = (button: ENavigationButton) => {
         if (button === ENavigationButton.PREV) {
+            history.push(`/projects/${projectId}/curation/import`);
             props.onNavigate(button);
         } else {
-            console.log(allDataForSearch);
+            const newStubs = studiesToStubs(allDataForSearch?.results || []);
+            props.onImportStubs(newStubs);
         }
     };
+
+    const tableIsLoading =
+        isLoading || isFetching || allDataForSearchIsLoading || allDataForSearchIsFetching;
 
     return (
         <Box>
@@ -148,7 +154,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
                 <Box sx={{ marginBottom: '1rem' }}>
                     <NeurosynthTable
                         tableConfig={{
-                            isLoading: isLoading || isFetching || allDataForSearchIsLoading,
+                            isLoading: tableIsLoading,
                             loaderColor: 'secondary',
                             noDataDisplay: (
                                 <Box sx={{ color: 'warning.dark', padding: '1rem' }}>
@@ -216,6 +222,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
                         studyData?.metadata?.total_count || 0
                     } studies from neurostore`}
                     nextButtonStyle="contained"
+                    nextButtonDisabled={tableIsLoading || (studyData?.results || []).length === 0}
                     onButtonClick={handleButtonClick}
                 />
             </Box>

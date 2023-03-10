@@ -16,12 +16,11 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { useSnackbar } from 'notistack';
-import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
-import { ITag } from 'hooks/requests/useGetProjects';
 import {
     useProjectCurationColumns,
     useUpdateCurationColumns,
 } from 'pages/Projects/ProjectPage/ProjectStore';
+import { defaultExclusionTags } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 
 interface IPubMedWizardDuplicateStep {
     stubs: ICurationStubStudy[];
@@ -86,13 +85,6 @@ const PubMedwizardDuplicateStep: React.FC<IPubMedWizardDuplicateStep> = (props) 
 
     // mark the duplicates and save the new stubs into the project
     const handleImport = () => {
-        const duplicateTag: ITag = {
-            id: ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID,
-            label: 'Duplicate',
-            isAssignable: true,
-            isExclusionTag: true,
-        };
-
         const newStubsToAdd = [...props.stubs];
         const updatedCurationColumns = [...columns];
 
@@ -100,11 +92,11 @@ const PubMedwizardDuplicateStep: React.FC<IPubMedWizardDuplicateStep> = (props) 
             if (duplicate.resolution === 'existingStub') {
                 updatedCurationColumns[duplicate.existingStub.colIndex].stubStudies[
                     duplicate.existingStub.studyIndex
-                ].exclusionTag = duplicateTag as ITag;
+                ].exclusionTag = defaultExclusionTags.duplicate;
             } else if (duplicate.resolution === 'newStub') {
                 const stub = newStubsToAdd.find((stub) => stub.id === duplicate.newStub.id);
                 if (!stub) return;
-                stub.exclusionTag = duplicateTag as ITag;
+                stub.exclusionTag = defaultExclusionTags.duplicate;
             }
         });
 

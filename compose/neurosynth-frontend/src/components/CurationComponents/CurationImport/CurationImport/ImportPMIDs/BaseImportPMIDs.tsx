@@ -1,10 +1,9 @@
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import React from 'react';
 import { useState } from 'react';
+import { hasDuplicates } from '../../helpers/utils';
 import { IImportArgs } from '../CurationImport';
-import ResolveImportDuplicates, {
-    extractDuplicates,
-} from '../ResolveImportDuplicates/ResolveImportDuplicates';
+import ResolveImportDuplicates from '../ResolveImportDuplicates/ResolveImportDuplicates';
 import FetchPMIDs from './FetchPMIDs';
 import UploadPMIDs from './UploadPMIDs';
 
@@ -23,8 +22,8 @@ const BaseImportPMIDs: React.FC<IImportArgs> = (props) => {
 
     const handleStubsRetrieved = React.useCallback(
         (stubs: ICurationStubStudy[]) => {
-            const duplicates = extractDuplicates(stubs);
-            if (duplicates.length > 0) {
+            const duplicatesExist = hasDuplicates(stubs);
+            if (duplicatesExist) {
                 setResolveDuplicates(true);
                 setStubs(stubs);
             } else {

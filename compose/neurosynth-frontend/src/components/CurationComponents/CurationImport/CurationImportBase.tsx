@@ -1,8 +1,10 @@
 import { Step, StepLabel, Stepper, Box } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ICurationStubStudy } from '../CurationStubStudy/CurationStubStudyDraggableContainer';
 import CurationImport, { EImportMode } from './CurationImport/CurationImport';
+import CurationImportResolveDuplicates from './CurationImportResolveDuplicates/CurationImportResolveDuplicates';
 import CurationImportSelectMethod from './CurationImportSelectMethod/CurationImportSelectMethod';
 import CurationImportTag from './CurationImportTag/CurationImportTag';
 
@@ -10,6 +12,14 @@ const CurationImportBase: React.FC = (props) => {
     const [activeStep, setActiveStep] = useState(0);
     const [importMode, setImportMode] = useState<EImportMode>(EImportMode.NEUROSTORE_IMPORT);
     const [stubs, setStubs] = useState<ICurationStubStudy[]>([]);
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location?.search) {
+            setImportMode(EImportMode.NEUROSTORE_IMPORT);
+            setActiveStep(1);
+        }
+    }, [location?.search]);
 
     const handleChangeImportMode = (newImportMode: EImportMode) => {
         setImportMode(newImportMode);
@@ -28,7 +38,6 @@ const CurationImportBase: React.FC = (props) => {
     };
 
     const handleImportStubs = (stubs: ICurationStubStudy[]) => {
-        console.log(stubs);
         setStubs(stubs);
         setActiveStep((prev) => prev + 1);
     };
@@ -71,7 +80,9 @@ const CurationImportBase: React.FC = (props) => {
                         stubs={stubs}
                     />
                 )}
-                {activeStep === 3 && <div>resolve duplicates</div>}
+                {activeStep === 3 && (
+                    <CurationImportResolveDuplicates onNavigate={handleNavigate} stubs={stubs} />
+                )}
             </Box>
         </Box>
     );

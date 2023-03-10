@@ -4,13 +4,13 @@ import { useState } from 'react';
 import { hasDuplicates } from '../../helpers/utils';
 import { IImportArgs } from '../CurationImport';
 import ResolveImportDuplicates from '../ResolveImportDuplicates/ResolveImportDuplicates';
-import ImportStandardFormat from './ImportStandardFormat';
+import NeurostoreSearch from './NeurostoreSearch';
 
-const BaseImportStandardFormat: React.FC<IImportArgs> = (props) => {
+const BaseImportFromNeurostore: React.FC<IImportArgs> = (props) => {
     const [resolveDuplicates, setResolveDuplicates] = useState(false);
     const [stubs, setStubs] = useState<ICurationStubStudy[]>([]);
 
-    const onImportStubs = (stubs: ICurationStubStudy[]) => {
+    const handleOnImportStubs = (stubs: ICurationStubStudy[]) => {
         const duplicatesExist = hasDuplicates(stubs);
         if (duplicatesExist) {
             setStubs(stubs);
@@ -20,23 +20,25 @@ const BaseImportStandardFormat: React.FC<IImportArgs> = (props) => {
         }
     };
 
-    const onResolveStubs = (updatedStubs: ICurationStubStudy[]) => {
+    const handleResolveStubs = (updatedStubs: ICurationStubStudy[]) => {
         props.onImportStubs(updatedStubs);
     };
 
+    if (resolveDuplicates) {
+        return (
+            <ResolveImportDuplicates
+                onResolveStubs={handleResolveStubs}
+                onNavigate={props.onNavigate}
+                stubs={stubs}
+            />
+        );
+    }
+
     return (
-        <Box>
-            {resolveDuplicates ? (
-                <ResolveImportDuplicates
-                    onNavigate={() => setResolveDuplicates(false)}
-                    onResolveStubs={onResolveStubs}
-                    stubs={stubs}
-                />
-            ) : (
-                <ImportStandardFormat onNavigate={props.onNavigate} onImportStubs={onImportStubs} />
-            )}
+        <Box sx={{ marginTop: '1rem' }}>
+            <NeurostoreSearch {...props} onImportStubs={handleOnImportStubs} />
         </Box>
     );
 };
 
-export default BaseImportStandardFormat;
+export default BaseImportFromNeurostore;

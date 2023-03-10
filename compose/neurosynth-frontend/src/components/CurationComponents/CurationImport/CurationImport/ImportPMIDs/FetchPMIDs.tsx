@@ -1,10 +1,8 @@
 import { Box } from '@mui/material';
-import NavigationButtons from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import { ENeurosynthSourceIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { ISource } from 'hooks/requests/useGetProjects';
 import useGetPubmedIDs from 'hooks/requests/useGetPubMedIds';
+import { defaultIdentificationSources } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 import React from 'react';
 import { useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -40,11 +38,6 @@ const FetchPMIDs: React.FC<{
                 }
             }, '');
 
-            const pubmedIdentificationSource: ISource = {
-                id: ENeurosynthSourceIds.PUBMED,
-                label: 'PubMed',
-            };
-
             return {
                 id: uuidv4(),
                 title: x.title,
@@ -58,7 +51,7 @@ const FetchPMIDs: React.FC<{
                 articleLink: x.articleLink,
                 exclusionTag: null,
                 tags: [],
-                identificationSource: pubmedIdentificationSource,
+                identificationSource: defaultIdentificationSources.pubmed,
             };
         });
         props.onStubsUploaded(stubs);

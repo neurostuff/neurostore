@@ -1,7 +1,7 @@
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import CreateStubStudy from './CreateStubStudy/CreateStubStudy';
-import BaseImportFromNeurostore from './ImportFromNeurostore/ImportFromNeurostore';
+import BaseImportFromNeurostore from './ImportFromNeurostore/BaseImportFromNeurostore';
 import BaseImportPMIDs from './ImportPMIDs/BaseImportPMIDs';
 import BaseImportStandardFormat from './ImportStandardFormat/BaseImportStandardFormat';
 

@@ -19,6 +19,7 @@ import {
     useRemoveTagFromStub,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import React from 'react';
+import { defaultInfoTags } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 
 interface ICurationStubSummaryHeader {
     type: 'excluded' | 'included' | 'default';
@@ -67,12 +68,7 @@ const CurationStubSummaryHeader: React.FC<ICurationStubSummaryHeader> = React.me
     };
 
     const handleSaveForLater = () => {
-        handleAddTag({
-            id: ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID,
-            label: 'Save For Later',
-            isExclusionTag: false,
-            isAssignable: false,
-        });
+        handleAddTag(defaultInfoTags.saveForLater);
         props.onMoveToNextStub();
     };
 

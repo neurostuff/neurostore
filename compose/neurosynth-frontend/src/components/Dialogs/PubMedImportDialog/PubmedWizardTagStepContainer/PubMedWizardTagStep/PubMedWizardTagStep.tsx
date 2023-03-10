@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import PubMedImportStudySummary from 'components/Dialogs/PubMedImportDialog/PubMedImportStudySummary';
 import { ENeurosynthSourceIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import React from 'react';
+import { defaultIdentificationSources } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 
 export interface IPubMedWizardTagStep {
     ids: string[];
@@ -52,11 +53,6 @@ const PubMedWizardTagStep: React.FC<
                         }
                     }, '');
 
-                    const pubmedIdentificationSource: ISource = {
-                        id: ENeurosynthSourceIds.PUBMED,
-                        label: 'PubMed',
-                    };
-
                     return {
                         id: uuidv4(),
                         title: x.title,
@@ -70,7 +66,7 @@ const PubMedWizardTagStep: React.FC<
                         articleLink: x.articleLink,
                         exclusionTag: null,
                         tags: [],
-                        identificationSource: pubmedIdentificationSource,
+                        identificationSource: defaultIdentificationSources.pubmed,
                     };
                 })
             );
