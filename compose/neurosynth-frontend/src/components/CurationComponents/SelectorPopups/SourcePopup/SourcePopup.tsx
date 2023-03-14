@@ -36,6 +36,7 @@ interface ISourceSelectorPopup {
     initialValue?: ISource;
     isError?: boolean;
     helperText?: string;
+    excludeSources?: string[];
 }
 
 const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
@@ -43,19 +44,33 @@ const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(
         props.initialValue || null
     );
-
-    useEffect(() => {
-        setSelectedValue(props.initialValue || null);
-    }, [props.initialValue]);
+    const [sourceOptions, setSourceOptions] = useState<AutoSelectOption[]>([]);
 
     const sources = useProjectCurationSources();
     const createNewSource = useCreateCurationSource();
 
-    const sourceOptions: AutoSelectOption[] = sources.map((source) => ({
-        id: source.id,
-        label: source.label,
-        addOptionActualLabel: null,
-    }));
+    useEffect(() => {
+        if (sources) {
+            setSourceOptions((_) => {
+                const updatedSources = sources
+                    .filter(
+                        (originalSource) =>
+                            !(props.excludeSources || []).includes(originalSource.id)
+                    )
+                    .map((source) => ({
+                        id: source.id,
+                        label: source.label,
+                        addOptionActualLabel: null,
+                    }));
+
+                return updatedSources;
+            });
+        }
+    }, [sources, props.excludeSources]);
+
+    useEffect(() => {
+        setSelectedValue(props.initialValue || null);
+    }, [props.initialValue]);
 
     const handleCreateSource = (sourceName: string) => {
         if (projectId && sources) {

@@ -73,7 +73,7 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                 label="title"
                 textToEdit={props.stub.title}
             >
-                {props.stub.articleLink ? (
+                {props.stub.articleLink && props.stub.title ? (
                     <Link
                         rel="noopener"
                         underline="hover"
@@ -81,11 +81,14 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                         target="_blank"
                         href={props.stub.articleLink}
                     >
-                        <Typography variant="h6">{props.stub.title}</Typography>
+                        <Typography variant="h6">{props.stub.title || 'No Title'}</Typography>
                     </Link>
                 ) : (
-                    <Typography color="primary" variant="h5">
-                        {props.stub.title}
+                    <Typography
+                        sx={{ color: props.stub.title ? 'primary.main' : 'warning.dark' }}
+                        variant="h5"
+                    >
+                        {props.stub.title || 'No Title'}
                     </Typography>
                 )}
             </TextEdit>

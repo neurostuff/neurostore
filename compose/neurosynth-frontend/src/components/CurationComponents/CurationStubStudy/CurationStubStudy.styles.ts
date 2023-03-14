@@ -13,18 +13,8 @@ const CurationStubStudyStyles: Style = {
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    limitText: {
-        overflow: 'hidden',
-        textOverflow: 'ellipses',
-        display: '-webkit-box',
-        WebkitLineClamp: 1,
-        WebkitBoxOrient: 'vertical',
-        lineClamp: 1,
-        cursor: 'pointer',
-    },
     tag: {
         marginRight: '4px',
-        flex: '1 1 0px',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
     },

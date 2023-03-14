@@ -48,6 +48,9 @@ export enum ENeurosynthTagIds {
 export enum ENeurosynthSourceIds {
     NEUROSTORE = 'neurosynth_neurostore_id_source',
     PUBMED = 'neurosynth_pubmed_id_source',
+    SCOPUS = 'neurosynth_scopus_id_source',
+    WEBOFSCIENCE = 'neurosynth_web_of_science_id_source',
+    PSYCINFO = 'neurosynth_psycinfo_id_source',
 }
 
 const getPercentageComplete = (curationSummary: ICurationSummary): number => {

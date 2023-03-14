@@ -1,25 +1,36 @@
-import { Box, Chip, ListItem, ListItemButton, ListItemText, Typography } from '@mui/material';
+import { Box, Chip, ListItem, ListItemButton, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import CurationStubStudyStyles from 'components/CurationComponents/CurationStubStudy/CurationStubStudy.styles';
 import React from 'react';
 
 interface ICurationStubListItem {
     selected: boolean;
     stub: ICurationStubStudy;
     onSetSelectedStub: (stubId: string) => void;
+    style: React.CSSProperties;
 }
 
 const CurationStubListItem: React.FC<ICurationStubListItem> = React.memo((props) => {
     return (
         <ListItem
-            sx={{ backgroundColor: props.stub.exclusionTag ? '#fff3f3' : '' }}
+            style={{
+                ...props.style,
+                ...{
+                    backgroundColor: props.stub.exclusionTag ? '#fff3f3' : '',
+                },
+            }}
             disablePadding
             divider
         >
             <ListItemButton
                 onClick={() => props.onSetSelectedStub(props.stub.id || '')}
                 selected={props.selected}
-                sx={{ display: 'flex', flexDirection: 'column', alignItems: 'start' }}
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'start',
+                    height: '100%',
+                    width: '280px',
+                }}
                 autoFocus={props.selected}
             >
                 {props.stub.exclusionTag && (
@@ -27,14 +38,23 @@ const CurationStubListItem: React.FC<ICurationStubListItem> = React.memo((props)
                         {props.stub.exclusionTag.label}
                     </Typography>
                 )}
-                <ListItemText sx={CurationStubStudyStyles.limitText} primary={props.stub.title} />
-                <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                <Box sx={{ width: '100%' }}>
+                    <Typography noWrap variant="body1">
+                        {props.stub.title}
+                    </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', width: '100%' }}>
                     {props.stub.tags.map((tag) => (
                         <Chip
                             key={tag.id}
                             label={tag.label}
                             size="small"
-                            sx={{ margin: '3px', maxWidth: '70px' }}
+                            sx={{
+                                margin: '3px',
+                                marginRight: '4px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                            }}
                         />
                     ))}
                 </Box>

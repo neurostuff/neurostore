@@ -1,4 +1,4 @@
-import { Box, Button, TextField } from '@mui/material';
+import { Box, Button, TextField, Typography } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import NavigationButtons, {
     ENavigationButton,
@@ -8,6 +8,7 @@ import { ICurationStubStudy } from 'components/CurationComponents/CurationStubSt
 import { v4 as uuidv4 } from 'uuid';
 import { ISource } from 'hooks/requests/useGetProjects';
 import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
+import { ENeurosynthSourceIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 const Cite = require('citation-js');
 require('@citation-js/plugin-enw');
 require('@citation-js/plugin-bibtex');
@@ -176,11 +177,23 @@ const ImportStandardFormat: React.FC<{
 
     return (
         <Box sx={{ width: '100%' }}>
-            <Box sx={{ margin: '2rem 0 1rem 0', display: 'flex', justifyContent: 'center' }}>
+            <Box
+                sx={{
+                    margin: '2rem 0 1rem 0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexDirection: 'column',
+                }}
+            >
+                <Typography sx={{ maxWidth: '600px' }} gutterBottom>
+                    Enter the source that you imported your data from. If you don't see it below,
+                    start typing in the input to add it.
+                </Typography>
                 <IdentificationSourcePopup
+                    excludeSources={[ENeurosynthSourceIds.NEUROSTORE]}
                     sx={{ width: '100%', maxWidth: '600px' }}
                     onAddSource={handleAddSource}
-                    label="select data source (i.e. PubMed, Scopus)"
+                    label="enter data source (i.e. PubMed, Scopus)"
                     onCreateSource={handleAddSource}
                 />
             </Box>

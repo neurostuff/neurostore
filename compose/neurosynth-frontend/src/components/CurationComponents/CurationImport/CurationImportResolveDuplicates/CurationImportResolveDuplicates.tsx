@@ -114,7 +114,7 @@ const CurationImportResolveDuplicates: React.FC<{
                 } else if (importedStub.title && duplicateMapping.has(formattedTitle)) {
                     // in the future, this title search can be replaced with a fuzzier search via a string comparison algorithm
                     const duplicatedStubs = duplicateMapping.get(
-                        importedStub.title
+                        formattedTitle
                     ) as IResolveProjectDuplicatesCurationStubStudy[];
                     update.push({
                         importedStub: {

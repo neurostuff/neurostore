@@ -1,9 +1,12 @@
 import { Box, List, Paper, Typography } from '@mui/material';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import CurationStubSummary from 'components/Dialogs/CurationDialog/CurationStubSummary/CurationStubSummary';
 import CurationStubListItem from './CurationStubListItem/CurationStubListItem';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { FixedSizeList, ListChildComponentProps } from 'react-window';
+import useGetWindowHeight from 'hooks/useGetWindowHeight';
+import React from 'react';
 
 interface ICurationDialog {
     columnIndex: number;
@@ -13,15 +16,65 @@ interface ICurationDialog {
     onSetSelectedStub: (stub: string) => void;
 }
 
+const CurationDialogFixedSizeListRow: React.FC<
+    ListChildComponentProps<{
+        stubs: ICurationStubStudy[];
+        selectedStubId: string | undefined;
+        onSetSelectedStub: (stub: string) => void;
+    }>
+> = (props) => {
+    const stub = props.data.stubs[props.index];
+    const isSelected = props.data.selectedStubId === stub.id;
+
+    return (
+        <CurationStubListItem
+            selected={isSelected}
+            onSetSelectedStub={props.data.onSetSelectedStub}
+            stub={stub}
+            style={props.style}
+        />
+    );
+};
+
 const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
     const [stubs, setStubs] = useState<ICurationStubStudy[]>(props.stubs);
     const selectedStub: ICurationStubStudy | undefined = props.stubs.find(
         (stub) => stub.id === props.selectedStubId
     );
 
+    const windowHeight = useGetWindowHeight();
+
     useEffect(() => {
         setStubs(props.stubs);
     }, [props.stubs]);
+
+    const handleMoveToNextStub = () => {
+        if (selectedStub) {
+            const stubIndex = props.stubs.findIndex((x) => x.id === selectedStub.id);
+            if (stubIndex < 0) return;
+
+            const nextStub = props.stubs[stubIndex + 1];
+            if (!nextStub) return;
+            props.onSetSelectedStub(nextStub.id);
+        }
+    };
+
+    // cant use useRef as the listRef does not exist due to it being rendered
+    // later as a dialog. useEffect also does not keep track of useRef value changes
+    // https://stackoverflow.com/questions/60476155/is-it-safe-to-use-ref-current-as-useeffects-dependency-when-ref-points-to-a-dom
+    const handleScrollTo = React.useCallback(
+        (listRef: FixedSizeList) => {
+            if (listRef) {
+                const selectedItemIndex = props.stubs.findIndex(
+                    (x) => x.id === props.selectedStubId
+                );
+                listRef.scrollToItem(selectedItemIndex, 'smart');
+            }
+        },
+        [props.selectedStubId, props.stubs]
+    );
+
+    const pxInVh = Math.round((windowHeight * 60) / 100);
 
     if (stubs.length === 0) {
         return (
@@ -39,17 +92,6 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
         );
     }
 
-    const handleMoveToNextStub = () => {
-        if (selectedStub) {
-            const stubIndex = props.stubs.findIndex((x) => x.id === selectedStub.id);
-            if (stubIndex < 0) return;
-
-            const nextStub = props.stubs[stubIndex + 1];
-            if (!nextStub) return;
-            props.onSetSelectedStub(nextStub.id);
-        }
-    };
-
     return (
         <BaseDialog
             maxWidth="xl"
@@ -61,30 +103,24 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
             }`}
         >
             <Box sx={{ display: 'flex', height: '60vh' }}>
-                <Box
-                    sx={{
-                        minWidth: '260px',
-                        maxWidth: '260px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        height: '100%',
-                    }}
-                >
-                    <Paper
-                        elevation={1}
-                        sx={{ overflowY: 'scroll', overflowX: 'hidden', height: '100%' }}
+                <Box>
+                    <FixedSizeList
+                        height={pxInVh}
+                        itemCount={stubs.length}
+                        width={280}
+                        itemSize={90}
+                        itemKey={(index, data) => data.stubs[index]?.id}
+                        itemData={{
+                            stubs: stubs,
+                            selectedStubId: props.selectedStubId,
+                            onSetSelectedStub: props.onSetSelectedStub,
+                        }}
+                        layout="vertical"
+                        overscanCount={3}
+                        ref={handleScrollTo}
                     >
-                        <List disablePadding sx={{ width: '100%' }}>
-                            {stubs.map((stub, index) => (
-                                <CurationStubListItem
-                                    key={stub.id}
-                                    stub={stub}
-                                    selected={stub.id === props.selectedStubId}
-                                    onSetSelectedStub={props.onSetSelectedStub}
-                                />
-                            ))}
-                        </List>
-                    </Paper>
+                        {CurationDialogFixedSizeListRow}
+                    </FixedSizeList>
                 </Box>
                 <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
                     <CurationStubSummary

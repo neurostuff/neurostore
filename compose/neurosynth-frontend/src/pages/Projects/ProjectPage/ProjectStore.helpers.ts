@@ -17,6 +17,18 @@ export const defaultIdentificationSources = {
         id: ENeurosynthSourceIds.PUBMED,
         label: 'PubMed',
     },
+    scopus: {
+        id: ENeurosynthSourceIds.SCOPUS,
+        label: 'Scopus',
+    },
+    webOfScience: {
+        id: ENeurosynthSourceIds.WEBOFSCIENCE,
+        label: 'Web of Science',
+    },
+    psycInfo: {
+        id: ENeurosynthSourceIds.PSYCINFO,
+        label: 'PsycInfo',
+    },
 };
 
 export const defaultExclusionTags = {
