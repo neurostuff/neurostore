@@ -16,7 +16,6 @@ import {
     useProjectDescription,
     useProjectExtractionMetadata,
     useProjectFiltrationMetadata,
-    useProjectId,
     useProjectName,
     useUpdateProjectDescription,
     useUpdateProjectName,
@@ -34,6 +33,12 @@ import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import { useEffect, useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
 import ProjectPageStyles from './ProjectPage.styles';
+
+export interface IProjectPageLocationState {
+    projectPage?: {
+        openCurationDialog?: boolean;
+    };
+}
 
 // TODO: for now, we will only be supporting a single meta-analysis, so we only assume there is one. This will change later.
 // const metaAnalysisId = (project?.meta_analyses as MetaAnalysis[]).
@@ -55,7 +60,6 @@ const ProjectPage: React.FC = (props) => {
 
     const projectName = useProjectName();
     const projectDescription = useProjectDescription();
-    const storeProjectId = useProjectId();
 
     const curationStepHasBeenInitialized = useProjectCurationColumns().length > 0;
 
@@ -86,7 +90,7 @@ const ProjectPage: React.FC = (props) => {
 
     useEffect(() => {
         initStore(projectId);
-    }, [initStore, projectId, storeProjectId]);
+    }, [initStore, projectId]);
 
     const handleTabChange = (event: any, tab: number) => {
         setTab((prev) => {

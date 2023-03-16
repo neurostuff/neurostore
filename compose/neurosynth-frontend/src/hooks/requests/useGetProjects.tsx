@@ -91,10 +91,20 @@ export const indexToPRISMAMapping = (
     }
 };
 
-const useGetProjects = () => {
-    return useQuery('projects', () => API.NeurosynthServices.ProjectsService.projectsGet(), {
-        select: (axiosResponse) => axiosResponse.data.results as INeurosynthProjectReturn[],
-    });
+const useGetProjects = (authenticatedUser?: string) => {
+    return useQuery(
+        ['projects', authenticatedUser],
+        () => API.NeurosynthServices.ProjectsService.projectsGet(),
+        {
+            select: (axiosResponse) =>
+                ((axiosResponse.data.results as INeurosynthProjectReturn[]) || []).filter(
+                    (x) => x.user === authenticatedUser
+                ),
+            enabled: !!authenticatedUser,
+            cacheTime: 0,
+            staleTime: 0,
+        }
+    );
 };
 
 export default useGetProjects;

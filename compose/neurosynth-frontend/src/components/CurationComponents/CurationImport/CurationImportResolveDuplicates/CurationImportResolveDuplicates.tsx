@@ -12,7 +12,6 @@ import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import PubMedImportStudySummary from 'components/Dialogs/PubMedImportDialog/PubMedImportStudySummary';
 import {
     useProjectCurationColumns,
     useProjectId,
@@ -26,6 +25,7 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { defaultExclusionTags } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import { useHistory } from 'react-router-dom';
+import CurationImportStubSummary from '../CurationImportStubSummary';
 
 type IResolveProjectDuplicatesCurationStubStudy = ICurationStubStudy & {
     columnIndex?: number;
@@ -294,7 +294,7 @@ const CurationImportResolveDuplicates: React.FC<{
                                     }}
                                 >
                                     <Box sx={{ width: '100%' }}>
-                                        <PubMedImportStudySummary {...importedStub} />
+                                        <CurationImportStubSummary {...importedStub} />
                                     </Box>
                                 </Box>
                                 <Box sx={{ width: '250px' }}>
@@ -336,7 +336,7 @@ const CurationImportResolveDuplicates: React.FC<{
                                     >
                                         <Box sx={{ width: '100%' }}>
                                             <Chip size="small" label={stub.colName} />
-                                            <PubMedImportStudySummary {...stub} />
+                                            <CurationImportStubSummary {...stub} />
                                         </Box>
                                     </Box>
                                     <Box sx={{ width: '250px' }}>

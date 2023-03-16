@@ -18,7 +18,6 @@ const queryClient = new QueryClient({
         queries: {
             retry: env === 'DEV' ? 0 : 3, // need to do this because of issues testing with cypress
             refetchOnWindowFocus: env !== 'DEV', // need to do this because of issues testing with cypress
-            refetchOnMount: false, // this is needed for smooth UI handling with the curation board
         },
     },
     queryCache: new QueryCache({

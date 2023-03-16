@@ -6,9 +6,11 @@ import useGetProjects from 'hooks/requests/useGetProjects';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { useHistory } from 'react-router-dom';
 import { useIsMutating } from 'react-query';
+import { useAuth0 } from '@auth0/auth0-react';
 
 const ProjectsPage: React.FC = (props) => {
-    const { data, isError, isLoading, isFetching } = useGetProjects();
+    const { user } = useAuth0();
+    const { data, isError, isLoading, isFetching } = useGetProjects(user?.sub);
     const createProjectIsFetchingNum = useIsMutating('create-project');
     const history = useHistory();
 

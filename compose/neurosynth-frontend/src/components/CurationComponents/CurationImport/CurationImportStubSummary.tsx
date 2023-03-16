@@ -1,8 +1,8 @@
-import { Box, Link, Typography, Chip } from '@mui/material';
+import { Box, Link, Typography, Chip, Button } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
 
-const PubMedImportStudySummary: React.FC<ICurationStubStudy> = (props) => {
+const CurationImportStubSummary: React.FC<ICurationStubStudy> = (props) => {
     const {
         articleLink,
         articleYear,
@@ -14,21 +14,38 @@ const PubMedImportStudySummary: React.FC<ICurationStubStudy> = (props) => {
         abstractText,
         keywords,
         journal,
+        neurostoreId,
     } = props;
 
     return (
-        <Box sx={{ padding: '0.25rem', paddingBottom: '0.5rem' }}>
-            <Link
-                rel="noopener"
-                underline="hover"
-                color="primary"
-                target="_blank"
-                href={articleLink}
-            >
-                <Typography variant="h6">
-                    {articleYear ? `(${articleYear})` : ''} {title}
-                </Typography>
-            </Link>
+        <Box sx={{ padding: '0.25rem', paddingBottom: '1rem' }}>
+            {neurostoreId && (
+                <Button
+                    size="small"
+                    variant="outlined"
+                    rel="noopener"
+                    target="_blank"
+                    href={`/studies/${neurostoreId}`}
+                    sx={{ marginRight: '15px' }}
+                >
+                    View neurostore study
+                </Button>
+            )}
+            {articleLink.length > 0 && (
+                <Button
+                    size="small"
+                    variant="outlined"
+                    rel="noopener"
+                    target="_blank"
+                    color="secondary"
+                    href={articleLink}
+                >
+                    View article
+                </Button>
+            )}
+            <Typography color="primary" noWrap variant="h6">
+                {articleYear ? `(${articleYear})` : ''} {title}
+            </Typography>
             <Box>
                 {tags.map((tag) => (
                     <Chip
@@ -61,4 +78,4 @@ const PubMedImportStudySummary: React.FC<ICurationStubStudy> = (props) => {
     );
 };
 
-export default PubMedImportStudySummary;
+export default CurationImportStubSummary;

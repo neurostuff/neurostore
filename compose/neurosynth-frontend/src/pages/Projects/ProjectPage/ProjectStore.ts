@@ -25,7 +25,6 @@ import {
 import { persist } from 'zustand/middleware';
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import useGetCurationSummary from 'hooks/useGetCurationSummary';
 
 type ProjectStoreActions = {
     updateProjectName: (name: string) => void;
@@ -205,11 +204,10 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                         if (currId !== projectId) {
                             const res = (await API.NeurosynthServices.ProjectsService.projectsIdGet(
                                 projectId
-                            )) as AxiosResponse<INeurosynthProject>;
+                            )) as AxiosResponse<INeurosynthProjectReturn>;
                             set((state) => ({
                                 ...state,
                                 ...res.data,
-                                initialLoad: true,
                             }));
                         }
                     },
@@ -435,10 +433,12 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
     )
 );
 
+// higher level project retrieval hooks
 export const useProjectName = () => useProjectStore((state) => state.name);
 export const useProjectDescription = () => useProjectStore((state) => state.description);
 export const useProjectProvenance = () => useProjectStore((state) => state.provenance);
 
+// curation retrieval hooks
 export const useProjectCurationColumns = () =>
     useProjectStore((state) => state.provenance.curationMetadata.columns);
 export const useProjectCurationIsLastColumn = (columnIndex: number) =>
@@ -447,18 +447,6 @@ export const useProjectNumCurationColumns = () =>
     useProjectStore((state) => state.provenance.curationMetadata.columns.length);
 export const useProjectCurationColumn = (columnIndex: number) =>
     useProjectStore((state) => state.provenance.curationMetadata.columns[columnIndex]);
-export const useCanMoveToExtractionPhase = (columnIndex: number) => {
-    const curationSummary = useGetCurationSummary();
-    const numCols = useProjectNumCurationColumns();
-    const curationColumn = useProjectCurationColumn(columnIndex);
-
-    return (
-        numCols === columnIndex + 1 && // we are at the last column
-        curationColumn.stubStudies.length > 0 && // there are stubs within this column
-        curationSummary.uncategorized === 0 // there are no uncategorized studies in this project
-    );
-};
-
 export const useProjectCurationSources = () =>
     useProjectStore((state) => state.provenance.curationMetadata.identificationSources);
 export const useProjectExtractionMetadata = () =>
@@ -476,13 +464,8 @@ export const useProjectCurationInfoTags = () =>
     useProjectStore((state) => state.provenance.curationMetadata.infoTags);
 export const useProjectCurationExclusionTags = () =>
     useProjectStore((state) => state.provenance.curationMetadata.exclusionTags);
-export const useProjectExtractionStudysetId = () =>
-    useProjectStore((state) => state.provenance.extractionMetadata.studysetId);
-export const useProjectExtractionAnnotationId = () =>
-    useProjectStore((state) => state.provenance.extractionMetadata.annotationId);
-export const useProjectExtractionStudyStatusList = () =>
-    useProjectStore((state) => state.provenance.extractionMetadata.studyStatusList);
 
+// curation updater hooks
 export const useUpdateProjectName = () => useProjectStore((state) => state.updateProjectName);
 export const useUpdateProjectDescription = () =>
     useProjectStore((state) => state.updateProjectDescription);
@@ -502,5 +485,15 @@ export const useAddTagToStub = () => useProjectStore((state) => state.addTagToSt
 export const useRemoveTagFromStub = () => useProjectStore((state) => state.removeTagFromStub);
 export const useSetExclusionFromStub = () => useProjectStore((state) => state.setExclusionForStub);
 export const useCreateNewExclusion = () => useProjectStore((state) => state.createNewExclusion);
+
+// extraction updater hooks
 export const useUpdateExtractionMetadata = () =>
     useProjectStore((state) => state.updateExtractionMetadata);
+
+// extraction retrieval hooks
+export const useProjectExtractionStudysetId = () =>
+    useProjectStore((state) => state.provenance.extractionMetadata.studysetId);
+export const useProjectExtractionAnnotationId = () =>
+    useProjectStore((state) => state.provenance.extractionMetadata.annotationId);
+export const useProjectExtractionStudyStatusList = () =>
+    useProjectStore((state) => state.provenance.extractionMetadata.studyStatusList);

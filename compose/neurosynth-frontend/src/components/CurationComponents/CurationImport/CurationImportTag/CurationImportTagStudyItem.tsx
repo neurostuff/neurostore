@@ -33,23 +33,9 @@ const CurationImportTagStudyItem: React.FC<ICurationStubStudy & { style: React.C
                 },
             }}
         >
-            {articleLink.length === 0 ? (
-                <Typography color="primary" noWrap variant="h6">
-                    {articleYear ? `(${articleYear})` : ''} {title}
-                </Typography>
-            ) : (
-                <Link
-                    rel="noopener"
-                    underline="hover"
-                    color="primary"
-                    target="_blank"
-                    href={articleLink}
-                >
-                    <Typography noWrap variant="h6">
-                        {articleYear ? `(${articleYear})` : ''} {title}
-                    </Typography>
-                </Link>
-            )}
+            <Typography color="primary" noWrap variant="h6">
+                {articleYear ? `(${articleYear})` : ''} {title}
+            </Typography>
             <Typography noWrap variant="body1">
                 {authors}
             </Typography>

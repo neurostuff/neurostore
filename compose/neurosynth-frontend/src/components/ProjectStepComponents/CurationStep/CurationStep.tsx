@@ -79,7 +79,7 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                 createBoard(['identification', 'screening', 'eligibility', 'included'], true);
                 break;
             case ECurationBoardTypes.SIMPLE:
-                createBoard(['included'], false);
+                createBoard(['not included', 'included'], false);
                 break;
             case ECurationBoardTypes.CUSTOM:
                 setDialogIsOpen(true);
@@ -211,7 +211,7 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                         {
                                             label: 'Simple Workflow',
                                             secondary:
-                                                'Workflow for users that simply want to include all imported studies in their meta-analysi',
+                                                'Workflow involving only two columns for users looking to simply include/exclude studies for their meta-analysis',
                                             onClick: () =>
                                                 handleCreateCreationBoard(
                                                     ECurationBoardTypes.SIMPLE
@@ -226,10 +226,10 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                                     ECurationBoardTypes.CUSTOM
                                                 ),
                                         },
-                                        // {
-                                        //     label: 'Reuse a studyset',
+                                        // { TBD
+                                        //     label: 'Semi-Automated Meta-Analysis',
                                         //     secondary:
-                                        //         'Skip the curation step and run a meta-analysis on an existing studyset',
+                                        //         'All imported studies will be automatically included',
                                         //     onClick: () => {},
                                         // },
                                     ]}

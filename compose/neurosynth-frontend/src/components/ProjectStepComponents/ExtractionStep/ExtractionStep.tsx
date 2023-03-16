@@ -14,15 +14,16 @@ import {
     CardActions,
     Button,
 } from '@mui/material';
-import { useHistory, useParams } from 'react-router-dom';
+import { useHistory, useLocation, useParams } from 'react-router-dom';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
 import { useState } from 'react';
-import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionDialog';
+import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionBase';
 import useGetExtractionSummary, { IExtractionSummary } from 'hooks/useGetExtractionSummary';
 import ExtractionStepStyles from './ExtractionStep.style';
 import { useGetStudysetById } from 'hooks';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
 
 interface IExtractionStep {
     extractionStepHasBeenInitialized: boolean;
@@ -47,10 +48,14 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
         isError: getStudysetIsError,
         isLoading: getStudysetIsLoading,
     } = useGetStudysetById(project?.provenance?.extractionMetadata?.studysetId || undefined);
+    const { extractionStepHasBeenInitialized, disabled, ...stepProps } = props;
     const extractionSummary = useGetExtractionSummary(projectId);
     const history = useHistory();
-    const [moveToExtractionDialog, setMoveToExtractionDialog] = useState(false);
-    const { extractionStepHasBeenInitialized, disabled, ...stepProps } = props;
+    const location = useLocation<IProjectPageLocationState>();
+
+    const autoOpenExtractionDialog =
+        !extractionStepHasBeenInitialized && !!location?.state?.projectPage?.openCurationDialog;
+    const [moveToExtractionDialog, setMoveToExtractionDialog] = useState(autoOpenExtractionDialog);
 
     return (
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>

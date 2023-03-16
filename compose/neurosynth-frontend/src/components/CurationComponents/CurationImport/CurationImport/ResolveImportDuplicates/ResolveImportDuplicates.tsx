@@ -13,10 +13,10 @@ import { useEffect, useState } from 'react';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { defaultExclusionTags } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 import { createDuplicateMap } from '../../helpers/utils';
-import PubMedImportStudySummary from 'components/Dialogs/PubMedImportDialog/PubMedImportStudySummary';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import CurationImportStubSummary from '../../CurationImportStubSummary';
 
 type IResolveImportDuplicatesCurationStubStudy = ICurationStubStudy & {
     resolution?: 'duplicate' | 'not-duplicate';
@@ -132,7 +132,7 @@ const ResolveImportDuplicates: React.FC<{
                                             }}
                                         >
                                             <Box sx={{ width: '100%' }}>
-                                                <PubMedImportStudySummary {...stub} />
+                                                <CurationImportStubSummary {...stub} />
                                             </Box>
                                         </Box>
                                         <Box sx={{ width: '250px' }}>

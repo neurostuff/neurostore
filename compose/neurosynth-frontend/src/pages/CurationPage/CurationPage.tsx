@@ -1,38 +1,34 @@
 import { Box, Breadcrumbs, Button, Link, Typography } from '@mui/material';
 import { useParams, NavLink, useHistory } from 'react-router-dom';
-import AddIcon from '@mui/icons-material/Add';
-import FileUploadIcon from '@mui/icons-material/FileUpload';
 import SchemaIcon from '@mui/icons-material/Schema';
 import CurationBoard from 'components/CurationComponents/CurationBoard/CurationBoard';
 import { useEffect, useState } from 'react';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import CreateStubStudyDialog from 'components/Dialogs/CreateStubStudyDialog/CreateStubStudyDialog';
-import PubmedImportDialog from 'components/Dialogs/PubMedImportDialog/PubMedImportDialog';
 import PrismaDialog from 'components/Dialogs/PrismaDialog/PrismaDialog';
 import {
     useProjectName,
     useProjectCurationIsPrisma,
-    useProjectId,
     useInitStore,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import CurationPageLoadingText from './CurationPageLoadingText';
-import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
+import useGetCurationSummary from 'hooks/useGetCurationSummary';
+import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
 
 const CurationPage: React.FC = (props) => {
-    const [createStudyDialogIsOpen, setCreateStudyDialogIsOpen] = useState(false);
-    const [pubmedImportDialogIsOpen, setPubMedImportDialogIsOpen] = useState(false);
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
     const { projectId }: { projectId: string | undefined } = useParams();
-    const history = useHistory();
+    const history = useHistory<IProjectPageLocationState>();
 
     const isPrisma = useProjectCurationIsPrisma();
     const projectName = useProjectName();
     const initStore = useInitStore();
-    const storeProjectId = useProjectId();
+    const { included, uncategorized } = useGetCurationSummary();
 
     useEffect(() => {
         initStore(projectId);
-    }, [initStore, projectId, storeProjectId]);
+    }, [initStore, projectId]);
+
+    const canMoveToExtractionPhase = included > 0 && uncategorized === 0;
 
     return (
         <StateHandlerComponent isError={false} isLoading={false}>
@@ -69,11 +65,6 @@ const CurationPage: React.FC = (props) => {
                         <CurationPageLoadingText />
                     </Box>
                     <Box sx={{ marginRight: '1rem' }}>
-                        <PubmedImportDialog
-                            onCloseDialog={() => setPubMedImportDialogIsOpen(false)}
-                            isOpen={pubmedImportDialogIsOpen}
-                        />
-
                         <Button
                             variant="outlined"
                             sx={{ marginRight: '1rem' }}
@@ -90,11 +81,28 @@ const CurationPage: React.FC = (props) => {
                                 <Button
                                     onClick={() => setPrismaIsOpen(true)}
                                     variant="outlined"
+                                    sx={{ marginRight: '1rem' }}
                                     endIcon={<SchemaIcon />}
                                 >
                                     PRISMA diagram
                                 </Button>
                             </>
+                        )}
+                        {canMoveToExtractionPhase && (
+                            <Button
+                                onClick={() =>
+                                    history.push(`/projects/${projectId}`, {
+                                        projectPage: {
+                                            openCurationDialog: true,
+                                        },
+                                    })
+                                }
+                                variant="contained"
+                                color="success"
+                                disableElevation
+                            >
+                                Move To Extraction Phase
+                            </Button>
                         )}
                     </Box>
                 </Box>

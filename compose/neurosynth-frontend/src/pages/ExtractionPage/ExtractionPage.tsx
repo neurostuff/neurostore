@@ -7,14 +7,12 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useHistory, useLocation, useParams } from 'react-router-dom';
-import IngestionDialog from 'components/Dialogs/IngestionDialog/IngestionDialog';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import StudyListItem from 'components/ExtractionComponents/StudyListItem';
 import {
-    useProjectExtractionAnnotationId,
+    useInitStore,
     useProjectExtractionStudysetId,
     useProjectExtractionStudyStatusList,
-    useProjectId,
     useProjectName,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 
@@ -36,6 +34,7 @@ const getSelectedFromURL = (pathname: string | undefined): ESelectedChip => {
 };
 
 const ExtractionPage: React.FC = (props) => {
+    const { projectId }: { projectId: string | undefined } = useParams();
     const [studiesDisplayed, setStudiesDisplayed] = useState<{
         uncategorized: StudyReturn[];
         saveForLater: StudyReturn[];
@@ -53,11 +52,14 @@ const ExtractionPage: React.FC = (props) => {
         savedForLaterSet: new Set<string>(),
     });
 
-    const projectId = useProjectId();
     const projectName = useProjectName();
     const studysetId = useProjectExtractionStudysetId();
     const studyStatusList = useProjectExtractionStudyStatusList();
+    const initStore = useInitStore();
 
+    useEffect(() => {
+        initStore(projectId);
+    }, [initStore, projectId]);
     const {
         data: studyset,
         isLoading: getStudysetIsLoading,
@@ -72,6 +74,10 @@ const ExtractionPage: React.FC = (props) => {
         getSelectedFromURL(location.search)
     );
     const [ingestionDialogIsOpen, setIngestionDialogIsOpen] = useState(false);
+
+    useEffect(() => {
+        initStore(projectId);
+    }, [initStore, projectId]);
 
     useEffect(() => {
         if (!getStudysetIsLoading && studyset?.studies && studyset.studies.length === 0) {
@@ -151,10 +157,6 @@ const ExtractionPage: React.FC = (props) => {
 
     return (
         <StateHandlerComponent isError={false} isLoading={getStudysetIsLoading}>
-            <IngestionDialog
-                isOpen={ingestionDialogIsOpen}
-                onCloseDialog={() => setIngestionDialogIsOpen(false)}
-            />
             <Box sx={{ width: '80%', minWidth: '450px', margin: '0 auto' }}>
                 <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
                     <Breadcrumbs>

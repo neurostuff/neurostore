@@ -16,10 +16,8 @@ import CurationStubStudyDraggableContainer, {
 } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import CurationColumnStyles from './CurationColumn.styles';
 import CurationDialog from 'components/Dialogs/CurationDialog/CurationDialog';
-import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionDialog';
 import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import {
-    useCanMoveToExtractionPhase,
     useProjectCurationColumn,
     useProjectCurationExclusionTags,
     useProjectCurationInfoTags,
@@ -89,11 +87,9 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
     const prismaConfig = useProjectCurationPrismaConfig();
     const infoTags = useProjectCurationInfoTags();
     const exclusionTags = useProjectCurationExclusionTags();
-    const canMoveToExtractionPhase = useCanMoveToExtractionPhase(props.columnIndex);
 
     const [selectedTag, setSelectedTag] = useState<ITag>();
     const windowHeight = useGetWindowHeight();
-    const [lastColExtractionDialogIsOpen, setLastColExtractionDialogIsOpen] = useState(false);
     const [tags, setTags] = useState<ITag[]>([]);
     const [dialogState, setDialogState] = useState<{
         isOpen: boolean;
@@ -172,24 +168,6 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
             >
                 {column.name} ({filteredStudies.length} of {column.stubStudies.length})
             </Button>
-
-            {canMoveToExtractionPhase && (
-                <>
-                    <MoveToExtractionDialog
-                        onCloseDialog={() => setLastColExtractionDialogIsOpen(false)}
-                        isOpen={lastColExtractionDialogIsOpen}
-                    />
-                    <Button
-                        onClick={() => setLastColExtractionDialogIsOpen(true)}
-                        sx={{ marginBottom: '0.75rem' }}
-                        disableElevation
-                        variant="contained"
-                        color="success"
-                    >
-                        move to next phase (extraction)
-                    </Button>
-                </>
-            )}
 
             <Paper elevation={0} sx={{ width: '100%' }}>
                 <Autocomplete

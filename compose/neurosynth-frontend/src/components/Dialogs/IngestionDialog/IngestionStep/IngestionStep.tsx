@@ -1,19 +1,24 @@
 import { Box, Button, CircularProgress, Link, Typography } from '@mui/material';
-import { AxiosResponse } from 'axios';
 import NavigationButtons from 'components/Buttons/NavigationButtons/NavigationButtons';
+import CurationImportStubSummary from 'components/CurationComponents/CurationImport/CurationImportStubSummary';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import PubMedImportStudySummary from 'components/Dialogs/PubMedImportDialog/PubMedImportStudySummary';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
-import { StudyReturn, StudysetReturn } from 'neurostore-typescript-sdk';
+import { StudyReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
+import {
+    useProjectCurationColumn,
+    useProjectNumCurationColumns,
+} from 'pages/Projects/ProjectPage/ProjectStore';
 import { useEffect, useState, useRef } from 'react';
 import { useQueryClient } from 'react-query';
 import { useParams } from 'react-router-dom';
 import API from 'utils/api';
 
 const IngestionStep: React.FC<{ onNext: () => void }> = (props) => {
+    const numColumns = useProjectNumCurationColumns();
+    const includedStudies = useProjectCurationColumn(numColumns - 1);
+
     const { projectId }: { projectId: string | undefined } = useParams();
     const queryClient = useQueryClient();
     const {
@@ -285,7 +290,7 @@ const IngestionStep: React.FC<{ onNext: () => void }> = (props) => {
                                         padding: '10px',
                                     }}
                                 >
-                                    <PubMedImportStudySummary {...ingestionView.stubToIngest} />
+                                    <CurationImportStubSummary {...ingestionView.stubToIngest} />
                                     <Button
                                         onClick={() =>
                                             createStudyFromStub(
