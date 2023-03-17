@@ -1,3 +1,4 @@
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import event, ForeignKeyConstraint
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.exc import SQLAlchemyError
@@ -14,7 +15,6 @@ def generate_id():
 
 
 class BaseMixin(object):
-
     id = db.Column(db.Text, primary_key=True, index=True, default=generate_id)
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
@@ -41,7 +41,7 @@ class Studyset(BaseMixin, db.Model):
     description = db.Column(db.String)
     publication = db.Column(db.String)
     authors = db.Column(db.String)
-    metadata_ = db.Column(db.JSON)
+    metadata_ = db.Column(JSONB)
     source = db.Column(db.String)
     source_id = db.Column(db.String)
     source_updated_at = db.Column(db.DateTime(timezone=True))
@@ -54,7 +54,7 @@ class Studyset(BaseMixin, db.Model):
         "Study",
         cascade="all",
         secondary="studyset_studies",
-        backref=backref("studysets", lazy='dynamic'),
+        backref=backref("studysets", lazy="dynamic"),
     )
     annotations = relationship("Annotation", cascade="all, delete", backref="studyset")
 
@@ -66,17 +66,17 @@ class Annotation(BaseMixin, db.Model):
     source = db.Column(db.String)
     source_id = db.Column(db.String)
     source_updated_at = db.Column(db.DateTime(timezone=True))
-    user_id = db.Column(db.Text, db.ForeignKey('users.external_id'))
-    user = relationship('User', backref=backref('annotations'))
-    studyset_id = db.Column(db.Text, db.ForeignKey('studysets.id'))
-    metadata_ = db.Column(db.JSON)
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
+    user = relationship("User", backref=backref("annotations"))
+    studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
+    metadata_ = db.Column(JSONB)
     public = db.Column(db.Boolean, default=True)
-    note_keys = db.Column(MutableDict.as_mutable(db.JSON))
+    note_keys = db.Column(MutableDict.as_mutable(JSONB))
     annotation_analyses = relationship(
-        'AnnotationAnalysis',
+        "AnnotationAnalysis",
         backref=backref("annotation"),
-        cascade='all, delete-orphan',
-        lazy='subquery',
+        cascade="all, delete-orphan",
+        lazy="subquery",
     )
 
 
@@ -84,9 +84,10 @@ class AnnotationAnalysis(db.Model):
     __tablename__ = "annotation_analyses"
     __table_args__ = (
         ForeignKeyConstraint(
-            ('study_id', 'studyset_id'),
-            ('studyset_studies.study_id', 'studyset_studies.studyset_id'),
-            ondelete="CASCADE"),
+            ("study_id", "studyset_id"),
+            ("studyset_studies.study_id", "studyset_studies.studyset_id"),
+            ondelete="CASCADE",
+        ),
     )
 
     study_id = db.Column(db.Text, nullable=False)
@@ -94,8 +95,10 @@ class AnnotationAnalysis(db.Model):
     annotation_id = db.Column(
         db.Text, db.ForeignKey("annotations.id"), index=True, primary_key=True
     )
-    analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id"), index=True, primary_key=True)
-    note = db.Column(MutableDict.as_mutable(db.JSON))
+    analysis_id = db.Column(
+        db.Text, db.ForeignKey("analyses.id"), index=True, primary_key=True
+    )
+    note = db.Column(MutableDict.as_mutable(JSONB))
 
 
 class Study(BaseMixin, db.Model):
@@ -109,7 +112,7 @@ class Study(BaseMixin, db.Model):
     authors = db.Column(db.String)
     year = db.Column(db.Integer)
     public = db.Column(db.Boolean, default=True)
-    metadata_ = db.Column(db.JSON)
+    metadata_ = db.Column(JSONB)
     source = db.Column(db.String)
     source_id = db.Column(db.String)
     source_updated_at = db.Column(db.DateTime(timezone=True))
@@ -125,29 +128,31 @@ class Study(BaseMixin, db.Model):
 class StudysetStudy(db.Model):
     __tablename__ = "studyset_studies"
     study_id = db.Column(
-        db.ForeignKey('studies.id', ondelete='CASCADE'), index=True, primary_key=True
+        db.ForeignKey("studies.id", ondelete="CASCADE"), index=True, primary_key=True
     )
     studyset_id = db.Column(
-        db.ForeignKey('studysets.id', ondelete='CASCADE'), index=True, primary_key=True
+        db.ForeignKey("studysets.id", ondelete="CASCADE"), index=True, primary_key=True
     )
     study = relationship(
         "Study",
         backref=backref("studyset_studies"),
         viewonly=True,
-        lazy='subquery',
+        lazy="subquery",
     )
-    studyset = relationship("Studyset", backref=backref("studyset_studies"), viewonly=True)
+    studyset = relationship(
+        "Studyset", backref=backref("studyset_studies"), viewonly=True
+    )
     annotation_analyses = relationship(
         "AnnotationAnalysis",
-        cascade='all, delete-orphan',
-        backref=backref("studyset_study", lazy='subquery'),
+        cascade="all, delete-orphan",
+        backref=backref("studyset_study", lazy="subquery"),
     )
 
 
 class Analysis(BaseMixin, db.Model):
     __tablename__ = "analyses"
 
-    study_id = db.Column(db.Text, db.ForeignKey("studies.id", ondelete='CASCADE'))
+    study_id = db.Column(db.Text, db.ForeignKey("studies.id", ondelete="CASCADE"))
     name = db.Column(db.String)
     description = db.Column(db.String)
     points = relationship(
@@ -159,7 +164,7 @@ class Analysis(BaseMixin, db.Model):
         "Image",
         backref=backref("analysis"),
         cascade="all, delete-orphan",
-        )
+    )
     weights = association_proxy("analysis_conditions", "weight")
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("analyses"))
@@ -170,7 +175,7 @@ class Analysis(BaseMixin, db.Model):
     )
     annotation_analyses = relationship(
         "AnnotationAnalysis",
-        backref=backref("analysis", lazy='subquery'),
+        backref=backref("analysis", lazy="subquery"),
         cascade="all, delete-orphan",
     )
 
@@ -184,7 +189,7 @@ class Condition(BaseMixin, db.Model):
     user = relationship("User", backref=backref("conditions"))
     analysis_conditions = relationship(
         "AnalysisConditions",
-        backref=backref("condition", lazy='subquery'),
+        backref=backref("condition", lazy="subquery"),
         cascade="all, delete",
     )
 
@@ -203,16 +208,16 @@ class AnalysisConditions(db.Model):
 PointEntityMap = db.Table(
     "point_entities",
     db.Model.metadata,
-    db.Column("point", db.Text, db.ForeignKey("points.id", ondelete='CASCADE')),
-    db.Column("entity", db.Text, db.ForeignKey("entities.id", ondelete='CASCADE')),
+    db.Column("point", db.Text, db.ForeignKey("points.id", ondelete="CASCADE")),
+    db.Column("entity", db.Text, db.ForeignKey("entities.id", ondelete="CASCADE")),
 )
 
 
 ImageEntityMap = db.Table(
     "image_entities",
     db.Model.metadata,
-    db.Column("image", db.Text, db.ForeignKey("images.id", ondelete='CASCADE')),
-    db.Column("entity", db.Text, db.ForeignKey("entities.id", ondelete='CASCADE')),
+    db.Column("image", db.Text, db.ForeignKey("images.id", ondelete="CASCADE")),
+    db.Column("entity", db.Text, db.ForeignKey("entities.id", ondelete="CASCADE")),
 )
 
 
@@ -222,11 +227,11 @@ class Entity(BaseMixin, db.Model):
     __tablename__ = "entities"
 
     # link to analysis
-    analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id", ondelete='CASCADE'))
+    analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"))
     label = db.Column(db.String)  # bids-entity
     # constrained enumeration (bids-entity, run, session, subject, group, meta)
     level = db.Column(db.String)
-    data = db.Column(db.JSON)  # metadata (participants.tsv, or something else)
+    data = db.Column(JSONB)  # metadata (participants.tsv, or something else)
     analysis = relationship("Analysis", backref=backref("entities"))
 
 
@@ -244,7 +249,7 @@ class Point(BaseMixin, db.Model):
     kind = db.Column(db.String)
     image = db.Column(db.String)  # what does image represent
     label_id = db.Column(db.Float, default=None)
-    analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id", ondelete='CASCADE'))
+    analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"))
 
     entities = relationship(
         "Entity", secondary=PointEntityMap, backref=backref("points")
@@ -260,8 +265,8 @@ class Image(BaseMixin, db.Model):
     filename = db.Column(db.String)
     space = db.Column(db.String)
     value_type = db.Column(db.String)
-    analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id", ondelete='CASCADE'))
-    data = db.Column(db.JSON)
+    analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"))
+    data = db.Column(JSONB)
     add_date = db.Column(db.DateTime(timezone=True))
 
     analysis_name = association_proxy("analysis", "name")
@@ -275,11 +280,11 @@ class Image(BaseMixin, db.Model):
 class PointValue(BaseMixin, db.Model):
     __tablename__ = "point_values"
 
-    point_id = db.Column(db.Text, db.ForeignKey("points.id", ondelete='CASCADE'))
+    point_id = db.Column(db.Text, db.ForeignKey("points.id", ondelete="CASCADE"))
     kind = db.Column(db.String)
     value = db.Column(db.String)
     dtype = db.Column(db.String, default="str")
-    point = relationship("Point", backref=backref("values", lazy='subquery'))
+    point = relationship("Point", backref=backref("values", lazy="subquery"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("point_values"))
 
@@ -334,7 +339,9 @@ def create_blank_notes(studyset, annotation, initiator):
 
 def add_annotation_analyses_studyset(studyset, studies, collection_adapter):
     all_analyses = [analysis for study in studies for analysis in study.analyses]
-    existing_analyses = [analysis for study in studyset.studies for analysis in study.analyses]
+    existing_analyses = [
+        analysis for study in studyset.studies for analysis in study.analyses
+    ]
     new_analyses = set(all_analyses) - set(existing_analyses)
     new_aas = []
     for annot in studyset.annotations:
@@ -357,7 +364,9 @@ def add_annotation_analyses_studyset(studyset, studies, collection_adapter):
 
 def add_annotation_analyses_study(study, analyses, collection_adapter):
     new_analyses = set(analyses) - set([a for a in study.analyses])
-    all_annotations = [aa.annotation for a in study.analyses for aa in a.annotation_analyses]
+    all_annotations = [
+        aa.annotation for a in study.analyses for aa in a.annotation_analyses
+    ]
     new_aas = []
     for analysis in new_analyses:
         for annot in all_annotations:
@@ -380,11 +389,11 @@ def add_annotation_analyses_study(study, analyses, collection_adapter):
 def _check_type(x):
     """check annotation key type"""
     if isinstance(x, (int, float)):
-        return 'number'
+        return "number"
     elif isinstance(x, str):
-        return 'string'
+        return "string"
     elif isinstance(x, bool):
-        return 'boolean'
+        return "boolean"
     elif x is None:
         return None
     else:
@@ -392,13 +401,13 @@ def _check_type(x):
 
 
 # ensure all keys are the same across all notes
-event.listen(Annotation, 'before_insert', check_note_columns, retval=True)
+event.listen(Annotation, "before_insert", check_note_columns, retval=True)
 
 # create notes when annotation is first created
-event.listen(Studyset.annotations, 'append', create_blank_notes)
+event.listen(Studyset.annotations, "append", create_blank_notes)
 
 
 # ensure new annotation_analyses are added when study is added to studyset
-event.listen(Studyset.studies, 'bulk_replace', add_annotation_analyses_studyset)
+event.listen(Studyset.studies, "bulk_replace", add_annotation_analyses_studyset)
 
-event.listen(Study.analyses, 'bulk_replace', add_annotation_analyses_study)
+event.listen(Study.analyses, "bulk_replace", add_annotation_analyses_study)

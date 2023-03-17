@@ -16,13 +16,12 @@ from webargs import fields
 from ..database import db
 from .utils import get_current_user
 from .nested import nested_load
-from ..models import Studyset, Study, Analysis, User, Annotation
+from ..models import Studyset, User, Annotation
 from ..schemas.data import StudysetSnapshot
 from . import data as viewdata
 
 
 class BaseView(MethodView):
-
     _model = None
     _nested = {}
     _parent = {}
@@ -39,9 +38,9 @@ class BaseView(MethodView):
           a. studies are linked to a studyset, so create a new studyset with same links
         3. cloning an annotation
           a. annotations are linked to studysets, update when studyset updates
-        2. creating an analysis
+        4. creating an analysis
           a. I should have to own all (relevant) parent objects
-        3. creating an annotation
+        5. creating an annotation
             a. I should not have to own the studyset to create an annotation
         """
 
@@ -52,13 +51,13 @@ class BaseView(MethodView):
         if not current_user:
             # user signed up with auth0, but has not made any queries yet...
             # should have endpoint to "create user" after sign on with auth0
-            current_user = User(external_id=connexion.context['user'])
+            current_user = User(external_id=connexion.context["user"])
             db.session.add(current_user)
             db.session.commit()
 
         id = id or data.get("id", None)  # want to handle case of {"id": "asdfasf"}
 
-        only_ids = set(data.keys()) - set(['id']) == set()
+        only_ids = set(data.keys()) - set(["id"]) == set()
 
         if id is None:
             record = cls._model()
@@ -88,7 +87,7 @@ class BaseView(MethodView):
                 PrtCls = getattr(viewdata, cls._parent[k])
                 # DO NOT WANT PEOPLE TO BE ABLE TO ADD ANALYSES
                 # TO STUDIES UNLESS THEY OWN THE STUDY
-                v = PrtCls._model.query.filter_by(id=v['id']).first()
+                v = PrtCls._model.query.filter_by(id=v["id"]).first()
                 if current_user != v.user:
                     abort(403)
             if k in cls._linked and v is not None:
@@ -96,9 +95,11 @@ class BaseView(MethodView):
                 # this can be owned by someone else
                 if LnCls._composite_key:
                     # composite key is defined in linked class, so need to lookup
-                    query_args = {k: v[k.rstrip('_id')]['id'] for k in LnCls._composite_key}
+                    query_args = {
+                        k: v[k.rstrip("_id")]["id"] for k in LnCls._composite_key
+                    }
                 else:
-                    query_args = {'id': v['id']}
+                    query_args = {"id": v["id"]}
                 v = LnCls._model.query.filter_by(**query_args).first()
                 if v is None:
                     abort(400)
@@ -152,10 +153,12 @@ class ObjectView(BaseView):
             snapshot = StudysetSnapshot()
             return snapshot.dump(record)
         else:
-            return self.__class__._schema(context={
-                'nested': nested,
-                'export': export,
-            }).dump(record)
+            return self.__class__._schema(
+                context={
+                    "nested": nested,
+                    "export": export,
+                }
+            ).dump(record)
 
     def put(self, id):
         request_data = self.insert_data(id, request.json)
@@ -189,31 +192,41 @@ LIST_USER_ARGS = {
     "page": fields.Int(missing=1),
     "desc": fields.Boolean(missing=True),
     "page_size": fields.Int(missing=20, validate=lambda val: val < 30000),
-    "source_id": fields.String(missing=None),
-    "source": fields.String(missing=None),
-    "unique": fields.Boolean(missing=False),
-    "nested": fields.Boolean(missing=False),
     "user_id": fields.String(missing=None),
-    "studyset_id": fields.String(missing=None),
-    "export": fields.Boolean(missing=False),
-    "data_type": fields.String(missing=None),
-    "studyset_owner": fields.String(missing=None),
 }
 
 
 class ListView(BaseView):
-
     _only = None
     _search_fields = []
     _multi_search = None
+    _view_fields = {}
 
     def __init__(self):
         # Initialize expected arguments based on class attributes
         self._fulltext_fields = self._multi_search or self._search_fields
         self._user_args = {
             **LIST_USER_ARGS,
+            **self._view_fields,
             **{f: fields.Str() for f in self._fulltext_fields},
         }
+
+    def view_search(self, q, args):
+        return q
+
+    def serialize_records(self, records, args):
+        """serialize records from search"""
+        nested = bool(args.get("nested"))
+        content = self.__class__._schema(
+            only=self._only,
+            many=True,
+            context={"nested": nested},
+        ).dump(records)
+        return content
+
+    def create_metadata(self, q):
+        count = q.count()
+        return {"total_count": count}
 
     def search(self):
         # Parse arguments using webargs
@@ -225,34 +238,14 @@ class ListView(BaseView):
         # Search
         s = args["search"]
 
-        # check if results should be nested
-        nested = True if args.get("nested") else False
-        if m is Annotation or nested:
-            q = q.options(nested_load(self))
-
         # query items that are owned by a user_id
         if args.get("user_id"):
             q = q.filter(m.user_id == args.get("user_id"))
 
         # query items that are public and/or you own them
-        if hasattr(m, 'public'):
+        if hasattr(m, "public"):
             current_user = get_current_user()
             q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
-
-        # query annotations for a specific studyset
-        if args.get('studyset_id'):
-            q = q.filter(m.studyset_id == args.get('studyset_id'))
-
-        # search studies for data_type
-        if args.get('data_type'):
-            if args['data_type'] == 'coordinate':
-                q = q.filter(m.analyses.any(Analysis.points.any()))
-            elif args['data_type'] == 'image':
-                q = q.filter(m.analyses.any(Analysis.images.any()))
-            elif args['data_type'] == 'both':
-                q = q.filter(sae.or_(
-                    m.analyses.any(Analysis.images.any()),
-                    m.analyses.any(Analysis.points.any())))
 
         # For multi-column search, default to using search fields
         if s is not None and self._fulltext_fields:
@@ -267,6 +260,7 @@ class ListView(BaseView):
             if s is not None:
                 q = q.filter(getattr(m, field).ilike(f"%{s}%"))
 
+        q = self.view_search(q, args)
         # Sort
         sort_col = args["sort"]
         desc = False if sort_col != "created_at" else args["desc"]
@@ -285,60 +279,16 @@ class ListView(BaseView):
         #     q = q.join(*attr.attr)
         q = q.order_by(getattr(attr, desc)())
 
-        if args.get('unique'):
-            if hasattr(m, 'source_id'):
-                q = q.filter((Study.source != 'neurostore') | (Study.source_id == None))  # noqa E711
-            elif hasattr(m, 'study'):
-                q = q.join(Study).filter(
-                    (Study.source != 'neurostore') | (Study.source_id == None)  # noqa E711
-                )
-            elif hasattr(m, 'analysis'):
-                q = q.join(Analysis).join(Study).filter(
-                    (Study.source != 'neurostore') | (Study.source_id == None)  # noqa E711
-                )
-            else:
-                # nothing to do here
-                pass
-            unique_count = count = q.count()
-        else:
-            # unique_count may need to represent user clones
-            # instead of original studies
-            # (e.g., a clone may have a different number of points
-            # than the original)
-            count = q.count()
-            if hasattr(m, 'source_id'):
-                unique_count = q.filter_by(source_id=None).count()
-            elif hasattr(m, 'study'):
-                unique_count = q.join(Study).filter_by(source_id=None).count()
-            elif hasattr(m, 'analysis'):
-                unique_count = q.join(Analysis).join(Study).filter_by(source_id=None).count()
-            else:
-                unique_count = count
-
-        records = q.paginate(page=args["page"], per_page=args["page_size"], error_out=False).items
-        if m is Study and args.get("studyset_owner"):
-            for study in records:
-                study.studysets = study.studysets.filter(
-                    Studyset.user_id == args.get('studyset_owner')
-                ).all()
-
-        if m is Studyset and nested:
-            snapshot = StudysetSnapshot()
-            content = [snapshot.dump(r) for r in records]
-            response = {
-                'metadata': {'total_count': count, 'unique_count': unique_count},
-                'results': content,
-            }
-            return response, 200
-        else:
-            content = self.__class__._schema(
-                only=self._only, many=True, context={'nested': nested}
-            ).dump(records)
-            response = {
-                'metadata': {'total_count': count, 'unique_count': unique_count},
-                'results': content,
-            }
-            return response, 200
+        records = q.paginate(
+            page=args["page"], per_page=args["page_size"], error_out=False
+        ).items
+        content = self.serialize_records(records, args)
+        metadata = self.create_metadata(q)
+        response = {
+            "metadata": metadata,
+            "results": content,
+        }
+        return response, 200
 
     def post(self):
         # TODO: check to make sure current user hasn't already created a
@@ -346,8 +296,8 @@ class ListView(BaseView):
 
         # Parse arguments using webargs
         args = parser.parse(self._user_args, request, location="query")
-        source_id = args.get('source_id')
-        source = args.get('source') or 'neurostore'
+        source_id = args.get("source_id")
+        source = args.get("source") or "neurostore"
         if source_id:
             data = self._load_from_source(source, source_id)
         else:
@@ -356,4 +306,4 @@ class ListView(BaseView):
         nested = bool(request.args.get("nested") or request.args.get("source_id"))
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
-        return self.__class__._schema(context={'nested': nested}).dump(record)
+        return self.__class__._schema(context={"nested": nested}).dump(record)

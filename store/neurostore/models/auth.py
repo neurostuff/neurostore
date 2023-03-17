@@ -25,8 +25,9 @@ class User(BaseMixin, db.Model, UserMixin):
     active = db.Column(db.Boolean())
     name = db.Column(db.Text)
     external_id = db.Column(db.Text, unique=True)
-    roles = db.relationship('Role', secondary=roles_users,
-                            backref=db.backref('users', lazy='dynamic'))
+    roles = db.relationship(
+        "Role", secondary=roles_users, backref=db.backref("users", lazy="dynamic")
+    )
 
 
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)

@@ -14,9 +14,18 @@ const DynamicFormNumericInput: React.FC<IDynamicFormInput> = (props) => {
             <Box sx={{ width: '50%' }}>
                 <TextField
                     onChange={(event) => {
-                        props.onUpdate({
-                            [props.parameterName]: event.target.value,
-                        });
+                        const parsedValue = parseFloat(event.target.value);
+                        if (event.target.value === '') {
+                            props.onUpdate({
+                                [props.parameterName]: null,
+                            });
+                        } else if (isNaN(parsedValue)) {
+                            return;
+                        } else {
+                            props.onUpdate({
+                                [props.parameterName]: parsedValue,
+                            });
+                        }
                     }}
                     value={props.value || ''}
                     label="number"
