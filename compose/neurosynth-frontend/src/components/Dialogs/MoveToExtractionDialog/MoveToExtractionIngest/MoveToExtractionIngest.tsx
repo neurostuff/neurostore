@@ -2,7 +2,7 @@ import { Box, Typography } from '@mui/material';
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import Ingestion from 'components/ExtractionComponents/Ingestion';
+import Ingestion from 'components/ExtractionComponents/Ingestion/Ingestion';
 import { useState } from 'react';
 
 const MoveToExtractionIngest: React.FC<{ onNavigate: (button: ENavigationButton) => void }> = (

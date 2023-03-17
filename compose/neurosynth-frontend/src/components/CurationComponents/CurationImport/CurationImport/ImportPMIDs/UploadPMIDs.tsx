@@ -1,4 +1,4 @@
-import { Box, Button, TextField, Typography } from '@mui/material';
+import { Box, Button, TextField } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import { ChangeEvent, useEffect, useState } from 'react';
 import NavigationButtons, {
@@ -7,7 +7,7 @@ import NavigationButtons, {
 
 enum EValidationReason {
     EMPTY = 'PubMed ID input is empty',
-    INCORRECT = 'PubMed ID format is incorrect',
+    INCORRECT = 'PubMed ID format is incorrect or unsupported',
     TOO_BIG = 'Please limit uploads to 1500 PMIDs at a time',
 }
 

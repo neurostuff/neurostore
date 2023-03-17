@@ -46,7 +46,7 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
             .filter(
                 (x) =>
                     x.id !== ENeurosynthTagIds.UNTAGGED_TAG_ID &&
-                    x.id !== ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID &&
+                    x.id !== ENeurosynthTagIds.NEEDS_REVIEW_TAG_ID &&
                     x.id !== ENeurosynthTagIds.UNCATEGORIZED_ID
             )
             .map((tag) => ({

@@ -222,7 +222,11 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
                         studyData?.metadata?.total_count || 0
                     } studies from neurostore`}
                     nextButtonStyle="contained"
-                    nextButtonDisabled={tableIsLoading || (studyData?.results || []).length === 0}
+                    nextButtonDisabled={
+                        tableIsLoading ||
+                        (studyData?.results || []).length === 0 ||
+                        allDataForSearchIsLoading
+                    }
                     onButtonClick={handleButtonClick}
                 />
             </Box>

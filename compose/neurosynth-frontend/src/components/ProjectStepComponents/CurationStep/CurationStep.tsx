@@ -33,7 +33,7 @@ enum ECurationBoardTypes {
 
 export enum ENeurosynthTagIds {
     UNTAGGED_TAG_ID = 'neurosynth_untagged_tag', // default info tag
-    SAVE_FOR_LATER_TAG_ID = 'neurosynth_save_for_later_tag', // default info tag
+    NEEDS_REVIEW_TAG_ID = 'neurosynth_needs_review_tag', // default info tag
     UNCATEGORIZED_ID = 'neurosynth_uncategorized_tag', // default info tag
 
     DUPLICATE_EXCLUSION_ID = 'neurosynth_duplicate_exclusion', // default exclusion

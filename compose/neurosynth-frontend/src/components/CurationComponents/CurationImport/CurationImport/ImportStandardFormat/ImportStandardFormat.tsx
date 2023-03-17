@@ -16,7 +16,7 @@ require('@citation-js/plugin-ris');
 
 enum EValidationReason {
     EMPTY = 'Input is empty',
-    INCORRECT = 'Format is incorrect',
+    INCORRECT = 'Format is incorrect or unsupported',
 }
 
 interface CSLJSONDateParts {

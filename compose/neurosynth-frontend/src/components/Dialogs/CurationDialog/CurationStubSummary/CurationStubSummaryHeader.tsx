@@ -68,7 +68,7 @@ const CurationStubSummaryHeader: React.FC<ICurationStubSummaryHeader> = React.me
     };
 
     const handleSaveForLater = () => {
-        handleAddTag(defaultInfoTags.saveForLater);
+        handleAddTag(defaultInfoTags.needsReview);
         props.onMoveToNextStub();
     };
 
@@ -116,7 +116,7 @@ const CurationStubSummaryHeader: React.FC<ICurationStubSummaryHeader> = React.me
                     </Tooltip>
                     <LoadingButton
                         onClick={handleSaveForLater}
-                        text="Save For Later"
+                        text="Needs Review"
                         startIcon={<HelpOutlineIcon />}
                         variant="outlined"
                         color="warning"
@@ -129,7 +129,7 @@ const CurationStubSummaryHeader: React.FC<ICurationStubSummaryHeader> = React.me
                         }}
                         disabled={
                             !!props.stub.tags.find(
-                                (x) => x.id === ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID
+                                (x) => x.id === ENeurosynthTagIds.NEEDS_REVIEW_TAG_ID
                             )
                         }
                     />

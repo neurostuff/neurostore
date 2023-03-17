@@ -59,9 +59,9 @@ export const defaultInfoTags = {
         isExclusionTag: false,
         isAssignable: false,
     },
-    saveForLater: {
-        id: ENeurosynthTagIds.SAVE_FOR_LATER_TAG_ID,
-        label: 'Save For Later',
+    needsReview: {
+        id: ENeurosynthTagIds.NEEDS_REVIEW_TAG_ID,
+        label: 'Needs Review',
         isExclusionTag: false,
         isAssignable: false,
     },

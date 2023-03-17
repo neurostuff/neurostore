@@ -6,7 +6,7 @@ import Typography from '@mui/material/Typography';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import { useGetStudysetById } from 'hooks';
-import { StudyReturn } from 'neurostore-typescript-sdk';
+import { StudyReturn, StudysetReturn } from 'neurostore-typescript-sdk';
 import {
     useProjectCurationColumn,
     useProjectExtractionStudysetId,
@@ -40,6 +40,50 @@ const getMatchingStudies = async (searchTerm: string): Promise<StudyReturn[]> =>
         return databaseHasStubAlready;
     } catch (e) {
         throw new Error('error getting study');
+    }
+};
+
+const createStudyFromStub = async (stub: ICurationStubStudy): Promise<StudyReturn> => {
+    try {
+        // 1. create study using the stub
+        const createdStudy = await API.NeurostoreServices.StudiesService.studiesPost(
+            undefined,
+            undefined,
+            {
+                name: stub.title,
+                doi: stub.doi,
+                description: stub.abstractText,
+                publication: stub.journal,
+                pmid: stub.pmid,
+                authors: stub.authors,
+                year: parseInt(stub.articleYear || '0'),
+            }
+        );
+
+        return createdStudy.data;
+    } catch (e) {
+        throw new Error('error creating study from stub');
+    }
+};
+
+const addStudyToStudyset = async (
+    studysetId: string,
+    study: StudyReturn,
+    currStudyset: StudyReturn[]
+): Promise<StudysetReturn> => {
+    // add study to studyset and handle update currStudyset
+    try {
+        // 2. add the stub to the studyset
+        const updatedStudyset = await API.NeurostoreServices.StudySetsService.studysetsIdPut(
+            studysetId,
+            {
+                studies: [...currStudyset.map((x) => x.id as string), study.id as string],
+            }
+        );
+
+        return updatedStudyset.data;
+    } catch (e) {
+        throw new Error('error adding study to studyset');
     }
 };
 
@@ -111,51 +155,6 @@ const Ingestion: React.FC = (props) => {
         ui: null,
     });
 
-    const createStudyFromStub = async (stub: ICurationStubStudy) => {
-        try {
-            // 1. create study using the stub
-            const createdStudy = await API.NeurostoreServices.StudiesService.studiesPost(
-                undefined,
-                undefined,
-                {
-                    name: stub.title,
-                    doi: stub.doi,
-                    description: stub.abstractText,
-                    publication: stub.journal,
-                    pmid: stub.pmid,
-                    authors: stub.authors,
-                    year: parseInt(stub.articleYear || '0'),
-                }
-            );
-
-            await addStudyToStudyset(createdStudy.data);
-        } catch (e) {
-            throw new Error('error creating study from stub');
-        }
-    };
-
-    const addStudyToStudyset = async (stub: StudyReturn) => {
-        // add study to studyset and handle update currStudyset
-        // try {
-        // 2. add the stub to the studyset
-        //     const updatedStudyset = await mutateAsync({
-        //         studysetId: project?.provenance?.extractionMetadata?.studysetId || '',
-        //         studyset: {
-        //             studies: [...ingestionProgressRef.current.studyList, study.id as string],
-        //         },
-        //     });
-        //     // 3. increment currentStubIndex to next
-        //     ingestionProgressRef.current.studyList = updatedStudyset.data.studies as string[];
-        //     ingestionProgressRef.current.currentStubIndex++;
-        //     // 4. start the ingestion process for the next stub
-        //     await startIngestionProcess();
-        // } catch (e) {
-        //     throw new Error('error adding study to studyset');
-        // }
-    };
-
-    const handleSelectStudy = () => {};
-
     // initial difference extractor
     useEffect(() => {
         if (!studyset?.studies) return;
@@ -170,6 +169,7 @@ const Ingestion: React.FC = (props) => {
 
             return {
                 ...prev,
+                ingestionStatus: 'IN-PROGRESS',
                 stubsToIngest: stubsToIngest,
                 currStudyset: studiesInStudyset,
                 numStudiesRemovedFromStudyset: removedFromStudyset.length,
@@ -177,32 +177,48 @@ const Ingestion: React.FC = (props) => {
         });
     }, [studyset, curationIncludedStudies]);
 
+    // this should only trigger the ingestion process after the initial differences are extracted,
+    // or when the index is updated
     useEffect(() => {
         (async () => {
-            if (currentIngestionState.stubsToIngest.length === 0) return;
-            if (currentIngestionState.isIngesting) return;
+            if (
+                !studysetId ||
+                currentIngestionState.stubsToIngest.length === 0 ||
+                currentIngestionState.ingestionStatus !== 'IN-PROGRESS'
+            ) {
+                return;
+            }
 
-            const termToSearchFor =
-                currentIngestionState?.stubsToIngest[currentIngestionState.ingestionIndex].pmid ||
-                '';
-            const studies = await getMatchingStudies(termToSearchFor);
-            if (studies.length > 0) {
+            const currStub =
+                currentIngestionState.stubsToIngest[currentIngestionState.ingestionIndex];
+
+            const termToSearchFor = currStub.pmid || currStub.title || '';
+            const matchingStudies = await getMatchingStudies(termToSearchFor);
+            if (matchingStudies.length > 0) {
                 setCurrentIngestionState((prev) => ({
                     ...prev,
-                    isIngesting: true,
+                    ingestionStatus: 'AWAITING-USER-RESPONSE',
+                    ui: {
+                        stubBeingIngest: currStub,
+                        existingDuplicateStudies: matchingStudies,
+                    },
                 }));
-                setView();
             } else {
-                const newStudy = await createStudyFromStub();
-                const res = await addStudyToStudyset(newStudy);
+                const newStudy = await createStudyFromStub(currStub);
+                const updatedStudyset = await addStudyToStudyset(
+                    studysetId,
+                    newStudy,
+                    currentIngestionState.currStudyset
+                );
                 setCurrentIngestionState((prev) => ({
                     ...prev,
                     ingestionIndex: prev.ingestionIndex + 1,
-                    isIngesting: false,
                 }));
             }
         })();
-    }, [currentIngestionState, diffState]);
+    }, [currentIngestionState, studysetId]);
+
+    const handleSelectStudy = (option: StudyReturn | ICurationStubStudy, isStudy: boolean) => {};
 
     switch (currentIngestionState.ingestionStatus) {
         case 'NOT-STARTED':
@@ -218,7 +234,7 @@ const Ingestion: React.FC = (props) => {
                             existingMatchingStudies={
                                 currentIngestionState.ui.existingDuplicateStudies
                             }
-                            onSelectOption={() => {}}
+                            onSelectOption={handleSelectStudy}
                             currentIngestionIndex={currentIngestionState.ingestionIndex}
                             totalToIngest={currentIngestionState.stubsToIngest.length}
                         />
@@ -250,17 +266,6 @@ const Ingestion: React.FC = (props) => {
                 </Box>
             );
     }
-    // if (currentIngestionState.ingestionStatus === 'NOT-STARTED') {
-    //     return <Typography>Starting up ingestion...</Typography>
-    // } else if ) {
-
-    // } else if (currentIngestionState.) {
-
-    // }
-
-    // if (currentIngestionState.ingestionHasStarted) {
-
-    // }
 };
 
 export default Ingestion;

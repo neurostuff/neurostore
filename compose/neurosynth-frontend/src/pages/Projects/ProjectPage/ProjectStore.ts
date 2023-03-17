@@ -75,6 +75,10 @@ const apiDebouncedUpdaterImpl: APIDebouncedUpdaterImpl = (f, name) => (set, get,
         if (timeout) clearTimeout(timeout);
         timeout = setTimeout(() => {
             const storeData = get() as unknown as INeurosynthProjectReturn & ProjectStoreActions;
+
+            // project store calls set on init so we need to check that a project ID exists
+            if (!storeData.id) return;
+
             const update: INeurosynthProject = {
                 name: storeData.name,
                 description: storeData.description,
@@ -82,6 +86,7 @@ const apiDebouncedUpdaterImpl: APIDebouncedUpdaterImpl = (f, name) => (set, get,
                     ...storeData.provenance,
                 },
             };
+
             console.log('update: ', update);
             localStorage.setItem(`updateCurationIsLoading`, 'true');
             window.dispatchEvent(new Event('storage'));
