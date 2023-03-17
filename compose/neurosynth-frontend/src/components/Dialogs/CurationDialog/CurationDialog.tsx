@@ -1,6 +1,6 @@
-import { Box, List, Paper, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import CurationStubSummary from 'components/Dialogs/CurationDialog/CurationStubSummary/CurationStubSummary';
 import CurationStubListItem from './CurationStubListItem/CurationStubListItem';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';

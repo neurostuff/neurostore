@@ -1,5 +1,6 @@
 import { Box, Chip, ListItem, ListItemButton, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import React from 'react';
 
 interface ICurationStubListItem {
@@ -10,12 +11,18 @@ interface ICurationStubListItem {
 }
 
 const CurationStubListItem: React.FC<ICurationStubListItem> = React.memo((props) => {
+    const itemColor = props.stub.exclusionTag
+        ? '#fff3f3'
+        : props.stub.tags.some((x) => x.id === ENeurosynthTagIds.NEEDS_REVIEW_TAG_ID)
+        ? '#fff0b8'
+        : '';
+
     return (
         <ListItem
             style={{
                 ...props.style,
                 ...{
-                    backgroundColor: props.stub.exclusionTag ? '#fff3f3' : '',
+                    backgroundColor: itemColor,
                 },
             }}
             disablePadding
@@ -31,7 +38,6 @@ const CurationStubListItem: React.FC<ICurationStubListItem> = React.memo((props)
                     height: '100%',
                     width: '280px',
                 }}
-                autoFocus={props.selected}
             >
                 {props.stub.exclusionTag && (
                     <Typography sx={{ color: 'error.dark', fontWeight: 'bold' }} variant="body2">

@@ -51,6 +51,10 @@ const ExclusionSelectorPopup: React.FC<IExclusionSelectorPopup> = (props) => {
     const createExclusion = useCreateNewExclusion();
 
     useEffect(() => {
+        if (!props.popupIsOpen) setSelectedValue(null);
+    }, [props.popupIsOpen]);
+
+    useEffect(() => {
         if (prismaConfig.isPrisma) {
             const phase = indexToPRISMAMapping(props.columnIndex);
             const filteredExclusions = phase ? prismaConfig[phase].exclusionTags : [];
@@ -143,13 +147,18 @@ const ExclusionSelectorPopup: React.FC<IExclusionSelectorPopup> = (props) => {
         });
     };
 
+    const handleClosePopup = () => {
+        setSelectedValue(null);
+        props.onClosePopup();
+    };
+
     return (
         <>
             <NeurosynthPopper
                 open={props.popupIsOpen}
                 anchorElement={excludeButtonRef?.current}
                 placement="bottom-start"
-                onClickAway={() => props.onClosePopup()}
+                onClickAway={handleClosePopup}
             >
                 <Box sx={{ marginTop: '6px' }}>
                     <Autocomplete
@@ -215,6 +224,7 @@ const ExclusionSelectorPopup: React.FC<IExclusionSelectorPopup> = (props) => {
                 <Button
                     startIcon={defaultExclusion ? undefined : <HighlightOffIcon />}
                     size="small"
+                    sx={{ width: defaultExclusion ? '44px' : '160px' }}
                     onClick={() => props.onOpenPopup()}
                 >
                     {defaultExclusion ? <ArrowDropDownIcon /> : 'exclude'}

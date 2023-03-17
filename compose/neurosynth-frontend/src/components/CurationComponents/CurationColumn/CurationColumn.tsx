@@ -139,7 +139,6 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
     // This logic was previously in a useEffect hook, but was removed because it caused
     // visual flickering as the filteredStudies took noticable milliseconds to get updated
     const filteredStudies = useMemo(() => {
-        console.log('re running');
         return column.stubStudies.filter((stub) => getVisibility(stub, selectedTag));
     }, [column.stubStudies, selectedTag]);
 

@@ -56,6 +56,7 @@ const CurationStubSummaryHeader: React.FC<ICurationStubSummaryHeader> = React.me
     const handleAddExclusion = (exclusionTag: ITag) => {
         if (props.stub?.id) {
             setExclusionForStub(props.columnIndex, props.stub.id, exclusionTag);
+            setExclusionTagSelectorIsOpen(false);
             props.onMoveToNextStub();
         }
     };
@@ -109,7 +110,7 @@ const CurationStubSummaryHeader: React.FC<ICurationStubSummaryHeader> = React.me
                                 onClick={handlePromote}
                                 variant="outlined"
                                 color="success"
-                                sx={{ marginRight: '10px', width: '124px' }}
+                                sx={{ marginRight: '10px', width: '160px' }}
                                 startIcon={<CheckCircleOutlineIcon />}
                             />
                         </>
@@ -125,7 +126,7 @@ const CurationStubSummaryHeader: React.FC<ICurationStubSummaryHeader> = React.me
                             borderColor: 'warning.dark',
                             color: 'warning.dark',
                             marginRight: '10px',
-                            width: '169px',
+                            width: '160px',
                         }}
                         disabled={
                             !!props.stub.tags.find(

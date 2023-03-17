@@ -19,6 +19,7 @@ import {
 import { useProjectId } from 'pages/Projects/ProjectPage/ProjectStore';
 import { IImportArgs } from '../CurationImport';
 import { studiesToStubs } from './helpers/utils';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 
 const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
     const { user, isLoading: authenticationIsLoading } = useAuth0();
@@ -134,7 +135,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
         isLoading || isFetching || allDataForSearchIsLoading || allDataForSearchIsFetching;
 
     return (
-        <Box>
+        <StateHandlerComponent isLoading={false} isError={isError || allDataForSearchIsError}>
             <SearchContainer
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
@@ -230,7 +231,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
                     onButtonClick={handleButtonClick}
                 />
             </Box>
-        </Box>
+        </StateHandlerComponent>
     );
 };
 
