@@ -3,20 +3,25 @@ import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import Ingestion from 'components/ExtractionComponents/Ingestion/Ingestion';
+import { useProjectId } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
+import { useHistory } from 'react-router-dom';
 
-const MoveToExtractionIngest: React.FC<{ onNavigate: (button: ENavigationButton) => void }> = (
-    props
-) => {
+const MoveToExtractionIngest: React.FC<{
+    onNavigate: (button: ENavigationButton) => void;
+    onCloseDialog: () => void;
+}> = (props) => {
     const [doIngestion, setDoIngestion] = useState(false);
+    const projectId = useProjectId();
+    const history = useHistory();
 
     const handleOnComplete = () => {
-        // TODO: handle complete ingestion
-        props.onNavigate(ENavigationButton.NEXT);
+        props.onCloseDialog();
+        history.push(`/projects/${projectId}/extraction`);
     };
 
     if (doIngestion) {
-        return <Ingestion />;
+        return <Ingestion onComplete={handleOnComplete} />;
     }
 
     return (

@@ -3,6 +3,7 @@
 
 import { Box } from '@mui/material';
 import Typography from '@mui/material/Typography';
+import NavigationButtons from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import { useGetStudysetById } from 'hooks';
@@ -11,6 +12,7 @@ import {
     useProjectCurationColumn,
     useProjectExtractionStudysetId,
     useProjectNumCurationColumns,
+    useUpdateStubField,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useEffect, useState } from 'react';
 import API from 'utils/api';
@@ -68,8 +70,8 @@ const createStudyFromStub = async (stub: ICurationStubStudy): Promise<StudyRetur
 
 const addStudyToStudyset = async (
     studysetId: string,
-    study: StudyReturn,
-    currStudyset: StudyReturn[]
+    studyId: string,
+    currStudyset: string[]
 ): Promise<StudysetReturn> => {
     // add study to studyset and handle update currStudyset
     try {
@@ -77,7 +79,7 @@ const addStudyToStudyset = async (
         const updatedStudyset = await API.NeurostoreServices.StudySetsService.studysetsIdPut(
             studysetId,
             {
-                studies: [...currStudyset.map((x) => x.id as string), study.id as string],
+                studies: [...currStudyset, studyId as string],
             }
         );
 
@@ -89,27 +91,26 @@ const addStudyToStudyset = async (
 
 const resolveStudysetAndCurationDifferences = (
     curationStubs: ICurationStubStudy[],
-    studysetStudies: StudyReturn[]
+    studysetStudies: string[]
 ) => {
     const returnObj: {
-        removedFromStudyset: StudyReturn[];
+        removedFromStudyset: string[];
         stubsToIngest: ICurationStubStudy[];
-        studiesInStudyset: StudyReturn[];
+        studiesInStudyset: string[];
     } = {
         removedFromStudyset: [],
         stubsToIngest: [],
         studiesInStudyset: [],
     };
 
-    const studysetMap = new Map<string, StudyReturn>();
-    studysetStudies.forEach((study) => studysetMap.set(study.id as string, study));
+    const studysetSet = new Set<string>();
+    studysetStudies.forEach((studyId) => studysetSet.add(studyId));
 
     curationStubs.forEach((stub) => {
         if (stub.neurostoreId) {
-            if (studysetMap.has(stub.neurostoreId)) {
-                const study = studysetMap.get(stub.neurostoreId) as StudyReturn;
-                returnObj.studiesInStudyset.push(study);
-                studysetMap.delete(stub.neurostoreId);
+            if (studysetSet.has(stub.neurostoreId)) {
+                returnObj.studiesInStudyset.push(stub.neurostoreId);
+                studysetSet.delete(stub.neurostoreId);
             } else {
                 returnObj.stubsToIngest.push(stub);
             }
@@ -118,50 +119,54 @@ const resolveStudysetAndCurationDifferences = (
         }
     });
 
-    for (const entry in studysetMap) {
-        returnObj.removedFromStudyset.push(studysetMap.get(entry) as StudyReturn);
+    for (const entry in studysetSet) {
+        returnObj.removedFromStudyset.push(entry);
     }
 
     return returnObj;
 };
 
-const Ingestion: React.FC = (props) => {
+const Ingestion: React.FC<{
+    onComplete: () => void;
+}> = (props) => {
     const studysetId = useProjectExtractionStudysetId();
     const numColumns = useProjectNumCurationColumns();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
     const { data: studyset } = useGetStudysetById(studysetId);
+    const updateStubField = useUpdateStubField();
 
     const [currentIngestionState, setCurrentIngestionState] = useState<{
         ingestionStatus:
-            | 'NOT-STARTED'
-            | 'IN-PROGRESS'
-            | 'AWAITING-USER-RESPONSE'
-            | 'FINISHED'
-            | 'ERROR';
+            | 'NOT-STARTED' // nothing has occurred yet
+            | 'INGESTION-IN-PROGRESS' // ingestion in progress
+            | 'READY-TO-INGEST' // ready to accept the next stub to ingest
+            | 'AWAITING-USER-RESPONSE' // we require user resolution to address existing studies
+            | 'FINISHED' // ingestion is complete
+            | 'ERROR'; // there was an error during ingestion
         ingestionIndex: number;
-        currStudyset: StudyReturn[];
+        currStudyset: string[];
         stubsToIngest: ICurationStubStudy[];
         numStudiesRemovedFromStudyset: number;
         ui: {
-            stubBeingIngest: ICurationStubStudy;
+            stubBeingIngested: ICurationStubStudy;
             existingDuplicateStudies: StudyReturn[];
         } | null;
     }>({
         ingestionStatus: 'NOT-STARTED',
         ingestionIndex: 0,
         currStudyset: [],
-        stubsToIngest: [],
-        numStudiesRemovedFromStudyset: 0,
+        stubsToIngest: [], // not touched after initial set
+        numStudiesRemovedFromStudyset: 0, // not touched after initial set
         ui: null,
     });
 
     // initial difference extractor
     useEffect(() => {
-        if (!studyset?.studies) return;
+        if (!studyset?.studies || curationIncludedStudies.stubStudies.length === 0) return;
         const { removedFromStudyset, stubsToIngest, studiesInStudyset } =
             resolveStudysetAndCurationDifferences(
                 curationIncludedStudies.stubStudies,
-                studyset.studies as StudyReturn[]
+                studyset.studies as string[]
             );
 
         setCurrentIngestionState((prev) => {
@@ -169,7 +174,7 @@ const Ingestion: React.FC = (props) => {
 
             return {
                 ...prev,
-                ingestionStatus: 'IN-PROGRESS',
+                ingestionStatus: 'READY-TO-INGEST',
                 stubsToIngest: stubsToIngest,
                 currStudyset: studiesInStudyset,
                 numStudiesRemovedFromStudyset: removedFromStudyset.length,
@@ -184,53 +189,163 @@ const Ingestion: React.FC = (props) => {
             if (
                 !studysetId ||
                 currentIngestionState.stubsToIngest.length === 0 ||
-                currentIngestionState.ingestionStatus !== 'IN-PROGRESS'
+                currentIngestionState.ingestionStatus !== 'READY-TO-INGEST'
             ) {
                 return;
             }
 
-            const currStub =
-                currentIngestionState.stubsToIngest[currentIngestionState.ingestionIndex];
+            setCurrentIngestionState((prev) => ({
+                ...prev,
+                ingestionStatus: 'INGESTION-IN-PROGRESS',
+            }));
 
-            const termToSearchFor = currStub.pmid || currStub.title || '';
-            const matchingStudies = await getMatchingStudies(termToSearchFor);
-            if (matchingStudies.length > 0) {
+            const { currStudyset, ingestionIndex, stubsToIngest } = currentIngestionState;
+
+            // we are done ingesting
+            if (ingestionIndex >= stubsToIngest.length) {
                 setCurrentIngestionState((prev) => ({
                     ...prev,
-                    ingestionStatus: 'AWAITING-USER-RESPONSE',
-                    ui: {
-                        stubBeingIngest: currStub,
-                        existingDuplicateStudies: matchingStudies,
-                    },
+                    ingestionStatus: 'FINISHED',
                 }));
-            } else {
-                const newStudy = await createStudyFromStub(currStub);
-                const updatedStudyset = await addStudyToStudyset(
-                    studysetId,
-                    newStudy,
-                    currentIngestionState.currStudyset
-                );
+                return;
+            }
+
+            try {
+                const currStub = stubsToIngest[ingestionIndex];
+
+                if (currStub.neurostoreId) {
+                    // we either imported this stub from neurostore, or some weird thing happened where the stub was connnected
+                    // to the study that was added to the studyset, but that study was later deleted or removed from the studyset
+                    const updatedStudyset = await addStudyToStudyset(
+                        studysetId,
+                        currStub.neurostoreId,
+                        currStudyset
+                    );
+                    setCurrentIngestionState((prev) => ({
+                        ...prev,
+                        ingestionStatus: 'READY-TO-INGEST',
+                        ingestionIndex: prev.ingestionIndex + 1,
+                        currStudyset: updatedStudyset.studies as string[],
+                    }));
+                    return;
+                }
+
+                const termToSearchFor = currStub.pmid || currStub.title || '';
+                const matchingStudies = await getMatchingStudies(termToSearchFor);
+                if (matchingStudies.length > 0) {
+                    // there are 1 or more studies that are matching our stub existing in neurostore already
+                    setCurrentIngestionState((prev) => ({
+                        ...prev,
+                        ingestionStatus: 'AWAITING-USER-RESPONSE',
+                        ui: {
+                            stubBeingIngested: currStub,
+                            existingDuplicateStudies: matchingStudies,
+                        },
+                    }));
+                } else {
+                    // there are no neurostore matches
+                    const newStudy = await createStudyFromStub(currStub);
+                    updateStubField(
+                        numColumns - 1,
+                        currStub.id,
+                        'neurostoreId',
+                        newStudy.id as string
+                    );
+                    const updatedStudyset = await addStudyToStudyset(
+                        studysetId,
+                        newStudy.id as string,
+                        currStudyset
+                    );
+                    setCurrentIngestionState((prev) => ({
+                        ...prev,
+                        ingestionStatus: 'READY-TO-INGEST',
+                        currStudyset: updatedStudyset.studies as string[],
+                        ingestionIndex: prev.ingestionIndex + 1,
+                    }));
+                }
+            } catch (e) {
+                console.error('there was an error');
                 setCurrentIngestionState((prev) => ({
                     ...prev,
-                    ingestionIndex: prev.ingestionIndex + 1,
+                    ingestionStatus: 'ERROR',
                 }));
             }
         })();
-    }, [currentIngestionState, studysetId]);
+    }, [currentIngestionState, numColumns, studysetId, updateStubField]);
 
-    const handleSelectStudy = (option: StudyReturn | ICurationStubStudy, isStudy: boolean) => {};
+    const handleSelectStudy = async (
+        option: StudyReturn | ICurationStubStudy,
+        isStudy: boolean
+    ) => {
+        if (!studysetId) return;
+
+        try {
+            let study: StudyReturn;
+            if (!isStudy) {
+                study = await createStudyFromStub(option as ICurationStubStudy);
+            } else {
+                study = option as StudyReturn;
+            }
+
+            updateStubField(
+                numColumns - 1,
+                currentIngestionState.ui!.stubBeingIngested.id,
+                'neurostoreId',
+                study.id as string
+            );
+
+            const updatedStudyset = await addStudyToStudyset(
+                studysetId,
+                study.id as string,
+                currentIngestionState.currStudyset
+            );
+
+            setCurrentIngestionState((prev) => ({
+                ...prev,
+                ingestionIndex: prev.ingestionIndex + 1,
+                ingestionStatus: 'READY-TO-INGEST',
+                currStudyset: updatedStudyset.studies as string[],
+                ui: null,
+            }));
+        } catch (e) {
+            setCurrentIngestionState((prev) => ({
+                ...prev,
+                ingestionStatus: 'ERROR',
+            }));
+        }
+    };
+
+    const handleButtonClick = () => {
+        props.onComplete();
+    };
 
     switch (currentIngestionState.ingestionStatus) {
         case 'NOT-STARTED':
             return <Typography>Starting up ingestion...</Typography>;
-        case 'IN-PROGRESS':
-            return <ProgressLoader />;
+        case 'INGESTION-IN-PROGRESS':
+        case 'READY-TO-INGEST':
+            return (
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        margin: '2rem 0',
+                        flexDirection: 'column',
+                    }}
+                >
+                    <Typography sx={{ marginBottom: '1rem' }} variant="h6">
+                        Ingesting studies ({currentIngestionState.ingestionIndex + 1} /{' '}
+                        {currentIngestionState.stubsToIngest.length})
+                    </Typography>
+                    <ProgressLoader />
+                </Box>
+            );
         case 'AWAITING-USER-RESPONSE':
             return (
                 <>
                     {currentIngestionState?.ui && (
                         <IngestionAwaitUserResponse
-                            stubBeingIngested={currentIngestionState.ui.stubBeingIngest}
+                            stubBeingIngested={currentIngestionState.ui.stubBeingIngested}
                             existingMatchingStudies={
                                 currentIngestionState.ui.existingDuplicateStudies
                             }
@@ -244,11 +359,14 @@ const Ingestion: React.FC = (props) => {
         case 'FINISHED':
             return (
                 <Box>
-                    <Typography>Ingestion process is complete</Typography>
-                    <Typography>Ingestion Summary:</Typography>
+                    <Typography gutterBottom color="primary" variant="h6">
+                        Ingestion process is complete
+                    </Typography>
+                    <Typography>Summary:</Typography>
                     <Typography>
-                        {currentIngestionState.stubsToIngest.length} studies ingested into
-                        neurostore
+                        {currentIngestionState.stubsToIngest.length}{' '}
+                        {currentIngestionState.stubsToIngest.length > 1 ? 'studies' : 'study'}{' '}
+                        ingested into neurostore
                     </Typography>
                     {currentIngestionState.numStudiesRemovedFromStudyset > 0 && (
                         <Typography>
@@ -256,6 +374,14 @@ const Ingestion: React.FC = (props) => {
                             from the studyset
                         </Typography>
                     )}
+                    <Box sx={{ marginTop: '1rem' }}>
+                        <NavigationButtons
+                            prevButtonDisabled
+                            nextButtonText="complete"
+                            nextButtonStyle="contained"
+                            onButtonClick={handleButtonClick}
+                        />
+                    </Box>
                 </Box>
             );
         case 'ERROR':

@@ -6,7 +6,7 @@ import MoveToExtractionCreateStudyset from './MoveToExtractionCreateStudyset/Mov
 import MoveToExtractionIngest from './MoveToExtractionIngest/MoveToExtractionIngest';
 
 const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
-    const [activeStep, setActiveStep] = useState(1);
+    const [activeStep, setActiveStep] = useState(0);
 
     const handleCloseDialog = () => {
         props.onCloseDialog();
@@ -40,16 +40,17 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                     <Step>
                         <StepLabel>Ingest</StepLabel>
                     </Step>
-                    <Step>
-                        <StepLabel>Complete</StepLabel>
-                    </Step>
                 </Stepper>
                 <Box sx={{ marginTop: '1rem' }}>
                     {activeStep === 0 && (
                         <MoveToExtractionCreateStudyset onNavigate={handleNavigate} />
                     )}
-                    {activeStep === 1 && <MoveToExtractionIngest onNavigate={handleNavigate} />}
-                    {activeStep === 2 && <></>}
+                    {activeStep === 1 && (
+                        <MoveToExtractionIngest
+                            onCloseDialog={handleCloseDialog}
+                            onNavigate={handleNavigate}
+                        />
+                    )}
                 </Box>
             </Box>
         </BaseDialog>

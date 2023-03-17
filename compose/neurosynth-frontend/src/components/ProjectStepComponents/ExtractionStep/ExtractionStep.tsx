@@ -55,7 +55,8 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
 
     const autoOpenExtractionDialog =
         !extractionStepHasBeenInitialized && !!location?.state?.projectPage?.openCurationDialog;
-    const [moveToExtractionDialog, setMoveToExtractionDialog] = useState(autoOpenExtractionDialog);
+    const [moveToExtractionDialogIsOpen, setMoveToExtractionDialogIsOpen] =
+        useState(autoOpenExtractionDialog);
 
     return (
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
@@ -82,6 +83,10 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                             will be used to help filter analyses within your studies
                         </Typography>
                         <Box sx={{ marginTop: '1rem' }}>
+                            <MoveToExtractionDialog
+                                isOpen={moveToExtractionDialogIsOpen}
+                                onCloseDialog={() => setMoveToExtractionDialogIsOpen(false)}
+                            />
                             {extractionStepHasBeenInitialized ? (
                                 <Box sx={[ProjectStepComponentsStyles.stepCard]}>
                                     <Card sx={{ width: '100%', height: '100%' }}>
@@ -173,12 +178,8 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                         { borderColor: disabled ? 'muted.main' : 'primary.main' },
                                     ]}
                                 >
-                                    <MoveToExtractionDialog
-                                        isOpen={moveToExtractionDialog}
-                                        onCloseDialog={() => setMoveToExtractionDialog(false)}
-                                    />
                                     <Button
-                                        onClick={() => setMoveToExtractionDialog(true)}
+                                        onClick={() => setMoveToExtractionDialogIsOpen(true)}
                                         disabled={disabled}
                                         sx={{ width: '100%', height: '100%' }}
                                     >

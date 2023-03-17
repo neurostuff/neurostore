@@ -22,43 +22,42 @@ const MoveToExtractionCreateStudyset: React.FC<{
     });
 
     const handleCreateStudyset = async () => {
-        if (studysetDetails.name.length > 0 && projectId) {
-            try {
-                const newStudyset = await createStudyset({ ...studysetDetails });
+        if (studysetDetails.name.length === 0 || !projectId) return;
 
-                const newStudysetId = newStudyset.data.id;
-                if (!newStudysetId)
-                    throw new Error('expected a studyset id but did not receive one');
+        try {
+            const newStudyset = await createStudyset({ ...studysetDetails });
 
-                const newAnnotation = await createAnnotation({
-                    source: 'neurosynth',
-                    sourceId: undefined,
-                    annotation: {
-                        name: `${studysetDetails.name} Annotation`,
-                        description: `Annotation for studyset: ${studysetDetails.name}`,
-                        note_keys: {
-                            included: 'boolean', // default note key
-                        },
-                        studyset: newStudysetId,
+            const newStudysetId = newStudyset.data.id;
+            if (!newStudysetId) throw new Error('expected a studyset id but did not receive one');
+
+            const newAnnotation = await createAnnotation({
+                source: 'neurosynth',
+                sourceId: undefined,
+                annotation: {
+                    name: `${studysetDetails.name} Annotation`,
+                    description: `Annotation for studyset: ${studysetDetails.name}`,
+                    note_keys: {
+                        included: 'boolean', // default note key
                     },
-                });
+                    studyset: newStudysetId,
+                },
+            });
 
-                const newAnnotationId = newAnnotation.data.id;
-                if (!newAnnotationId)
-                    throw new Error('expected an annotation id but did not receive one');
+            const newAnnotationId = newAnnotation.data.id;
+            if (!newAnnotationId)
+                throw new Error('expected an annotation id but did not receive one');
 
-                updateExtractionMetadata({
-                    studysetId: newStudysetId,
-                    annotationId: newAnnotationId,
-                    studyStatusList: [],
-                });
+            updateExtractionMetadata({
+                studysetId: newStudysetId,
+                annotationId: newAnnotationId,
+                studyStatusList: [],
+            });
 
-                props.onNavigate(ENavigationButton.NEXT);
-            } catch (e) {
-                enqueueSnackbar('there was an error creating a new studyset for this project', {
-                    variant: 'error',
-                });
-            }
+            props.onNavigate(ENavigationButton.NEXT);
+        } catch (e) {
+            enqueueSnackbar('there was an error creating a new studyset for this project', {
+                variant: 'error',
+            });
         }
     };
 

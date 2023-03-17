@@ -25,9 +25,9 @@ const IngestionAwaitUserResponse: React.FC<{
                     Ingesting {`${(currentIngestionIndex || 0) + 1} / ${totalToIngest}`}
                 </Typography>
                 <Typography>
-                    We encountered a study that exists in neurosynth-compose already. You can choose
-                    whether to ignore the existing study and ingest anyway, or select the existing
-                    study to add to your studyset instead.
+                    We encountered a study that exists in neurostore already. You can choose whether
+                    to ignore the existing study and ingest anyway, or select the existing study to
+                    add to your studyset instead.
                 </Typography>
             </Box>
             <Box sx={{ marginTop: '1rem' }}>
@@ -43,9 +43,10 @@ const IngestionAwaitUserResponse: React.FC<{
                         <CurationImportStubSummary {...stubBeingIngested} />
                         <Button
                             onClick={() => onSelectOption(stubBeingIngested, false)}
-                            color="secondary"
-                            variant="outlined"
+                            color="success"
+                            variant="contained"
                             size="small"
+                            disableElevation
                         >
                             Ignore existing studies and ingest
                         </Button>
@@ -54,7 +55,7 @@ const IngestionAwaitUserResponse: React.FC<{
             </Box>
             <Box sx={{ marginTop: '2rem' }}>
                 <Typography variant="h6" gutterBottom sx={{ marginBottom: '0.5rem' }}>
-                    Existing Studies in the database
+                    Existing Studies in the database (click the title to view in neurostore)
                 </Typography>
                 {(existingMatchingStudies || []).map((study, index) => (
                     <Box
@@ -80,8 +81,9 @@ const IngestionAwaitUserResponse: React.FC<{
                             onClick={() => onSelectOption(study, true)}
                             sx={{ marginTop: '0.5rem', display: 'block' }}
                             size="small"
-                            color="secondary"
-                            variant="outlined"
+                            color="success"
+                            variant="contained"
+                            disableElevation
                         >
                             Add this study to your studyset
                         </Button>
