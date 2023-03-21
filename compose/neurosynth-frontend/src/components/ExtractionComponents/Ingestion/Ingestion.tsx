@@ -215,7 +215,8 @@ const Ingestion: React.FC<{
 
                 if (currStub.neurostoreId) {
                     // we either imported this stub from neurostore, or some weird thing happened where the stub was connnected
-                    // to the study that was added to the studyset, but that study was later deleted or removed from the studyset
+                    // to the study that was added to the studyset, but that study was later deleted or removed from the studyset.
+                    // Either way, we add the associated neurostore id to the studyset.
                     const updatedStudyset = await addStudyToStudyset(
                         studysetId,
                         currStub.neurostoreId,
@@ -233,7 +234,8 @@ const Ingestion: React.FC<{
                 const termToSearchFor = currStub.pmid || currStub.title || '';
                 const matchingStudies = await getMatchingStudies(termToSearchFor);
                 if (matchingStudies.length > 0) {
-                    // there are 1 or more studies that are matching our stub existing in neurostore already
+                    // there are 1 or more studies that are matching our stub existing in neurostore already.
+                    // we need the user to pick which one they want to include
                     setCurrentIngestionState((prev) => ({
                         ...prev,
                         ingestionStatus: 'AWAITING-USER-RESPONSE',
@@ -243,7 +245,7 @@ const Ingestion: React.FC<{
                         },
                     }));
                 } else {
-                    // there are no neurostore matches
+                    // there are no neurostore matches - automatically add and move on
                     const newStudy = await createStudyFromStub(currStub);
                     updateStubField(
                         numColumns - 1,
