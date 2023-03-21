@@ -3,18 +3,14 @@ import { StudyReturn } from 'neurostore-typescript-sdk';
 import StudyListItemStyles from './StudyListItem.styles';
 import CheckIcon from '@mui/icons-material/Check';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
-import TextExpansion from 'components/TextExpansion/TextExpansion';
 import { useHistory, useParams } from 'react-router-dom';
-import useUpdateProject from 'hooks/requests/useUpdateProject';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
+import { ESelectedChip } from 'pages/ExtractionPage/ExtractionPage';
+import { useProjectExtractionAddOrUpdateStudyListStatus } from 'pages/Projects/ProjectPage/ProjectStore';
 
-const StudyListItem: React.FC<
-    StudyReturn & { status: 'COMPLETE' | 'SAVEFORLATER' | 'UNCATEGORIZED' }
-> = (props) => {
+const StudyListItem: React.FC<StudyReturn & { currentSelectedChip: ESelectedChip }> = (props) => {
     const { projectId }: { projectId: string } = useParams();
-    const { data: project } = useGetProjectById(projectId);
-    const { mutate } = useUpdateProject();
     const history = useHistory();
+    const addOrUpdateStudyListStatus = useProjectExtractionAddOrUpdateStudyListStatus();
 
     const handleClick = (_event: React.MouseEvent) => {
         if (props?.id) {
@@ -23,33 +19,18 @@ const StudyListItem: React.FC<
     };
 
     const handleUpdateStatus = (studyId: string, status: 'COMPLETE' | 'SAVEFORLATER') => {
-        if (studyId && project?.provenance?.extractionMetadata?.studyStatusList) {
-            const updatedStudyList = [...project.provenance.extractionMetadata.studyStatusList];
-            const studyIndex = updatedStudyList.findIndex((x) => x.id === studyId);
-            if (studyIndex < 0) {
-                updatedStudyList.push({
-                    id: studyId,
-                    status: status,
-                });
-            } else {
-                const updatedStudyStatus = { ...updatedStudyList[studyIndex], status: status };
-                updatedStudyList[studyIndex] = updatedStudyStatus;
-            }
-
-            mutate({
-                projectId: projectId,
-                project: {
-                    provenance: {
-                        ...project.provenance,
-                        extractionMetadata: {
-                            ...project.provenance.extractionMetadata,
-                            studyStatusList: updatedStudyList,
-                        },
-                    },
-                },
-            });
+        if (studyId) {
+            addOrUpdateStudyListStatus(studyId, status);
         }
     };
+
+    const showMarkAsCompleteButton =
+        props.currentSelectedChip === ESelectedChip.UNCATEGORIZED ||
+        props.currentSelectedChip === ESelectedChip.SAVEDFORLATER;
+
+    const showMarkAsSaveForLaterbutton =
+        props.currentSelectedChip === ESelectedChip.UNCATEGORIZED ||
+        props.currentSelectedChip === ESelectedChip.COMPLETED;
 
     return (
         <Box sx={StudyListItemStyles.listItem}>
@@ -61,6 +42,7 @@ const StudyListItem: React.FC<
                     <Typography color="secondary">{props.authors}</Typography>
                     <Typography>Journal: {props.publication}</Typography>
                     <Typography>DOI: {props.doi}</Typography>
+                    <Typography>PMID: {props.pmid}</Typography>
                 </Box>
             </Box>
             <Box
@@ -72,9 +54,9 @@ const StudyListItem: React.FC<
                     width: '80px',
                 }}
             >
-                {(props.status === 'UNCATEGORIZED' || props.status === 'SAVEFORLATER') && (
+                {showMarkAsCompleteButton && (
                     <Box sx={{ marginBottom: '1rem' }}>
-                        <Tooltip title="mark as complete">
+                        <Tooltip placement="right" title="mark as complete">
                             <IconButton
                                 size="large"
                                 onClick={(e) => {
@@ -87,9 +69,9 @@ const StudyListItem: React.FC<
                         </Tooltip>
                     </Box>
                 )}
-                {(props.status === 'UNCATEGORIZED' || props.status === 'COMPLETE') && (
+                {showMarkAsSaveForLaterbutton && (
                     <Box>
-                        <Tooltip title="save for later">
+                        <Tooltip placement="right" title="save for later">
                             <IconButton
                                 size="large"
                                 onClick={(e) => {

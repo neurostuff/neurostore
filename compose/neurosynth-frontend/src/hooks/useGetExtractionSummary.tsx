@@ -1,5 +1,8 @@
+import {
+    useProjectExtractionStudysetId,
+    useProjectExtractionStudyStatusList,
+} from 'pages/Projects/ProjectPage/ProjectStore';
 import { useEffect, useState } from 'react';
-import useGetProjectById from './requests/useGetProjectById';
 import useGetStudysetById from './requests/useGetStudysetById';
 
 export interface IExtractionSummary {
@@ -10,10 +13,9 @@ export interface IExtractionSummary {
 }
 
 const useGetExtractionSummary = (projectId: string) => {
-    const { data: project } = useGetProjectById(projectId);
-    const { data: studyset } = useGetStudysetById(
-        project?.provenance?.extractionMetadata?.studysetId || undefined
-    );
+    const studysetId = useProjectExtractionStudysetId();
+    const studyStatusList = useProjectExtractionStudyStatusList();
+    const { data: studyset } = useGetStudysetById(studysetId);
     const [extractionSummary, setExtractionSummary] = useState<IExtractionSummary>({
         savedForLater: 0,
         uncategorized: 0,
@@ -23,24 +25,18 @@ const useGetExtractionSummary = (projectId: string) => {
 
     useEffect(() => {
         setExtractionSummary((prev) => {
-            if (
-                !projectId ||
-                !project?.provenance?.extractionMetadata?.studysetId ||
-                !project.provenance.extractionMetadata?.studyStatusList
-            ) {
+            if (!projectId || !studysetId || !studyStatusList) {
                 return prev;
             }
-
-            const extractionMetadata = project.provenance.extractionMetadata;
 
             const total = (studyset?.studies || []).length;
 
             // all included studies are in the last column
-            const numCompletedStudies = extractionMetadata.studyStatusList.filter(
+            const numCompletedStudies = studyStatusList.filter(
                 (study) => study.status === 'COMPLETE'
             ).length;
 
-            const numSavedForLaterStudies = extractionMetadata.studyStatusList.filter(
+            const numSavedForLaterStudies = studyStatusList.filter(
                 (study) => study.status === 'SAVEFORLATER'
             ).length;
 
@@ -53,7 +49,7 @@ const useGetExtractionSummary = (projectId: string) => {
                 uncategorized: numUncategorizedStudies,
             };
         });
-    }, [project, projectId, setExtractionSummary, studyset]);
+    }, [projectId, studyStatusList, studyset, studysetId]);
 
     return { ...extractionSummary };
 };

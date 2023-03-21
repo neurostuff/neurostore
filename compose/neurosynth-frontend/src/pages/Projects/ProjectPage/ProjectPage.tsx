@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import {
     useClearProvenance,
-    useInitStore,
+    useInitProjectStore,
     useProjectAlgorithmMetadata,
     useProjectCurationColumns,
     useProjectDescription,
@@ -55,7 +55,7 @@ const ProjectPage: React.FC = (props) => {
 
     const updateProjectName = useUpdateProjectName();
     const updateProjectDescription = useUpdateProjectDescription();
-    const initStore = useInitStore();
+    const initProjectStore = useInitProjectStore();
     const clearProvenance = useClearProvenance();
 
     const projectName = useProjectName();
@@ -89,8 +89,8 @@ const ProjectPage: React.FC = (props) => {
         +!!algorithmStepHasBeenInitialized;
 
     useEffect(() => {
-        initStore(projectId);
-    }, [initStore, projectId]);
+        initProjectStore(projectId);
+    }, [initProjectStore, projectId]);
 
     const handleTabChange = (event: any, tab: number) => {
         setTab((prev) => {

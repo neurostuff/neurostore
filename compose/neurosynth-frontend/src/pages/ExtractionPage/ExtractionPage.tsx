@@ -1,22 +1,26 @@
-import { Box, Breadcrumbs, Typography, Link, Chip } from '@mui/material';
+import { Box, Breadcrumbs, Typography, Link, Chip, Button } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import CheckIcon from '@mui/icons-material/Check';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, useHistory, useLocation, useParams } from 'react-router-dom';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import StudyListItem from 'components/ExtractionComponents/StudyListItem';
 import {
-    useInitStore,
+    useInitProjectStore,
+    useProjectCurationColumn,
     useProjectExtractionStudysetId,
     useProjectExtractionStudyStatusList,
     useProjectName,
+    useProjectNumCurationColumns,
 } from 'pages/Projects/ProjectPage/ProjectStore';
+import { resolveStudysetAndCurationDifferences } from 'components/ExtractionComponents/Ingestion/helpers/utils';
+import ExtractionReconcileDialog from 'components/Dialogs/ExtractionReconcileDialog/ExtractionReconcileDialog';
 
-enum ESelectedChip {
+export enum ESelectedChip {
     'COMPLETED' = 'completed',
     'SAVEDFORLATER' = 'savedforlater',
     'UNCATEGORIZED' = 'uncategorized',
@@ -35,7 +39,32 @@ const getSelectedFromURL = (pathname: string | undefined): ESelectedChip => {
 
 const ExtractionPage: React.FC = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
-    const [studiesDisplayed, setStudiesDisplayed] = useState<{
+    const location = useLocation();
+    const history = useHistory();
+
+    const projectName = useProjectName();
+    const studysetId = useProjectExtractionStudysetId();
+    const studyStatusList = useProjectExtractionStudyStatusList();
+    const initProjectStore = useInitProjectStore();
+    const numColumns = useProjectNumCurationColumns();
+    const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
+
+    useEffect(() => {
+        initProjectStore(projectId);
+    }, [initProjectStore, projectId]);
+
+    const {
+        data: studyset,
+        isLoading: getStudysetIsLoading,
+        isError: getStudysetIsError,
+    } = useGetStudysetById(studysetId, true);
+    const { mutate } = useUpdateStudyset();
+
+    const [fieldBeingUpdated, setFieldBeingUpdated] = useState('');
+    const [currentChip, setCurrentChip] = useState<ESelectedChip>(
+        getSelectedFromURL(location.search)
+    );
+    const [studiesDisplayedState, setStudiesDisplayedState] = useState<{
         uncategorized: StudyReturn[];
         saveForLater: StudyReturn[];
         completed: StudyReturn[];
@@ -44,64 +73,29 @@ const ExtractionPage: React.FC = (props) => {
         saveForLater: [],
         completed: [],
     });
-    const studysetCategories = useRef<{
-        completeSet: Set<string>;
-        savedForLaterSet: Set<string>;
-    }>({
-        completeSet: new Set<string>(),
-        savedForLaterSet: new Set<string>(),
-    });
-
-    const projectName = useProjectName();
-    const studysetId = useProjectExtractionStudysetId();
-    const studyStatusList = useProjectExtractionStudyStatusList();
-    const initStore = useInitStore();
+    const [showReconcilePrompt, setShowReconcilePrompt] = useState(false);
+    const [reconcileDialogIsOpen, setReconcileDialogIsOpen] = useState(false);
 
     useEffect(() => {
-        initStore(projectId);
-    }, [initStore, projectId]);
-    const {
-        data: studyset,
-        isLoading: getStudysetIsLoading,
-        isError: getStudysetIsError,
-    } = useGetStudysetById(studysetId, true);
-    const [fieldBeingUpdated, setFieldBeingUpdated] = useState('');
-    const { mutate } = useUpdateStudyset();
-    const location = useLocation();
-    const history = useHistory();
+        if (curationIncludedStudies.stubStudies.length > 0 && studyset?.studies) {
+            const { removedFromStudyset, stubsToIngest } = resolveStudysetAndCurationDifferences(
+                curationIncludedStudies.stubStudies,
+                (studyset.studies as StudyReturn[]).map((x) => x.id as string)
+            );
 
-    const [currentChip, setCurrentChip] = useState<ESelectedChip>(
-        getSelectedFromURL(location.search)
-    );
-    const [ingestionDialogIsOpen, setIngestionDialogIsOpen] = useState(false);
-
-    useEffect(() => {
-        initStore(projectId);
-    }, [initStore, projectId]);
-
-    useEffect(() => {
-        if (!getStudysetIsLoading && studyset?.studies && studyset.studies.length === 0) {
-            setIngestionDialogIsOpen(true);
+            setShowReconcilePrompt(removedFromStudyset.length > 0 || stubsToIngest.length > 0);
         }
-    }, [studyset, studyset?.studies, getStudysetIsLoading]);
+    }, [curationIncludedStudies, studyset?.studies]);
 
     useEffect(() => {
         if (studyStatusList && studyset?.studies) {
-            const completeSet = new Set<string>();
-            const savedForLaterSet = new Set<string>();
+            const map = new Map<string, 'COMPLETE' | 'SAVEFORLATER'>();
 
             studyStatusList.forEach((studyStatus) => {
-                studyStatus.status === 'COMPLETE'
-                    ? completeSet.add(studyStatus.id)
-                    : savedForLaterSet.add(studyStatus.id);
+                map.set(studyStatus.id, studyStatus.status);
             });
 
-            studysetCategories.current = {
-                completeSet: completeSet,
-                savedForLaterSet: savedForLaterSet,
-            };
-
-            setStudiesDisplayed((prev) => {
+            setStudiesDisplayedState((prev) => {
                 if (!prev) return prev;
 
                 const allStudies = studyset.studies as StudyReturn[];
@@ -111,10 +105,11 @@ const ExtractionPage: React.FC = (props) => {
                 const uncategorized: StudyReturn[] = [];
 
                 allStudies.forEach((study) => {
-                    if (completeSet.has(study?.id || '')) {
-                        completed.push(study);
-                    } else if (savedForLaterSet.has(study?.id || '')) {
-                        saveForLater.push(study);
+                    if (!study?.id) return;
+
+                    if (map.has(study.id)) {
+                        const status = map.get(study.id);
+                        status === 'COMPLETE' ? completed.push(study) : saveForLater.push(study);
                     } else {
                         uncategorized.push(study);
                     }
@@ -155,8 +150,22 @@ const ExtractionPage: React.FC = (props) => {
         }
     };
 
+    const studiesDisplayed =
+        currentChip === ESelectedChip.COMPLETED
+            ? studiesDisplayedState.completed
+            : currentChip === ESelectedChip.SAVEDFORLATER
+            ? studiesDisplayedState.saveForLater
+            : studiesDisplayedState.uncategorized;
+
+    const text =
+        currentChip === ESelectedChip.COMPLETED
+            ? 'completed'
+            : currentChip === ESelectedChip.SAVEDFORLATER
+            ? 'saved for later'
+            : 'uncategorized';
+
     return (
-        <StateHandlerComponent isError={false} isLoading={getStudysetIsLoading}>
+        <StateHandlerComponent isError={getStudysetIsError} isLoading={getStudysetIsLoading}>
             <Box sx={{ width: '80%', minWidth: '450px', margin: '0 auto' }}>
                 <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
                     <Breadcrumbs>
@@ -181,6 +190,40 @@ const ExtractionPage: React.FC = (props) => {
                         </Typography>
                     </Breadcrumbs>
                 </Box>
+                {showReconcilePrompt && (
+                    <>
+                        <ExtractionReconcileDialog
+                            isOpen={reconcileDialogIsOpen}
+                            onCloseDialog={() => setReconcileDialogIsOpen(false)}
+                        />
+                        <Box
+                            sx={{
+                                backgroundColor: 'secondary.main',
+                                color: 'white',
+                                padding: '1rem',
+                                borderRadius: '4px',
+                                marginBottom: '1rem',
+                                position: 'sticky',
+                                top: '1.5rem',
+                                zIndex: 10,
+                            }}
+                        >
+                            <Typography variant="body1">
+                                <b>This studyset is out of sync with the curation phase.</b> Either
+                                some studies specified as "included" within the curation phase are
+                                not in the studyset, or some studies within the studyset are not
+                                specified as "included" within the curation phase.
+                            </Typography>
+                            <Button
+                                onClick={() => setReconcileDialogIsOpen(true)}
+                                sx={{ marginTop: '1rem' }}
+                                variant="contained"
+                            >
+                                Fix this issue
+                            </Button>
+                        </Box>
+                    </>
+                )}
                 <Box>
                     <Box>
                         <TextEdit
@@ -222,17 +265,6 @@ const ExtractionPage: React.FC = (props) => {
                         </TextEdit>
                     </Box>
                 </Box>
-                {/* <Box sx={{ margin: '1rem 0' }}>
-                    <FormControl sx={{ width: '100%', marginTop: '2px' }}>
-                        <InputLabel>search</InputLabel>
-                        <OutlinedInput
-                            onChange={handleInputSearch}
-                            value={searchTerm}
-                            label="search"
-                            endAdornment={<SearchIcon color="primary" />}
-                        />
-                    </FormControl>
-                </Box> */}
                 <Box sx={{ marginTop: '1rem' }}>
                     <Chip
                         size="medium"
@@ -269,47 +301,27 @@ const ExtractionPage: React.FC = (props) => {
                 <Box
                     sx={{
                         margin: '1rem 0',
-                        display: currentChip === ESelectedChip.COMPLETED ? 'block' : 'none',
                     }}
                 >
-                    {studiesDisplayed.completed.map((study, index) => (
-                        <StudyListItem key={study?.id || ''} status="COMPLETE" {...study} />
-                    ))}
-                    {studiesDisplayed.completed.length === 0 && (
-                        <Typography sx={{ color: 'warning.dark' }}>
-                            No studies marked as complete
+                    <Box>
+                        <Typography sx={{ textAlign: 'end' }} variant="h6">
+                            {studiesDisplayed.length} studies
                         </Typography>
-                    )}
-                </Box>
-                <Box
-                    sx={{
-                        margin: '1rem 0',
-                        display: currentChip === ESelectedChip.SAVEDFORLATER ? 'block' : 'none',
-                    }}
-                >
-                    {studiesDisplayed.saveForLater.map((study, index) => (
-                        <StudyListItem key={study?.id || ''} status="SAVEFORLATER" {...study} />
-                    ))}
-                    {studiesDisplayed.saveForLater.length === 0 && (
-                        <Typography sx={{ color: 'warning.dark' }}>
-                            No studies marked as saved for later
-                        </Typography>
-                    )}
-                </Box>
-                <Box
-                    sx={{
-                        margin: '1rem 0',
-                        display: currentChip === ESelectedChip.UNCATEGORIZED ? 'block' : 'none',
-                    }}
-                >
-                    {studiesDisplayed.uncategorized.map((study, index) => (
-                        <StudyListItem key={study?.id || ''} status="UNCATEGORIZED" {...study} />
-                    ))}
-                    {studiesDisplayed.uncategorized.length === 0 && (
-                        <Typography sx={{ color: 'warning.dark' }}>
-                            No uncategorized studies
-                        </Typography>
-                    )}
+                    </Box>
+                    <Box>
+                        {studiesDisplayed.map((study, index) => (
+                            <StudyListItem
+                                key={study?.id || ''}
+                                currentSelectedChip={currentChip}
+                                {...study}
+                            />
+                        ))}
+                        {studiesDisplayed.length === 0 && (
+                            <Typography sx={{ color: 'warning.dark' }}>
+                                No studies marked as {text}
+                            </Typography>
+                        )}
+                    </Box>
                 </Box>
             </Box>
         </StateHandlerComponent>

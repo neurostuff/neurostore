@@ -48,7 +48,7 @@ export interface ICurationMetadata {
     identificationSources: ISource[];
 }
 
-interface IStudyExtractionStatus {
+export interface IStudyExtractionStatus {
     status: 'COMPLETE' | 'SAVEFORLATER';
     id: string;
 }

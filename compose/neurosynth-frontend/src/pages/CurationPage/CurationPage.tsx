@@ -8,7 +8,7 @@ import PrismaDialog from 'components/Dialogs/PrismaDialog/PrismaDialog';
 import {
     useProjectName,
     useProjectCurationIsPrisma,
-    useInitStore,
+    useInitProjectStore,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import CurationPageLoadingText from './CurationPageLoadingText';
 import useGetCurationSummary from 'hooks/useGetCurationSummary';
@@ -21,12 +21,12 @@ const CurationPage: React.FC = (props) => {
 
     const isPrisma = useProjectCurationIsPrisma();
     const projectName = useProjectName();
-    const initStore = useInitStore();
+    const initProjectStore = useInitProjectStore();
     const { included, uncategorized } = useGetCurationSummary();
 
     useEffect(() => {
-        initStore(projectId);
-    }, [initStore, projectId]);
+        initProjectStore(projectId);
+    }, [initProjectStore, projectId]);
 
     const canMoveToExtractionPhase = included > 0 && uncategorized === 0;
 

@@ -3,14 +3,13 @@ import { AxiosResponse } from 'axios';
 import { EPropertyType } from 'components/EditMetadata';
 import {
     IExtractionMetadata,
-    INeurosynthProject,
     INeurosynthProjectReturn,
     IPRISMAConfig,
     ISource,
     ITag,
 } from 'hooks/requests/useGetProjects';
 import API from 'utils/api';
-import { create, StateCreator, StoreMutatorIdentifier } from 'zustand';
+import { create } from 'zustand';
 import {
     addNewStubsHelper,
     handleDragEndHelper,
@@ -21,15 +20,17 @@ import {
     createNewExclusionHelper,
     removeTagFromStubHelper,
     setExclusionForStubHelper,
+    apiDebouncedUpdaterImplMiddleware,
+    addOrUpdateStudyListStatusHelper,
 } from './ProjectStore.helpers';
 import { persist } from 'zustand/middleware';
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 
-type ProjectStoreActions = {
+export type ProjectStoreActions = {
     updateProjectName: (name: string) => void;
     updateProjectDescription: (description: string) => void;
-    initStore: (projectId: string | undefined) => void;
+    initProjectStore: (projectId: string | undefined) => void;
     initCuration: (cols: string[], isPrisma: boolean) => void;
     handleDrag: (result: DropResult, provided: ResponderProvided) => void;
     createNewExclusion: (
@@ -52,62 +53,8 @@ type ProjectStoreActions = {
     setExclusionForStub: (columnIndex: number, stubId: string, exclusion: ITag | null) => void;
     promoteStub: (columnIndex: number, stubId: string) => void;
     updateExtractionMetadata: (metadata: IExtractionMetadata) => void;
+    addOrUpdateStudyListStatus: (id: string, status: 'COMPLETE' | 'SAVEFORLATER') => void;
 };
-
-type APIDebouncedUpdater = <
-    T extends unknown,
-    Mps extends [StoreMutatorIdentifier, unknown][] = [],
-    Mcs extends [StoreMutatorIdentifier, unknown][] = []
->(
-    f: StateCreator<T, Mps, Mcs>,
-    name?: string
-) => StateCreator<T, Mps, Mcs>;
-
-type APIDebouncedUpdaterImpl = <T extends unknown>(
-    f: StateCreator<T, [], []>,
-    name?: string
-) => StateCreator<T, [], []>;
-
-const apiDebouncedUpdaterImpl: APIDebouncedUpdaterImpl = (f, name) => (set, get, store) => {
-    let timeout: number | NodeJS.Timeout | undefined = undefined;
-
-    const debouncedAPIUpdaterSet: typeof set = (...a) => {
-        if (timeout) clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            const storeData = get() as unknown as INeurosynthProjectReturn & ProjectStoreActions;
-
-            // project store calls set on init so we need to check that a project ID exists
-            if (!storeData.id) return;
-
-            const update: INeurosynthProject = {
-                name: storeData.name,
-                description: storeData.description,
-                provenance: {
-                    ...storeData.provenance,
-                },
-            };
-
-            console.log('update: ', update);
-            localStorage.setItem(`updateCurationIsLoading`, 'true');
-            window.dispatchEvent(new Event('storage'));
-            API.NeurosynthServices.ProjectsService.projectsIdPut(
-                storeData.id || '',
-                update
-            ).finally(() => {
-                localStorage.setItem(`updateCurationIsLoading`, 'false');
-                window.dispatchEvent(new Event('storage'));
-            });
-        }, 4000);
-
-        set(...a);
-    };
-    // replace all state updater functions with our custom implementation
-    store.setState = debouncedAPIUpdaterSet;
-    return f(debouncedAPIUpdaterSet, get, store);
-};
-
-export const apiDebouncedUpdaterImplMiddleware =
-    apiDebouncedUpdaterImpl as unknown as APIDebouncedUpdater;
 
 const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()(
     apiDebouncedUpdaterImplMiddleware(
@@ -202,7 +149,7 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                             },
                         }));
                     },
-                    initStore: async (projectId: string | undefined) => {
+                    initProjectStore: async (projectId: string | undefined) => {
                         if (!projectId) return;
 
                         const currId = useProjectStore.getState().id;
@@ -428,6 +375,24 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                             },
                         }));
                     },
+                    addOrUpdateStudyListStatus: (id, status) => {
+                        set((state) => ({
+                            ...state,
+                            provenance: {
+                                ...state.provenance,
+                                extractionMetadata: {
+                                    ...state.provenance.extractionMetadata,
+                                    studyStatusList: [
+                                        ...addOrUpdateStudyListStatusHelper(
+                                            state.provenance.extractionMetadata.studyStatusList,
+                                            id,
+                                            status
+                                        ),
+                                    ],
+                                },
+                            },
+                        }));
+                    },
                 };
             },
             {
@@ -474,7 +439,7 @@ export const useProjectCurationExclusionTags = () =>
 export const useUpdateProjectName = () => useProjectStore((state) => state.updateProjectName);
 export const useUpdateProjectDescription = () =>
     useProjectStore((state) => state.updateProjectDescription);
-export const useInitStore = () => useProjectStore((state) => state.initStore);
+export const useInitProjectStore = () => useProjectStore((state) => state.initProjectStore);
 export const useClearProvenance = () => useProjectStore((state) => state.clearProvenance);
 export const useHandleCurationDrag = () => useProjectStore((state) => state.handleDrag);
 export const useCreateNewCurationInfoTag = () => useProjectStore((state) => state.createNewInfoTag);
@@ -502,3 +467,5 @@ export const useProjectExtractionAnnotationId = () =>
     useProjectStore((state) => state.provenance.extractionMetadata.annotationId);
 export const useProjectExtractionStudyStatusList = () =>
     useProjectStore((state) => state.provenance.extractionMetadata.studyStatusList);
+export const useProjectExtractionAddOrUpdateStudyListStatus = () =>
+    useProjectStore((state) => state.addOrUpdateStudyListStatus);

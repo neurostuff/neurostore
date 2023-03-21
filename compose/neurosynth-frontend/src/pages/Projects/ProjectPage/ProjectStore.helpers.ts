@@ -1,5 +1,13 @@
 import { DropResult, ResponderProvided } from '@hello-pangea/dnd';
-import { ICurationMetadata, IPRISMAConfig, ISource, ITag } from 'hooks/requests/useGetProjects';
+import {
+    ICurationMetadata,
+    INeurosynthProject,
+    INeurosynthProjectReturn,
+    IPRISMAConfig,
+    ISource,
+    IStudyExtractionStatus,
+    ITag,
+} from 'hooks/requests/useGetProjects';
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 import {
     ENeurosynthSourceIds,
@@ -7,6 +15,9 @@ import {
 } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import { v4 as uuidv4 } from 'uuid';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { StateCreator, StoreMutatorIdentifier } from 'zustand';
+import { ProjectStoreActions } from './ProjectStore';
+import API from 'utils/api';
 
 export const defaultIdentificationSources = {
     neurostore: {
@@ -365,3 +376,81 @@ export const removeTagFromStubHelper = (
     };
     return updatedState;
 };
+
+export const addOrUpdateStudyListStatusHelper = (
+    state: IStudyExtractionStatus[],
+    id: string,
+    newStatus: 'COMPLETE' | 'SAVEFORLATER'
+): IStudyExtractionStatus[] => {
+    const updatedState = [...state];
+
+    const foundStudyStatusIndex = updatedState.findIndex((x) => x.id === id);
+    if (foundStudyStatusIndex < 0) {
+        updatedState.unshift({
+            id: id,
+            status: newStatus,
+        });
+    } else {
+        updatedState[foundStudyStatusIndex] = {
+            ...updatedState[foundStudyStatusIndex],
+            status: newStatus,
+        };
+    }
+
+    return updatedState;
+};
+
+type APIDebouncedUpdater = <
+    T extends unknown,
+    Mps extends [StoreMutatorIdentifier, unknown][] = [],
+    Mcs extends [StoreMutatorIdentifier, unknown][] = []
+>(
+    f: StateCreator<T, Mps, Mcs>,
+    name?: string
+) => StateCreator<T, Mps, Mcs>;
+
+type APIDebouncedUpdaterImpl = <T extends unknown>(
+    f: StateCreator<T, [], []>,
+    name?: string
+) => StateCreator<T, [], []>;
+
+const apiDebouncedUpdaterImpl: APIDebouncedUpdaterImpl = (f, name) => (set, get, store) => {
+    let timeout: number | NodeJS.Timeout | undefined = undefined;
+
+    const debouncedAPIUpdaterSet: typeof set = (...a) => {
+        if (timeout) clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            const storeData = get() as unknown as INeurosynthProjectReturn & ProjectStoreActions;
+
+            // project store calls set on init so we need to check that a project ID exists
+            if (!storeData.id) return;
+
+            const update: INeurosynthProject = {
+                name: storeData.name,
+                description: storeData.description,
+                provenance: {
+                    ...storeData.provenance,
+                },
+            };
+
+            console.log('update: ', update);
+            localStorage.setItem(`updateCurationIsLoading`, 'true');
+            window.dispatchEvent(new Event('storage'));
+            API.NeurosynthServices.ProjectsService.projectsIdPut(
+                storeData.id || '',
+                update
+            ).finally(() => {
+                localStorage.setItem(`updateCurationIsLoading`, 'false');
+                window.dispatchEvent(new Event('storage'));
+            });
+        }, 4000);
+
+        set(...a);
+    };
+    // replace all state updater functions with our custom implementation
+    store.setState = debouncedAPIUpdaterSet;
+    return f(debouncedAPIUpdaterSet, get, store);
+};
+
+export const apiDebouncedUpdaterImplMiddleware =
+    apiDebouncedUpdaterImpl as unknown as APIDebouncedUpdater;

@@ -21,9 +21,9 @@ import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/Mo
 import useGetExtractionSummary, { IExtractionSummary } from 'hooks/useGetExtractionSummary';
 import ExtractionStepStyles from './ExtractionStep.style';
 import { useGetStudysetById } from 'hooks';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
+import { useProjectExtractionStudysetId } from 'pages/Projects/ProjectPage/ProjectStore';
 
 interface IExtractionStep {
     extractionStepHasBeenInitialized: boolean;
@@ -38,21 +38,19 @@ const getPercentageComplete = (extractionSummary: IExtractionSummary): number =>
 
 const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
     const { projectId }: { projectId: string } = useParams();
-    const {
-        data: project,
-        isError: getProjectIsError,
-        isLoading: getProjectIsLoading,
-    } = useGetProjectById(projectId);
+    const studysetId = useProjectExtractionStudysetId();
     const {
         data: studyset,
         isError: getStudysetIsError,
         isLoading: getStudysetIsLoading,
-    } = useGetStudysetById(project?.provenance?.extractionMetadata?.studysetId || undefined);
+    } = useGetStudysetById(studysetId);
     const { extractionStepHasBeenInitialized, disabled, ...stepProps } = props;
     const extractionSummary = useGetExtractionSummary(projectId);
     const history = useHistory();
     const location = useLocation<IProjectPageLocationState>();
 
+    // this is set in the curation phase when we click to move on to the extraction phase.
+    // a flag is sent along with the location data when the page is redirected
     const autoOpenExtractionDialog =
         !extractionStepHasBeenInitialized && !!location?.state?.projectPage?.openCurationDialog;
     const [moveToExtractionDialogIsOpen, setMoveToExtractionDialogIsOpen] =
@@ -67,8 +65,8 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
             </StepLabel>
             <StepContent>
                 <StateHandlerComponent
-                    isError={getProjectIsError || getStudysetIsError}
-                    isLoading={getProjectIsLoading || getStudysetIsLoading}
+                    isError={getStudysetIsError}
+                    isLoading={getStudysetIsLoading}
                 >
                     <Box sx={{ marginLeft: '2rem' }}>
                         <Typography sx={{ color: 'muted.main' }}>

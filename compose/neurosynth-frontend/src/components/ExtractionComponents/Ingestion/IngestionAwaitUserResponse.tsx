@@ -31,7 +31,9 @@ const IngestionAwaitUserResponse: React.FC<{
                 </Typography>
             </Box>
             <Box sx={{ marginTop: '1rem' }}>
-                <Typography variant="h6">Your Study</Typography>
+                <Typography sx={{ fontWeight: 'bold' }} variant="h6">
+                    Your Study
+                </Typography>
                 {stubBeingIngested && (
                     <Box
                         sx={{
@@ -54,7 +56,7 @@ const IngestionAwaitUserResponse: React.FC<{
                 )}
             </Box>
             <Box sx={{ marginTop: '2rem' }}>
-                <Typography variant="h6" gutterBottom sx={{ marginBottom: '0.5rem' }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
                     Existing Studies in the database (click the title to view in neurostore)
                 </Typography>
                 {(existingMatchingStudies || []).map((study, index) => (
