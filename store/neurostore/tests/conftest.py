@@ -278,9 +278,12 @@ def user_data(session, mock_add_users):
                     name=name + "study",
                     user=user,
                     public=public,
+                    metadata_={"topic": "cognition"},
                 )
+                if public:
+                    study.doi = "123"
 
-                analysis = Analysis(user=user)
+                analysis = Analysis(user=user, metadata={"task": "n-back"})
 
                 condition = Condition(
                     name=name + "condition",
