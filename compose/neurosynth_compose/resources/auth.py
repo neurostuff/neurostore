@@ -121,3 +121,7 @@ def decode_token(token):
     raise AuthError(
         {"code": "invalid_header", "description": "Unable to find appropriate key"}, 401
     )
+
+
+def verify_key(*args, **kwargs):
+    pass

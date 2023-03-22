@@ -2,12 +2,17 @@
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 import shortuuid
+import secrets
 
 from ..database import db
 
 
 def generate_id():
     return shortuuid.ShortUUID().random(length=12)
+
+
+def generate_api_key():
+    return secrets.token_urlsafe(16)
 
 
 class BaseMixin(object):
@@ -90,6 +95,9 @@ class MetaAnalysis(BaseMixin, db.Model):
     project_id = db.Column(db.Text, db.ForeignKey("projects.id"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     provenance = db.Column(db.JSON)
+    upload_key = db.Column(
+        db.Text, default=generate_api_key
+    )  # the API key to use for upload to not have to login
 
     specification = relationship("Specification", backref=backref("meta_analyses"))
     studyset = relationship("Studyset", backref=backref("meta_analyses"), lazy="joined")

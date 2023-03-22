@@ -9,7 +9,7 @@ from ....models import (
 from ....resources.tasks import file_upload_neurovault
 
 
-@celery_test
+# @celery_test
 def test_meta_analysis_result(app, auth_client, user_data, meta_analysis_results):
     import time
 
