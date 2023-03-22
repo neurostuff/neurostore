@@ -424,15 +424,9 @@ class NeurovaultFilesView(ObjectView, ListView):
 
         try:
             data["file"] = data["file"].decode("latin1")
-<<<<<<< HEAD
-            task = celery_app.send_task(
-                "neurovault.upload", args=[data, record.id]
-            )  # noqa: F841
-=======
             task = celery_app.send_task(  # noqa: F841
                 "neurovault.upload", args=[data, record.id]
             )
->>>>>>> 969ea8ba558c9083d16e9634eab32c4388b13df9
         except:  # noqa: E722
             setattr(record, "status", "FAILED")
 
