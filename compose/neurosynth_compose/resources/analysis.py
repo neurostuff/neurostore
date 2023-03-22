@@ -273,7 +273,9 @@ class ListView(BaseView):
         #     q = q.join(*attr.attr)
         q = q.order_by(getattr(attr, desc)())
 
-        records = q.paginate(page=args["page"], per_page=args["page_size"], error_out=False).items
+        records = q.paginate(
+            page=args["page"], per_page=args["page_size"], error_out=False
+        ).items
         # check if results should be nested
         nested = True if args.get("nested") else False
         content = self.__class__._schema(
@@ -422,7 +424,9 @@ class NeurovaultFilesView(ObjectView, ListView):
 
         try:
             data["file"] = data["file"].decode("latin1")
-            task = celery_app.send_task("neurovault.upload", args=[data, record.id])  # noqa: F841
+            _ = celery_app.send_task(
+                "neurovault.upload", args=[data, record.id]
+            )  # noqa: F841
         except:  # noqa: E722
             setattr(record, "status", "FAILED")
 

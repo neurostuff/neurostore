@@ -53,7 +53,7 @@ def file_upload_neurovault(self, data, id):
         shutil.rmtree(tmp_dir)
 
     except Exception as exception:  # noqa: E722
-        data['traceback'] = str(exception)
+        data["traceback"] = str(exception)
         data["status"] = "FAILED"
 
     for k, v in data.items():
