@@ -29,7 +29,7 @@ def make_shell_context():
 
 @app.cli.command()
 @click.option("--n-studysets", default=None)
-@click.option("--neurostore-url", default="https://neurostore.xyz")
+@click.option("--neurostore-url", default="https://neurostore.org")
 def ingest_neurostore(n_studysets, neurostore_url):
     if n_studysets is not None:
         n_studysets = int(n_studysets)
@@ -38,7 +38,7 @@ def ingest_neurostore(n_studysets, neurostore_url):
 
 @app.cli.command()
 @click.option("--n-studysets", default=None)
-@click.option("--neurostore-url", default="https://neurostore.xyz")
+@click.option("--neurostore-url", default="https://neurostore.org")
 def create_meta_analyses(n_studysets, neurostore_url):
     if n_studysets is not None:
         n_studysets = int(n_studysets)
