@@ -1,10 +1,9 @@
-import { Box, Chip, TextField } from '@mui/material';
+import { Box, TextField } from '@mui/material';
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
-import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';
-import { ISource, ITag } from 'hooks/requests/useGetProjects';
+import { ISource } from 'hooks/requests/useGetProjects';
 import { ChangeEvent, useState } from 'react';
 import CreateStubStudyStyles from './CreateStubStudy.styles';
 import { v4 as uuidv4 } from 'uuid';

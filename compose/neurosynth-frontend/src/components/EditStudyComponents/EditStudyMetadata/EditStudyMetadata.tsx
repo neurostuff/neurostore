@@ -1,15 +1,26 @@
-import { Typography, Button, Box } from '@mui/material';
+import {
+    Typography,
+    Button,
+    Box,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+} from '@mui/material';
 import EditStudyMetadataStyles from './EditStudyMetadata.styles';
 import EditMetadata from 'components/EditMetadata/EditMetadata';
-import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { IMetadataRowModel } from 'components/EditMetadata';
 import React, { useState, useCallback, useEffect } from 'react';
 import { useUpdateStudy } from 'hooks';
-import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import {
+    useAddOrUpdateMetadata,
+    useDeleteMetadataRow,
+    useStudyMetadata,
+} from 'pages/Studies/StudyStore';
 
 export interface IEditStudyMetadata {
     studyId: string;
-    metadata: any;
+    metadata: IMetadataRowModel[];
 }
 
 export const arrayToMetadata = (arr: IMetadataRowModel[]): { [key: string]: any } => {
@@ -18,13 +29,11 @@ export const arrayToMetadata = (arr: IMetadataRowModel[]): { [key: string]: any 
     return tempObj;
 };
 
-export const metadataToArray = (
-    metadata: { [key: string]: any } | undefined
-): IMetadataRowModel[] => {
+export const metadataToArray = (metadata: object | undefined): IMetadataRowModel[] => {
     const transformedArr = metadata
-        ? Object.keys(metadata).map((row) => ({
-              metadataKey: row,
-              metadataValue: metadata[row],
+        ? Object.keys(metadata).map((key) => ({
+              metadataKey: key,
+              metadataValue: (metadata as unknown as { [key: string]: any })[key],
           }))
         : [];
 
@@ -38,138 +47,58 @@ export const sortMetadataArrayFn = (a: string, b: string) => {
     return lowerCaseA < lowerCaseB ? -1 : lowerCaseA > lowerCaseB ? 1 : 0;
 };
 
-const EditStudyMetadata: React.FC<IEditStudyMetadata> = (props) => {
-    const { isLoading, mutate } = useUpdateStudy();
-    const [updatedEnabled, setUpdateEnabled] = useState(false);
+const EditStudyMetadata: React.FC = (props) => {
+    const metadata = useStudyMetadata();
+    const addOrUpdateMetadata = useAddOrUpdateMetadata();
+    const deleteMetadataRow = useDeleteMetadataRow();
 
-    const [metadataArr, setMetadataArr] = useState<IMetadataRowModel[]>([]);
+    const handleMetadataRowEdit = useCallback(
+        (updatedRow: IMetadataRowModel) => {
+            addOrUpdateMetadata(updatedRow);
+        },
+        [addOrUpdateMetadata]
+    );
 
-    // we dont need to update the UI as the parent component will always be in sync.
-    // save is the only action that updates the metadata, and that will reflect what is already shown on the page
-    useEffect(() => {
-        if (props.metadata) {
-            const metadataArray = metadataToArray(props.metadata).sort((a, b) =>
-                sortMetadataArrayFn(a.metadataKey, b.metadataKey)
-            );
-            setMetadataArr(metadataArray);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    const handleOnSave = () => {
-        const transformedMetadata = arrayToMetadata(metadataArr);
-        mutate(
-            {
-                studyId: props.studyId,
-                study: {
-                    metadata: transformedMetadata,
-                },
-            },
-            {
-                onSuccess: () => {
-                    setUpdateEnabled(false);
-                },
-            }
-        );
-    };
-
-    const handleMetadataRowEdit = useCallback((updatedRow: IMetadataRowModel) => {
-        setMetadataArr((prevState) => {
-            const updatedMetadata = [...prevState];
-            const valueToEditIndexFound = updatedMetadata.findIndex(
-                (x) => x.metadataKey === updatedRow.metadataKey
-            );
-            if (valueToEditIndexFound < 0) return { ...prevState };
-            updatedMetadata[valueToEditIndexFound] = {
-                ...updatedMetadata[valueToEditIndexFound],
-                metadataValue: updatedRow.metadataValue,
-            };
-            setUpdateEnabled(true);
-            return updatedMetadata;
-        });
-    }, []);
-
-    const handleMetadataRowDelete = useCallback((updatedRow: IMetadataRowModel) => {
-        setMetadataArr((prevState) => {
-            // filter returns a new copy of the array
-            const updatedMetadata = prevState.filter(
-                (element) => element.metadataKey !== updatedRow.metadataKey
-            );
-            return updatedMetadata;
-        });
-        setUpdateEnabled(true);
-    }, []);
+    const handleMetadataRowDelete = useCallback(
+        (updatedRow: IMetadataRowModel) => {
+            deleteMetadataRow(updatedRow.metadataKey);
+        },
+        [deleteMetadataRow]
+    );
 
     const handleMetadataRowAdd = useCallback(
         (row: IMetadataRowModel): boolean => {
-            const keyExists = !!metadataArr.find((item) => item.metadataKey === row.metadataKey);
-            if (keyExists) {
-                return false;
-            } else {
-                setMetadataArr((prevState) => {
-                    const updatedState = [{ ...row }, ...prevState];
-                    return updatedState;
-                });
-                setUpdateEnabled(true);
+            const foundIndex = metadata.findIndex((x) => x.metadataKey === row.metadataKey);
+            if (foundIndex < 0) {
+                addOrUpdateMetadata(row);
                 return true;
             }
+            return false;
         },
-        [metadataArr]
+        [addOrUpdateMetadata]
     );
 
-    const handleRevertChanges = (event: React.MouseEvent) => {
-        const tempRevertedChanges = metadataToArray(props.metadata).sort((a, b) =>
-            sortMetadataArrayFn(a.metadataKey, b.metadataKey)
-        );
-        setMetadataArr(tempRevertedChanges);
-        setUpdateEnabled(false);
-    };
-
     return (
-        <NeurosynthAccordion
-            TitleElement={
-                <Box sx={EditStudyMetadataStyles.accordionTitleContainer}>
-                    <Typography variant="h6">
-                        <b>Edit Study Metadata</b>
-                    </Typography>
-                    {updatedEnabled && (
-                        <Typography color="secondary" variant="body2">
-                            unsaved changes
-                        </Typography>
-                    )}
-                </Box>
-            }
-            accordionSummarySx={EditStudyMetadataStyles.accordionSummary}
-            elevation={2}
-            sx={updatedEnabled ? EditStudyMetadataStyles.unsavedChanges : {}}
-        >
-            {metadataArr && (
-                <EditMetadata
-                    onMetadataRowAdd={handleMetadataRowAdd}
-                    onMetadataRowEdit={handleMetadataRowEdit}
-                    onMetadataRowDelete={handleMetadataRowDelete}
-                    metadata={metadataArr}
-                />
-            )}
-            <LoadingButton
-                disabled={!updatedEnabled}
-                onClick={handleOnSave}
-                isLoading={isLoading}
-                color="success"
-                text="Save"
-                variant="contained"
-                sx={{ ...EditStudyMetadataStyles.button, marginRight: '15px' }}
-            />
-            <Button
-                disabled={!updatedEnabled}
-                color="secondary"
-                variant="outlined"
-                onClick={handleRevertChanges}
-                sx={EditStudyMetadataStyles.button}
+        <Accordion elevation={0}>
+            <AccordionSummary
+                sx={{ ':hover': { backgroundColor: '#f7f7f7' } }}
+                expandIcon={<ExpandMoreIcon />}
             >
-                Cancel
-            </Button>
-        </NeurosynthAccordion>
+                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                    Study Metadata
+                </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+                <Box>
+                    <EditMetadata
+                        onMetadataRowAdd={handleMetadataRowAdd}
+                        onMetadataRowEdit={handleMetadataRowEdit}
+                        onMetadataRowDelete={handleMetadataRowDelete}
+                        metadata={metadata}
+                    />
+                </Box>
+            </AccordionDetails>
+        </Accordion>
     );
 };
 

@@ -39,8 +39,10 @@ import { getType } from 'components/EditMetadata';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { sortMetadataArrayFn } from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
+import { useInitStudyStore } from '../StudyStore';
 
 const StudyPage: React.FC = (props) => {
+    const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
     const { startTour } = useGetTour('StudyPage');
     const [dialogIsOpen, setDialogIsOpen] = useState(false);
     const [selectedAnalysis, setSelectedAnalysis] = useState<{
@@ -50,11 +52,15 @@ const StudyPage: React.FC = (props) => {
         analysisIndex: 0,
         analysis: undefined,
     });
+    const initStudyStore = useInitStudyStore();
+
+    useEffect(() => {
+        initStudyStore(studyId);
+    }, [initStudyStore, studyId]);
 
     const [allowEdits, setAllowEdits] = useState(false);
     const history = useHistory();
     const { isAuthenticated, user } = useAuth0();
-    const { projectId, studyId }: { projectId: string; studyId: string } = useParams();
     const { data: project } = useGetProjectById(projectId);
     const { data: annotation } = useGetAnnotationById(
         project?.provenance?.extractionMetadata?.annotationId
@@ -215,7 +221,8 @@ const StudyPage: React.FC = (props) => {
                             This study is owned by <b>neurosynth</b> and is <b>read-only</b>
                         </Typography>
                         <Typography>
-                            Would you like to make your own clone to edit the study?
+                            If you would like to make your own edits, then you need to <b>clone</b>{' '}
+                            the study.
                         </Typography>
                         <Typography>
                             Once you clone, your studyset will contain the new study instead of the

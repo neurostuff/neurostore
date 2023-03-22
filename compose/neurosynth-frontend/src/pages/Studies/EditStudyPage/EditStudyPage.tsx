@@ -1,60 +1,112 @@
-import { Box } from '@mui/material';
-import { useParams } from 'react-router-dom';
-import BackButton from 'components/Buttons/BackButton/BackButton';
+import { Add } from '@mui/icons-material';
+import { Box, Button, Typography } from '@mui/material';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import EditAnalyses from 'components/EditStudyComponents/EditAnalyses/EditAnalyses';
 import EditStudyDetails from 'components/EditStudyComponents/EditStudyDetails/EditStudyDetails';
 import EditStudyMetadata from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useGetStudyById, useGuard } from 'hooks';
-import EditStudyPageStyles from './EditStudyPage.styles';
-import { useAuth0 } from '@auth0/auth0-react';
-import { AnalysisReturn } from 'neurostore-typescript-sdk';
+import { useSnackbar } from 'notistack';
+import { useEffect } from 'react';
+import { useHistory, useParams } from 'react-router-dom';
+import {
+    useClearStudyStore,
+    useInitStudyStore,
+    useIsEdited,
+    useStudyId,
+    useStudyIsLoading,
+    useStudyMetadata,
+    useUpdateStudyInDB,
+} from '../StudyStore';
 
-const EditStudyPage = () => {
-    const params: { projectId: string; studyId: string } = useParams();
-    const { user, isAuthenticated } = useAuth0();
-    const { isLoading, data, isError } = useGetStudyById(params.studyId || '');
+const EditStudyPage: React.FC = (props) => {
+    const { studyId, projectId } = useParams<{ projectId: string; studyId: string }>();
+    const initStudyStore = useInitStudyStore();
+    const clearStudyStore = useClearStudyStore();
+    const hasBeenEdited = useIsEdited();
+    const storeStudyId = useStudyId();
+    const isLoading = useStudyIsLoading();
+    const updateStudyInDB = useUpdateStudyInDB();
+    const snackbar = useSnackbar();
+    const history = useHistory();
 
-    const thisUserOwnsthisStudyset = (data?.user || undefined) === (user?.sub || null);
+    useEffect(() => {
+        clearStudyStore();
+        initStudyStore(studyId);
+    }, [clearStudyStore, initStudyStore, studyId]);
 
-    useGuard(
-        `/studies/${params.studyId}`,
-        isAuthenticated ? 'you can only edit studies that you have cloned' : undefined,
-        !isLoading && !thisUserOwnsthisStudyset
-    );
+    const handleSave = () => {
+        updateStudyInDB()
+            .then((res) => {
+                snackbar.enqueueSnackbar('study saved successfully', { variant: 'success' });
+            })
+            .catch((e) => {
+                snackbar.enqueueSnackbar('there was an error saving the study', {
+                    variant: 'error',
+                });
+            });
+    };
 
     return (
-        <StateHandlerComponent isLoading={isLoading} isError={isError}>
-            <Box sx={EditStudyPageStyles.stickyButtonContainer}>
-                <BackButton
-                    color="secondary"
+        <StateHandlerComponent isError={false} isLoading={!storeStudyId}>
+            <Box
+                sx={{
+                    position: 'sticky',
+                    top: 0,
+                    padding: '1rem 0',
+                    backgroundColor: 'white',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    zIndex: 10,
+                }}
+            >
+                <Button
+                    onClick={() =>
+                        history.push(`/projects/${projectId}/extraction/studies/${studyId}`)
+                    }
+                    disableElevation
                     variant="outlined"
-                    sx={EditStudyPageStyles.button}
-                    text="return to study view"
-                    path={`/projects/${params.projectId}/extraction/studies/${params.studyId}`}
+                    color="error"
+                    sx={{ width: '150px' }}
+                >
+                    cancel
+                </Button>
+                <LoadingButton
+                    text="save"
+                    isLoading={isLoading}
+                    variant="contained"
+                    disabled={!hasBeenEdited}
+                    disableElevation
+                    sx={{ width: '150px' }}
+                    onClick={handleSave}
                 />
             </Box>
-
-            <Box sx={{ marginBottom: '15px', padding: '0 10px' }}>
-                <EditStudyDetails
-                    studyId={params.studyId}
-                    name={data?.name || ''}
-                    description={data?.description || ''}
-                    authors={data?.authors || ''}
-                    doi={data?.doi || ''}
-                    publication={data?.publication || ''}
-                />
+            <Box sx={{ margin: '0.5rem 0' }}>
+                <EditStudyDetails />
             </Box>
-
-            <Box sx={{ marginBottom: '15px', padding: '0 10px' }}>
-                <EditStudyMetadata metadata={data?.metadata || {}} studyId={params.studyId} />
+            <Box sx={{ marginBottom: '0.5rem' }}>
+                <EditStudyMetadata />
             </Box>
-
-            <Box sx={{ marginBottom: '15px', padding: '0 10px', marginLeft: '15px' }}>
-                <EditAnalyses
-                    analyses={data?.analyses as AnalysisReturn[]}
-                    studyId={params.studyId}
-                />
+            <Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography
+                        sx={{
+                            fontWeight: 'bold',
+                            marginLeft: '16px',
+                            marginTop: '1rem',
+                            marginBottom: '1rem',
+                        }}
+                        variant="h6"
+                        gutterBottom
+                    >
+                        Analyses
+                    </Typography>
+                    <Box>
+                        <Button sx={{ width: '150px' }} variant="outlined" startIcon={<Add />}>
+                            analysis
+                        </Button>
+                    </Box>
+                </Box>
+                <EditAnalyses />
             </Box>
         </StateHandlerComponent>
     );

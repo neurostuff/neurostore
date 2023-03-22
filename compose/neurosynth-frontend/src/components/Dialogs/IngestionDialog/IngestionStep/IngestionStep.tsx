@@ -139,6 +139,7 @@ const IngestionStep: React.FC<{ onNext: () => void }> = (props) => {
                     pmid: stub.pmid,
                     authors: stub.authors,
                     year: parseInt(stub.articleYear || '0'),
+                    metadata: stub.articleLink ? { articleLink: stub.articleLink } : {},
                 }
             );
 

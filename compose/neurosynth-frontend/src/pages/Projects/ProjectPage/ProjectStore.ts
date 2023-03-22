@@ -149,7 +149,7 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                             },
                         }));
                     },
-                    initProjectStore: async (projectId: string | undefined) => {
+                    initProjectStore: async (projectId?: string) => {
                         if (!projectId) return;
 
                         const currId = useProjectStore.getState().id;
