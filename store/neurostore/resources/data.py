@@ -190,7 +190,7 @@ class StudiesView(ObjectView, ListView):
         if unique_col:
             q_null = q.filter(getattr(self._model, unique_col).is_(None))
             q_distinct = q.distinct(getattr(self._model, unique_col))
-            q = q.union(q_null, q_distinct)
+            q = q_distinct.union(q_null)
             q = q.order_by(getattr(self._model, unique_col))
         return q
 

@@ -15,7 +15,7 @@ from ..database import db
 
 
 def ingest_neurostore(
-    url="https://neurostore.xyz", n_studysets=None, study_size_limit=1000
+    url="https://neurostore.org", n_studysets=None, study_size_limit=1000
 ):
     request = requests.get(f"{url}/api/studysets/")
     if request.status_code != 200:
@@ -52,7 +52,7 @@ def ingest_neurostore(
         db.session.commit()
 
 
-def create_meta_analyses(url="https://neurostore.xyz", n_studysets=None):
+def create_meta_analyses(url="https://neurostore.org", n_studysets=None):
     ingest_neurostore(url, n_studysets)
     stdsts = Studyset.query.all()
     to_commit = []

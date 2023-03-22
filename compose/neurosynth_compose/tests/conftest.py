@@ -428,10 +428,10 @@ def meta_analysis_results(app, db, user_data, mock_add_users):
 @pytest.fixture(scope="function")
 def neurostore_data(db, mock_add_users):
     try:
-        create_meta_analyses(url="https://neurostore.xyz")
-    except HTTPError:
+        create_meta_analyses(url="https://neurostore.org")
+    except (HTTPError, ConnectionRefusedError):
         pytest.skip(
-            "neurostore.xyz is not responding as expected", allow_module_level=True
+            "neurostore.org is not responding as expected", allow_module_level=True
         )
 
 
