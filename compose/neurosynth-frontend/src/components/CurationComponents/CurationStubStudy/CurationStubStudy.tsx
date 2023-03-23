@@ -31,7 +31,7 @@ const CurationStubStudy: React.FC<
                     ? props.exclusionTag.label
                     : 'uncategorized'}
             </Typography>
-            <Typography noWrap variant="body1" color="primary">
+            <Typography sx={{ fontWeight: 'bold' }} noWrap variant="body1">
                 {props.title}
             </Typography>
             <Typography noWrap>{props.authors}</Typography>

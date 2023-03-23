@@ -1,49 +1,54 @@
-import { Add } from '@mui/icons-material';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import EditAnalyses from 'components/EditStudyComponents/EditAnalyses/EditAnalyses';
+import EditAnalysisAnnotations from 'components/EditStudyComponents/EditAnalyses/EditAnalysisAnnotations/EditAnalysisAnnotations';
 import EditStudyDetails from 'components/EditStudyComponents/EditStudyDetails/EditStudyDetails';
 import EditStudyMetadata from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useSnackbar } from 'notistack';
+import { useProjectExtractionAnnotationId } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useEffect } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import {
+    useAnnotationHasBeenEdited,
     useClearStudyStore,
     useInitStudyStore,
-    useIsEdited,
+    useStudyHasBeenEdited,
     useStudyId,
     useStudyIsLoading,
-    useStudyMetadata,
+    useUpdateAnnotationInDB,
     useUpdateStudyInDB,
 } from '../StudyStore';
 
 const EditStudyPage: React.FC = (props) => {
     const { studyId, projectId } = useParams<{ projectId: string; studyId: string }>();
+    const annotationId = useProjectExtractionAnnotationId();
     const initStudyStore = useInitStudyStore();
     const clearStudyStore = useClearStudyStore();
-    const hasBeenEdited = useIsEdited();
+    const studyHasBeenEdited = useStudyHasBeenEdited();
+    const annotationHasBeenEdited = useAnnotationHasBeenEdited();
     const storeStudyId = useStudyId();
     const isLoading = useStudyIsLoading();
     const updateStudyInDB = useUpdateStudyInDB();
+    const updateAnnotationInDB = useUpdateAnnotationInDB();
     const snackbar = useSnackbar();
     const history = useHistory();
 
     useEffect(() => {
         clearStudyStore();
-        initStudyStore(studyId);
-    }, [clearStudyStore, initStudyStore, studyId]);
+        initStudyStore(studyId, annotationId);
+    }, [clearStudyStore, initStudyStore, studyId, annotationId]);
 
-    const handleSave = () => {
-        updateStudyInDB()
-            .then((res) => {
-                snackbar.enqueueSnackbar('study saved successfully', { variant: 'success' });
-            })
-            .catch((e) => {
-                snackbar.enqueueSnackbar('there was an error saving the study', {
-                    variant: 'error',
-                });
+    const handleSave = async () => {
+        try {
+            if (studyHasBeenEdited) await updateStudyInDB();
+            if (annotationHasBeenEdited) await updateAnnotationInDB();
+            snackbar.enqueueSnackbar('study saved successfully', { variant: 'success' });
+        } catch (e) {
+            snackbar.enqueueSnackbar('there was an error saving the study', {
+                variant: 'error',
             });
+        }
     };
 
     return (
@@ -52,7 +57,7 @@ const EditStudyPage: React.FC = (props) => {
                 sx={{
                     position: 'sticky',
                     top: 0,
-                    padding: '1rem 0',
+                    padding: '1rem',
                     backgroundColor: 'white',
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -66,17 +71,20 @@ const EditStudyPage: React.FC = (props) => {
                     disableElevation
                     variant="outlined"
                     color="error"
-                    sx={{ width: '150px' }}
+                    sx={{ width: '300px' }}
+                    size="large"
                 >
                     cancel
                 </Button>
                 <LoadingButton
+                    size="large"
                     text="save"
                     isLoading={isLoading}
                     variant="contained"
-                    disabled={!hasBeenEdited}
+                    loaderColor="secondary"
+                    disabled={!studyHasBeenEdited && !annotationHasBeenEdited}
                     disableElevation
-                    sx={{ width: '150px' }}
+                    sx={{ width: '300px' }}
                     onClick={handleSave}
                 />
             </Box>
@@ -86,26 +94,10 @@ const EditStudyPage: React.FC = (props) => {
             <Box sx={{ marginBottom: '0.5rem' }}>
                 <EditStudyMetadata />
             </Box>
+            <Box sx={{ marginBottom: '0.5rem' }}>
+                <EditAnalysisAnnotations />
+            </Box>
             <Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography
-                        sx={{
-                            fontWeight: 'bold',
-                            marginLeft: '16px',
-                            marginTop: '1rem',
-                            marginBottom: '1rem',
-                        }}
-                        variant="h6"
-                        gutterBottom
-                    >
-                        Analyses
-                    </Typography>
-                    <Box>
-                        <Button sx={{ width: '150px' }} variant="outlined" startIcon={<Add />}>
-                            analysis
-                        </Button>
-                    </Box>
-                </Box>
                 <EditAnalyses />
             </Box>
         </StateHandlerComponent>

@@ -1,4 +1,4 @@
-import { Typography, Box, Link } from '@mui/material';
+import { Typography, Box, Link, Button } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import React from 'react';
 import TextEdit from 'components/TextEdit/TextEdit';
@@ -67,30 +67,65 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                 />
             </Box>
 
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    margin:
+                        props.stub.neurostoreId || props.stub.articleLink ? '1rem 0 0.5rem 0' : '0',
+                }}
+            >
+                {props.stub.neurostoreId && (
+                    <Button
+                        target="_blank"
+                        href={`/studies/${props.stub.neurostoreId}`}
+                        variant="outlined"
+                        size="small"
+                        color="primary"
+                        sx={{ marginRight: '15px' }}
+                    >
+                        view neurostore study
+                    </Button>
+                )}
+                <TextEdit
+                    sx={{ width: '500px' }}
+                    onSave={handleUpdateStub}
+                    label="articleLink"
+                    textToEdit={props.stub.articleLink}
+                >
+                    {props.stub.articleLink ? (
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            color="secondary"
+                            target="_blank"
+                            href={props.stub.articleLink}
+                        >
+                            view article
+                        </Button>
+                    ) : (
+                        <Typography sx={{ color: 'warning.dark' }}>
+                            No external article link
+                        </Typography>
+                    )}
+                </TextEdit>
+            </Box>
+
             <TextEdit
                 sx={{ input: { fontSize: '1.25rem' } }}
                 onSave={handleUpdateStub}
                 label="title"
                 textToEdit={props.stub.title}
             >
-                {props.stub.articleLink && props.stub.title ? (
-                    <Link
-                        rel="noopener"
-                        underline="hover"
-                        color="primary"
-                        target="_blank"
-                        href={props.stub.articleLink}
-                    >
-                        <Typography variant="h6">{props.stub.title || 'No Title'}</Typography>
-                    </Link>
-                ) : (
-                    <Typography
-                        sx={{ color: props.stub.title ? 'primary.main' : 'warning.dark' }}
-                        variant="h5"
-                    >
-                        {props.stub.title || 'No Title'}
-                    </Typography>
-                )}
+                <Typography
+                    sx={{
+                        color: props.stub.title ? '' : 'warning.dark',
+                        fontWeight: props.stub.title ? 'bold' : 'normal',
+                    }}
+                    variant="h5"
+                >
+                    {props.stub.title || 'No Title'}
+                </Typography>
             </TextEdit>
 
             <TextEdit
@@ -99,10 +134,7 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                 label="authors"
                 textToEdit={props.stub.authors}
             >
-                <Typography
-                    sx={{ color: props.stub.authors ? 'secondary.main' : 'warning.dark' }}
-                    variant="h6"
-                >
+                <Typography sx={{ color: props.stub.authors ? '' : 'warning.dark' }} variant="h6">
                     {props.stub.authors || 'No Authors'}
                 </Typography>
             </TextEdit>

@@ -1,10 +1,8 @@
 import { createFilterOptions, ListItem, ListItemText } from '@mui/material';
 import React, { useState } from 'react';
-import { useCreateCondition, useGetConditions } from 'hooks';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
-import { ConditionReturn } from 'neurostore-typescript-sdk';
-import { useSnackbar } from 'notistack';
+import { IStoreCondition, useConditions, useCreateCondition } from 'pages/Studies/StudyStore';
 
 interface AutoSelectOption {
     id: string;
@@ -21,16 +19,10 @@ const filterOptions = createFilterOptions<AutoSelectOption | undefined>({
 });
 
 const ConditionSelector: React.FC<{
-    onConditionSelected: (condition: ConditionReturn) => void;
+    onConditionSelected: (condition: IStoreCondition) => void;
 }> = (props) => {
-    const { enqueueSnackbar } = useSnackbar();
-    const {
-        isLoading: getConditionsIsLoading,
-        data: conditions,
-        isError: getConditionsIsError,
-    } = useGetConditions();
-    const { mutate, isLoading: createConditionIsLoading } = useCreateCondition();
-
+    const conditions = useConditions();
+    const createCondition = useCreateCondition();
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption>();
     const [dialog, setDialog] = useState({
         isOpen: false,
@@ -38,20 +30,13 @@ const ConditionSelector: React.FC<{
     });
 
     const handleOnCreate = async (name: string, description: string) => {
-        mutate(
-            {
-                name,
-                description,
-            },
-            {
-                onSuccess: (_data, _variables, _context) => {
-                    enqueueSnackbar('condition created', { variant: 'success' });
-                },
-                onError: (data, _variables, _context) => {
-                    enqueueSnackbar('there was an error', { variant: 'error' });
-                },
-            }
-        );
+        const condition = createCondition({
+            name,
+            description,
+            isNew: true,
+        });
+
+        props.onConditionSelected(condition);
     };
 
     const conditionOptions: AutoSelectOption[] = (conditions || []).map((condition) => ({
@@ -64,11 +49,9 @@ const ConditionSelector: React.FC<{
     return (
         <>
             <NeurosynthAutocomplete
-                isLoading={getConditionsIsLoading || createConditionIsLoading}
-                isError={getConditionsIsError}
                 value={selectedValue}
                 required={false}
-                size="medium"
+                size="small"
                 label="add a new condition"
                 options={conditionOptions}
                 isOptionEqualToValue={(option, value) => option?.id === value?.id}

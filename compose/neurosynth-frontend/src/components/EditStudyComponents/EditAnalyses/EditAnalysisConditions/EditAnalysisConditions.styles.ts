@@ -1,4 +1,4 @@
-import { Style } from '../../../../..';
+import { Style } from 'index';
 
 const EditAnalysisConditionsStyles: Style = {
     datagrid: {

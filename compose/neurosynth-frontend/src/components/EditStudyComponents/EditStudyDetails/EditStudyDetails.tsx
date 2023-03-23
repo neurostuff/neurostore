@@ -7,8 +7,6 @@ import {
     TextField,
 } from '@mui/material';
 import React from 'react';
-import TextExpansion from 'components/TextExpansion/TextExpansion';
-import TextEdit from 'components/TextEdit/TextEdit';
 import { StudyDetails, useStudyDetails, useUpdateStudyDetails } from 'pages/Studies/StudyStore';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
@@ -34,9 +32,10 @@ const EditStudyDetails: React.FC = React.memo((props) => {
                 sx={{ ':hover': { backgroundColor: '#f7f7f7' } }}
                 expandIcon={<ExpandMoreIcon />}
             >
-                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                <Typography sx={{ fontWeight: 'bold', marginRight: '10px' }}>
                     Study Details
                 </Typography>
+                <Typography>(name, authors, description, doi, pmid, etc)</Typography>
             </AccordionSummary>
             <AccordionDetails>
                 <Box>

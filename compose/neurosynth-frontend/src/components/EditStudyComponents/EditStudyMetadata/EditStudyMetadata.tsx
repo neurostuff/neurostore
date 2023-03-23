@@ -1,16 +1,7 @@
-import {
-    Typography,
-    Button,
-    Box,
-    Accordion,
-    AccordionSummary,
-    AccordionDetails,
-} from '@mui/material';
-import EditStudyMetadataStyles from './EditStudyMetadata.styles';
+import { Typography, Box, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import EditMetadata from 'components/EditMetadata/EditMetadata';
 import { IMetadataRowModel } from 'components/EditMetadata';
-import React, { useState, useCallback, useEffect } from 'react';
-import { useUpdateStudy } from 'hooks';
+import React, { useCallback } from 'react';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
     useAddOrUpdateMetadata,
@@ -75,7 +66,7 @@ const EditStudyMetadata: React.FC = (props) => {
             }
             return false;
         },
-        [addOrUpdateMetadata]
+        [addOrUpdateMetadata, metadata]
     );
 
     return (
@@ -84,9 +75,7 @@ const EditStudyMetadata: React.FC = (props) => {
                 sx={{ ':hover': { backgroundColor: '#f7f7f7' } }}
                 expandIcon={<ExpandMoreIcon />}
             >
-                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                    Study Metadata
-                </Typography>
+                <Typography sx={{ fontWeight: 'bold' }}>Study Metadata</Typography>
             </AccordionSummary>
             <AccordionDetails>
                 <Box>

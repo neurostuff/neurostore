@@ -12,12 +12,13 @@ import {
     NoteCollectionReturn,
     PointReturn,
 } from 'neurostore-typescript-sdk';
-import { ROW_HEIGHT } from 'components/EditStudyComponents/EditAnalyses/EditAnalysis/EditAnalysisPoints/EditAnalysisPoints';
 import NeurosynthTable, { getValue } from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import DisplayImageTableRow from 'components/Tables/DisplayImageTableRow/DisplayImageTableRow';
 import { NeurostoreAnnotation } from 'utils/api';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { getType } from 'components/EditMetadata';
+
+export const ROW_HEIGHT = 56;
 
 const DisplayAnalysis: React.FC<
     (AnalysisReturn | undefined) & { annotation: NeurostoreAnnotation | undefined }

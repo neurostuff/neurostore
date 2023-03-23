@@ -1,15 +1,44 @@
+import { AxiosResponse } from 'axios';
 import { IMetadataRowModel } from 'components/EditMetadata';
 import {
     arrayToMetadata,
     metadataToArray,
 } from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
-import { StudyReturn } from 'neurostore-typescript-sdk';
-import API from 'utils/api';
+import {
+    AnalysisRequest,
+    AnalysisReturn,
+    ConditionRequest,
+    ConditionReturn,
+    StudyReturn,
+} from 'neurostore-typescript-sdk';
+import API, { NeurostoreAnnotation } from 'utils/api';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import {
+    noteKeyArrToObj,
+    noteKeyObjToArr,
+    NoteKeyType,
+    storeAnalysesToStudyAnalyses,
+    studyAnalysesToStoreAnalyses,
+} from './StudyStore.helpers';
+import { v4 as uuid } from 'uuid';
 
-interface StoreStudy extends Omit<StudyReturn, 'metadata'> {
+export interface IStoreAnalysis extends Omit<AnalysisReturn, 'conditions'> {
+    isNew: boolean;
+    conditions: IStoreCondition[];
+}
+
+export interface IStoreCondition extends ConditionReturn {
+    isNew: boolean;
+}
+
+interface StoreStudy extends Omit<StudyReturn, 'metadata' | 'analyses'> {
     metadata: IMetadataRowModel[];
+    analyses: IStoreAnalysis[];
+}
+
+interface StoreAnnotation extends Omit<NeurostoreAnnotation, 'note_keys'> {
+    note_keys: NoteKeyType[];
 }
 
 export type StudyDetails = Pick<
@@ -18,206 +47,546 @@ export type StudyDetails = Pick<
 >;
 
 export type StudyStoreActions = {
-    initStudyStore: (studyId?: string) => void;
+    initStudyStore: (studyId?: string, annotationId?: string) => void;
     clearStudyStore: () => void;
     updateStudy: (fieldName: keyof StudyDetails, value: string | number) => void;
     updateStudyInDB: () => Promise<void>;
+    updateAnnotationInDB: () => Promise<void>;
     addOrUpdateStudyMetadataRow: (row: IMetadataRowModel) => void;
     deleteStudyMetadataRow: (key: string) => void;
+    addOrUpdateAnalysis: (analysis: IStoreAnalysis) => void;
+    createCondition: (condition: IStoreCondition) => IStoreCondition;
+    addOrUpdateConditionWeightPairForAnalysis: (
+        analysisId: string,
+        condition: IStoreCondition,
+        weight: number
+    ) => void;
+    deleteConditionFromAnalysis: (analysisId: string, conditionId: string) => void;
 };
 
 type StudyStoreMetadata = {
-    isEdited: boolean;
+    studyIsEdited: boolean;
+    studyIsLoading: boolean;
+    annotationIsEdited: boolean;
+    annotationIsLoading: boolean;
+    conditionsIsEdited: boolean;
+    conditionsIsLoading: boolean;
     isError: boolean;
-    isLoading: boolean;
 };
 
-const useStudyStore = create<StoreStudy & StudyStoreMetadata & StudyStoreActions>()(
+const useStudyStore = create<
+    {
+        study: StoreStudy;
+        annotation: StoreAnnotation;
+        conditions: IStoreCondition[];
+        storeMetadata: StudyStoreMetadata;
+    } & StudyStoreActions
+>()(
     persist(
         (set) => {
             return {
-                id: undefined,
-                name: undefined,
-                description: undefined,
-                doi: undefined,
-                pmid: undefined,
-                authors: undefined,
-                year: undefined,
-                publication: undefined,
-                public: undefined,
-                metadata: [],
-                analyses: [],
-                studysets: [],
-                user: undefined,
-                source: undefined,
-                source_id: undefined,
-                source_updated_at: undefined,
-                created_at: undefined,
-                updated_at: undefined,
+                study: {
+                    id: undefined,
+                    name: undefined,
+                    description: undefined,
+                    doi: undefined,
+                    pmid: undefined,
+                    authors: undefined,
+                    year: undefined,
+                    publication: undefined,
+                    public: undefined,
+                    metadata: [],
+                    analyses: [],
+                    studysets: [],
+                    user: undefined,
+                    source: undefined,
+                    source_id: undefined,
+                    source_updated_at: undefined,
+                    created_at: undefined,
+                    updated_at: undefined,
+                },
+                annotation: {
+                    id: undefined,
+                    name: undefined,
+                    description: undefined,
+                    created_at: undefined,
+                    metadata: null,
+                    note_keys: [],
+                    notes: [],
+                    source: undefined,
+                    source_id: undefined,
+                    source_updated_at: undefined,
+                    studyset: undefined,
+                    updated_at: undefined,
+                    user: undefined,
+                },
+                conditions: [],
+                storeMetadata: {
+                    studyIsEdited: false,
+                    annotationIsEdited: false,
+                    studyIsLoading: false,
+                    annotationIsLoading: false,
+                    isError: false,
+                    conditionsIsEdited: false,
+                    conditionsIsLoading: false,
+                },
 
-                isEdited: false,
-                isLoading: false,
-                isError: false,
-
-                initStudyStore: async (studyId) => {
-                    console.log('updating');
-                    if (!studyId) return;
+                initStudyStore: async (studyId, annotationId) => {
+                    if (!studyId || !annotationId) return;
                     set((state) => ({
                         ...state,
                         isLoading: true,
                     }));
                     try {
-                        const res = await API.NeurostoreServices.StudiesService.studiesIdGet(
-                            studyId
+                        const studyRes = await API.NeurostoreServices.StudiesService.studiesIdGet(
+                            studyId,
+                            true
                         );
+                        const annotationRes =
+                            (await API.NeurostoreServices.AnnotationsService.annotationsIdGet(
+                                annotationId
+                            )) as AxiosResponse<NeurostoreAnnotation>;
+                        const conditionsRes =
+                            await API.NeurostoreServices.ConditionsService.conditionsGet();
+
                         set((state) => ({
                             ...state,
-                            ...res.data,
-                            metadata: metadataToArray(res?.data?.metadata || {}),
-                            isEdited: false,
-                            isLoading: false,
+                            study: {
+                                ...state.study,
+                                ...studyRes.data,
+                                analyses: studyAnalysesToStoreAnalyses(
+                                    studyRes.data.analyses as AnalysisReturn[]
+                                ),
+                                metadata: metadataToArray(studyRes?.data?.metadata || {}),
+                            },
+                            annotation: {
+                                ...state.annotation,
+                                ...annotationRes.data,
+                                note_keys: noteKeyObjToArr(annotationRes.data.note_keys),
+                            },
+                            conditions: conditionsRes.data.results?.map((x) => ({
+                                ...x,
+                                isNew: false,
+                            })),
+                            storeMetadata: {
+                                ...state.storeMetadata,
+                                studyIsEdited: false,
+                                annotationIsEdited: false,
+                                studyIsLoading: false,
+                            },
                         }));
                     } catch (e) {
                         set((state) => ({
                             ...state,
-                            isLoading: false,
-                            isError: true,
+                            storeMetadata: {
+                                ...state.storeMetadata,
+                                studyIsLoading: false,
+                                isError: true,
+                            },
                         }));
                     }
                 },
                 clearStudyStore: () => {
                     set((state) => ({
-                        ...state,
-                        id: undefined,
-                        name: undefined,
-                        description: undefined,
-                        doi: undefined,
-                        pmid: undefined,
-                        authors: undefined,
-                        year: undefined,
-                        publication: undefined,
-                        public: undefined,
-                        metadata: [],
-                        analyses: [],
-                        studysets: [],
-                        user: undefined,
-                        source: undefined,
-                        source_id: undefined,
-                        source_updated_at: undefined,
-                        created_at: undefined,
-                        updated_at: undefined,
-
-                        isEdited: false,
+                        study: {
+                            id: undefined,
+                            name: undefined,
+                            description: undefined,
+                            doi: undefined,
+                            pmid: undefined,
+                            authors: undefined,
+                            year: undefined,
+                            publication: undefined,
+                            public: undefined,
+                            storeMetadata: [],
+                            analyses: [],
+                            studysets: [],
+                            user: undefined,
+                            source: undefined,
+                            source_id: undefined,
+                            source_updated_at: undefined,
+                            created_at: undefined,
+                            updated_at: undefined,
+                            metadata: [],
+                        },
+                        annotation: {
+                            id: undefined,
+                            name: undefined,
+                            description: undefined,
+                            created_at: undefined,
+                            metadata: null,
+                            note_keys: [],
+                            notes: [],
+                            source: undefined,
+                            source_id: undefined,
+                            source_updated_at: undefined,
+                            studyset: undefined,
+                            updated_at: undefined,
+                            user: undefined,
+                        },
+                        storeMetadata: {
+                            studyIsEdited: false,
+                            annotationIsEdited: false,
+                            studyIsLoading: false,
+                            annotationIsLoading: false,
+                            conditionsIsEdited: false,
+                            conditionsIsLoading: false,
+                            isError: false,
+                        },
+                        conditions: [],
                     }));
                 },
                 updateStudy: (fieldName, value) => {
                     set((state) => ({
                         ...state,
-                        [fieldName]: value,
-                        isEdited: true,
+                        study: {
+                            ...state.study,
+                            [fieldName]: value,
+                        },
+                        storeMetadata: {
+                            ...state.storeMetadata,
+                            studyIsEdited: true,
+                        },
                     }));
                 },
                 updateStudyInDB: async () => {
                     try {
                         const state = useStudyStore.getState();
-                        if (!state.id) throw new Error('no study id');
+                        if (!state.study.id) throw new Error('no study id');
                         set((state) => ({
                             ...state,
-                            isLoading: true,
+                            storeMetadata: {
+                                ...state.storeMetadata,
+                                studyIsLoading: true,
+                            },
                         }));
-                        const res = await API.NeurostoreServices.StudiesService.studiesIdPut(
-                            state.id,
-                            {
-                                name: state.name,
-                                description: state.description,
-                                doi: state.doi,
-                                pmid: state.pmid,
-                                authors: state.authors,
-                                year: state.year,
-                                publication: state.publication,
-                                metadata: arrayToMetadata(state.metadata),
-                            }
+
+                        await API.NeurostoreServices.StudiesService.studiesIdPut(state.study.id, {
+                            name: state.study.name,
+                            description: state.study.description,
+                            doi: state.study.doi,
+                            pmid: state.study.pmid,
+                            authors: state.study.authors,
+                            year: state.study.year,
+                            publication: state.study.publication,
+                            metadata: arrayToMetadata(state.study.metadata),
+                            analyses: storeAnalysesToStudyAnalyses(state.study.analyses),
+                        });
+
+                        // we want to reset the store with our new data because if we created any new
+                        // analyses, they will now have their own IDs assigned to them by neurostore
+                        const studyRes = await API.NeurostoreServices.StudiesService.studiesIdGet(
+                            state.study.id,
+                            true
                         );
+
                         set((state) => ({
                             ...state,
-                            isEdited: false,
-                            isLoading: false,
+                            study: {
+                                ...studyRes.data,
+                                analyses: studyAnalysesToStoreAnalyses(
+                                    studyRes.data.analyses as StudyReturn[]
+                                ),
+                                metadata: metadataToArray(studyRes?.data?.metadata || {}),
+                            },
+                            storeMetadata: {
+                                ...state.storeMetadata,
+                                studyIsEdited: false,
+                                studyIsLoading: false,
+                            },
                         }));
                     } catch (e) {
                         set((state) => ({
                             ...state,
-                            isLoading: false,
-                            isError: true,
+                            storeMetadata: {
+                                ...state.storeMetadata,
+                                studyIsLoading: false,
+                                isError: true,
+                            },
+                        }));
+                        throw new Error('error updating study');
+                    }
+                },
+                updateAnnotationInDB: async () => {
+                    try {
+                        const state = useStudyStore.getState();
+                        if (!state.annotation.id) throw new Error('no annotation id');
+                        set((state) => ({
+                            ...state,
+                            storeMetadata: {
+                                ...state.storeMetadata,
+                                annotationIsLoading: true,
+                            },
+                        }));
+                        await API.NeurostoreServices.AnnotationsService.annotationsIdPut(
+                            state.annotation.id,
+                            {
+                                name: state.study.name,
+                                description: state.study.description,
+                                note_keys: noteKeyArrToObj(state.annotation.note_keys),
+                                // we update the notes property via the analyses in the study object, not here
+                            }
+                        );
+                        set((state) => ({
+                            ...state,
+                            storeMetadata: {
+                                ...state.storeMetadata,
+                                annotationIsEdited: false,
+                                annotationIsLoading: false,
+                            },
+                        }));
+                    } catch (e) {
+                        set((state) => ({
+                            ...state,
+                            storeMetadata: {
+                                ...state.storeMetadata,
+                                annotationIsLoading: false,
+                                isError: true,
+                            },
                         }));
                         throw new Error('error updating study');
                     }
                 },
                 addOrUpdateStudyMetadataRow: (row) => {
                     set((state) => {
-                        const update = [...state.metadata];
-                        const foundRowIndex = update.findIndex(
+                        const metadataUpdate = [...state.study.metadata];
+                        const foundRowIndex = metadataUpdate.findIndex(
                             (x) => x.metadataKey === row.metadataKey
                         );
                         if (foundRowIndex < 0) {
-                            update.unshift({
+                            metadataUpdate.unshift({
                                 ...row,
                             });
                         } else {
-                            update[foundRowIndex] = {
-                                ...update[foundRowIndex],
+                            metadataUpdate[foundRowIndex] = {
+                                ...metadataUpdate[foundRowIndex],
                                 ...row,
                             };
                         }
 
                         return {
                             ...state,
-                            metadata: update,
-                            isEdited: true,
+                            study: {
+                                ...state.study,
+                                metadata: metadataUpdate,
+                            },
+                            storeMetadata: {
+                                ...state.storeMetadata,
+                                studyIsEdited: true,
+                            },
                         };
                     });
                 },
                 deleteStudyMetadataRow: (id) => {
                     set((state) => {
-                        const update = [...state.metadata];
-                        const foundRowIndex = update.findIndex((x) => x.metadataKey === id);
+                        const metadataUpdate = [...state.study.metadata];
+                        const foundRowIndex = metadataUpdate.findIndex((x) => x.metadataKey === id);
                         if (foundRowIndex < 0) return state;
 
-                        update.splice(foundRowIndex, 1);
+                        metadataUpdate.splice(foundRowIndex, 1);
 
                         return {
                             ...state,
-                            metadata: update,
-                            isEdited: true,
+                            study: {
+                                ...state.study,
+                                metadata: metadataUpdate,
+                            },
+                            storeMetadata: {
+                                ...state.storeMetadata,
+                                studyIsEdited: true,
+                            },
+                        };
+                    });
+                },
+                addOrUpdateAnalysis: (analysis) => {
+                    set((state) => {
+                        const updatedAnalyses = [...state.study.analyses];
+                        const foundAnalysisIndex = updatedAnalyses.findIndex(
+                            (x) => (x.id || null) === (analysis.id || undefined)
+                        );
+                        let annotationIsEdited = false;
+                        if (foundAnalysisIndex < 0) {
+                            updatedAnalyses.unshift({
+                                ...analysis,
+                                isNew: true,
+                                conditions: [],
+                                weights: [],
+                                id: uuid(), // this is a temporary ID until one is assigned via neurostore
+                            });
+                        } else {
+                            updatedAnalyses[foundAnalysisIndex] = {
+                                ...updatedAnalyses[foundAnalysisIndex],
+                                ...analysis,
+                            };
+                        }
+
+                        return {
+                            ...state,
+                            study: {
+                                ...state.study,
+                                analyses: updatedAnalyses,
+                            },
+                            storeMetadata: {
+                                ...state.storeMetadata,
+                                studyIsEdited: true,
+                                annotationIsEdited: annotationIsEdited,
+                            },
+                        };
+                    });
+                },
+                createCondition: (condition) => {
+                    const newCondition = {
+                        ...condition,
+                        id: uuid(),
+                        isNew: true,
+                    };
+
+                    set((state) => ({
+                        ...state,
+                        conditions: [newCondition, ...state.conditions],
+                        storeMetadata: {
+                            ...state.storeMetadata,
+                            studyIsEdited: true,
+                        },
+                    }));
+                    return newCondition;
+                },
+                addOrUpdateConditionWeightPairForAnalysis: (analysisId, condition, weight) => {
+                    set((state) => {
+                        const updatedAnalyses = [...state.study.analyses];
+                        const foundAnalysisIndex = updatedAnalyses.findIndex(
+                            (x) => x.id === analysisId
+                        );
+                        if (foundAnalysisIndex < 0) return state;
+
+                        const updatedWeights = [
+                            ...(updatedAnalyses[foundAnalysisIndex].weights || []),
+                        ];
+                        const updatedConditions = [
+                            ...updatedAnalyses[foundAnalysisIndex].conditions,
+                        ];
+                        const foundConditionIndex = updatedConditions.findIndex(
+                            (x) => (x.id || null) === (condition.id || undefined)
+                        );
+                        if (foundConditionIndex < 0) {
+                            updatedAnalyses[foundAnalysisIndex] = {
+                                ...updatedAnalyses[foundAnalysisIndex],
+                                conditions: [
+                                    {
+                                        ...condition,
+                                    },
+                                    ...updatedAnalyses[foundAnalysisIndex].conditions,
+                                ],
+                                weights: [
+                                    weight,
+                                    ...(updatedAnalyses[foundAnalysisIndex].weights as number[]),
+                                ],
+                            };
+                        } else {
+                            updatedConditions[foundConditionIndex] = {
+                                ...updatedConditions[foundConditionIndex],
+                                ...condition,
+                            };
+                            updatedWeights[foundConditionIndex] = weight;
+
+                            updatedAnalyses[foundAnalysisIndex] = {
+                                ...updatedAnalyses[foundAnalysisIndex],
+                                conditions: updatedConditions,
+                                weights: updatedWeights,
+                            };
+                        }
+
+                        return {
+                            ...state,
+                            storeMetadata: {
+                                ...state.storeMetadata,
+                                studyIsEdited: true,
+                            },
+                            study: {
+                                ...state.study,
+                                analyses: updatedAnalyses,
+                            },
+                        };
+                    });
+                },
+                deleteConditionFromAnalysis: (analysisId, conditionId) => {
+                    set((state) => {
+                        const updatedAnalyses = [...state.study.analyses];
+                        const foundAnalysisIndex = updatedAnalyses.findIndex(
+                            (x) => x.id === analysisId
+                        );
+                        if (foundAnalysisIndex < 0) return state;
+
+                        const foundConditionIndex = updatedAnalyses[
+                            foundAnalysisIndex
+                        ].conditions.findIndex((x) => x.id === conditionId);
+                        if (foundConditionIndex < 0) return state;
+                        const updatedConditions = [
+                            ...updatedAnalyses[foundAnalysisIndex].conditions,
+                        ];
+                        const updatedWeights = [
+                            ...(updatedAnalyses[foundAnalysisIndex].weights as number[]),
+                        ];
+                        updatedConditions.splice(foundConditionIndex, 1);
+                        updatedWeights.splice(foundConditionIndex, 1);
+
+                        updatedAnalyses[foundAnalysisIndex] = {
+                            ...updatedAnalyses[foundAnalysisIndex],
+                            conditions: updatedConditions,
+                            weights: updatedWeights,
+                        };
+
+                        return {
+                            ...state,
+                            study: {
+                                ...state.study,
+                                analyses: updatedAnalyses,
+                            },
+                            storeMetadata: {
+                                ...state.storeMetadata,
+                                studyIsEdited: true,
+                            },
                         };
                     });
                 },
             };
         },
         {
-            name: 'neurosynth',
+            name: 'neurosynth-study',
         }
     )
 );
 
 // study retrieval hooks
-export const useStudyId = () => useStudyStore((state) => state.id);
-export const useStudyIsLoading = () => useStudyStore((state) => state.isLoading);
+export const useStudyId = () => useStudyStore((state) => state.study.id);
+export const useStudyIsLoading = () => useStudyStore((state) => state.storeMetadata.studyIsLoading);
+export const useAnnotationIsLoading = () =>
+    useStudyStore((state) => state.storeMetadata.annotationIsLoading);
+export const useConditionsIsLoading = () =>
+    useStudyStore((state) => state.storeMetadata.conditionsIsLoading);
+export const useStudyHasBeenEdited = () =>
+    useStudyStore((state) => state.storeMetadata.studyIsEdited);
+export const useAnnotationHasBeenEdited = () =>
+    useStudyStore((state) => state.storeMetadata.annotationIsEdited);
+export const useConditionsIsEdited = () =>
+    useStudyStore((state) => state.storeMetadata.conditionsIsEdited);
 export const useStudyDetails = () =>
     useStudyStore(
         (state) =>
             ({
-                name: state.name,
-                description: state.description,
-                authors: state.authors,
-                publication: state.publication,
-                doi: state.doi,
-                year: state.year,
-                pmid: state.pmid,
+                name: state.study.name,
+                description: state.study.description,
+                authors: state.study.authors,
+                publication: state.study.publication,
+                doi: state.study.doi,
+                year: state.study.year,
+                pmid: state.study.pmid,
             } as StudyDetails)
     );
-export const useIsEdited = () => useStudyStore((state) => state.isEdited);
-export const useStudyMetadata = () => useStudyStore((state) => state.metadata);
-export const useStudyAnalyses = () => useStudyStore((state) => state.analyses);
+export const useStudyMetadata = () => useStudyStore((state) => state.study.metadata);
+export const useStudyAnalyses = () => useStudyStore((state) => state.study.analyses);
+export const useAnnotation = () => useStudyStore((state) => state.annotation);
+export const useConditions = () => useStudyStore((state) => state.conditions);
 
 // study action hooks
 export const useInitStudyStore = () => useStudyStore((state) => state.initStudyStore);
@@ -227,358 +596,10 @@ export const useUpdateStudyInDB = () => useStudyStore((state) => state.updateStu
 export const useAddOrUpdateMetadata = () =>
     useStudyStore((state) => state.addOrUpdateStudyMetadataRow);
 export const useDeleteMetadataRow = () => useStudyStore((state) => state.deleteStudyMetadataRow);
-// export type ProjectStoreActions = {
-//     updateProjectName: (name: string) => void;
-//     updateProjectDescription: (description: string) => void;
-//     initProjectStore: (projectId: string | undefined) => void;
-//     initCuration: (cols: string[], isPrisma: boolean) => void;
-//     handleDrag: (result: DropResult, provided: ResponderProvided) => void;
-//     createNewExclusion: (
-// };
-
-// const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()(
-//     apiDebouncedUpdaterImplMiddleware(
-//         persist(
-//             (set) => {
-//                 return {
-//                     // project
-//                     name: '',
-//                     id: undefined,
-//                     meta_analyses: [],
-//                     description: '',
-//                     provenance: {
-//                         curationMetadata: {
-//                             columns: [],
-//                             prismaConfig: {
-//                                 isPrisma: false,
-//                                 identification: {
-//                                     exclusionTags: [],
-//                                 },
-//                                 screening: {
-//                                     exclusionTags: [],
-//                                 },
-//                                 eligibility: {
-//                                     exclusionTags: [],
-//                                 },
-//                             },
-//                             infoTags: [],
-//                             exclusionTags: [],
-//                             identificationSources: [],
-//                         },
-//                         extractionMetadata: {
-//                             studysetId: undefined,
-//                             annotationId: undefined,
-//                             studyStatusList: [],
-//                         },
-//                         filtrationMetadata: {
-//                             filter: {
-//                                 filtrationKey: undefined,
-//                                 type: EPropertyType.NONE,
-//                             },
-//                         },
-//                         algorithmMetadata: {
-//                             specificationId: undefined,
-//                         },
-//                     },
-
-//                     // just for testing purposes
-//                     clearProvenance: async () => {
-//                         const emptyProvenance = {
-//                             curationMetadata: {
-//                                 columns: [],
-//                                 prismaConfig: {
-//                                     isPrisma: false,
-//                                     identification: {
-//                                         exclusionTags: [],
-//                                     },
-//                                     screening: {
-//                                         exclusionTags: [],
-//                                     },
-//                                     eligibility: {
-//                                         exclusionTags: [],
-//                                     },
-//                                 },
-//                                 infoTags: [],
-//                                 exclusionTags: [],
-//                                 identificationSources: [],
-//                             },
-//                             extractionMetadata: {
-//                                 studysetId: undefined,
-//                                 annotationId: undefined,
-//                                 studyStatusList: [],
-//                             },
-//                             filtrationMetadata: {
-//                                 filter: {
-//                                     filtrationKey: undefined,
-//                                     type: EPropertyType.NONE,
-//                                 },
-//                             },
-//                             algorithmMetadata: {
-//                                 specificationId: undefined,
-//                             },
-//                         };
-//                         const id = useProjectStore.getState().id;
-
-//                         await API.NeurosynthServices.ProjectsService.projectsIdPut(id || '', {
-//                             provenance: emptyProvenance,
-//                         });
-//                         set((state) => ({
-//                             ...state,
-//                             provenance: {
-//                                 ...emptyProvenance,
-//                             },
-//                         }));
-//                     },
-//                     initProjectStore: async (projectId: string | undefined) => {
-//                         if (!projectId) return;
-
-//                         const currId = useProjectStore.getState().id;
-//                         if (currId !== projectId) {
-//                             const res = (await API.NeurosynthServices.ProjectsService.projectsIdGet(
-//                                 projectId
-//                             )) as AxiosResponse<INeurosynthProjectReturn>;
-//                             set((state) => ({
-//                                 ...state,
-//                                 ...res.data,
-//                             }));
-//                         }
-//                     },
-//                     initCuration: (cols: string[], isPrisma: boolean) => {
-//                         set((state) => {
-//                             const update = {
-//                                 ...state,
-//                                 provenance: {
-//                                     ...state.provenance,
-//                                     curationMetadata: {
-//                                         ...state.provenance.curationMetadata,
-//                                         ...initCurationHelper(cols, isPrisma),
-//                                     },
-//                                 },
-//                             };
-//                             return update;
-//                         });
-//                     },
-//                     updateProjectName: (name: string) => {
-//                         set((state) => ({
-//                             ...state,
-//                             name: name,
-//                         }));
-//                     },
-//                     updateProjectDescription: (description: string) => {
-//                         set((state) => ({
-//                             ...state,
-//                             description: description,
-//                         }));
-//                     },
-//                     handleDrag: (result, provided) => {
-//                         set((state) => ({
-//                             ...state,
-//                             provenance: {
-//                                 ...state.provenance,
-//                                 curationMetadata: {
-//                                     ...state.provenance.curationMetadata,
-//                                     columns: handleDragEndHelper(
-//                                         state.provenance.curationMetadata.columns,
-//                                         result,
-//                                         provided
-//                                     ),
-//                                 },
-//                             },
-//                         }));
-//                     },
-//                     createNewExclusion: (newExclusion, phase) => {
-//                         set((state) => ({
-//                             ...state,
-//                             provenance: {
-//                                 ...state.provenance,
-//                                 curationMetadata: {
-//                                     ...createNewExclusionHelper(
-//                                         state.provenance.curationMetadata,
-//                                         newExclusion,
-//                                         phase
-//                                     ),
-//                                 },
-//                             },
-//                         }));
-//                     },
-//                     createNewInfoTag: (newTag: ITag) => {
-//                         set((state) => ({
-//                             ...state,
-//                             provenance: {
-//                                 ...state.provenance,
-//                                 curationMetadata: {
-//                                     ...state.provenance.curationMetadata,
-//                                     infoTags: [
-//                                         ...state.provenance.curationMetadata.infoTags,
-//                                         { ...newTag },
-//                                     ],
-//                                 },
-//                             },
-//                         }));
-//                     },
-//                     addTagToStub: (columnIndex, stubId, newTag) => {
-//                         set((state) => ({
-//                             ...state,
-//                             provenance: {
-//                                 ...state.provenance,
-//                                 curationMetadata: {
-//                                     ...state.provenance.curationMetadata,
-//                                     columns: addTagToStubHelper(
-//                                         state.provenance.curationMetadata.columns,
-//                                         columnIndex,
-//                                         stubId,
-//                                         newTag
-//                                     ),
-//                                 },
-//                             },
-//                         }));
-//                     },
-//                     createNewIdentificationSource: (newSource: ISource) => {
-//                         set((state) => ({
-//                             ...state,
-//                             provenance: {
-//                                 ...state.provenance,
-//                                 curationMetadata: {
-//                                     ...state.provenance.curationMetadata,
-//                                     identificationSources: [
-//                                         ...state.provenance.curationMetadata.identificationSources,
-//                                         { ...newSource },
-//                                     ],
-//                                 },
-//                             },
-//                         }));
-//                     },
-//                     addNewStubs: (stubs) => {
-//                         set((state) => ({
-//                             ...state,
-//                             provenance: {
-//                                 ...state.provenance,
-//                                 curationMetadata: {
-//                                     ...state.provenance.curationMetadata,
-//                                     columns: addNewStubsHelper(
-//                                         state.provenance.curationMetadata.columns,
-//                                         stubs
-//                                     ),
-//                                 },
-//                             },
-//                         }));
-//                     },
-//                     updateCurationColumns(columns) {
-//                         set((state) => ({
-//                             ...state,
-//                             provenance: {
-//                                 ...state.provenance,
-//                                 curationMetadata: {
-//                                     ...state.provenance.curationMetadata,
-//                                     columns: columns,
-//                                 },
-//                             },
-//                         }));
-//                     },
-//                     updateStubField: (columnIndex, stubId, field, value) => {
-//                         set((state) => ({
-//                             ...state,
-//                             provenance: {
-//                                 ...state.provenance,
-//                                 curationMetadata: {
-//                                     ...state.provenance.curationMetadata,
-//                                     columns: updateStubFieldHelper(
-//                                         state.provenance.curationMetadata.columns,
-//                                         columnIndex,
-//                                         stubId,
-//                                         field,
-//                                         value
-//                                     ),
-//                                 },
-//                             },
-//                         }));
-//                     },
-//                     removeTagFromStub: (columnIndex, stubId, tagId) => {
-//                         set((state) => ({
-//                             ...state,
-//                             provenance: {
-//                                 ...state.provenance,
-//                                 curationMetadata: {
-//                                     ...state.provenance.curationMetadata,
-//                                     columns: removeTagFromStubHelper(
-//                                         state.provenance.curationMetadata.columns,
-//                                         columnIndex,
-//                                         stubId,
-//                                         tagId
-//                                     ),
-//                                 },
-//                             },
-//                         }));
-//                     },
-//                     setExclusionForStub: (columnIndex, stubId, exclusion) => {
-//                         set((state) => ({
-//                             ...state,
-//                             provenance: {
-//                                 ...state.provenance,
-//                                 curationMetadata: {
-//                                     ...state.provenance.curationMetadata,
-//                                     columns: setExclusionForStubHelper(
-//                                         state.provenance.curationMetadata.columns,
-//                                         columnIndex,
-//                                         stubId,
-//                                         exclusion
-//                                     ),
-//                                 },
-//                             },
-//                         }));
-//                     },
-//                     promoteStub: (columnIndex, stubId) => {
-//                         set((state) => ({
-//                             ...state,
-//                             provenance: {
-//                                 ...state.provenance,
-//                                 curationMetadata: {
-//                                     ...state.provenance.curationMetadata,
-//                                     columns: promoteStubHelper(
-//                                         state.provenance.curationMetadata.columns,
-//                                         columnIndex,
-//                                         stubId
-//                                     ),
-//                                 },
-//                             },
-//                         }));
-//                     },
-//                     updateExtractionMetadata: (metadata) => {
-//                         set((state) => ({
-//                             ...state,
-//                             provenance: {
-//                                 ...state.provenance,
-//                                 extractionMetadata: {
-//                                     ...state.provenance.extractionMetadata,
-//                                     ...metadata,
-//                                 },
-//                             },
-//                         }));
-//                     },
-//                     addOrUpdateStudyListStatus: (id, status) => {
-//                         set((state) => ({
-//                             ...state,
-//                             provenance: {
-//                                 ...state.provenance,
-//                                 extractionMetadata: {
-//                                     ...state.provenance.extractionMetadata,
-//                                     studyStatusList: [
-//                                         ...addOrUpdateStudyListStatusHelper(
-//                                             state.provenance.extractionMetadata.studyStatusList,
-//                                             id,
-//                                             status
-//                                         ),
-//                                     ],
-//                                 },
-//                             },
-//                         }));
-//                     },
-//                 };
-//             },
-//             {
-//                 name: 'neurosynth-project',
-//             }
-//         ),
-//         'neurosynth-store'
-//     )
-// );
+export const useAddOrUpdateAnalysis = () => useStudyStore((state) => state.addOrUpdateAnalysis);
+export const useUpdateAnnotationInDB = () => useStudyStore((state) => state.updateAnnotationInDB);
+export const useCreateCondition = () => useStudyStore((state) => state.createCondition);
+export const useAddOrUpdateConditionWeightPairForAnalysis = () =>
+    useStudyStore((state) => state.addOrUpdateConditionWeightPairForAnalysis);
+export const useDeleteConditionFromAnalysis = () =>
+    useStudyStore((state) => state.deleteConditionFromAnalysis);
