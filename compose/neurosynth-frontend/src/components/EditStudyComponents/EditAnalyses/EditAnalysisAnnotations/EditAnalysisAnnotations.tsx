@@ -12,6 +12,7 @@ import { Add } from '@mui/icons-material';
 import { useAnnotation } from 'pages/Studies/StudyStore';
 import NeurosynthNoRowsOverlay from './NeurosynthNoRowsOverlay';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import EditAnalysesStyles from '../EditAnalyses.styles';
 
 const EditAnalysisAnnotations: React.FC = (props) => {
     const annotation = useAnnotation();
@@ -29,6 +30,7 @@ const EditAnalysisAnnotations: React.FC = (props) => {
     ];
 
     const rows = ((annotation.notes || []) as NoteCollectionReturn[]).map((annotationNote) => ({
+        id: annotationNote.analysis,
         analysis: annotationNote.analysis,
         ...(annotationNote.note || {}),
     }));
@@ -36,35 +38,37 @@ const EditAnalysisAnnotations: React.FC = (props) => {
     const handleRowUpdate = (newRow: any, oldRow: any) => {};
 
     return (
-        <Accordion elevation={0}>
+        <Accordion elevation={0} defaultExpanded>
             <AccordionSummary
-                sx={{ ':hover': { backgroundColor: '#f7f7f7' } }}
-                expandIcon={<ExpandMoreIcon />}
+                sx={EditAnalysesStyles.accordionSummary}
+                expandIcon={<ExpandMoreIcon sx={EditAnalysesStyles.accordionExpandIcon} />}
             >
                 <Typography sx={{ fontWeight: 'bold' }}>Study Annotations</Typography>
             </AccordionSummary>
             <AccordionDetails>
-                <Box
-                    sx={{
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        marginBottom: '1rem',
-                    }}
-                >
-                    <Button variant="outlined" sx={{ width: '150px' }} startIcon={<Add />}>
-                        Annotation
-                    </Button>
-                </Box>
-                <Box sx={{ height: `${56 + (rows.length + 1) * 52}px` }}>
-                    <DataGrid
-                        processRowUpdate={handleRowUpdate}
-                        components={{
-                            NoRowsOverlay: NeurosynthNoRowsOverlay,
+                <Box sx={{ margin: '1rem 0' }}>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            marginBottom: '1rem',
                         }}
-                        rows={rows}
-                        columns={columns}
-                        hideFooter
-                    />
+                    >
+                        <Button variant="outlined" sx={{ width: '150px' }} startIcon={<Add />}>
+                            Annotation
+                        </Button>
+                    </Box>
+                    <Box sx={{ height: `${56 + (rows.length + 1) * 52}px` }}>
+                        <DataGrid
+                            processRowUpdate={handleRowUpdate}
+                            components={{
+                                NoRowsOverlay: NeurosynthNoRowsOverlay,
+                            }}
+                            rows={rows}
+                            columns={columns}
+                            hideFooter
+                        />
+                    </Box>
                 </Box>
             </AccordionDetails>
         </Accordion>

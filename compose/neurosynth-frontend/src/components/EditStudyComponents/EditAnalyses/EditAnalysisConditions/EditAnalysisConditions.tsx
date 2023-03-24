@@ -11,22 +11,28 @@ import React from 'react';
 import ConditionSelector from './ConditionSelector/ConditionSelector';
 import EditAnalysisConditionsStyles from './EditAnalysisConditions.styles';
 import {
-    IStoreAnalysis,
     IStoreCondition,
     useAddOrUpdateConditionWeightPairForAnalysis,
     useDeleteConditionFromAnalysis,
+    useStudyAnalysisConditions,
+    useStudyAnalysisWeights,
 } from 'pages/Studies/StudyStore';
 import { useSnackbar } from 'notistack';
 
-const EditAnalysisConditions: React.FC<IStoreAnalysis> = React.memo((props) => {
-    const { id: analysisId, weights, conditions } = props;
+const EditAnalysisConditions: React.FC<{ analysisId: string }> = React.memo((props) => {
+    const conditions = useStudyAnalysisConditions(props.analysisId);
+    const weights = useStudyAnalysisWeights(props.analysisId);
+
+    console.log('re render');
+    console.log({ conditions, weights });
+
     const addOrUpdateConditionWeightPairForAnalysis =
         useAddOrUpdateConditionWeightPairForAnalysis();
     const deleteConditionFromAnalysis = useDeleteConditionFromAnalysis();
     const { enqueueSnackbar } = useSnackbar();
 
     const handleConditionSelected = (condition: IStoreCondition) => {
-        if (!analysisId) return;
+        if (!props.analysisId) return;
 
         const conditionExistsInTable =
             (conditions || []).findIndex(
@@ -40,7 +46,7 @@ const EditAnalysisConditions: React.FC<IStoreAnalysis> = React.memo((props) => {
             return;
         }
 
-        addOrUpdateConditionWeightPairForAnalysis(analysisId, condition, 1);
+        addOrUpdateConditionWeightPairForAnalysis(props.analysisId, condition, 1);
     };
 
     const handleCellEditCommit: GridEventListener<'cellEditCommit'> = (
@@ -48,20 +54,20 @@ const EditAnalysisConditions: React.FC<IStoreAnalysis> = React.memo((props) => {
         _event: MuiEvent<MuiBaseEvent>,
         _details: GridCallbackDetails
     ) => {
-        if (!analysisId) return;
+        if (!props.analysisId) return;
         const conditionIndex = conditions.findIndex((x) => x.id === params.id);
         if (conditionIndex < 0) return;
         addOrUpdateConditionWeightPairForAnalysis(
-            analysisId,
+            props.analysisId,
             conditions[conditionIndex],
             params.value as number
         );
     };
 
     const handleDeleteCondition = (conditionId: string) => {
-        if (!analysisId) return;
+        if (!props.analysisId) return;
 
-        deleteConditionFromAnalysis(analysisId, conditionId);
+        deleteConditionFromAnalysis(props.analysisId, conditionId);
     };
 
     const conditionWeightsList = (conditions || []).map((condition, index) => ({

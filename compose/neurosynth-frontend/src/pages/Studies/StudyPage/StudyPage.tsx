@@ -149,10 +149,7 @@ const StudyPage: React.FC = (props) => {
     return (
         <StateHandlerComponent isLoading={getStudyIsLoading} isError={getStudyIsError}>
             {isViewingStudyFromProject && (
-                <Box
-                    data-tour="StudyPage-8"
-                    sx={[StudyPageStyles.actionButtonContainer, StudyPageStyles.spaceBelow]}
-                >
+                <Box data-tour="StudyPage-8" sx={[StudyPageStyles.actionButtonContainer]}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                         <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
                             <Breadcrumbs>
@@ -245,15 +242,14 @@ const StudyPage: React.FC = (props) => {
             )}
 
             <Box data-tour="StudyPage-1">
-                <Typography sx={StudyPageStyles.spaceBelow} variant="h6">
+                <Typography variant="h6">
                     <b>{data?.name}</b>
                 </Typography>
-                <Typography sx={StudyPageStyles.spaceBelow} variant="h6">
-                    {data?.authors}
-                </Typography>
+                <Typography>{data?.authors}</Typography>
                 <Box sx={StudyPageStyles.spaceBelow}>
-                    <Typography variant="h6">{data?.publication}</Typography>
-                    {data?.doi && <Typography variant="h6">DOI: {data?.doi}</Typography>}
+                    <Typography>{data?.publication}</Typography>
+                    {data?.doi && <Typography>DOI: {data?.doi}</Typography>}
+                    {data?.pmid && <Typography>PMID: {data?.pmid}</Typography>}
                 </Box>
                 <TextExpansion
                     text={data?.description || ''}

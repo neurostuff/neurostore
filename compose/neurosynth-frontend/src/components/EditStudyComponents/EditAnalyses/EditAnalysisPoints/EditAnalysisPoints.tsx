@@ -1,23 +1,102 @@
 import { Box } from '@mui/material';
-import {
-    DataGrid,
-    GridColumns,
-    GridCellEditCommitParams,
-    MuiEvent,
-    MuiBaseEvent,
-    GridCallbackDetails,
-} from '@mui/x-data-grid';
-import React, { useCallback } from 'react';
-import { useIsFetching } from 'react-query';
-import { useCreatePoint, useDeletePoint, useUpdatePoint, useUpdateAnalysis } from 'hooks';
-import AnalysisPointsHeader from './AnalysisPointsHeader';
-import AnalysisPointsDeleteButton from './AnalysisPointsDeleteButton';
+import React, { useRef } from 'react';
+import { HotTable } from '@handsontable/react';
+import { CellChange, ChangeSource, RangeType } from 'handsontable/common';
+import { registerAllModules } from 'handsontable/registry';
+import { Settings } from 'handsontable/plugins/contextMenu';
+import { useStudyAnalysisPoints, useUpdateAnalysisPoints } from 'pages/Studies/StudyStore';
+import { ColumnSettings } from 'handsontable/settings';
 
 export const ROW_HEIGHT = 56;
 
-const EditAnalysisPoints: React.FC = (props) => {
-    return <div>hello</div>;
+registerAllModules();
+
+const hotTableColHeaders = ['X', 'Y', 'Z', 'Kind', 'Space'];
+const hotTableColumnSettings: ColumnSettings[] = [
+    {
+        validator: 'numeric',
+    },
+    {
+        validator: 'numeric',
+    },
+    {
+        validator: 'numeric',
+    },
+    {},
+    {},
+];
+const hotTableContextMenuSettings: Settings = [
+    'row_above',
+    'row_below',
+    'remove_row',
+    'copy',
+    'cut',
+];
+
+const stripTags = (stringWhichMayHaveHTML: any) => {
+    if (typeof stringWhichMayHaveHTML !== 'string') return '';
+
+    let doc = new DOMParser().parseFromString(stringWhichMayHaveHTML, 'text/html');
+    return doc.body.textContent || '';
 };
+
+const replaceString = (val: string) => {
+    return val.replaceAll('−', '-');
+};
+
+const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props) => {
+    const points = useStudyAnalysisPoints(props.analysisId);
+    const updatedPoints = useUpdateAnalysisPoints();
+    const hotReference = useRef<HotTable>(null);
+
+    const noData = points.length === 0;
+
+    console.log('re render');
+
+    const handlebeforeChange = (changes: (CellChange | null)[], source: ChangeSource) => {};
+
+    const handleBeforePaste = (data: any[][], coords: RangeType[]) => {
+        data.forEach((dataRow, rowIndex) => {
+            dataRow.forEach((value, valueIndex) => {
+                if (typeof value === 'number') return;
+
+                const strippedData = stripTags(value); // strip all HTML tags that were copied over if they exist
+                const replacedData = replaceString(strippedData); // replace minus operator with javascript character code
+                const parsedData = parseInt(replacedData);
+                if (!isNaN(parsedData)) {
+                    data[rowIndex][valueIndex] = parsedData;
+                }
+            });
+        });
+
+        return true;
+    };
+
+    return (
+        <Box>
+            <HotTable
+                // className="htCenter"
+                ref={hotReference}
+                licenseKey="non-commercial-and-evaluation"
+                beforeChange={handlebeforeChange}
+                beforePaste={handleBeforePaste}
+                allowInsertRow
+                allowRemoveColumn={false}
+                allowInvalid={false}
+                minRows={1}
+                height="auto"
+                colWidths={[100, 100, 100, 200, 200]}
+                manualColumnResize
+                manualColumnFreeze
+                allowInsertColumn={false}
+                columns={hotTableColumnSettings}
+                contextMenu={hotTableContextMenuSettings}
+                colHeaders={hotTableColHeaders}
+                data={[[0, 0, 0, '', 5]]}
+            />
+        </Box>
+    );
+});
 
 export default EditAnalysisPoints;
 //     const { isLoading: createPointIsLoading, mutate: createPoint } = useCreatePoint();

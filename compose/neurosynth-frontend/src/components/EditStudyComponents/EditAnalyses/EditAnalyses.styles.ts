@@ -41,6 +41,14 @@ const EditAnalysesStyles: Style = {
             color: 'secondary.main',
         },
     },
+    accordionSummary: {
+        ':hover': { backgroundColor: 'primary.dark' },
+        backgroundColor: 'primary.main',
+        color: 'white',
+    },
+    accordionExpandIcon: {
+        color: 'white',
+    },
 };
 
 export default EditAnalysesStyles;

@@ -1,7 +1,6 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
-import { QueryKey, useQueries, useQuery, UseQueryOptions } from 'react-query';
+import { useQueries, UseQueryOptions } from 'react-query';
 import * as fxparser from 'fast-xml-parser';
-import { useMemo } from 'react';
 const { XMLParser } = fxparser;
 
 type PubMedYN = 'Y' | 'N';

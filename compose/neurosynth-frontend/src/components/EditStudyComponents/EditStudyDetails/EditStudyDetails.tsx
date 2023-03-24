@@ -7,11 +7,28 @@ import {
     TextField,
 } from '@mui/material';
 import React from 'react';
-import { StudyDetails, useStudyDetails, useUpdateStudyDetails } from 'pages/Studies/StudyStore';
+import {
+    StudyDetails,
+    useStudyAuthors,
+    useStudyDescription,
+    useStudyDOI,
+    useStudyName,
+    useStudyPMID,
+    useStudyPublication,
+    useStudyYear,
+    useUpdateStudyDetails,
+} from 'pages/Studies/StudyStore';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import EditAnalysesStyles from '../EditAnalyses/EditAnalyses.styles';
 
 const EditStudyDetails: React.FC = React.memo((props) => {
-    const { name, description, authors, publication, doi, pmid, year } = useStudyDetails();
+    const name = useStudyName();
+    const description = useStudyDescription();
+    const authors = useStudyAuthors();
+    const publication = useStudyPublication();
+    const doi = useStudyDOI();
+    const pmid = useStudyPMID();
+    const year = useStudyYear();
     const updateStudyDetails = useUpdateStudyDetails();
 
     const handleUpdate = (update: string, field: keyof StudyDetails) => {
@@ -29,8 +46,8 @@ const EditStudyDetails: React.FC = React.memo((props) => {
     return (
         <Accordion elevation={0}>
             <AccordionSummary
-                sx={{ ':hover': { backgroundColor: '#f7f7f7' } }}
-                expandIcon={<ExpandMoreIcon />}
+                sx={EditAnalysesStyles.accordionSummary}
+                expandIcon={<ExpandMoreIcon sx={EditAnalysesStyles.accordionExpandIcon} />}
             >
                 <Typography sx={{ fontWeight: 'bold', marginRight: '10px' }}>
                     Study Details
@@ -38,7 +55,7 @@ const EditStudyDetails: React.FC = React.memo((props) => {
                 <Typography>(name, authors, description, doi, pmid, etc)</Typography>
             </AccordionSummary>
             <AccordionDetails>
-                <Box>
+                <Box sx={{ margin: '2rem 0' }}>
                     <TextField
                         label="name"
                         sx={{ width: '100%', marginBottom: '1rem' }}

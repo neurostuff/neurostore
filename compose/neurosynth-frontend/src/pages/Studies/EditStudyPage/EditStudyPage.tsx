@@ -1,4 +1,4 @@
-import { Box, Button } from '@mui/material';
+import { Box, Button, Divider } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import EditAnalyses from 'components/EditStudyComponents/EditAnalyses/EditAnalyses';
 import EditAnalysisAnnotations from 'components/EditStudyComponents/EditAnalyses/EditAnalysisAnnotations/EditAnalysisAnnotations';
@@ -57,11 +57,11 @@ const EditStudyPage: React.FC = (props) => {
                 sx={{
                     position: 'sticky',
                     top: 0,
-                    padding: '1rem',
+                    padding: '1rem 0',
                     backgroundColor: 'white',
                     display: 'flex',
                     justifyContent: 'space-between',
-                    zIndex: 10,
+                    zIndex: 1000,
                 }}
             >
                 <Button
@@ -88,14 +88,17 @@ const EditStudyPage: React.FC = (props) => {
                     onClick={handleSave}
                 />
             </Box>
-            <Box sx={{ margin: '0.5rem 0' }}>
+            <Box>
                 <EditStudyDetails />
+                <Divider />
             </Box>
-            <Box sx={{ marginBottom: '0.5rem' }}>
+            <Box>
                 <EditStudyMetadata />
+                <Divider />
             </Box>
-            <Box sx={{ marginBottom: '0.5rem' }}>
+            <Box>
                 <EditAnalysisAnnotations />
+                <Divider />
             </Box>
             <Box>
                 <EditAnalyses />

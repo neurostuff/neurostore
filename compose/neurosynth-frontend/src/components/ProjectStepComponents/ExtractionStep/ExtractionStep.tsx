@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionBase';
 import useGetExtractionSummary, { IExtractionSummary } from 'hooks/useGetExtractionSummary';
 import ExtractionStepStyles from './ExtractionStep.style';
@@ -51,10 +51,12 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
 
     // this is set in the curation phase when we click to move on to the extraction phase.
     // a flag is sent along with the location data when the page is redirected
-    const autoOpenExtractionDialog =
-        !extractionStepHasBeenInitialized && !!location?.state?.projectPage?.openCurationDialog;
-    const [moveToExtractionDialogIsOpen, setMoveToExtractionDialogIsOpen] =
-        useState(autoOpenExtractionDialog);
+    // const [moveToExtractionDialogIsOpen, setMoveToExtractionDialogIsOpen] = useState(
+    //     !extractionStepHasBeenInitialized && !!location?.state?.projectPage?.openCurationDialog
+    // );
+    const [moveToExtractionDialogIsOpen, setMoveToExtractionDialogIsOpen] = useState(
+        !extractionStepHasBeenInitialized && !!location?.state?.projectPage?.openCurationDialog
+    );
 
     return (
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
@@ -64,6 +66,10 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                 </Typography>
             </StepLabel>
             <StepContent>
+                <MoveToExtractionDialog
+                    isOpen={moveToExtractionDialogIsOpen}
+                    onCloseDialog={() => setMoveToExtractionDialogIsOpen(false)}
+                />
                 <StateHandlerComponent
                     isError={getStudysetIsError}
                     isLoading={getStudysetIsLoading}
@@ -81,10 +87,6 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                             will be used to help filter analyses within your studies
                         </Typography>
                         <Box sx={{ marginTop: '1rem' }}>
-                            <MoveToExtractionDialog
-                                isOpen={moveToExtractionDialogIsOpen}
-                                onCloseDialog={() => setMoveToExtractionDialogIsOpen(false)}
-                            />
                             {extractionStepHasBeenInitialized ? (
                                 <Box sx={[ProjectStepComponentsStyles.stepCard]}>
                                     <Card sx={{ width: '100%', height: '100%' }}>

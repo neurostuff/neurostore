@@ -8,6 +8,7 @@ import {
     useDeleteMetadataRow,
     useStudyMetadata,
 } from 'pages/Studies/StudyStore';
+import EditAnalysesStyles from '../EditAnalyses/EditAnalyses.styles';
 
 export interface IEditStudyMetadata {
     studyId: string;
@@ -72,13 +73,13 @@ const EditStudyMetadata: React.FC = (props) => {
     return (
         <Accordion elevation={0}>
             <AccordionSummary
-                sx={{ ':hover': { backgroundColor: '#f7f7f7' } }}
-                expandIcon={<ExpandMoreIcon />}
+                sx={EditAnalysesStyles.accordionSummary}
+                expandIcon={<ExpandMoreIcon sx={EditAnalysesStyles.accordionExpandIcon} />}
             >
                 <Typography sx={{ fontWeight: 'bold' }}>Study Metadata</Typography>
             </AccordionSummary>
             <AccordionDetails>
-                <Box>
+                <Box sx={{ margin: '2rem 0 1rem 0' }}>
                     <EditMetadata
                         onMetadataRowAdd={handleMetadataRowAdd}
                         onMetadataRowEdit={handleMetadataRowEdit}

@@ -5,10 +5,9 @@ import {
     metadataToArray,
 } from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import {
-    AnalysisRequest,
     AnalysisReturn,
-    ConditionRequest,
     ConditionReturn,
+    PointRequest,
     StudyReturn,
 } from 'neurostore-typescript-sdk';
 import API, { NeurostoreAnnotation } from 'utils/api';
@@ -54,7 +53,7 @@ export type StudyStoreActions = {
     updateAnnotationInDB: () => Promise<void>;
     addOrUpdateStudyMetadataRow: (row: IMetadataRowModel) => void;
     deleteStudyMetadataRow: (key: string) => void;
-    addOrUpdateAnalysis: (analysis: IStoreAnalysis) => void;
+    addOrUpdateAnalysis: (analysis: Partial<IStoreAnalysis>) => void;
     createCondition: (condition: IStoreCondition) => IStoreCondition;
     addOrUpdateConditionWeightPairForAnalysis: (
         analysisId: string,
@@ -62,6 +61,7 @@ export type StudyStoreActions = {
         weight: number
     ) => void;
     deleteConditionFromAnalysis: (analysisId: string, conditionId: string) => void;
+    updateAnalysisPoints: (analysisId: string, points: PointRequest[]) => void;
 };
 
 type StudyStoreMetadata = {
@@ -549,6 +549,30 @@ const useStudyStore = create<
                         };
                     });
                 },
+                updateAnalysisPoints: (analysisId, points) => {
+                    set((state) => {
+                        const updatedAnalyses = [...state.study.analyses];
+                        const foundAnalysisIndex = updatedAnalyses.findIndex(
+                            (x) => x.id === analysisId
+                        );
+                        if (foundAnalysisIndex < 0) return state;
+                        updatedAnalyses[foundAnalysisIndex] = {
+                            ...updatedAnalyses[foundAnalysisIndex],
+                            points: [...points],
+                        };
+                        return {
+                            ...state,
+                            study: {
+                                ...state.study,
+                                analyses: updatedAnalyses,
+                            },
+                            storeMetadata: {
+                                ...state.storeMetadata,
+                                studyIsEdited: true,
+                            },
+                        };
+                    });
+                },
             };
         },
         {
@@ -570,23 +594,69 @@ export const useAnnotationHasBeenEdited = () =>
     useStudyStore((state) => state.storeMetadata.annotationIsEdited);
 export const useConditionsIsEdited = () =>
     useStudyStore((state) => state.storeMetadata.conditionsIsEdited);
-export const useStudyDetails = () =>
-    useStudyStore(
-        (state) =>
-            ({
-                name: state.study.name,
-                description: state.study.description,
-                authors: state.study.authors,
-                publication: state.study.publication,
-                doi: state.study.doi,
-                year: state.study.year,
-                pmid: state.study.pmid,
-            } as StudyDetails)
-    );
+
+export const useStudyName = () => useStudyStore((state) => state.study.name);
+export const useStudyDescription = () => useStudyStore((state) => state.study.description);
+export const useStudyAuthors = () => useStudyStore((state) => state.study.authors);
+export const useStudyPMID = () => useStudyStore((state) => state.study.pmid);
+export const useStudyDOI = () => useStudyStore((state) => state.study.doi);
+export const useStudyPublication = () => useStudyStore((state) => state.study.publication);
+export const useStudyYear = () => useStudyStore((state) => state.study.year);
+
 export const useStudyMetadata = () => useStudyStore((state) => state.study.metadata);
-export const useStudyAnalyses = () => useStudyStore((state) => state.study.analyses);
 export const useAnnotation = () => useStudyStore((state) => state.annotation);
 export const useConditions = () => useStudyStore((state) => state.conditions);
+
+export const useStudyAnalysis = (analysisId?: string) =>
+    useStudyStore((state) => {
+        if (!analysisId) return undefined;
+
+        const foundAnalysis = state.study.analyses.find((x) => x.id === analysisId);
+        if (!foundAnalysis) return undefined;
+        return foundAnalysis;
+    });
+export const useStudyAnalysisName = (analysisId?: string) =>
+    useStudyStore((state) => {
+        if (!analysisId) return '';
+
+        const foundAnalysis = state.study.analyses.find((x) => x.id === analysisId);
+        if (!foundAnalysis) return '';
+        return foundAnalysis.name;
+    });
+export const useStudyAnalysisDescription = (analysisId?: string) =>
+    useStudyStore((state) => {
+        if (!analysisId) return '';
+
+        const foundAnalysis = state.study.analyses.find((x) => x.id === analysisId);
+        if (!foundAnalysis) return '';
+        return foundAnalysis.description;
+    });
+export const useStudyAnalysisConditions = (analysisId?: string) =>
+    useStudyStore((state) => {
+        if (!analysisId) return [];
+
+        const foundAnalysis = state.study.analyses.find((x) => x.id === analysisId);
+        if (!foundAnalysis) return [];
+        return foundAnalysis.conditions;
+    });
+export const useStudyAnalysisWeights = (analysisId?: string) =>
+    useStudyStore((state) => {
+        if (!analysisId) return [];
+
+        const foundAnalysis = state.study.analyses.find((x) => x.id === analysisId);
+        if (!foundAnalysis) return [];
+        return foundAnalysis.weights;
+    });
+export const useStudyAnalysisPoints = (analysisId?: string) =>
+    useStudyStore((state) => {
+        if (!analysisId) return [];
+
+        const foundAnalysis = state.study.analyses.find((x) => x.id === analysisId);
+        if (!foundAnalysis) return [];
+        return foundAnalysis.points || [];
+    });
+export const useNumStudyAnalyses = () => useStudyStore((state) => state.study.analyses.length);
+export const useStudyAnalyses = () => useStudyStore((state) => state.study.analyses);
 
 // study action hooks
 export const useInitStudyStore = () => useStudyStore((state) => state.initStudyStore);
@@ -603,3 +673,4 @@ export const useAddOrUpdateConditionWeightPairForAnalysis = () =>
     useStudyStore((state) => state.addOrUpdateConditionWeightPairForAnalysis);
 export const useDeleteConditionFromAnalysis = () =>
     useStudyStore((state) => state.deleteConditionFromAnalysis);
+export const useUpdateAnalysisPoints = () => useStudyStore((state) => state.updateAnalysisPoints);
