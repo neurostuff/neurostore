@@ -1,3 +1,5 @@
+import pytest
+
 from ...conftest import celery_test
 from ....models import (
     MetaAnalysis,
@@ -9,7 +11,8 @@ from ....models import (
 from ....resources.tasks import file_upload_neurovault
 
 
-# @celery_test
+@pytest.mark.skip(reason="neurovault not currently working.")
+@celery_test
 def test_meta_analysis_result(app, auth_client, user_data, meta_analysis_results):
     import time
 
