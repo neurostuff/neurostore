@@ -95,7 +95,7 @@ class MetaAnalysis(BaseMixin, db.Model):
     project_id = db.Column(db.Text, db.ForeignKey("projects.id"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     provenance = db.Column(db.JSON)
-    upload_key = db.Column(
+    run_key = db.Column(
         db.Text, default=generate_api_key
     )  # the API key to use for upload to not have to login
 

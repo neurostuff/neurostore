@@ -97,6 +97,11 @@ class MockPYNVClient:
         return {"id": image_id}
 
 
+class MockNSSDKClient:
+    def __init__(self, access_token):
+        self.access_token = access_token
+
+
 @pytest.fixture(scope="session")
 def mock_pynv(monkeysession):
     monkeysession.setattr("pynv.Client", MockPYNVClient)

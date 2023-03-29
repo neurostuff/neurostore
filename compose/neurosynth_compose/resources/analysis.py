@@ -347,7 +347,13 @@ class AnnotationReferencesResource(ObjectView):
 
 @view_maker
 class MetaAnalysisResultsView(ObjectView, ListView):
-    _nested = {"neurovault_collection": "NeurovaultCollectionsView"}
+    _nested = {
+        "neurovault_collection": "NeurovaultCollectionsView",
+        "specification_snapshot": "SpecificationsView",
+        "studyset_snapshot": "StudysetsView",
+        "annotation_snapshot": "AnnotationsView",
+    }
+
 
 
 @view_maker

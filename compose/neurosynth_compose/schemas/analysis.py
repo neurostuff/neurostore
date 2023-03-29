@@ -1,5 +1,7 @@
 from marshmallow import fields, Schema, utils, post_load, pre_dump
 
+from neurosynth_compose.models import MetaAnalysis
+
 
 class BytesField(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
@@ -137,11 +139,29 @@ class MetaAnalysisResultSchema(BaseSchema):
     cli_version = fields.String()
     estimator = fields.Nested(EstimatorSchema)
     neurovault_collection = fields.Nested("NeurovaultCollectionSchema")
+    studyset_snapshot = fields.Nested("StudysetSchema", load_only=True)
+    annotation_snapshot = fields.Nested("AnnotationSchema", load_only=True)
 
     @post_load
-    def propagate_meta_analysis_id(self, data, **kwargs):
+    def process_data(self, data, **kwargs):
+        # propogate meta-analysis id to the neurovault collection
         if data.get("neurovault_collection", None):
             data["neurovault_collection"]["meta_analysis_id"] = data["meta_analysis_id"]
+
+        # get meta-analysis object
+        ma = MetaAnalysis.query.filter_by(id=data['meta_analysis_id'])
+        # place the snapshots into their appropriate location
+        if data.get("studyset_snapshot"):
+            data['studyset_snapshot'] = {
+                'id': ma.internal_studyset_id,
+                'snapshot': data['studyset_snapshot']
+            }
+
+        if data.get("annotation_snapshot"):
+            data['annotation_snapshot'] = {
+                'id': ma.internal_annotation_id,
+                'snapshot': data['annotation_snapshot']
+            }
 
         return data
 
@@ -168,6 +188,7 @@ class MetaAnalysisSchema(BaseSchema):
     internal_annotation_id = fields.Pluck(
         AnnotationSchema, "id", load_only=True, attribute="annotation"
     )
+    run_key = fields.String(dump_only=True)
     results = StringOrNested(MetaAnalysisResultSchema, many=True)
 
 
