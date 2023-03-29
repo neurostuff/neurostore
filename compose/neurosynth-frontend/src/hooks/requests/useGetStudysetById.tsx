@@ -6,7 +6,7 @@ import API from 'utils/api';
 
 const useGetStudysetById = (studysetId?: string, nested?: boolean) => {
     const { enqueueSnackbar } = useSnackbar();
-    const { data, isLoading, isError, error } = useQuery<
+    const { data, isLoading, isError, error, refetch, isRefetching } = useQuery<
         AxiosResponse<StudysetReturn>,
         AxiosError,
         StudysetReturn,
@@ -32,6 +32,8 @@ const useGetStudysetById = (studysetId?: string, nested?: boolean) => {
         isLoading,
         isError,
         error,
+        refetch,
+        isRefetching,
     };
 };
 

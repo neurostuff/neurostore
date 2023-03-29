@@ -17,6 +17,7 @@ export interface IAddMetadataRowModel {
     keyPlaceholderText?: string;
     showToggleType?: boolean;
     valuePlaceholderText?: string;
+    showMetadataValueInput?: boolean;
     onAddMetadataRow: (row: IMetadataRowModel) => boolean;
 }
 

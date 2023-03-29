@@ -2,6 +2,7 @@ import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { useState } from 'react';
 import BaseDialog, { IDialog } from '../BaseDialog';
+import MoveToExtractionCreateAnnotation from './MoveToExtractionCreateAnnotation/MoveToExtractionCreateAnnotation';
 import MoveToExtractionCreateStudyset from './MoveToExtractionCreateStudyset/MoveToExtractionCreateStudyset';
 import MoveToExtractionIngest from './MoveToExtractionIngest/MoveToExtractionIngest';
 
@@ -38,6 +39,9 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                         <StepLabel>Create Studyset</StepLabel>
                     </Step>
                     <Step>
+                        <StepLabel>Create Annotations</StepLabel>
+                    </Step>
+                    <Step>
                         <StepLabel>Ingest</StepLabel>
                     </Step>
                 </Stepper>
@@ -46,6 +50,9 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                         <MoveToExtractionCreateStudyset onNavigate={handleNavigate} />
                     )}
                     {activeStep === 1 && (
+                        <MoveToExtractionCreateAnnotation onNavigate={handleNavigate} />
+                    )}
+                    {activeStep === 2 && (
                         <MoveToExtractionIngest
                             onCloseDialog={handleCloseDialog}
                             onNavigate={handleNavigate}

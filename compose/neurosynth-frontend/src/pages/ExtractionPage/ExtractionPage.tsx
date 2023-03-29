@@ -4,7 +4,7 @@ import TextEdit from 'components/TextEdit/TextEdit';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import CheckIcon from '@mui/icons-material/Check';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
-import { useGetStudysetById, useUpdateStudyset } from 'hooks';
+import { useGetAnnotationById, useGetStudysetById, useUpdateStudyset } from 'hooks';
 import { useEffect, useState } from 'react';
 import { NavLink, useHistory, useLocation, useParams } from 'react-router-dom';
 import { StudyReturn } from 'neurostore-typescript-sdk';
@@ -12,6 +12,7 @@ import StudyListItem from 'components/ExtractionComponents/StudyListItem';
 import {
     useInitProjectStore,
     useProjectCurationColumn,
+    useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectExtractionStudyStatusList,
     useProjectName,
@@ -19,6 +20,7 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { resolveStudysetAndCurationDifferences } from 'components/ExtractionComponents/Ingestion/helpers/utils';
 import ExtractionReconcileDialog from 'components/Dialogs/ExtractionReconcileDialog/ExtractionReconcileDialog';
+import EditAnnotations from 'components/EditAnnotations/EditAnnotations';
 
 export enum ESelectedChip {
     'COMPLETED' = 'completed',
@@ -44,6 +46,7 @@ const ExtractionPage: React.FC = (props) => {
 
     const projectName = useProjectName();
     const studysetId = useProjectExtractionStudysetId();
+    const annotationId = useProjectExtractionAnnotationId();
     const studyStatusList = useProjectExtractionStudyStatusList();
     const initProjectStore = useInitProjectStore();
     const numColumns = useProjectNumCurationColumns();
@@ -58,6 +61,8 @@ const ExtractionPage: React.FC = (props) => {
         isLoading: getStudysetIsLoading,
         isError: getStudysetIsError,
     } = useGetStudysetById(studysetId, true);
+
+    const { data, isLoading, isError } = useGetAnnotationById(annotationId);
     const { mutate } = useUpdateStudyset();
 
     const [fieldBeingUpdated, setFieldBeingUpdated] = useState('');
@@ -265,49 +270,56 @@ const ExtractionPage: React.FC = (props) => {
                         </TextEdit>
                     </Box>
                 </Box>
-                <Box sx={{ marginTop: '1rem' }}>
-                    <Chip
-                        size="medium"
-                        onClick={() => handleSelectChip(ESelectedChip.UNCATEGORIZED)}
-                        color="warning"
-                        sx={{ marginRight: '8px' }}
-                        variant={
-                            currentChip === ESelectedChip.UNCATEGORIZED ? 'filled' : 'outlined'
-                        }
-                        icon={<QuestionMarkIcon />}
-                        label="Uncategorized"
-                    />
-                    <Chip
-                        size="medium"
-                        onClick={() => handleSelectChip(ESelectedChip.SAVEDFORLATER)}
-                        variant={
-                            currentChip === ESelectedChip.SAVEDFORLATER ? 'filled' : 'outlined'
-                        }
-                        color="info"
-                        sx={{ marginRight: '8px' }}
-                        icon={<BookmarkIcon />}
-                        label="Save for later"
-                    />
-                    <Chip
-                        size="medium"
-                        onClick={() => handleSelectChip(ESelectedChip.COMPLETED)}
-                        variant={currentChip === ESelectedChip.COMPLETED ? 'filled' : 'outlined'}
-                        color="success"
-                        sx={{ marginRight: '8px' }}
-                        icon={<CheckIcon />}
-                        label="Completed"
-                    />
-                </Box>
-                <Box
-                    sx={{
-                        margin: '1rem 0',
-                    }}
-                >
+                <Box sx={{ margin: '1rem 0', display: 'flex', justifyContent: 'space-between' }}>
+                    <Box>
+                        <Chip
+                            size="medium"
+                            onClick={() => handleSelectChip(ESelectedChip.UNCATEGORIZED)}
+                            color="warning"
+                            sx={{ marginRight: '8px' }}
+                            variant={
+                                currentChip === ESelectedChip.UNCATEGORIZED ? 'filled' : 'outlined'
+                            }
+                            icon={<QuestionMarkIcon />}
+                            label="Uncategorized"
+                        />
+                        <Chip
+                            size="medium"
+                            onClick={() => handleSelectChip(ESelectedChip.SAVEDFORLATER)}
+                            variant={
+                                currentChip === ESelectedChip.SAVEDFORLATER ? 'filled' : 'outlined'
+                            }
+                            color="info"
+                            sx={{ marginRight: '8px' }}
+                            icon={<BookmarkIcon />}
+                            label="Save for later"
+                        />
+                        <Chip
+                            size="medium"
+                            onClick={() => handleSelectChip(ESelectedChip.COMPLETED)}
+                            variant={
+                                currentChip === ESelectedChip.COMPLETED ? 'filled' : 'outlined'
+                            }
+                            color="success"
+                            sx={{ marginRight: '8px' }}
+                            icon={<CheckIcon />}
+                            label="Completed"
+                        />
+                    </Box>
                     <Box>
                         <Typography sx={{ textAlign: 'end' }} variant="h6">
                             {studiesDisplayed.length} studies
                         </Typography>
                     </Box>
+                </Box>
+                <Box>
+                    <EditAnnotations />
+                </Box>
+                <Box
+                    sx={{
+                        marginBottom: '1rem',
+                    }}
+                >
                     <Box>
                         {studiesDisplayed.map((study, index) => (
                             <StudyListItem

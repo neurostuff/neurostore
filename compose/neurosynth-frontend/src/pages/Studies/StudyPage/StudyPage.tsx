@@ -40,7 +40,6 @@ import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthT
 import { sortMetadataArrayFn } from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { useInitStudyStore } from '../StudyStore';
-import { useProjectExtractionAnnotationId } from 'pages/Projects/ProjectPage/ProjectStore';
 
 const StudyPage: React.FC = (props) => {
     const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
@@ -53,12 +52,11 @@ const StudyPage: React.FC = (props) => {
         analysisIndex: 0,
         analysis: undefined,
     });
-    const annotationId = useProjectExtractionAnnotationId();
     const initStudyStore = useInitStudyStore();
 
     useEffect(() => {
-        initStudyStore(studyId, annotationId);
-    }, [initStudyStore, studyId, annotationId]);
+        initStudyStore(studyId);
+    }, [initStudyStore, studyId]);
 
     const [allowEdits, setAllowEdits] = useState(false);
     const history = useHistory();

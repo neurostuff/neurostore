@@ -36,13 +36,15 @@ const StudyListItem: React.FC<StudyReturn & { currentSelectedChip: ESelectedChip
         <Box sx={StudyListItemStyles.listItem}>
             <Box sx={{ width: 'calc(100% - 80px)' }}>
                 <Box onClick={handleClick} sx={{ padding: '0 1rem' }}>
-                    <Typography color="primary" variant="h5">
+                    <Typography sx={{ fontWeight: 'bold' }}>
                         {`${props.year ? `(${props.year}) ` : ''}${props.name}`}
                     </Typography>
-                    <Typography color="secondary">{props.authors}</Typography>
+                    <Typography>{props.authors}</Typography>
                     <Typography>Journal: {props.publication}</Typography>
-                    <Typography>DOI: {props.doi}</Typography>
-                    <Typography>PMID: {props.pmid}</Typography>
+                    <Box sx={{ display: 'flex' }}>
+                        <Typography sx={{ width: '220px' }}>PMID: {props.pmid}</Typography>
+                        <Typography>DOI: {props.doi}</Typography>
+                    </Box>
                 </Box>
             </Box>
             <Box

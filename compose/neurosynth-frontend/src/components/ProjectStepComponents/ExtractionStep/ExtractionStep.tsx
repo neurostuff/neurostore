@@ -156,7 +156,12 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                                 </Box>
                                             </Box>
                                         </CardContent>
-                                        <CardActions>
+                                        <CardActions
+                                            sx={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                            }}
+                                        >
                                             <Button
                                                 onClick={() =>
                                                     history.push(
@@ -167,6 +172,7 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                             >
                                                 continue editing
                                             </Button>
+                                            <Button color="success">Mark all as complete</Button>
                                         </CardActions>
                                     </Card>
                                 </Box>

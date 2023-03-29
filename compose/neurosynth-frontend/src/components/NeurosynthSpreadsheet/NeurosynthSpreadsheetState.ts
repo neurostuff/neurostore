@@ -10,6 +10,7 @@ import styles from './NeurosynthSpreadsheet.module.css';
 import { numericRenderer, textRenderer } from 'handsontable/renderers';
 import { renderToString } from 'react-dom/server';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import { registerAllModules } from 'handsontable/registry';
 
 interface IStudyTitleRow {
     publication: string;
@@ -17,6 +18,8 @@ interface IStudyTitleRow {
     authors: string;
     year: number | undefined;
 }
+
+registerAllModules();
 
 class NeurosynthSpreadsheetState {
     private hotTableRef;

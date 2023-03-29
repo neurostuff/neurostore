@@ -1,7 +1,7 @@
 import { Box, Link, TextField, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { useCreateAnnotation, useCreateStudyset } from 'hooks';
+import { useCreateStudyset } from 'hooks';
 import { useSnackbar } from 'notistack';
 import { useUpdateExtractionMetadata } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
@@ -13,8 +13,6 @@ const MoveToExtractionCreateStudyset: React.FC<{
     const { projectId }: { projectId: string | undefined } = useParams();
     const updateExtractionMetadata = useUpdateExtractionMetadata();
     const { mutateAsync: createStudyset, isLoading: createStudysetIsLoading } = useCreateStudyset();
-    const { mutateAsync: createAnnotation, isLoading: createAnnotationIsLoading } =
-        useCreateAnnotation();
     const { enqueueSnackbar } = useSnackbar();
     const [studysetDetails, setStudysetDetails] = useState({
         name: '',
@@ -30,26 +28,8 @@ const MoveToExtractionCreateStudyset: React.FC<{
             const newStudysetId = newStudyset.data.id;
             if (!newStudysetId) throw new Error('expected a studyset id but did not receive one');
 
-            const newAnnotation = await createAnnotation({
-                source: 'neurosynth',
-                sourceId: undefined,
-                annotation: {
-                    name: `${studysetDetails.name} Annotation`,
-                    description: `Annotation for studyset: ${studysetDetails.name}`,
-                    note_keys: {
-                        included: 'boolean', // default note key
-                    },
-                    studyset: newStudysetId,
-                },
-            });
-
-            const newAnnotationId = newAnnotation.data.id;
-            if (!newAnnotationId)
-                throw new Error('expected an annotation id but did not receive one');
-
             updateExtractionMetadata({
                 studysetId: newStudysetId,
-                annotationId: newAnnotationId,
                 studyStatusList: [],
             });
 
@@ -146,7 +126,7 @@ const MoveToExtractionCreateStudyset: React.FC<{
                     text="create studyset"
                     onClick={handleCreateStudyset}
                     loaderColor="secondary"
-                    isLoading={createStudysetIsLoading || createAnnotationIsLoading}
+                    isLoading={createStudysetIsLoading}
                     variant="contained"
                 />
             </Box>

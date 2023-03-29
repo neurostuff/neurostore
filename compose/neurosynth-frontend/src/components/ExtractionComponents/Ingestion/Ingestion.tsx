@@ -3,7 +3,7 @@
 
 import { Box } from '@mui/material';
 import Typography from '@mui/material/Typography';
-import NavigationButtons from 'components/Buttons/NavigationButtons/NavigationButtons';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import { useGetStudysetById } from 'hooks';
@@ -29,7 +29,7 @@ const Ingestion: React.FC<{
     const studysetId = useProjectExtractionStudysetId();
     const numColumns = useProjectNumCurationColumns();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
-    const { data: studyset } = useGetStudysetById(studysetId, false);
+    const { data: studyset, refetch, isRefetching } = useGetStudysetById(studysetId, false);
     const updateStubField = useUpdateStubField();
 
     const [currentIngestionState, setCurrentIngestionState] = useState<{
@@ -214,7 +214,8 @@ const Ingestion: React.FC<{
         }
     };
 
-    const handleButtonClick = () => {
+    const handleButtonClick = async () => {
+        await refetch();
         props.onComplete();
     };
 
@@ -273,12 +274,14 @@ const Ingestion: React.FC<{
                             from the studyset
                         </Typography>
                     )}
-                    <Box sx={{ marginTop: '1rem' }}>
-                        <NavigationButtons
-                            prevButtonDisabled
-                            nextButtonText="complete"
-                            nextButtonStyle="contained"
-                            onButtonClick={handleButtonClick}
+                    <Box sx={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                        <LoadingButton
+                            sx={{ width: '107px' }}
+                            loaderColor="secondary"
+                            isLoading={isRefetching}
+                            text="complete"
+                            variant="contained"
+                            onClick={handleButtonClick}
                         />
                     </Box>
                 </Box>

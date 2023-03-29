@@ -52,7 +52,7 @@ export type ProjectStoreActions = {
     removeTagFromStub: (columnIndex: number, stubId: string, tagId: string) => void;
     setExclusionForStub: (columnIndex: number, stubId: string, exclusion: ITag | null) => void;
     promoteStub: (columnIndex: number, stubId: string) => void;
-    updateExtractionMetadata: (metadata: IExtractionMetadata) => void;
+    updateExtractionMetadata: (metadata: Partial<IExtractionMetadata>) => void;
     addOrUpdateStudyListStatus: (id: string, status: 'COMPLETE' | 'SAVEFORLATER') => void;
 };
 
