@@ -1,10 +1,10 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import NeurosynthSpreadsheet from 'components/NeurosynthSpreadsheet/NeurosynthSpreadsheet';
 import { EPropertyType } from 'components/EditMetadata';
 import { NoteCollectionReturn } from '../../neurostore-typescript-sdk';
 import HotSettingsBuilder from './HotSettingsBuilder';
+import NeurosynthSpreadsheet from './NeurosynthSpreadsheet';
 import NeurosynthSpreadsheetHelper from './NeurosynthSpreadsheetHelper';
 import NeurosynthSpreadsheetState from './NeurosynthSpreadsheetState';
 

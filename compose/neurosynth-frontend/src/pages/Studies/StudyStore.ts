@@ -1,4 +1,3 @@
-import { AxiosResponse } from 'axios';
 import { IMetadataRowModel } from 'components/EditMetadata';
 import {
     arrayToMetadata,
@@ -10,14 +9,10 @@ import {
     PointRequest,
     StudyReturn,
 } from 'neurostore-typescript-sdk';
-import API, { NeurostoreAnnotation } from 'utils/api';
+import API from 'utils/api';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import {
-    NoteKeyType,
-    storeAnalysesToStudyAnalyses,
-    studyAnalysesToStoreAnalyses,
-} from './StudyStore.helpers';
+import { storeAnalysesToStudyAnalyses, studyAnalysesToStoreAnalyses } from './StudyStore.helpers';
 import { v4 as uuid } from 'uuid';
 
 export interface IStoreAnalysis extends Omit<AnalysisReturn, 'conditions'> {
@@ -34,10 +29,6 @@ interface StoreStudy extends Omit<StudyReturn, 'metadata' | 'analyses'> {
     analyses: IStoreAnalysis[];
 }
 
-// interface StoreAnnotation extends Omit<NeurostoreAnnotation, 'note_keys'> {
-//     note_keys: NoteKeyType[];
-// }
-
 export type StudyDetails = Pick<
     StudyReturn,
     'name' | 'description' | 'publication' | 'authors' | 'doi' | 'pmid' | 'year'
@@ -48,7 +39,6 @@ export type StudyStoreActions = {
     clearStudyStore: () => void;
     updateStudy: (fieldName: keyof StudyDetails, value: string | number) => void;
     updateStudyInDB: () => Promise<void>;
-    // updateAnnotationInDB: () => Promise<void>;
     addOrUpdateStudyMetadataRow: (row: IMetadataRowModel) => void;
     deleteStudyMetadataRow: (key: string) => void;
     addOrUpdateAnalysis: (analysis: Partial<IStoreAnalysis>) => void;
@@ -65,8 +55,6 @@ export type StudyStoreActions = {
 type StudyStoreMetadata = {
     studyIsEdited: boolean;
     studyIsLoading: boolean;
-    // annotationIsEdited: boolean;
-    // annotationIsLoading: boolean;
     conditionsIsEdited: boolean;
     conditionsIsLoading: boolean;
     isError: boolean;
@@ -102,32 +90,14 @@ const useStudyStore = create<
                     created_at: undefined,
                     updated_at: undefined,
                 },
-                // annotation: {
-                //     id: undefined,
-                //     name: undefined,
-                //     description: undefined,
-                //     created_at: undefined,
-                //     metadata: null,
-                //     note_keys: [],
-                //     notes: [],
-                //     source: undefined,
-                //     source_id: undefined,
-                //     source_updated_at: undefined,
-                //     studyset: undefined,
-                //     updated_at: undefined,
-                //     user: undefined,
-                // },
                 conditions: [],
                 storeMetadata: {
                     studyIsEdited: false,
                     studyIsLoading: false,
-                    // annotationIsEdited: false,
-                    // annotationIsLoading: false,
                     isError: false,
                     conditionsIsEdited: false,
                     conditionsIsLoading: false,
                 },
-
                 initStudyStore: async (studyId) => {
                     if (!studyId) return;
                     set((state) => ({
@@ -159,7 +129,6 @@ const useStudyStore = create<
                             storeMetadata: {
                                 ...state.storeMetadata,
                                 studyIsEdited: false,
-                                annotationIsEdited: false,
                                 studyIsLoading: false,
                             },
                         }));
@@ -197,26 +166,9 @@ const useStudyStore = create<
                             updated_at: undefined,
                             metadata: [],
                         },
-                        annotation: {
-                            id: undefined,
-                            name: undefined,
-                            description: undefined,
-                            created_at: undefined,
-                            metadata: null,
-                            note_keys: [],
-                            notes: [],
-                            source: undefined,
-                            source_id: undefined,
-                            source_updated_at: undefined,
-                            studyset: undefined,
-                            updated_at: undefined,
-                            user: undefined,
-                        },
                         storeMetadata: {
                             studyIsEdited: false,
-                            annotationIsEdited: false,
                             studyIsLoading: false,
-                            annotationIsLoading: false,
                             conditionsIsEdited: false,
                             conditionsIsLoading: false,
                             isError: false,
@@ -295,46 +247,6 @@ const useStudyStore = create<
                         throw new Error('error updating study');
                     }
                 },
-                // updateAnnotationInDB: async () => {
-                //     try {
-                //         const state = useStudyStore.getState();
-                //         if (!state.annotation.id) throw new Error('no annotation id');
-                //         set((state) => ({
-                //             ...state,
-                //             storeMetadata: {
-                //                 ...state.storeMetadata,
-                //                 annotationIsLoading: true,
-                //             },
-                //         }));
-                //         await API.NeurostoreServices.AnnotationsService.annotationsIdPut(
-                //             state.annotation.id,
-                //             {
-                //                 name: state.study.name,
-                //                 description: state.study.description,
-                //                 note_keys: noteKeyArrToObj(state.annotation.note_keys),
-                //                 // we update the notes property via the analyses in the study object, not here
-                //             }
-                //         );
-                //         set((state) => ({
-                //             ...state,
-                //             storeMetadata: {
-                //                 ...state.storeMetadata,
-                //                 annotationIsEdited: false,
-                //                 annotationIsLoading: false,
-                //             },
-                //         }));
-                //     } catch (e) {
-                //         set((state) => ({
-                //             ...state,
-                //             storeMetadata: {
-                //                 ...state.storeMetadata,
-                //                 annotationIsLoading: false,
-                //                 isError: true,
-                //             },
-                //         }));
-                //         throw new Error('error updating study');
-                //     }
-                // },
                 addOrUpdateStudyMetadataRow: (row) => {
                     set((state) => {
                         const metadataUpdate = [...state.study.metadata];
@@ -392,7 +304,6 @@ const useStudyStore = create<
                         const foundAnalysisIndex = updatedAnalyses.findIndex(
                             (x) => (x.id || null) === (analysis.id || undefined)
                         );
-                        let annotationIsEdited = false;
                         if (foundAnalysisIndex < 0) {
                             updatedAnalyses.unshift({
                                 ...analysis,
@@ -417,7 +328,6 @@ const useStudyStore = create<
                             storeMetadata: {
                                 ...state.storeMetadata,
                                 studyIsEdited: true,
-                                annotationIsEdited: annotationIsEdited,
                             },
                         };
                     });
@@ -572,14 +482,10 @@ const useStudyStore = create<
 // study retrieval hooks
 export const useStudyId = () => useStudyStore((state) => state.study.id);
 export const useStudyIsLoading = () => useStudyStore((state) => state.storeMetadata.studyIsLoading);
-// export const useAnnotationIsLoading = () =>
-//     useStudyStore((state) => state.storeMetadata.annotationIsLoading);
 export const useConditionsIsLoading = () =>
     useStudyStore((state) => state.storeMetadata.conditionsIsLoading);
 export const useStudyHasBeenEdited = () =>
     useStudyStore((state) => state.storeMetadata.studyIsEdited);
-// export const useAnnotationHasBeenEdited = () =>
-//     useStudyStore((state) => state.storeMetadata.annotationIsEdited);
 export const useConditionsIsEdited = () =>
     useStudyStore((state) => state.storeMetadata.conditionsIsEdited);
 
@@ -592,7 +498,6 @@ export const useStudyPublication = () => useStudyStore((state) => state.study.pu
 export const useStudyYear = () => useStudyStore((state) => state.study.year);
 
 export const useStudyMetadata = () => useStudyStore((state) => state.study.metadata);
-// export const useAnnotation = () => useStudyStore((state) => state.annotation);
 export const useConditions = () => useStudyStore((state) => state.conditions);
 
 export const useStudyAnalysis = (analysisId?: string) =>
@@ -655,7 +560,6 @@ export const useAddOrUpdateMetadata = () =>
     useStudyStore((state) => state.addOrUpdateStudyMetadataRow);
 export const useDeleteMetadataRow = () => useStudyStore((state) => state.deleteStudyMetadataRow);
 export const useAddOrUpdateAnalysis = () => useStudyStore((state) => state.addOrUpdateAnalysis);
-// export const useUpdateAnnotationInDB = () => useStudyStore((state) => state.updateAnnotationInDB);
 export const useCreateCondition = () => useStudyStore((state) => state.createCondition);
 export const useAddOrUpdateConditionWeightPairForAnalysis = () =>
     useStudyStore((state) => state.addOrUpdateConditionWeightPairForAnalysis);

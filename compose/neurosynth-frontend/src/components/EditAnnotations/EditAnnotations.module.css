@@ -1,0 +1,25 @@
+.read-only-col {
+    background-color: #f0f0f0 !important;
+    color: black;
+}
+
+.study-col {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+.boolean {
+    color: green !important;
+}
+
+.string {
+    color: orange !important;
+}
+
+.number {
+    color: blue !important;
+}
+
+.null {
+    color: gray !important;
+}

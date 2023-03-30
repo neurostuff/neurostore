@@ -1,6 +1,7 @@
 import {
     Box,
     Button,
+    IconButton,
     Link,
     Table,
     TableBody,
@@ -20,6 +21,7 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
 import MoveToExtractionCreateAnnotationStyles from './MoveToExtractionCreateAnnotation.styles';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 const MoveToExtractionCreateAnnotation: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
@@ -82,6 +84,10 @@ const MoveToExtractionCreateAnnotation: React.FC<{
         return true;
     };
 
+    const handleRemoveColumn = (annotationCol: { type: EPropertyType; value: string }) => {
+        setAnnotationColumns((state) => [...state.filter((x) => x.value !== annotationCol.value)]);
+    };
+
     return (
         <Box>
             <Typography gutterBottom>
@@ -112,11 +118,11 @@ const MoveToExtractionCreateAnnotation: React.FC<{
             </Typography>
             <Typography gutterBottom>
                 To get started specifying your annotations, enter the keys that you would like to
-                use to annotate.
+                add to annotate.
             </Typography>
             <Typography>
-                All columns and values can be changed later. By default, an "included" key will be
-                added.
+                All keys and values can be modified, added, and removed later. By default, an
+                "included" key will be added.
             </Typography>
 
             <Box
@@ -148,14 +154,40 @@ const MoveToExtractionCreateAnnotation: React.FC<{
                                         { fontWeight: 'bold' },
                                     ]}
                                 >
-                                    {annotationCol.value}
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                        }}
+                                    >
+                                        <Box>
+                                            {annotationCol.value !== 'included' && (
+                                                <IconButton
+                                                    onClick={() =>
+                                                        handleRemoveColumn(annotationCol)
+                                                    }
+                                                    size="small"
+                                                >
+                                                    <CancelIcon color="error" />
+                                                </IconButton>
+                                            )}
+                                        </Box>
+                                        <Box>
+                                            <Typography sx={{ whiteSpace: 'nowrap' }}>
+                                                {annotationCol.value}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
                                 </TableCell>
                             ))}
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         <TableRow>
-                            <TableCell sx={{ whiteSpace: 'nowrap' }}>analysis 1 ...</TableCell>
+                            <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                                example analysis 1 ...
+                            </TableCell>
                             {annotationColumns.map((annotationCol, index) => (
                                 <TableCell
                                     key={index}
@@ -164,6 +196,7 @@ const MoveToExtractionCreateAnnotation: React.FC<{
                                         MoveToExtractionCreateAnnotationStyles[
                                             `${annotationCol.type}-type`
                                         ],
+                                        MoveToExtractionCreateAnnotationStyles['value-cell'],
                                     ]}
                                 >
                                     {annotationCol.type}
@@ -171,7 +204,9 @@ const MoveToExtractionCreateAnnotation: React.FC<{
                             ))}
                         </TableRow>
                         <TableRow>
-                            <TableCell sx={{ whiteSpace: 'nowrap' }}>analysis 2 ...</TableCell>
+                            <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                                example analysis 2 ...
+                            </TableCell>
                             {annotationColumns.map((annotationCol, index) => (
                                 <TableCell
                                     key={index}
@@ -180,6 +215,7 @@ const MoveToExtractionCreateAnnotation: React.FC<{
                                         MoveToExtractionCreateAnnotationStyles[
                                             `${annotationCol.type}-type`
                                         ],
+                                        MoveToExtractionCreateAnnotationStyles['value-cell'],
                                     ]}
                                 >
                                     {annotationCol.type}
@@ -196,6 +232,7 @@ const MoveToExtractionCreateAnnotation: React.FC<{
                                         MoveToExtractionCreateAnnotationStyles[
                                             `${annotationCol.type}-type`
                                         ],
+                                        MoveToExtractionCreateAnnotationStyles['value-cell'],
                                     ]}
                                 >
                                     {annotationCol.type}

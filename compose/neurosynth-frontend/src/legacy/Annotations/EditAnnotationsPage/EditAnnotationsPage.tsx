@@ -5,7 +5,6 @@ import { useParams } from 'react-router';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import TextEdit from 'components/TextEdit/TextEdit';
 import BackButton from 'components/Buttons/BackButton/BackButton';
-import NeurosynthSpreadsheet from 'components/NeurosynthSpreadsheet/NeurosynthSpreadsheet';
 import { EPropertyType } from 'components/EditMetadata';
 import EditStudyPageStyles from 'pages/Studies/EditStudyPage/EditStudyPage.styles';
 import EditAnnotationsPageStyles from './EditAnnotationsPage.styles';
@@ -38,6 +37,7 @@ import {
 import { useDeleteAnnotation, useGetAnnotationById, useUpdateAnnotationById } from 'hooks';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { NeurostoreAnnotation } from 'utils/api';
+import NeurosynthSpreadsheet from 'legacy/NeurosynthSpreadsheet/NeurosynthSpreadsheet';
 
 registerEditor(BaseEditor);
 registerEditor(NumericEditor);

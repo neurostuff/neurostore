@@ -20,7 +20,6 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { resolveStudysetAndCurationDifferences } from 'components/ExtractionComponents/Ingestion/helpers/utils';
 import ExtractionReconcileDialog from 'components/Dialogs/ExtractionReconcileDialog/ExtractionReconcileDialog';
-import EditAnnotations from 'components/EditAnnotations/EditAnnotations';
 
 export enum ESelectedChip {
     'COMPLETED' = 'completed',
@@ -172,28 +171,41 @@ const ExtractionPage: React.FC = (props) => {
     return (
         <StateHandlerComponent isError={getStudysetIsError} isLoading={getStudysetIsLoading}>
             <Box sx={{ width: '80%', minWidth: '450px', margin: '0 auto' }}>
-                <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
-                    <Breadcrumbs>
-                        <Link
-                            component={NavLink}
-                            to="/projects"
-                            sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                            underline="hover"
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
+                        <Breadcrumbs>
+                            <Link
+                                component={NavLink}
+                                to="/projects"
+                                sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
+                                underline="hover"
+                            >
+                                Projects
+                            </Link>
+                            <Link
+                                component={NavLink}
+                                to={`/projects/${projectId}`}
+                                sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
+                                underline="hover"
+                            >
+                                {projectName || ''}
+                            </Link>
+                            <Typography color="secondary" sx={{ fontSize: '1.5rem' }}>
+                                Extraction
+                            </Typography>
+                        </Breadcrumbs>
+                    </Box>
+                    <Box>
+                        <Button
+                            color="secondary"
+                            variant="outlined"
+                            onClick={() =>
+                                history.push(`/projects/${projectId}/extraction/annotation`)
+                            }
                         >
-                            Projects
-                        </Link>
-                        <Link
-                            component={NavLink}
-                            to={`/projects/${projectId}`}
-                            sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                            underline="hover"
-                        >
-                            {projectName || ''}
-                        </Link>
-                        <Typography color="secondary" sx={{ fontSize: '1.5rem' }}>
-                            Extraction
-                        </Typography>
-                    </Breadcrumbs>
+                            View Entire Annotation
+                        </Button>
+                    </Box>
                 </Box>
                 {showReconcilePrompt && (
                     <>
@@ -306,20 +318,17 @@ const ExtractionPage: React.FC = (props) => {
                             label="Completed"
                         />
                     </Box>
-                    <Box>
-                        <Typography sx={{ textAlign: 'end' }} variant="h6">
-                            {studiesDisplayed.length} studies
-                        </Typography>
-                    </Box>
-                </Box>
-                <Box>
-                    <EditAnnotations />
                 </Box>
                 <Box
                     sx={{
                         marginBottom: '1rem',
                     }}
                 >
+                    <Box>
+                        <Typography sx={{ textAlign: 'end' }} variant="h6">
+                            {studiesDisplayed.length} studies
+                        </Typography>
+                    </Box>
                     <Box>
                         {studiesDisplayed.map((study, index) => (
                             <StudyListItem

@@ -5,14 +5,14 @@ import styles from './NeurosynthSpreadsheet.module.css';
 import React, { memo, useEffect, useRef } from 'react';
 import { EPropertyType, IMetadataRowModel } from 'components/EditMetadata';
 import { NavLink } from 'react-router-dom';
-import AddMetadataRow from '../EditMetadata/EditMetadataRow/AddMetadataRow';
-import EditAnnotationsPageStyles from '../../pages/Annotations/EditAnnotationsPage/EditAnnotationsPage.styles';
 import EditStudyPageStyles from '../../pages/Studies/EditStudyPage/EditStudyPage.styles';
 import { Button, Link, Box } from '@mui/material';
 import HotSettingsBuilder from './HotSettingsBuilder';
 import NeurosynthSpreadsheetState from './NeurosynthSpreadsheetState';
 import NeurosynthSpreadsheetHelper from './NeurosynthSpreadsheetHelper';
 import { NoteCollectionReturn, ResourceAttributes } from 'neurostore-typescript-sdk';
+import AddMetadataRow from 'components/EditMetadata/EditMetadataRow/AddMetadataRow';
+import EditAnnotationsPageStyles from 'legacy/Annotations/EditAnnotationsPage/EditAnnotationsPage.styles';
 
 export interface INeurosynthColumn {
     value: string;

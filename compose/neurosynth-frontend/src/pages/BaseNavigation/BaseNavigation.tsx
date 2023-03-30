@@ -7,12 +7,9 @@ import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import NotFoundPage from 'pages/NotFound/NotFoundPage';
 import ProjectPage from 'pages/Projects/ProjectPage/ProjectPage';
 import ExtractionPage from 'pages/ExtractionPage/ExtractionPage';
-import PrismaComponent from 'components/PrismaComponent/PrismaComponent';
 import CurationImportPage from 'pages/CurationPage/CurationImportPage';
+import AnnotationsPage from 'pages/AnnotationsPage/AnnotationsPage';
 
-const EditAnnotationsPage = React.lazy(
-    () => import('../Annotations/EditAnnotationsPage/EditAnnotationsPage')
-);
 const StudysetPage = React.lazy(() => import('../Studysets/StudysetPage/StudysetPage'));
 const StudysetsPage = React.lazy(() => import('../Studysets/StudysetsPage/StudysetsPage'));
 const EditStudyPage = React.lazy(() => import('../Studies/EditStudyPage/EditStudyPage'));
@@ -79,6 +76,11 @@ const BaseNavigation: React.FC = (_props) => {
                         <ExtractionPage />
                     </Box>
                 </Route>
+                <Route path="/projects/:projectId/extraction/annotation" exact>
+                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                        <AnnotationsPage />
+                    </Box>
+                </Route>
                 <Route path="/studysets" exact>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <StudysetsPage />
@@ -87,11 +89,6 @@ const BaseNavigation: React.FC = (_props) => {
                 <Route path="/studysets/:studysetId" exact>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <StudysetPage />
-                    </Box>
-                </Route>
-                <Route path="/annotations/:annotationId" exact>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <EditAnnotationsPage />
                     </Box>
                 </Route>
                 <Route path="/studies" exact>

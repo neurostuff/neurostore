@@ -19,6 +19,9 @@ const MoveToExtractionCreateAnnotationStyles: Style = {
     'number-type': {
         color: '#ababff',
     },
+    'value-cell': {
+        textAlign: 'center !important',
+    },
 };
 
 export default MoveToExtractionCreateAnnotationStyles;
