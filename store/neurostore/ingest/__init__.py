@@ -157,7 +157,7 @@ def ingest_neurosynth(max_rows=None):
 
     coord_data = pd.read_table(coords_file, dtype={"id": str})
     coord_data = coord_data.set_index("id")
-    metadata = pd.read_table(metadata_file, dtype={"id": str})
+    metadata = pd.read_table(metadata_file, dtype={"id": str, "doi": str})
     metadata = metadata.set_index("id")
     # load annotations
     features = sparse.load_npz(feature_file).todense()
@@ -200,7 +200,7 @@ def ingest_neurosynth(max_rows=None):
                 publication=metadata_row.journal,
                 metadata=md,
                 pmid=id_,
-                doi=metadata_row.doi,
+                doi=None if isinstance(metadata_row.doi, float) else metadata_row.doi,
                 source="neurosynth",
                 source_id=id_,
             )

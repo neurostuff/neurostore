@@ -149,6 +149,43 @@ def test_study_addition_to_studyset(auth_client, session, user_data):
     )
 
 
+def test_blank_slate_creation(auth_client, session):
+    # create empty studyset
+    studyset_data = {"name": "test studyset"}
+    studyset_post = auth_client.post("/api/studysets/", data=studyset_data)
+    ss_id = studyset_post.json['id']
+    # create annotation
+    annotation_data = {
+        "studyset": ss_id,
+        "note_keys": {"include": "boolean"},
+        "name": "mah notes",
+    }
+    annotation_post = auth_client.post("/api/annotations/", data=annotation_data)
+
+    # create study
+    study_data = {"name": "fake study"}
+    study_post = auth_client.post("/api/studies/", data=study_data)
+    s_id = study_post.json['id']
+
+    # add study to studyset
+    studyset_put_data = {
+        'studies': [s_id]
+    }
+    _ = auth_client.put(f"/api/studysets/{ss_id}", data=studyset_put_data)
+
+    # update study with analyses
+    study_put_data = {
+        'analyses': [{"name": "analysis1"}, {"name": "analysis2"}]
+    }
+    _ = auth_client.put(f"/api/studies/{s_id}", data=study_put_data)
+
+    annotation_get = auth_client.get(f"/api/annotations/{annotation_post.json['id']}")
+
+    assert len(annotation_get.json["notes"]) == (
+        (len(annotation_post.json["notes"]) + 2)
+    )
+
+
 def test_analysis_addition_to_studyset(auth_client, session, user_data):
     user = User.query.filter_by(name="user1").first()
     # get relevant studyset

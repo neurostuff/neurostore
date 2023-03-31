@@ -170,5 +170,8 @@ def test_getting_studysets_by_owner(auth_clients, user_data):
 
 @pytest.mark.parametrize("param", ["true", "false", "doi", "name", "pmid"])
 def test_get_unique_studies(auth_client, user_data, param):
+    # clone a study owned by the user
+    study_entry = Study.query.filter_by(user_id=auth_client.username).first()
+    auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={})
     resp = auth_client.get(f"/api/studies/?unique={param}")
     assert resp.status_code == 200

@@ -364,9 +364,13 @@ def add_annotation_analyses_studyset(studyset, studies, collection_adapter):
 
 def add_annotation_analyses_study(study, analyses, collection_adapter):
     new_analyses = set(analyses) - set([a for a in study.analyses])
-    all_annotations = [
-        aa.annotation for a in study.analyses for aa in a.annotation_analyses
-    ]
+
+    all_annotations = set(
+        [
+            annot for sss in study.studyset_studies for annot in sss.studyset.annotations
+        ]
+    )
+
     new_aas = []
     for analysis in new_analyses:
         for annot in all_annotations:
