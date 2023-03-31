@@ -55,7 +55,7 @@ const EditStudyDetails: React.FC = React.memo((props) => {
                 <Typography>(name, authors, description, doi, pmid, etc)</Typography>
             </AccordionSummary>
             <AccordionDetails>
-                <Box sx={{ margin: '2rem 0' }}>
+                <Box sx={{ margin: '1rem 0 0.5rem 0' }}>
                     <TextField
                         label="name"
                         sx={{ width: '100%', marginBottom: '1rem' }}

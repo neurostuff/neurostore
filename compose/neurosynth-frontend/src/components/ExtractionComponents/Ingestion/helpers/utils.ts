@@ -1,6 +1,7 @@
+import { AxiosResponse } from 'axios';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import { StudyReturn, StudysetReturn } from 'neurostore-typescript-sdk';
-import API from 'utils/api';
+import { NoteCollectionReturn, StudyReturn, StudysetReturn } from 'neurostore-typescript-sdk';
+import API, { NeurostoreAnnotation } from 'utils/api';
 
 export const getMatchingStudies = async (searchTerm: string): Promise<StudyReturn[]> => {
     try {
@@ -108,4 +109,21 @@ export const resolveStudysetAndCurationDifferences = (
     }
 
     return returnObj;
+};
+
+export const setAnalysesInAnnotationAsIncluded = async (annotationId: string) => {
+    try {
+        const annotation = (await API.NeurostoreServices.AnnotationsService.annotationsIdGet(
+            annotationId
+        )) as AxiosResponse<NeurostoreAnnotation>;
+
+        const notes = (annotation.data.notes || []) as NoteCollectionReturn[];
+        // need to finish updating the annotations to set all notes to be included: TRUE
+        await API.NeurostoreServices.AnnotationsService.annotationsIdPut(annotationId, {
+            notes: [],
+        });
+        console.log(annotation);
+    } catch (e) {
+        throw new Error('error creating study from stub');
+    }
 };

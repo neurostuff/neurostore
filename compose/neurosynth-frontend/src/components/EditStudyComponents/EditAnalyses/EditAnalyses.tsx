@@ -45,7 +45,7 @@ const EditAnalyses: React.FC = (props) => {
                     <Typography sx={{ fontWeight: 'bold' }}>Study Analyses</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
-                    <Box sx={{ width: '100%', margin: '1rem 0' }}>
+                    <Box sx={{ width: '100%', margin: '0.5rem 0' }}>
                         <Box
                             sx={{
                                 marginBottom: '1rem',

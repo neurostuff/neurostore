@@ -10,6 +10,7 @@ import { useGetStudysetById } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import {
     useProjectCurationColumn,
+    useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectNumCurationColumns,
     useUpdateStubField,
@@ -20,6 +21,7 @@ import {
     createStudyFromStub,
     getMatchingStudies,
     resolveStudysetAndCurationDifferences,
+    setAnalysesInAnnotationAsIncluded,
 } from './helpers/utils';
 import IngestionAwaitUserResponse from './IngestionAwaitUserResponse';
 
@@ -27,6 +29,7 @@ const Ingestion: React.FC<{
     onComplete: () => void;
 }> = (props) => {
     const studysetId = useProjectExtractionStudysetId();
+    const annotationId = useProjectExtractionAnnotationId();
     const numColumns = useProjectNumCurationColumns();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
     const { data: studyset, refetch, isRefetching } = useGetStudysetById(studysetId, false);
@@ -100,6 +103,8 @@ const Ingestion: React.FC<{
 
             // we are done ingesting
             if (ingestionIndex >= stubsToIngest.length) {
+                await setAnalysesInAnnotationAsIncluded(annotationId || '');
+
                 setCurrentIngestionState((prev) => ({
                     ...prev,
                     ingestionStatus: 'FINISHED',
@@ -170,7 +175,7 @@ const Ingestion: React.FC<{
                 }));
             }
         })();
-    }, [currentIngestionState, numColumns, studysetId, updateStubField]);
+    }, [annotationId, currentIngestionState, numColumns, studysetId, updateStubField]);
 
     const handleSelectStudy = async (
         option: StudyReturn | ICurationStubStudy,
@@ -224,6 +229,14 @@ const Ingestion: React.FC<{
             return <Typography>Starting up ingestion...</Typography>;
         case 'INGESTION-IN-PROGRESS':
         case 'READY-TO-INGEST':
+            const totalStubsToIngest = currentIngestionState.stubsToIngest.length;
+
+            // theres a small delay and so it will show x + 1 / x. This logic prevents that
+            const currIndex =
+                currentIngestionState.ingestionIndex + 1 > totalStubsToIngest
+                    ? totalStubsToIngest
+                    : currentIngestionState.ingestionIndex + 1;
+
             return (
                 <Box
                     sx={{
@@ -234,8 +247,7 @@ const Ingestion: React.FC<{
                     }}
                 >
                     <Typography sx={{ marginBottom: '1rem' }} variant="h6">
-                        Ingesting studies ({currentIngestionState.ingestionIndex + 1} /{' '}
-                        {currentIngestionState.stubsToIngest.length})
+                        Ingesting studies ({currIndex} / {totalStubsToIngest})
                     </Typography>
                     <ProgressLoader />
                 </Box>

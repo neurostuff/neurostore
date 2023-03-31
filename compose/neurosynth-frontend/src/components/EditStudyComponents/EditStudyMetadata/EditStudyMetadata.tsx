@@ -79,7 +79,7 @@ const EditStudyMetadata: React.FC = (props) => {
                 <Typography sx={{ fontWeight: 'bold' }}>Study Metadata</Typography>
             </AccordionSummary>
             <AccordionDetails>
-                <Box sx={{ margin: '2rem 0 1rem 0' }}>
+                <Box sx={{ margin: '1rem 0 0.5rem 0' }}>
                     <EditMetadata
                         onMetadataRowAdd={handleMetadataRowAdd}
                         onMetadataRowEdit={handleMetadataRowEdit}

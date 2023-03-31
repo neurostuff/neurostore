@@ -30,12 +30,12 @@ const createColumns = (noteKeys: NoteKeyType[]) => [
     {
         className: `${styles['study-col']} ${styles['read-only-col']}`,
         readOnly: true,
-        width: '250',
+        width: '200',
     },
     {
         className: styles['read-only-col'],
         readOnly: true,
-        width: '250',
+        width: '150',
     },
     ...noteKeys.map((x) => {
         return {
@@ -74,7 +74,6 @@ const hotSettings: HotTableProps = {
     licenseKey: 'non-commercial-and-evaluation',
     contextMenu: false,
     renderAllRows: true,
-    autoRowSize: true,
     width: '100%',
     fixedColumnsStart: 2,
 };
@@ -255,7 +254,7 @@ const AnnotationsHotTable: React.FC<{
                     height: '100%',
                     borderCollapse: 'separate',
                     borderSpacing: '12px 0px',
-                    margin: '1rem 0 30px 0',
+                    margin: '1rem 0 25px 0',
                 }}
             >
                 <AddMetadataRow
@@ -265,15 +264,12 @@ const AnnotationsHotTable: React.FC<{
                     allowNoneOption={false}
                 />
             </Box>
-            <Box>
+            <Box sx={{ marginBottom: '100px', height: '80vh', overflow: 'hidden' }}>
                 <HotTable
                     {...hotSettings}
-                    style={{
-                        overflow: 'hidden',
-                        height: window.innerHeight - (86 + 44 + 39 * 2 + 32 + 77) || 600,
-                    }}
                     afterChange={handleChangeOccurred}
                     ref={hotTableRef}
+                    preventOverflow="horizontal"
                     mergeCells={initialHotState.initialMergeCells}
                     colHeaders={initialHotState.intialHotColumnHeaders}
                     columns={initialHotState.initialHotColumns}

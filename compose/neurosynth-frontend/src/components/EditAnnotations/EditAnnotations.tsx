@@ -107,6 +107,7 @@ const EditAnnotations: React.FC = (props) => {
                 sx={{
                     position: 'fixed',
                     bottom: 0,
+                    zIndex: 999,
                     width: {
                         xs: '90%',
                         md: '80%',
