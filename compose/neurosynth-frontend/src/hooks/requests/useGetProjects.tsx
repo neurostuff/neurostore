@@ -101,8 +101,6 @@ const useGetProjects = (authenticatedUser?: string) => {
                     (x) => x.user === authenticatedUser
                 ),
             enabled: !!authenticatedUser,
-            cacheTime: 0,
-            staleTime: 0,
         }
     );
 };

@@ -44,7 +44,9 @@ export const annotationNotesToHotData = (
         };
     }
 
-    annotationNotes
+    // this is the same obj stored in the react-query hook so we must copy it or else it will cause infinite re renders
+    // since we're changing the original references by sorting it
+    [...annotationNotes]
         .sort((a, b) => {
             const firstStudyId = a.study as string;
             const secondStudyId = b.study as string;
@@ -82,4 +84,28 @@ export const annotationNotesToHotData = (
         hotData,
         hotDataToStudyMapping: hotDataToAnnotationMapping,
     };
+};
+
+export const hotDataToAnnotationNotes = (
+    hotData: AnnotationNoteValue[][],
+    mapping: Map<number, { studyId: string; analysisId: string }>,
+    noteKeys: NoteKeyType[]
+): NoteCollectionReturn[] => {
+    const noteCollections: NoteCollectionReturn[] = hotData.map((row, index) => {
+        const mappedStudyAnalysis = mapping.get(index) as { studyId: string; analysisId: string };
+
+        const updatedNote: { [key: string]: AnnotationNoteValue } = {};
+        for (let i = 0; i < noteKeys.length; i++) {
+            const noteKey = noteKeys[i];
+            updatedNote[noteKey.key] = row[i + 2]; // take into account the first two columns which are readonly reseved to display study name and analysis name
+        }
+
+        return {
+            study: mappedStudyAnalysis.studyId,
+            analysis: mappedStudyAnalysis.analysisId,
+            note: updatedNote,
+        };
+    });
+
+    return noteCollections;
 };
