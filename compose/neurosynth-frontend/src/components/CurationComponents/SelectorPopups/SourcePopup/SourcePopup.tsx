@@ -146,7 +146,7 @@ const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
                     {...params}
                     required={props.required}
                     size={props.size}
-                    label={props.label || 'select source'}
+                    label={props.label === undefined ? 'select source' : props.label}
                     error={props.isError}
                     helperText={props.helperText}
                 />

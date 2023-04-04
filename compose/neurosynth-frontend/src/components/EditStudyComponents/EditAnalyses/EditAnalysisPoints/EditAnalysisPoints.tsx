@@ -6,6 +6,8 @@ import { registerAllModules } from 'handsontable/registry';
 import { Settings } from 'handsontable/plugins/contextMenu';
 import { useStudyAnalysisPoints, useUpdateAnalysisPoints } from 'pages/Studies/StudyStore';
 import { ColumnSettings } from 'handsontable/settings';
+import styles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable.module.css';
+import { PointReturn } from 'neurostore-typescript-sdk';
 
 export const ROW_HEIGHT = 56;
 
@@ -15,16 +17,29 @@ const hotTableColHeaders = ['X', 'Y', 'Z', 'Kind', 'Space'];
 const hotTableColumnSettings: ColumnSettings[] = [
     {
         validator: 'numeric',
+        className: styles.number,
+        data: 'coordinates.0',
     },
     {
         validator: 'numeric',
+        className: styles.number,
+        data: 'coordinates.1',
     },
     {
         validator: 'numeric',
+        className: styles.number,
+        data: 'coordinates.2',
     },
-    {},
-    {},
+    {
+        className: styles.string,
+        data: 'kind',
+    },
+    {
+        className: styles.string,
+        data: 'space',
+    },
 ];
+
 const hotTableContextMenuSettings: Settings = [
     'row_above',
     'row_below',
@@ -44,42 +59,88 @@ const replaceString = (val: string) => {
     return val.replaceAll('−', '-');
 };
 
+const handleBeforePaste = (data: any[][], coords: RangeType[]) => {
+    data.forEach((dataRow, rowIndex) => {
+        dataRow.forEach((value, valueIndex) => {
+            if (typeof value === 'number') return;
+
+            const strippedData = stripTags(value); // strip all HTML tags that were copied over if they exist
+            const replacedData = replaceString(strippedData); // replace minus operator with javascript character code
+            const parsedData = parseInt(replacedData);
+            if (!isNaN(parsedData)) {
+                data[rowIndex][valueIndex] = parsedData;
+            }
+        });
+    });
+
+    return true;
+};
+
 const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props) => {
-    const points = useStudyAnalysisPoints(props.analysisId);
+    // const points = useStudyAnalysisPoints(props.analysisId) as PointReturn[];
+    const points: PointReturn[] = [
+        {
+            id: 'abc',
+            coordinates: [0, 22, -2],
+            kind: 'some kind',
+            space: 'MNI',
+        },
+    ];
     const updatedPoints = useUpdateAnalysisPoints();
     const hotReference = useRef<HotTable>(null);
 
+    // points[0].coordinates
+
     const noData = points.length === 0;
 
-    console.log('re render');
+    const handlebeforeChange = (changes: (CellChange | null)[], source: ChangeSource) => {
+        if (changes.length === 0) return;
+        return false;
+    };
 
-    const handlebeforeChange = (changes: (CellChange | null)[], source: ChangeSource) => {};
-
-    const handleBeforePaste = (data: any[][], coords: RangeType[]) => {
-        data.forEach((dataRow, rowIndex) => {
-            dataRow.forEach((value, valueIndex) => {
-                if (typeof value === 'number') return;
-
-                const strippedData = stripTags(value); // strip all HTML tags that were copied over if they exist
-                const replacedData = replaceString(strippedData); // replace minus operator with javascript character code
-                const parsedData = parseInt(replacedData);
-                if (!isNaN(parsedData)) {
-                    data[rowIndex][valueIndex] = parsedData;
-                }
-            });
+    const handleBeforeRemoveRow = (
+        index: number,
+        amount: number,
+        physicalColumns: number[],
+        source?: ChangeSource | undefined
+    ) => {
+        console.log({
+            rowEdit: 'REMOVE',
+            index,
+            amount,
+            physicalColumns,
+            source,
         });
 
-        return true;
+        return false;
+    };
+
+    const handleBeforeCreateRow = (
+        index: number,
+        amount: number,
+        source?: ChangeSource | undefined
+    ) => {
+        if (source === 'auto') {
+        }
+
+        console.log({
+            rowEdit: 'ADD',
+            index,
+            amount,
+            source,
+        });
+        return false;
     };
 
     return (
         <Box>
             <HotTable
-                // className="htCenter"
                 ref={hotReference}
                 licenseKey="non-commercial-and-evaluation"
                 beforeChange={handlebeforeChange}
                 beforePaste={handleBeforePaste}
+                beforeRemoveRow={handleBeforeRemoveRow}
+                beforeCreateRow={handleBeforeCreateRow}
                 allowInsertRow
                 allowRemoveColumn={false}
                 allowInvalid={false}
@@ -92,7 +153,7 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
                 columns={hotTableColumnSettings}
                 contextMenu={hotTableContextMenuSettings}
                 colHeaders={hotTableColHeaders}
-                data={[[0, 0, 0, '', 5]]}
+                data={points}
             />
         </Box>
     );

@@ -118,11 +118,18 @@ export const setAnalysesInAnnotationAsIncluded = async (annotationId: string) =>
         )) as AxiosResponse<NeurostoreAnnotation>;
 
         const notes = (annotation.data.notes || []) as NoteCollectionReturn[];
-        // need to finish updating the annotations to set all notes to be included: TRUE
         await API.NeurostoreServices.AnnotationsService.annotationsIdPut(annotationId, {
-            notes: [],
+            notes: notes.map((x) => ({
+                analysis: x.analysis,
+                study: x.study,
+                note: {
+                    ...x.note,
+                    // included can be null meaning it has not been instantiated. We only want to set it to true
+                    // if it has not been instantiated as that will overwrite the value is the user previously set it to false
+                    included: (x.note as any)?.included === false ? false : true,
+                },
+            })),
         });
-        console.log(annotation);
     } catch (e) {
         throw new Error('error creating study from stub');
     }

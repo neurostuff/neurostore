@@ -60,6 +60,7 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
 
             <Box sx={{ margin: '0.5rem 0', marginTop: '1rem' }}>
                 <IdentificationSourcePopup
+                    label=""
                     onAddSource={(source) => handleUpdateStub(source, 'identificationSource')}
                     onCreateSource={(source) => handleUpdateStub(source, 'identificationSource')}
                     initialValue={props.stub.identificationSource}

@@ -36,7 +36,7 @@ const AnnotationsPage: React.FC = (props) => {
                         Extraction
                     </Link>
                     <Typography variant="h5" color="secondary">
-                        Annotation
+                        Annotations
                     </Typography>
                 </Breadcrumbs>
             </Box>

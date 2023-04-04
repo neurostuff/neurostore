@@ -46,7 +46,7 @@ const EditAnnotations: React.FC = (props) => {
                 noteKeys,
                 data.notes as NoteCollectionReturn[] | undefined
             );
-
+            console.log(data);
             setInitialAnnotationHotState({
                 noteKeys,
                 hotData,

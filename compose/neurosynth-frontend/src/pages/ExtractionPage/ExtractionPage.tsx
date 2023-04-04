@@ -203,7 +203,7 @@ const ExtractionPage: React.FC = (props) => {
                                 history.push(`/projects/${projectId}/extraction/annotation`)
                             }
                         >
-                            View Entire Annotation
+                            View Annotations
                         </Button>
                     </Box>
                 </Box>

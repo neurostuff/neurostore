@@ -1,6 +1,7 @@
 import {
     Box,
     Button,
+    Chip,
     IconButton,
     Link,
     Table,
@@ -131,7 +132,7 @@ const MoveToExtractionCreateAnnotation: React.FC<{
                     height: '100%',
                     borderCollapse: 'separate',
                     borderSpacing: '8px 0px',
-                    margin: '1rem auto',
+                    margin: '1rem 0',
                 }}
             >
                 <AddMetadataRow
@@ -141,7 +142,27 @@ const MoveToExtractionCreateAnnotation: React.FC<{
                     onAddMetadataRow={handleAddAnnotationColumn}
                 />
             </Box>
-            <Box sx={{ overflowX: 'auto' }}>
+            <Box sx={{ display: 'flex' }}>
+                <Chip
+                    onDelete={() => {}}
+                    sx={{ margin: '4px' }}
+                    label="included: boolean"
+                    color="success"
+                />
+                <Chip
+                    onDelete={() => {}}
+                    sx={{ margin: '4px' }}
+                    label="modality: string"
+                    color="secondary"
+                />
+                <Chip
+                    onDelete={() => {}}
+                    sx={{ margin: '4px' }}
+                    label="threshold: number"
+                    color="primary"
+                />
+            </Box>
+            {/* <Box sx={{ overflowX: 'auto' }}>
                 <Table>
                     <TableHead>
                         <TableRow>
@@ -241,7 +262,7 @@ const MoveToExtractionCreateAnnotation: React.FC<{
                         </TableRow>
                     </TableBody>
                 </Table>
-            </Box>
+            </Box> */}
             <Box sx={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
                 <LoadingButton
                     variant="contained"

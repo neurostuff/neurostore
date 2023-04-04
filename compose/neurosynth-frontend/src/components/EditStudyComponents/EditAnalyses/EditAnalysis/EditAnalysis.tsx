@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import EditAnalysisConditions from '../EditAnalysisConditions/EditAnalysisConditions';
 import EditAnalysisDetails from '../EditAnalysisDetails/EditAnalysisDetails';
 import EditAnalysisPoints from '../EditAnalysisPoints/EditAnalysisPoints';
@@ -28,6 +28,11 @@ const EditAnalysis: React.FC<{ analysisId?: string }> = (props) => {
                     Analysis Conditions
                 </Typography>
                 <EditAnalysisConditions analysisId={props.analysisId} />
+            </Box>
+            <Box sx={{ marginTop: '2rem' }}>
+                <Button variant="outlined" color="error">
+                    Delete Analysis
+                </Button>
             </Box>
         </Box>
     );

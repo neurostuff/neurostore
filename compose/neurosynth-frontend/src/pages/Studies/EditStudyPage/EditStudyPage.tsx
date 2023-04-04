@@ -5,7 +5,6 @@ import EditStudyDetails from 'components/EditStudyComponents/EditStudyDetails/Ed
 import EditStudyMetadata from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useSnackbar } from 'notistack';
-import { useProjectExtractionAnnotationId } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useEffect } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import {
@@ -16,6 +15,7 @@ import {
     useStudyIsLoading,
     useUpdateStudyInDB,
 } from '../StudyStore';
+import { useProjectExtractionAnnotationId } from 'pages/Projects/ProjectPage/ProjectStore';
 
 const EditStudyPage: React.FC = (props) => {
     const { studyId, projectId } = useParams<{ projectId: string; studyId: string }>();
@@ -25,6 +25,7 @@ const EditStudyPage: React.FC = (props) => {
     const storeStudyId = useStudyId();
     const isLoading = useStudyIsLoading();
     const updateStudyInDB = useUpdateStudyInDB();
+    const annotationId = useProjectExtractionAnnotationId();
     const snackbar = useSnackbar();
     const history = useHistory();
 
@@ -35,7 +36,7 @@ const EditStudyPage: React.FC = (props) => {
 
     const handleSave = async () => {
         try {
-            if (studyHasBeenEdited) await updateStudyInDB();
+            if (studyHasBeenEdited) await updateStudyInDB(annotationId as string);
             snackbar.enqueueSnackbar('study saved successfully', { variant: 'success' });
         } catch (e) {
             snackbar.enqueueSnackbar('there was an error saving the study', {
@@ -46,13 +47,28 @@ const EditStudyPage: React.FC = (props) => {
 
     return (
         <StateHandlerComponent isError={false} isLoading={!storeStudyId}>
+            <Box>
+                <EditStudyDetails />
+                <Divider />
+            </Box>
+            <Box>
+                <EditStudyMetadata />
+                <Divider />
+            </Box>
+            <Box>
+                <EditAnalyses />
+            </Box>
             <Box
                 sx={{
-                    position: 'sticky',
-                    top: 0,
+                    bottom: 0,
                     padding: '1rem 0',
                     backgroundColor: 'white',
+                    position: 'fixed',
                     display: 'flex',
+                    width: {
+                        xs: '90%',
+                        md: '80%',
+                    },
                     justifyContent: 'space-between',
                     zIndex: 1000,
                 }}
@@ -67,7 +83,7 @@ const EditStudyPage: React.FC = (props) => {
                     sx={{ width: '300px' }}
                     size="large"
                 >
-                    cancel
+                    back to study page
                 </Button>
                 <LoadingButton
                     size="large"
@@ -80,17 +96,6 @@ const EditStudyPage: React.FC = (props) => {
                     sx={{ width: '300px' }}
                     onClick={handleSave}
                 />
-            </Box>
-            <Box>
-                <EditStudyDetails />
-                <Divider />
-            </Box>
-            <Box>
-                <EditStudyMetadata />
-                <Divider />
-            </Box>
-            <Box>
-                <EditAnalyses />
             </Box>
         </StateHandlerComponent>
     );

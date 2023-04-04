@@ -73,7 +73,8 @@ const hotSettings: HotTableProps = {
     fillHandle: false,
     licenseKey: 'non-commercial-and-evaluation',
     contextMenu: false,
-    renderAllRows: true,
+    viewportRowRenderingOffset: 2,
+    viewportColumnRenderingOffset: 2,
     width: '100%',
     fixedColumnsStart: 2,
 };
@@ -102,6 +103,37 @@ const AnnotationsHotTable: React.FC<{
         mergeCells: [],
     });
     const { noteKeys: initialNoteKeys, hotDataToStudyMapping, hotData, onChange } = props;
+
+    // set handsontable ref height if the (debouneced) window height changes.
+    // Must do this via an eventListener to avoid react re renders clearing the HOT State
+    useEffect(() => {
+        let timeout: any;
+        const handleResize = () => {
+            const currentWindowSize = window.innerHeight;
+            if (currentWindowSize) {
+                if (timeout) clearTimeout(timeout);
+                timeout = setTimeout(async () => {
+                    if (hotTableRef.current?.hotInstance) {
+                        const navHeight = '64px';
+                        const breadCrumbHeight = '44px';
+                        const addMetadataHeight = '1rem + 40px + 25px';
+                        const bottomSaveButtonHeight = '2.5rem';
+                        const pageMarginHeight = '4rem';
+                        hotTableRef.current.hotInstance.updateSettings({
+                            height: `calc(${currentWindowSize}px - ${navHeight} - ${breadCrumbHeight} - (${addMetadataHeight}) - ${bottomSaveButtonHeight} - ${pageMarginHeight})`,
+                        });
+                    }
+                }, 200);
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        handleResize();
+
+        return () => {
+            if (timeout) clearTimeout(timeout);
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
 
     const [initialHotState, setInitialHotState] = useState<{
         initialHotData: AnnotationNoteValue[][];
@@ -264,9 +296,10 @@ const AnnotationsHotTable: React.FC<{
                     allowNoneOption={false}
                 />
             </Box>
-            <Box sx={{ marginBottom: '100px', height: '80vh', overflow: 'hidden' }}>
+            <Box>
                 <HotTable
                     {...hotSettings}
+                    id="hot-annotations"
                     afterChange={handleChangeOccurred}
                     ref={hotTableRef}
                     preventOverflow="horizontal"

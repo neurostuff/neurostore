@@ -14,6 +14,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { storeAnalysesToStudyAnalyses, studyAnalysesToStoreAnalyses } from './StudyStore.helpers';
 import { v4 as uuid } from 'uuid';
+import { setAnalysesInAnnotationAsIncluded } from 'components/ExtractionComponents/Ingestion/helpers/utils';
 
 export interface IStoreAnalysis extends Omit<AnalysisReturn, 'conditions'> {
     isNew: boolean;
@@ -38,7 +39,7 @@ export type StudyStoreActions = {
     initStudyStore: (studyId?: string) => void;
     clearStudyStore: () => void;
     updateStudy: (fieldName: keyof StudyDetails, value: string | number) => void;
-    updateStudyInDB: () => Promise<void>;
+    updateStudyInDB: (annotationId: string) => Promise<void>;
     addOrUpdateStudyMetadataRow: (row: IMetadataRowModel) => void;
     deleteStudyMetadataRow: (key: string) => void;
     addOrUpdateAnalysis: (analysis: Partial<IStoreAnalysis>) => void;
@@ -102,7 +103,10 @@ const useStudyStore = create<
                     if (!studyId) return;
                     set((state) => ({
                         ...state,
-                        isLoading: true,
+                        storeMetadata: {
+                            ...state.storeMetadata,
+                            studyIsLoading: true,
+                        },
                     }));
                     try {
                         const studyRes = await API.NeurostoreServices.StudiesService.studiesIdGet(
@@ -130,6 +134,8 @@ const useStudyStore = create<
                                 ...state.storeMetadata,
                                 studyIsEdited: false,
                                 studyIsLoading: false,
+                                conditionsIsLoading: false,
+                                conditionsIsEdited: false,
                             },
                         }));
                     } catch (e) {
@@ -138,6 +144,7 @@ const useStudyStore = create<
                             storeMetadata: {
                                 ...state.storeMetadata,
                                 studyIsLoading: false,
+                                conditionsIsLoading: false,
                                 isError: true,
                             },
                         }));
@@ -189,7 +196,7 @@ const useStudyStore = create<
                         },
                     }));
                 },
-                updateStudyInDB: async () => {
+                updateStudyInDB: async (annotationId) => {
                     try {
                         const state = useStudyStore.getState();
                         if (!state.study.id) throw new Error('no study id');
@@ -212,6 +219,8 @@ const useStudyStore = create<
                             metadata: arrayToMetadata(state.study.metadata),
                             analyses: storeAnalysesToStudyAnalyses(state.study.analyses),
                         });
+
+                        await setAnalysesInAnnotationAsIncluded(annotationId);
 
                         // we want to reset the store with our new data because if we created any new
                         // analyses, they will now have their own IDs assigned to them by neurostore
