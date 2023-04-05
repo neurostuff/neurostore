@@ -39,7 +39,6 @@ class Specification(BaseMixin, db.Model):
     filter = db.Column(db.Text)
     contrast = db.Column(db.JSON)
     corrector = db.Column(db.JSON)
-    public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
 
     user = relationship("User", backref=backref("specifications"))
@@ -54,7 +53,6 @@ class Studyset(BaseMixin, db.Model):
     __tablename__ = "studysets"
 
     snapshot = db.Column(db.JSON)
-    public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     neurostore_id = db.Column(db.Text, db.ForeignKey("studyset_references.id"))
 
@@ -71,7 +69,6 @@ class Annotation(BaseMixin, db.Model):
     __tablename__ = "annotations"
 
     snapshot = db.Column(db.JSON)
-    public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     neurostore_id = db.Column(db.Text, db.ForeignKey("annotation_references.id"))
     internal_studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
@@ -134,6 +131,7 @@ class NeurovaultCollection(BaseMixin, db.Model):
 
 class NeurovaultFile(BaseMixin, db.Model):
     """NV file upload"""
+    __tablename__ = "neurovault_files"
 
     collection_id = db.Column(
         db.Integer,
@@ -147,6 +145,21 @@ class NeurovaultFile(BaseMixin, db.Model):
     __table_args__ = (db.CheckConstraint(status.in_(["OK", "FAILED", "PENDING"])),)
 
 
+class NeurostoreStudy(BaseMixin, db.Model):
+    "Neurostore upload of a study"
+    neurostore_id = db.Column(db.Text)
+    exception = db.Column(db.Text)
+    traceback = db.Column(db.Text)
+    status = db.Column(db.Text, default="PENDING")
+    result_id = db.Column(
+        db.Text, db.ForeignKey("meta_analysis_results.id"), unique=True
+    )
+    result = db.relationship(
+        "MetaAnalysisResult", backref=backref("neurostore_study", uselist=False)
+    )
+    __table_args__ = (db.CheckConstraint(status.in_(["OK", "FAILED", "PENDING"])),)
+
+
 class Project(BaseMixin, db.Model):
     __tablename__ = "projects"
 
@@ -154,6 +167,7 @@ class Project(BaseMixin, db.Model):
     description = db.Column(db.Text)
     provenance = db.Column(db.JSON)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
+    public = db.Column(db.Boolean, default=False)
 
     user = relationship("User", backref=backref("projects"))
 

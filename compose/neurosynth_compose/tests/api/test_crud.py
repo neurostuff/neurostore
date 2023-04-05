@@ -33,6 +33,8 @@ def test_create(auth_client, user_data, endpoint, model, schema):
         payload["internal_annotation_id"] = example.annotation.id
     if payload.get("project"):
         del payload["project"]
+    if payload.get("run_key"):
+        del payload["run_key"]
 
     resp = auth_client.post(f"/api/{endpoint}", data=payload)
 

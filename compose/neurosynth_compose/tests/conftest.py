@@ -359,14 +359,12 @@ def user_data(app, db, mock_add_users):
             studyset = Studyset(
                 user=user,
                 snapshot=serialized_studyset,
-                public=True,
                 studyset_reference=ss_ref,
             )
 
             annotation = Annotation(
                 user=user,
                 snapshot=serialized_annotation,
-                public=True,
                 annotation_reference=annot_ref,
                 studyset=studyset,
             )
@@ -385,7 +383,6 @@ def user_data(app, db, mock_add_users):
                     "method": "indep",
                 },
                 filter="include",
-                public=True,
             )
 
             meta_analysis = MetaAnalysis(
@@ -400,6 +397,7 @@ def user_data(app, db, mock_add_users):
                 name=user.id + "'s project",
                 meta_analyses=[meta_analysis],
                 user=user,
+                public=True,
             )
 
             to_commit.extend(
@@ -412,7 +410,9 @@ def user_data(app, db, mock_add_users):
 
 @pytest.fixture(scope="function")
 def meta_analysis_results(app, db, user_data, mock_add_users):
-    from ..resources.executor import run_nimare
+    from nimare.workflows import cbma_workflow
+    from nimare.diagnostics import FocusCounter
+    from ..resources.executor import process_bundle
     from ..schemas import MetaAnalysisSchema
 
     results = {}
@@ -422,9 +422,11 @@ def meta_analysis_results(app, db, user_data, mock_add_users):
             meta_schema = MetaAnalysisSchema(context={"nested": True}).dump(
                 meta_analysis
             )
+            dataset, estimator, corrector = process_bundle(meta_schema)
+
             results[user_info["id"]] = {
                 "meta_analysis_id": meta_analysis.id,
-                "results": run_nimare(meta_schema),
+                "results": cbma_workflow(dataset, estimator, corrector, FocusCounter()),
             }
 
     return results

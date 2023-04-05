@@ -8,6 +8,7 @@ from .analysis import (
     AnnotationSchema,
     AnnotationReferenceSchema,
     SpecificationSchema,
+    NeurostoreStudySchema,
     ProjectSchema,
 )
 from .users import UserSchema
@@ -23,6 +24,7 @@ __all__ = [
     "AnnotationSchema",
     "AnnotationReferenceSchema",
     "SpecificationSchema",
+    "NeurostoreStudySchema",
     "ProjectSchema",
     "UserSchema",
 ]

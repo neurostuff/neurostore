@@ -141,6 +141,7 @@ class MetaAnalysisResultSchema(BaseSchema):
     neurovault_collection = fields.Nested("NeurovaultCollectionSchema")
     studyset_snapshot = fields.Nested("StudysetSchema", load_only=True)
     annotation_snapshot = fields.Nested("AnnotationSchema", load_only=True)
+    neurostore_study = fields.Nested("NeurostoreStudySchema", load_only=True)
 
     @post_load
     def process_data(self, data, **kwargs):
@@ -216,6 +217,14 @@ class NeurovaultCollectionSchema(BaseSchema):
     @pre_dump
     def test_fnc(self, data, **kwargs):
         return data
+
+
+class NeurostoreStudySchema(BaseSchema):
+    neurostore_id = fields.String()
+    exception = fields.String()
+    traceback = fields.String()
+    status = fields.String()
+    result = fields.String(attribute="result_id", dump_only=True)
 
 
 class ProjectSchema(BaseSchema):

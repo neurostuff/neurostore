@@ -68,38 +68,20 @@ def file_upload_neurovault(self, data, id):
         db.session.commit()
 
 
-@celery_app.task(name="complex_db", bind=True)
-def more_complex_db(self, meta_analysis_id):
-    # rdb.set_trace()
-    meta_analysis = MetaAnalysis.query.filter_by(id=meta_analysis_id).one()
-    meta_analysis.description = "different"
-    # meta_analysis_result = MetaAnalysisResult(meta_analysis=meta_analysis)
-    # coll_id = 12345
+@celery_app.task(name="neurostore.upload", bind=True)
+def upload_neurostore(self, data, access_token, id):
+    """
+    0. create neurostore result
+    1. create meta-analysis result
+    2. attach to meta-analysis
+    3. create new neurovault collection
+    4. add files to neurovault collection
+    """
+    pass
+    
+    # meta_analysis = MetaAnalysis.query.filter_by(id=meta_analysis_id).one()
 
-    # nv_coll = NeurovaultCollection(collection_id=coll_id, result=meta_analysis_result)
-    # nv_file = NeurovaultFile(neurovault_collection=nv_coll)
-    db.session.add_all(
-        [
-            meta_analysis,
-            # meta_analysis_result,
-            # nv_coll,
-            # nv_file,
-        ]
-    )
-    db.session.commit()
+    # neurostore_study = ApiClient.studies_post(name=meta_analysis.name or meta_analysis.id)
 
-
-# def upload_neurostore(flask_app, filenames, meta_analysis_id):
-#     """
-#     0. create neurostore result
-#     1. create meta-analysis result
-#     2. attach to meta-analysis
-#     3. create new neurovault collection
-#     4. add files to neurovault collection
-#     """
-#     meta_analysis = MetaAnalysis.query.filter_by(id=meta_analysis_id).one()
-
-#     neurostore_study = ApiClient.studies_post(name=meta_analysis.name or meta_analysis.id)
-
-#     meta_result = MetaAnalysisResult(
-#         meta_analysis_id=meta_analysis_id, neurostore_id=neurostore_study)
+    # meta_result = MetaAnalysisResult(
+    #     meta_analysis_id=meta_analysis_id, neurostore_id=neurostore_study)

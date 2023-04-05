@@ -20,6 +20,7 @@ from ..models.analysis import (  # noqa E401
     MetaAnalysisResult,
     NeurovaultCollection,
     NeurovaultFile,
+    NeurostoreStudy,
     Project,
 )
 from ..models.auth import User
@@ -34,6 +35,7 @@ from ..schemas import (  # noqa E401
     MetaAnalysisResultSchema,
     NeurovaultCollectionSchema,
     NeurovaultFileSchema,
+    NeurostoreStudySchema,
     ProjectSchema,
 )
 from .singular import singularize
@@ -355,7 +357,6 @@ class MetaAnalysisResultsView(ObjectView, ListView):
     }
 
 
-
 @view_maker
 class NeurovaultCollectionsView(ObjectView, ListView):
     _nested = {"files": "NeurovaultFilesView"}
@@ -432,6 +433,47 @@ class NeurovaultFilesView(ObjectView, ListView):
             data["file"] = data["file"].decode("latin1")
             task = celery_app.send_task(  # noqa: F841
                 "neurovault.upload", args=[data, record.id]
+            )
+        except:  # noqa: E722
+            setattr(record, "status", "FAILED")
+
+        data.pop("file")
+        return committed
+
+
+@view_maker
+class NeurostoreStudiesView(ObjectView, ListView):
+    @classmethod
+    def _external_request(cls, data, record, id):
+        from flask import request
+        from .neurostore import neurostore_session
+        from .tasks import celery_app
+
+        # create study that maps onto project if it exists
+        if record.result.neurostore_id is None:
+            ns_ses = neurostore_session(request)
+
+            study_data = {
+                "name": getattr(record.result.meta_analysis.project, "name", "Untitled"),
+                "description": getattr(record.result.meta_analysis.project, "name", None),
+            }
+            neurostore_id = ns_ses.post("/studies", data=study_data)
+            record.result.neurostore_id = neurostore_id
+
+        if record.id is None:
+            for k, v in data.items():
+                if k not in cls._nested and k not in ["file", "user"]:
+                    setattr(record, k, v)
+
+            db.session.add(record)
+            db.session.commit()
+        committed = True
+        access_token = request
+
+        try:
+            data["file"] = data["file"].decode("latin1")
+            task = celery_app.send_task(  # noqa: F841
+                "neurostore.upload", args=[data, access_token, record.id]
             )
         except:  # noqa: E722
             setattr(record, "status", "FAILED")

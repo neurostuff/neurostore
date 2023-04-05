@@ -8,7 +8,7 @@ from ....models import (
     NeurovaultCollection,
     User,
 )
-from ....resources.tasks import file_upload_neurovault
+from ....resources.tasks import file_upload_neurovault, upload_neurostore
 
 
 @pytest.mark.skip(reason="neurovault not currently working.")
@@ -69,6 +69,8 @@ def test_file_upload_neurovault(app, db, user_data, meta_analysis_results, mock_
     file_upload_neurovault(submit_data, nv_file.id)
 
 
+def test_upload_neurostore(app, db, user_data, meta_analysis_results):
+    pass
 # @celery_test
 # def test_send_task_file_upload_neurovault(
 #     app, db, session, user_data, meta_analysis_results, mock_pynv
