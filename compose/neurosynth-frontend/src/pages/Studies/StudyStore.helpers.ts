@@ -5,6 +5,7 @@ import {
     PointReturn,
 } from 'neurostore-typescript-sdk';
 import { IStoreAnalysis, IStoreCondition, IStorePoint } from './StudyStore';
+import { v4 as uuid } from 'uuid';
 
 export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStoreAnalysis[] => {
     const studyAnalyses: IStoreAnalysis[] = (analyses || []).map((analysis) => {
@@ -15,10 +16,26 @@ export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStor
             isNew: false,
         }));
 
-        const parsedPoints: IStorePoint[] = ((analysis.points || []) as PointReturn[]).map((x) => ({
-            ...x,
-            isNew: false,
-        }));
+        const parsedPoints: IStorePoint[] =
+            (analysis?.points || []).length === 0
+                ? [
+                      {
+                          x: undefined,
+                          y: undefined,
+                          z: undefined,
+                          kind: '',
+                          space: '',
+                          isNew: true,
+                          id: uuid(),
+                      },
+                  ]
+                : (analysis.points as PointReturn[]).map((analysisPoint) => ({
+                      ...analysisPoint,
+                      x: (analysisPoint.coordinates || [])[0],
+                      y: (analysisPoint.coordinates || [])[1],
+                      z: (analysisPoint.coordinates || [])[2],
+                      isNew: false,
+                  }));
 
         return {
             ...analysis,
