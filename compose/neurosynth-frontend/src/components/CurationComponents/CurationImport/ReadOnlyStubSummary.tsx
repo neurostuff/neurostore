@@ -1,8 +1,9 @@
-import { Box, Link, Typography, Chip, Button } from '@mui/material';
+import { Box, Typography, Chip, Button } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
+import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
 
-const CurationImportStubSummary: React.FC<ICurationStubStudy> = (props) => {
+const ReadOnlyStubSummary: React.FC<ICurationStubStudy> = (props) => {
     const {
         articleLink,
         articleYear,
@@ -28,7 +29,19 @@ const CurationImportStubSummary: React.FC<ICurationStubStudy> = (props) => {
                     href={`/studies/${neurostoreId}`}
                     sx={{ marginRight: '15px' }}
                 >
-                    View neurostore study
+                    view study in neurostore
+                </Button>
+            )}
+            {pmid && (
+                <Button
+                    target="_blank"
+                    href={`${PUBMED_ARTICLE_URL_PREFIX}${pmid}`}
+                    variant="outlined"
+                    size="small"
+                    color="success"
+                    sx={{ marginRight: '15px' }}
+                >
+                    view study in pubmed
                 </Button>
             )}
             {articleLink.length > 0 && (
@@ -78,4 +91,4 @@ const CurationImportStubSummary: React.FC<ICurationStubStudy> = (props) => {
     );
 };
 
-export default CurationImportStubSummary;
+export default ReadOnlyStubSummary;

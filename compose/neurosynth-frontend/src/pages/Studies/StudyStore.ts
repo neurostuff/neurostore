@@ -6,7 +6,7 @@ import {
 import {
     AnalysisReturn,
     ConditionReturn,
-    PointRequest,
+    PointReturn,
     StudyReturn,
 } from 'neurostore-typescript-sdk';
 import API from 'utils/api';
@@ -16,9 +16,14 @@ import { storeAnalysesToStudyAnalyses, studyAnalysesToStoreAnalyses } from './St
 import { v4 as uuid } from 'uuid';
 import { setAnalysesInAnnotationAsIncluded } from 'components/ExtractionComponents/Ingestion/helpers/utils';
 
-export interface IStoreAnalysis extends Omit<AnalysisReturn, 'conditions'> {
+export interface IStorePoint extends PointReturn {
+    isNew: boolean;
+}
+
+export interface IStoreAnalysis extends Omit<AnalysisReturn, 'conditions' | 'points'> {
     isNew: boolean;
     conditions: IStoreCondition[];
+    points: IStorePoint[];
 }
 
 export interface IStoreCondition extends ConditionReturn {
@@ -50,7 +55,9 @@ export type StudyStoreActions = {
         weight: number
     ) => void;
     deleteConditionFromAnalysis: (analysisId: string, conditionId: string) => void;
-    updateAnalysisPoints: (analysisId: string, points: PointRequest[]) => void;
+    createAnalysisPoints: (analysisId: string, points: IStorePoint[], index: number) => void;
+    deleteAnalysisPoints: (analysisId: string, pointIds: string[]) => void;
+    updateAnalysisPoints: (analysisId: string, points: IStorePoint[]) => void;
 };
 
 type StudyStoreMetadata = {
@@ -319,6 +326,7 @@ const useStudyStore = create<
                                 isNew: true,
                                 conditions: [],
                                 weights: [],
+                                points: [],
                                 id: uuid(), // this is a temporary ID until one is assigned via neurostore
                             });
                         } else {
@@ -456,16 +464,91 @@ const useStudyStore = create<
                         };
                     });
                 },
-                updateAnalysisPoints: (analysisId, points) => {
+                createAnalysisPoints: (analysisId, points, index) => {
                     set((state) => {
                         const updatedAnalyses = [...state.study.analyses];
                         const foundAnalysisIndex = updatedAnalyses.findIndex(
                             (x) => x.id === analysisId
                         );
                         if (foundAnalysisIndex < 0) return state;
+                        const updatedPoints = [...state.study.analyses[foundAnalysisIndex].points];
+
+                        updatedPoints.splice(
+                            index,
+                            0,
+                            ...points.map((x) => ({ ...x, isNew: true, id: uuid() }))
+                        );
                         updatedAnalyses[foundAnalysisIndex] = {
                             ...updatedAnalyses[foundAnalysisIndex],
-                            points: [...points],
+                            points: updatedPoints,
+                        };
+
+                        return {
+                            ...state,
+                            study: {
+                                ...state.study,
+                                analyses: updatedAnalyses,
+                            },
+                            storeMetadata: {
+                                ...state.storeMetadata,
+                                studyIsEdited: true,
+                            },
+                        };
+                    });
+                },
+                deleteAnalysisPoints: (analysisId, ids) => {
+                    set((state) => {
+                        const updatedAnalyses = [...state.study.analyses];
+                        const foundAnalysisIndex = updatedAnalyses.findIndex(
+                            (x) => x.id === analysisId
+                        );
+                        if (foundAnalysisIndex < 0) return state;
+                        const updatedPoints = [
+                            ...state.study.analyses[foundAnalysisIndex].points,
+                        ].filter((point) => !ids.includes(point.id as string));
+
+                        updatedAnalyses[foundAnalysisIndex] = {
+                            ...updatedAnalyses[foundAnalysisIndex],
+                            points: updatedPoints,
+                        };
+
+                        return {
+                            ...state,
+                            study: {
+                                ...state.study,
+                                analyses: updatedAnalyses,
+                            },
+                            storeMetadata: {
+                                ...state.storeMetadata,
+                                studyIsEdited: true,
+                            },
+                        };
+                    });
+                },
+                updateAnalysisPoints: (analysisId, pointsToUpdate) => {
+                    set((state) => {
+                        const updatedAnalyses = [...state.study.analyses];
+                        const foundAnalysisIndex = updatedAnalyses.findIndex(
+                            (x) => x.id === analysisId
+                        );
+                        if (foundAnalysisIndex < 0) return state;
+
+                        const updatedPoints = [...state.study.analyses[foundAnalysisIndex].points];
+                        pointsToUpdate.forEach((pointToUpdate) => {
+                            const pointToUpdateId = pointToUpdate.id as string;
+                            const foundPointIndex = updatedPoints.findIndex(
+                                (x) => x.id === pointToUpdateId
+                            );
+                            if (foundPointIndex < 0) return;
+                            updatedPoints[foundPointIndex] = {
+                                ...updatedPoints[foundPointIndex],
+                                ...pointToUpdate,
+                            };
+                        });
+
+                        updatedAnalyses[foundAnalysisIndex] = {
+                            ...updatedAnalyses[foundAnalysisIndex],
+                            points: updatedPoints,
                         };
                         return {
                             ...state,
@@ -575,3 +658,5 @@ export const useAddOrUpdateConditionWeightPairForAnalysis = () =>
 export const useDeleteConditionFromAnalysis = () =>
     useStudyStore((state) => state.deleteConditionFromAnalysis);
 export const useUpdateAnalysisPoints = () => useStudyStore((state) => state.updateAnalysisPoints);
+export const useCreateAnalysisPoints = () => useStudyStore((state) => state.createAnalysisPoints);
+export const useDeleteAnalysisPoints = () => useStudyStore((state) => state.deleteAnalysisPoints);

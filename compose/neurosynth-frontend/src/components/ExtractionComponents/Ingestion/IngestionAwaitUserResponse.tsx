@@ -1,5 +1,5 @@
 import { Box, Button, Link, Typography } from '@mui/material';
-import CurationImportStubSummary from 'components/CurationComponents/CurationImport/CurationImportStubSummary';
+import ReadOnlyStubSummary from 'components/CurationComponents/CurationImport/ReadOnlyStubSummary';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 
@@ -42,7 +42,7 @@ const IngestionAwaitUserResponse: React.FC<{
                             padding: '10px',
                         }}
                     >
-                        <CurationImportStubSummary {...stubBeingIngested} />
+                        <ReadOnlyStubSummary {...stubBeingIngested} />
                         <Button
                             onClick={() => onSelectOption(stubBeingIngested, false)}
                             color="success"

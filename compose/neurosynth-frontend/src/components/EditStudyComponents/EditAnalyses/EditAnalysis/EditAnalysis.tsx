@@ -21,7 +21,7 @@ const EditAnalysis: React.FC<{ analysisId?: string }> = (props) => {
                 <Typography sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
                     Analysis Coordinates
                 </Typography>
-                <EditAnalysisPoints />
+                <EditAnalysisPoints analysisId={props.analysisId} />
             </Box>
             <Box sx={{ marginTop: '2rem' }}>
                 <Typography sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>

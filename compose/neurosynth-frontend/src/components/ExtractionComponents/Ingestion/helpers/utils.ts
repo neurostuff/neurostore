@@ -32,6 +32,16 @@ export const getMatchingStudies = async (searchTerm: string): Promise<StudyRetur
 
 export const createStudyFromStub = async (stub: ICurationStubStudy): Promise<StudyReturn> => {
     try {
+        const metadata: { [key: string]: any } = {};
+        if (stub.articleLink) metadata.articleLink = stub.articleLink;
+        if (stub.identificationSource) metadata.identificationSource = stub.identificationSource;
+        if (stub.keywords) metadata.keywords = stub.keywords;
+        if (stub.tags.length > 0) {
+            stub.tags.forEach((tag, index) => {
+                metadata[`tag_${index}`] = tag.label;
+            });
+        }
+
         // 1. create study using the stub
         const createdStudy = await API.NeurostoreServices.StudiesService.studiesPost(
             undefined,
@@ -44,6 +54,7 @@ export const createStudyFromStub = async (stub: ICurationStubStudy): Promise<Stu
                 pmid: stub.pmid,
                 authors: stub.authors,
                 year: parseInt(stub.articleYear || '0'),
+                metadata: metadata,
             }
         );
 

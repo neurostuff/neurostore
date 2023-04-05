@@ -25,7 +25,7 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { defaultExclusionTags } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import { useHistory } from 'react-router-dom';
-import CurationImportStubSummary from '../CurationImportStubSummary';
+import ReadOnlyStubSummary from '../ReadOnlyStubSummary';
 
 type IResolveProjectDuplicatesCurationStubStudy = ICurationStubStudy & {
     columnIndex?: number;
@@ -294,7 +294,7 @@ const CurationImportResolveDuplicates: React.FC<{
                                     }}
                                 >
                                     <Box sx={{ width: '100%' }}>
-                                        <CurationImportStubSummary {...importedStub} />
+                                        <ReadOnlyStubSummary {...importedStub} />
                                     </Box>
                                 </Box>
                                 <Box sx={{ width: '250px' }}>
@@ -336,7 +336,7 @@ const CurationImportResolveDuplicates: React.FC<{
                                     >
                                         <Box sx={{ width: '100%' }}>
                                             <Chip size="small" label={stub.colName} />
-                                            <CurationImportStubSummary {...stub} />
+                                            <ReadOnlyStubSummary {...stub} />
                                         </Box>
                                     </Box>
                                     <Box sx={{ width: '250px' }}>

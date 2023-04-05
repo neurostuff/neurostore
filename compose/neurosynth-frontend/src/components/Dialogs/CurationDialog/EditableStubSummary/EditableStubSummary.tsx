@@ -1,23 +1,23 @@
-import { Typography, Box, Link, Button } from '@mui/material';
+import { Typography, Box, Button } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import React from 'react';
 import TextEdit from 'components/TextEdit/TextEdit';
 import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
 import { ISource } from 'hooks/requests/useGetProjects';
-import CurationStubSummaryHeader from './CurationStubSummaryHeader';
+import EditableStubSummaryHeader from './EditableStubSummaryHeader';
 import {
     useProjectCurationColumns,
     useUpdateStubField,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
 
-interface ICurationStubSummary {
+interface IEditableStubSummary {
     stub: ICurationStubStudy | undefined;
     columnIndex: number;
     onMoveToNextStub: () => void;
 }
 
-const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
+const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
     const updateStubField = useUpdateStubField();
     const curationColumns = useProjectCurationColumns();
 
@@ -51,14 +51,14 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
 
     return (
         <Box sx={{ padding: '0rem 2rem', minWidth: '585px' }}>
-            <CurationStubSummaryHeader
+            <EditableStubSummaryHeader
                 type={isLastColumn ? 'included' : props.stub.exclusionTag ? 'excluded' : 'default'}
                 stub={props.stub}
                 columnIndex={props.columnIndex}
                 onMoveToNextStub={props.onMoveToNextStub}
             />
 
-            <Box sx={{ margin: '0.5rem 0', marginTop: '1rem' }}>
+            <Box sx={{ margin: '0.5rem 0' }}>
                 <IdentificationSourcePopup
                     label=""
                     onAddSource={(source) => handleUpdateStub(source, 'identificationSource')}
@@ -85,7 +85,19 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
                         color="primary"
                         sx={{ marginRight: '15px' }}
                     >
-                        view neurostore study
+                        view study in neurostore
+                    </Button>
+                )}
+                {props.stub.pmid && (
+                    <Button
+                        target="_blank"
+                        href={`${PUBMED_ARTICLE_URL_PREFIX}${props.stub.pmid}`}
+                        variant="outlined"
+                        size="small"
+                        color="success"
+                        sx={{ marginRight: '15px' }}
+                    >
+                        view study in pubmed
                     </Button>
                 )}
                 <TextEdit
@@ -242,4 +254,4 @@ const CurationStubSummary: React.FC<ICurationStubSummary> = (props) => {
     );
 };
 
-export default CurationStubSummary;
+export default EditableStubSummary;

@@ -4,10 +4,15 @@ import { HotTable } from '@handsontable/react';
 import { CellChange, ChangeSource, RangeType } from 'handsontable/common';
 import { registerAllModules } from 'handsontable/registry';
 import { Settings } from 'handsontable/plugins/contextMenu';
-import { useStudyAnalysisPoints, useUpdateAnalysisPoints } from 'pages/Studies/StudyStore';
+import {
+    useCreateAnalysisPoints,
+    useDeleteAnalysisPoints,
+    useStudyAnalysisPoints,
+    useUpdateAnalysisPoints,
+} from 'pages/Studies/StudyStore';
 import { ColumnSettings } from 'handsontable/settings';
 import styles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable.module.css';
-import { PointReturn } from 'neurostore-typescript-sdk';
+import { IStorePoint } from 'pages/Studies/StudyStore';
 
 export const ROW_HEIGHT = 56;
 
@@ -77,26 +82,25 @@ const handleBeforePaste = (data: any[][], coords: RangeType[]) => {
 };
 
 const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props) => {
-    // const points = useStudyAnalysisPoints(props.analysisId) as PointReturn[];
-    const points: PointReturn[] = [
-        {
-            id: 'abc',
-            coordinates: [0, 22, -2],
-            kind: 'some kind',
-            space: 'MNI',
-        },
-    ];
-    const updatedPoints = useUpdateAnalysisPoints();
-    const hotReference = useRef<HotTable>(null);
+    console.log('render');
+    const points = useStudyAnalysisPoints(props.analysisId) as IStorePoint[];
+    const updatePoints = useUpdateAnalysisPoints();
+    const createPoint = useCreateAnalysisPoints();
+    const deletePoints = useDeleteAnalysisPoints();
+    const hotTableRef = useRef<HotTable>(null);
 
-    // points[0].coordinates
-
-    const noData = points.length === 0;
+    // make a copy so that hot table doesnt update the original
+    const hotPoints = points.map((x) => ({ ...x }));
 
     const handlebeforeChange = (changes: (CellChange | null)[], source: ChangeSource) => {
+        if (!props.analysisId) return;
         if (changes.length === 0) return;
+        console.log(changes);
+        // updatePoints(props.analysisId, )
         return false;
     };
+
+    console.log(points);
 
     const handleBeforeRemoveRow = (
         index: number,
@@ -120,40 +124,63 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
         amount: number,
         source?: ChangeSource | undefined
     ) => {
-        if (source === 'auto') {
+        if (!props.analysisId) return false;
+
+        if (source === 'auto' && points.length === 0) {
+            return true;
         }
 
-        console.log({
-            rowEdit: 'ADD',
-            index,
-            amount,
-            source,
-        });
+        if (source === 'ContextMenu.rowAbove') {
+            createPoint(
+                props.analysisId,
+                [
+                    {
+                        coordinates: [0, 0, 0],
+                        kind: '',
+                        space: '',
+                        isNew: true,
+                    },
+                ],
+                index === 0 ? index : index - 1
+            );
+        } else if (source === 'ContextMenu.rowBelow') {
+            createPoint(
+                props.analysisId,
+                [
+                    {
+                        coordinates: [0, 0, 0],
+                        kind: '',
+                        space: '',
+                        isNew: true,
+                    },
+                ],
+                index + 1
+            );
+        }
+
         return false;
     };
 
     return (
         <Box>
             <HotTable
-                ref={hotReference}
+                ref={hotTableRef}
                 licenseKey="non-commercial-and-evaluation"
                 beforeChange={handlebeforeChange}
                 beforePaste={handleBeforePaste}
                 beforeRemoveRow={handleBeforeRemoveRow}
                 beforeCreateRow={handleBeforeCreateRow}
-                allowInsertRow
                 allowRemoveColumn={false}
                 allowInvalid={false}
                 minRows={1}
                 height="auto"
                 colWidths={[100, 100, 100, 200, 200]}
                 manualColumnResize
-                manualColumnFreeze
                 allowInsertColumn={false}
                 columns={hotTableColumnSettings}
                 contextMenu={hotTableContextMenuSettings}
                 colHeaders={hotTableColHeaders}
-                data={points}
+                data={hotPoints}
             />
         </Box>
     );

@@ -1,6 +1,6 @@
 import { Box, Button, CircularProgress, Link, Typography } from '@mui/material';
 import NavigationButtons from 'components/Buttons/NavigationButtons/NavigationButtons';
-import CurationImportStubSummary from 'components/CurationComponents/CurationImport/CurationImportStubSummary';
+import ReadOnlyStubSummary from 'components/CurationComponents/CurationImport/ReadOnlyStubSummary';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
@@ -291,7 +291,7 @@ const IngestionStep: React.FC<{ onNext: () => void }> = (props) => {
                                         padding: '10px',
                                     }}
                                 >
-                                    <CurationImportStubSummary {...ingestionView.stubToIngest} />
+                                    <ReadOnlyStubSummary {...ingestionView.stubToIngest} />
                                     <Button
                                         onClick={() =>
                                             createStudyFromStub(

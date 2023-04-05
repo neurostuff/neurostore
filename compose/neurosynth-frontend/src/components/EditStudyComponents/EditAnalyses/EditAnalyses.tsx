@@ -20,7 +20,7 @@ const EditAnalyses: React.FC = (props) => {
     const numAnalyses = useNumStudyAnalyses();
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
     const [selectedAnalysisId, setSelectedAnalysisId] = useState<string>();
-    const [createNewAnnotationDialogIsOpen, setCreateNewAnnotationDialogIsOpen] = useState(false);
+    const [createNewAnalysisDialogIsOpen, setCreateNewAnalysisDialogIsOpen] = useState(false);
 
     const handleCreateNewAnalysis = (name: string, description: string) => {
         addOrUpdateAnalysis({
@@ -54,13 +54,13 @@ const EditAnalyses: React.FC = (props) => {
                             }}
                         >
                             <CreateDetailsDialog
-                                titleText="Create new annotation"
+                                titleText="Create new analysis"
                                 onCreate={handleCreateNewAnalysis}
-                                onCloseDialog={() => setCreateNewAnnotationDialogIsOpen(false)}
-                                isOpen={createNewAnnotationDialogIsOpen}
+                                onCloseDialog={() => setCreateNewAnalysisDialogIsOpen(false)}
+                                isOpen={createNewAnalysisDialogIsOpen}
                             />
                             <Button
-                                onClick={() => setCreateNewAnnotationDialogIsOpen(true)}
+                                onClick={() => setCreateNewAnalysisDialogIsOpen(true)}
                                 sx={{
                                     width: '150px',
                                     marginLeft: 'auto',
@@ -73,7 +73,13 @@ const EditAnalyses: React.FC = (props) => {
                         </Box>
 
                         {numAnalyses === 0 ? (
-                            <Typography sx={{ color: 'warning.dark', marginTop: '1rem' }}>
+                            <Typography
+                                sx={{
+                                    color: 'warning.dark',
+                                    marginTop: '1rem',
+                                    textAlign: 'center',
+                                }}
+                            >
                                 No Analyses for this study
                             </Typography>
                         ) : (

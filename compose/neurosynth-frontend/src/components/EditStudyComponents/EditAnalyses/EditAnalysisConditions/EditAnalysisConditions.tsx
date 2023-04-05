@@ -23,9 +23,6 @@ const EditAnalysisConditions: React.FC<{ analysisId: string }> = React.memo((pro
     const conditions = useStudyAnalysisConditions(props.analysisId);
     const weights = useStudyAnalysisWeights(props.analysisId);
 
-    console.log('re render');
-    console.log({ conditions, weights });
-
     const addOrUpdateConditionWeightPairForAnalysis =
         useAddOrUpdateConditionWeightPairForAnalysis();
     const deleteConditionFromAnalysis = useDeleteConditionFromAnalysis();

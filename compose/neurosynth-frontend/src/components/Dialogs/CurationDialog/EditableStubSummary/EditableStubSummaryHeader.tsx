@@ -21,14 +21,14 @@ import {
 import React from 'react';
 import { defaultInfoTags } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 
-interface ICurationStubSummaryHeader {
+interface IEditableStubSummaryHeader {
     type: 'excluded' | 'included' | 'default';
     columnIndex: number;
     stub: ICurationStubStudy;
     onMoveToNextStub: () => void;
 }
 
-const CurationStubSummaryHeader: React.FC<ICurationStubSummaryHeader> = React.memo((props) => {
+const EditableStubSummaryHeader: React.FC<IEditableStubSummaryHeader> = React.memo((props) => {
     const addTagsRef = useRef<HTMLButtonElement>(null);
 
     const [exclusionTagSelectorIsOpen, setExclusionTagSelectorIsOpen] = useState(false);
@@ -194,4 +194,4 @@ const CurationStubSummaryHeader: React.FC<ICurationStubSummaryHeader> = React.me
     );
 });
 
-export default CurationStubSummaryHeader;
+export default EditableStubSummaryHeader;

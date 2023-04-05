@@ -1,7 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import { useEffect, useState } from 'react';
-import CurationStubSummary from 'components/Dialogs/CurationDialog/CurationStubSummary/CurationStubSummary';
+import EditableStubSummary from 'components/Dialogs/CurationDialog/EditableStubSummary/EditableStubSummary';
 import CurationStubListItem from './CurationStubListItem/CurationStubListItem';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
@@ -123,7 +123,7 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
                     </FixedSizeList>
                 </Box>
                 <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
-                    <CurationStubSummary
+                    <EditableStubSummary
                         onMoveToNextStub={handleMoveToNextStub}
                         columnIndex={props.columnIndex}
                         stub={selectedStub}

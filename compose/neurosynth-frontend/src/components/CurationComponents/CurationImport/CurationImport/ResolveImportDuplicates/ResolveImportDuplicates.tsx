@@ -16,7 +16,7 @@ import { createDuplicateMap } from '../../helpers/utils';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import CurationImportStubSummary from '../../CurationImportStubSummary';
+import ReadOnlyStubSummary from '../../ReadOnlyStubSummary';
 
 type IResolveImportDuplicatesCurationStubStudy = ICurationStubStudy & {
     resolution?: 'duplicate' | 'not-duplicate';
@@ -132,7 +132,7 @@ const ResolveImportDuplicates: React.FC<{
                                             }}
                                         >
                                             <Box sx={{ width: '100%' }}>
-                                                <CurationImportStubSummary {...stub} />
+                                                <ReadOnlyStubSummary {...stub} />
                                             </Box>
                                         </Box>
                                         <Box sx={{ width: '250px' }}>

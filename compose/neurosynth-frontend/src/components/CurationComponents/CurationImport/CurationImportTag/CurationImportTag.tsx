@@ -94,7 +94,7 @@ const CurationImportTag: React.FC<{
                     height={fixedListHeight}
                     itemCount={stubs.length}
                     width="100%"
-                    itemSize={210}
+                    itemSize={238}
                     itemKey={(index, data) => data.stubs[index]?.id}
                     layout="vertical"
                     itemData={{

@@ -23,6 +23,7 @@ const CreateStubStudy: React.FC<IImportArgs> = (props) => {
         articleYear: string;
         doi: string;
         journal: string;
+        articleLink: string;
         abstract: string;
         identificationSource: ISource | null;
     }>({
@@ -33,6 +34,7 @@ const CreateStubStudy: React.FC<IImportArgs> = (props) => {
         articleYear: '',
         doi: '',
         journal: '',
+        articleLink: '',
         abstract: '',
         identificationSource: null,
     });
@@ -78,7 +80,7 @@ const CreateStubStudy: React.FC<IImportArgs> = (props) => {
                     journal: form.journal,
                     articleYear: form.articleYear,
                     abstractText: form.abstract,
-                    articleLink: form.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${form.pmid}` : '',
+                    articleLink: form.articleLink,
                     exclusionTag: null,
                     tags: [],
                     identificationSource: form.identificationSource as ISource,
@@ -131,7 +133,7 @@ const CreateStubStudy: React.FC<IImportArgs> = (props) => {
                 />
                 <TextField
                     onChange={handleUpdateForm}
-                    sx={{ display: 'flex', flex: '1 1 200px', marginRight: '15px' }}
+                    sx={{ display: 'flex', flex: '1 1 100px', marginRight: '15px' }}
                     label="PMID"
                     value={form.pmid}
                     name="pmid"
@@ -139,7 +141,7 @@ const CreateStubStudy: React.FC<IImportArgs> = (props) => {
                     placeholder="2393823"
                 />
                 <TextField
-                    sx={{ display: 'flex', flex: '1 1 150px' }}
+                    sx={{ display: 'flex', flex: '1 1 100px' }}
                     onChange={handleUpdateForm}
                     value={form.articleYear}
                     label="Article Year"
@@ -172,6 +174,14 @@ const CreateStubStudy: React.FC<IImportArgs> = (props) => {
                 </Box>
             </Box>
 
+            <TextField
+                onChange={handleUpdateForm}
+                sx={CreateStubStudyStyles.textInput}
+                label="article link"
+                name="articleLink"
+                placeholder="https://www ..."
+                value={form.articleLink}
+            />
             <TextField
                 onChange={handleUpdateForm}
                 sx={CreateStubStudyStyles.textInput}

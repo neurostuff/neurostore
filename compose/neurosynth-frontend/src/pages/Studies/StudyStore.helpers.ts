@@ -1,5 +1,10 @@
-import { AnalysisReturn, ConditionRequest, ConditionReturn } from 'neurostore-typescript-sdk';
-import { IStoreAnalysis, IStoreCondition } from './StudyStore';
+import {
+    AnalysisReturn,
+    ConditionRequest,
+    ConditionReturn,
+    PointReturn,
+} from 'neurostore-typescript-sdk';
+import { IStoreAnalysis, IStoreCondition, IStorePoint } from './StudyStore';
 
 export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStoreAnalysis[] => {
     const studyAnalyses: IStoreAnalysis[] = (analyses || []).map((analysis) => {
@@ -10,9 +15,15 @@ export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStor
             isNew: false,
         }));
 
+        const parsedPoints: IStorePoint[] = ((analysis.points || []) as PointReturn[]).map((x) => ({
+            ...x,
+            isNew: false,
+        }));
+
         return {
             ...analysis,
             conditions: parsedConditions,
+            points: parsedPoints,
             isNew: false,
         };
     });
