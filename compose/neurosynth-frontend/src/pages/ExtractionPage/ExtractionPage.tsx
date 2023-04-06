@@ -4,15 +4,14 @@ import TextEdit from 'components/TextEdit/TextEdit';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import CheckIcon from '@mui/icons-material/Check';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
-import { useGetAnnotationById, useGetStudysetById, useUpdateStudyset } from 'hooks';
+import { useGetStudysetById, useUpdateStudyset } from 'hooks';
 import { useEffect, useState } from 'react';
 import { NavLink, useHistory, useLocation, useParams } from 'react-router-dom';
 import { StudyReturn } from 'neurostore-typescript-sdk';
-import StudyListItem from 'components/ExtractionComponents/StudyListItem';
+import ReadOnlyStudySummary from 'components/ExtractionComponents/ReadOnlyStudySummary';
 import {
     useInitProjectStore,
     useProjectCurationColumn,
-    useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectExtractionStudyStatusList,
     useProjectName,
@@ -45,7 +44,6 @@ const ExtractionPage: React.FC = (props) => {
 
     const projectName = useProjectName();
     const studysetId = useProjectExtractionStudysetId();
-    const annotationId = useProjectExtractionAnnotationId();
     const studyStatusList = useProjectExtractionStudyStatusList();
     const initProjectStore = useInitProjectStore();
     const numColumns = useProjectNumCurationColumns();
@@ -60,8 +58,6 @@ const ExtractionPage: React.FC = (props) => {
         isLoading: getStudysetIsLoading,
         isError: getStudysetIsError,
     } = useGetStudysetById(studysetId, true);
-
-    const { data, isLoading, isError } = useGetAnnotationById(annotationId);
     const { mutate } = useUpdateStudyset();
 
     const [fieldBeingUpdated, setFieldBeingUpdated] = useState('');
@@ -170,7 +166,7 @@ const ExtractionPage: React.FC = (props) => {
 
     return (
         <StateHandlerComponent isError={getStudysetIsError} isLoading={getStudysetIsLoading}>
-            <Box sx={{ width: '80%', minWidth: '450px', margin: '0 auto' }}>
+            <Box sx={{ minWidth: '450px', margin: '0 auto' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
                         <Breadcrumbs>
@@ -200,7 +196,7 @@ const ExtractionPage: React.FC = (props) => {
                             color="secondary"
                             variant="outlined"
                             onClick={() =>
-                                history.push(`/projects/${projectId}/extraction/annotation`)
+                                history.push(`/projects/${projectId}/extraction/annotations`)
                             }
                         >
                             View Annotations
@@ -318,6 +314,11 @@ const ExtractionPage: React.FC = (props) => {
                             label="Completed"
                         />
                     </Box>
+                    <Box>
+                        <Typography sx={{ textAlign: 'end' }} variant="h6">
+                            {studiesDisplayed.length} studies
+                        </Typography>
+                    </Box>
                 </Box>
                 <Box
                     sx={{
@@ -325,13 +326,8 @@ const ExtractionPage: React.FC = (props) => {
                     }}
                 >
                     <Box>
-                        <Typography sx={{ textAlign: 'end' }} variant="h6">
-                            {studiesDisplayed.length} studies
-                        </Typography>
-                    </Box>
-                    <Box>
                         {studiesDisplayed.map((study, index) => (
-                            <StudyListItem
+                            <ReadOnlyStudySummary
                                 key={study?.id || ''}
                                 currentSelectedChip={currentChip}
                                 {...study}

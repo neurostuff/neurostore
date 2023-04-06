@@ -48,6 +48,7 @@ export type StudyStoreActions = {
     addOrUpdateStudyMetadataRow: (row: IMetadataRowModel) => void;
     deleteStudyMetadataRow: (key: string) => void;
     addOrUpdateAnalysis: (analysis: Partial<IStoreAnalysis>) => void;
+    deleteAnalysis: (analysisId: string) => void;
     createCondition: (condition: IStoreCondition) => IStoreCondition;
     addOrUpdateConditionWeightPairForAnalysis: (
         analysisId: string,
@@ -58,6 +59,7 @@ export type StudyStoreActions = {
     createAnalysisPoints: (analysisId: string, points: IStorePoint[], index: number) => void;
     deleteAnalysisPoints: (analysisId: string, pointIds: string[]) => void;
     updateAnalysisPoints: (analysisId: string, points: IStorePoint[]) => void;
+    setIsValid: (isValid: boolean) => void;
 };
 
 type StudyStoreMetadata = {
@@ -65,7 +67,8 @@ type StudyStoreMetadata = {
     studyIsLoading: boolean;
     conditionsIsEdited: boolean;
     conditionsIsLoading: boolean;
-    isError: boolean;
+    isError: boolean; // for http errors that occur
+    isValid: boolean; // flag denoting if the form is valid
 };
 
 const useStudyStore = create<
@@ -105,6 +108,7 @@ const useStudyStore = create<
                     isError: false,
                     conditionsIsEdited: false,
                     conditionsIsLoading: false,
+                    isValid: true,
                 },
                 initStudyStore: async (studyId) => {
                     if (!studyId) return;
@@ -157,6 +161,15 @@ const useStudyStore = create<
                         }));
                     }
                 },
+                setIsValid: (isValid) => {
+                    set((state) => ({
+                        ...state,
+                        storeMetadata: {
+                            ...state.storeMetadata,
+                            isValid: isValid,
+                        },
+                    }));
+                },
                 clearStudyStore: () => {
                     set((state) => ({
                         study: {
@@ -186,6 +199,7 @@ const useStudyStore = create<
                             conditionsIsEdited: false,
                             conditionsIsLoading: false,
                             isError: false,
+                            isValid: true,
                         },
                         conditions: [],
                     }));
@@ -349,6 +363,25 @@ const useStudyStore = create<
                         };
                     });
                 },
+                deleteAnalysis: (analysisId) => {
+                    set((state) => {
+                        const updatedAnalyses = [
+                            ...state.study.analyses.filter((x) => x.id !== analysisId),
+                        ];
+
+                        return {
+                            ...state,
+                            study: {
+                                ...state.study,
+                                analyses: updatedAnalyses,
+                            },
+                            storeMetadata: {
+                                ...state.storeMetadata,
+                                studyIsEdited: true,
+                            },
+                        };
+                    });
+                },
                 createCondition: (condition) => {
                     const newCondition = {
                         ...condition,
@@ -476,7 +509,16 @@ const useStudyStore = create<
                         updatedPoints.splice(
                             index,
                             0,
-                            ...points.map((x) => ({ ...x, isNew: true, id: uuid() }))
+                            ...points.map((x) => ({
+                                x: undefined,
+                                y: undefined,
+                                z: undefined,
+                                kind: undefined,
+                                space: undefined,
+                                ...x,
+                                isNew: true,
+                                id: uuid(), // temporary ID until one is assigned by neurostore
+                            }))
                         );
                         updatedAnalyses[foundAnalysisIndex] = {
                             ...updatedAnalyses[foundAnalysisIndex],
@@ -637,11 +679,12 @@ export const useStudyAnalysisPoints = (analysisId?: string) =>
         if (!analysisId) return [];
 
         const foundAnalysis = state.study.analyses.find((x) => x.id === analysisId);
-        if (!foundAnalysis) return [];
-        return foundAnalysis.points || [];
+        if (!foundAnalysis) return null;
+        return foundAnalysis.points || null;
     });
 export const useNumStudyAnalyses = () => useStudyStore((state) => state.study.analyses.length);
 export const useStudyAnalyses = () => useStudyStore((state) => state.study.analyses);
+export const useIsValid = () => useStudyStore((state) => state.storeMetadata.isValid);
 
 // study action hooks
 export const useInitStudyStore = () => useStudyStore((state) => state.initStudyStore);
@@ -660,3 +703,5 @@ export const useDeleteConditionFromAnalysis = () =>
 export const useUpdateAnalysisPoints = () => useStudyStore((state) => state.updateAnalysisPoints);
 export const useCreateAnalysisPoints = () => useStudyStore((state) => state.createAnalysisPoints);
 export const useDeleteAnalysisPoints = () => useStudyStore((state) => state.deleteAnalysisPoints);
+export const useSetIsValid = () => useStudyStore((state) => state.setIsValid);
+export const useDeleteAnalysis = () => useStudyStore((state) => state.deleteAnalysis);

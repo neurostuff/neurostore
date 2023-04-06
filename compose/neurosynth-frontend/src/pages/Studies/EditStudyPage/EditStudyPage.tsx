@@ -1,4 +1,13 @@
-import { Box, Button, Divider } from '@mui/material';
+import {
+    Box,
+    Breadcrumbs,
+    Button,
+    Divider,
+    IconButton,
+    Link,
+    Tooltip,
+    Typography,
+} from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import EditAnalyses from 'components/EditStudyComponents/EditAnalyses/EditAnalyses';
 import EditStudyDetails from 'components/EditStudyComponents/EditStudyDetails/EditStudyDetails';
@@ -6,19 +15,27 @@ import EditStudyMetadata from 'components/EditStudyComponents/EditStudyMetadata/
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useSnackbar } from 'notistack';
 import { useEffect } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import { NavLink, useParams } from 'react-router-dom';
 import {
     useClearStudyStore,
     useInitStudyStore,
+    useIsValid,
     useStudyHasBeenEdited,
     useStudyId,
     useStudyIsLoading,
+    useStudyName,
     useUpdateStudyInDB,
 } from '../StudyStore';
 import { useProjectExtractionAnnotationId } from 'pages/Projects/ProjectPage/ProjectStore';
+import useGetProjectById from 'hooks/requests/useGetProjectById';
+import CheckIcon from '@mui/icons-material/Check';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
+import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatusButtons/FloatingStatusButtons';
 
 const EditStudyPage: React.FC = (props) => {
     const { studyId, projectId } = useParams<{ projectId: string; studyId: string }>();
+    const { data: project } = useGetProjectById(projectId);
+    const isValid = useIsValid();
     const initStudyStore = useInitStudyStore();
     const clearStudyStore = useClearStudyStore();
     const studyHasBeenEdited = useStudyHasBeenEdited();
@@ -27,7 +44,7 @@ const EditStudyPage: React.FC = (props) => {
     const updateStudyInDB = useUpdateStudyInDB();
     const annotationId = useProjectExtractionAnnotationId();
     const snackbar = useSnackbar();
-    const history = useHistory();
+    const studyName = useStudyName();
 
     useEffect(() => {
         clearStudyStore();
@@ -35,6 +52,8 @@ const EditStudyPage: React.FC = (props) => {
     }, [clearStudyStore, initStudyStore, studyId]);
 
     const handleSave = async () => {
+        if (!isValid) return;
+
         try {
             if (studyHasBeenEdited) await updateStudyInDB(annotationId as string);
             snackbar.enqueueSnackbar('study saved successfully', { variant: 'success' });
@@ -47,6 +66,46 @@ const EditStudyPage: React.FC = (props) => {
 
     return (
         <StateHandlerComponent isError={false} isLoading={!storeStudyId}>
+            <FloatingStatusButtons />
+            <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
+                <Breadcrumbs>
+                    <Link
+                        component={NavLink}
+                        to="/projects"
+                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
+                        underline="hover"
+                    >
+                        Projects
+                    </Link>
+                    <Link
+                        component={NavLink}
+                        to={`/projects/${projectId}`}
+                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
+                        underline="hover"
+                    >
+                        {project?.name || ''}
+                    </Link>
+                    <Link
+                        component={NavLink}
+                        to={`/projects/${projectId}/extraction`}
+                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
+                        underline="hover"
+                    >
+                        Extraction
+                    </Link>
+                    <Link
+                        component={NavLink}
+                        to={`/projects/${projectId}/extraction/studies/${studyId}`}
+                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
+                        underline="hover"
+                    >
+                        {studyName || ''}
+                    </Link>
+                    <Typography variant="h5" sx={{ color: 'secondary.main' }}>
+                        Edit
+                    </Typography>
+                </Breadcrumbs>
+            </Box>
             <Box>
                 <EditStudyDetails />
                 <Divider />
@@ -65,33 +124,20 @@ const EditStudyPage: React.FC = (props) => {
                     backgroundColor: 'white',
                     position: 'fixed',
                     display: 'flex',
+                    justifyContent: 'flex-end',
                     width: {
                         xs: '90%',
                         md: '80%',
                     },
-                    justifyContent: 'space-between',
                     zIndex: 1000,
                 }}
             >
-                <Button
-                    onClick={() =>
-                        history.push(`/projects/${projectId}/extraction/studies/${studyId}`)
-                    }
-                    disableElevation
-                    variant="outlined"
-                    color="error"
-                    sx={{ width: '300px' }}
-                    size="large"
-                >
-                    back to study page
-                </Button>
                 <LoadingButton
-                    size="large"
                     text="save"
                     isLoading={isLoading}
                     variant="contained"
                     loaderColor="secondary"
-                    disabled={!studyHasBeenEdited}
+                    disabled={!studyHasBeenEdited || !isValid}
                     disableElevation
                     sx={{ width: '300px' }}
                     onClick={handleSave}

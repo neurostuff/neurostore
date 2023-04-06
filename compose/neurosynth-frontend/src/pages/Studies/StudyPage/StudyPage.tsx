@@ -9,9 +9,9 @@ import {
     Divider,
     TableRow,
     TableCell,
-    Fab,
     Breadcrumbs,
     Link,
+    IconButton,
 } from '@mui/material';
 import React, { useState, useEffect, SyntheticEvent } from 'react';
 import { NavLink, useHistory, useParams } from 'react-router-dom';
@@ -19,7 +19,6 @@ import TextExpansion from 'components/TextExpansion/TextExpansion';
 import DisplayAnalysis from 'components/DisplayAnalysis/DisplayAnalysis';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import StudyPageStyles from './StudyPage.styles';
-import HelpIcon from '@mui/icons-material/Help';
 import {
     useCreateStudy,
     useGetAnnotationById,
@@ -28,11 +27,8 @@ import {
     useGetTour,
     useUpdateStudyset,
 } from 'hooks';
-import StudysetsPopupMenu from 'components/StudysetsPopupMenu/StudysetsPopupMenu';
 import EditIcon from '@mui/icons-material/Edit';
 import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
-import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
-import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NeurosynthTable, { getValue } from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import { getType } from 'components/EditMetadata';
@@ -40,11 +36,10 @@ import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthT
 import { sortMetadataArrayFn } from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { useInitStudyStore } from '../StudyStore';
+import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatusButtons/FloatingStatusButtons';
 
 const StudyPage: React.FC = (props) => {
     const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
-    const { startTour } = useGetTour('StudyPage');
-    const [dialogIsOpen, setDialogIsOpen] = useState(false);
     const [selectedAnalysis, setSelectedAnalysis] = useState<{
         analysisIndex: number;
         analysis: AnalysisReturn | undefined;
@@ -125,6 +120,10 @@ const StudyPage: React.FC = (props) => {
         history.push(`/projects/${projectId}/extraction/studies/${studyId}/edit`);
     };
 
+    const handleEditStudyAnnotations = (event: React.MouseEvent) => {
+        history.push(`/projects/${projectId}/extraction/studies/${studyId}/annotations`);
+    };
+
     const handleSelectAnalysis = (event: SyntheticEvent, newVal: number) => {
         setSelectedAnalysis({
             analysisIndex: newVal,
@@ -146,8 +145,9 @@ const StudyPage: React.FC = (props) => {
 
     return (
         <StateHandlerComponent isLoading={getStudyIsLoading} isError={getStudyIsError}>
+            <FloatingStatusButtons />
             {isViewingStudyFromProject && (
-                <Box data-tour="StudyPage-8" sx={[StudyPageStyles.actionButtonContainer]}>
+                <Box data-tour="StudyPage-8">
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                         <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
                             <Breadcrumbs>
@@ -175,27 +175,33 @@ const StudyPage: React.FC = (props) => {
                                 >
                                     Extraction
                                 </Link>
-                                <Typography color="secondary" sx={{ fontSize: '1.5rem' }}>
+                                <Typography variant="h5" color="secondary">
                                     {data?.name || ''}
                                 </Typography>
                             </Breadcrumbs>
                         </Box>
-                        <Tooltip
-                            placement="top"
-                            title={allowEdits ? '' : 'you can only edit studies you have cloned'}
-                        >
+                        <Box sx={{ display: 'flex' }}>
                             <Box>
-                                <Fab
-                                    size="medium"
-                                    disabled={!allowEdits}
-                                    onClick={handleEditStudy}
-                                    color="primary"
-                                    aria-label="add"
+                                <Button
+                                    onClick={handleEditStudyAnnotations}
+                                    color="secondary"
+                                    sx={{ width: '215px' }}
+                                    variant="outlined"
                                 >
-                                    <EditIcon />
-                                </Fab>
+                                    Edit Study Annotations
+                                </Button>
                             </Box>
-                        </Tooltip>
+                            <Box>
+                                <Button
+                                    onClick={handleEditStudy}
+                                    endIcon={<EditIcon />}
+                                    sx={{ width: '215px', marginLeft: '15px' }}
+                                    variant="contained"
+                                >
+                                    Edit Study
+                                </Button>
+                            </Box>
+                        </Box>
                     </Box>
                 </Box>
             )}

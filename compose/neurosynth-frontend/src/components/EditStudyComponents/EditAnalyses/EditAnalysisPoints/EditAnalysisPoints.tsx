@@ -1,5 +1,5 @@
-import { Box } from '@mui/material';
-import React, { useRef, useState } from 'react';
+import { Box, Button, Link, Typography } from '@mui/material';
+import React, { useEffect, useRef, useState } from 'react';
 import { HotTable } from '@handsontable/react';
 import { CellChange, CellValue, ChangeSource, RangeType } from 'handsontable/common';
 import { registerAllModules } from 'handsontable/registry';
@@ -7,6 +7,7 @@ import { Settings } from 'handsontable/plugins/contextMenu';
 import {
     useCreateAnalysisPoints,
     useDeleteAnalysisPoints,
+    useSetIsValid,
     useStudyAnalysisPoints,
     useUpdateAnalysisPoints,
 } from 'pages/Studies/StudyStore';
@@ -18,29 +19,29 @@ export const ROW_HEIGHT = 56;
 
 registerAllModules();
 
-// const nonEmptyNumericValidator = (value: CellValue, callback: (isValid: boolean) => void) => {
-//     const isNumber = !isNaN(value);
-//     if (isNumber && value !== 'e') {
-//         callback(true);
-//     } else {
-//         callback(false);
-//     }
-// };
+const nonEmptyNumericValidator = (value: CellValue, callback: (isValid: boolean) => void) => {
+    const isNumber = !isNaN(value);
+    if (isNumber && value !== 'e') {
+        callback(true);
+    } else {
+        callback(false);
+    }
+};
 
 const hotTableColHeaders = ['X', 'Y', 'Z', 'Kind', 'Space'];
 const hotTableColumnSettings: ColumnSettings[] = [
     {
-        validator: 'numeric',
+        validator: nonEmptyNumericValidator,
         className: styles.number,
         data: 'x',
     },
     {
-        validator: 'numeric',
+        validator: nonEmptyNumericValidator,
         className: styles.number,
         data: 'y',
     },
     {
-        validator: 'numeric',
+        validator: nonEmptyNumericValidator,
         className: styles.number,
         data: 'z',
     },
@@ -90,31 +91,44 @@ const handleBeforePaste = (data: any[][], coords: RangeType[]) => {
     return true;
 };
 
-/**
- * DO HANDS ON TABLE VALIDATIONS AND ADD isValid TO THE STUDYSTORE METADATA
- * on each point update, do a calculation to check if there are empty coordinate cells. If so, set invalid styling.
- * Debounce this calculation
- */
+const parseNumericString = (val: string | undefined): string | number | undefined => {
+    let newVal: string | number | undefined = val;
+    if (newVal === null || newVal === '') {
+        newVal = undefined;
+    } else if (typeof newVal === 'string') {
+        const parsedVal = parseInt(newVal);
+        newVal = isNaN(parsedVal) ? newVal : parsedVal;
+    }
+    return newVal;
+};
 
 const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props) => {
-    const points = useStudyAnalysisPoints(props.analysisId) as IStorePoint[];
-    console.log(points);
+    const points = useStudyAnalysisPoints(props.analysisId) as IStorePoint[] | null;
     const updatePoints = useUpdateAnalysisPoints();
     const createPoint = useCreateAnalysisPoints();
     const deletePoints = useDeleteAnalysisPoints();
+    const setIsValid = useSetIsValid();
     const hotTableRef = useRef<HotTable>(null);
 
-    const [hotTableIsValid, setHotTableIsValid] = useState(false);
+    useEffect(() => {
+        const hotData = hotTableRef.current?.hotInstance?.getData();
+        const hasEmptyCoordinates = (hotData || []).some(
+            ([x, y, z, _kind, _space]) => x === undefined || y === undefined || z === undefined
+        );
+        setIsValid(!hasEmptyCoordinates);
+        hotTableRef.current?.hotInstance?.validateCells();
+    }, [points, setIsValid]);
 
     const handleAfterChange = (changes: CellChange[] | null, source: ChangeSource) => {
         if (!props.analysisId) return;
         if (!changes) return;
+        if (!points) return;
 
         const updatedPoints = [...points];
         changes.forEach((change) => {
             if (!change) return;
             const [index, colName, prev, next] = change;
-            const nextVal = next === null ? undefined : next;
+            const nextVal = parseNumericString(next);
             updatedPoints[index] = {
                 ...updatedPoints[index],
                 [colName]: nextVal,
@@ -140,27 +154,11 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
         source?: ChangeSource | undefined
     ) => {
         if (!props.analysisId) return false;
-        if (points.length <= 1) return false;
+        if (!points || points.length <= 1) return false;
 
         const idsRemoved = physicalColumns.map((index) => points[index].id || '');
         deletePoints(props.analysisId, idsRemoved);
         return false;
-    };
-
-    const handleAfterValidate = (
-        isValid: boolean,
-        value: any,
-        row: number,
-        prop: string | number,
-        source: ChangeSource
-    ) => {
-        console.log({
-            isValid,
-            value,
-            row,
-            prop,
-            source,
-        });
     };
 
     const handleBeforeCreateRow = (
@@ -179,8 +177,8 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
                         x: undefined,
                         y: undefined,
                         z: undefined,
-                        kind: '',
-                        space: '',
+                        kind: undefined,
+                        space: undefined,
                         isNew: true,
                     },
                 ],
@@ -190,8 +188,11 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
         return false;
     };
 
+    const totalHeight = 28 + (points?.length || 0) * 23;
+    const height = totalHeight > 500 ? 500 : totalHeight;
+
     return (
-        <Box>
+        <Box sx={{ width: '100%' }}>
             <HotTable
                 ref={hotTableRef}
                 licenseKey="non-commercial-and-evaluation"
@@ -199,20 +200,46 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
                 beforePaste={handleBeforePaste}
                 beforeRemoveRow={handleBeforeRemoveRow}
                 beforeCreateRow={handleBeforeCreateRow}
-                afterValidate={handleAfterValidate}
-                stretchH="all"
                 allowRemoveColumn={false}
                 allowInvalid={false}
-                height="auto"
                 undo={false}
-                colWidths={[100, 100, 100, 200, 200]}
+                colWidths={[50, 50, 50, 150, 150]}
                 manualColumnResize
+                height={height}
                 allowInsertColumn={false}
                 columns={hotTableColumnSettings}
                 contextMenu={hotTableContextMenuSettings}
                 colHeaders={hotTableColHeaders}
-                data={points}
+                data={points || []}
             />
+            {(!points || points.length === 0) && (
+                <Typography sx={{ color: 'warning.dark', marginTop: '0.5rem' }}>
+                    No coordinate data.{' '}
+                    <Link
+                        onClick={() => {
+                            if (!props.analysisId) return;
+                            createPoint(
+                                props.analysisId,
+                                [
+                                    {
+                                        x: undefined,
+                                        y: undefined,
+                                        z: undefined,
+                                        kind: undefined,
+                                        space: undefined,
+                                        isNew: true,
+                                    },
+                                ],
+                                0
+                            );
+                        }}
+                        underline="hover"
+                        sx={{ cursor: 'pointer' }}
+                    >
+                        Click here to get started
+                    </Link>
+                </Typography>
+            )}
         </Box>
     );
 });

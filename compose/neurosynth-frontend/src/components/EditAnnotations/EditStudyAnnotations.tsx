@@ -14,10 +14,10 @@ import {
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import { ColumnSettings } from 'handsontable/settings';
-import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
+import { useParams } from 'react-router-dom';
 
-const EditAnnotations: React.FC = (props) => {
+const EditStudyAnnotations: React.FC = (props) => {
+    const { studyId } = useParams<{ studyId: string }>();
     const annotationId = useProjectExtractionAnnotationId();
     const { mutate, isLoading: updateAnnotationIsLoading } = useUpdateAnnotationById(annotationId);
     const { data, isLoading: getAnnotationIsLoading, isError } = useGetAnnotationById(annotationId);
@@ -34,90 +34,32 @@ const EditAnnotations: React.FC = (props) => {
     const [initialAnnotationHotState, setInitialAnnotationHotState] = useState<{
         hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>;
         noteKeys: NoteKeyType[];
-
-        initialHotData: AnnotationNoteValue[][];
-        initialHotColumns: ColumnSettings[];
-        intialHotColumnHeaders: string[];
-        initialMergeCells: MergeCellsSettings[];
+        hotData: (string | number | boolean | null)[][];
     }>({
         hotDataToStudyMapping: new Map<number, { studyId: string; analysisId: string }>(),
         noteKeys: [],
-
-        initialHotData: [],
-        initialHotColumns: [],
-        intialHotColumnHeaders: [],
-        initialMergeCells: [],
+        hotData: [],
     });
 
     useEffect(() => {
         if (data) {
             const noteKeys = noteKeyObjToArr(data.note_keys);
+            const studyNotes = (data.notes as NoteCollectionReturn[]).filter(
+                (x) => x.study === studyId
+            );
+
             const { hotData, hotDataToStudyMapping } = annotationNotesToHotData(
                 noteKeys,
-                data.notes as NoteCollectionReturn[] | undefined
+                studyNotes
             );
 
             setInitialAnnotationHotState({
-                hotDataToStudyMapping,
                 noteKeys,
-                initialHotColumns: createColumns(noteKeys),
+                hotData,
+                hotDataToStudyMapping: hotDataToStudyMapping,
             });
         }
-    }, [data]);
-
-    useEffect(() => {
-        setInitialHotState((state) => {
-            const mergeCells: MergeCellsSettings[] = [];
-
-            let studyId: string;
-            let mergeCellObj: MergeCellsSettings = {
-                row: 0,
-                col: 0,
-                rowspan: 1,
-                colspan: 1,
-            };
-            hotDataToStudyMapping.forEach((value, key) => {
-                if (value.studyId === studyId) {
-                    mergeCellObj.rowspan++;
-                    if (key === hotDataToStudyMapping.size - 1 && mergeCellObj.rowspan > 1) {
-                        mergeCells.push(mergeCellObj);
-                    }
-                } else {
-                    if (mergeCellObj.rowspan > 1) mergeCells.push(mergeCellObj);
-                    studyId = value.studyId;
-                    mergeCellObj = {
-                        row: key,
-                        col: 0,
-                        rowspan: 1,
-                        colspan: 1,
-                    };
-                }
-            });
-
-            return {
-                initialHotData: JSON.parse(JSON.stringify(hotData)),
-                initialHotColumns: createColumns(initialNoteKeys),
-                initialMergeCells: mergeCells,
-                intialHotColumnHeaders: [
-                    'Study',
-                    'Analysis',
-                    ...initialNoteKeys.map((col) =>
-                        createColumnHeader(
-                            col.key,
-                            col.type,
-                            props.allowRemoveColumns ? handleRemoveHotColumn : undefined
-                        )
-                    ),
-                ],
-            };
-        });
-    }, [
-        hotData,
-        initialNoteKeys,
-        hotDataToStudyMapping,
-        handleRemoveHotColumn,
-        props.allowRemoveColumns,
-    ]);
+    }, [data, studyId]);
 
     const handleClickSave = () => {
         if (!annotationId) return;
@@ -197,4 +139,4 @@ const EditAnnotations: React.FC = (props) => {
     );
 };
 
-export default EditAnnotations;
+export default EditStudyAnnotations;

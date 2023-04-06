@@ -49,9 +49,7 @@ const EditStudyDetails: React.FC = React.memo((props) => {
                 sx={EditAnalysesStyles.accordionSummary}
                 expandIcon={<ExpandMoreIcon sx={EditAnalysesStyles.accordionExpandIcon} />}
             >
-                <Typography sx={{ fontWeight: 'bold', marginRight: '10px' }}>
-                    Study Details
-                </Typography>
+                <Typography sx={{ fontWeight: 'bold', marginRight: '10px' }}>Details</Typography>
                 <Typography>(name, authors, description, doi, pmid, etc)</Typography>
             </AccordionSummary>
             <AccordionDetails>
@@ -59,26 +57,26 @@ const EditStudyDetails: React.FC = React.memo((props) => {
                     <TextField
                         label="name"
                         sx={{ width: '100%', marginBottom: '1rem' }}
-                        value={name}
+                        value={name || ''}
                         onChange={(event) => handleUpdate(event.target.value, 'name')}
                     />
                     <TextField
                         label="authors"
                         sx={{ width: '100%', marginBottom: '1rem' }}
-                        value={authors}
+                        value={authors || ''}
                         onChange={(event) => handleUpdate(event.target.value, 'authors')}
                     />
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                         <TextField
                             label="pmid"
                             sx={{ width: '49%', marginBottom: '1rem' }}
-                            value={pmid}
+                            value={pmid || ''}
                             onChange={(event) => handleUpdate(event.target.value, 'pmid')}
                         />
                         <TextField
                             label="doi"
                             sx={{ width: '49%' }}
-                            value={doi}
+                            value={doi || ''}
                             onChange={(event) => handleUpdate(event.target.value, 'doi')}
                         />
                     </Box>
@@ -87,20 +85,20 @@ const EditStudyDetails: React.FC = React.memo((props) => {
                             label="year"
                             sx={{ width: '49%', marginBottom: '1rem' }}
                             type="number"
-                            value={year}
+                            value={year || ''}
                             onChange={(event) => handleUpdate(event.target.value, 'year')}
                         />
                         <TextField
                             label="journal"
                             sx={{ width: '49%' }}
-                            value={publication}
+                            value={publication || ''}
                             onChange={(event) => handleUpdate(event.target.value, 'publication')}
                         />
                     </Box>
                     <TextField
                         label="description or abstract"
                         sx={{ width: '100%' }}
-                        value={description}
+                        value={description || ''}
                         multiline
                         onChange={(event) => handleUpdate(event.target.value, 'description')}
                     />

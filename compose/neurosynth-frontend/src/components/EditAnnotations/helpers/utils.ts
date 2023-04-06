@@ -1,5 +1,6 @@
 import { EPropertyType } from 'components/EditMetadata';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
 
 export interface NoteKeyType {
     key: string;
@@ -25,6 +26,39 @@ export const noteKeyArrToObj = (noteKeyArr: NoteKeyType[]): { [key: string]: EPr
     }, {} as { [key: string]: EPropertyType });
 
     return noteKeyObj;
+};
+
+export const getMergeCells = (
+    hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>
+) => {
+    const mergeCells: MergeCellsSettings[] = [];
+
+    let studyId: string;
+    let mergeCellObj: MergeCellsSettings = {
+        row: 0,
+        col: 0,
+        rowspan: 1,
+        colspan: 1,
+    };
+    hotDataToStudyMapping.forEach((value, key) => {
+        if (value.studyId === studyId) {
+            mergeCellObj.rowspan++;
+            if (key === hotDataToStudyMapping.size - 1 && mergeCellObj.rowspan > 1) {
+                mergeCells.push(mergeCellObj);
+            }
+        } else {
+            if (mergeCellObj.rowspan > 1) mergeCells.push(mergeCellObj);
+            studyId = value.studyId;
+            mergeCellObj = {
+                row: key,
+                col: 0,
+                rowspan: 1,
+                colspan: 1,
+            };
+        }
+    });
+
+    return mergeCells;
 };
 
 export const annotationNotesToHotData = (

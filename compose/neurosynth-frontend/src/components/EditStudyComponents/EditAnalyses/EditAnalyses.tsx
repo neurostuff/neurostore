@@ -42,7 +42,7 @@ const EditAnalyses: React.FC = (props) => {
                     sx={EditAnalysesStyles.accordionSummary}
                     expandIcon={<ExpandMore sx={EditAnalysesStyles.accordionExpandIcon} />}
                 >
-                    <Typography sx={{ fontWeight: 'bold' }}>Study Analyses</Typography>
+                    <Typography sx={{ fontWeight: 'bold' }}>Analyses</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
                     <Box sx={{ width: '100%', margin: '0.5rem 0' }}>
@@ -90,7 +90,12 @@ const EditAnalyses: React.FC = (props) => {
                                         selectedAnalysisId={selectedAnalysisId}
                                         onSelectAnalysis={handleSelectAnalysis}
                                     />
-                                    <Box sx={{ padding: '1rem', width: '100%' }}>
+                                    <Box
+                                        sx={{
+                                            padding: '1rem 0 1rem 1rem',
+                                            width: 'calc(100% - 250px - 1rem)',
+                                        }}
+                                    >
                                         <EditAnalysis analysisId={selectedAnalysisId} />
                                     </Box>
                                 </Box>

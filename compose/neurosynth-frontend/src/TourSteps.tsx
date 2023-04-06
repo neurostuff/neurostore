@@ -96,7 +96,7 @@ const TourSteps: { [key: string]: StepType[] } = {
             selector: '[data-tour="StudyPage-1"]',
             content: () => (
                 <div>
-                    <Typography variant="h5">Study Details</Typography>
+                    <Typography variant="h5">Details</Typography>
                     <Typography variant="subtitle1">
                         This page holds information on a particular study, including the{' '}
                         <b>study title, authors, publication, DOI, and description.</b>

@@ -76,7 +76,7 @@ const EditStudyMetadata: React.FC = (props) => {
                 sx={EditAnalysesStyles.accordionSummary}
                 expandIcon={<ExpandMoreIcon sx={EditAnalysesStyles.accordionExpandIcon} />}
             >
-                <Typography sx={{ fontWeight: 'bold' }}>Study Metadata</Typography>
+                <Typography sx={{ fontWeight: 'bold' }}>Metadata</Typography>
             </AccordionSummary>
             <AccordionDetails>
                 <Box sx={{ margin: '1rem 0 0.5rem 0' }}>

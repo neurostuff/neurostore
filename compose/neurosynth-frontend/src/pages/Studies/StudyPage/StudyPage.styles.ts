@@ -1,16 +1,6 @@
 import { Style } from '../../..';
 
 const StudyPageStyles: Style = {
-    actionButtonContainer: {
-        '& button': {
-            marginRight: '15px',
-        },
-        display: 'flex',
-        justifyContent: {
-            xs: 'center',
-            md: 'initial',
-        },
-    },
     actionButton: {
         width: '130px',
     },

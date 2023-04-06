@@ -1,13 +1,15 @@
 import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { StudyReturn } from 'neurostore-typescript-sdk';
-import StudyListItemStyles from './StudyListItem.styles';
+import StudyListItemStyles from './ReadOnlyStudySummary.styles';
 import CheckIcon from '@mui/icons-material/Check';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useHistory, useParams } from 'react-router-dom';
 import { ESelectedChip } from 'pages/ExtractionPage/ExtractionPage';
 import { useProjectExtractionAddOrUpdateStudyListStatus } from 'pages/Projects/ProjectPage/ProjectStore';
 
-const StudyListItem: React.FC<StudyReturn & { currentSelectedChip: ESelectedChip }> = (props) => {
+const ReadOnlyStudySummary: React.FC<StudyReturn & { currentSelectedChip: ESelectedChip }> = (
+    props
+) => {
     const { projectId }: { projectId: string } = useParams();
     const history = useHistory();
     const addOrUpdateStudyListStatus = useProjectExtractionAddOrUpdateStudyListStatus();
@@ -91,4 +93,4 @@ const StudyListItem: React.FC<StudyReturn & { currentSelectedChip: ESelectedChip
     );
 };
 
-export default StudyListItem;
+export default ReadOnlyStudySummary;

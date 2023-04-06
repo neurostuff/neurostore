@@ -2,17 +2,72 @@ import HotTable, { HotTableProps } from '@handsontable/react';
 import { Box } from '@mui/material';
 import { EPropertyType, IMetadataRowModel, getType } from 'components/EditMetadata';
 import AddMetadataRow from 'components/EditMetadata/EditMetadataRow/AddMetadataRow';
-import { CellChange, ChangeSource } from 'handsontable/common';
+import { CellChange, CellValue, ChangeSource } from 'handsontable/common';
 import { registerAllModules } from 'handsontable/registry';
 import { ColumnSettings } from 'handsontable/settings';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import styles from './AnnotationsHotTable.module.css';
+import styles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable.module.css';
+import { Cancel } from '@mui/icons-material';
 import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
 import { AnnotationNoteValue, NoteKeyType } from '../helpers/utils';
+import { numericValidator } from 'handsontable/validators';
 import { renderToString } from 'react-dom/server';
 import { CellCoords } from 'handsontable';
 import React from 'react';
-import { createColumnHeader, createColumns } from './utils';
+
+const booleanValidator = (value: CellValue, callback: (isValid: boolean) => void) => {
+    const isValid =
+        value === true ||
+        value === false ||
+        value === 'true' ||
+        value === 'false' ||
+        value === null ||
+        value === '';
+    callback(isValid);
+};
+
+const createColumns = (noteKeys: NoteKeyType[]) => [
+    {
+        className: `${styles['read-only-col']}`,
+        readOnly: true,
+        width: '200',
+    },
+    {
+        className: styles['read-only-col'],
+        readOnly: true,
+        width: '150',
+    },
+    ...noteKeys.map((x) => {
+        return {
+            readOnly: false,
+            className: styles[x.type],
+            allowInvalid: false,
+            type: x.type === EPropertyType.BOOLEAN ? 'checkbox' : 'text',
+            validator:
+                x.type === EPropertyType.NUMBER
+                    ? numericValidator
+                    : x.type === EPropertyType.BOOLEAN
+                    ? booleanValidator
+                    : undefined,
+        } as ColumnSettings;
+    }),
+];
+
+// const createColumnHeader = (
+//     colKey: string,
+//     colType: EPropertyType,
+//     updateFunc: (key: string) => void
+// ) =>
+//     `<div style="display: flex; align-items: center; justify-content: center; min-width: 160px">` +
+//     `<div class=${styles[colType]}>${colKey}</div>` +
+//     `<div style="width: 50px;">${renderToString(
+//         <Cancel
+//             onClick={() => updateFunc(colKey)}
+//             sx={{ ':hover': { color: 'error.light', cursor: 'pointer' } }}
+//             color="error"
+//         />
+//     )}</div>` +
+//     `</div>`;
 
 const hotSettings: HotTableProps = {
     fillHandle: false,
@@ -26,12 +81,9 @@ const hotSettings: HotTableProps = {
 
 registerAllModules();
 
-const AnnotationsHotTable: React.FC<{
-    allowAddColumn?: boolean;
-    allowRemoveColumns?: boolean;
+const StudyAnnotationsHotTable: React.FC<{
     onChange: (hotData: AnnotationNoteValue[][], updatedNoteKeys: NoteKeyType[]) => void;
     hotData: AnnotationNoteValue[][];
-    hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>;
     noteKeys: NoteKeyType[];
 }> = React.memo((props) => {
     const hotTableRef = useRef<HotTable>(null);
@@ -40,7 +92,7 @@ const AnnotationsHotTable: React.FC<{
     }>({
         noteKeys: [],
     });
-    const { noteKeys: initialNoteKeys, hotDataToStudyMapping, hotData, onChange } = props;
+    const { noteKeys: initialNoteKeys, hotData, onChange } = props;
 
     // set handsontable ref height if the (debouneced) window height changes.
     // Must do this via an eventListener to avoid react re renders clearing the HOT State
@@ -77,12 +129,10 @@ const AnnotationsHotTable: React.FC<{
         initialHotData: AnnotationNoteValue[][];
         initialHotColumns: ColumnSettings[];
         intialHotColumnHeaders: string[];
-        initialMergeCells: MergeCellsSettings[];
     }>({
         initialHotData: [],
         initialHotColumns: [],
         intialHotColumnHeaders: [],
-        initialMergeCells: [],
     });
 
     const handleRemoveHotColumn = useCallback(
@@ -129,43 +179,6 @@ const AnnotationsHotTable: React.FC<{
         }
     };
 
-    const handleAddHotColumn = (row: IMetadataRowModel) => {
-        if (!hotTableRef.current?.hotInstance) return false;
-
-        if (hotStateRef.current.noteKeys.find((x) => x.key === row.metadataKey)) return false;
-
-        const noteKeys = hotStateRef.current.noteKeys;
-        const colHeaders = hotTableRef.current.hotInstance.getColHeader() as string[];
-        const data = hotTableRef.current.hotInstance.getData() as AnnotationNoteValue[][];
-
-        noteKeys.unshift({ key: row.metadataKey, type: getType(row.metadataValue) });
-        const columns = createColumns(noteKeys);
-
-        colHeaders.splice(
-            2,
-            0,
-            createColumnHeader(
-                row.metadataKey,
-                getType(row.metadataValue),
-                props.allowRemoveColumns ? handleRemoveHotColumn : undefined
-            )
-        );
-
-        data.forEach((row) => {
-            row.splice(2, 0, null);
-        });
-
-        hotTableRef.current.hotInstance.updateSettings({
-            data: data,
-            colHeaders: colHeaders,
-            columns: columns,
-        });
-
-        onChange(hotTableRef.current.hotInstance.getData() as AnnotationNoteValue[][], noteKeys);
-
-        return true;
-    };
-
     const handleChangeOccurred = (changes: CellChange[] | null, source: ChangeSource) => {
         // this hook is triggered during merge cells and on initial update. We don't want the parent to be notified unless its a real user change
         if (!changes || changes.some((x) => x[1] === 0)) return;
@@ -178,94 +191,34 @@ const AnnotationsHotTable: React.FC<{
     useEffect(() => {
         setInitialHotState((state) => {
             hotStateRef.current.noteKeys = JSON.parse(JSON.stringify(initialNoteKeys));
-            const mergeCells: MergeCellsSettings[] = [];
-
-            let studyId: string;
-            let mergeCellObj: MergeCellsSettings = {
-                row: 0,
-                col: 0,
-                rowspan: 1,
-                colspan: 1,
-            };
-            hotDataToStudyMapping.forEach((value, key) => {
-                if (value.studyId === studyId) {
-                    mergeCellObj.rowspan++;
-                    if (key === hotDataToStudyMapping.size - 1 && mergeCellObj.rowspan > 1) {
-                        mergeCells.push(mergeCellObj);
-                    }
-                } else {
-                    if (mergeCellObj.rowspan > 1) mergeCells.push(mergeCellObj);
-                    studyId = value.studyId;
-                    mergeCellObj = {
-                        row: key,
-                        col: 0,
-                        rowspan: 1,
-                        colspan: 1,
-                    };
-                }
-            });
 
             return {
                 initialHotData: JSON.parse(JSON.stringify(hotData)),
                 initialHotColumns: createColumns(initialNoteKeys),
-                initialMergeCells: mergeCells,
                 intialHotColumnHeaders: [
-                    'Study',
-                    'Analysis',
-                    ...initialNoteKeys.map((col) =>
-                        createColumnHeader(
-                            col.key,
-                            col.type,
-                            props.allowRemoveColumns ? handleRemoveHotColumn : undefined
-                        )
-                    ),
+                    'Analysis Name',
+                    'Description',
+                    ...initialNoteKeys.map((col) => col.key),
                 ],
             };
         });
-    }, [
-        hotData,
-        initialNoteKeys,
-        hotDataToStudyMapping,
-        handleRemoveHotColumn,
-        props.allowRemoveColumns,
-    ]);
+    }, [hotData, initialNoteKeys, handleRemoveHotColumn]);
 
     return (
         <Box>
-            {props.allowAddColumn && (
-                <Box
-                    sx={{
-                        display: 'table',
-                        height: '100%',
-                        borderCollapse: 'separate',
-                        borderSpacing: '12px 0px',
-                        margin: '1rem 0 25px 0',
-                    }}
-                >
-                    <AddMetadataRow
-                        keyPlaceholderText="New Annotation Key"
-                        onAddMetadataRow={handleAddHotColumn}
-                        showMetadataValueInput={false}
-                        allowNoneOption={false}
-                    />
-                </Box>
-            )}
-            <Box>
-                <HotTable
-                    {...hotSettings}
-                    id="hot-annotations"
-                    afterChange={handleChangeOccurred}
-                    ref={hotTableRef}
-                    preventOverflow="horizontal"
-                    mergeCells={initialHotState.initialMergeCells}
-                    colHeaders={initialHotState.intialHotColumnHeaders}
-                    columns={initialHotState.initialHotColumns}
-                    data={initialHotState.initialHotData}
-                    afterOnCellMouseUp={handleCellMouseUp}
-                />
-            </Box>
+            <HotTable
+                {...hotSettings}
+                id="hot-annotations"
+                afterChange={handleChangeOccurred}
+                ref={hotTableRef}
+                preventOverflow="horizontal"
+                colHeaders={initialHotState.intialHotColumnHeaders}
+                columns={initialHotState.initialHotColumns}
+                data={initialHotState.initialHotData}
+                afterOnCellMouseUp={handleCellMouseUp}
+            />
         </Box>
     );
 });
 
-export default AnnotationsHotTable;
+export default StudyAnnotationsHotTable;

@@ -24,12 +24,12 @@ const EditAnalysisDetails: React.FC<{ analysisId?: string }> = (props) => {
     };
 
     return (
-        <Box>
+        <Box sx={{ width: '100%' }}>
             <TextField
                 label="name"
                 size="small"
                 sx={{ width: '100%', marginBottom: '1rem' }}
-                value={name}
+                value={name || ''}
                 onChange={(event) => {
                     handleUpdateAnalysisDetails('name', props.analysisId || '', event.target.value);
                 }}
@@ -45,7 +45,7 @@ const EditAnalysisDetails: React.FC<{ analysisId?: string }> = (props) => {
                 label="description"
                 size="small"
                 sx={{ width: '100%' }}
-                value={description}
+                value={description || ''}
             />
         </Box>
     );
