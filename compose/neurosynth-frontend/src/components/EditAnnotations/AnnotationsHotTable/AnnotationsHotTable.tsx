@@ -1,18 +1,16 @@
 import HotTable, { HotTableProps } from '@handsontable/react';
 import { Box } from '@mui/material';
-import { EPropertyType, IMetadataRowModel, getType } from 'components/EditMetadata';
+import { IMetadataRowModel, getType } from 'components/EditMetadata';
 import AddMetadataRow from 'components/EditMetadata/EditMetadataRow/AddMetadataRow';
 import { CellChange, ChangeSource } from 'handsontable/common';
 import { registerAllModules } from 'handsontable/registry';
 import { ColumnSettings } from 'handsontable/settings';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import styles from './AnnotationsHotTable.module.css';
-import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
+import { useCallback, useEffect, useRef } from 'react';
+import { DetailedSettings } from 'handsontable/plugins/mergeCells';
 import { AnnotationNoteValue, NoteKeyType } from '../helpers/utils';
-import { renderToString } from 'react-dom/server';
 import { CellCoords } from 'handsontable';
 import React from 'react';
-import { createColumnHeader, createColumns } from './utils';
+import { createColumnHeader, createColumns } from '../helpers/utils';
 
 const hotSettings: HotTableProps = {
     fillHandle: false,
@@ -26,21 +24,33 @@ const hotSettings: HotTableProps = {
 
 registerAllModules();
 
+/**
+ * Note: this component preserves the state of the handsontable when manipulating data for performance reasons.
+ * As a result, it avoids rerenders.
+ */
 const AnnotationsHotTable: React.FC<{
     allowAddColumn?: boolean;
+    hardCodedReadOnlyCols: string[];
     allowRemoveColumns?: boolean;
     onChange: (hotData: AnnotationNoteValue[][], updatedNoteKeys: NoteKeyType[]) => void;
     hotData: AnnotationNoteValue[][];
-    hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>;
     noteKeys: NoteKeyType[];
+    mergeCells: DetailedSettings[];
+    hotColumns: ColumnSettings[];
 }> = React.memo((props) => {
+    console.log('render');
     const hotTableRef = useRef<HotTable>(null);
     const hotStateRef = useRef<{
         noteKeys: NoteKeyType[];
     }>({
         noteKeys: [],
     });
-    const { noteKeys: initialNoteKeys, hotDataToStudyMapping, hotData, onChange } = props;
+    const { noteKeys, hotData, mergeCells, onChange, hotColumns, hardCodedReadOnlyCols } = props;
+
+    useEffect(() => {
+        // make a copy as we don't want to modify the original
+        hotStateRef.current.noteKeys = noteKeys.map((x) => ({ ...x }));
+    }, [noteKeys]);
 
     // set handsontable ref height if the (debouneced) window height changes.
     // Must do this via an eventListener to avoid react re renders clearing the HOT State
@@ -72,18 +82,6 @@ const AnnotationsHotTable: React.FC<{
             window.removeEventListener('resize', handleResize);
         };
     }, []);
-
-    const [initialHotState, setInitialHotState] = useState<{
-        initialHotData: AnnotationNoteValue[][];
-        initialHotColumns: ColumnSettings[];
-        intialHotColumnHeaders: string[];
-        initialMergeCells: MergeCellsSettings[];
-    }>({
-        initialHotData: [],
-        initialHotColumns: [],
-        intialHotColumnHeaders: [],
-        initialMergeCells: [],
-    });
 
     const handleRemoveHotColumn = useCallback(
         (colKey: string) => {
@@ -175,60 +173,16 @@ const AnnotationsHotTable: React.FC<{
         }
     };
 
-    useEffect(() => {
-        setInitialHotState((state) => {
-            hotStateRef.current.noteKeys = JSON.parse(JSON.stringify(initialNoteKeys));
-            const mergeCells: MergeCellsSettings[] = [];
-
-            let studyId: string;
-            let mergeCellObj: MergeCellsSettings = {
-                row: 0,
-                col: 0,
-                rowspan: 1,
-                colspan: 1,
-            };
-            hotDataToStudyMapping.forEach((value, key) => {
-                if (value.studyId === studyId) {
-                    mergeCellObj.rowspan++;
-                    if (key === hotDataToStudyMapping.size - 1 && mergeCellObj.rowspan > 1) {
-                        mergeCells.push(mergeCellObj);
-                    }
-                } else {
-                    if (mergeCellObj.rowspan > 1) mergeCells.push(mergeCellObj);
-                    studyId = value.studyId;
-                    mergeCellObj = {
-                        row: key,
-                        col: 0,
-                        rowspan: 1,
-                        colspan: 1,
-                    };
-                }
-            });
-
-            return {
-                initialHotData: JSON.parse(JSON.stringify(hotData)),
-                initialHotColumns: createColumns(initialNoteKeys),
-                initialMergeCells: mergeCells,
-                intialHotColumnHeaders: [
-                    'Study',
-                    'Analysis',
-                    ...initialNoteKeys.map((col) =>
-                        createColumnHeader(
-                            col.key,
-                            col.type,
-                            props.allowRemoveColumns ? handleRemoveHotColumn : undefined
-                        )
-                    ),
-                ],
-            };
-        });
-    }, [
-        hotData,
-        initialNoteKeys,
-        hotDataToStudyMapping,
-        handleRemoveHotColumn,
-        props.allowRemoveColumns,
-    ]);
+    const intialHotColumnHeaders = [
+        ...hardCodedReadOnlyCols,
+        ...noteKeys.map((col) =>
+            createColumnHeader(
+                col.key,
+                col.type,
+                props.allowRemoveColumns ? handleRemoveHotColumn : undefined
+            )
+        ),
+    ];
 
     return (
         <Box>
@@ -257,10 +211,10 @@ const AnnotationsHotTable: React.FC<{
                     afterChange={handleChangeOccurred}
                     ref={hotTableRef}
                     preventOverflow="horizontal"
-                    mergeCells={initialHotState.initialMergeCells}
-                    colHeaders={initialHotState.intialHotColumnHeaders}
-                    columns={initialHotState.initialHotColumns}
-                    data={initialHotState.initialHotData}
+                    mergeCells={mergeCells}
+                    colHeaders={intialHotColumnHeaders}
+                    columns={hotColumns}
+                    data={JSON.parse(JSON.stringify(hotData))}
                     afterOnCellMouseUp={handleCellMouseUp}
                 />
             </Box>

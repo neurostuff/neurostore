@@ -17,11 +17,11 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useEffect, useState } from 'react';
 import {
-    addStudyToStudyset,
     createStudyFromStub,
     getMatchingStudies,
     resolveStudysetAndCurationDifferences,
     setAnalysesInAnnotationAsIncluded,
+    updateStudyset,
 } from './helpers/utils';
 import IngestionAwaitUserResponse from './IngestionAwaitUserResponse';
 
@@ -44,9 +44,9 @@ const Ingestion: React.FC<{
             | 'FINISHED' // ingestion is complete
             | 'ERROR'; // there was an error during ingestion
         ingestionIndex: number;
-        currStudyset: string[];
+        currValidStudyset: string[];
         stubsToIngest: ICurationStubStudy[];
-        numStudiesRemovedFromStudyset: number;
+        studiesRemovedFromStudyset: string[];
         ui: {
             stubBeingIngested: ICurationStubStudy;
             existingDuplicateStudies: StudyReturn[];
@@ -54,16 +54,16 @@ const Ingestion: React.FC<{
     }>({
         ingestionStatus: 'NOT-STARTED',
         ingestionIndex: 0,
-        currStudyset: [],
+        currValidStudyset: [],
         stubsToIngest: [], // not touched after initial set
-        numStudiesRemovedFromStudyset: 0, // not touched after initial set
+        studiesRemovedFromStudyset: [], // not touched after initial set
         ui: null,
     });
 
     // initial difference extractor
     useEffect(() => {
         if (!studyset?.studies || curationIncludedStudies.stubStudies.length === 0) return;
-        const { removedFromStudyset, stubsToIngest, studiesInStudyset } =
+        const { removedFromStudyset, stubsToIngest, validStudiesInStudyset } =
             resolveStudysetAndCurationDifferences(
                 curationIncludedStudies.stubStudies,
                 (studyset.studies as StudyReturn[]).map((x) => x.id as string)
@@ -76,21 +76,18 @@ const Ingestion: React.FC<{
                 ...prev,
                 ingestionStatus: 'READY-TO-INGEST',
                 stubsToIngest: stubsToIngest,
-                currStudyset: studiesInStudyset,
-                numStudiesRemovedFromStudyset: removedFromStudyset.length,
+                currValidStudyset: validStudiesInStudyset,
+                studiesRemovedFromStudyset: removedFromStudyset,
             };
         });
     }, [studyset, curationIncludedStudies]);
 
     // this should only trigger the ingestion process after the initial differences are extracted,
-    // or when the index is updated
+    // or when the index is updated.
+    // We reconcile when the stubs to remove are greater than zero, or there are stubs to ingest
     useEffect(() => {
         (async () => {
-            if (
-                !studysetId ||
-                currentIngestionState.stubsToIngest.length === 0 ||
-                currentIngestionState.ingestionStatus !== 'READY-TO-INGEST'
-            ) {
+            if (!studysetId || currentIngestionState.ingestionStatus !== 'READY-TO-INGEST') {
                 return;
             }
 
@@ -99,36 +96,40 @@ const Ingestion: React.FC<{
                 ingestionStatus: 'INGESTION-IN-PROGRESS',
             }));
 
-            const { currStudyset, ingestionIndex, stubsToIngest } = currentIngestionState;
-
-            // we are done ingesting
-            if (ingestionIndex >= stubsToIngest.length) {
-                await setAnalysesInAnnotationAsIncluded(annotationId || '');
-
-                setCurrentIngestionState((prev) => ({
-                    ...prev,
-                    ingestionStatus: 'FINISHED',
-                }));
-                return;
-            }
+            const { currValidStudyset, ingestionIndex, stubsToIngest, studiesRemovedFromStudyset } =
+                currentIngestionState;
 
             try {
                 const currStub = stubsToIngest[ingestionIndex];
+
+                // we are done ingesting
+                if (!currStub) {
+                    if (stubsToIngest.length === 0 && studiesRemovedFromStudyset.length > 0) {
+                        // remove studies from studyset if needed. If there are any stubs to be ingested, this removal will be done as part of that proces
+                        await updateStudyset(studysetId, [...currValidStudyset]);
+                    }
+                    await setAnalysesInAnnotationAsIncluded(annotationId || '');
+
+                    setCurrentIngestionState((prev) => ({
+                        ...prev,
+                        ingestionStatus: 'FINISHED',
+                    }));
+                    return;
+                }
 
                 if (currStub.neurostoreId) {
                     // we either imported this stub from neurostore, or some weird thing happened where the stub was connnected
                     // to the study that was added to the studyset, but that study was later deleted or removed from the studyset.
                     // Either way, we add the associated neurostore id to the studyset.
-                    const updatedStudyset = await addStudyToStudyset(
-                        studysetId,
+                    const updatedStudyset = await updateStudyset(studysetId, [
+                        ...currValidStudyset,
                         currStub.neurostoreId,
-                        currStudyset
-                    );
+                    ]);
                     setCurrentIngestionState((prev) => ({
                         ...prev,
                         ingestionStatus: 'READY-TO-INGEST',
                         ingestionIndex: prev.ingestionIndex + 1,
-                        currStudyset: updatedStudyset.studies as string[],
+                        currValidStudyset: updatedStudyset.studies as string[],
                     }));
                     return;
                 }
@@ -155,15 +156,14 @@ const Ingestion: React.FC<{
                         'neurostoreId',
                         newStudy.id as string
                     );
-                    const updatedStudyset = await addStudyToStudyset(
-                        studysetId,
+                    const updatedStudyset = await updateStudyset(studysetId, [
+                        ...currValidStudyset,
                         newStudy.id as string,
-                        currStudyset
-                    );
+                    ]);
                     setCurrentIngestionState((prev) => ({
                         ...prev,
                         ingestionStatus: 'READY-TO-INGEST',
-                        currStudyset: updatedStudyset.studies as string[],
+                        currValidStudyset: updatedStudyset.studies as string[],
                         ingestionIndex: prev.ingestionIndex + 1,
                     }));
                 }
@@ -198,17 +198,16 @@ const Ingestion: React.FC<{
                 study.id as string
             );
 
-            const updatedStudyset = await addStudyToStudyset(
-                studysetId,
+            const updatedStudyset = await updateStudyset(studysetId, [
+                ...currentIngestionState.currValidStudyset,
                 study.id as string,
-                currentIngestionState.currStudyset
-            );
+            ]);
 
             setCurrentIngestionState((prev) => ({
                 ...prev,
                 ingestionIndex: prev.ingestionIndex + 1,
                 ingestionStatus: 'READY-TO-INGEST',
-                currStudyset: updatedStudyset.studies as string[],
+                currValidStudyset: updatedStudyset.studies as string[],
                 ui: null,
             }));
         } catch (e) {
@@ -275,15 +274,15 @@ const Ingestion: React.FC<{
                         Ingestion process is complete
                     </Typography>
                     <Typography>Summary:</Typography>
-                    <Typography>
-                        {currentIngestionState.stubsToIngest.length}{' '}
-                        {currentIngestionState.stubsToIngest.length > 1 ? 'studies' : 'study'}{' '}
-                        ingested into neurostore
-                    </Typography>
-                    {currentIngestionState.numStudiesRemovedFromStudyset > 0 && (
+                    {currentIngestionState.stubsToIngest.length > 0 && (
                         <Typography>
-                            Removed {currentIngestionState.numStudiesRemovedFromStudyset} studies
-                            from the studyset
+                            Ingested {currentIngestionState.stubsToIngest.length} into neurostore
+                        </Typography>
+                    )}
+                    {currentIngestionState.studiesRemovedFromStudyset.length > 0 && (
+                        <Typography>
+                            Removed {currentIngestionState.studiesRemovedFromStudyset.length}{' '}
+                            studies from the studyset
                         </Typography>
                     )}
                     <Box sx={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>

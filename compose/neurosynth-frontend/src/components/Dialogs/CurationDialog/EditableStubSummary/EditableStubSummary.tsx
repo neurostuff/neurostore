@@ -1,4 +1,4 @@
-import { Typography, Box, Button } from '@mui/material';
+import { Typography, Box, Button, Link } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import React from 'react';
 import TextEdit from 'components/TextEdit/TextEdit';
@@ -58,47 +58,31 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                 onMoveToNextStub={props.onMoveToNextStub}
             />
 
-            <Box sx={{ margin: '0.5rem 0' }}>
-                <IdentificationSourcePopup
-                    label=""
-                    onAddSource={(source) => handleUpdateStub(source, 'identificationSource')}
-                    onCreateSource={(source) => handleUpdateStub(source, 'identificationSource')}
-                    initialValue={props.stub.identificationSource}
-                    size="small"
-                />
-            </Box>
-
             <Box
                 sx={{
                     display: 'flex',
                     alignItems: 'center',
-                    margin:
-                        props.stub.neurostoreId || props.stub.articleLink ? '1rem 0 0.5rem 0' : '0',
                 }}
             >
                 {props.stub.neurostoreId && (
-                    <Button
+                    <Link
+                        underline="hover"
                         target="_blank"
                         href={`/studies/${props.stub.neurostoreId}`}
-                        variant="outlined"
-                        size="small"
-                        color="primary"
-                        sx={{ marginRight: '15px' }}
+                        sx={{ marginRight: '10px' }}
                     >
                         view study in neurostore
-                    </Button>
+                    </Link>
                 )}
                 {props.stub.pmid && (
-                    <Button
+                    <Link
+                        underline="hover"
                         target="_blank"
                         href={`${PUBMED_ARTICLE_URL_PREFIX}${props.stub.pmid}`}
-                        variant="outlined"
-                        size="small"
-                        color="success"
-                        sx={{ marginRight: '15px' }}
+                        sx={{ marginRight: '10px' }}
                     >
                         view study in pubmed
-                    </Button>
+                    </Link>
                 )}
                 <TextEdit
                     sx={{ width: '500px' }}
@@ -107,15 +91,14 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                     textToEdit={props.stub.articleLink}
                 >
                     {props.stub.articleLink ? (
-                        <Button
-                            variant="outlined"
-                            size="small"
-                            color="secondary"
+                        <Link
+                            underline="hover"
                             target="_blank"
                             href={props.stub.articleLink}
+                            sx={{ marginRight: '10px' }}
                         >
-                            view article
-                        </Button>
+                            view article link
+                        </Link>
                     ) : (
                         <Typography sx={{ color: 'warning.dark' }}>
                             No external article link
@@ -124,22 +107,24 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                 </TextEdit>
             </Box>
 
-            <TextEdit
-                sx={{ input: { fontSize: '1.25rem' } }}
-                onSave={handleUpdateStub}
-                label="title"
-                textToEdit={props.stub.title}
-            >
-                <Typography
-                    sx={{
-                        color: props.stub.title ? '' : 'warning.dark',
-                        fontWeight: props.stub.title ? 'bold' : 'normal',
-                    }}
-                    variant="h5"
+            <Box>
+                <TextEdit
+                    sx={{ input: { fontSize: '1.25rem' } }}
+                    onSave={handleUpdateStub}
+                    label="title"
+                    textToEdit={props.stub.title}
                 >
-                    {props.stub.title || 'No Title'}
-                </Typography>
-            </TextEdit>
+                    <Typography
+                        sx={{
+                            color: props.stub.title ? '' : 'warning.dark',
+                            fontWeight: props.stub.title ? 'bold' : 'normal',
+                        }}
+                        variant="h5"
+                    >
+                        {props.stub.title || 'No Title'}
+                    </Typography>
+                </TextEdit>
+            </Box>
 
             <TextEdit
                 sx={{ width: '100%', input: { fontSize: '1.25rem' } }}
@@ -250,6 +235,16 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                     {props.stub.abstractText || 'No Abstract'}
                 </Typography>
             </TextEdit>
+
+            <Box sx={{ margin: '1rem 0' }}>
+                <IdentificationSourcePopup
+                    label="source"
+                    onAddSource={(source) => handleUpdateStub(source, 'identificationSource')}
+                    onCreateSource={(source) => handleUpdateStub(source, 'identificationSource')}
+                    initialValue={props.stub.identificationSource}
+                    size="small"
+                />
+            </Box>
         </Box>
     );
 };

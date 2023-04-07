@@ -7,6 +7,7 @@ import {
     AnnotationNoteValue,
     NoteKeyType,
     annotationNotesToHotData,
+    getMergeCells,
     hotDataToAnnotationNotes,
     noteKeyArrToObj,
     noteKeyObjToArr,
@@ -16,6 +17,9 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { ColumnSettings } from 'handsontable/settings';
 import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
+import { createColumns } from './helpers/utils';
+
+const hardCodedColumns = ['Study', 'Analysis'];
 
 const EditAnnotations: React.FC = (props) => {
     const annotationId = useProjectExtractionAnnotationId();
@@ -24,9 +28,11 @@ const EditAnnotations: React.FC = (props) => {
 
     // tracks the changes made to hot table
     const hotTableDataUpdatesRef = useRef<{
+        initialized: boolean;
         hotData: (string | number | boolean | null)[][];
         noteKeys: NoteKeyType[];
     }>({
+        initialized: false,
         hotData: [],
         noteKeys: [],
     });
@@ -34,90 +40,47 @@ const EditAnnotations: React.FC = (props) => {
     const [initialAnnotationHotState, setInitialAnnotationHotState] = useState<{
         hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>;
         noteKeys: NoteKeyType[];
-
-        initialHotData: AnnotationNoteValue[][];
-        initialHotColumns: ColumnSettings[];
-        intialHotColumnHeaders: string[];
-        initialMergeCells: MergeCellsSettings[];
+        hotData: AnnotationNoteValue[][];
+        hotColumns: ColumnSettings[];
+        mergeCells: MergeCellsSettings[];
     }>({
         hotDataToStudyMapping: new Map<number, { studyId: string; analysisId: string }>(),
         noteKeys: [],
-
-        initialHotData: [],
-        initialHotColumns: [],
-        intialHotColumnHeaders: [],
-        initialMergeCells: [],
+        hotData: [],
+        hotColumns: [],
+        mergeCells: [],
     });
 
     useEffect(() => {
-        if (data) {
+        if (data && !hotTableDataUpdatesRef.current.initialized) {
+            hotTableDataUpdatesRef.current.initialized = true;
             const noteKeys = noteKeyObjToArr(data.note_keys);
             const { hotData, hotDataToStudyMapping } = annotationNotesToHotData(
                 noteKeys,
-                data.notes as NoteCollectionReturn[] | undefined
+                data.notes as NoteCollectionReturn[] | undefined,
+                (annotationNote) => {
+                    const studyName =
+                        annotationNote.study_name && annotationNote.study_year
+                            ? `(${annotationNote.study_year}) ${annotationNote.study_name}`
+                            : annotationNote.study_name
+                            ? annotationNote.study_name
+                            : '';
+
+                    const analysisName = annotationNote.analysis_name || '';
+
+                    return [studyName, analysisName];
+                }
             );
 
             setInitialAnnotationHotState({
                 hotDataToStudyMapping,
                 noteKeys,
-                initialHotColumns: createColumns(noteKeys),
+                hotColumns: createColumns(noteKeys),
+                hotData: hotData,
+                mergeCells: getMergeCells(hotDataToStudyMapping),
             });
         }
     }, [data]);
-
-    useEffect(() => {
-        setInitialHotState((state) => {
-            const mergeCells: MergeCellsSettings[] = [];
-
-            let studyId: string;
-            let mergeCellObj: MergeCellsSettings = {
-                row: 0,
-                col: 0,
-                rowspan: 1,
-                colspan: 1,
-            };
-            hotDataToStudyMapping.forEach((value, key) => {
-                if (value.studyId === studyId) {
-                    mergeCellObj.rowspan++;
-                    if (key === hotDataToStudyMapping.size - 1 && mergeCellObj.rowspan > 1) {
-                        mergeCells.push(mergeCellObj);
-                    }
-                } else {
-                    if (mergeCellObj.rowspan > 1) mergeCells.push(mergeCellObj);
-                    studyId = value.studyId;
-                    mergeCellObj = {
-                        row: key,
-                        col: 0,
-                        rowspan: 1,
-                        colspan: 1,
-                    };
-                }
-            });
-
-            return {
-                initialHotData: JSON.parse(JSON.stringify(hotData)),
-                initialHotColumns: createColumns(initialNoteKeys),
-                initialMergeCells: mergeCells,
-                intialHotColumnHeaders: [
-                    'Study',
-                    'Analysis',
-                    ...initialNoteKeys.map((col) =>
-                        createColumnHeader(
-                            col.key,
-                            col.type,
-                            props.allowRemoveColumns ? handleRemoveHotColumn : undefined
-                        )
-                    ),
-                ],
-            };
-        });
-    }, [
-        hotData,
-        initialNoteKeys,
-        hotDataToStudyMapping,
-        handleRemoveHotColumn,
-        props.allowRemoveColumns,
-    ]);
 
     const handleClickSave = () => {
         if (!annotationId) return;
@@ -155,6 +118,7 @@ const EditAnnotations: React.FC = (props) => {
         (hotData: AnnotationNoteValue[][], noteKeys: NoteKeyType[]) => {
             setAnnotationIsEdited(true);
             hotTableDataUpdatesRef.current = {
+                ...hotTableDataUpdatesRef.current,
                 hotData,
                 noteKeys,
             };
@@ -165,7 +129,13 @@ const EditAnnotations: React.FC = (props) => {
     return (
         <StateHandlerComponent isLoading={getAnnotationIsLoading} isError={isError}>
             <Box>
-                <AnnotationsHotTable {...initialAnnotationHotState} onChange={handleChange} />
+                <AnnotationsHotTable
+                    {...initialAnnotationHotState}
+                    allowAddColumn
+                    hardCodedReadOnlyCols={hardCodedColumns}
+                    allowRemoveColumns
+                    onChange={handleChange}
+                />
             </Box>
             <Box
                 sx={{

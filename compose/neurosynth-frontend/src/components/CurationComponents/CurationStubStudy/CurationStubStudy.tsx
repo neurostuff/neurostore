@@ -12,7 +12,7 @@ const CurationStubStudy: React.FC<
     const isLastColumn = useProjectCurationIsLastColumn(props.columnIndex);
 
     return (
-        <Box sx={{ width: 'calc(100% - 30px)' }}>
+        <Box sx={{ width: 'calc(100% - 35px)' }}>
             <Typography
                 variant="body2"
                 sx={{
@@ -31,20 +31,20 @@ const CurationStubStudy: React.FC<
                     ? props.exclusionTag.label
                     : 'uncategorized'}
             </Typography>
-            <Typography sx={{ fontWeight: 'bold' }} noWrap variant="body1">
-                {props.title}
-            </Typography>
-            <Typography noWrap>{props.authors}</Typography>
             <Box sx={{ display: 'flex' }}>
                 {props.articleYear && (
-                    <Typography sx={{ marginRight: '4px' }} variant="caption">
+                    <Typography sx={{ marginRight: '4px', fontWeight: 'bold' }} variant="body1">
                         ({props.articleYear})
                     </Typography>
                 )}
-                <Typography noWrap variant="caption">
-                    {props.journal}
+                <Typography sx={{ fontWeight: 'bold' }} noWrap variant="body1">
+                    {props.title}
                 </Typography>
             </Box>
+            <Typography noWrap>{props.authors}</Typography>
+            <Typography noWrap variant="caption">
+                {props.journal}
+            </Typography>
             <Box sx={{ padding: '5px 0', display: 'flex' }}>
                 {props.tags.map((tag) => (
                     <Tooltip title={tag.label} key={tag.id}>

@@ -1,4 +1,4 @@
-import { Box, Typography, Chip, Button } from '@mui/material';
+import { Box, Typography, Chip, Button, Link } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
 import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
@@ -21,28 +21,24 @@ const ReadOnlyStubSummary: React.FC<ICurationStubStudy> = (props) => {
     return (
         <Box sx={{ padding: '0.25rem', paddingBottom: '1rem' }}>
             {neurostoreId && (
-                <Button
-                    size="small"
-                    variant="outlined"
-                    rel="noopener"
+                <Link
+                    underline="hover"
                     target="_blank"
                     href={`/studies/${neurostoreId}`}
-                    sx={{ marginRight: '15px' }}
+                    sx={{ marginRight: '10px' }}
                 >
                     view study in neurostore
-                </Button>
+                </Link>
             )}
             {pmid && (
-                <Button
+                <Link
+                    underline="hover"
                     target="_blank"
                     href={`${PUBMED_ARTICLE_URL_PREFIX}${pmid}`}
-                    variant="outlined"
-                    size="small"
-                    color="success"
-                    sx={{ marginRight: '15px' }}
+                    sx={{ marginRight: '10px' }}
                 >
                     view study in pubmed
-                </Button>
+                </Link>
             )}
             {articleLink.length > 0 && (
                 <Button

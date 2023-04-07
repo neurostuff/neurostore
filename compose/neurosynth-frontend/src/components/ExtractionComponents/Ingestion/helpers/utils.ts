@@ -64,9 +64,8 @@ export const createStudyFromStub = async (stub: ICurationStubStudy): Promise<Stu
     }
 };
 
-export const addStudyToStudyset = async (
+export const updateStudyset = async (
     studysetId: string,
-    studyId: string,
     currStudyset: string[]
 ): Promise<StudysetReturn> => {
     // add study to studyset and handle update currStudyset
@@ -75,7 +74,7 @@ export const addStudyToStudyset = async (
         const updatedStudyset = await API.NeurostoreServices.StudySetsService.studysetsIdPut(
             studysetId,
             {
-                studies: [...currStudyset, studyId as string],
+                studies: [...currStudyset],
             }
         );
 
@@ -92,20 +91,22 @@ export const resolveStudysetAndCurationDifferences = (
     const returnObj: {
         removedFromStudyset: string[];
         stubsToIngest: ICurationStubStudy[];
-        studiesInStudyset: string[];
+        validStudiesInStudyset: string[];
     } = {
         removedFromStudyset: [],
         stubsToIngest: [],
-        studiesInStudyset: [],
+        validStudiesInStudyset: [],
     };
 
     const studysetSet = new Set<string>();
-    studysetStudies.forEach((studyId) => studysetSet.add(studyId));
+    studysetStudies.forEach((studyId) => {
+        studysetSet.add(studyId);
+    });
 
     curationStubs.forEach((stub) => {
         if (stub.neurostoreId) {
             if (studysetSet.has(stub.neurostoreId)) {
-                returnObj.studiesInStudyset.push(stub.neurostoreId);
+                returnObj.validStudiesInStudyset.push(stub.neurostoreId);
                 studysetSet.delete(stub.neurostoreId);
             } else {
                 returnObj.stubsToIngest.push(stub);
@@ -115,9 +116,9 @@ export const resolveStudysetAndCurationDifferences = (
         }
     });
 
-    for (const entry in studysetSet) {
-        returnObj.removedFromStudyset.push(entry);
-    }
+    studysetSet.forEach((item) => {
+        returnObj.removedFromStudyset.push(item);
+    });
 
     return returnObj;
 };

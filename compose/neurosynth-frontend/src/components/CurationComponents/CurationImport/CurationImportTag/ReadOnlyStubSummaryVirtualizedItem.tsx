@@ -1,4 +1,4 @@
-import { Box, Typography, Chip, Button } from '@mui/material';
+import { Box, Typography, Chip, Link } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
 
@@ -6,9 +6,9 @@ import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
  * Study summary for studies that are being imported and tagged. We cannot reuse the ReadOnlyStubSummary easily here because
  * all data needs to be a one liner with fixed height for virtualization purposes
  */
-const CurationImportTagStudyItem: React.FC<ICurationStubStudy & { style: React.CSSProperties }> = (
-    props
-) => {
+const ReadOnlyStubSummaryVirtualizedItem: React.FC<
+    ICurationStubStudy & { style: React.CSSProperties }
+> = (props) => {
     const {
         articleLink,
         articleYear,
@@ -32,7 +32,7 @@ const CurationImportTagStudyItem: React.FC<ICurationStubStudy & { style: React.C
                 ...{
                     borderRadius: '4px',
                     border: exclusionTag ? '1px solid red' : '1px solid #ebebeb',
-                    height: '208px',
+                    height: '200px',
                     padding: '10px 10px',
                     marginBottom: '10px',
                     width: 'calc(100% - 30px)',
@@ -41,43 +41,37 @@ const CurationImportTagStudyItem: React.FC<ICurationStubStudy & { style: React.C
         >
             <Box>
                 {neurostoreId && (
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        rel="noopener"
+                    <Link
+                        underline="hover"
                         target="_blank"
                         href={`/studies/${neurostoreId}`}
-                        sx={{ marginRight: '15px' }}
+                        sx={{ marginRight: '10px' }}
                     >
                         view study in neurostore
-                    </Button>
+                    </Link>
                 )}
                 {pmid && (
-                    <Button
+                    <Link
+                        underline="hover"
                         target="_blank"
                         href={`${PUBMED_ARTICLE_URL_PREFIX}${pmid}`}
-                        variant="outlined"
-                        size="small"
-                        color="success"
-                        sx={{ marginRight: '15px' }}
+                        sx={{ marginRight: '10px' }}
                     >
                         view study in pubmed
-                    </Button>
+                    </Link>
                 )}
                 {articleLink && (
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        rel="noopener"
+                    <Link
+                        underline="hover"
                         target="_blank"
-                        color="secondary"
                         href={articleLink}
+                        sx={{ marginRight: '10px' }}
                     >
-                        View article
-                    </Button>
+                        view article link
+                    </Link>
                 )}
             </Box>
-            <Typography color="primary" noWrap variant="h6">
+            <Typography noWrap variant="h6">
                 {articleYear ? `(${articleYear})` : ''} {title}
             </Typography>
             <Typography noWrap variant="body1">
@@ -125,4 +119,4 @@ const CurationImportTagStudyItem: React.FC<ICurationStubStudy & { style: React.C
     );
 };
 
-export default CurationImportTagStudyItem;
+export default ReadOnlyStubSummaryVirtualizedItem;

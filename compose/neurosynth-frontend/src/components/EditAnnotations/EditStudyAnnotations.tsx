@@ -14,19 +14,28 @@ import {
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import { ColumnSettings } from 'handsontable/settings';
+import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
+import { createColumns } from './helpers/utils';
 import { useParams } from 'react-router-dom';
+import { useStudyAnalyses } from 'pages/Studies/StudyStore';
+
+const hardCodedColumns = ['Analysis', 'Description'];
 
 const EditStudyAnnotations: React.FC = (props) => {
     const { studyId } = useParams<{ studyId: string }>();
     const annotationId = useProjectExtractionAnnotationId();
+    const analyses = useStudyAnalyses();
     const { mutate, isLoading: updateAnnotationIsLoading } = useUpdateAnnotationById(annotationId);
     const { data, isLoading: getAnnotationIsLoading, isError } = useGetAnnotationById(annotationId);
 
     // tracks the changes made to hot table
     const hotTableDataUpdatesRef = useRef<{
+        initialized: boolean;
         hotData: (string | number | boolean | null)[][];
         noteKeys: NoteKeyType[];
     }>({
+        initialized: false,
         hotData: [],
         noteKeys: [],
     });
@@ -34,44 +43,75 @@ const EditStudyAnnotations: React.FC = (props) => {
     const [initialAnnotationHotState, setInitialAnnotationHotState] = useState<{
         hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>;
         noteKeys: NoteKeyType[];
-        hotData: (string | number | boolean | null)[][];
+        hotData: AnnotationNoteValue[][];
+        hotColumns: ColumnSettings[];
+        mergeCells: MergeCellsSettings[];
     }>({
         hotDataToStudyMapping: new Map<number, { studyId: string; analysisId: string }>(),
         noteKeys: [],
         hotData: [],
+        hotColumns: [],
+        mergeCells: [],
     });
 
     useEffect(() => {
-        if (data) {
+        if (data && !hotTableDataUpdatesRef.current.initialized) {
+            hotTableDataUpdatesRef.current.initialized = true;
             const noteKeys = noteKeyObjToArr(data.note_keys);
-            const studyNotes = (data.notes as NoteCollectionReturn[]).filter(
+
+            const studyNotes = ((data.notes as NoteCollectionReturn[]) || []).filter(
                 (x) => x.study === studyId
             );
 
             const { hotData, hotDataToStudyMapping } = annotationNotesToHotData(
                 noteKeys,
-                studyNotes
+                studyNotes,
+                (annotationNote) => {
+                    const analysis = analyses.find((x) => x.id === annotationNote.analysis);
+                    return [annotationNote.analysis_name || '', analysis?.description || ''];
+                }
             );
 
             setInitialAnnotationHotState({
+                hotDataToStudyMapping,
                 noteKeys,
-                hotData,
-                hotDataToStudyMapping: hotDataToStudyMapping,
+                hotColumns: createColumns(noteKeys),
+                hotData: hotData,
+                mergeCells: [],
             });
         }
-    }, [data, studyId]);
+    }, [data, studyId, analyses]);
 
     const handleClickSave = () => {
         if (!annotationId) return;
 
         const { hotData, noteKeys } = hotTableDataUpdatesRef.current;
 
-        const updatedAnnotationNotes = hotDataToAnnotationNotes(
+        const convertedAnnotationNotes = hotDataToAnnotationNotes(
             hotData,
             initialAnnotationHotState.hotDataToStudyMapping,
             noteKeys
         );
         const updatedNoteKeyObj = noteKeyArrToObj(noteKeys);
+
+        const updatedAnnotationNotes = ((data?.notes || []) as NoteCollectionReturn[]).map(
+            (annotationNote) => {
+                const foundAnnotationNote = convertedAnnotationNotes.find(
+                    (x) => x.analysis === annotationNote.analysis
+                );
+                // if we have not found it (i.e. the annotation is not part of the study annotations we are editing) then we just return a copy of the original.
+                // if we have found it, (i.e. the annotation is part of the study annotations we are editing) then we return the version we have edited
+                if (!foundAnnotationNote) {
+                    return {
+                        ...annotationNote,
+                    };
+                } else {
+                    return {
+                        ...foundAnnotationNote,
+                    };
+                }
+            }
+        );
 
         mutate(
             {
@@ -97,6 +137,7 @@ const EditStudyAnnotations: React.FC = (props) => {
         (hotData: AnnotationNoteValue[][], noteKeys: NoteKeyType[]) => {
             setAnnotationIsEdited(true);
             hotTableDataUpdatesRef.current = {
+                ...hotTableDataUpdatesRef.current,
                 hotData,
                 noteKeys,
             };
@@ -107,7 +148,13 @@ const EditStudyAnnotations: React.FC = (props) => {
     return (
         <StateHandlerComponent isLoading={getAnnotationIsLoading} isError={isError}>
             <Box>
-                <AnnotationsHotTable {...initialAnnotationHotState} onChange={handleChange} />
+                <AnnotationsHotTable
+                    {...initialAnnotationHotState}
+                    hardCodedReadOnlyCols={hardCodedColumns}
+                    allowAddColumn={false}
+                    allowRemoveColumns={false}
+                    onChange={handleChange}
+                />
             </Box>
             <Box
                 sx={{

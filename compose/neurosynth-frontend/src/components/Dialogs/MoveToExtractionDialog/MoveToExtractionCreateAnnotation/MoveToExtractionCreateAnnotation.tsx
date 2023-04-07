@@ -143,130 +143,27 @@ const MoveToExtractionCreateAnnotation: React.FC<{
                 />
             </Box>
             <Box sx={{ display: 'flex' }}>
-                <Chip
-                    onDelete={() => {}}
-                    sx={{ margin: '4px' }}
-                    label="included: boolean"
-                    color="success"
-                />
-                <Chip
-                    onDelete={() => {}}
-                    sx={{ margin: '4px' }}
-                    label="modality: string"
-                    color="secondary"
-                />
-                <Chip
-                    onDelete={() => {}}
-                    sx={{ margin: '4px' }}
-                    label="threshold: number"
-                    color="primary"
-                />
+                {annotationColumns.map((col) => (
+                    <Chip
+                        key={col.value}
+                        onDelete={() => handleRemoveColumn(col)}
+                        sx={{ margin: '4px' }}
+                        label={`${col.value}: ${col.type}`}
+                        color={
+                            col.type === EPropertyType.BOOLEAN
+                                ? 'success'
+                                : col.type === EPropertyType.NUMBER
+                                ? 'primary'
+                                : 'secondary'
+                        }
+                    />
+                ))}
             </Box>
-            {/* <Box sx={{ overflowX: 'auto' }}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell></TableCell>
-                            {annotationColumns.map((annotationCol) => (
-                                <TableCell
-                                    key={annotationCol.value}
-                                    sx={[
-                                        MoveToExtractionCreateAnnotationStyles[annotationCol.type],
-                                        { fontWeight: 'bold' },
-                                    ]}
-                                >
-                                    <Box
-                                        sx={{
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center',
-                                        }}
-                                    >
-                                        <Box>
-                                            {annotationCol.value !== 'included' && (
-                                                <IconButton
-                                                    onClick={() =>
-                                                        handleRemoveColumn(annotationCol)
-                                                    }
-                                                    size="small"
-                                                >
-                                                    <CancelIcon color="error" />
-                                                </IconButton>
-                                            )}
-                                        </Box>
-                                        <Box>
-                                            <Typography sx={{ whiteSpace: 'nowrap' }}>
-                                                {annotationCol.value}
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                </TableCell>
-                            ))}
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        <TableRow>
-                            <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                                example analysis 1 ...
-                            </TableCell>
-                            {annotationColumns.map((annotationCol, index) => (
-                                <TableCell
-                                    key={index}
-                                    sx={[
-                                        MoveToExtractionCreateAnnotationStyles[annotationCol.type],
-                                        MoveToExtractionCreateAnnotationStyles[
-                                            `${annotationCol.type}-type`
-                                        ],
-                                        MoveToExtractionCreateAnnotationStyles['value-cell'],
-                                    ]}
-                                >
-                                    {annotationCol.type}
-                                </TableCell>
-                            ))}
-                        </TableRow>
-                        <TableRow>
-                            <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                                example analysis 2 ...
-                            </TableCell>
-                            {annotationColumns.map((annotationCol, index) => (
-                                <TableCell
-                                    key={index}
-                                    sx={[
-                                        MoveToExtractionCreateAnnotationStyles[annotationCol.type],
-                                        MoveToExtractionCreateAnnotationStyles[
-                                            `${annotationCol.type}-type`
-                                        ],
-                                        MoveToExtractionCreateAnnotationStyles['value-cell'],
-                                    ]}
-                                >
-                                    {annotationCol.type}
-                                </TableCell>
-                            ))}
-                        </TableRow>
-                        <TableRow>
-                            <TableCell>...</TableCell>
-                            {annotationColumns.map((annotationCol, index) => (
-                                <TableCell
-                                    key={index}
-                                    sx={[
-                                        MoveToExtractionCreateAnnotationStyles[annotationCol.type],
-                                        MoveToExtractionCreateAnnotationStyles[
-                                            `${annotationCol.type}-type`
-                                        ],
-                                        MoveToExtractionCreateAnnotationStyles['value-cell'],
-                                    ]}
-                                >
-                                    {annotationCol.type}
-                                </TableCell>
-                            ))}
-                        </TableRow>
-                    </TableBody>
-                </Table>
-            </Box> */}
             <Box sx={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
                 <LoadingButton
                     variant="contained"
                     onClick={handleCreateAnnotation}
+                    loaderColor="secondary"
                     text="Create Annotation"
                     isLoading={createAnnotationIsLoading}
                     sx={{ width: '178px' }}

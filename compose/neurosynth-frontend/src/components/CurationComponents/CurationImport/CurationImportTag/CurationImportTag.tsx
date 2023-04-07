@@ -7,7 +7,7 @@ import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSe
 import { ITag } from 'hooks/requests/useGetProjects';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
-import CurationImportTagStudyItem from './CurationImportTagStudyItem';
+import ReadOnlyStubSummaryVirtualizedItem from './ReadOnlyStubSummaryVirtualizedItem';
 
 const CurationImportTagFixedSizeListRow: React.FC<
     ListChildComponentProps<{
@@ -16,7 +16,7 @@ const CurationImportTagFixedSizeListRow: React.FC<
 > = (props) => {
     const stub = props.data.stubs[props.index];
 
-    return <CurationImportTagStudyItem {...stub} style={props.style} />;
+    return <ReadOnlyStubSummaryVirtualizedItem {...stub} style={props.style} />;
 };
 
 const CurationImportTag: React.FC<{
@@ -94,7 +94,7 @@ const CurationImportTag: React.FC<{
                     height={fixedListHeight}
                     itemCount={stubs.length}
                     width="100%"
-                    itemSize={238}
+                    itemSize={230}
                     itemKey={(index, data) => data.stubs[index]?.id}
                     layout="vertical"
                     itemData={{

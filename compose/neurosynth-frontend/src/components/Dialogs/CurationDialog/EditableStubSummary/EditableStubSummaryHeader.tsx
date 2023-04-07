@@ -148,9 +148,9 @@ const EditableStubSummaryHeader: React.FC<IEditableStubSummaryHeader> = React.me
     }
 
     return (
-        <Box sx={{ marginBottom: '0.5rem', minWidth: '700px' }}>
+        <Box sx={{ minWidth: '700px' }}>
             <Box sx={{ display: 'flex' }}>
-                <Box sx={{ display: 'flex' }}>{categorizeHeader}</Box>
+                <Box sx={{ display: 'flex', marginBottom: '8px' }}>{categorizeHeader}</Box>
                 <Box sx={{ marginLeft: 'auto' }}>
                     <NeurosynthPopper
                         open={tagSelectorIsOpen}
@@ -180,7 +180,7 @@ const EditableStubSummaryHeader: React.FC<IEditableStubSummaryHeader> = React.me
                 </Box>
             </Box>
 
-            <Box sx={{ margin: '6px 0' }}>
+            <Box>
                 {(props.stub.tags || []).map((tag) => (
                     <NeurosynthConfirmationChip
                         sx={{ margin: '3px' }}
