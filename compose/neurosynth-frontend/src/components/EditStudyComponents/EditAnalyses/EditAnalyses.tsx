@@ -35,6 +35,10 @@ const EditAnalyses: React.FC = (props) => {
         setSelectedAnalysisId(analysisId);
     };
 
+    const handleOnDeleteAnalysis = () => {
+        setSelectedAnalysisId(undefined);
+    };
+
     return (
         <Box>
             <Accordion elevation={0} defaultExpanded>
@@ -85,7 +89,7 @@ const EditAnalyses: React.FC = (props) => {
                         ) : (
                             <>
                                 <Divider />
-                                <Box sx={{ display: 'flex', minHeight: '80vh' }}>
+                                <Box sx={{ display: 'flex' }}>
                                     <EditAnalysesList
                                         selectedAnalysisId={selectedAnalysisId}
                                         onSelectAnalysis={handleSelectAnalysis}
@@ -96,7 +100,10 @@ const EditAnalyses: React.FC = (props) => {
                                             width: 'calc(100% - 250px - 1rem)',
                                         }}
                                     >
-                                        <EditAnalysis analysisId={selectedAnalysisId} />
+                                        <EditAnalysis
+                                            onDeleteAnalysis={handleOnDeleteAnalysis}
+                                            analysisId={selectedAnalysisId}
+                                        />
                                     </Box>
                                 </Box>
                             </>

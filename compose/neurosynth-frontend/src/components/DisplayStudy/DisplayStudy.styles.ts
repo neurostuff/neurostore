@@ -1,6 +1,6 @@
-import { Style } from '../../..';
+import { Style } from 'index';
 
-const StudyPageStyles: Style = {
+const DisplayStudyStyles: Style = {
     actionButton: {
         width: '130px',
     },
@@ -66,4 +66,4 @@ const StudyPageStyles: Style = {
     },
 };
 
-export default StudyPageStyles;
+export default DisplayStudyStyles;

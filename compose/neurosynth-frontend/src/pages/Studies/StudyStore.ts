@@ -335,7 +335,7 @@ const useStudyStore = create<
                             (x) => (x.id || null) === (analysis.id || undefined)
                         );
                         if (foundAnalysisIndex < 0) {
-                            updatedAnalyses.unshift({
+                            updatedAnalyses.push({
                                 ...analysis,
                                 isNew: true,
                                 conditions: [],

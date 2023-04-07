@@ -36,17 +36,15 @@ const ReadOnlyStudySummary: React.FC<StudyReturn & { currentSelectedChip: ESelec
 
     return (
         <Box sx={StudyListItemStyles.listItem}>
-            <Box sx={{ width: 'calc(100% - 80px)' }}>
-                <Box onClick={handleClick} sx={{ padding: '0 1rem' }}>
-                    <Typography sx={{ fontWeight: 'bold' }}>
-                        {`${props.year ? `(${props.year}) ` : ''}${props.name}`}
-                    </Typography>
-                    <Typography>{props.authors}</Typography>
-                    <Typography>Journal: {props.publication}</Typography>
-                    <Box sx={{ display: 'flex' }}>
-                        <Typography sx={{ width: '220px' }}>PMID: {props.pmid}</Typography>
-                        <Typography>DOI: {props.doi}</Typography>
-                    </Box>
+            <Box onClick={handleClick} sx={{ padding: '0 1rem', width: 'calc(100% - 80px)' }}>
+                <Typography sx={{ fontWeight: 'bold' }}>
+                    {`${props.year ? `(${props.year}) ` : ''}${props.name}`}
+                </Typography>
+                <Typography>{props.authors}</Typography>
+                <Typography>Journal: {props.publication}</Typography>
+                <Box sx={{ display: 'flex' }}>
+                    <Typography sx={{ width: '220px' }}>PMID: {props.pmid}</Typography>
+                    <Typography>DOI: {props.doi}</Typography>
                 </Box>
             </Box>
             <Box

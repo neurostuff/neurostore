@@ -15,7 +15,7 @@ import EditStudyMetadata from 'components/EditStudyComponents/EditStudyMetadata/
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useSnackbar } from 'notistack';
 import { useEffect } from 'react';
-import { NavLink, useParams } from 'react-router-dom';
+import { NavLink, useHistory, useParams } from 'react-router-dom';
 import {
     useClearStudyStore,
     useInitStudyStore,
@@ -28,8 +28,6 @@ import {
 } from '../StudyStore';
 import { useProjectExtractionAnnotationId } from 'pages/Projects/ProjectPage/ProjectStore';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
-import CheckIcon from '@mui/icons-material/Check';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
 import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatusButtons/FloatingStatusButtons';
 
 const EditStudyPage: React.FC = (props) => {
@@ -45,6 +43,7 @@ const EditStudyPage: React.FC = (props) => {
     const annotationId = useProjectExtractionAnnotationId();
     const snackbar = useSnackbar();
     const studyName = useStudyName();
+    const history = useHistory();
 
     useEffect(() => {
         clearStudyStore();
@@ -64,48 +63,63 @@ const EditStudyPage: React.FC = (props) => {
         }
     };
 
+    const isEditingFromProject = !!projectId;
+
     return (
         <StateHandlerComponent isError={false} isLoading={!storeStudyId}>
-            <FloatingStatusButtons />
-            <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
-                <Breadcrumbs>
-                    <Link
-                        component={NavLink}
-                        to="/projects"
-                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                        underline="hover"
-                    >
-                        Projects
-                    </Link>
-                    <Link
-                        component={NavLink}
-                        to={`/projects/${projectId}`}
-                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                        underline="hover"
-                    >
-                        {project?.name || ''}
-                    </Link>
-                    <Link
-                        component={NavLink}
-                        to={`/projects/${projectId}/extraction`}
-                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                        underline="hover"
-                    >
-                        Extraction
-                    </Link>
-                    <Link
-                        component={NavLink}
-                        to={`/projects/${projectId}/extraction/studies/${studyId}`}
-                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                        underline="hover"
-                    >
-                        {studyName || ''}
-                    </Link>
-                    <Typography variant="h5" sx={{ color: 'secondary.main' }}>
-                        Edit
-                    </Typography>
-                </Breadcrumbs>
-            </Box>
+            {isEditingFromProject ? (
+                <>
+                    <FloatingStatusButtons />
+                    <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
+                        <Breadcrumbs>
+                            <Link
+                                component={NavLink}
+                                to="/projects"
+                                sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
+                                underline="hover"
+                            >
+                                Projects
+                            </Link>
+                            <Link
+                                component={NavLink}
+                                to={`/projects/${projectId}`}
+                                sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
+                                underline="hover"
+                            >
+                                {project?.name || ''}
+                            </Link>
+                            <Link
+                                component={NavLink}
+                                to={`/projects/${projectId}/extraction`}
+                                sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
+                                underline="hover"
+                            >
+                                Extraction
+                            </Link>
+                            <Link
+                                component={NavLink}
+                                to={`/projects/${projectId}/extraction/studies/${studyId}`}
+                                sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
+                                underline="hover"
+                            >
+                                {studyName || ''}
+                            </Link>
+                            <Typography variant="h5" sx={{ color: 'secondary.main' }}>
+                                Edit
+                            </Typography>
+                        </Breadcrumbs>
+                    </Box>
+                </>
+            ) : (
+                <Button
+                    color="secondary"
+                    variant="outlined"
+                    sx={{ marginBottom: '1rem' }}
+                    onClick={() => history.push(`/studies/${studyId}`)}
+                >
+                    Return To Study Page
+                </Button>
+            )}
             <Box>
                 <EditStudyDetails />
                 <Divider />

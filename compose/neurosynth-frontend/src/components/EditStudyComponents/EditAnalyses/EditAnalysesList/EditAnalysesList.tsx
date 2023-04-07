@@ -11,10 +11,10 @@ const EditAnalysesList: React.FC<{
 
     // select the first analysis on first render
     useEffect(() => {
-        if (analyses[0].id) {
+        if (!props.selectedAnalysisId && analyses[0]?.id) {
             props.onSelectAnalysis(analyses[0].id);
         }
-    }, []);
+    }, [analyses, props]);
 
     return (
         <Box

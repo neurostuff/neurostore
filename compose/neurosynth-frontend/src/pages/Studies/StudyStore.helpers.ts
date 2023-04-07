@@ -17,11 +17,11 @@ export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStor
         }));
 
         const parsedPoints: IStorePoint[] = (analysis.points as PointReturn[]).map(
-            (analysisPoint) => ({
-                ...analysisPoint,
-                x: (analysisPoint.coordinates || [])[0],
-                y: (analysisPoint.coordinates || [])[1],
-                z: (analysisPoint.coordinates || [])[2],
+            ({ entities, ...args }) => ({
+                ...args,
+                x: (args.coordinates || [])[0],
+                y: (args.coordinates || [])[1],
+                z: (args.coordinates || [])[2],
                 isNew: false,
             })
         );

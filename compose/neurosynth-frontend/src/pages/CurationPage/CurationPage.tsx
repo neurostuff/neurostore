@@ -9,6 +9,7 @@ import {
     useProjectName,
     useProjectCurationIsPrisma,
     useInitProjectStore,
+    useProjectExtractionStudysetId,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import CurationPageLoadingText from './CurationPageLoadingText';
 import useGetCurationSummary from 'hooks/useGetCurationSummary';
@@ -20,6 +21,7 @@ const CurationPage: React.FC = (props) => {
     const history = useHistory<IProjectPageLocationState>();
 
     const isPrisma = useProjectCurationIsPrisma();
+    const studysetId = useProjectExtractionStudysetId();
     const projectName = useProjectName();
     const initProjectStore = useInitProjectStore();
     const { included, uncategorized } = useGetCurationSummary();
@@ -27,6 +29,18 @@ const CurationPage: React.FC = (props) => {
     useEffect(() => {
         initProjectStore(projectId);
     }, [initProjectStore, projectId]);
+
+    const handleMoveToExtractionPhase = () => {
+        if (studysetId) {
+            history.push(`/projects/${projectId}/extraction`);
+        } else {
+            history.push(`/projects/${projectId}`, {
+                projectPage: {
+                    openCurationDialog: true,
+                },
+            });
+        }
+    };
 
     const canMoveToExtractionPhase = included > 0 && uncategorized === 0;
 
@@ -90,13 +104,7 @@ const CurationPage: React.FC = (props) => {
                         )}
                         {canMoveToExtractionPhase && (
                             <Button
-                                onClick={() =>
-                                    history.push(`/projects/${projectId}`, {
-                                        projectPage: {
-                                            openCurationDialog: true,
-                                        },
-                                    })
-                                }
+                                onClick={handleMoveToExtractionPhase}
                                 variant="contained"
                                 color="success"
                                 disableElevation

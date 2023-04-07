@@ -10,6 +10,7 @@ import ExtractionPage from 'pages/ExtractionPage/ExtractionPage';
 import CurationImportPage from 'pages/CurationPage/CurationImportPage';
 import AnnotationsPage from 'pages/Annotations/AnnotationsPage/AnnotationsPage';
 import StudyAnnotationsPage from 'pages/Annotations/StudyAnnotationsPage/StudyAnnotationsPage';
+import ProjectStudyPage from 'pages/Studies/ProjectStudyPage/ProjectStudyPage';
 
 const StudysetPage = React.lazy(() => import('../Studysets/StudysetPage/StudysetPage'));
 const StudysetsPage = React.lazy(() => import('../Studysets/StudysetsPage/StudysetsPage'));
@@ -102,15 +103,23 @@ const BaseNavigation: React.FC = (_props) => {
                         <StudiesPage />
                     </Box>
                 </Route>
-                <Route
-                    path={['/studies/:studyId', '/projects/:projectId/extraction/studies/:studyId']}
-                    exact={true}
-                >
+                <Route path={'/studies/:studyId'} exact={true}>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <StudyPage />
                     </Box>
                 </Route>
-                <Route path="/projects/:projectId/extraction/studies/:studyId/edit" exact>
+                <Route path={'/projects/:projectId/extraction/studies/:studyId'}>
+                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                        <ProjectStudyPage />
+                    </Box>
+                </Route>
+                <Route
+                    path={[
+                        '/projects/:projectId/extraction/studies/:studyId/edit',
+                        '/studies/:studyId/edit',
+                    ]}
+                    exact
+                >
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <EditStudyPage />
                     </Box>

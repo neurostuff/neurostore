@@ -6,7 +6,7 @@ import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/Confirmati
 import { useDeleteAnalysis } from 'pages/Studies/StudyStore';
 import { useState } from 'react';
 
-const EditAnalysis: React.FC<{ analysisId?: string }> = (props) => {
+const EditAnalysis: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void }> = (props) => {
     const deleteAnalysis = useDeleteAnalysis();
 
     const [dialogIsOpen, setDialogIsOpen] = useState(false);
@@ -16,7 +16,10 @@ const EditAnalysis: React.FC<{ analysisId?: string }> = (props) => {
     }
 
     const handleCloseDialog = (confirm?: boolean) => {
-        if (confirm && props.analysisId) deleteAnalysis(props.analysisId);
+        if (confirm && props.analysisId) {
+            deleteAnalysis(props.analysisId);
+            props.onDeleteAnalysis();
+        }
         setDialogIsOpen(false);
     };
 
