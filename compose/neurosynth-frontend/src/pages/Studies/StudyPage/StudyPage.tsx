@@ -34,6 +34,11 @@ const StudyPage: React.FC = (props) => {
         const userIDAndStudyIDExist = !!user?.sub && !!data?.user;
         const thisUserOwnsThisStudy = (data?.user || null) === (user?.sub || undefined);
         const allowEdit = isAuthenticated && userIDAndStudyIDExist && thisUserOwnsThisStudy;
+        console.log({
+            userIDAndStudyIDExist,
+            thisUserOwnsThisStudy,
+            isAuthenticated,
+        });
         setAllowEdits(allowEdit);
     }, [isAuthenticated, user?.sub, data?.user, history]);
 

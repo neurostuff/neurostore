@@ -283,7 +283,10 @@ const CurationImportResolveDuplicates: React.FC<{
                             </Typography>
                         </AccordionSummary>
                         <AccordionDetails>
-                            <Typography sx={{ fontWeight: 'bold' }} variant="h6">
+                            <Typography
+                                sx={{ fontWeight: 'bold', marginBottom: '1rem' }}
+                                variant="h6"
+                            >
                                 This is the study you are importing
                             </Typography>
                             <Box sx={{ display: 'flex' }}>
@@ -323,7 +326,10 @@ const CurationImportResolveDuplicates: React.FC<{
                                 </Box>
                             </Box>
 
-                            <Typography sx={{ fontWeight: 'bold' }} variant="h6">
+                            <Typography
+                                sx={{ fontWeight: 'bold', marginBottom: '1rem' }}
+                                variant="h6"
+                            >
                                 These studies exist within the project
                             </Typography>
                             {projectDuplicates.map((stub, duplicateStubIndex) => (
@@ -335,7 +341,7 @@ const CurationImportResolveDuplicates: React.FC<{
                                         }}
                                     >
                                         <Box sx={{ width: '100%' }}>
-                                            <Chip size="small" label={stub.colName} />
+                                            <Chip size="small" color="info" label={stub.colName} />
                                             <ReadOnlyStubSummary {...stub} />
                                         </Box>
                                     </Box>

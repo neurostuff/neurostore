@@ -60,7 +60,7 @@ const CurationImportTag: React.FC<{
             <Paper elevation={0}>
                 <Box sx={{ paddingTop: '0.5rem' }}>
                     <Typography gutterBottom sx={{ fontWeight: 'bold' }} variant="h6">
-                        Importing {stubs.length} article{stubs.length > 1 ? 's' : ''} from pubmed
+                        Importing {stubs.length} article{stubs.length > 1 ? 's' : ''}
                     </Typography>
                     <Typography sx={{ marginBottom: '0.5rem' }} variant="body1">
                         Tag all your imported studies

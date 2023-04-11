@@ -14,6 +14,7 @@ import {
 import CurationPageLoadingText from './CurationPageLoadingText';
 import useGetCurationSummary from 'hooks/useGetCurationSummary';
 import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
+import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 
 const CurationPage: React.FC = (props) => {
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
@@ -55,27 +56,25 @@ const CurationPage: React.FC = (props) => {
                     }}
                 >
                     <Box sx={{ display: 'flex' }}>
-                        <Breadcrumbs>
-                            <Link
-                                component={NavLink}
-                                to="/projects"
-                                sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                                underline="hover"
-                            >
-                                Projects
-                            </Link>
-                            <Link
-                                component={NavLink}
-                                to={`/projects/${projectId}`}
-                                sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                                underline="hover"
-                            >
-                                {projectName || ''}
-                            </Link>
-                            <Typography color="secondary" sx={{ fontSize: '1.5rem' }}>
-                                Search & Curate
-                            </Typography>
-                        </Breadcrumbs>
+                        <NeurosynthBreadcrumbs
+                            breadcrumbItems={[
+                                {
+                                    text: 'Projects',
+                                    link: '/projects',
+                                    isCurrentPage: false,
+                                },
+                                {
+                                    text: projectName || '',
+                                    link: `/projects/${projectId}`,
+                                    isCurrentPage: false,
+                                },
+                                {
+                                    text: 'Search & Curate',
+                                    link: '',
+                                    isCurrentPage: true,
+                                },
+                            ]}
+                        />
                         <CurationPageLoadingText />
                     </Box>
                     <Box sx={{ marginRight: '1rem' }}>

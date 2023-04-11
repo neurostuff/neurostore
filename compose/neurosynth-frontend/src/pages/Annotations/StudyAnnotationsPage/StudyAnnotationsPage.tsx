@@ -1,5 +1,6 @@
 import { Box, Breadcrumbs, Link, Typography } from '@mui/material';
 import EditStudyAnnotations from 'components/EditAnnotations/EditStudyAnnotations';
+import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import { useProjectId, useProjectName } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useStudyName } from 'pages/Studies/StudyStore';
 import { NavLink, useParams } from 'react-router-dom';
@@ -14,44 +15,36 @@ const StudyAnnotationsPage: React.FC = (props) => {
 
     return (
         <Box>
-            <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
-                <Breadcrumbs>
-                    <Link
-                        component={NavLink}
-                        to="/projects"
-                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                        underline="hover"
-                    >
-                        Projects
-                    </Link>
-                    <Link
-                        component={NavLink}
-                        to={`/projects/${projectId}`}
-                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                        underline="hover"
-                    >
-                        {projectName || ''}
-                    </Link>
-                    <Link
-                        component={NavLink}
-                        to={`/projects/${projectId}/extraction`}
-                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                        underline="hover"
-                    >
-                        Extraction
-                    </Link>
-                    <Link
-                        component={NavLink}
-                        to={`/projects/${projectId}/extraction/studies/${studyId}`}
-                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                        underline="hover"
-                    >
-                        {studyName || ''}
-                    </Link>
-                    <Typography variant="h5" sx={{ color: 'secondary.main' }}>
-                        Annotations
-                    </Typography>
-                </Breadcrumbs>
+            <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
+                <NeurosynthBreadcrumbs
+                    breadcrumbItems={[
+                        {
+                            text: 'Projects',
+                            link: '/projects',
+                            isCurrentPage: false,
+                        },
+                        {
+                            text: projectName || '',
+                            link: `/projects/${projectId}`,
+                            isCurrentPage: false,
+                        },
+                        {
+                            text: 'Extraction',
+                            link: `/projects/${projectId}/extraction`,
+                            isCurrentPage: false,
+                        },
+                        {
+                            text: studyName || '',
+                            link: `/projects/${projectId}/extraction/studies/${studyId}`,
+                            isCurrentPage: false,
+                        },
+                        {
+                            text: 'Annotations',
+                            link: '',
+                            isCurrentPage: true,
+                        },
+                    ]}
+                />
             </Box>
             <Box>
                 <EditStudyAnnotations />

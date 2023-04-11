@@ -23,9 +23,7 @@ const DisplayAnalyses: React.FC<{
                 analyses={props.analyses}
             />
             <Box sx={{ padding: '1rem', width: '100%', height: '100%' }}>
-                <Box>
-                    <DisplayAnalysis {...selectedAnalysis} />
-                </Box>
+                <DisplayAnalysis {...selectedAnalysis} />
             </Box>
         </Box>
     );

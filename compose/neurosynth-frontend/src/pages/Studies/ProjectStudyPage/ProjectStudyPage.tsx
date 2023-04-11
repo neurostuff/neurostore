@@ -1,14 +1,8 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Button, Typography, Box, Breadcrumbs, Link } from '@mui/material';
+import { Button, Typography, Box } from '@mui/material';
 import React, { useState, useEffect } from 'react';
-import { NavLink, useHistory, useParams } from 'react-router-dom';
-import {
-    useCreateStudy,
-    useGetAnnotationById,
-    useGetStudyById,
-    useGetStudysetById,
-    useUpdateStudyset,
-} from 'hooks';
+import { useHistory, useParams } from 'react-router-dom';
+import { useCreateStudy, useGetStudyById, useGetStudysetById, useUpdateStudyset } from 'hooks';
 import EditIcon from '@mui/icons-material/Edit';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
@@ -19,6 +13,7 @@ import { useUpdateStubField } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useProjectCurationColumns } from 'pages/Projects/ProjectPage/ProjectStore';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import DisplayStudy from 'components/DisplayStudy/DisplayStudy';
+import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 
 const ProjectStudyPage: React.FC = (props) => {
     const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
@@ -117,38 +112,38 @@ const ProjectStudyPage: React.FC = (props) => {
             <FloatingStatusButtons />
             {isViewingStudyFromProject && (
                 <Box data-tour="StudyPage-8">
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                        <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
-                            <Breadcrumbs>
-                                <Link
-                                    component={NavLink}
-                                    to="/projects"
-                                    sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                                    underline="hover"
-                                >
-                                    Projects
-                                </Link>
-                                <Link
-                                    component={NavLink}
-                                    to={`/projects/${projectId}`}
-                                    sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                                    underline="hover"
-                                >
-                                    {project?.name || ''}
-                                </Link>
-                                <Link
-                                    component={NavLink}
-                                    to={`/projects/${projectId}/extraction`}
-                                    sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                                    underline="hover"
-                                >
-                                    Extraction
-                                </Link>
-                                <Typography variant="h5" color="secondary">
-                                    {data?.name || ''}
-                                </Typography>
-                            </Breadcrumbs>
-                        </Box>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            width: '100%',
+                            marginBottom: '0.5rem',
+                        }}
+                    >
+                        <NeurosynthBreadcrumbs
+                            breadcrumbItems={[
+                                {
+                                    text: 'Projects',
+                                    link: '/projects',
+                                    isCurrentPage: false,
+                                },
+                                {
+                                    text: project?.name || '',
+                                    link: `/projects/${projectId}`,
+                                    isCurrentPage: false,
+                                },
+                                {
+                                    text: 'Extraction',
+                                    link: `/projects/${projectId}/extraction`,
+                                    isCurrentPage: false,
+                                },
+                                {
+                                    text: data?.name || '',
+                                    link: '',
+                                    isCurrentPage: true,
+                                },
+                            ]}
+                        />
                         <Box sx={{ display: 'flex' }}>
                             <Box>
                                 <Button

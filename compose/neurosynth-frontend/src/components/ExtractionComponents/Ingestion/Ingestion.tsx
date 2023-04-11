@@ -24,6 +24,7 @@ import {
     updateStudyset,
 } from './helpers/utils';
 import IngestionAwaitUserResponse from './IngestionAwaitUserResponse';
+import { useQueryClient } from 'react-query';
 
 const Ingestion: React.FC<{
     onComplete: () => void;
@@ -34,6 +35,7 @@ const Ingestion: React.FC<{
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
     const { data: studyset, refetch, isRefetching } = useGetStudysetById(studysetId, false);
     const updateStubField = useUpdateStubField();
+    const queryClient = useQueryClient();
 
     const [currentIngestionState, setCurrentIngestionState] = useState<{
         ingestionStatus:
@@ -109,7 +111,6 @@ const Ingestion: React.FC<{
                         await updateStudyset(studysetId, [...currValidStudyset]);
                     }
                     await setAnalysesInAnnotationAsIncluded(annotationId || '');
-
                     setCurrentIngestionState((prev) => ({
                         ...prev,
                         ingestionStatus: 'FINISHED',
@@ -220,6 +221,7 @@ const Ingestion: React.FC<{
 
     const handleButtonClick = async () => {
         await refetch();
+        queryClient.refetchQueries('annotation');
         props.onComplete();
     };
 

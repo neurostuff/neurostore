@@ -41,10 +41,14 @@ const CurationStubStudy: React.FC<
                     {props.title}
                 </Typography>
             </Box>
-            <Typography noWrap>{props.authors}</Typography>
-            <Typography noWrap variant="caption">
-                {props.journal}
-            </Typography>
+            <Box>
+                <Typography noWrap>{props.authors}</Typography>
+            </Box>
+            <Box>
+                <Typography noWrap variant="body2">
+                    {props.journal}
+                </Typography>
+            </Box>
             <Box sx={{ padding: '5px 0', display: 'flex' }}>
                 {props.tags.map((tag) => (
                     <Tooltip title={tag.label} key={tag.id}>

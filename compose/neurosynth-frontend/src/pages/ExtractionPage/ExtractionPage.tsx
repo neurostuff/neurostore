@@ -19,6 +19,7 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { resolveStudysetAndCurationDifferences } from 'components/ExtractionComponents/Ingestion/helpers/utils';
 import ExtractionReconcileDialog from 'components/Dialogs/ExtractionReconcileDialog/ExtractionReconcileDialog';
+import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 
 export enum ESelectedChip {
     'COMPLETED' = 'completed',
@@ -169,27 +170,25 @@ const ExtractionPage: React.FC = (props) => {
             <Box sx={{ minWidth: '450px', margin: '0 auto' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
-                        <Breadcrumbs>
-                            <Link
-                                component={NavLink}
-                                to="/projects"
-                                sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                                underline="hover"
-                            >
-                                Projects
-                            </Link>
-                            <Link
-                                component={NavLink}
-                                to={`/projects/${projectId}`}
-                                sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                                underline="hover"
-                            >
-                                {projectName || ''}
-                            </Link>
-                            <Typography color="secondary" sx={{ fontSize: '1.5rem' }}>
-                                Extraction
-                            </Typography>
-                        </Breadcrumbs>
+                        <NeurosynthBreadcrumbs
+                            breadcrumbItems={[
+                                {
+                                    text: 'Projects',
+                                    link: '/projects',
+                                    isCurrentPage: false,
+                                },
+                                {
+                                    text: projectName || '',
+                                    link: `/projects/${projectId}`,
+                                    isCurrentPage: false,
+                                },
+                                {
+                                    text: 'Extraction',
+                                    link: '',
+                                    isCurrentPage: true,
+                                },
+                            ]}
+                        />
                     </Box>
                     <Box>
                         <Button

@@ -1,4 +1,4 @@
-import { Box, Tab, Typography, TableCell, Divider, Tabs, TableRow } from '@mui/material';
+import { Box, Typography, TableCell, Divider, TableRow, Button } from '@mui/material';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import NeurosynthTable, { getValue } from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
@@ -7,43 +7,34 @@ import TextExpansion from 'components/TextExpansion/TextExpansion';
 import { sortMetadataArrayFn } from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import { getType } from 'components/EditMetadata';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import DisplayAnalysis from './DisplayAnalyses/DisplayAnalysis/DisplayAnalysis';
-import { SyntheticEvent, useEffect, useState } from 'react';
 import DisplayAnalyses from './DisplayAnalyses/DisplayAnalyses';
+import { useAuth0 } from '@auth0/auth0-react';
+import EditIcon from '@mui/icons-material/Edit';
+import { useHistory } from 'react-router-dom';
 
 const DisplayStudy: React.FC<StudyReturn> = (props) => {
-    const { name, description, doi, pmid, authors, publication, metadata, analyses = [] } = props;
-
-    const [selectedAnalysis, setSelectedAnalysis] = useState<{
-        analysisIndex: number;
-        analysis: AnalysisReturn | undefined;
-    }>({
-        analysisIndex: 0,
-        analysis: undefined,
-    });
-
-    useEffect(() => {
-        if (analyses) {
-            setSelectedAnalysis({
-                analysisIndex: 0,
-                analysis: (analyses as AnalysisReturn[])[0],
-            });
-        }
-    }, [analyses]);
-
-    const handleSelectAnalysis = (event: SyntheticEvent, newVal: number) => {
-        setSelectedAnalysis({
-            analysisIndex: newVal,
-            analysis: (analyses as AnalysisReturn[])[newVal],
-        });
-    };
+    const history = useHistory();
+    const { user: authenticatedUser, isAuthenticated } = useAuth0();
+    const {
+        name,
+        id,
+        description,
+        doi,
+        pmid,
+        authors,
+        publication,
+        metadata,
+        analyses = [],
+    } = props;
 
     return (
         <Box>
-            <Box data-tour="StudyPage-1">
-                <Typography variant="h6">
-                    <b>{name}</b>
-                </Typography>
+            <Box data-tour="StudyPage-1" sx={{ padding: '0 1rem' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="h6">
+                        <b>{name}</b>
+                    </Typography>
+                </Box>
                 <Typography>{authors}</Typography>
                 <Box sx={DisplayStudyStyles.spaceBelow}>
                     <Typography>{publication}</Typography>
@@ -58,7 +49,8 @@ const DisplayStudy: React.FC<StudyReturn> = (props) => {
             <Box data-tour="StudyPage-2" sx={{ margin: '15px 0' }}>
                 <NeurosynthAccordion
                     accordionSummarySx={DisplayStudyStyles.accordionSummary}
-                    elevation={2}
+                    accordionDetailsSx={{ padding: 0 }}
+                    elevation={0}
                     TitleElement={
                         <Typography variant="h6">
                             <b>Metadata</b>
@@ -98,8 +90,8 @@ const DisplayStudy: React.FC<StudyReturn> = (props) => {
                     variant="h6"
                     sx={[
                         {
-                            marginLeft: '15px',
                             fontWeight: 'bold',
+                            padding: '0 16px',
                         },
                         DisplayStudyStyles.spaceBelow,
                     ]}

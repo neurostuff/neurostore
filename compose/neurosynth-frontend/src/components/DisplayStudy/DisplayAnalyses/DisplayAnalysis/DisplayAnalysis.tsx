@@ -8,6 +8,9 @@ const DisplayAnalysis: React.FC<AnalysisReturn | undefined> = (props) => {
     return (
         <Box>
             <Box sx={{ marginBottom: '1rem' }}>
+                <Typography gutterBottom sx={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                    Details
+                </Typography>
                 <Typography variant="h6">{props.name || ''}</Typography>
                 <Typography>{props.description || ''}</Typography>
             </Box>

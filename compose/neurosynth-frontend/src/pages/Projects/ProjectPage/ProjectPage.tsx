@@ -33,6 +33,7 @@ import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import { useEffect, useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
 import ProjectPageStyles from './ProjectPage.styles';
+import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 
 export interface IProjectPageLocationState {
     projectPage?: {
@@ -101,19 +102,22 @@ const ProjectPage: React.FC = (props) => {
 
     return (
         <StateHandlerComponent isLoading={getProjectIsLoading} isError={getProjectIsError}>
-            <Breadcrumbs sx={{ marginBottom: '0.5rem' }}>
-                <Link
-                    component={NavLink}
-                    to="/projects"
-                    sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                    underline="hover"
-                >
-                    Projects
-                </Link>
-                <Typography sx={{ fontSize: '1.5rem' }} color="secondary">
-                    {projectName || ''}
-                </Typography>
-            </Breadcrumbs>
+            <Box sx={{ marginBottom: '0.5rem' }}>
+                <NeurosynthBreadcrumbs
+                    breadcrumbItems={[
+                        {
+                            text: 'Projects',
+                            link: '/projects',
+                            isCurrentPage: false,
+                        },
+                        {
+                            text: projectName || '',
+                            link: '',
+                            isCurrentPage: true,
+                        },
+                    ]}
+                />
+            </Box>
 
             <Box sx={{ marginBottom: '0.5rem' }}>
                 <TextEdit

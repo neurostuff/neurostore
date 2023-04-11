@@ -63,6 +63,10 @@ const DisplayStudyStyles: Style = {
     },
     accordionSummary: {
         '.MuiAccordionSummary-content': { margin: '0px' },
+        borderRadius: '4px',
+        ':hover': {
+            backgroundColor: '#ececec',
+        },
     },
 };
 

@@ -41,20 +41,15 @@ const ReadOnlyStubSummary: React.FC<ICurationStubStudy> = (props) => {
                 </Link>
             )}
             {articleLink.length > 0 && (
-                <Button
-                    size="small"
-                    variant="outlined"
-                    rel="noopener"
+                <Link
+                    underline="hover"
                     target="_blank"
-                    color="secondary"
                     href={articleLink}
+                    sx={{ marginRight: '10px' }}
                 >
-                    View article
-                </Button>
+                    view article
+                </Link>
             )}
-            <Typography color="primary" noWrap variant="h6">
-                {articleYear ? `(${articleYear})` : ''} {title}
-            </Typography>
             <Box>
                 {tags.map((tag) => (
                     <Chip
@@ -65,9 +60,12 @@ const ReadOnlyStubSummary: React.FC<ICurationStubStudy> = (props) => {
                     />
                 ))}
             </Box>
-            <Typography variant="h6">{journal}</Typography>
-            <Typography sx={{ fontWeight: 'bold' }}>{keywords}</Typography>
+            <Typography noWrap variant="h6">
+                {articleYear ? `(${articleYear})` : ''} {title}
+            </Typography>
             <Typography variant="body1">{authors}</Typography>
+            <Typography>{journal}</Typography>
+            <Typography sx={{ fontStyle: 'italic' }}>{keywords}</Typography>
             <Box sx={{ display: 'flex' }}>
                 <Box sx={{ marginRight: '2rem' }}>
                     <Typography variant="caption">PMID: </Typography>

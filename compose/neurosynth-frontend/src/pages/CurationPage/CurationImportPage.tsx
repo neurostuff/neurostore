@@ -1,7 +1,7 @@
-import { Box, Breadcrumbs, Link, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import CurationImportBase from 'components/CurationComponents/CurationImport/CurationImportBase';
+import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import { useProjectId, useProjectName } from 'pages/Projects/ProjectPage/ProjectStore';
-import { NavLink } from 'react-router-dom';
 
 const CurationImportPage: React.FC = (props) => {
     const projectId = useProjectId();
@@ -10,35 +10,30 @@ const CurationImportPage: React.FC = (props) => {
     return (
         <Box>
             <Box sx={{ display: 'flex' }}>
-                <Breadcrumbs>
-                    <Link
-                        component={NavLink}
-                        to="/projects"
-                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                        underline="hover"
-                    >
-                        Projects
-                    </Link>
-                    <Link
-                        component={NavLink}
-                        to={`/projects/${projectId}`}
-                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                        underline="hover"
-                    >
-                        {projectName || ''}
-                    </Link>
-                    <Link
-                        component={NavLink}
-                        to={`/projects/${projectId}/curation`}
-                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                        underline="hover"
-                    >
-                        Search & Curate
-                    </Link>
-                    <Typography color="secondary" sx={{ fontSize: '1.5rem' }}>
-                        Import
-                    </Typography>
-                </Breadcrumbs>
+                <NeurosynthBreadcrumbs
+                    breadcrumbItems={[
+                        {
+                            text: 'Projects',
+                            link: '/projects',
+                            isCurrentPage: false,
+                        },
+                        {
+                            text: projectName || '',
+                            link: `/projects/${projectId}`,
+                            isCurrentPage: false,
+                        },
+                        {
+                            text: 'Search & Curate',
+                            link: `/projects/${projectId}/curation`,
+                            isCurrentPage: false,
+                        },
+                        {
+                            text: 'Import',
+                            link: '',
+                            isCurrentPage: true,
+                        },
+                    ]}
+                />
             </Box>
             <Box sx={{ marginTop: '1rem' }}>
                 <CurationImportBase />

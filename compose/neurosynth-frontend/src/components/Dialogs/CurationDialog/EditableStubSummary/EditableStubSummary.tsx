@@ -1,15 +1,17 @@
 import { Typography, Box, Button, Link } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import React from 'react';
+import React, { useState } from 'react';
 import TextEdit from 'components/TextEdit/TextEdit';
 import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
 import { ISource } from 'hooks/requests/useGetProjects';
 import EditableStubSummaryHeader from './EditableStubSummaryHeader';
 import {
+    useDeleteStub,
     useProjectCurationColumns,
     useUpdateStubField,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 
 interface IEditableStubSummary {
     stub: ICurationStubStudy | undefined;
@@ -20,12 +22,14 @@ interface IEditableStubSummary {
 const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
     const updateStubField = useUpdateStubField();
     const curationColumns = useProjectCurationColumns();
+    const deleteStub = useDeleteStub();
+    const [deleteStubConfirmationIsOpen, setDeleteStubConfirmationIsOpen] = useState(false);
 
     const handleUpdateStub = (updatedText: string | number | ISource, label: string) => {
         const stubKey = label as unknown as keyof ICurationStubStudy;
 
         if (props.stub?.id) {
-            // update the article link is PMID is being updated
+            // update the article link if PMID is being updated
             if (stubKey === 'pmid' && props.stub.articleLink.includes(PUBMED_ARTICLE_URL_PREFIX)) {
                 updateStubField(
                     props.columnIndex,
@@ -36,6 +40,14 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
             }
 
             updateStubField(props.columnIndex, props.stub.id, stubKey, updatedText);
+        }
+    };
+
+    const handleCloseDialog = () => {
+        if (props.stub?.id) {
+            setDeleteStubConfirmationIsOpen(false);
+            deleteStub(props.columnIndex, props.stub?.id);
+            props.onMoveToNextStub();
         }
     };
 
@@ -244,6 +256,24 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                     initialValue={props.stub.identificationSource}
                     size="small"
                 />
+            </Box>
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <ConfirmationDialog
+                    isOpen={deleteStubConfirmationIsOpen}
+                    onCloseDialog={handleCloseDialog}
+                    dialogTitle="Are you sure you want to delete this study?"
+                    confirmText="Yes"
+                    rejectText="Cancel"
+                />
+                <Button
+                    onClick={() => setDeleteStubConfirmationIsOpen(true)}
+                    variant="contained"
+                    disableElevation
+                    color="error"
+                >
+                    Delete study
+                </Button>
             </Box>
         </Box>
     );

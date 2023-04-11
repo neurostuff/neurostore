@@ -1,5 +1,6 @@
 import { Box, Breadcrumbs, Link, Typography } from '@mui/material';
 import EditAnnotations from 'components/EditAnnotations/EditAnnotations';
+import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import { useProjectId, useProjectName } from 'pages/Projects/ProjectPage/ProjectStore';
 import { NavLink } from 'react-router-dom';
 
@@ -9,37 +10,33 @@ const AnnotationsPage: React.FC = (props) => {
 
     return (
         <Box>
-            <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
-                <Breadcrumbs>
-                    <Link
-                        component={NavLink}
-                        to="/projects"
-                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                        underline="hover"
-                    >
-                        Projects
-                    </Link>
-                    <Link
-                        component={NavLink}
-                        to={`/projects/${projectId}`}
-                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                        underline="hover"
-                    >
-                        {projectName || ''}
-                    </Link>
-                    <Link
-                        component={NavLink}
-                        to={`/projects/${projectId}/extraction`}
-                        sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                        underline="hover"
-                    >
-                        Extraction
-                    </Link>
-                    <Typography variant="h5" color="secondary">
-                        Annotations
-                    </Typography>
-                </Breadcrumbs>
+            <Box sx={{ marginBottom: '1rem' }}>
+                <NeurosynthBreadcrumbs
+                    breadcrumbItems={[
+                        {
+                            text: 'Projects',
+                            link: '/projects',
+                            isCurrentPage: false,
+                        },
+                        {
+                            text: projectName || '',
+                            link: `/projects/${projectId}`,
+                            isCurrentPage: false,
+                        },
+                        {
+                            text: 'Extraction',
+                            link: `/projects/${projectId}/extraction`,
+                            isCurrentPage: false,
+                        },
+                        {
+                            text: 'Annotations',
+                            link: '',
+                            isCurrentPage: true,
+                        },
+                    ]}
+                />
             </Box>
+
             <Box sx={{ margin: '1rem 0' }}>
                 <EditAnnotations />
             </Box>

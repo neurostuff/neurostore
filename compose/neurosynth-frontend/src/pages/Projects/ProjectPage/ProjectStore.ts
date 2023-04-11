@@ -22,6 +22,7 @@ import {
     setExclusionForStubHelper,
     apiDebouncedUpdaterImplMiddleware,
     addOrUpdateStudyListStatusHelper,
+    deleteStubHelper,
 } from './ProjectStore.helpers';
 import { persist } from 'zustand/middleware';
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
@@ -54,6 +55,7 @@ export type ProjectStoreActions = {
     promoteStub: (columnIndex: number, stubId: string) => void;
     updateExtractionMetadata: (metadata: Partial<IExtractionMetadata>) => void;
     addOrUpdateStudyListStatus: (id: string, status: 'COMPLETE' | 'SAVEFORLATER') => void;
+    deleteStub: (columnIndex: number, stubId: string) => void;
 };
 
 const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()(
@@ -283,6 +285,22 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                             },
                         }));
                     },
+                    deleteStub: (columnIndex, stubId) => {
+                        set((state) => ({
+                            ...state,
+                            provenance: {
+                                ...state.provenance,
+                                curationMetadata: {
+                                    ...state.provenance.curationMetadata,
+                                    columns: deleteStubHelper(
+                                        state.provenance.curationMetadata.columns,
+                                        columnIndex,
+                                        stubId
+                                    ),
+                                },
+                            },
+                        }));
+                    },
                     updateCurationColumns(columns) {
                         set((state) => ({
                             ...state,
@@ -455,6 +473,7 @@ export const useAddTagToStub = () => useProjectStore((state) => state.addTagToSt
 export const useRemoveTagFromStub = () => useProjectStore((state) => state.removeTagFromStub);
 export const useSetExclusionFromStub = () => useProjectStore((state) => state.setExclusionForStub);
 export const useCreateNewExclusion = () => useProjectStore((state) => state.createNewExclusion);
+export const useDeleteStub = () => useProjectStore((state) => state.deleteStub);
 
 // extraction updater hooks
 export const useUpdateExtractionMetadata = () =>

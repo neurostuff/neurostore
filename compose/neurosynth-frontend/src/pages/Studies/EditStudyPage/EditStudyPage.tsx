@@ -29,6 +29,7 @@ import {
 import { useProjectExtractionAnnotationId } from 'pages/Projects/ProjectPage/ProjectStore';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatusButtons/FloatingStatusButtons';
+import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 
 const EditStudyPage: React.FC = (props) => {
     const { studyId, projectId } = useParams<{ projectId: string; studyId: string }>();
@@ -68,48 +69,33 @@ const EditStudyPage: React.FC = (props) => {
     return (
         <StateHandlerComponent isError={false} isLoading={!storeStudyId}>
             {isEditingFromProject ? (
-                <>
+                <Box sx={{ marginBottom: '0.5rem' }}>
                     <FloatingStatusButtons />
-                    <Box sx={{ display: 'flex', marginBottom: '0.5rem' }}>
-                        <Breadcrumbs>
-                            <Link
-                                component={NavLink}
-                                to="/projects"
-                                sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                                underline="hover"
-                            >
-                                Projects
-                            </Link>
-                            <Link
-                                component={NavLink}
-                                to={`/projects/${projectId}`}
-                                sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                                underline="hover"
-                            >
-                                {project?.name || ''}
-                            </Link>
-                            <Link
-                                component={NavLink}
-                                to={`/projects/${projectId}/extraction`}
-                                sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                                underline="hover"
-                            >
-                                Extraction
-                            </Link>
-                            <Link
-                                component={NavLink}
-                                to={`/projects/${projectId}/extraction/studies/${studyId}`}
-                                sx={{ cursor: 'pointer', fontSize: '1.5rem' }}
-                                underline="hover"
-                            >
-                                {studyName || ''}
-                            </Link>
-                            <Typography variant="h5" sx={{ color: 'secondary.main' }}>
-                                Edit
-                            </Typography>
-                        </Breadcrumbs>
-                    </Box>
-                </>
+                    <NeurosynthBreadcrumbs
+                        breadcrumbItems={[
+                            {
+                                text: 'Projects',
+                                link: '/projects',
+                                isCurrentPage: false,
+                            },
+                            {
+                                text: project?.name || '',
+                                link: `/projects/${projectId}`,
+                                isCurrentPage: false,
+                            },
+                            {
+                                text: 'Extraction',
+                                link: `/projects/${projectId}/extraction`,
+                                isCurrentPage: false,
+                            },
+                            {
+                                text: studyName || '',
+                                link: '',
+                                isCurrentPage: true,
+                            },
+                        ]}
+                    />
+                </Box>
             ) : (
                 <Button
                     color="secondary"
