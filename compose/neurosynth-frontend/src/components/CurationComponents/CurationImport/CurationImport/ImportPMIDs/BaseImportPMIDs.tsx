@@ -21,13 +21,13 @@ const BaseImportPMIDs: React.FC<IImportArgs> = (props) => {
     };
 
     const handleStubsRetrieved = React.useCallback(
-        (stubs: ICurationStubStudy[]) => {
+        (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => {
             const duplicatesExist = hasDuplicates(stubs);
             if (duplicatesExist) {
                 setResolveDuplicates(true);
                 setStubs(stubs);
             } else {
-                onImportStubs(stubs);
+                onImportStubs(stubs, unimportedStubs);
             }
         },
         [onImportStubs]

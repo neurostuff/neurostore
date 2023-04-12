@@ -12,6 +12,7 @@ const CurationImportBase: React.FC = (props) => {
     const [activeStep, setActiveStep] = useState(0);
     const [importMode, setImportMode] = useState<EImportMode>(EImportMode.NEUROSTORE_IMPORT);
     const [stubs, setStubs] = useState<ICurationStubStudy[]>([]);
+    const [unimportedStubs, setUnimportedStubs] = useState<string[]>([]);
     const location = useLocation();
 
     useEffect(() => {
@@ -37,8 +38,9 @@ const CurationImportBase: React.FC = (props) => {
         });
     };
 
-    const handleImportStubs = (stubs: ICurationStubStudy[]) => {
+    const handleImportStubs = (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => {
         setStubs(stubs);
+        if (unimportedStubs) setUnimportedStubs(unimportedStubs);
         setActiveStep((prev) => prev + 1);
     };
 
@@ -78,6 +80,7 @@ const CurationImportBase: React.FC = (props) => {
                         onNavigate={handleNavigate}
                         onUpdateStubs={(stubs) => setStubs(stubs)}
                         stubs={stubs}
+                        unimportedStubs={unimportedStubs}
                     />
                 )}
                 {activeStep === 3 && (

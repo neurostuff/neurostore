@@ -26,12 +26,43 @@ import { defaultExclusionTags } from 'pages/Projects/ProjectPage/ProjectStore.he
 import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import { useHistory } from 'react-router-dom';
 import ReadOnlyStubSummary from '../ReadOnlyStubSummary';
+import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 
 type IResolveProjectDuplicatesCurationStubStudy = ICurationStubStudy & {
     columnIndex?: number;
     studyIndex?: number;
     resolution?: 'duplicate' | 'not-duplicate' | 'resolved';
     colName?: string;
+};
+
+const flattenColumns = (cols: ICurationColumn[]): IResolveProjectDuplicatesCurationStubStudy[] => {
+    const allStubsInProject: IResolveProjectDuplicatesCurationStubStudy[] = (cols || []).reduce(
+        (acc, curr, currIndex) => {
+            const convertedStudies = curr.stubStudies.map((study, studyIndex) => {
+                const resolutionStr: 'duplicate' | 'not-duplicate' | 'resolved' | undefined =
+                    study.exclusionTag
+                        ? study.exclusionTag.id === ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID
+                            ? 'duplicate'
+                            : 'resolved'
+                        : undefined;
+
+                return {
+                    ...study,
+                    columnIndex: currIndex,
+                    studyIndex: studyIndex,
+                    colName: curr.name,
+                    resolution: resolutionStr,
+                };
+            });
+
+            acc.push(...convertedStudies);
+
+            return acc;
+        },
+        [] as IResolveProjectDuplicatesCurationStubStudy[] // we need to typecast as typescript infers this type as never[]
+    );
+
+    return allStubsInProject;
 };
 
 const CurationImportResolveDuplicates: React.FC<{
@@ -56,27 +87,7 @@ const CurationImportResolveDuplicates: React.FC<{
     const columns = useProjectCurationColumns();
 
     useEffect(() => {
-        const allStubsInProject = (columns || []).reduce(
-            (acc, curr, currIndex) => [
-                ...acc,
-                ...curr.stubStudies.map(
-                    (study, studyIndex) =>
-                        ({
-                            ...study,
-                            columnIndex: currIndex,
-                            studyIndex: studyIndex,
-                            colName: curr.name,
-                            resolution: study.exclusionTag
-                                ? study.exclusionTag.id === ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID
-                                    ? 'duplicate'
-                                    : 'resolved'
-                                : undefined,
-                        } as IResolveProjectDuplicatesCurationStubStudy)
-                ),
-            ],
-            [] as IResolveProjectDuplicatesCurationStubStudy[] // we need to typecast as typescript infers this type as never[]
-        );
-
+        const allStubsInProject = flattenColumns(columns);
         const { duplicateMapping } = createDuplicateMap(allStubsInProject);
 
         setDuplicates((_) => {
@@ -88,33 +99,19 @@ const CurationImportResolveDuplicates: React.FC<{
             props.stubs.forEach((importedStub, stubIndex) => {
                 if (importedStub.exclusionTag !== null) return;
 
+                let key = undefined;
                 const formattedTitle = importedStub.title.toLocaleLowerCase().trim();
                 if (importedStub.doi && duplicateMapping.has(importedStub.doi)) {
-                    const duplicatedStubs = duplicateMapping.get(
-                        importedStub.doi
-                    ) as IResolveProjectDuplicatesCurationStubStudy[];
-                    update.push({
-                        importedStub: {
-                            ...importedStub,
-                            index: stubIndex,
-                        },
-                        projectDuplicates: duplicatedStubs,
-                    });
+                    key = importedStub.doi;
                 } else if (importedStub.pmid && duplicateMapping.has(importedStub.pmid)) {
-                    const duplicatedStubs = duplicateMapping.get(
-                        importedStub.pmid
-                    ) as IResolveProjectDuplicatesCurationStubStudy[];
-                    update.push({
-                        importedStub: {
-                            ...importedStub,
-                            index: stubIndex,
-                        },
-                        projectDuplicates: duplicatedStubs,
-                    });
+                    key = importedStub.pmid;
                 } else if (importedStub.title && duplicateMapping.has(formattedTitle)) {
                     // in the future, this title search can be replaced with a fuzzier search via a string comparison algorithm
+                    key = formattedTitle;
+                }
+                if (key) {
                     const duplicatedStubs = duplicateMapping.get(
-                        formattedTitle
+                        key
                     ) as IResolveProjectDuplicatesCurationStubStudy[];
                     update.push({
                         importedStub: {
@@ -198,7 +195,7 @@ const CurationImportResolveDuplicates: React.FC<{
                     duplicateCase.importedStub.exclusionTag;
 
                 duplicateCase.projectDuplicates.forEach((stub) => {
-                    if (stub.columnIndex && stub.studyIndex) {
+                    if (stub.columnIndex !== undefined && stub.studyIndex !== undefined) {
                         const updatedStubStudies = [
                             ...updatedColumns[stub.columnIndex].stubStudies,
                         ];

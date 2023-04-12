@@ -14,12 +14,12 @@ export enum EImportMode {
 
 export interface IImportArgs {
     onNavigate: (button: ENavigationButton) => void;
-    onImportStubs: (stubs: ICurationStubStudy[]) => void;
+    onImportStubs: (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => void;
 }
 
 const CurationImport: React.FC<{
     mode: EImportMode;
-    onImportStubs: (stubs: ICurationStubStudy[]) => void;
+    onImportStubs: (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => void;
     onNavigate: (button: ENavigationButton) => void;
 }> = (props) => {
     if (props.mode === EImportMode.NEUROSTORE_IMPORT) {

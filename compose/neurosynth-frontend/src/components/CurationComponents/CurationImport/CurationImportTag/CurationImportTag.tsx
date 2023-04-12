@@ -21,6 +21,7 @@ const CurationImportTagFixedSizeListRow: React.FC<
 
 const CurationImportTag: React.FC<{
     stubs: ICurationStubStudy[];
+    unimportedStubs: string[];
     onUpdateStubs: (stubs: ICurationStubStudy[]) => void;
     onNavigate: (button: ENavigationButton) => void;
 }> = (props) => {
@@ -60,8 +61,23 @@ const CurationImportTag: React.FC<{
             <Paper elevation={0}>
                 <Box sx={{ paddingTop: '0.5rem' }}>
                     <Typography gutterBottom sx={{ fontWeight: 'bold' }} variant="h6">
-                        Importing {stubs.length} article{stubs.length > 1 ? 's' : ''}
+                        Importing {stubs.length} article(s)
                     </Typography>
+                    {props.unimportedStubs.length > 0 && (
+                        <>
+                            <Typography color="warning.dark">
+                                We encountered issues importing {props.unimportedStubs.length}{' '}
+                                studies. You may have to create these studies manually:
+                            </Typography>
+                            <Typography color="warning.dark" gutterBottom>
+                                {props.unimportedStubs.reduce((acc, curr, currIndex, arr) => {
+                                    return currIndex === arr.length - 1
+                                        ? `${acc}${curr}`
+                                        : `${acc}${curr}, `;
+                                }, '')}
+                            </Typography>
+                        </>
+                    )}
                     <Typography sx={{ marginBottom: '0.5rem' }} variant="body1">
                         Tag all your imported studies
                     </Typography>

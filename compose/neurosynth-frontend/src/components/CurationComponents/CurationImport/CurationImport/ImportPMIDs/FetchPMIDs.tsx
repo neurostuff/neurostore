@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const FetchPMIDs: React.FC<{
     pubmedIds: string[];
-    onStubsUploaded: (stubs: ICurationStubStudy[]) => void;
+    onStubsUploaded: (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => void;
 }> = React.memo((props) => {
     const results = useGetPubmedIDs(props.pubmedIds);
     const isLoading = results.some((x) => x.isLoading);
@@ -21,6 +21,18 @@ const FetchPMIDs: React.FC<{
         if (data.length === 0 || isLoading || !isSuccess) return;
 
         const flattenedData = data.flat();
+
+        let unimportedStubs;
+        if (flattenedData.length !== props.pubmedIds.length) {
+            unimportedStubs = [];
+            const pmidSet = new Set(flattenedData.map((x) => x.PMID));
+            props.pubmedIds.forEach((pmid) => {
+                if (!pmidSet.has(pmid)) {
+                    unimportedStubs.push(pmid);
+                }
+            });
+        }
+
         const stubs = flattenedData.map((x) => {
             const authorString = (x?.authors || []).reduce(
                 (prev, curr, index, arr) =>
@@ -54,7 +66,7 @@ const FetchPMIDs: React.FC<{
                 identificationSource: defaultIdentificationSources.pubmed,
             };
         });
-        props.onStubsUploaded(stubs);
+        props.onStubsUploaded(stubs, unimportedStubs);
     }, [data, isLoading, isSuccess, props, props.onStubsUploaded]);
 
     return (

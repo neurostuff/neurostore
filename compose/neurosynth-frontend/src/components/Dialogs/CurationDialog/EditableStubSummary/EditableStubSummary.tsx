@@ -63,12 +63,24 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
 
     return (
         <Box sx={{ padding: '0rem 2rem', minWidth: '585px' }}>
-            <EditableStubSummaryHeader
-                type={isLastColumn ? 'included' : props.stub.exclusionTag ? 'excluded' : 'default'}
-                stub={props.stub}
-                columnIndex={props.columnIndex}
-                onMoveToNextStub={props.onMoveToNextStub}
-            />
+            <Box
+                sx={{
+                    position: 'sticky',
+                    top: 0,
+                    backgroundColor: 'white',
+                    padding: '8px 0',
+                    zIndex: 1000,
+                }}
+            >
+                <EditableStubSummaryHeader
+                    type={
+                        isLastColumn ? 'included' : props.stub.exclusionTag ? 'excluded' : 'default'
+                    }
+                    stub={props.stub}
+                    columnIndex={props.columnIndex}
+                    onMoveToNextStub={props.onMoveToNextStub}
+                />
+            </Box>
 
             <Box
                 sx={{
@@ -213,12 +225,25 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                     label="doi"
                     textToEdit={props.stub.doi}
                 >
-                    <Typography
-                        sx={{ color: props.stub.doi ? 'initial' : 'warning.dark' }}
-                        variant="h6"
-                    >
-                        {props.stub.doi || 'No DOI'}
-                    </Typography>
+                    {props.stub.doi ? (
+                        <Link
+                            target="_blank"
+                            href={`https://doi.org/${props.stub.doi}`}
+                            underline="hover"
+                            sx={{
+                                fontSize: '1.25rem',
+                            }}
+                        >
+                            {props.stub.doi}
+                        </Link>
+                    ) : (
+                        <Typography
+                            sx={{ color: props.stub.doi ? 'initial' : 'warning.dark' }}
+                            variant="h6"
+                        >
+                            {props.stub.doi || 'No DOI'}
+                        </Typography>
+                    )}
                 </TextEdit>
             </Box>
 
@@ -241,6 +266,7 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
             >
                 <Typography
                     sx={{
+                        whiteSpace: 'break-spaces',
                         color: props.stub.abstractText ? 'initial' : 'warning.dark',
                     }}
                 >
