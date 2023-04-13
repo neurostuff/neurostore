@@ -6,7 +6,7 @@ from ...models import Studyset, Study, User, Analysis
 
 def test_get_studies(auth_client, ingest_neurosynth, ingest_neuroquery):
     # List of studies
-    resp = auth_client.get("/api/studies/?nested=true")
+    resp = auth_client.get("/api/studies/?nested=true&level=group")
     assert resp.status_code == 200
     studies_list = decode_json(resp)["results"]
 
@@ -174,4 +174,40 @@ def test_get_unique_studies(auth_client, user_data, param):
     study_entry = Study.query.filter_by(user_id=auth_client.username).first()
     auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={})
     resp = auth_client.get(f"/api/studies/?unique={param}")
+    assert resp.status_code == 200
+
+
+def test_post_meta_analysis(auth_client, user_data):
+    study_data = {
+        "name": "meta-analysis",
+        "analyses": [
+            {
+                "name": "emotion",
+                "points": [
+                    {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0,
+                        "values": [
+                            {
+                                "kind": "z",
+                                "value": 3.65,
+                            },
+                        ],
+                    },
+                ],
+                "images": [
+                    {
+                        "url": "https://imagesrus.org/images/1234",
+                    },
+                ],
+                "entities": [
+                    {
+                        "level": "meta",
+                    },
+                ],
+            },
+        ],
+    }
+    resp = auth_client.post("/api/studies/", data=study_data)
     assert resp.status_code == 200

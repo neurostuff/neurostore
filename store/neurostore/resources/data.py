@@ -145,6 +145,7 @@ class StudiesView(ObjectView, ListView):
         **{
             "data_type": fields.String(missing=None),
             "studyset_owner": fields.String(missing=None),
+            "level": fields.String(default="group", missing="group")
         },
         **LIST_NESTED_ARGS,
         **LIST_CLONE_ARGS,
@@ -180,7 +181,8 @@ class StudiesView(ObjectView, ListView):
                         self._model.analyses.any(Analysis.points.any()),
                     )
                 )
-
+        # filter by level of analysis (group or meta)
+        q = q.filter(self._model.level == args.get("level"))
         # only return unique studies
         unique_col = args.get("unique")
         # doi is the default uniquefier
@@ -246,6 +248,7 @@ class AnalysesView(ObjectView, ListView):
         "images": "ImagesView",
         "points": "PointsView",
         "analysis_conditions": "AnalysisConditionsResource",
+        "entities": "EntitiesResource",
     }
     _parent = {
         "study": "StudiesView",

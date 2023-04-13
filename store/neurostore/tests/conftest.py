@@ -14,6 +14,7 @@ from ..models import (
     AnalysisConditions,
     Point,
     Image,
+    Entity,
 )
 from auth0.v3.authentication import GetToken
 
@@ -261,69 +262,72 @@ def user_data(session, mock_add_users):
         public_studies = []
         for user_info in mock_add_users.values():
             user = User.query.filter_by(id=user_info["id"]).first()
-            for public in [True, False]:
-                if public:
-                    name = f"{user.id}'s public "
-                else:
-                    name = f"{user.id}'s private "
+            for level in ["group", "meta"]:
+                entity = Entity(level=level)
+                for public in [True, False]:
+                    if public:
+                        name = f"{user.id}'s public "
+                    else:
+                        name = f"{user.id}'s private "
 
-                studyset = Studyset(
-                    name=name + "studyset",
-                    description="detailed description",
-                    user=user,
-                    public=public,
-                )
+                    studyset = Studyset(
+                        name=name + "studyset",
+                        description="detailed description",
+                        user=user,
+                        public=public,
+                    )
 
-                study = Study(
-                    name=name + "study",
-                    user=user,
-                    public=public,
-                    metadata_={"topic": "cognition"},
-                )
-                if public:
-                    study.doi = "123"
+                    study = Study(
+                        name=name + "study",
+                        user=user,
+                        public=public,
+                        metadata_={"topic": "cognition"},
+                        level=level,
+                    )
+                    if public:
+                        study.doi = "123"
 
-                analysis = Analysis(user=user)
+                    analysis = Analysis(user=user, entities=[entity])
 
-                condition = Condition(
-                    name=name + "condition",
-                    user=user,
-                )
+                    condition = Condition(
+                        name=name + "condition",
+                        user=user,
+                    )
 
-                analysis_condition = AnalysisConditions(
-                    condition=condition,
-                    weight=1,
-                )
+                    analysis_condition = AnalysisConditions(
+                        condition=condition,
+                        weight=1,
+                    )
 
-                point = Point(
-                    x=0,
-                    y=0,
-                    z=0,
-                    user=user,
-                )
+                    point = Point(
+                        x=0,
+                        y=0,
+                        z=0,
+                        user=user,
+                    )
 
-                image = Image(
-                    url="made up",
-                    filename="also made up",
-                    user=user,
-                )
+                    image = Image(
+                        url="made up",
+                        filename="also made up",
+                        user=user,
+                    )
 
-                # put together the analysis
-                analysis.images = [image]
-                analysis.points = [point]
-                analysis.analysis_conditions = [analysis_condition]
+                    # put together the analysis
+                    analysis.images = [image]
+                    analysis.points = [point]
+                    analysis.analysis_conditions = [analysis_condition]
 
-                # put together the study
-                study.analyses = [analysis]
+                    # put together the study
+                    study.analyses = [analysis]
 
-                # put together the studyset
-                studyset.studies = [study]
+                    # put together the studyset
+                    studyset.studies = [study]
 
-                if public:
-                    public_studies.append(study)
+                    if public:
+                        public_studies.append(study)
 
-                # add everything to commit
-                to_commit.append(studyset)
+                    # add everything to commit
+                    to_commit.append(studyset)
 
         # add public studyset to commit
         public_studyset.studies = public_studies

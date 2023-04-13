@@ -46,6 +46,7 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False):
             source_id=collection_id,
             metadata_=data,
             source="neurovault",
+            level="group",
         )
 
         space = data.get("coordinate_space", None)
@@ -203,6 +204,7 @@ def ingest_neurosynth(max_rows=None):
                 doi=None if isinstance(metadata_row.doi, float) else metadata_row.doi,
                 source="neurosynth",
                 source_id=id_,
+                level="group"
             )
             analyses = []
             points = []
@@ -300,6 +302,7 @@ def ingest_neuroquery(max_rows=None):
             source="neuroquery",
             pmid=id_,
             source_id=id_,
+            level="group",
         )
         analyses = []
         points = []

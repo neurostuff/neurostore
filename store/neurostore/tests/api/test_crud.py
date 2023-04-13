@@ -68,8 +68,12 @@ def test_read(auth_client, user_data, endpoint, model, schema):
     user = User.query.filter_by(name="user1").first()
     if hasattr(model, "public"):
         query = (model.user == user) | (model.public == True)  # noqa E712
+
+    if hasattr(model, "level"):
+        query = (query) & (model.level == "group")
     else:
         query = True
+
     expected_results = model.query.filter(query).all()
 
     resp = auth_client.get(f"/api/{endpoint}/")

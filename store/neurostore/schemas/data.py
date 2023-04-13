@@ -196,6 +196,7 @@ class AnalysisSchema(BaseDataSchema):
     images = StringOrNested(ImageSchema, many=True)
     points = StringOrNested(PointSchema, many=True)
     weights = fields.List(fields.Float())
+    entities = fields.Nested(EntitySchema, many=True)
 
     class Meta:
         additional = ("name", "description")
@@ -258,6 +259,7 @@ class StudySchema(BaseDataSchema):
             "pmid",
             "authors",
             "year",
+            "level",
         )
         allow_none = (
             "name",
@@ -267,6 +269,7 @@ class StudySchema(BaseDataSchema):
             "pmid",
             "authors",
             "year",
+            "level",
         )
 
 
