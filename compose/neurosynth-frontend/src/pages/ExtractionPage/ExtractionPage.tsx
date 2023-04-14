@@ -6,9 +6,8 @@ import CheckIcon from '@mui/icons-material/Check';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
 import { useEffect, useState } from 'react';
-import { NavLink, useHistory, useLocation, useParams } from 'react-router-dom';
+import { useHistory, useLocation, useParams } from 'react-router-dom';
 import { StudyReturn } from 'neurostore-typescript-sdk';
-import ReadOnlyStudySummary from 'components/ExtractionComponents/ReadOnlyStudySummary';
 import {
     useInitProjectStore,
     useProjectCurationColumn,
@@ -20,6 +19,9 @@ import {
 import { resolveStudysetAndCurationDifferences } from 'components/ExtractionComponents/Ingestion/helpers/utils';
 import ExtractionReconcileDialog from 'components/Dialogs/ExtractionReconcileDialog/ExtractionReconcileDialog';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
+import { FixedSizeList, ListChildComponentProps } from 'react-window';
+import ReadOnlyStudySummaryVirtualizedItem from 'components/ExtractionComponents/ReadOnlyStudySummary';
+import useGetWindowHeight from 'hooks/useGetWindowHeight';
 
 export enum ESelectedChip {
     'COMPLETED' = 'completed',
@@ -38,10 +40,26 @@ const getSelectedFromURL = (pathname: string | undefined): ESelectedChip => {
     }
 };
 
+const ReadOnlyStudySummaryFixedSizeListRow: React.FC<
+    ListChildComponentProps<{ studies: StudyReturn[]; currentSelectedChip: ESelectedChip }>
+> = (props) => {
+    const study = props.data.studies[props.index];
+    const currentSelectedChip = props.data.currentSelectedChip;
+
+    return (
+        <ReadOnlyStudySummaryVirtualizedItem
+            {...study}
+            currentSelectedChip={currentSelectedChip}
+            style={props.style}
+        />
+    );
+};
+
 const ExtractionPage: React.FC = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
     const location = useLocation();
     const history = useHistory();
+    const windowHeight = useGetWindowHeight();
 
     const projectName = useProjectName();
     const studysetId = useProjectExtractionStudysetId();
@@ -164,6 +182,8 @@ const ExtractionPage: React.FC = (props) => {
             : currentChip === ESelectedChip.SAVEDFORLATER
             ? 'saved for later'
             : 'uncategorized';
+
+    const pxInVh = Math.round((windowHeight * 60) / 100);
 
     return (
         <StateHandlerComponent isError={getStudysetIsError} isLoading={getStudysetIsLoading}>
@@ -324,19 +344,27 @@ const ExtractionPage: React.FC = (props) => {
                         marginBottom: '1rem',
                     }}
                 >
+                    {studiesDisplayed.length === 0 && (
+                        <Typography sx={{ color: 'warning.dark' }}>
+                            No studies marked as {text}
+                        </Typography>
+                    )}
                     <Box>
-                        {studiesDisplayed.map((study, index) => (
-                            <ReadOnlyStudySummary
-                                key={study?.id || ''}
-                                currentSelectedChip={currentChip}
-                                {...study}
-                            />
-                        ))}
-                        {studiesDisplayed.length === 0 && (
-                            <Typography sx={{ color: 'warning.dark' }}>
-                                No studies marked as {text}
-                            </Typography>
-                        )}
+                        <FixedSizeList
+                            height={pxInVh}
+                            itemCount={studiesDisplayed.length}
+                            width="100%"
+                            itemSize={140}
+                            itemKey={(index, data) => data.studies[index]?.id || index}
+                            itemData={{
+                                studies: studiesDisplayed,
+                                currentSelectedChip: currentChip,
+                            }}
+                            layout="vertical"
+                            overscanCount={3}
+                        >
+                            {ReadOnlyStudySummaryFixedSizeListRow}
+                        </FixedSizeList>
                     </Box>
                 </Box>
             </Box>

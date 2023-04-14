@@ -16,14 +16,19 @@ import {
 } from '@mui/material';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionBase';
 import useGetExtractionSummary, { IExtractionSummary } from 'hooks/useGetExtractionSummary';
 import ExtractionStepStyles from './ExtractionStep.style';
 import { useGetStudysetById } from 'hooks';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
-import { useProjectExtractionStudysetId } from 'pages/Projects/ProjectPage/ProjectStore';
+import {
+    useProjectExtractionSetGivenStudyStatusesAsComplete,
+    useProjectExtractionStudysetId,
+} from 'pages/Projects/ProjectPage/ProjectStore';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
+import { StudyReturn } from 'neurostore-typescript-sdk';
 
 interface IExtractionStep {
     extractionStepHasBeenInitialized: boolean;
@@ -39,6 +44,7 @@ const getPercentageComplete = (extractionSummary: IExtractionSummary): number =>
 const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
     const { projectId }: { projectId: string } = useParams();
     const studysetId = useProjectExtractionStudysetId();
+    const setGivenStudyStatusesAsComplete = useProjectExtractionSetGivenStudyStatusesAsComplete();
     const {
         data: studyset,
         isError: getStudysetIsError,
@@ -48,6 +54,10 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
     const extractionSummary = useGetExtractionSummary(projectId);
     const history = useHistory();
     const location = useLocation<IProjectPageLocationState>();
+    const [
+        markAllAsCompleteConfirmationDialogIsOpen,
+        setMarkAllAsCompleteConfirmationDialogIsOpen,
+    ] = useState(false);
 
     // this is set in the curation phase when we click to move on to the extraction phase.
     // a flag is sent along with the location data when the page is redirected
@@ -57,6 +67,15 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
     const [moveToExtractionDialogIsOpen, setMoveToExtractionDialogIsOpen] = useState(
         !extractionStepHasBeenInitialized && !!location?.state?.projectPage?.openCurationDialog
     );
+
+    const handleMarkAllAsComplete = () => {
+        if (studyset?.studies) {
+            setGivenStudyStatusesAsComplete(
+                (studyset.studies as StudyReturn[]).map((x) => x.id || '')
+            );
+            setMarkAllAsCompleteConfirmationDialogIsOpen(false);
+        }
+    };
 
     return (
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
@@ -172,7 +191,22 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                             >
                                                 continue editing
                                             </Button>
-                                            <Button color="success">Mark all as complete</Button>
+                                            <ConfirmationDialog
+                                                onCloseDialog={handleMarkAllAsComplete}
+                                                isOpen={markAllAsCompleteConfirmationDialogIsOpen}
+                                                dialogTitle="Are you sure you want to mark all the studies as complete?"
+                                                dialogMessage="The selection phase will be enabled when all studies in the extraction phase have been marked as complete. You can skip or expedite the extraction process by clicking this button. This may result in some studies in the studyset having incomplete or unextracted data."
+                                            />
+                                            <Button
+                                                onClick={() =>
+                                                    setMarkAllAsCompleteConfirmationDialogIsOpen(
+                                                        true
+                                                    )
+                                                }
+                                                color="success"
+                                            >
+                                                Mark all as complete
+                                            </Button>
                                         </CardActions>
                                     </Card>
                                 </Box>

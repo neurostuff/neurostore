@@ -74,6 +74,7 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
         [props.selectedStubId, props.stubs]
     );
 
+    // 60vh
     const pxInVh = Math.round((windowHeight * 60) / 100);
 
     if (stubs.length === 0) {

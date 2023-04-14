@@ -23,6 +23,8 @@ const StudyPage: React.FC = (props) => {
     const {
         isLoading: getStudyIsLoading,
         isError: getStudyIsError,
+        isFetching: getStudyIsFetching,
+        isRefetching: getStudyIsRefetching,
         data,
     } = useGetStudyById(studyId);
 
@@ -34,16 +36,14 @@ const StudyPage: React.FC = (props) => {
         const userIDAndStudyIDExist = !!user?.sub && !!data?.user;
         const thisUserOwnsThisStudy = (data?.user || null) === (user?.sub || undefined);
         const allowEdit = isAuthenticated && userIDAndStudyIDExist && thisUserOwnsThisStudy;
-        console.log({
-            userIDAndStudyIDExist,
-            thisUserOwnsThisStudy,
-            isAuthenticated,
-        });
         setAllowEdits(allowEdit);
     }, [isAuthenticated, user?.sub, data?.user, history]);
 
     return (
-        <StateHandlerComponent isLoading={getStudyIsLoading} isError={getStudyIsError}>
+        <StateHandlerComponent
+            isLoading={getStudyIsLoading || getStudyIsFetching || getStudyIsRefetching}
+            isError={getStudyIsError}
+        >
             {allowEdits && (
                 <Box
                     sx={{

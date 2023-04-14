@@ -89,8 +89,7 @@ const CreateStubStudy: React.FC<IImportArgs> = (props) => {
         }
     };
 
-    const disableCreateButton =
-        form.name.length === 0 || form.doi.length === 0 || !form.identificationSource;
+    const disableCreateButton = form.name.length === 0 || !form.identificationSource;
 
     return (
         <Box sx={{ padding: '10px 0', margin: '2rem 0' }}>
@@ -127,7 +126,6 @@ const CreateStubStudy: React.FC<IImportArgs> = (props) => {
                     error={formFieldTouched.doi && form.doi.length === 0}
                     name="doi"
                     label="DOI"
-                    required
                     placeholder="10.1016/S0896-6273(00)80715-1"
                     sx={{ display: 'flex', flex: '1 1 300px', marginRight: '15px' }}
                 />

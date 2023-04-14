@@ -415,6 +415,15 @@ export const addOrUpdateStudyListStatusHelper = (
     return updatedState;
 };
 
+export const setGivenStudyStatusesAsCompleteHelper = (
+    studyIds: string[]
+): IStudyExtractionStatus[] => {
+    return studyIds.map((studyId) => ({
+        id: studyId,
+        status: 'COMPLETE',
+    }));
+};
+
 type APIDebouncedUpdater = <
     T extends unknown,
     Mps extends [StoreMutatorIdentifier, unknown][] = [],

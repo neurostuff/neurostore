@@ -114,7 +114,7 @@ const MoveToExtractionCreateAnnotation: React.FC<{
                 of interest should be included in annotations.
             </Typography>
             <Typography gutterBottom sx={{ fontWeight: 'bold' }}>
-                This data will be used to include or exclude studies from a meta-analysis when you
+                Annotations will be used to include or exclude studies from a meta-analysis when you
                 have reached the select phase.
             </Typography>
             <Typography gutterBottom>
@@ -146,7 +146,9 @@ const MoveToExtractionCreateAnnotation: React.FC<{
                 {annotationColumns.map((col) => (
                     <Chip
                         key={col.value}
-                        onDelete={() => handleRemoveColumn(col)}
+                        onDelete={
+                            col.value === 'included' ? undefined : () => handleRemoveColumn(col)
+                        }
                         sx={{ margin: '4px' }}
                         label={`${col.value}: ${col.type}`}
                         color={

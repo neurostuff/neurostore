@@ -57,6 +57,11 @@ const EditAnalyses: React.FC = (props) => {
                                 justifyContent: 'flex-end',
                             }}
                         >
+                            {numAnalyses === 0 && (
+                                <Typography sx={{ color: 'warning.dark' }}>
+                                    There are no analyses for this study.
+                                </Typography>
+                            )}
                             <CreateDetailsDialog
                                 titleText="Create new analysis"
                                 onCreate={handleCreateNewAnalysis}
@@ -75,18 +80,7 @@ const EditAnalyses: React.FC = (props) => {
                                 analysis
                             </Button>
                         </Box>
-
-                        {numAnalyses === 0 ? (
-                            <Typography
-                                sx={{
-                                    color: 'warning.dark',
-                                    marginTop: '1rem',
-                                    textAlign: 'center',
-                                }}
-                            >
-                                No Analyses for this study
-                            </Typography>
-                        ) : (
+                        {numAnalyses > 0 && (
                             <>
                                 <Divider />
                                 <Box sx={{ display: 'flex' }}>

@@ -27,7 +27,7 @@ const MoveToExtractionIngest: React.FC<{
     return (
         <Box>
             <Typography gutterBottom>
-                Your studyset has been created - let's get started ingesting your studies.
+                Your annotation has been created - let's get started ingesting your studies.
             </Typography>
             <Typography gutterBottom>
                 Neurosynth Compose will add the studies you included in the previous curation step

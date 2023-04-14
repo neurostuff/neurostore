@@ -1,5 +1,5 @@
 import HotTable, { HotTableProps } from '@handsontable/react';
-import { Box } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { IMetadataRowModel, getType } from 'components/EditMetadata';
 import AddMetadataRow from 'components/EditMetadata/EditMetadataRow/AddMetadataRow';
 import { CellChange, ChangeSource } from 'handsontable/common';
@@ -205,18 +205,25 @@ const AnnotationsHotTable: React.FC<{
                 </Box>
             )}
             <Box>
-                <HotTable
-                    {...hotSettings}
-                    id="hot-annotations"
-                    afterChange={handleChangeOccurred}
-                    ref={hotTableRef}
-                    preventOverflow="horizontal"
-                    mergeCells={mergeCells}
-                    colHeaders={intialHotColumnHeaders}
-                    columns={hotColumns}
-                    data={JSON.parse(JSON.stringify(hotData))}
-                    afterOnCellMouseUp={handleCellMouseUp}
-                />
+                {hotData.length > 0 ? (
+                    <HotTable
+                        {...hotSettings}
+                        id="hot-annotations"
+                        afterChange={handleChangeOccurred}
+                        ref={hotTableRef}
+                        preventOverflow="horizontal"
+                        mergeCells={mergeCells}
+                        colHeaders={intialHotColumnHeaders}
+                        columns={hotColumns}
+                        data={JSON.parse(JSON.stringify(hotData))}
+                        afterOnCellMouseUp={handleCellMouseUp}
+                    />
+                ) : (
+                    <Typography sx={{ color: 'warning.dark' }}>
+                        There are no analyses to annotate. Get started by adding analyses to your
+                        studies.
+                    </Typography>
+                )}
             </Box>
         </Box>
     );

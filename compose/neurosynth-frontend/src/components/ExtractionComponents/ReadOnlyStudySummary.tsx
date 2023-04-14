@@ -7,9 +7,9 @@ import { useHistory, useParams } from 'react-router-dom';
 import { ESelectedChip } from 'pages/ExtractionPage/ExtractionPage';
 import { useProjectExtractionAddOrUpdateStudyListStatus } from 'pages/Projects/ProjectPage/ProjectStore';
 
-const ReadOnlyStudySummary: React.FC<StudyReturn & { currentSelectedChip: ESelectedChip }> = (
-    props
-) => {
+const ReadOnlyStudySummaryVirtualizedItem: React.FC<
+    StudyReturn & { currentSelectedChip: ESelectedChip; style: React.CSSProperties }
+> = (props) => {
     const { projectId }: { projectId: string } = useParams();
     const history = useHistory();
     const addOrUpdateStudyListStatus = useProjectExtractionAddOrUpdateStudyListStatus();
@@ -35,60 +35,65 @@ const ReadOnlyStudySummary: React.FC<StudyReturn & { currentSelectedChip: ESelec
         props.currentSelectedChip === ESelectedChip.COMPLETED;
 
     return (
-        <Box sx={StudyListItemStyles.listItem}>
-            <Box onClick={handleClick} sx={{ padding: '0 1rem', width: 'calc(100% - 80px)' }}>
-                <Typography sx={{ fontWeight: 'bold' }}>
-                    {`${props.year ? `(${props.year}) ` : ''}${props.name}`}
-                </Typography>
-                <Typography>{props.authors}</Typography>
-                <Typography>Journal: {props.publication}</Typography>
-                <Box sx={{ display: 'flex' }}>
-                    <Typography sx={{ width: '220px' }}>PMID: {props.pmid}</Typography>
-                    <Typography>DOI: {props.doi}</Typography>
+        <Box style={props.style}>
+            <Box onClick={handleClick} sx={StudyListItemStyles.listItem}>
+                <Box sx={{ width: 'calc(100% - 70px)' }}>
+                    <Typography noWrap sx={{ fontWeight: 'bold' }}>
+                        {`${props.year ? `(${props.year}) ` : ''}${props.name}`}
+                    </Typography>
+                    <Typography noWrap>{props.authors}</Typography>
+                    <Typography noWrap>Journal: {props.publication}</Typography>
+                    <Box sx={{ display: 'flex' }}>
+                        <Typography sx={{ width: '220px' }}>PMID: {props.pmid}</Typography>
+                        <Typography>DOI: {props.doi}</Typography>
+                    </Box>
+                    <Typography noWrap>{props.description}</Typography>
                 </Box>
-            </Box>
-            <Box
-                sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '80px',
-                }}
-            >
-                {showMarkAsCompleteButton && (
-                    <Box sx={{ marginBottom: '1rem' }}>
-                        <Tooltip placement="right" title="mark as complete">
-                            <IconButton
-                                size="large"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    handleUpdateStatus(props.id || '', 'COMPLETE');
-                                }}
-                            >
-                                <CheckIcon color="success" />
-                            </IconButton>
-                        </Tooltip>
-                    </Box>
-                )}
-                {showMarkAsSaveForLaterbutton && (
-                    <Box>
-                        <Tooltip placement="right" title="save for later">
-                            <IconButton
-                                size="large"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    handleUpdateStatus(props.id || '', 'SAVEFORLATER');
-                                }}
-                            >
-                                <BookmarkIcon color="info" />
-                            </IconButton>
-                        </Tooltip>
-                    </Box>
-                )}
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '70px',
+                    }}
+                >
+                    {showMarkAsCompleteButton && (
+                        <Box sx={{ marginBottom: '1rem' }}>
+                            <Tooltip placement="right" title="mark as complete">
+                                <IconButton
+                                    size="large"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleUpdateStatus(props.id || '', 'COMPLETE');
+                                    }}
+                                >
+                                    <CheckIcon color="success" />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                    )}
+                    {showMarkAsSaveForLaterbutton && (
+                        <Box>
+                            <Tooltip placement="right" title="save for later">
+                                <IconButton
+                                    size="large"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleUpdateStatus(props.id || '', 'SAVEFORLATER');
+                                    }}
+                                >
+                                    <BookmarkIcon color="info" />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                    )}
+                </Box>
             </Box>
         </Box>
     );
 };
 
-export default ReadOnlyStudySummary;
+export default ReadOnlyStudySummaryVirtualizedItem;

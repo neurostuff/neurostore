@@ -8,24 +8,9 @@ import { sortMetadataArrayFn } from 'components/EditStudyComponents/EditStudyMet
 import { getType } from 'components/EditMetadata';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import DisplayAnalyses from './DisplayAnalyses/DisplayAnalyses';
-import { useAuth0 } from '@auth0/auth0-react';
-import EditIcon from '@mui/icons-material/Edit';
-import { useHistory } from 'react-router-dom';
 
 const DisplayStudy: React.FC<StudyReturn> = (props) => {
-    const history = useHistory();
-    const { user: authenticatedUser, isAuthenticated } = useAuth0();
-    const {
-        name,
-        id,
-        description,
-        doi,
-        pmid,
-        authors,
-        publication,
-        metadata,
-        analyses = [],
-    } = props;
+    const { name, description, doi, pmid, authors, publication, metadata, analyses = [] } = props;
 
     return (
         <Box>
@@ -98,13 +83,17 @@ const DisplayStudy: React.FC<StudyReturn> = (props) => {
                 >
                     Analyses
                 </Typography>
-                <Divider />
                 {analyses?.length === 0 ? (
-                    <Box sx={{ color: 'warning.dark', margin: '15px 0 0 15px' }}>No analyses</Box>
-                ) : (
-                    <Box sx={{ marginBottom: '1rem' }}>
-                        <DisplayAnalyses analyses={analyses as AnalysisReturn[]} />
+                    <Box sx={{ color: 'warning.dark', margin: '15px 0 0 15px' }}>
+                        There are no analyses for this study.
                     </Box>
+                ) : (
+                    <>
+                        <Box sx={{ marginBottom: '1rem', padding: '0 1rem' }}>
+                            <Divider />
+                            <DisplayAnalyses analyses={analyses as AnalysisReturn[]} />
+                        </Box>
+                    </>
                 )}
             </Box>
         </Box>

@@ -89,11 +89,11 @@ const ResolveImportDuplicates: React.FC<{
                 potential duplicates in your import
             </Typography>
             <Typography sx={{ color: 'gray' }}>
-                Some studies that you are importing have been flagged as duplicates.
+                Some studies within the list you are importing have been flagged as duplicates.
             </Typography>
             <Typography gutterBottom sx={{ color: 'gray' }}>
-                Resolve below by marking the study of interest as "Not a duplicate", and marking the
-                other study/studies as "Duplicate".
+                Resolve below by marking the study of interest as <b>"NOT A DUPLICATE"</b>, and
+                marking the other study/studies as <b>"DUPLICATE"</b>.
             </Typography>
 
             <Box>

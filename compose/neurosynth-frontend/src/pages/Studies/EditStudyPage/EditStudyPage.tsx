@@ -1,13 +1,4 @@
-import {
-    Box,
-    Breadcrumbs,
-    Button,
-    Divider,
-    IconButton,
-    Link,
-    Tooltip,
-    Typography,
-} from '@mui/material';
+import { Box, Button, Divider } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import EditAnalyses from 'components/EditStudyComponents/EditAnalyses/EditAnalyses';
 import EditStudyDetails from 'components/EditStudyComponents/EditStudyDetails/EditStudyDetails';
@@ -15,7 +6,7 @@ import EditStudyMetadata from 'components/EditStudyComponents/EditStudyMetadata/
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useSnackbar } from 'notistack';
 import { useEffect } from 'react';
-import { NavLink, useHistory, useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import {
     useClearStudyStore,
     useInitStudyStore,
@@ -30,8 +21,10 @@ import { useProjectExtractionAnnotationId } from 'pages/Projects/ProjectPage/Pro
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatusButtons/FloatingStatusButtons';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
+import { useQueryClient } from 'react-query';
 
 const EditStudyPage: React.FC = (props) => {
+    const queryClient = useQueryClient();
     const { studyId, projectId } = useParams<{ projectId: string; studyId: string }>();
     const { data: project } = useGetProjectById(projectId);
     const isValid = useIsValid();
@@ -57,6 +50,7 @@ const EditStudyPage: React.FC = (props) => {
         try {
             if (studyHasBeenEdited) await updateStudyInDB(annotationId as string);
             snackbar.enqueueSnackbar('study saved successfully', { variant: 'success' });
+            queryClient.invalidateQueries('studies');
         } catch (e) {
             snackbar.enqueueSnackbar('there was an error saving the study', {
                 variant: 'error',
@@ -69,33 +63,40 @@ const EditStudyPage: React.FC = (props) => {
     return (
         <StateHandlerComponent isError={false} isLoading={!storeStudyId}>
             {isEditingFromProject ? (
-                <Box sx={{ marginBottom: '0.5rem' }}>
-                    <FloatingStatusButtons />
-                    <NeurosynthBreadcrumbs
-                        breadcrumbItems={[
-                            {
-                                text: 'Projects',
-                                link: '/projects',
-                                isCurrentPage: false,
-                            },
-                            {
-                                text: project?.name || '',
-                                link: `/projects/${projectId}`,
-                                isCurrentPage: false,
-                            },
-                            {
-                                text: 'Extraction',
-                                link: `/projects/${projectId}/extraction`,
-                                isCurrentPage: false,
-                            },
-                            {
-                                text: studyName || '',
-                                link: '',
-                                isCurrentPage: true,
-                            },
-                        ]}
-                    />
-                </Box>
+                <>
+                    <FloatingStatusButtons studyId={studyId} />
+                    <Box sx={{ marginBottom: '0.5rem' }}>
+                        <NeurosynthBreadcrumbs
+                            breadcrumbItems={[
+                                {
+                                    text: 'Projects',
+                                    link: '/projects',
+                                    isCurrentPage: false,
+                                },
+                                {
+                                    text: project?.name || '',
+                                    link: `/projects/${projectId}`,
+                                    isCurrentPage: false,
+                                },
+                                {
+                                    text: 'Extraction',
+                                    link: `/projects/${projectId}/extraction`,
+                                    isCurrentPage: false,
+                                },
+                                {
+                                    text: studyName || '',
+                                    link: `/projects/${projectId}/extraction/studies/${studyId}`,
+                                    isCurrentPage: false,
+                                },
+                                {
+                                    text: 'Edit',
+                                    link: '',
+                                    isCurrentPage: true,
+                                },
+                            ]}
+                        />
+                    </Box>
+                </>
             ) : (
                 <Button
                     color="secondary"

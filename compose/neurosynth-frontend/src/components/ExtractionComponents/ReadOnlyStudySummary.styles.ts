@@ -3,9 +3,10 @@ import { Style } from 'index';
 const StudyListItemStyles: Style = {
     listItem: {
         display: 'flex',
-        width: '100%',
+        padding: '10px',
+        width: 'calc(100% - 20px)',
+        height: 'calc(100% - 20px)',
         transition: '0.1s ease-in-out',
-        padding: '1rem 0',
         ':hover': {
             backgroundColor: '#efefef',
             borderRadius: '8px',

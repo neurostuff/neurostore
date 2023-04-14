@@ -23,6 +23,7 @@ import {
     apiDebouncedUpdaterImplMiddleware,
     addOrUpdateStudyListStatusHelper,
     deleteStubHelper,
+    setGivenStudyStatusesAsCompleteHelper,
 } from './ProjectStore.helpers';
 import { persist } from 'zustand/middleware';
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
@@ -55,6 +56,7 @@ export type ProjectStoreActions = {
     promoteStub: (columnIndex: number, stubId: string) => void;
     updateExtractionMetadata: (metadata: Partial<IExtractionMetadata>) => void;
     addOrUpdateStudyListStatus: (id: string, status: 'COMPLETE' | 'SAVEFORLATER') => void;
+    setGivenStudyStatusesAsComplete: (studyIdList: string[]) => void;
     deleteStub: (columnIndex: number, stubId: string) => void;
 };
 
@@ -411,6 +413,20 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                             },
                         }));
                     },
+                    setGivenStudyStatusesAsComplete: (studyIdList: string[]) => {
+                        set((state) => ({
+                            ...state,
+                            provenance: {
+                                ...state.provenance,
+                                extractionMetadata: {
+                                    ...state.provenance.extractionMetadata,
+                                    studyStatusList: [
+                                        ...setGivenStudyStatusesAsCompleteHelper(studyIdList),
+                                    ],
+                                },
+                            },
+                        }));
+                    },
                 };
             },
             {
@@ -486,5 +502,11 @@ export const useProjectExtractionAnnotationId = () =>
     useProjectStore((state) => state.provenance.extractionMetadata.annotationId);
 export const useProjectExtractionStudyStatusList = () =>
     useProjectStore((state) => state.provenance.extractionMetadata.studyStatusList);
+export const useProjectExtractionStudyStatus = (studyId: string) =>
+    useProjectStore((state) =>
+        state.provenance.extractionMetadata.studyStatusList.find((x) => x.id === studyId)
+    );
 export const useProjectExtractionAddOrUpdateStudyListStatus = () =>
     useProjectStore((state) => state.addOrUpdateStudyListStatus);
+export const useProjectExtractionSetGivenStudyStatusesAsComplete = () =>
+    useProjectStore((state) => state.setGivenStudyStatusesAsComplete);

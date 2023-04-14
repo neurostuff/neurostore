@@ -109,7 +109,7 @@ const ProjectStudyPage: React.FC = (props) => {
 
     return (
         <StateHandlerComponent isLoading={getStudyIsLoading} isError={getStudyIsError}>
-            <FloatingStatusButtons />
+            <FloatingStatusButtons studyId={studyId} />
             {isViewingStudyFromProject && (
                 <Box data-tour="StudyPage-8">
                     <Box
@@ -118,6 +118,7 @@ const ProjectStudyPage: React.FC = (props) => {
                             justifyContent: 'space-between',
                             width: '100%',
                             marginBottom: '0.5rem',
+                            padding: '0 1rem',
                         }}
                     >
                         <NeurosynthBreadcrumbs

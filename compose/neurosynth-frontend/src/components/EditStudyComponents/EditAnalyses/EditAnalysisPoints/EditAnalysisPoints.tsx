@@ -28,7 +28,7 @@ const nonEmptyNumericValidator = (value: CellValue, callback: (isValid: boolean)
     }
 };
 
-const hotTableColHeaders = ['X', 'Y', 'Z', 'Kind', 'Space'];
+const hotTableColHeaders = ['X', 'Y', 'Z', 'Statistic', 'Space'];
 const hotTableColumnSettings: ColumnSettings[] = [
     {
         validator: nonEmptyNumericValidator,
