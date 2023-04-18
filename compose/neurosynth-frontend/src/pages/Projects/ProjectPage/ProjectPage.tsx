@@ -1,15 +1,6 @@
+import { Box, Typography, Stepper, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import {
-    Box,
-    Typography,
-    Stepper,
-    ToggleButtonGroup,
-    ToggleButton,
-    Breadcrumbs,
-    Link,
-    Button,
-} from '@mui/material';
-import {
-    useClearProvenance,
+    // useClearProvenance,
     useInitProjectStore,
     useProjectAlgorithmMetadata,
     useProjectCurationColumns,
@@ -23,7 +14,7 @@ import {
 import AlgorithmStep from 'components/ProjectStepComponents/AlgorithmStep/AlgorithmStep';
 import CurationStep from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import ExtractionStep from 'components/ProjectStepComponents/ExtractionStep/ExtractionStep';
-import FiltrationStep from 'components/ProjectStepComponents/FiltrationStep/FiltrationStep';
+import SelectionStep from 'components/ProjectStepComponents/SelectionStep/SelectionStep';
 import RunMetaAnalysisStep from 'components/ProjectStepComponents/RunMetaAnalysisStep/RunMetaAnalysisStep';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
@@ -31,7 +22,7 @@ import useGetProjectById from 'hooks/requests/useGetProjectById';
 import useGetCurationSummary from 'hooks/useGetCurationSummary';
 import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import { useEffect, useState } from 'react';
-import { NavLink, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import ProjectPageStyles from './ProjectPage.styles';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 
@@ -57,7 +48,7 @@ const ProjectPage: React.FC = (props) => {
     const updateProjectName = useUpdateProjectName();
     const updateProjectDescription = useUpdateProjectDescription();
     const initProjectStore = useInitProjectStore();
-    const clearProvenance = useClearProvenance();
+    // const clearProvenance = useClearProvenance();
 
     const projectName = useProjectName();
     const projectDescription = useProjectDescription();
@@ -74,20 +65,22 @@ const ProjectPage: React.FC = (props) => {
         curationSummary.uncategorized > 0;
 
     const filtrationMetadata = useProjectFiltrationMetadata();
-    const filtrationStepHasBeenInitialized = !!filtrationMetadata.filter.filtrationKey;
 
     const disableFiltrationStep =
         extractionSummary?.total === 0 || extractionSummary.total !== extractionSummary.completed;
+
+    const selectionStepHasBeenInitialized = !!filtrationMetadata.filter.filtrationKey;
 
     // variables realted to algorithm
     const algorithmMetadata = useProjectAlgorithmMetadata();
     const algorithmStepHasBeenInitialized = !!algorithmMetadata.specificationId;
     const disableRunMetaAnalysisStep = !algorithmMetadata.specificationId;
 
+    // activeStep is 0 indexed.
     const activeStep =
         +!!extractionStepHasBeenInitialized +
-        +!!filtrationStepHasBeenInitialized +
-        +!!algorithmStepHasBeenInitialized;
+        +!disableFiltrationStep +
+        +!!selectionStepHasBeenInitialized;
 
     useEffect(() => {
         initProjectStore(projectId);
@@ -178,8 +171,8 @@ const ProjectPage: React.FC = (props) => {
                         extractionStepHasBeenInitialized={extractionStepHasBeenInitialized}
                         disabled={disableExtractionStep}
                     />
-                    <FiltrationStep
-                        filtrationStepHasBeenInitialized={filtrationStepHasBeenInitialized}
+                    <SelectionStep
+                        selectionStepHasBeenInitialized={selectionStepHasBeenInitialized}
                         disabled={disableFiltrationStep}
                     />
                     <AlgorithmStep
@@ -190,7 +183,7 @@ const ProjectPage: React.FC = (props) => {
                 </Stepper>
             )}
             {tab === 1 && <div>view meta-analysis</div>}
-            <Button
+            {/* <Button
                 onClick={() => {
                     clearProvenance();
                 }}
@@ -199,7 +192,7 @@ const ProjectPage: React.FC = (props) => {
                 color="error"
             >
                 Clear Provenance (FOR DEV PURPOSES ONLY)
-            </Button>
+            </Button> */}
         </StateHandlerComponent>
     );
 };

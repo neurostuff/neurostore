@@ -1,10 +1,4 @@
-import {
-    ListItem,
-    ListItemButton,
-    ListItemProps,
-    ListItemText,
-    ListItemTextProps,
-} from '@mui/material';
+import { ListItem, ListItemButton, ListItemText } from '@mui/material';
 import React from 'react';
 
 const EditAnalysesListItem: React.FC<{
@@ -12,13 +6,14 @@ const EditAnalysesListItem: React.FC<{
     name?: string | null;
     description?: string | null;
     selected: boolean;
-    onSelectAnalysis: (analysisId: string) => void;
+    index: number;
+    onSelectAnalysis: (analysisId: string, index: number) => void;
 }> = React.memo((props) => {
     const { name, description, selected, analysisId, onSelectAnalysis } = props;
 
     const handleSelectAnalysis = () => {
         if (!analysisId) return;
-        onSelectAnalysis(analysisId);
+        onSelectAnalysis(analysisId, props.index);
     };
 
     return (

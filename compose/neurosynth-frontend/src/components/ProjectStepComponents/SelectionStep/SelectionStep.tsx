@@ -11,20 +11,20 @@ import {
     Button,
 } from '@mui/material';
 import { useState } from 'react';
-import FiltrationDialog from 'components/Dialogs/FiltrationDialog/FiltrationDialog';
+import SelectionDialog from 'components/Dialogs/SelectionDialog/SelectionDialog';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { EPropertyType } from 'components/EditMetadata';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
 import { useProjectFiltrationMetadata } from 'pages/Projects/ProjectPage/ProjectStore';
 
-interface IFiltrationStep {
-    filtrationStepHasBeenInitialized: boolean;
+interface ISelectionStep {
+    selectionStepHasBeenInitialized: boolean;
     disabled: boolean;
 }
 
-const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
-    const [filtrationDialogIsOpen, setFiltrationDialogIsOpen] = useState(false);
-    const { filtrationStepHasBeenInitialized, disabled, ...stepProps } = props;
+const SelectionStep: React.FC<ISelectionStep & StepProps> = (props) => {
+    const [selectionDialogIsOpen, setSelectionDialogIsOpen] = useState(false);
+    const { selectionStepHasBeenInitialized, disabled, ...stepProps } = props;
 
     const filter = useProjectFiltrationMetadata().filter;
 
@@ -47,12 +47,12 @@ const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
                         In this step, select the analyses from each study that you want to include
                         in the meta-analysis based on your analysis annotations
                     </Typography>
-                    <FiltrationDialog
-                        isOpen={filtrationDialogIsOpen}
-                        onCloseDialog={() => setFiltrationDialogIsOpen(false)}
+                    <SelectionDialog
+                        isOpen={selectionDialogIsOpen}
+                        onCloseDialog={() => setSelectionDialogIsOpen(false)}
                     />
                     <Box sx={{ marginTop: '1rem' }}>
-                        {filtrationStepHasBeenInitialized ? (
+                        {selectionStepHasBeenInitialized ? (
                             <Box sx={[ProjectStepComponentsStyles.stepCard]}>
                                 <Card sx={{ width: '100%', height: '100%' }}>
                                     <CardContent>
@@ -79,7 +79,7 @@ const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
                                     </CardContent>
                                     <CardActions>
                                         <Button
-                                            onClick={() => setFiltrationDialogIsOpen(true)}
+                                            onClick={() => setSelectionDialogIsOpen(true)}
                                             variant="text"
                                         >
                                             update filter
@@ -96,11 +96,11 @@ const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
                                 ]}
                             >
                                 <Button
-                                    onClick={() => setFiltrationDialogIsOpen(true)}
+                                    onClick={() => setSelectionDialogIsOpen(true)}
                                     disabled={disabled}
                                     sx={{ width: '100%', height: '100%' }}
                                 >
-                                    filtration: get started
+                                    selection: get started
                                 </Button>
                             </Box>
                         )}
@@ -111,4 +111,4 @@ const FiltrationStep: React.FC<IFiltrationStep & StepProps> = (props) => {
     );
 };
 
-export default FiltrationStep;
+export default SelectionStep;

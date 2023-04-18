@@ -193,6 +193,8 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                             </Button>
                                             <ConfirmationDialog
                                                 onCloseDialog={handleMarkAllAsComplete}
+                                                rejectText="Cancel"
+                                                confirmText="Yes"
                                                 isOpen={markAllAsCompleteConfirmationDialogIsOpen}
                                                 dialogTitle="Are you sure you want to mark all the studies as complete?"
                                                 dialogMessage="The selection phase will be enabled when all studies in the extraction phase have been marked as complete. You can skip or expedite the extraction process by clicking this button. This may result in some studies in the studyset having incomplete or unextracted data."

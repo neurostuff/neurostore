@@ -21,31 +21,37 @@ const DisplayPoints: React.FC<{ points: PointReturn[] }> = (props) => {
                 Coordinates
             </Typography>
             <Box sx={{ width: '100%' }}>
-                <HotTable
-                    manualColumnResize
-                    data={hotData}
-                    columns={[
-                        {
-                            className: styles.number,
-                        },
-                        {
-                            className: styles.number,
-                        },
-                        {
-                            className: styles.number,
-                        },
-                        {
-                            className: styles.string,
-                        },
-                        {
-                            className: styles.string,
-                        },
-                    ]}
-                    colHeaders={['X', 'Y', 'Z', 'Kind', 'Space']}
-                    colWidths={[50, 50, 50, 150, 150]}
-                    licenseKey="non-commercial-and-evaluation"
-                    readOnly
-                />
+                {hotData.length === 0 ? (
+                    <Typography sx={{ color: 'warning.dark' }}>
+                        No coordinates have been added yet
+                    </Typography>
+                ) : (
+                    <HotTable
+                        manualColumnResize
+                        data={hotData}
+                        columns={[
+                            {
+                                className: styles.number,
+                            },
+                            {
+                                className: styles.number,
+                            },
+                            {
+                                className: styles.number,
+                            },
+                            {
+                                className: styles.string,
+                            },
+                            {
+                                className: styles.string,
+                            },
+                        ]}
+                        colHeaders={['X', 'Y', 'Z', 'Kind', 'Space']}
+                        colWidths={[50, 50, 50, 150, 150]}
+                        licenseKey="non-commercial-and-evaluation"
+                        readOnly
+                    />
+                )}
             </Box>
         </Box>
     );

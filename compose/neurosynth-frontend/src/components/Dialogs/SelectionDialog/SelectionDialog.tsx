@@ -9,7 +9,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import BaseDialog, { IDialog } from '../BaseDialog';
 
-const FiltrationDialog: React.FC<IDialog> = (props) => {
+const SelectionDialog: React.FC<IDialog> = (props) => {
     const { projectId }: { projectId: string } = useParams();
     const { data: project } = useGetProjectById(projectId);
     const { data: annotation } = useGetAnnotationById(
@@ -18,20 +18,22 @@ const FiltrationDialog: React.FC<IDialog> = (props) => {
     const { mutate } = useUpdateProject();
 
     const [selectedValue, setSelectedValue] = useState<
-        { filtrationKey: string; type: EPropertyType } | undefined
+        { selectionKey: string; type: EPropertyType } | undefined
     >(
         project?.provenance?.filtrationMetadata?.filter?.filtrationKey
             ? {
-                  filtrationKey: project?.provenance?.filtrationMetadata?.filter?.filtrationKey,
+                  selectionKey: project?.provenance?.filtrationMetadata?.filter?.filtrationKey,
                   type: project?.provenance?.filtrationMetadata?.filter?.type,
               }
             : undefined
     );
 
-    const options = Object.entries(annotation?.note_keys || {}).map(([key, value]) => ({
-        filtrationKey: key,
-        type: value as EPropertyType,
-    }));
+    const options = Object.entries(annotation?.note_keys || {})
+        .map(([key, value]) => ({
+            selectionKey: key,
+            type: value as EPropertyType,
+        }))
+        .filter((x) => x.type === EPropertyType.BOOLEAN);
 
     const handleSelectFilter = () => {
         if (projectId && project?.provenance && selectedValue) {
@@ -43,7 +45,7 @@ const FiltrationDialog: React.FC<IDialog> = (props) => {
                             ...project.provenance,
                             filtrationMetadata: {
                                 filter: {
-                                    filtrationKey: selectedValue.filtrationKey,
+                                    filtrationKey: selectedValue.selectionKey,
                                     type: selectedValue.type as EPropertyType,
                                 },
                             },
@@ -59,40 +61,46 @@ const FiltrationDialog: React.FC<IDialog> = (props) => {
         }
     };
 
+    console.log(annotation);
+
     return (
         <BaseDialog
             isOpen={props.isOpen}
             maxWidth="md"
             fullWidth
             onCloseDialog={props.onCloseDialog}
-            dialogTitle="Select Filter"
+            dialogTitle={`0 / 73 analyses selected`}
         >
             <Box>
-                <Typography gutterBottom sx={{ marginBottom: '1rem' }}>
-                    Select the annotation <b>inclusion column</b> that you would like to use to
-                    filter the analyses for your meta-analysis.
+                <Typography gutterBottom>
+                    Select the <b>annotation inclusion column</b> that you would like to use to
+                    select the analyses for your meta-analysis.
+                </Typography>
+                <Typography sx={{ color: 'warning.dark', marginBottom: '1rem' }}>
+                    At the moment, only boolean columns will be supported. We will be adding support
+                    for the other types in the near future.
                 </Typography>
 
                 <NeurosynthAutocomplete
                     label="Inclusion Column"
                     shouldDisable={false}
                     isOptionEqualToValue={(option, value) =>
-                        option?.filtrationKey === value?.filtrationKey
+                        option?.selectionKey === value?.selectionKey
                     }
                     value={selectedValue}
                     size="medium"
                     required={false}
                     renderOption={(params, option) => (
-                        <ListItem {...params} key={option.key}>
+                        <ListItem {...params} key={option.selectionKey}>
                             <ListItemText
                                 sx={{
                                     color: NeurosynthTableStyles[option.type || EPropertyType.NONE],
                                 }}
-                                primary={option?.key || ''}
+                                primary={option?.selectionKey || ''}
                             />
                         </ListItem>
                     )}
-                    getOptionLabel={(option) => option?.filtrationKey || ''}
+                    getOptionLabel={(option) => option?.selectionKey || ''}
                     onChange={(_event, newVal, _reason) => setSelectedValue(newVal || undefined)}
                     options={options}
                 />
@@ -110,4 +118,4 @@ const FiltrationDialog: React.FC<IDialog> = (props) => {
     );
 };
 
-export default FiltrationDialog;
+export default SelectionDialog;

@@ -21,7 +21,7 @@ const DisplayStudy: React.FC<StudyReturn> = (props) => {
                     </Typography>
                 </Box>
                 <Typography>{authors}</Typography>
-                <Box sx={DisplayStudyStyles.spaceBelow}>
+                <Box>
                     <Typography>{publication}</Typography>
                     {doi && <Typography>DOI: {doi}</Typography>}
                     {pmid && <Typography>PMID: {pmid}</Typography>}

@@ -5,17 +5,10 @@ import { useHistory, useParams } from 'react-router-dom';
 import { useGetStudyById } from 'hooks';
 import EditIcon from '@mui/icons-material/Edit';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useInitStudyStore } from '../StudyStore';
 import DisplayStudy from 'components/DisplayStudy/DisplayStudy';
 
 const StudyPage: React.FC = (props) => {
     const { studyId } = useParams<{ studyId: string }>();
-
-    const initStudyStore = useInitStudyStore();
-
-    useEffect(() => {
-        initStudyStore(studyId);
-    }, [initStudyStore, studyId]);
 
     const [allowEdits, setAllowEdits] = useState(false);
     const history = useHistory();

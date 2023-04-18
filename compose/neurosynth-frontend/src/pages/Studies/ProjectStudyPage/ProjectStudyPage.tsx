@@ -34,6 +34,8 @@ const ProjectStudyPage: React.FC = (props) => {
     const {
         isLoading: getStudyIsLoading,
         isError: getStudyIsError,
+        isFetching: getStudyIsFetching,
+        isRefetching: getStudyIsRefetching,
         data,
     } = useGetStudyById(studyId);
     const { data: studyset } = useGetStudysetById(
@@ -108,7 +110,10 @@ const ProjectStudyPage: React.FC = (props) => {
     const showCloneMessage = isViewingStudyFromProject && !thisUserOwnsThisStudy;
 
     return (
-        <StateHandlerComponent isLoading={getStudyIsLoading} isError={getStudyIsError}>
+        <StateHandlerComponent
+            isLoading={getStudyIsLoading || getStudyIsFetching || getStudyIsRefetching}
+            isError={getStudyIsError}
+        >
             <FloatingStatusButtons studyId={studyId} />
             {isViewingStudyFromProject && (
                 <Box data-tour="StudyPage-8">
