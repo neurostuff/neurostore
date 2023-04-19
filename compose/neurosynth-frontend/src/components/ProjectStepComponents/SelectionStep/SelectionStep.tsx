@@ -15,7 +15,7 @@ import SelectionDialog from 'components/Dialogs/SelectionDialog/SelectionDialog'
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { EPropertyType } from 'components/EditMetadata';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
-import { useProjectFiltrationMetadata } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useProjectSelectionMetadata } from 'pages/Projects/ProjectPage/ProjectStore';
 
 interface ISelectionStep {
     selectionStepHasBeenInitialized: boolean;
@@ -26,7 +26,7 @@ const SelectionStep: React.FC<ISelectionStep & StepProps> = (props) => {
     const [selectionDialogIsOpen, setSelectionDialogIsOpen] = useState(false);
     const { selectionStepHasBeenInitialized, disabled, ...stepProps } = props;
 
-    const filter = useProjectFiltrationMetadata().filter;
+    const filter = useProjectSelectionMetadata()?.filter;
 
     return (
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
@@ -73,7 +73,7 @@ const SelectionStep: React.FC<ISelectionStep & StepProps> = (props) => {
                                                     ],
                                                 }}
                                             >
-                                                {filter.filtrationKey || ''}
+                                                {filter.selectionKey || ''}
                                             </Typography>
                                         </Box>
                                     </CardContent>

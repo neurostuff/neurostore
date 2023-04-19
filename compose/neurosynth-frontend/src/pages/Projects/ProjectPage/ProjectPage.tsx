@@ -6,7 +6,7 @@ import {
     useProjectCurationColumns,
     useProjectDescription,
     useProjectExtractionMetadata,
-    useProjectFiltrationMetadata,
+    useProjectSelectionMetadata,
     useProjectName,
     useUpdateProjectDescription,
     useUpdateProjectName,
@@ -25,6 +25,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ProjectPageStyles from './ProjectPage.styles';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
+import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
 
 export interface IProjectPageLocationState {
     projectPage?: {
@@ -64,12 +65,12 @@ const ProjectPage: React.FC = (props) => {
         curationSummary.included === 0 ||
         curationSummary.uncategorized > 0;
 
-    const filtrationMetadata = useProjectFiltrationMetadata();
+    const selectionMetadata = useProjectSelectionMetadata();
 
     const disableFiltrationStep =
         extractionSummary?.total === 0 || extractionSummary.total !== extractionSummary.completed;
 
-    const selectionStepHasBeenInitialized = !!filtrationMetadata.filter.filtrationKey;
+    const selectionStepHasBeenInitialized = !!selectionMetadata?.filter?.selectionKey;
 
     // variables realted to algorithm
     const algorithmMetadata = useProjectAlgorithmMetadata();
@@ -95,7 +96,7 @@ const ProjectPage: React.FC = (props) => {
 
     return (
         <StateHandlerComponent isLoading={getProjectIsLoading} isError={getProjectIsError}>
-            <Box sx={{ marginBottom: '0.5rem' }}>
+            <Box sx={{ marginBottom: '0.5rem', display: 'flex' }}>
                 <NeurosynthBreadcrumbs
                     breadcrumbItems={[
                         {
@@ -110,6 +111,7 @@ const ProjectPage: React.FC = (props) => {
                         },
                     ]}
                 />
+                <ProjectIsLoadingText />
             </Box>
 
             <Box sx={{ marginBottom: '0.5rem' }}>

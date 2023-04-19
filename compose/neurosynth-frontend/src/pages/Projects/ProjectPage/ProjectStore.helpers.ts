@@ -443,6 +443,8 @@ const apiDebouncedUpdaterImpl: APIDebouncedUpdaterImpl = (f, name) => (set, get,
 
     const debouncedAPIUpdaterSet: typeof set = (...a) => {
         if (timeout) clearTimeout(timeout);
+        localStorage.setItem(`updateProjectRequest`, 'true');
+
         timeout = setTimeout(() => {
             const storeData = get() as unknown as INeurosynthProjectReturn & ProjectStoreActions;
 
@@ -458,13 +460,14 @@ const apiDebouncedUpdaterImpl: APIDebouncedUpdaterImpl = (f, name) => (set, get,
             };
 
             console.log('update: ', update);
-            localStorage.setItem(`updateCurationIsLoading`, 'true');
+            localStorage.setItem(`updateProjectIsLoading`, 'true');
             window.dispatchEvent(new Event('storage'));
             API.NeurosynthServices.ProjectsService.projectsIdPut(
                 storeData.id || '',
                 update
             ).finally(() => {
-                localStorage.setItem(`updateCurationIsLoading`, 'false');
+                localStorage.setItem(`updateProjectIsLoading`, 'false');
+                localStorage.setItem(`updateProjectRequest`, 'false');
                 window.dispatchEvent(new Event('storage'));
             });
         }, 4000);

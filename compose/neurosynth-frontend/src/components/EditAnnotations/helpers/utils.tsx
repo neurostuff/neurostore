@@ -34,6 +34,7 @@ export const noteKeyArrToObj = (noteKeyArr: NoteKeyType[]): { [key: string]: EPr
     return noteKeyObj;
 };
 
+// we can assume that the input is already sorted
 export const getMergeCells = (
     hotDataToStudyMapping: Map<number, { studyId: string; analysisId: string }>
 ) => {

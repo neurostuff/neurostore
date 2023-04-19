@@ -1,5 +1,5 @@
-import { Box, Breadcrumbs, Button, Link, Typography } from '@mui/material';
-import { useParams, NavLink, useHistory } from 'react-router-dom';
+import { Box, Button } from '@mui/material';
+import { useParams, useHistory } from 'react-router-dom';
 import SchemaIcon from '@mui/icons-material/Schema';
 import CurationBoard from 'components/CurationComponents/CurationBoard/CurationBoard';
 import { useEffect, useState } from 'react';
@@ -11,7 +11,7 @@ import {
     useInitProjectStore,
     useProjectExtractionStudysetId,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import CurationPageLoadingText from './CurationPageLoadingText';
+import ProjectIsLoadingText from './ProjectIsLoadingText';
 import useGetCurationSummary from 'hooks/useGetCurationSummary';
 import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
@@ -75,7 +75,7 @@ const CurationPage: React.FC = (props) => {
                                 },
                             ]}
                         />
-                        <CurationPageLoadingText />
+                        <ProjectIsLoadingText />
                     </Box>
                     <Box sx={{ marginRight: '1rem' }}>
                         <Button

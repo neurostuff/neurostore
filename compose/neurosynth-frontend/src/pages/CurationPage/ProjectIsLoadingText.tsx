@@ -1,12 +1,12 @@
 import { Box, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 
-const CurationPageLoadingText: React.FC = (props) => {
-    const [curationIsLoading, setCurationIsLoading] = useState(false);
+const ProjectIsLoadingText: React.FC = (props) => {
+    const [projectIsLoading, setProjectIsLoading] = useState(false);
 
     useEffect(() => {
         function onStorageUpdate() {
-            const isLoading = localStorage.getItem(`updateCurationIsLoading`) === 'true';
+            const isLoading = localStorage.getItem(`updateProjectIsLoading`) === 'true';
             if (isLoading) {
                 window.onbeforeunload = () => {
                     return '';
@@ -14,7 +14,7 @@ const CurationPageLoadingText: React.FC = (props) => {
             } else {
                 window.onbeforeunload = null;
             }
-            setCurationIsLoading(isLoading);
+            setProjectIsLoading(isLoading);
         }
         window.addEventListener('storage', onStorageUpdate);
         return () => {
@@ -28,7 +28,7 @@ const CurationPageLoadingText: React.FC = (props) => {
                 sx={{
                     color: 'muted.main',
                     fontSize: '1.5rem',
-                    display: curationIsLoading ? 'inline' : 'none',
+                    display: projectIsLoading ? 'inline' : 'none',
                 }}
             >
                 updating...
@@ -37,4 +37,4 @@ const CurationPageLoadingText: React.FC = (props) => {
     );
 };
 
-export default CurationPageLoadingText;
+export default ProjectIsLoadingText;

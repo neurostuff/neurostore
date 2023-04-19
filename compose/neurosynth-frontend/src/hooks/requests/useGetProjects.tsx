@@ -20,9 +20,9 @@ export interface IAlgorithmMetadata {
     specificationId: string | undefined;
 }
 
-export interface IFiltrationMetadata {
+export interface ISelectionMetadata {
     filter: {
-        filtrationKey: string | undefined;
+        selectionKey: string | undefined;
         type: EPropertyType;
     };
 }
@@ -62,7 +62,7 @@ export interface IExtractionMetadata {
 export interface IProvenance {
     curationMetadata: ICurationMetadata;
     extractionMetadata: IExtractionMetadata;
-    filtrationMetadata: IFiltrationMetadata;
+    selectionMetadata: ISelectionMetadata;
     algorithmMetadata: IAlgorithmMetadata;
 }
 

@@ -5,6 +5,7 @@ import {
     IExtractionMetadata,
     INeurosynthProjectReturn,
     IPRISMAConfig,
+    ISelectionMetadata,
     ISource,
     ITag,
 } from 'hooks/requests/useGetProjects';
@@ -58,6 +59,7 @@ export type ProjectStoreActions = {
     addOrUpdateStudyListStatus: (id: string, status: 'COMPLETE' | 'SAVEFORLATER') => void;
     setGivenStudyStatusesAsComplete: (studyIdList: string[]) => void;
     deleteStub: (columnIndex: number, stubId: string) => void;
+    setSelectionFilter: (selectionMetadata: ISelectionMetadata) => void;
 };
 
 const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()(
@@ -94,9 +96,9 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                             annotationId: undefined,
                             studyStatusList: [],
                         },
-                        filtrationMetadata: {
+                        selectionMetadata: {
                             filter: {
-                                filtrationKey: undefined,
+                                selectionKey: undefined,
                                 type: EPropertyType.NONE,
                             },
                         },
@@ -131,9 +133,9 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                                 annotationId: undefined,
                                 studyStatusList: [],
                             },
-                            filtrationMetadata: {
+                            selectionMetadata: {
                                 filter: {
-                                    filtrationKey: undefined,
+                                    selectionKey: undefined,
                                     type: EPropertyType.NONE,
                                 },
                             },
@@ -427,6 +429,18 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                             },
                         }));
                     },
+                    setSelectionFilter: (selectionMetadata) => {
+                        set((state) => ({
+                            ...state,
+                            provenance: {
+                                ...state.provenance,
+                                selectionMetadata: {
+                                    ...state.provenance.selectionMetadata,
+                                    ...selectionMetadata,
+                                },
+                            },
+                        }));
+                    },
                 };
             },
             {
@@ -455,8 +469,8 @@ export const useProjectCurationSources = () =>
     useProjectStore((state) => state.provenance.curationMetadata.identificationSources);
 export const useProjectExtractionMetadata = () =>
     useProjectStore((state) => state.provenance.extractionMetadata);
-export const useProjectFiltrationMetadata = () =>
-    useProjectStore((state) => state.provenance.filtrationMetadata);
+export const useProjectSelectionMetadata = () =>
+    useProjectStore((state) => state.provenance.selectionMetadata);
 export const useProjectId = () => useProjectStore((state) => state.id);
 export const useProjectAlgorithmMetadata = () =>
     useProjectStore((state) => state.provenance.algorithmMetadata);
@@ -510,3 +524,6 @@ export const useProjectExtractionAddOrUpdateStudyListStatus = () =>
     useProjectStore((state) => state.addOrUpdateStudyListStatus);
 export const useProjectExtractionSetGivenStudyStatusesAsComplete = () =>
     useProjectStore((state) => state.setGivenStudyStatusesAsComplete);
+
+// selection updater hooks
+export const useUpdateSelectionFilter = () => useProjectStore((state) => state.setSelectionFilter);
