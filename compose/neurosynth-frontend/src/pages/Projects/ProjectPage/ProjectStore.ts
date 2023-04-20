@@ -59,7 +59,10 @@ export type ProjectStoreActions = {
     addOrUpdateStudyListStatus: (id: string, status: 'COMPLETE' | 'SAVEFORLATER') => void;
     setGivenStudyStatusesAsComplete: (studyIdList: string[]) => void;
     deleteStub: (columnIndex: number, stubId: string) => void;
-    setSelectionFilter: (selectionMetadata: ISelectionMetadata) => void;
+    setSelectionFilter: (selectionMetadata: {
+        selectionKey: string | undefined;
+        type: EPropertyType;
+    }) => void;
 };
 
 const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()(
@@ -435,8 +438,10 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                             provenance: {
                                 ...state.provenance,
                                 selectionMetadata: {
-                                    ...state.provenance.selectionMetadata,
-                                    ...selectionMetadata,
+                                    filter: {
+                                        ...state.provenance.selectionMetadata.filter,
+                                        ...selectionMetadata,
+                                    },
                                 },
                             },
                         }));

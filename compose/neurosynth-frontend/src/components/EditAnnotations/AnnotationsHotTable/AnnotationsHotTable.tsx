@@ -65,10 +65,10 @@ const AnnotationsHotTable: React.FC<{
                         const navHeight = '64px';
                         const breadCrumbHeight = '44px';
                         const addMetadataHeight = '1rem + 40px + 25px';
-                        const bottomSaveButtonHeight = '2.5rem';
+                        const bottomSaveButtonHeight = '2.5rem + 37px';
                         const pageMarginHeight = '4rem';
                         hotTableRef.current.hotInstance.updateSettings({
-                            height: `calc(${currentWindowSize}px - ${navHeight} - ${breadCrumbHeight} - (${addMetadataHeight}) - ${bottomSaveButtonHeight} - ${pageMarginHeight})`,
+                            height: `calc(${currentWindowSize}px - ${navHeight} - ${breadCrumbHeight} - (${addMetadataHeight}) - (${bottomSaveButtonHeight}) - ${pageMarginHeight})`,
                         });
                     }
                 }, 200);
@@ -204,7 +204,7 @@ const AnnotationsHotTable: React.FC<{
                     />
                 </Box>
             )}
-            <Box>
+            <Box style={{ width: '100%', overflow: 'hidden' }}>
                 {hotData.length > 0 ? (
                     <HotTable
                         {...hotSettings}

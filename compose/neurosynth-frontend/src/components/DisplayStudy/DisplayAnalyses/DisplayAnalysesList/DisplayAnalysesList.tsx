@@ -17,6 +17,8 @@ const DisplayAnalysesList: React.FC<{
             <List
                 sx={{
                     width: '250px',
+                    maxHeight: '70vh',
+                    overflow: 'auto',
                 }}
                 disablePadding
             >

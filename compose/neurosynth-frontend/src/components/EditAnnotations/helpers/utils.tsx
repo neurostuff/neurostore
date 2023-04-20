@@ -158,32 +158,33 @@ const booleanValidator = (value: CellValue, callback: (isValid: boolean) => void
     callback(isValid);
 };
 
-export const createColumns = (noteKeys: NoteKeyType[]) => [
-    {
-        className: `${styles['study-col']} ${styles['read-only-col']}`,
-        readOnly: true,
-        width: '200',
-    },
-    {
-        className: styles['read-only-col'],
-        readOnly: true,
-        width: '150',
-    },
-    ...noteKeys.map((x) => {
-        return {
-            readOnly: false,
-            className: styles[x.type],
-            allowInvalid: false,
-            type: x.type === EPropertyType.BOOLEAN ? 'checkbox' : 'text',
-            validator:
-                x.type === EPropertyType.NUMBER
-                    ? numericValidator
-                    : x.type === EPropertyType.BOOLEAN
-                    ? booleanValidator
-                    : undefined,
-        } as ColumnSettings;
-    }),
-];
+export const createColumns = (noteKeys: NoteKeyType[]) =>
+    [
+        {
+            className: `${styles['study-col']} ${styles['read-only-col']}`,
+            readOnly: true,
+            width: '200',
+        },
+        {
+            className: styles['read-only-col'],
+            readOnly: true,
+            width: '150',
+        },
+        ...noteKeys.map((x) => {
+            return {
+                readOnly: false,
+                className: styles[x.type],
+                allowInvalid: false,
+                type: x.type === EPropertyType.BOOLEAN ? 'checkbox' : 'text',
+                validator:
+                    x.type === EPropertyType.NUMBER
+                        ? numericValidator
+                        : x.type === EPropertyType.BOOLEAN
+                        ? booleanValidator
+                        : undefined,
+            } as ColumnSettings;
+        }),
+    ] as ColumnSettings[];
 
 export const createColumnHeader = (
     colKey: string,
@@ -191,13 +192,19 @@ export const createColumnHeader = (
     updateFunc?: (key: string) => void
 ) => {
     const allowRemove = updateFunc
-        ? `<div style="width: 50px;">${renderToString(
-              <Cancel
-                  onClick={() => updateFunc(colKey)}
-                  sx={{ ':hover': { color: 'error.light', cursor: 'pointer' } }}
-                  color="error"
-              />
-          )}</div>`
+        ? `<div style="width: 50px; display: flex; align-items: center; justify-content: center">
+        ${renderToString(
+            <Cancel
+                onClick={() => updateFunc(colKey)}
+                sx={{
+                    width: '18px',
+                    height: '18px',
+                    ':hover': { color: 'error.light', cursor: 'pointer' },
+                }}
+                color="error"
+            />
+        )}
+          </div>`
         : '<div></div>';
 
     return (

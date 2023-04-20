@@ -11,11 +11,18 @@ import {
     Button,
 } from '@mui/material';
 import { useState } from 'react';
-import SelectionDialog from 'components/Dialogs/SelectionDialog/SelectionDialog';
+import SelectionDialog, {
+    getFilteredAnnotationNotes,
+} from 'components/Dialogs/SelectionDialog/SelectionDialog';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { EPropertyType } from 'components/EditMetadata';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
-import { useProjectSelectionMetadata } from 'pages/Projects/ProjectPage/ProjectStore';
+import {
+    useProjectExtractionAnnotationId,
+    useProjectSelectionMetadata,
+} from 'pages/Projects/ProjectPage/ProjectStore';
+import { useGetAnnotationById } from 'hooks';
+import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 
 interface ISelectionStep {
     selectionStepHasBeenInitialized: boolean;
@@ -24,9 +31,15 @@ interface ISelectionStep {
 
 const SelectionStep: React.FC<ISelectionStep & StepProps> = (props) => {
     const [selectionDialogIsOpen, setSelectionDialogIsOpen] = useState(false);
+    const annotationId = useProjectExtractionAnnotationId();
+    const { data: annotation } = useGetAnnotationById(annotationId);
     const { selectionStepHasBeenInitialized, disabled, ...stepProps } = props;
 
     const filter = useProjectSelectionMetadata()?.filter;
+    const filteredAnnotations = getFilteredAnnotationNotes(
+        (annotation?.notes || []) as NoteCollectionReturn[],
+        filter.selectionKey
+    );
 
     return (
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
@@ -56,25 +69,37 @@ const SelectionStep: React.FC<ISelectionStep & StepProps> = (props) => {
                             <Box sx={[ProjectStepComponentsStyles.stepCard]}>
                                 <Card sx={{ width: '100%', height: '100%' }}>
                                     <CardContent>
-                                        <Typography
-                                            gutterBottom
-                                            variant="h5"
-                                            sx={{ marginBottom: '1.5rem' }}
-                                        >
-                                            Filter:
-                                        </Typography>
                                         <Box>
-                                            <Typography
-                                                variant="h5"
-                                                sx={{
-                                                    fontWeight: 'bold',
-                                                    color: NeurosynthTableStyles[
-                                                        filter.type || EPropertyType.NONE
-                                                    ],
-                                                }}
-                                            >
-                                                {filter.selectionKey || ''}
-                                            </Typography>
+                                            <Box sx={{ display: 'flex' }}>
+                                                <Typography
+                                                    sx={{ marginRight: '8px' }}
+                                                    gutterBottom
+                                                    variant="h5"
+                                                >
+                                                    Selection Filter:
+                                                </Typography>
+                                                <Typography
+                                                    variant="h5"
+                                                    sx={{
+                                                        fontWeight: 'bold',
+                                                        color: NeurosynthTableStyles[
+                                                            filter.type || EPropertyType.NONE
+                                                        ],
+                                                    }}
+                                                >
+                                                    {filter.selectionKey || ''}
+                                                </Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography
+                                                    variant="h5"
+                                                    sx={{ color: 'secondary.main' }}
+                                                >
+                                                    {filteredAnnotations.length} /{' '}
+                                                    {annotation?.notes?.length || 0} analyses
+                                                    selected
+                                                </Typography>
+                                            </Box>
                                         </Box>
                                     </CardContent>
                                     <CardActions>

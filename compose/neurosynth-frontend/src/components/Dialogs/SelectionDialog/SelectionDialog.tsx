@@ -24,94 +24,106 @@ import {
     useProjectSelectionMetadata,
     useUpdateSelectionFilter,
 } from 'pages/Projects/ProjectPage/ProjectStore';
+import SelectionDialogStyles from './SelectionDialog.styles';
+
+export const getFilteredAnnotationNotes = (
+    annotationNotes: NoteCollectionReturn[],
+    selectionKey: string | undefined
+): NoteCollectionReturn[] => {
+    if (!annotationNotes || !selectionKey) return [];
+    return annotationNotes.filter((x) => {
+        const annotationNote = x.note as { [key: string]: AnnotationNoteValue };
+        return annotationNote[selectionKey] === true; // for now, we only care about boolean filters. Later, the filter process will get more complicated
+    });
+};
 
 // we can assume that the input is already sorted
-const annotationNotesToTableFormat = (notes: NoteCollectionReturn[]) => {
+const annotationNotesToTableFormat = (
+    notes: NoteCollectionReturn[],
+    selectedNotes: NoteCollectionReturn[]
+) => {
     let currStudy = '';
     const tableFormat: {
         studyName: string;
         studyId: string;
-        analyses: { analysisName: string; analysisId: string }[];
+        analyses: { analysisName: string; analysisId: string; isSelected: boolean }[];
     }[] = [];
 
-    notes.forEach((note) => {
-        if (note.study === currStudy) {
-            tableFormat[tableFormat.length - 1].analyses.push({
-                analysisId: note.analysis as string,
-                analysisName: note.analysis_name as string,
-            });
-        } else {
-            currStudy = note.study as string;
-            tableFormat.push({
-                studyName: note.study_name as string,
-                studyId: note.study as string,
-                analyses: [
-                    {
-                        analysisId: note.analysis as string,
-                        analysisName: note.analysis_name as string,
-                    },
-                ],
-            });
-        }
-    });
+    const selectedNotesMap = new Map();
+    selectedNotes.forEach((note) => selectedNotesMap.set(note.analysis, note));
+
+    [...notes]
+        .sort((a, b) => {
+            const firstStudyId = a.study as string;
+            const secondStudyId = b.study as string;
+            return firstStudyId.localeCompare(secondStudyId);
+        })
+        .forEach((note) => {
+            if (note.study === currStudy) {
+                tableFormat[tableFormat.length - 1].analyses.push({
+                    analysisId: note.analysis as string,
+                    analysisName: note.analysis_name as string,
+                    isSelected: selectedNotesMap.has(note.analysis),
+                });
+            } else {
+                currStudy = note.study as string;
+                tableFormat.push({
+                    studyName: note.study_name as string,
+                    studyId: note.study as string,
+                    analyses: [
+                        {
+                            analysisId: note.analysis as string,
+                            analysisName: note.analysis_name as string,
+                            isSelected: selectedNotesMap.has(note.analysis),
+                        },
+                    ],
+                });
+            }
+        });
 
     return tableFormat;
 };
 
 const SelectionDialog: React.FC<IDialog> = (props) => {
-    const annotationId = useProjectExtractionAnnotationId();
     const updateSelection = useUpdateSelectionFilter();
     const selectionMetadata = useProjectSelectionMetadata();
+    const annotationId = useProjectExtractionAnnotationId();
     const { data: annotation } = useGetAnnotationById(annotationId);
 
-    const [analysesSelected, setAnalysesSelected] = useState<NoteCollectionReturn[]>([]);
+    const [annotationsSelected, setAnnotationsSelected] = useState<NoteCollectionReturn[]>([]);
     const [selectedValue, setSelectedValue] = useState<
         | {
               selectionKey: string | undefined;
               type: EPropertyType;
           }
         | undefined
-    >(selectionMetadata?.filter?.selectionKey ? { ...selectionMetadata.filter } : undefined);
+    >(undefined);
 
     const handleSelectFilter = () => {
-        // if (projectId && project?.provenance && selectedValue) {
-        //     mutate(
-        //         {
-        //             projectId: projectId,
-        //             project: {
-        //                 provenance: {
-        //                     ...project.provenance,
-        //                     filtrationMetadata: {
-        //                         filter: {
-        //                             filtrationKey: selectedValue.selectionKey,
-        //                             type: selectedValue.type as EPropertyType,
-        //                         },
-        //                     },
-        //                 },
-        //             },
-        //         },
-        //         {
-        //             onSuccess: () => {
-        //                 props.onCloseDialog();
-        //             },
-        //         }
-        //     );
-        // }
+        if (selectedValue?.selectionKey) {
+            updateSelection({
+                ...selectedValue,
+            });
+
+            handleCloseDialog();
+        }
     };
 
     useEffect(() => {
-        setAnalysesSelected((prev) => {
+        setSelectedValue({
+            selectionKey: selectionMetadata.filter.selectionKey,
+            type: selectionMetadata.filter.type,
+        });
+    }, [selectionMetadata]);
+
+    useEffect(() => {
+        setAnnotationsSelected((prev) => {
             if (!selectedValue?.selectionKey) return [];
-            const filteredAnnotations = ((annotation?.notes || []) as NoteCollectionReturn[])
-                .filter((x) => {
-                    const annotationNote = x.note as { [key: string]: AnnotationNoteValue };
-                    return annotationNote[selectedValue.selectionKey as string] === true; // for now, we only care about boolean values
-                })
-                .sort((a, b) => {
-                    const firstStudyId = a.study as string;
-                    const secondStudyId = b.study as string;
-                    return firstStudyId.localeCompare(secondStudyId);
-                });
+            const filteredAnnotations = getFilteredAnnotationNotes(
+                (annotation?.notes || []) as NoteCollectionReturn[],
+                selectedValue.selectionKey
+            );
+
             return filteredAnnotations;
         });
     }, [selectedValue, annotation]);
@@ -123,15 +135,28 @@ const SelectionDialog: React.FC<IDialog> = (props) => {
         }))
         .filter((x) => x.type === EPropertyType.BOOLEAN);
 
-    const analysesDisplayed = annotationNotesToTableFormat(analysesSelected);
+    const analysesDisplayed = selectedValue?.selectionKey
+        ? annotationNotesToTableFormat(
+              (annotation?.notes || []) as NoteCollectionReturn[],
+              annotationsSelected
+          )
+        : [];
+
+    const handleCloseDialog = () => {
+        props.onCloseDialog();
+        setSelectedValue({
+            selectionKey: selectionMetadata.filter.selectionKey,
+            type: selectionMetadata.filter.type,
+        });
+    };
 
     return (
         <BaseDialog
             isOpen={props.isOpen}
             maxWidth="md"
             fullWidth
-            onCloseDialog={props.onCloseDialog}
-            dialogTitle={`${analysesSelected.length} / ${
+            onCloseDialog={handleCloseDialog}
+            dialogTitle={`${annotationsSelected.length} / ${
                 annotation?.notes?.length || 0
             } analyses selected`}
         >
@@ -175,9 +200,7 @@ const SelectionDialog: React.FC<IDialog> = (props) => {
                             <TableHead>
                                 <TableRow>
                                     <TableCell sx={{ fontWeight: 'bold' }}>Study</TableCell>
-                                    <TableCell sx={{ fontWeight: 'bold' }}>
-                                        Selected Analyses
-                                    </TableCell>
+                                    <TableCell sx={{ fontWeight: 'bold' }}>Analyses</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -185,12 +208,22 @@ const SelectionDialog: React.FC<IDialog> = (props) => {
                                     <Fragment key={analysisDisplayed.studyId}>
                                         <TableRow>
                                             <TableCell
-                                                sx={{ maxWidth: '100px' }}
+                                                sx={[
+                                                    SelectionDialogStyles.tableCell,
+                                                    { maxWidth: '300px' },
+                                                ]}
                                                 rowSpan={analysisDisplayed.analyses.length}
                                             >
                                                 {analysisDisplayed.studyName}
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell
+                                                sx={[
+                                                    SelectionDialogStyles.tableCell,
+                                                    analysisDisplayed.analyses[0].isSelected
+                                                        ? SelectionDialogStyles.selected
+                                                        : SelectionDialogStyles['not-selected'],
+                                                ]}
+                                            >
                                                 {analysisDisplayed.analyses[0].analysisName}
                                             </TableCell>
                                         </TableRow>
@@ -198,7 +231,18 @@ const SelectionDialog: React.FC<IDialog> = (props) => {
                                             .slice(1, analysisDisplayed.analyses.length)
                                             .map((analysis) => (
                                                 <TableRow key={analysis.analysisId}>
-                                                    <TableCell>{analysis.analysisName}</TableCell>
+                                                    <TableCell
+                                                        sx={[
+                                                            SelectionDialogStyles.tableCell,
+                                                            analysis.isSelected
+                                                                ? SelectionDialogStyles.selected
+                                                                : SelectionDialogStyles[
+                                                                      'not-selected'
+                                                                  ],
+                                                        ]}
+                                                    >
+                                                        {analysis.analysisName}
+                                                    </TableCell>
                                                 </TableRow>
                                             ))}
                                     </Fragment>
@@ -206,7 +250,7 @@ const SelectionDialog: React.FC<IDialog> = (props) => {
                             </TableBody>
                         </Table>
                     </TableContainer>
-                    {analysesSelected.length === 0 && (
+                    {annotationsSelected.length === 0 && (
                         <Typography sx={{ color: 'warning.dark', marginTop: '1rem' }}>
                             No analyses selected
                         </Typography>
