@@ -75,7 +75,7 @@ const ProjectPage: React.FC = (props) => {
     // variables realted to algorithm
     const algorithmMetadata = useProjectAlgorithmMetadata();
     const algorithmStepHasBeenInitialized = !!algorithmMetadata.specificationId;
-    const disableRunMetaAnalysisStep = !algorithmMetadata.specificationId;
+    const selectionFilterHasBeenSet = !!selectionMetadata?.filter?.selectionKey;
 
     // activeStep is 0 indexed.
     const activeStep =
@@ -179,9 +179,8 @@ const ProjectPage: React.FC = (props) => {
                     />
                     <AlgorithmStep
                         algorithmStepHasBeenInitialized={algorithmStepHasBeenInitialized}
-                        disabled={true}
+                        disabled={!selectionFilterHasBeenSet}
                     />
-                    <RunMetaAnalysisStep disabled={disableRunMetaAnalysisStep} />
                 </Stepper>
             )}
             {tab === 1 && <div>view meta-analysis</div>}
