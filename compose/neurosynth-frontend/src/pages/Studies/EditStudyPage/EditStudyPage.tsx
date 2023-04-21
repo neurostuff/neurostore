@@ -45,7 +45,11 @@ const EditStudyPage: React.FC = (props) => {
     }, [clearStudyStore, initStudyStore, studyId]);
 
     const handleSave = async () => {
-        if (!isValid) return;
+        if (!isValid) {
+            // currently isValid is only used for coordinates. If we want to check validity for multiple things in the future, we may have to create multiple isValid flags
+            snackbar.enqueueSnackbar('missing coordinates', { variant: 'warning' });
+            return;
+        }
 
         try {
             if (studyHasBeenEdited) await updateStudyInDB(annotationId as string);
@@ -138,7 +142,7 @@ const EditStudyPage: React.FC = (props) => {
                     isLoading={isLoading}
                     variant="contained"
                     loaderColor="secondary"
-                    disabled={!studyHasBeenEdited || !isValid}
+                    disabled={!studyHasBeenEdited}
                     disableElevation
                     sx={{ width: '300px' }}
                     onClick={handleSave}

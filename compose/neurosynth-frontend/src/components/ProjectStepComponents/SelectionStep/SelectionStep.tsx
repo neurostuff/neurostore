@@ -38,7 +38,7 @@ const SelectionStep: React.FC<ISelectionStep & StepProps> = (props) => {
     const filter = useProjectSelectionMetadata()?.filter;
     const filteredAnnotations = getFilteredAnnotationNotes(
         (annotation?.notes || []) as NoteCollectionReturn[],
-        filter.selectionKey
+        filter?.selectionKey
     );
 
     return (

@@ -55,9 +55,9 @@ const Navbar: React.FC = (_props) => {
                         annotationId: null,
                         studyStatusList: [],
                     },
-                    filtrationMetadata: {
+                    selectionMetadata: {
                         filter: {
-                            filtrationKey: null,
+                            selectionKey: null,
                             type: EPropertyType.NONE,
                         },
                     },

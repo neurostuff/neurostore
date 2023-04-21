@@ -62,6 +62,7 @@ export type ProjectStoreActions = {
         selectionKey: string | undefined;
         type: EPropertyType;
     }) => void;
+    setAlgorithmMetadata: (specificationId: string, metaAnalysisId: string) => void;
 };
 
 const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()(
@@ -106,6 +107,7 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                         },
                         algorithmMetadata: {
                             specificationId: undefined,
+                            metaAnalysisId: undefined,
                         },
                     },
 
@@ -143,6 +145,7 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                             },
                             algorithmMetadata: {
                                 specificationId: undefined,
+                                metaAnalysisId: undefined,
                             },
                         };
                         const id = useProjectStore.getState().id;
@@ -445,6 +448,19 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                             },
                         }));
                     },
+                    setAlgorithmMetadata: (specificationId: string, metaAnalysisId: string) => {
+                        set((state) => ({
+                            ...state,
+                            provenance: {
+                                ...state.provenance,
+                                algorithmMetadata: {
+                                    ...state.provenance.algorithmMetadata,
+                                    specificationId: specificationId,
+                                    metaAnalysisId: metaAnalysisId,
+                                },
+                            },
+                        }));
+                    },
                 };
             },
             {
@@ -531,3 +547,13 @@ export const useProjectExtractionSetGivenStudyStatusesAsComplete = () =>
 
 // selection updater hooks
 export const useUpdateSelectionFilter = () => useProjectStore((state) => state.setSelectionFilter);
+
+// algorithm retrieval hooks
+export const useAlgorithmSpecificationId = () =>
+    useProjectStore((state) => state.provenance.algorithmMetadata.specificationId);
+export const useAlgorithmMetaAnalysisId = () =>
+    useProjectStore((state) => state.provenance.algorithmMetadata.metaAnalysisId);
+
+// algorithm updater hooks
+export const useUpdateSpecificationMetadata = () =>
+    useProjectStore((state) => state.setAlgorithmMetadata);

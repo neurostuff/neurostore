@@ -18,6 +18,7 @@ export interface ISource {
 
 export interface IAlgorithmMetadata {
     specificationId: string | undefined;
+    metaAnalysisId: string | undefined;
 }
 
 export interface ISelectionMetadata {

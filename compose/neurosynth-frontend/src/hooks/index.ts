@@ -5,7 +5,7 @@ import useGuard from './useGuard';
 import useGetTour from './useGetTour';
 
 import useGetStudyById from './requests/useGetStudyById';
-import useCreateMetaAnalysis from './requests/useCreateMetaAnalysis';
+import useCreateAlgorithmSpecification from './requests/useCreateAlgorithmSpecification';
 import useGetMetaAnalyses from './requests/useGetMetaAnalyses';
 import useGetMetaAnalysisById from './requests/useGetMetaAnalysisById';
 import useGetStudysets from './requests/useGetStudysets';
@@ -42,7 +42,7 @@ export {
     useUpdateStudy,
     useCreateStudy,
     // META-ANALYSES
-    useCreateMetaAnalysis,
+    useCreateAlgorithmSpecification,
     useGetMetaAnalyses,
     useGetMetaAnalysisById,
     // STUDYSETS

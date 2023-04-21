@@ -74,7 +74,8 @@ const ProjectPage: React.FC = (props) => {
 
     // variables realted to algorithm
     const algorithmMetadata = useProjectAlgorithmMetadata();
-    const algorithmStepHasBeenInitialized = !!algorithmMetadata.specificationId;
+    const algorithmStepHasBeenInitialized =
+        !!algorithmMetadata.specificationId && !!algorithmMetadata.metaAnalysisId;
 
     // activeStep is 0 indexed.
     const activeStep =
@@ -92,8 +93,6 @@ const ProjectPage: React.FC = (props) => {
             return tab;
         });
     };
-
-    console.log(getProjectIsLoading);
 
     return (
         <StateHandlerComponent isLoading={getProjectIsLoading} isError={getProjectIsError}>

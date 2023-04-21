@@ -1,21 +1,16 @@
 import { Box, Typography, Paper, Button } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import {
-    EAnalysisType,
-    IMetaAnalysisComponents,
-    IEstimatorCorrectorArgs,
-} from 'legacy/MetaAnalysis/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
+import { EAnalysisType } from 'legacy/MetaAnalysis/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import DynamicInputDisplay from './DynamicInputDisplay/DynamicInputDisplay';
 import MetaAnalysisSummaryRow from './MetaAnalysisSummaryRow/MetaAnalysisSummaryRow';
 import MetaAnalysisFinalizeStyles from './MetaAnalysisFinalize.styles';
-import { useCreateMetaAnalysis } from 'hooks';
 import React from 'react';
 import { useHistory } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
-interface IMetaAnalysisFinalize extends IMetaAnalysisComponents, IEstimatorCorrectorArgs {
-    onNavigate: (button: ENavigationButton) => void;
-}
+// interface IMetaAnalysisFinalize extends IMetaAnalysisComponents, IEstimatorCorrectorArgs {
+//     onNavigate: (button: ENavigationButton) => void;
+// }
 
 export const getAnalysisTypeDescription = (name: string | undefined): string => {
     switch (name) {
@@ -28,10 +23,10 @@ export const getAnalysisTypeDescription = (name: string | undefined): string => 
     }
 };
 
-const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
+const MetaAnalysisFinalize: React.FC = (props) => {
     // const { createMetaAnalysis, isLoading } = useCreateMetaAnalysis();
     const history = useHistory();
-    const hasCorrector = !!props.corrector;
+    // const hasCorrector = !!props.corrector;
     const { enqueueSnackbar } = useSnackbar();
 
     // const handleCreateMetaAnalysis = async () => {
@@ -62,9 +57,9 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
     //         });
     // };
 
-    const handleNavigation = (_event: React.MouseEvent) => {
-        props.onNavigate(ENavigationButton.PREV);
-    };
+    // const handleNavigation = (_event: React.MouseEvent) => {
+    //     props.onNavigate(ENavigationButton.PREV);
+    // };
 
     return (
         <Box sx={{ marginBottom: '2em' }}>
@@ -77,11 +72,11 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
                     Details
                 </Typography>
 
-                <MetaAnalysisSummaryRow
+                {/* <MetaAnalysisSummaryRow
                     title="meta-analysis name"
                     value={props.metaAnalysisName || ''}
                     caption={props.metaAnalysisDescription || ''}
-                />
+                /> */}
             </Paper>
 
             <Paper elevation={2} sx={MetaAnalysisFinalizeStyles.stepContainer}>
@@ -89,7 +84,7 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
                     Data
                 </Typography>
 
-                <MetaAnalysisSummaryRow
+                {/* <MetaAnalysisSummaryRow
                     title="analysis type"
                     value={props.analysisType || ''}
                     caption={getAnalysisTypeDescription(props.analysisType)}
@@ -110,7 +105,7 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
                 <MetaAnalysisSummaryRow
                     title="inclusion column"
                     value={props.inclusionColumn || ''}
-                />
+                /> */}
             </Paper>
 
             <Paper elevation={2} sx={MetaAnalysisFinalizeStyles.stepContainer}>
@@ -118,7 +113,7 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
                     Algorithm
                 </Typography>
 
-                <MetaAnalysisSummaryRow
+                {/* <MetaAnalysisSummaryRow
                     title="algorithm"
                     value={props.estimator?.label || ''}
                     caption={props.estimator?.description || ''}
@@ -133,14 +128,13 @@ const MetaAnalysisFinalize: React.FC<IMetaAnalysisFinalize> = (props) => {
                         caption={props.corrector?.description || ''}
                     >
                         <DynamicInputDisplay dynamicArg={props.correctorArgs} />
-                    </MetaAnalysisSummaryRow>
-                )}
+                    </MetaAnalysisSummaryRow> */}
             </Paper>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Button sx={{ fontSize: '1rem' }} onClick={handleNavigation} variant="outlined">
+                {/* <Button sx={{ fontSize: '1rem' }} onClick={handleNavigation} variant="outlined">
                     back
-                </Button>
+                </Button> */}
                 <LoadingButton
                     sx={{ fontSize: '1rem', width: '250px' }}
                     loaderColor="secondary"
