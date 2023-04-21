@@ -1,8 +1,8 @@
 import { Box, Typography } from '@mui/material';
-import { IDynamicInputType, KWARG_STRING } from '../..';
+import { IDynamicValueType, KWARG_STRING } from '../..';
 import DynamicInputDisplayStyles from './DynamicInputDisplay.styles';
 
-const DynamicInputDisplay: React.FC<{ dynamicArg: IDynamicInputType }> = (props) => {
+const DynamicInputDisplay: React.FC<{ dynamicArg: IDynamicValueType }> = (props) => {
     /**
      * filter for values that exist
      */

@@ -15,7 +15,6 @@ import AlgorithmStep from 'components/ProjectStepComponents/AlgorithmStep/Algori
 import CurationStep from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import ExtractionStep from 'components/ProjectStepComponents/ExtractionStep/ExtractionStep';
 import SelectionStep from 'components/ProjectStepComponents/SelectionStep/SelectionStep';
-import RunMetaAnalysisStep from 'components/ProjectStepComponents/RunMetaAnalysisStep/RunMetaAnalysisStep';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
@@ -71,11 +70,11 @@ const ProjectPage: React.FC = (props) => {
         extractionSummary?.total === 0 || extractionSummary.total !== extractionSummary.completed;
 
     const selectionStepHasBeenInitialized = !!selectionMetadata?.filter?.selectionKey;
+    const selectionFilterHasBeenSet = !!selectionMetadata?.filter?.selectionKey;
 
     // variables realted to algorithm
     const algorithmMetadata = useProjectAlgorithmMetadata();
     const algorithmStepHasBeenInitialized = !!algorithmMetadata.specificationId;
-    const selectionFilterHasBeenSet = !!selectionMetadata?.filter?.selectionKey;
 
     // activeStep is 0 indexed.
     const activeStep =
@@ -93,6 +92,8 @@ const ProjectPage: React.FC = (props) => {
             return tab;
         });
     };
+
+    console.log(getProjectIsLoading);
 
     return (
         <StateHandlerComponent isLoading={getProjectIsLoading} isError={getProjectIsError}>

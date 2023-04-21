@@ -268,7 +268,7 @@ const SelectionDialog: React.FC<IDialog> = (props) => {
                         disabled={selectedValue === undefined}
                         variant="contained"
                     >
-                        select filter
+                        save
                     </Button>
                 </Box>
             </Box>

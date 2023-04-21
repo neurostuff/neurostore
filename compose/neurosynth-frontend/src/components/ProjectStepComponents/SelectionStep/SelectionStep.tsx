@@ -93,7 +93,7 @@ const SelectionStep: React.FC<ISelectionStep & StepProps> = (props) => {
                                             <Box>
                                                 <Typography
                                                     variant="h5"
-                                                    sx={{ color: 'secondary.main' }}
+                                                    sx={{ color: 'info.main' }}
                                                 >
                                                     {filteredAnnotations.length} /{' '}
                                                     {annotation?.notes?.length || 0} analyses

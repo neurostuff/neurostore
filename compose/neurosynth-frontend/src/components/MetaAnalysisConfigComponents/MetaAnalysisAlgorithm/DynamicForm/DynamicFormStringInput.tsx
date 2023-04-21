@@ -1,11 +1,11 @@
 import { Box, TextField } from '@mui/material';
-import MetaAnalysisAlgorithmStyles from '../MetaAnalysisAlgorithm.styles';
 import { IDynamicFormInput } from '../..';
 import DynamicFormBaseTitle from './DynamicFormBaseTitle';
+import DynamicFormStyles from './DynamicFormStyles';
 
 const DynamicFormStringInput: React.FC<IDynamicFormInput> = (props) => {
     return (
-        <Box sx={MetaAnalysisAlgorithmStyles.input}>
+        <Box sx={DynamicFormStyles.input}>
             <DynamicFormBaseTitle
                 name={props.parameterName}
                 description={props.parameter.description}

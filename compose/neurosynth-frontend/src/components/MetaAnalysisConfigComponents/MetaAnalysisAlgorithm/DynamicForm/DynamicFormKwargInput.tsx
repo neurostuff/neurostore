@@ -2,11 +2,11 @@ import { Box, Button, Divider, TableCell, TableRow, Typography, IconButton } fro
 import { useState } from 'react';
 import { IMetadataRowModel } from 'components/EditMetadata';
 import AddMetadataRow from 'components/EditMetadata/EditMetadataRow/AddMetadataRow';
-import MetaAnalysisAlgorithmStyles from '../MetaAnalysisAlgorithm.styles';
 import { IDynamicFormInput } from '../..';
 import DynamicFormBaseTitle from './DynamicFormBaseTitle';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import RemoveCircle from '@mui/icons-material/RemoveCircle';
+import DynamicFormStyles from './DynamicFormStyles';
 
 const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
     const kwargList: { key: string; value: string }[] = Object.keys(props.value || {}).map(
@@ -27,6 +27,7 @@ const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
     };
 
     const handleOnAddMetadataRow = (row: IMetadataRowModel) => {
+        console.log(props.value);
         if (row.metadataKey in props.value) return false;
         const newObj = { ...props.value };
         newObj[row.metadataKey] = row.metadataValue;
@@ -38,7 +39,7 @@ const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
     };
 
     return (
-        <Box sx={MetaAnalysisAlgorithmStyles.input}>
+        <Box sx={DynamicFormStyles.input}>
             <Button
                 onClick={() => setShowAdvancedOptions((prevState) => !prevState)}
                 sx={{ marginBottom: '1rem' }}
@@ -54,14 +55,7 @@ const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
                     description={props.parameter.description}
                 />
 
-                <Box
-                    sx={{
-                        width: {
-                            xl: '50%',
-                            lg: '100%',
-                        },
-                    }}
-                >
+                <Box>
                     <Box
                         sx={{
                             display: 'block',

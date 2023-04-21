@@ -5,7 +5,6 @@ import {
     IExtractionMetadata,
     INeurosynthProjectReturn,
     IPRISMAConfig,
-    ISelectionMetadata,
     ISource,
     ITag,
 } from 'hooks/requests/useGetProjects';

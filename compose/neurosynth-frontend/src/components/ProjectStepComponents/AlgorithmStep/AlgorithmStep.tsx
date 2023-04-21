@@ -25,7 +25,7 @@ interface IAlgorithmStep {
     disabled: boolean;
 }
 
-const FiltrationStep: React.FC<IAlgorithmStep & StepProps> = (props) => {
+const AlgorithmStep: React.FC<IAlgorithmStep & StepProps> = (props) => {
     const { projectId }: { projectId: string } = useParams();
     const history = useHistory();
     const [algorithmDialogIsOpen, setAlgorithmDialogIsOpen] = useState(false);
@@ -196,4 +196,4 @@ const FiltrationStep: React.FC<IAlgorithmStep & StepProps> = (props) => {
     );
 };
 
-export default FiltrationStep;
+export default AlgorithmStep;

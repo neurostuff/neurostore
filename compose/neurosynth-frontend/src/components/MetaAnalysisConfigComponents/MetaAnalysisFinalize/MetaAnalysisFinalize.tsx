@@ -4,7 +4,7 @@ import {
     EAnalysisType,
     IMetaAnalysisComponents,
     IEstimatorCorrectorArgs,
-} from 'pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
+} from 'legacy/MetaAnalysis/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import DynamicInputDisplay from './DynamicInputDisplay/DynamicInputDisplay';
 import MetaAnalysisSummaryRow from './MetaAnalysisSummaryRow/MetaAnalysisSummaryRow';

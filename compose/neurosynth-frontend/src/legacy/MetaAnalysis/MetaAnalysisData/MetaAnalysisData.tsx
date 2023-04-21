@@ -9,42 +9,42 @@ import {
     Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { IMetaAnalysisData } from 'components/MetaAnalysisConfigComponents';
+// import { IMetaAnalysisData } from 'components/MetaAnalysisConfigComponents';
 import NavigationButtons from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { useInputValidation, useGetStudysets, useGetAnnotationsByStudysetId } from 'hooks';
-import { EAnalysisType } from 'pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
+import { EAnalysisType } from 'legacy/MetaAnalysis/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 import { EPropertyType } from 'components/EditMetadata';
 import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import MetaAnalysisDataStyles from './MetaAnalysisData.styles';
 
-const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
-    const {
-        data: studysetsData,
-        isLoading: studysetsIsLoading,
-        isError: studysetsIsError,
-    } = useGetStudysets({ isNested: false });
-    const {
-        data: annotationsData,
-        isLoading: annotationsIsLoading,
-        isError: annotationsIsError,
-    } = useGetAnnotationsByStudysetId(props.studyset?.id);
+const MetaAnalysisData: React.FC = (props) => {
+    // const {
+    //     data: studysetsData,
+    //     isLoading: studysetsIsLoading,
+    //     isError: studysetsIsError,
+    // } = useGetStudysets({ isNested: false });
+    // const {
+    //     data: annotationsData,
+    //     isLoading: annotationsIsLoading,
+    //     isError: annotationsIsError,
+    // } = useGetAnnotationsByStudysetId(props.studyset?.id);
 
     const [metadataKeys, setMetadataKeys] = useState<string[]>();
 
-    const { handleChange, handleOnBlur, handleOnFocus, isValid } = useInputValidation(
-        props.metaAnalysisType,
-        (arg: EAnalysisType | undefined | null) => !!arg
-    );
+    // const { handleChange, handleOnBlur, handleOnFocus, isValid } = useInputValidation(
+    //     props.metaAnalysisType,
+    //     (arg: EAnalysisType | undefined | null) => !!arg
+    // );
 
-    useEffect(() => {
-        if (!props.annotation || !props.annotation.id) return;
+    // useEffect(() => {
+    //     if (!props.annotation || !props.annotation.id) return;
 
-        const keyTypes: string[] = [];
-        for (const [key, value] of Object.entries(props.annotation.note_keys || {})) {
-            if (value === EPropertyType.BOOLEAN) keyTypes.push(key);
-        }
-        setMetadataKeys(keyTypes);
-    }, [props.annotation]);
+    //     const keyTypes: string[] = [];
+    //     for (const [key, value] of Object.entries(props.annotation.note_keys || {})) {
+    //         if (value === EPropertyType.BOOLEAN) keyTypes.push(key);
+    //     }
+    //     setMetadataKeys(keyTypes);
+    // }, [props.annotation]);
 
     return (
         <>
@@ -54,7 +54,7 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
 
             <FormControl sx={MetaAnalysisDataStyles.spaceBelow}>
                 <InputLabel id="select-label">analysis type</InputLabel>
-                <Select
+                {/* <Select
                     onBlur={handleOnBlur}
                     onFocus={handleOnFocus}
                     error={!isValid}
@@ -74,7 +74,7 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                 </Select>
                 {!isValid && (
                     <FormHelperText sx={{ color: 'error.main' }}>this is required</FormHelperText>
-                )}
+                )} */}
             </FormControl>
 
             <Typography sx={MetaAnalysisDataStyles.spaceBelow}>
@@ -148,7 +148,7 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                 options={metadataKeys || []}
             /> */}
 
-            <NavigationButtons
+            {/* <NavigationButtons
                 onButtonClick={props.onNext}
                 nextButtonDisabled={
                     !props.metaAnalysisType ||
@@ -157,7 +157,7 @@ const MetaAnalysisData: React.FC<IMetaAnalysisData> = (props) => {
                     !props.inclusionColumn
                 }
                 nextButtonStyle="outlined"
-            />
+            /> */}
         </>
     );
 };

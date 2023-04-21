@@ -14,7 +14,7 @@ import {
     EAnalysisType,
     IEstimatorCorrectorArgs,
     IMetaAnalysisComponents,
-} from 'pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
+} from 'legacy/MetaAnalysis/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 import API, { NeurostoreAnnotation } from 'utils/api';
 
 const useCreateMetaAnalysis = () => {

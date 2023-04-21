@@ -21,7 +21,7 @@ import MetaAnalysisSummaryRow from 'components/MetaAnalysisConfigComponents/Meta
 import { getAnalysisTypeDescription } from 'components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/MetaAnalysisFinalize';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import DynamicInputDisplay from 'components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/DynamicInputDisplay/DynamicInputDisplay';
-import { IDynamicInputType } from 'components/MetaAnalysisConfigComponents';
+import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
 import { NeurostoreAnnotation } from 'utils/api';
 
 const MetaAnalysisPage: React.FC = (props) => {
@@ -112,9 +112,9 @@ const MetaAnalysisPage: React.FC = (props) => {
         ),
         inclusionColumn: specification?.filter || '',
         estimator: specification?.estimator?.type || '',
-        estimatorArgs: (specification?.estimator?.args || {}) as IDynamicInputType,
+        estimatorArgs: (specification?.estimator?.args || {}) as IDynamicValueType,
         corrector: specification?.corrector?.type || '',
-        correctorArgs: (specification?.corrector?.args || {}) as IDynamicInputType,
+        correctorArgs: (specification?.corrector?.args || {}) as IDynamicValueType,
     };
 
     return (

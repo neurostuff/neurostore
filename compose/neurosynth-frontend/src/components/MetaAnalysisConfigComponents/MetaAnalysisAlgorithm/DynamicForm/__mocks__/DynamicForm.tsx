@@ -1,6 +1,4 @@
-import { IDynamicForm } from '../../..';
-
-const MockDynamicForm: React.FC<IDynamicForm> = (props) => {
+const MockDynamicForm: React.FC<any> = (props) => {
     const specificationKeys = Object.keys(props.specification);
 
     return (

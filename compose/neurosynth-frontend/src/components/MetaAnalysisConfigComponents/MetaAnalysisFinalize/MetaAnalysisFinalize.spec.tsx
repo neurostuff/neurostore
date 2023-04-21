@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { useCreateMetaAnalysis } from 'hooks';
 import { SnackbarProvider } from 'notistack';
-import { EAnalysisType } from 'pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
+import { EAnalysisType } from 'legacy/MetaAnalysis/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 import { act } from 'react-dom/test-utils';
 import { Router } from 'react-router-dom';
 import { mockAnnotations, mockStudysets } from 'testing/mockData';

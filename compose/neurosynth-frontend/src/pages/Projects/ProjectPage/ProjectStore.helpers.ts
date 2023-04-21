@@ -470,7 +470,7 @@ const apiDebouncedUpdaterImpl: APIDebouncedUpdaterImpl = (f, name) => (set, get,
                 localStorage.setItem(`updateProjectRequest`, 'false');
                 window.dispatchEvent(new Event('storage'));
             });
-        }, 4000);
+        }, 5000);
 
         set(...a);
     };

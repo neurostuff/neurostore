@@ -17,9 +17,6 @@ const StudysetsPage = React.lazy(() => import('../Studysets/StudysetsPage/Studys
 const EditStudyPage = React.lazy(() => import('../Studies/EditStudyPage/EditStudyPage'));
 const StudiesPage = React.lazy(() => import('../Studies/StudiesPage/StudiesPage'));
 const StudyPage = React.lazy(() => import('../Studies/StudyPage/StudyPage'));
-const MetaAnalysisBuilderPage = React.lazy(
-    () => import('../MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage')
-);
 
 const MetaAnalysesPage = React.lazy(
     () => import('../MetaAnalyses/MetaAnalysesPage/MetaAnalysesPage')

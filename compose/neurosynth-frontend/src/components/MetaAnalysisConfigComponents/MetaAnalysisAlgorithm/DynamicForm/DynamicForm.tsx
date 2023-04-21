@@ -1,13 +1,25 @@
 import { Box } from '@mui/material';
-import { IDynamicForm, IDynamicFormInput, IParameter, KWARG_STRING } from '../..';
+import {
+    IDynamicFormInput,
+    IDynamicValueType,
+    IMetaAnalysisParamsSpecification,
+    IParameter,
+    KWARG_STRING,
+} from '../..';
 import DynamicFormBoolInput from './DynamicFormBoolInput';
 import DynamicFormKwargInput from './DynamicFormKwargInput';
 import DynamicFormNumericInput from './DynamicFormNumericInput';
 import DynamicFormSelectInput from './DynamicFormSelectInput';
 import DynamicFormStringInput from './DynamicFormStringInput';
+import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
+import { EAnalysisType } from 'legacy/MetaAnalysis/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 
-const getFormComponentBySpec = (spec: IParameter): React.FC<IDynamicFormInput> => {
-    switch (spec.type) {
+const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
+
+const getDynamicFormInputComponentByParameter = (
+    parameter: IParameter
+): React.FC<IDynamicFormInput> => {
+    switch (parameter.type) {
         case 'str':
             return DynamicFormStringInput;
         case 'int':
@@ -22,21 +34,37 @@ const getFormComponentBySpec = (spec: IParameter): React.FC<IDynamicFormInput> =
     }
 };
 
-const DynamicForm: React.FC<IDynamicForm> = (props) => {
-    const specs = Object.keys(props.specification).sort();
+interface IDynamicForm {
+    type: EAnalysisType | 'CORRECTOR';
+    correctorOrEstimatorLabel: string;
+    values: IDynamicValueType;
+    onUpdate: (arg: IDynamicValueType) => void;
+}
 
-    const kwargStringIndex = specs.findIndex((spec) => spec === KWARG_STRING);
+const DynamicForm: React.FC<IDynamicForm> = (props) => {
+    const parametersForGivenTypeAndLabel =
+        metaAnalysisSpecification[props.type][props.correctorOrEstimatorLabel].parameters;
+    const sortedParameterKeys = Object.keys(parametersForGivenTypeAndLabel).sort();
+
+    const kwargStringIndex = sortedParameterKeys.findIndex((spec) => spec === KWARG_STRING);
     if (kwargStringIndex >= 0) {
-        specs.splice(kwargStringIndex, 1);
-        specs.push(KWARG_STRING);
+        sortedParameterKeys.splice(kwargStringIndex, 1);
+        sortedParameterKeys.push(KWARG_STRING);
     }
 
-    const parametersList: IDynamicFormInput[] = specs.map((parameter) => ({
-        parameterName: parameter,
-        parameter: props.specification[parameter],
-        value: props.values[parameter],
-        onUpdate: props.onUpdate,
-    }));
+    const parametersAsInputList: IDynamicFormInput[] = sortedParameterKeys.map((parameterKey) => {
+        const parameter =
+            metaAnalysisSpecification[props.type][props.correctorOrEstimatorLabel].parameters[
+                parameterKey
+            ];
+
+        return {
+            parameterName: parameterKey,
+            parameter: parameter,
+            value: props.values[parameterKey],
+            onUpdate: props.onUpdate,
+        };
+    });
 
     return (
         <Box
@@ -48,16 +76,18 @@ const DynamicForm: React.FC<IDynamicForm> = (props) => {
                 overflowY: 'auto',
             }}
         >
-            {parametersList.length > 0 &&
-                parametersList.map((parameter) => {
-                    const Component = getFormComponentBySpec(parameter.parameter);
+            {parametersAsInputList.length > 0 &&
+                parametersAsInputList.map((parameterAsInput) => {
+                    const DynamicInputComponent = getDynamicFormInputComponentByParameter(
+                        parameterAsInput.parameter
+                    );
                     return (
-                        <Box key={parameter.parameterName}>
-                            <Component {...parameter} />
+                        <Box key={parameterAsInput.parameterName}>
+                            <DynamicInputComponent {...parameterAsInput} />
                         </Box>
                     );
                 })}
-            {parametersList.length === 0 && (
+            {parametersAsInputList.length === 0 && (
                 <Box sx={{ color: 'warning.dark' }}>No arguments available</Box>
             )}
         </Box>

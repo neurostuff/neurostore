@@ -1,9 +1,9 @@
 import { TextField, Box, Typography } from '@mui/material';
-import { IMetaAnalysisDetails } from '..';
 import NavigationButtons from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { useInputValidation } from '../../../hooks';
+import { IMetaAnalysisSpecDetails } from 'components/MetaAnalysisConfigComponents';
 
-const MetaAnalysisDetails: React.FC<IMetaAnalysisDetails> = (props) => {
+const MetaAnalysisDetails: React.FC<IMetaAnalysisSpecDetails> = (props) => {
     const { handleChange, handleOnBlur, handleOnFocus, isValid } = useInputValidation(
         props.metaAnalysisName,
         (arg: string | undefined | null) => !!arg
@@ -14,7 +14,7 @@ const MetaAnalysisDetails: React.FC<IMetaAnalysisDetails> = (props) => {
             <Typography sx={{ marginBottom: '1rem' }}>
                 Enter the <b>name</b> that you would like to use for your meta-analysis
             </Typography>
-            <TextField
+            {/* <TextField
                 sx={{
                     marginBottom: '1rem',
                     width: '50%',
@@ -33,11 +33,11 @@ const MetaAnalysisDetails: React.FC<IMetaAnalysisDetails> = (props) => {
                     handleChange(input);
                     props.onUpdate({ metaAnalysisName: input });
                 }}
-            />
+            /> */}
             <Typography sx={{ marginBottom: '1rem' }}>
                 Enter the <b>description</b> that you would like to use for your meta-analysis
             </Typography>
-            <TextField
+            {/* <TextField
                 sx={{
                     marginBottom: '2rem',
                     width: '50%',
@@ -51,14 +51,14 @@ const MetaAnalysisDetails: React.FC<IMetaAnalysisDetails> = (props) => {
                     const input = event.target.value as string;
                     props.onUpdate({ metaAnalysisDescription: input });
                 }}
-            />
+            /> */}
 
-            <NavigationButtons
+            {/* <NavigationButtons
                 onButtonClick={props.onNext}
                 prevButtonDisabled={true}
                 nextButtonDisabled={!props.metaAnalysisName}
                 nextButtonStyle="outlined"
-            />
+            /> */}
         </Box>
     );
 };

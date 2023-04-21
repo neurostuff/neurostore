@@ -1,6 +1,6 @@
 import { Box, Button, Divider, ListItem, ListItemText, Typography } from '@mui/material';
 import {
-    IDynamicInputType,
+    IDynamicValueType,
     IMetaAnalysisParamsSpecification,
 } from 'components/MetaAnalysisConfigComponents';
 import NeurosynthAutocomplete, {
@@ -8,53 +8,51 @@ import NeurosynthAutocomplete, {
 } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import BaseDialog, { IDialog } from '../BaseDialog';
 import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
-import {
-    EAnalysisType,
-    IEstimatorCorrectorArgs,
-} from 'pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
+import { EAnalysisType } from 'legacy/MetaAnalysis/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import DynamicForm from 'components/MetaAnalysisConfigComponents/MetaAnalysisAlgorithm/DynamicForm/DynamicForm';
 import { useState } from 'react';
-import useUpdateProject from 'hooks/requests/useUpdateProject';
+import EditAnalysesStyles from 'components/EditStudyComponents/EditAnalyses/EditAnalyses.styles';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 
-/**
- * Helper function that gets the inputs for the selected algorithm and sets their default values
- * based on the meta_analysis_params file
- */
-const getArgsForKey = (
+const getDefaultValuesForTypeAndParameter = (
     type: EAnalysisType | 'CORRECTOR',
-    parameterName: IAutocompleteObject | null | undefined
-): IDynamicInputType => {
-    if (parameterName?.label) {
-        const params = metaAnalysisSpecification[type][parameterName.label]?.parameters;
-        const args: IDynamicInputType = {};
-        for (const [key, value] of Object.entries(params)) {
-            // if we have a kwarg argument
-            args[key] = value?.type === null ? {} : value.default;
+    parameterLabel: string | undefined
+): IDynamicValueType => {
+    if (type && parameterLabel) {
+        const parameters = metaAnalysisSpecification[type][parameterLabel].parameters;
+        const defaultVals: IDynamicValueType = {};
+        for (const [key, value] of Object.entries(parameters)) {
+            if (parameters[key].type === null) {
+                // in the case of kwargs or any other input with no default value
+                defaultVals[key] = {};
+            } else {
+                defaultVals[key] = value.default;
+            }
         }
-        return args;
+
+        return defaultVals;
     }
+
     return {};
 };
 
 const AlgorithmDialog: React.FC<IDialog> = (props) => {
-    const { mutate } = useUpdateProject();
+    const handleSelectAlgorithm = () => {};
 
-    const handleSetAlgorithm = () => {};
-
-    const [algorithmSpec, setAlgorithmSpec] = useState<
-        {
-            estimator: IAutocompleteObject | undefined | null;
-            corrector: IAutocompleteObject | undefined | null;
-        } & IEstimatorCorrectorArgs
-    >({
+    const [algorithmSpec, setAlgorithmSpec] = useState<{
+        estimator: IAutocompleteObject | undefined | null;
+        corrector: IAutocompleteObject | undefined | null;
+        estimatorArgs: IDynamicValueType;
+        correctorArgs: IDynamicValueType;
+    }>({
         estimator: undefined,
         corrector: undefined,
         estimatorArgs: {},
         correctorArgs: {},
     });
+
     const getMetaAnalyticAlgorithms: IAutocompleteObject[] = Object.keys(
         metaAnalysisSpecification[EAnalysisType.CBMA]
     ).map((algoName) => ({
@@ -83,7 +81,8 @@ const AlgorithmDialog: React.FC<IDialog> = (props) => {
                 </Typography>
 
                 <NeurosynthAutocomplete
-                    sx={{ width: '50%', marginBottom: '1rem' }}
+                    size="medium"
+                    sx={{ marginBottom: '1rem' }}
                     label="algorithm"
                     isOptionEqualToValue={(option, value) => option?.label === value?.label}
                     renderOption={(params, option) => (
@@ -102,6 +101,10 @@ const AlgorithmDialog: React.FC<IDialog> = (props) => {
                                 ? {
                                       ...prev,
                                       estimator: newVal,
+                                      estimatorArgs: getDefaultValuesForTypeAndParameter(
+                                          EAnalysisType.CBMA,
+                                          newVal?.label
+                                      ),
                                   }
                                 : prev
                         );
@@ -112,26 +115,25 @@ const AlgorithmDialog: React.FC<IDialog> = (props) => {
                 {algorithmSpec?.estimator && (
                     <Box sx={{ margin: '2rem 0' }}>
                         <NeurosynthAccordion
-                            elevation={2}
-                            TitleElement={
-                                <Typography variant="subtitle1">
-                                    Optional algorithm arguments
-                                </Typography>
-                            }
+                            elevation={0}
+                            accordionSummarySx={EditAnalysesStyles.accordionSummary}
+                            TitleElement={<Typography>Optional algorithm arguments</Typography>}
                         >
-                            <Divider sx={{ marginBottom: '1rem' }} />
                             <DynamicForm
                                 onUpdate={(arg) => {
-                                    // props.onArgsUpdate({
-                                    //     estimatorArgs: { ...arg },
-                                    // });
+                                    setAlgorithmSpec((prev) => {
+                                        return {
+                                            ...prev,
+                                            estimatorArgs: {
+                                                ...prev.estimatorArgs,
+                                                ...arg,
+                                            },
+                                        };
+                                    });
                                 }}
-                                values={getArgsForKey(EAnalysisType.CBMA, algorithmSpec?.estimator)}
-                                specification={
-                                    metaAnalysisSpecification[EAnalysisType.CBMA][
-                                        algorithmSpec?.estimator.label
-                                    ].parameters
-                                }
+                                type={EAnalysisType.CBMA}
+                                correctorOrEstimatorLabel={algorithmSpec.estimator.label}
+                                values={algorithmSpec.estimatorArgs}
                             />
                         </NeurosynthAccordion>
                     </Box>
@@ -142,7 +144,7 @@ const AlgorithmDialog: React.FC<IDialog> = (props) => {
                 </Typography>
 
                 <NeurosynthAutocomplete
-                    sx={{ width: '50%' }}
+                    size="medium"
                     label="corrector (optional)"
                     required={false}
                     isOptionEqualToValue={(option, value) => option?.label === value?.label}
@@ -162,6 +164,10 @@ const AlgorithmDialog: React.FC<IDialog> = (props) => {
                                 ? {
                                       ...prev,
                                       corrector: newVal,
+                                      correctorArgs: getDefaultValuesForTypeAndParameter(
+                                          'CORRECTOR',
+                                          newVal?.label
+                                      ),
                                   }
                                 : prev
                         );
@@ -172,34 +178,44 @@ const AlgorithmDialog: React.FC<IDialog> = (props) => {
                 {algorithmSpec?.corrector && (
                     <Box sx={{ margin: '2rem 0' }}>
                         <NeurosynthAccordion
-                            elevation={2}
-                            TitleElement={
-                                <Typography variant="subtitle1">
-                                    Optional corrector arguments
-                                </Typography>
-                            }
+                            elevation={0}
+                            accordionSummarySx={EditAnalysesStyles.accordionSummary}
+                            TitleElement={<Typography>Optional algorithm arguments</Typography>}
                         >
                             <Divider sx={{ marginBottom: '1rem' }} />
                             <DynamicForm
                                 onUpdate={(arg) => {
-                                    // props.onArgsUpdate({
-                                    //     correctorArgs: { ...arg },
-                                    // });
+                                    setAlgorithmSpec((prev) => {
+                                        return {
+                                            ...prev,
+                                            correctorArgs: {
+                                                ...prev.correctorArgs,
+                                                ...arg,
+                                            },
+                                        };
+                                    });
                                 }}
-                                values={getArgsForKey('CORRECTOR', algorithmSpec?.corrector)}
-                                specification={
-                                    metaAnalysisSpecification.CORRECTOR[
-                                        algorithmSpec?.corrector.label
-                                    ].parameters
-                                }
+                                type="CORRECTOR"
+                                correctorOrEstimatorLabel={algorithmSpec.corrector.label}
+                                values={algorithmSpec.correctorArgs}
                             />
                         </NeurosynthAccordion>
                     </Box>
                 )}
             </Box>
-            <Button disabled={!algorithmSpec?.estimator} variant="contained">
-                set algorithm
-            </Button>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                    sx={{ marginRight: '15px' }}
+                    onClick={handleSelectAlgorithm}
+                    disabled={!algorithmSpec?.estimator}
+                    variant="contained"
+                >
+                    save
+                </Button>
+                <Button variant="contained" color="success">
+                    save and run your meta-analysis
+                </Button>
+            </Box>
         </BaseDialog>
     );
 };

@@ -1,13 +1,10 @@
 import { Box, IconButton, Step, StepLabel, Stepper } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { IDynamicInputType } from 'components/MetaAnalysisConfigComponents';
-import MetaAnalysisAlgorithm from 'components/MetaAnalysisConfigComponents/MetaAnalysisAlgorithm/MetaAnalysisAlgorithm';
-import MetaAnalysisData from 'components/MetaAnalysisConfigComponents/MetaAnalysisData/MetaAnalysisData';
+import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
 import MetaAnalysisFinalize from 'components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/MetaAnalysisFinalize';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import BackButton from 'components/Buttons/BackButton/BackButton';
-import MetaAnalysisDetails from 'components/MetaAnalysisConfigComponents/MetaAnalysisDetails/MetaAnalysisDetails';
 import MetaAnalysisBuilderPageStyles from './MetaAnalysisBuilderPage.styles';
 import useGetTour from 'hooks/useGetTour';
 import Help from '@mui/icons-material/Help';
@@ -32,8 +29,8 @@ export interface IMetaAnalysisComponents {
 }
 
 export interface IEstimatorCorrectorArgs {
-    estimatorArgs: IDynamicInputType;
-    correctorArgs: IDynamicInputType;
+    estimatorArgs: IDynamicValueType;
+    correctorArgs: IDynamicValueType;
 }
 
 const MetaAnalysisBuilderPage: React.FC = (props) => {
@@ -141,7 +138,7 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
                 </Step>
             </Stepper>
 
-            {activeStep === 0 && (
+            {/* {activeStep === 0 && (
                 <MetaAnalysisDetails
                     metaAnalysisName={metaAnalysisComponents.metaAnalysisName}
                     metaAnalysisDescription={metaAnalysisComponents.metaAnalysisDescription}
@@ -172,7 +169,7 @@ const MetaAnalysisBuilderPage: React.FC = (props) => {
                     onArgsUpdate={handleArgsUpdate}
                     onNext={handleNavigation}
                 />
-            )}
+            )} */}
 
             {activeStep === 3 && (
                 <MetaAnalysisFinalize

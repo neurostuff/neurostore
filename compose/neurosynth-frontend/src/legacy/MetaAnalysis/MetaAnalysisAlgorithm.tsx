@@ -1,50 +1,46 @@
-import { Box, ListItem, ListItemText, Typography, Divider } from '@mui/material';
-import { IDynamicInputType, IMetaAnalysisAlgorithm, IMetaAnalysisParamsSpecification } from '..';
+import { Box, Divider, Typography } from '@mui/material';
 import NavigationButtons from 'components/Buttons/NavigationButtons/NavigationButtons';
+import { IMetaAnalysisParamsSpecification } from 'components/MetaAnalysisConfigComponents';
+import DynamicForm from 'components/MetaAnalysisConfigComponents/MetaAnalysisAlgorithm/DynamicForm/DynamicForm';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
-import metaAnalysisSpec from '../../../assets/config/meta_analysis_params.json';
-import { EAnalysisType } from '../../../pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
-import NeurosynthAutocomplete, {
-    IAutocompleteObject,
-} from '../../NeurosynthAutocomplete/NeurosynthAutocomplete';
-import DynamicForm from './DynamicForm/DynamicForm';
+import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 
-const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
+// const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 
-const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
-    const getMetaAnalyticAlgorithms: IAutocompleteObject[] = Object.keys(
-        metaAnalysisSpecification[props.metaAnalysisType]
-    ).map((algoName) => ({
-        label: algoName,
-        description: metaAnalysisSpecification[props.metaAnalysisType][algoName]?.summary || '',
-    }));
+const MetaAnalysisAlgorithm: React.FC = (props) => {
+    // const getMetaAnalyticAlgorithms: IAutocompleteObject[] = Object.keys(
+    //     metaAnalysisSpecification[props.metaAnalysisType]
+    // ).map((algoName) => ({
+    //     label: algoName,
+    //     description: metaAnalysisSpecification[props.metaAnalysisType][algoName]?.summary || '',
+    // }));
 
-    const getCorrectorOptions: IAutocompleteObject[] = Object.keys(
-        metaAnalysisSpecification.CORRECTOR
-    ).map((corrector) => ({
-        label: corrector,
-        description: metaAnalysisSpecification.CORRECTOR[corrector]?.summary,
-    }));
+    // const getCorrectorOptions: IAutocompleteObject[] = Object.keys(
+    //     metaAnalysisSpecification.CORRECTOR
+    // ).map((corrector) => ({
+    //     label: corrector,
+    //     description: metaAnalysisSpecification.CORRECTOR[corrector]?.summary,
+    // }));
 
     /**
      * Helper function that gets the inputs for the selected algorithm and sets their default values
      * based on the meta_analysis_params file
      */
-    const getArgsForKey = (
-        type: EAnalysisType | 'CORRECTOR',
-        parameterName: IAutocompleteObject | null | undefined
-    ): IDynamicInputType => {
-        if (parameterName?.label) {
-            const params = metaAnalysisSpecification[type][parameterName.label]?.parameters;
-            const args: IDynamicInputType = {};
-            for (const [key, value] of Object.entries(params)) {
-                // if we have a kwarg argument
-                args[key] = value?.type === null ? {} : value.default;
-            }
-            return args;
-        }
-        return {};
-    };
+    // const getArgsForKey = (
+    //     type: EAnalysisType | 'CORRECTOR',
+    //     parameterName: IAutocompleteObject | null | undefined
+    // ): IDynamicInputType => {
+    //     if (parameterName?.label) {
+    //         const params = metaAnalysisSpecification[type][parameterName.label]?.parameters;
+    //         const args: IDynamicInputType = {};
+    //         for (const [key, value] of Object.entries(params)) {
+    //             // if we have a kwarg argument
+    //             args[key] = value?.type === null ? {} : value.default;
+    //         }
+    //         return args;
+    //     }
+    //     return {};
+    // };
 
     return (
         <>
@@ -76,33 +72,33 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
                     options={getMetaAnalyticAlgorithms}
                 /> */}
 
-                {props.estimator && (
-                    <Box sx={{ margin: '2rem 0' }}>
-                        <NeurosynthAccordion
-                            elevation={2}
-                            TitleElement={
-                                <Typography variant="subtitle1">
-                                    Optional algorithm arguments
-                                </Typography>
-                            }
-                        >
-                            <Divider sx={{ marginBottom: '1rem' }} />
-                            <DynamicForm
+                {/* {props.estimator && ( */}
+                <Box sx={{ margin: '2rem 0' }}>
+                    <NeurosynthAccordion
+                        elevation={2}
+                        TitleElement={
+                            <Typography variant="subtitle1">
+                                Optional algorithm arguments
+                            </Typography>
+                        }
+                    >
+                        <Divider sx={{ marginBottom: '1rem' }} />
+                        {/* <DynamicForm
                                 onUpdate={(arg) => {
                                     props.onArgsUpdate({
                                         estimatorArgs: { ...arg },
                                     });
                                 }}
                                 values={props.estimatorArgs}
-                                specification={
+                                parameters={
                                     metaAnalysisSpecification[props.metaAnalysisType][
                                         props.estimator.label
                                     ].parameters
                                 }
-                            />
-                        </NeurosynthAccordion>
-                    </Box>
-                )}
+                            /> */}
+                    </NeurosynthAccordion>
+                </Box>
+                {/* )} */}
 
                 <Typography sx={{ marginBottom: '1rem' }}>
                     Select the <b>corrector</b> that you would like to use for your meta-analysis
@@ -132,38 +128,38 @@ const MetaAnalysisAlgorithm: React.FC<IMetaAnalysisAlgorithm> = (props) => {
                     options={getCorrectorOptions}
                 /> */}
 
-                {props.corrector && (
-                    <Box sx={{ margin: '2rem 0' }}>
-                        <NeurosynthAccordion
-                            elevation={2}
-                            TitleElement={
-                                <Typography variant="subtitle1">
-                                    Optional corrector arguments
-                                </Typography>
-                            }
-                        >
-                            <Divider sx={{ marginBottom: '1rem' }} />
-                            <DynamicForm
+                {/* {props.corrector && ( */}
+                <Box sx={{ margin: '2rem 0' }}>
+                    <NeurosynthAccordion
+                        elevation={2}
+                        TitleElement={
+                            <Typography variant="subtitle1">
+                                Optional corrector arguments
+                            </Typography>
+                        }
+                    >
+                        <Divider sx={{ marginBottom: '1rem' }} />
+                        {/* <DynamicForm
                                 onUpdate={(arg) => {
                                     props.onArgsUpdate({
                                         correctorArgs: { ...arg },
                                     });
                                 }}
                                 values={props.correctorArgs}
-                                specification={
+                                parameters={
                                     metaAnalysisSpecification.CORRECTOR[props.corrector.label]
                                         .parameters
                                 }
-                            />
-                        </NeurosynthAccordion>
-                    </Box>
-                )}
+                            /> */}
+                    </NeurosynthAccordion>
+                </Box>
+                {/* )} */}
             </Box>
-            <NavigationButtons
+            {/* <NavigationButtons
                 nextButtonDisabled={props.estimator === undefined || props.estimator === null}
                 onButtonClick={props.onNext}
                 nextButtonStyle="outlined"
-            />
+            /> */}
         </>
     );
 };
