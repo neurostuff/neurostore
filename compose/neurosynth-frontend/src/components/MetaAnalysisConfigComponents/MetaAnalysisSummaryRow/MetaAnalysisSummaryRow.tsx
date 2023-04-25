@@ -9,14 +9,14 @@ interface IMetaAnalysisSummaryRow {
 
 const MetaAnalysisSummaryRow: React.FC<IMetaAnalysisSummaryRow> = (props) => {
     return (
-        <Box sx={{ marginBottom: '1.5rem' }}>
-            <Box sx={{ display: 'flex' }}>
-                <Box sx={MetaAnalysisSummaryRowStyles.titleColWidth}>
+        <Box sx={{ marginBottom: '1.5rem', width: '100%' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Box sx={MetaAnalysisSummaryRowStyles.colWidth}>
                     <Typography sx={{ color: 'primary.main' }} variant="h6">
                         {props.title}
                     </Typography>
                 </Box>
-                <Box>
+                <Box sx={MetaAnalysisSummaryRowStyles.colWidth}>
                     <Typography variant="h6">{props.value}</Typography>
                     <Typography variant="body1" sx={{ color: 'gray' }}>
                         {props.caption || ''}

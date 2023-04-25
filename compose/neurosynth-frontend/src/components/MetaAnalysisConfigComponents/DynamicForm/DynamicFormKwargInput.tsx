@@ -2,7 +2,7 @@ import { Box, Button, Divider, TableCell, TableRow, Typography, IconButton } fro
 import { useState } from 'react';
 import { IMetadataRowModel } from 'components/EditMetadata';
 import AddMetadataRow from 'components/EditMetadata/EditMetadataRow/AddMetadataRow';
-import { IDynamicFormInput } from '../..';
+import { IDynamicFormInput } from 'components/MetaAnalysisConfigComponents/index';
 import DynamicFormBaseTitle from './DynamicFormBaseTitle';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import RemoveCircle from '@mui/icons-material/RemoveCircle';

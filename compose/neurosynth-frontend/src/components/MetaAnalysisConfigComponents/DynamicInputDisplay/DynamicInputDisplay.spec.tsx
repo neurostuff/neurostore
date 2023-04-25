@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { KWARG_STRING } from '../..';
+import { KWARG_STRING } from '..';
 import DynamicInputDisplay from './DynamicInputDisplay';
 
 describe('DynamicInputDisplay Component', () => {

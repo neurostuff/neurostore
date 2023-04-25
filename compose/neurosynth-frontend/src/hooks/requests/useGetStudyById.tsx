@@ -21,7 +21,6 @@ const useGetStudyById = (studyId: string) => {
                 res.data.analyses = sortedAnalyses;
                 return res.data;
             },
-            staleTime: Infinity,
         }
     );
 };

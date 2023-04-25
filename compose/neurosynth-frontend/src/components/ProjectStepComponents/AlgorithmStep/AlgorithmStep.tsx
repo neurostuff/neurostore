@@ -19,6 +19,12 @@ import { useHistory, useParams } from 'react-router-dom';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
 import { useState } from 'react';
 import AlgorithmDialog from 'components/Dialogs/AlgorithmDialog/AlgorithmDialog';
+import { useAlgorithmSpecificationId } from 'pages/Projects/ProjectPage/ProjectStore';
+import useGetSpecification from 'hooks/requests/useGetSpecificationById';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import MetaAnalysisSummaryRow from 'components/MetaAnalysisConfigComponents/MetaAnalysisSummaryRow/MetaAnalysisSummaryRow';
+import DynamicInputDisplay from 'components/MetaAnalysisConfigComponents/DynamicInputDisplay/DynamicInputDisplay';
+import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
 
 interface IAlgorithmStep {
     algorithmStepHasBeenInitialized: boolean;
@@ -27,9 +33,15 @@ interface IAlgorithmStep {
 
 const AlgorithmStep: React.FC<IAlgorithmStep & StepProps> = (props) => {
     const { projectId }: { projectId: string } = useParams();
+    const { algorithmStepHasBeenInitialized, disabled, ...stepProps } = props;
+    const specificationId = useAlgorithmSpecificationId();
+    const {
+        data: specification,
+        isLoading: getSpecificationIsLoading,
+        isError: getSpecificationIsError,
+    } = useGetSpecification(specificationId);
     const history = useHistory();
     const [algorithmDialogIsOpen, setAlgorithmDialogIsOpen] = useState(false);
-    const { algorithmStepHasBeenInitialized, disabled, ...stepProps } = props;
 
     return (
         <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
@@ -59,117 +71,68 @@ const AlgorithmStep: React.FC<IAlgorithmStep & StepProps> = (props) => {
                     <Box sx={{ marginTop: '1rem' }}>
                         {algorithmStepHasBeenInitialized ? (
                             <Box sx={[ProjectStepComponentsStyles.stepCard]}>
-                                <Card sx={{ width: '100%', height: '100%' }}>
-                                    <CardContent>
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                position: 'relative',
-                                            }}
-                                        >
-                                            <Typography sx={{ color: 'muted.main' }}>
-                                                433 studies
-                                            </Typography>
-                                            <CircularProgress
-                                                sx={{
-                                                    position: 'absolute',
-                                                    right: 0,
-                                                    backgroundColor: '#ededed',
-                                                    borderRadius: '50%',
-                                                }}
-                                                variant="determinate"
-                                                value={Math.round(((30 + 372) / 433) * 100)}
-                                            />
-                                        </Box>
-                                        <Typography
-                                            gutterBottom
-                                            variant="h5"
-                                            sx={{ marginRight: '40px' }}
-                                        >
-                                            Study Curation Summary
-                                        </Typography>
-                                        <Box
-                                            sx={{
-                                                marginTop: '1.5rem',
-                                                display: 'flex',
-                                            }}
-                                        >
+                                <Card
+                                    sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                        minHeight: '165px',
+                                        padding: '8px',
+                                    }}
+                                >
+                                    <StateHandlerComponent
+                                        isLoading={getSpecificationIsLoading}
+                                        isError={getSpecificationIsError}
+                                    >
+                                        <CardContent>
                                             <Box
                                                 sx={{
                                                     display: 'flex',
+                                                    justifyContent: 'space-between',
                                                     flexDirection: 'column',
-                                                    alignItems: 'center',
                                                 }}
                                             >
-                                                <CheckIcon
-                                                    sx={{
-                                                        color: 'success.main',
-                                                        marginBottom: '5px',
-                                                    }}
-                                                />
-                                                <Typography sx={{ color: 'success.main' }}>
-                                                    30 included
+                                                <Typography gutterBottom variant="h5">
+                                                    Specification
                                                 </Typography>
+                                                <MetaAnalysisSummaryRow
+                                                    title="meta-analysis type"
+                                                    value={specification?.type || ''}
+                                                ></MetaAnalysisSummaryRow>
+                                                <MetaAnalysisSummaryRow
+                                                    title="algorithm and optional arguments"
+                                                    value={specification?.estimator?.type || ''}
+                                                >
+                                                    <DynamicInputDisplay
+                                                        dynamicArg={
+                                                            (specification?.estimator?.args ||
+                                                                {}) as IDynamicValueType
+                                                        }
+                                                    />
+                                                </MetaAnalysisSummaryRow>
+                                                <MetaAnalysisSummaryRow
+                                                    title="corrector and optional arguments"
+                                                    value={specification?.corrector?.type || ''}
+                                                >
+                                                    <DynamicInputDisplay
+                                                        dynamicArg={
+                                                            (specification?.corrector?.args ||
+                                                                {}) as IDynamicValueType
+                                                        }
+                                                    />
+                                                </MetaAnalysisSummaryRow>
                                             </Box>
-                                            <Box>
-                                                <Divider
-                                                    sx={{ margin: '0 20px' }}
-                                                    orientation="vertical"
-                                                />
-                                            </Box>
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
-                                                }}
+                                        </CardContent>
+                                        <CardActions>
+                                            <Button
+                                                onClick={() =>
+                                                    history.push(`/projects/${projectId}/curation`)
+                                                }
+                                                variant="text"
                                             >
-                                                <QuestionMarkIcon
-                                                    sx={{
-                                                        color: 'warning.dark',
-                                                        marginBottom: '5px',
-                                                    }}
-                                                />
-                                                <Typography sx={{ color: 'warning.dark' }}>
-                                                    31 uncategorized
-                                                </Typography>
-                                            </Box>
-                                            <Box>
-                                                <Divider
-                                                    sx={{ margin: '0 20px' }}
-                                                    orientation="vertical"
-                                                />
-                                            </Box>
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
-                                                }}
-                                            >
-                                                <CloseIcon
-                                                    sx={{
-                                                        color: 'error.dark',
-                                                        marginBottom: '5px',
-                                                    }}
-                                                />
-                                                <Typography sx={{ color: 'error.dark' }}>
-                                                    372 excluded
-                                                </Typography>
-                                            </Box>
-                                        </Box>
-                                    </CardContent>
-                                    <CardActions>
-                                        <Button
-                                            onClick={() =>
-                                                history.push(`/projects/${projectId}/curation`)
-                                            }
-                                            variant="text"
-                                        >
-                                            continue editing
-                                        </Button>
-                                    </CardActions>
+                                                continue editing
+                                            </Button>
+                                        </CardActions>
+                                    </StateHandlerComponent>
                                 </Card>
                             </Box>
                         ) : (

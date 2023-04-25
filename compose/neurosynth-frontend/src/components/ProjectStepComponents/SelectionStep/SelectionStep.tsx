@@ -9,6 +9,7 @@ import {
     CardContent,
     CardActions,
     Button,
+    Chip,
 } from '@mui/material';
 import { useState } from 'react';
 import SelectionDialog, {
@@ -72,23 +73,23 @@ const SelectionStep: React.FC<ISelectionStep & StepProps> = (props) => {
                                         <Box>
                                             <Box sx={{ display: 'flex' }}>
                                                 <Typography
-                                                    sx={{ marginRight: '8px' }}
+                                                    sx={{ marginRight: '15px' }}
                                                     gutterBottom
                                                     variant="h5"
                                                 >
                                                     Selection Filter:
                                                 </Typography>
-                                                <Typography
-                                                    variant="h5"
-                                                    sx={{
-                                                        fontWeight: 'bold',
-                                                        color: NeurosynthTableStyles[
-                                                            filter.type || EPropertyType.NONE
-                                                        ],
-                                                    }}
-                                                >
-                                                    {filter.selectionKey || ''}
-                                                </Typography>
+                                                <Chip
+                                                    color={
+                                                        filter.type === EPropertyType.BOOLEAN
+                                                            ? 'success'
+                                                            : filter.type === EPropertyType.NUMBER
+                                                            ? 'primary'
+                                                            : 'secondary'
+                                                    }
+                                                    size="medium"
+                                                    label={filter.selectionKey || ''}
+                                                />
                                             </Box>
                                             <Box>
                                                 <Typography

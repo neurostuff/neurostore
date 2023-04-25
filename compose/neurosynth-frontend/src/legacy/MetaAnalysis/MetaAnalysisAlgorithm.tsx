@@ -1,7 +1,7 @@
 import { Box, Divider, Typography } from '@mui/material';
 import NavigationButtons from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { IMetaAnalysisParamsSpecification } from 'components/MetaAnalysisConfigComponents';
-import DynamicForm from 'components/MetaAnalysisConfigComponents/MetaAnalysisAlgorithm/DynamicForm/DynamicForm';
+// import DynamicForm from 'components/MetaAnalysisConfigComponents/MetaAnalysisAlgorithm/DynamicForm/DynamicForm';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 

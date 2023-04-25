@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { IParameter } from '../..';
+import { IParameter } from 'components/MetaAnalysisConfigComponents/index';
 import DynamicForm from './DynamicForm';
 
 jest.mock('./DynamicFormBoolInput');

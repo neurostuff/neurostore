@@ -1,5 +1,5 @@
 import { Box, MenuItem, Select } from '@mui/material';
-import { IDynamicFormInput } from '../..';
+import { IDynamicFormInput } from 'components/MetaAnalysisConfigComponents/index';
 import DynamicFormBaseTitle from './DynamicFormBaseTitle';
 import DynamicFormStyles from './DynamicFormStyles';
 

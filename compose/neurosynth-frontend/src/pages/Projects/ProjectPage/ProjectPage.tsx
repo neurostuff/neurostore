@@ -96,95 +96,101 @@ const ProjectPage: React.FC = (props) => {
 
     return (
         <StateHandlerComponent isLoading={getProjectIsLoading} isError={getProjectIsError}>
-            <Box sx={{ marginBottom: '0.5rem', display: 'flex' }}>
-                <NeurosynthBreadcrumbs
-                    breadcrumbItems={[
-                        {
-                            text: 'Projects',
-                            link: '/projects',
-                            isCurrentPage: false,
-                        },
-                        {
-                            text: projectName || '',
-                            link: '',
-                            isCurrentPage: true,
-                        },
-                    ]}
-                />
-                <ProjectIsLoadingText />
-            </Box>
+            <Box sx={{ marginBottom: '5rem' }}>
+                <Box sx={{ marginBottom: '0.5rem', display: 'flex' }}>
+                    <NeurosynthBreadcrumbs
+                        breadcrumbItems={[
+                            {
+                                text: 'Projects',
+                                link: '/projects',
+                                isCurrentPage: false,
+                            },
+                            {
+                                text: projectName || '',
+                                link: '',
+                                isCurrentPage: true,
+                            },
+                        ]}
+                    />
+                    <ProjectIsLoadingText />
+                </Box>
 
-            <Box sx={{ marginBottom: '0.5rem' }}>
-                <TextEdit
-                    onSave={(updatedName, label) => updateProjectName(updatedName)}
-                    sx={{ input: { fontSize: '2rem' }, width: '50%' }}
-                    textToEdit={projectName || ''}
-                >
-                    <Typography
-                        sx={{ color: projectName ? 'initial' : 'warning.dark' }}
-                        variant="h4"
+                <Box sx={{ marginBottom: '0.5rem' }}>
+                    <TextEdit
+                        onSave={(updatedName, label) => updateProjectName(updatedName)}
+                        sx={{ input: { fontSize: '2rem' }, width: '50%' }}
+                        textToEdit={projectName || ''}
                     >
-                        {projectName || 'No name'}
-                    </Typography>
-                </TextEdit>
-                <TextEdit
-                    onSave={(updatedDescription, label) =>
-                        updateProjectDescription(updatedDescription)
-                    }
-                    sx={{ input: { fontSize: '1.25rem' }, width: '50%' }}
-                    textToEdit={projectDescription || ''}
-                >
-                    <Typography
-                        sx={{ color: projectDescription ? 'initial' : 'warning.dark' }}
-                        variant="h6"
+                        <Typography
+                            sx={{ color: projectName ? 'initial' : 'warning.dark' }}
+                            variant="h4"
+                        >
+                            {projectName || 'No name'}
+                        </Typography>
+                    </TextEdit>
+                    <TextEdit
+                        onSave={(updatedDescription, label) =>
+                            updateProjectDescription(updatedDescription)
+                        }
+                        sx={{ input: { fontSize: '1.25rem' }, width: '50%' }}
+                        textToEdit={projectDescription || ''}
                     >
-                        {projectDescription || 'No description'}
-                    </Typography>
-                </TextEdit>
-            </Box>
+                        <Typography
+                            sx={{ color: projectDescription ? 'initial' : 'warning.dark' }}
+                            variant="h6"
+                        >
+                            {projectDescription || 'No description'}
+                        </Typography>
+                    </TextEdit>
+                </Box>
 
-            <ToggleButtonGroup
-                sx={{ marginBottom: '1.5rem', marginTop: '1rem' }}
-                color="primary"
-                value={tab}
-                exclusive
-                size="medium"
-                onChange={handleTabChange}
-            >
-                <ToggleButton onClick={() => setTab(0)} color="primary" value={0}>
-                    Build Meta-Analysis
-                </ToggleButton>
-                <ToggleButton
-                    sx={{ display: algorithmStepHasBeenInitialized ? 'initial' : 'none' }}
-                    value={1}
+                <ToggleButtonGroup
+                    sx={{ marginBottom: '1.5rem', marginTop: '1rem' }}
+                    color="primary"
+                    value={tab}
+                    exclusive
+                    size="medium"
+                    onChange={handleTabChange}
                 >
-                    View Meta-Analysis
-                </ToggleButton>
-            </ToggleButtonGroup>
+                    <ToggleButton onClick={() => setTab(0)} color="primary" value={0}>
+                        Build Meta-Analysis
+                    </ToggleButton>
+                    <ToggleButton
+                        sx={{ display: algorithmStepHasBeenInitialized ? 'initial' : 'none' }}
+                        value={1}
+                    >
+                        View Meta-Analysis
+                    </ToggleButton>
+                </ToggleButtonGroup>
 
-            {tab === 0 && (
-                <Stepper
-                    activeStep={activeStep}
-                    orientation="vertical"
-                    sx={[ProjectPageStyles.stepper, { display: tab === 0 ? 'initial' : 'none' }]}
-                >
-                    <CurationStep curationStepHasBeenInitialized={curationStepHasBeenInitialized} />
-                    <ExtractionStep
-                        extractionStepHasBeenInitialized={extractionStepHasBeenInitialized}
-                        disabled={disableExtractionStep}
-                    />
-                    <SelectionStep
-                        selectionStepHasBeenInitialized={selectionStepHasBeenInitialized}
-                        disabled={disableFiltrationStep}
-                    />
-                    <AlgorithmStep
-                        algorithmStepHasBeenInitialized={algorithmStepHasBeenInitialized}
-                        disabled={!selectionFilterHasBeenSet}
-                    />
-                </Stepper>
-            )}
-            {tab === 1 && <div>view meta-analysis</div>}
-            {/* <Button
+                {tab === 0 && (
+                    <Stepper
+                        activeStep={activeStep}
+                        orientation="vertical"
+                        sx={[
+                            ProjectPageStyles.stepper,
+                            { display: tab === 0 ? 'initial' : 'none' },
+                        ]}
+                    >
+                        <CurationStep
+                            curationStepHasBeenInitialized={curationStepHasBeenInitialized}
+                        />
+                        <ExtractionStep
+                            extractionStepHasBeenInitialized={extractionStepHasBeenInitialized}
+                            disabled={disableExtractionStep}
+                        />
+                        <SelectionStep
+                            selectionStepHasBeenInitialized={selectionStepHasBeenInitialized}
+                            disabled={disableFiltrationStep}
+                        />
+                        <AlgorithmStep
+                            algorithmStepHasBeenInitialized={algorithmStepHasBeenInitialized}
+                            disabled={!selectionFilterHasBeenSet}
+                        />
+                    </Stepper>
+                )}
+                {tab === 1 && <div>view meta-analysis</div>}
+                {/* <Button
                 onClick={() => {
                     clearProvenance();
                 }}
@@ -194,6 +200,7 @@ const ProjectPage: React.FC = (props) => {
             >
                 Clear Provenance (FOR DEV PURPOSES ONLY)
             </Button> */}
+            </Box>
         </StateHandlerComponent>
     );
 };

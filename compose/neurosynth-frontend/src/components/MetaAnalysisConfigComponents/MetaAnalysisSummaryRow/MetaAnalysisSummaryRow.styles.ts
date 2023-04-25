@@ -1,11 +1,11 @@
-import { Style } from '../../../..';
+import { Style } from '../../..';
 
 const MetaAnalysisSummaryRowStyles: Style = {
-    titleColWidth: {
-        width: '350px',
+    colWidth: {
+        width: '45%',
     },
     dynamicInput: {
-        marginLeft: '350px',
+        marginLeft: '55%',
     },
     divider: {
         margin: '1rem 0',

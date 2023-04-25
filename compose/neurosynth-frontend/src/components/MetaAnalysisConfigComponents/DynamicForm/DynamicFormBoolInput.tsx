@@ -1,5 +1,5 @@
 import { Box, Typography, ToggleButtonGroup, ToggleButton } from '@mui/material';
-import { IDynamicFormInput } from '../..';
+import { IDynamicFormInput } from 'components/MetaAnalysisConfigComponents/index';
 import DynamicFormStyles from './DynamicFormStyles';
 
 const DynamicFormBoolInput: React.FC<IDynamicFormInput> = (props) => {

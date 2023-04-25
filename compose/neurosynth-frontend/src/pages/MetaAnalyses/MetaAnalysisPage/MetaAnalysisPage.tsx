@@ -17,10 +17,10 @@ import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
 import Help from '@mui/icons-material/Help';
 import useGetTour from 'hooks/useGetTour';
 import { useAuth0 } from '@auth0/auth0-react';
-import MetaAnalysisSummaryRow from 'components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/MetaAnalysisSummaryRow/MetaAnalysisSummaryRow';
-import { getAnalysisTypeDescription } from 'components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/MetaAnalysisFinalize';
+import MetaAnalysisSummaryRow from 'components/MetaAnalysisConfigComponents/MetaAnalysisSummaryRow/MetaAnalysisSummaryRow';
+import { getAnalysisTypeDescription } from 'legacy/MetaAnalysis/MetaAnalysisFinalize/MetaAnalysisFinalize';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
-import DynamicInputDisplay from 'components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/DynamicInputDisplay/DynamicInputDisplay';
+import DynamicInputDisplay from 'components/MetaAnalysisConfigComponents/DynamicInputDisplay/DynamicInputDisplay';
 import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
 import { NeurostoreAnnotation } from 'utils/api';
 

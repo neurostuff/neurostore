@@ -5,7 +5,7 @@ import {
     IMetaAnalysisParamsSpecification,
     IParameter,
     KWARG_STRING,
-} from '../..';
+} from 'components/MetaAnalysisConfigComponents/index';
 import DynamicFormBoolInput from './DynamicFormBoolInput';
 import DynamicFormKwargInput from './DynamicFormKwargInput';
 import DynamicFormNumericInput from './DynamicFormNumericInput';

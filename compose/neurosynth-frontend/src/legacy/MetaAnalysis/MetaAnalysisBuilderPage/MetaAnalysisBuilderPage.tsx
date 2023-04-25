@@ -1,7 +1,7 @@
 import { Box, IconButton, Step, StepLabel, Stepper } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
-import MetaAnalysisFinalize from 'components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/MetaAnalysisFinalize';
+import MetaAnalysisFinalize from 'legacy/MetaAnalysis/MetaAnalysisFinalize/MetaAnalysisFinalize';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import BackButton from 'components/Buttons/BackButton/BackButton';

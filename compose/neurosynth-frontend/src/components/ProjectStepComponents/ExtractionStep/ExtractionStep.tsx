@@ -89,26 +89,33 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                     isOpen={moveToExtractionDialogIsOpen}
                     onCloseDialog={() => setMoveToExtractionDialogIsOpen(false)}
                 />
-                <StateHandlerComponent
-                    isError={getStudysetIsError}
-                    isLoading={getStudysetIsLoading}
-                >
-                    <Box sx={{ marginLeft: '2rem' }}>
-                        <Typography sx={{ color: 'muted.main' }}>
-                            <b>
-                                You have completed your study curation, and now have a potential
-                                list of studies to include in your meta-analysis
-                            </b>
-                        </Typography>
-                        <Typography gutterBottom sx={{ color: 'muted.main' }}>
-                            In this step, add necessary study data to the studies in your studyset
-                            (like coordinates and metadata) as well as analysis annotations that
-                            will be used to help filter analyses within your studies
-                        </Typography>
-                        <Box sx={{ marginTop: '1rem' }}>
-                            {extractionStepHasBeenInitialized ? (
-                                <Box sx={[ProjectStepComponentsStyles.stepCard]}>
-                                    <Card sx={{ width: '100%', height: '100%' }}>
+                <Box sx={{ marginLeft: '2rem' }}>
+                    <Typography sx={{ color: 'muted.main' }}>
+                        <b>
+                            You have completed your study curation, and now have a potential list of
+                            studies to include in your meta-analysis
+                        </b>
+                    </Typography>
+                    <Typography gutterBottom sx={{ color: 'muted.main' }}>
+                        In this step, add necessary study data to the studies in your studyset (like
+                        coordinates and metadata) as well as analysis annotations that will be used
+                        to help filter analyses within your studies
+                    </Typography>
+                    <Box sx={{ marginTop: '1rem' }}>
+                        {extractionStepHasBeenInitialized ? (
+                            <Box sx={[ProjectStepComponentsStyles.stepCard]}>
+                                <Card
+                                    sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                        minHeight: '165px',
+                                        padding: '8px',
+                                    }}
+                                >
+                                    <StateHandlerComponent
+                                        isError={getStudysetIsError}
+                                        isLoading={getStudysetIsLoading}
+                                    >
                                         <CardContent>
                                             <Box sx={ProjectStepComponentsStyles.stepTitle}>
                                                 <Typography sx={{ color: 'muted.main' }}>
@@ -210,28 +217,28 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                                 Mark all as complete
                                             </Button>
                                         </CardActions>
-                                    </Card>
-                                </Box>
-                            ) : (
-                                <Box
-                                    sx={[
-                                        ProjectStepComponentsStyles.stepCard,
-                                        ProjectStepComponentsStyles.getStartedContainer,
-                                        { borderColor: disabled ? 'muted.main' : 'primary.main' },
-                                    ]}
+                                    </StateHandlerComponent>
+                                </Card>
+                            </Box>
+                        ) : (
+                            <Box
+                                sx={[
+                                    ProjectStepComponentsStyles.stepCard,
+                                    ProjectStepComponentsStyles.getStartedContainer,
+                                    { borderColor: disabled ? 'muted.main' : 'primary.main' },
+                                ]}
+                            >
+                                <Button
+                                    onClick={() => setMoveToExtractionDialogIsOpen(true)}
+                                    disabled={disabled}
+                                    sx={{ width: '100%', height: '100%' }}
                                 >
-                                    <Button
-                                        onClick={() => setMoveToExtractionDialogIsOpen(true)}
-                                        disabled={disabled}
-                                        sx={{ width: '100%', height: '100%' }}
-                                    >
-                                        extraction: get started
-                                    </Button>
-                                </Box>
-                            )}
-                        </Box>
+                                    extraction: get started
+                                </Button>
+                            </Box>
+                        )}
                     </Box>
-                </StateHandlerComponent>
+                </Box>
             </StepContent>
         </Step>
     );
