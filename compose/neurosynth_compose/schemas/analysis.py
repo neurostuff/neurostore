@@ -32,7 +32,9 @@ class StringOrNested(fields.Nested):
     def _serialize(self, value, attr, obj, **kwargs):
         if value is None:
             return None
-        nested = self.context.get("nested")
+        nested = (
+            False if self.metadata.get("nested", None) is False else self.context.get("nested")
+        )
         nested_attr = self.metadata.get("pluck")
         if nested:
             many = self.schema.many or self.many
@@ -161,7 +163,7 @@ class MetaAnalysisSchema(BaseSchema):
     annotation = StringOrNested(
         AnnotationSchema, metadata={"pluck": "neurostore_id"}, dump_only=True
     )
-    project_id = StringOrNested("ProjectSchema", data_key="project")
+    project_id = StringOrNested("ProjectSchema", metadata={"nested": False}, data_key="project")
     internal_studyset_id = fields.Pluck(
         StudysetSchema, "id", load_only=True, attribute="studyset"
     )
