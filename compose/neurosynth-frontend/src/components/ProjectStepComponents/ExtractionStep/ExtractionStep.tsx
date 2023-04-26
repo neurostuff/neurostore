@@ -189,6 +189,7 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                             }}
                                         >
                                             <Button
+                                                color="secondary"
                                                 onClick={() =>
                                                     history.push(
                                                         `/projects/${projectId}/extraction`

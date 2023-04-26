@@ -249,7 +249,6 @@ const AlgorithmDialog: React.FC<IDialog> = (props) => {
                                 accordionSummarySx={EditAnalysesStyles.accordionSummary}
                                 TitleElement={<Typography>Optional corrector arguments</Typography>}
                             >
-                                <Divider sx={{ marginBottom: '1rem' }} />
                                 <DynamicForm
                                     onUpdate={(arg) => {
                                         setAlgorithmSpec((prev) => {

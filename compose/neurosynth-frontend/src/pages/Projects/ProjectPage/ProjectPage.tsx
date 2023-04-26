@@ -1,4 +1,13 @@
-import { Box, Typography, Stepper, ToggleButtonGroup, ToggleButton, Button } from '@mui/material';
+import {
+    Box,
+    Typography,
+    Stepper,
+    ToggleButtonGroup,
+    ToggleButton,
+    Button,
+    Tabs,
+    Tab,
+} from '@mui/material';
 import {
     // useClearProvenance,
     useInitProjectStore,
@@ -144,24 +153,34 @@ const ProjectPage: React.FC = (props) => {
                     </TextEdit>
                 </Box>
 
-                <ToggleButtonGroup
-                    sx={{ marginBottom: '1.5rem', marginTop: '1rem' }}
-                    color="primary"
-                    value={tab}
-                    exclusive
-                    size="medium"
-                    onChange={handleTabChange}
-                >
-                    <ToggleButton onClick={() => setTab(0)} color="primary" value={0}>
-                        Build Meta-Analysis
-                    </ToggleButton>
-                    <ToggleButton
-                        sx={{ display: algorithmStepHasBeenInitialized ? 'initial' : 'none' }}
-                        value={1}
+                <Box sx={{ borderBottom: 1, margin: '1rem 0 2rem 0', borderColor: 'divider' }}>
+                    <Tabs
+                        TabIndicatorProps={{
+                            style: {
+                                backgroundColor: '#ef8a24',
+                            },
+                        }}
+                        value={tab}
+                        onChange={handleTabChange}
                     >
-                        View Meta-Analysis
-                    </ToggleButton>
-                </ToggleButtonGroup>
+                        <Tab
+                            sx={{
+                                fontSize: '1.2rem',
+                                color: tab === 0 ? '#ef8a24 !important' : 'primary.main',
+                                fontWeight: tab === 0 ? 'bold' : 'normal',
+                            }}
+                            label="Edit Meta-Analyses"
+                        />
+                        <Tab
+                            sx={{
+                                fontSize: '1.2rem',
+                                color: tab === 1 ? '#ef8a24 !important' : 'primary.main',
+                                fontWeight: tab === 1 ? 'bold' : 'normal',
+                            }}
+                            label="View Meta-Analyses"
+                        />
+                    </Tabs>
+                </Box>
 
                 {tab === 0 && (
                     <Stepper

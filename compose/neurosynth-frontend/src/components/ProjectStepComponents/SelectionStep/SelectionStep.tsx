@@ -15,7 +15,6 @@ import { useState } from 'react';
 import SelectionDialog, {
     getFilteredAnnotationNotes,
 } from 'components/Dialogs/SelectionDialog/SelectionDialog';
-import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { EPropertyType } from 'components/EditMetadata';
 import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
 import {
@@ -105,10 +104,11 @@ const SelectionStep: React.FC<ISelectionStep & StepProps> = (props) => {
                                     </CardContent>
                                     <CardActions>
                                         <Button
+                                            color="secondary"
                                             onClick={() => setSelectionDialogIsOpen(true)}
                                             variant="text"
                                         >
-                                            update filter
+                                            update selection
                                         </Button>
                                     </CardActions>
                                 </Card>

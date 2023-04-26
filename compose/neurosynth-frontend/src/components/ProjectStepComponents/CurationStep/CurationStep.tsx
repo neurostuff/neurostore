@@ -171,6 +171,7 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                     </CardContent>
                                     <CardActions>
                                         <Button
+                                            color="secondary"
                                             onClick={() =>
                                                 history.push(`/projects/${projectId}/curation`)
                                             }
