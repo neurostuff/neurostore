@@ -161,7 +161,7 @@ class MetaAnalysisSchema(BaseSchema):
     annotation = StringOrNested(
         AnnotationSchema, metadata={"pluck": "neurostore_id"}, dump_only=True
     )
-    project = fields.String(allow_none=True)
+    project_id = StringOrNested("ProjectSchema", data_key="project")
     internal_studyset_id = fields.Pluck(
         StudysetSchema, "id", load_only=True, attribute="studyset"
     )
