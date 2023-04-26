@@ -74,6 +74,26 @@ def mock_decode_token(token):
         return {"sub": "user2-id"}
 
 
+def mock_ns_session(request):
+    class MockResponse:
+        def __init__(self, data):
+            self.data = data
+            self.status_code = 200
+
+        def json(self):
+            return self.data
+
+    class MockSession:
+        def post(self, path, data):
+            data.update({'id': '123'})
+            return MockResponse(data)
+
+        def put(self, path, data):
+            return MockResponse(data)
+
+    return MockSession()
+
+
 class MockPYNVClient:
     def __init__(self, access_token):
         self.access_token = access_token
@@ -114,7 +134,10 @@ def mock_auth(monkeysession):
         "BEARERINFO_FUNC", "neurosynth_compose.tests.conftest.mock_decode_token"
     )
 
-
+@pytest.fixture(scope="session")
+def mock_ns(monkeysession):
+    """mock neurostore api"""
+    monkeysession.setattr("neurosynth_compose.resources.neurostore_session", mock_ns_session)
 """
 Session / db managment tools
 """

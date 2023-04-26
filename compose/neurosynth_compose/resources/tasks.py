@@ -9,6 +9,7 @@ from nibabel import Nifti1Image
 from ..__init__ import create_app
 from ..database import db
 from ..models import NeurovaultFile, MetaAnalysis
+from .neurostore import neurostore_session
 
 app = create_app()
 celery_app = Celery(app.import_name)
@@ -69,7 +70,7 @@ def file_upload_neurovault(self, data, id):
 
 
 @celery_app.task(name="neurostore.upload", bind=True)
-def upload_neurostore(self, data, access_token, id):
+def upload_neurostore(self, data, access_token, id, neurostore_study_id, meta_analysis_id):
     """
     0. create neurostore result
     1. create meta-analysis result
@@ -77,9 +78,12 @@ def upload_neurostore(self, data, access_token, id):
     3. create new neurovault collection
     4. add files to neurovault collection
     """
-    pass
-    
-    # meta_analysis = MetaAnalysis.query.filter_by(id=meta_analysis_id).one()
+    ns_ses = neurostore_session(access_token)
+
+    meta_analysis = MetaAnalysis.query.filter_by(id=meta_analysis_id).one()
+
+    analysis_data = {"name": meta_analysis.name}
+    ns_ses.post(f"/api/studies/{neurostore_study_id}", data=analysis_data)
 
     # neurostore_study = ApiClient.studies_post(name=meta_analysis.name or meta_analysis.id)
 

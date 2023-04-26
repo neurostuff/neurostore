@@ -32,7 +32,7 @@ def test_create(auth_client, user_data, endpoint, model, schema):
         del payload["annotation"]
         payload["internal_annotation_id"] = example.annotation.id
     if payload.get("project"):
-        del payload["project"]
+        payload["project"] = payload["project"].id
     if payload.get("run_key"):
         del payload["run_key"]
 

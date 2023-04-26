@@ -110,7 +110,7 @@ class BaseView(MethodView):
 
                 return record
 
-        # update data if there is an external request
+        # check if external request updated the data already
         committed = cls._external_request(data, record, id)
 
         # Update all non-nested attributes
@@ -450,15 +450,20 @@ class NeurostoreStudiesView(ObjectView, ListView):
         from .tasks import celery_app
 
         # create study that maps onto project if it exists
+        access_token = request.headers['Authorization']
         if record.result.neurostore_id is None:
-            ns_ses = neurostore_session(request)
+            ns_ses = neurostore_session(access_token)
 
             study_data = {
                 "name": getattr(record.result.meta_analysis.project, "name", "Untitled"),
-                "description": getattr(record.result.meta_analysis.project, "name", None),
+                "description": getattr(record.result.meta_analysis.project, "description", None),
             }
-            neurostore_id = ns_ses.post("/studies", data=study_data)
-            record.result.neurostore_id = neurostore_id
+
+            try:
+                ns_study = ns_ses.post("/studies", data=study_data)
+                record.result.neurostore_id = ns_study.json['id']
+            except:  # noqa: E722
+                pass
 
         if record.id is None:
             for k, v in data.items():
@@ -468,18 +473,19 @@ class NeurostoreStudiesView(ObjectView, ListView):
             db.session.add(record)
             db.session.commit()
         committed = True
-        access_token = request
 
-        try:
-            data["file"] = data["file"].decode("latin1")
-            task = celery_app.send_task(  # noqa: F841
-                "neurostore.upload", args=[data, access_token, record.id]
-            )
-        except:  # noqa: E722
-            setattr(record, "status", "FAILED")
+        neurostore_study_id = record.result.neurostore_id
+        meta_analysis_id = record.result.meta_analysis_id
+        if neurostore_study_id:
+            try:
+                task = celery_app.send_task(  # noqa: F841
+                    "neurostore.upload", args=[data, access_token, record.id, neurostore_study_id, meta_analysis_id]
+                )
+            except:  # noqa: E722
+                setattr(record, "status", "FAILED")
 
-        data.pop("file")
-        return committed
+            data.pop("file")
+            return committed
 
 
 @view_maker
