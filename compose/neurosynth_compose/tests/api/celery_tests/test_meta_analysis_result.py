@@ -69,6 +69,9 @@ def test_file_upload_neurovault(app, db, user_data, meta_analysis_results, mock_
     file_upload_neurovault(submit_data, nv_file.id)
 
 
+def test_result_upload(meta_analysis_result_files):
+    pass
+
 # @celery_test
 # def test_send_task_file_upload_neurovault(
 #     app, db, session, user_data, meta_analysis_results, mock_pynv

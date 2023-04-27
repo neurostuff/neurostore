@@ -349,6 +349,14 @@ class AnnotationReferencesResource(ObjectView):
 class MetaAnalysisResultsView(ObjectView, ListView):
     _nested = {"neurovault_collection": "NeurovaultCollectionsView"}
 
+    def post(self):
+        try:
+            data = parser.parse(self.__class__._schema, request)
+        except ValidationError as e:
+            abort(422, description=f"input does not conform to specification: {str(e)}")
+
+        print(data)
+
 
 @view_maker
 class NeurovaultCollectionsView(ObjectView, ListView):

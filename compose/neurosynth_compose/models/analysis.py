@@ -69,7 +69,7 @@ class Annotation(BaseMixin, db.Model):
     public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     neurostore_id = db.Column(db.Text, db.ForeignKey("annotation_references.id"))
-    internal_studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
+    cached_studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
 
     user = relationship("User", backref=backref("annotations"))
     studyset = relationship("Studyset", backref=backref("annotations"), lazy="joined")
@@ -84,9 +84,10 @@ class MetaAnalysis(BaseMixin, db.Model):
     name = db.Column(db.Text)
     description = db.Column(db.Text)
     specification_id = db.Column(db.Text, db.ForeignKey("specifications.id"))
-    # internal meaning local to the neurosynth-compose database
-    internal_studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
-    internal_annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"))
+    neurostore_studyset_id = db.Column(db.Text, db.ForeignKey("studyset_references.id"))
+    neurostore_annotation_id = db.Column(db.Text, db.ForeignKey("annotation_references.id"))
+    cached_studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
+    cached_annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"))
     project_id = db.Column(db.Text, db.ForeignKey("projects.id"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     provenance = db.Column(db.JSON)
