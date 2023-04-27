@@ -123,7 +123,7 @@ class SpecificationSchema(BaseSchema):
     type = PGSQLString()
     mask = PGSQLString(allow_none=True)
     transformer = PGSQLString(allow_none=True)
-    estimator = fields.Dict()
+    estimator = fields.Nested("EstimatorSchema")
     contrast = PGSQLString(allow_none=True)
     filter = PGSQLString(allow_none=True)
     corrector = fields.Dict(allow_none=True)

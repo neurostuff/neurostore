@@ -5,10 +5,16 @@ from nimare.nimads import Studyset, Annotation
 
 def load_specification(spec):
     """Returns function to run analysis on dataset."""
-    est_mod = import_module(".".join(["nimare", "meta", spec["type"].lower()]))
+    est_mod = import_module(".".join(["nimare", "meta", "cbma"]))
     estimator = getattr(est_mod, spec["estimator"]["type"])
     if spec["estimator"].get("args"):
+        if "kernel_transformer" in spec["estimator"].get("args"):
+            kernel_mod = import_module(".".join(["nimare", "meta", "kernel"]))
+            spec["estimator"]["args"]["kernel_transformer"] = getattr(
+                kernel_mod, spec["estimator"]["args"]["kernel_transformer"]
+            )
         est_args = {**spec["estimator"]["args"]}
+
         if est_args.get("**kwargs") is not None:
             for k, v in est_args["**kwargs"].items():
                 est_args[k] = v
@@ -19,7 +25,7 @@ def load_specification(spec):
 
     if spec.get("corrector"):
         cor_mod = import_module(".".join(["nimare", "correct"]))
-        corrector = getattr(cor_mod, spec["corrector"]["type"])
+        corrector = getattr(cor_mod, spec["corrector"]["type"] + "Corrector")
         if spec["corrector"].get("args"):
             cor_args = {**spec["corrector"]["args"]}
             if cor_args.get("**kwargs") is not None:

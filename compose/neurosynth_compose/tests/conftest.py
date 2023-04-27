@@ -396,14 +396,18 @@ def user_data(app, db, mock_add_users):
                 user=user,
                 type="cbma",
                 estimator={
-                    "algorithm": "ALE",
-                    "kernel_transformer": "ALEKernel",
-                    "fwhm": 6.0,
+                    "type": "ALE",
+                    "args": {
+                        "kernel_transformer": "ALEKernel",
+                        "kernel__fwhm": 6.0,
+                    }
                 },
                 corrector={
                     "type": "FDR",
-                    "alpha": 0.05,
-                    "method": "indep",
+                    "args": {
+                        "alpha": 0.05,
+                        "method": "indep",
+                    }
                 },
                 filter="include",
             )
@@ -445,7 +449,15 @@ def meta_analysis_results(app, db, user_data, mock_add_users):
             meta_schema = MetaAnalysisSchema(context={"nested": True}).dump(
                 meta_analysis
             )
-            dataset, estimator, corrector = process_bundle(meta_schema)
+            studyset_dict = meta_schema['studyset']['snapshot']
+            annotation_dict = meta_schema['annotation']['snapshot']
+            specification_dict = meta_schema['specification']
+
+            dataset, estimator, corrector = process_bundle(
+                studyset_dict,
+                annotation_dict,
+                specification_dict,
+            )
 
             results[user_info["id"]] = {
                 "meta_analysis_id": meta_analysis.id,
