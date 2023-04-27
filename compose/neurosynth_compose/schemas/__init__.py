@@ -10,6 +10,8 @@ from .analysis import (
     SpecificationSchema,
     NeurostoreStudySchema,
     ProjectSchema,
+    ResultInitSchema,
+    ResultUploadSchema,
 )
 from .users import UserSchema
 
@@ -17,6 +19,8 @@ from .users import UserSchema
 __all__ = [
     "MetaAnalysisSchema",
     "MetaAnalysisResultSchema",
+    "ResultInitSchema",
+    "ResultUploadSchema",
     "NeurovaultCollectionSchema",
     "NeurovaultFileSchema",
     "StudysetSchema",

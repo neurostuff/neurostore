@@ -455,6 +455,19 @@ def meta_analysis_results(app, db, user_data, mock_add_users):
     return results
 
 
+@pytest.fixture(scope="session")
+def result_dir(tmpdir):
+    """Create temporary directory"""
+    return tmpdir
+
+
+@pytest.fixture(scope="function")
+def meta_analysis_result_files(tmpdir, meta_analysis_results):
+    res = list(meta_analysis_results.values())[0]["results"]
+    res.save_maps(tmpdir)
+    res.save_tables(tmpdir)
+
+
 @pytest.fixture(scope="function")
 def neurostore_data(db, mock_add_users):
     try:

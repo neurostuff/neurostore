@@ -24,6 +24,21 @@ class PGSQLString(fields.String):
             return result.replace("\x00", "\uFFFD")
 
 
+class ResultInitSchema(Schema):
+    meta_analysis_id = fields.String(load_only=True)
+    meta_analysis = fields.Pluck("MetaAnalysisSchema", "id", attribute="meta_analysis", dump_only=True)
+    studyset_snapshot = fields.Dict()
+    annotation_snapshot = fields.Dict()
+    specification_snapshot = fields.Dict()
+
+
+class ResultUploadSchema(Schema):
+    statistical_maps = fields.Raw(metadata={'type': 'string', 'format': 'binary'}, many=True)
+    cluster_tables = fields.Raw(metadata={'type': 'string', 'format': 'binary'}, many=True)
+    diagnostic_tables = fields.Raw(metadata={'type': 'string', 'format': 'binary'}, many=True)
+    method_description = fields.String()
+
+
 class StringOrNested(fields.Nested):
     #: Default error messages.
     default_error_messages = {
@@ -34,7 +49,9 @@ class StringOrNested(fields.Nested):
     def _serialize(self, value, attr, obj, **kwargs):
         if value is None:
             return None
-        nested = self.context.get("nested")
+        nested = (
+            False if self.metadata.get("nested", None) is False else self.context.get("nested")
+        )
         nested_attr = self.metadata.get("pluck")
         if nested:
             many = self.schema.many or self.many
@@ -129,7 +146,7 @@ class AnnotationSchema(BaseSchema):
         AnnotationReferenceSchema, "id", attribute="annotation_reference"
     )
     studyset = fields.Pluck(StudysetSchema, "neurostore_id", dump_only=True)
-    internal_studyset_id = fields.Pluck(
+    cached_studyset_id = fields.Pluck(
         StudysetSchema, "id", load_only=True, attribute="studyset"
     )
 
@@ -182,11 +199,11 @@ class MetaAnalysisSchema(BaseSchema):
     annotation = StringOrNested(
         AnnotationSchema, metadata={"pluck": "neurostore_id"}, dump_only=True
     )
-    project = fields.String(allow_none=True)
-    internal_studyset_id = fields.Pluck(
+    project_id = StringOrNested("ProjectSchema", metadata={"nested": False}, data_key="project")
+    cached_studyset_id = fields.Pluck(
         StudysetSchema, "id", load_only=True, attribute="studyset"
     )
-    internal_annotation_id = fields.Pluck(
+    cached_annotation_id = fields.Pluck(
         AnnotationSchema, "id", load_only=True, attribute="annotation"
     )
     run_key = fields.String(dump_only=True)

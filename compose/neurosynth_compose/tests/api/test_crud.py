@@ -27,10 +27,10 @@ def test_create(auth_client, user_data, endpoint, model, schema):
     payload = schema().dump(example)
     if payload.get("studyset"):
         del payload["studyset"]
-        payload["internal_studyset_id"] = example.studyset.id
+        payload["cached_studyset_id"] = example.studyset.id
     if payload.get("annotation"):
         del payload["annotation"]
-        payload["internal_annotation_id"] = example.annotation.id
+        payload["cached_annotation_id"] = example.annotation.id
     if payload.get("project"):
         payload["project"] = payload["project"].id
     if payload.get("run_key"):
