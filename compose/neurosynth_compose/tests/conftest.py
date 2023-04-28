@@ -1,4 +1,5 @@
 import json
+from os.path import isfile
 from os import environ
 import pathlib
 
@@ -22,7 +23,7 @@ from ..models import (
 )
 from auth0.v3.authentication import GetToken
 
-DATA_PATH = f_path = pathlib.Path(__file__).parent.resolve() / "data"
+DATA_PATH = pathlib.Path(__file__).parent.resolve() / "data"
 
 
 def pytest_addoption(parser):
@@ -134,10 +135,13 @@ def mock_auth(monkeysession):
         "BEARERINFO_FUNC", "neurosynth_compose.tests.conftest.mock_decode_token"
     )
 
+
 @pytest.fixture(scope="session")
 def mock_ns(monkeysession):
     """mock neurostore api"""
     monkeysession.setattr("neurosynth_compose.resources.neurostore_session", mock_ns_session)
+
+
 """
 Session / db managment tools
 """
@@ -474,10 +478,37 @@ def result_dir(tmpdir):
 
 
 @pytest.fixture(scope="function")
-def meta_analysis_result_files(tmpdir, meta_analysis_results):
-    res = list(meta_analysis_results.values())[0]["results"]
-    res.save_maps(tmpdir)
-    res.save_tables(tmpdir)
+def meta_analysis_result_files(tmpdir, auth_client, meta_analysis_results):
+    user_id = User.query.filter_by(name=auth_client.username.strip('-id')).one().id
+    res = meta_analysis_results[user_id]["results"]
+    res.save_maps(tmpdir / "maps")
+    res.save_tables(tmpdir / "tables")
+
+    return {
+        "meta_analysis_id": meta_analysis_results[user_id]["meta_analysis_id"],
+        "maps": [f.resolve() for f in pathlib.Path(tmpdir / "maps").glob('*')],
+        "tables": [f.resolve() for f in pathlib.Path(tmpdir / "tables").glob('*')],
+        "method_description": res.description_,
+    }
+
+
+
+@pytest.fixture(scope="session")
+def cached_metaresult():
+
+@pytest.fixture(scope="function")
+def meta_analysis_cached_result_files(tmpdir, auth_client):
+    user_id = User.query.filter_by(name=auth_client.username.strip('-id')).one().id
+    res = meta_analysis_results[user_id]["results"]
+    res.save_maps(tmpdir / "maps")
+    res.save_tables(tmpdir / "tables")
+
+    return {
+        "meta_analysis_id": meta_analysis_results[user_id]["meta_analysis_id"],
+        "maps": [f.resolve() for f in pathlib.Path(tmpdir / "maps").glob('*')],
+        "tables": [f.resolve() for f in pathlib.Path(tmpdir / "tables").glob('*')],
+        "method_description": res.description_,
+    }
 
 
 @pytest.fixture(scope="function")

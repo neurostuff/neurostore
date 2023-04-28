@@ -26,7 +26,9 @@ class PGSQLString(fields.String):
 
 class ResultInitSchema(Schema):
     meta_analysis_id = fields.String(load_only=True)
-    meta_analysis = fields.Pluck("MetaAnalysisSchema", "id", attribute="meta_analysis", dump_only=True)
+    meta_analysis = fields.Pluck(
+        "MetaAnalysisSchema", "id", attribute="meta_analysis", dump_only=True
+    )
     studyset_snapshot = fields.Dict()
     annotation_snapshot = fields.Dict()
     specification_snapshot = fields.Dict()

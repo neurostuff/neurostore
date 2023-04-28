@@ -8,6 +8,7 @@ from ....models import (
     NeurovaultCollection,
     User,
 )
+from ....schemas import ResultUploadSchema
 from ....resources.tasks import file_upload_neurovault, upload_neurostore
 
 
@@ -74,8 +75,23 @@ def test_upload_neurostore(app, db, user_data, meta_analysis_results):
     pass
 
 
-def test_result_upload(meta_analysis_result_files):
-    pass
+def test_result_upload(auth_client, app, db, meta_analysis_result_files):
+    data = {}
+    data["statistical_maps"] = meta_analysis_result_files['maps']
+    data["cluster_tables"] = [
+        f for f in meta_analysis_result_files['tables'] if 'clust.tsv' in f.name
+    ]
+    data["diagnostic_tables"] = [
+        f for f in meta_analysis_result_files['tables'] if 'clust.tsv' not in f.name
+    ]
+    data["method_description"] = meta_analysis_result_files["method_description"]
+
+    resp = auth_client.post(
+        "/api/meta-analysis-results",
+        data={"meta_analysis_id": meta_analysis_result_files["meta_analysis_id"]},
+    )
+    result_id = resp.json['id']
+    auth_client.put(f"/api/meta-analysis-results/{result_id}", data=data)
 
 # @celery_test
 # def test_send_task_file_upload_neurovault(

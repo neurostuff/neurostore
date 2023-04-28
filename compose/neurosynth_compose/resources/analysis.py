@@ -362,7 +362,12 @@ class MetaAnalysisResultsView(ObjectView, ListView):
         except ValidationError as e:
             abort(422, description=f"input does not conform to specification: {str(e)}")
 
-        print(data)
+        with db.session.no_autoflush:
+            record = self.__class__.update_or_create(data)
+        return self.__class__._schema().dump(record)
+
+    def put(self):
+        pass
 
 
 @view_maker

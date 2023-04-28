@@ -113,6 +113,7 @@ class MetaAnalysisResult(BaseMixin, db.Model):
     meta_analysis = relationship("MetaAnalysis", backref=backref("results"))
     cli_version = db.Column(db.Text)  # neurosynth-compose cli version
     cli_args = db.Column(db.JSON)  # Dictionary of cli arguments
+    method_description = db.Column(db.Text)  # description of the method applied
 
 
 class NeurovaultCollection(BaseMixin, db.Model):
