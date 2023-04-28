@@ -11,20 +11,18 @@ import {
     TableRow,
     Typography,
 } from '@mui/material';
+import { AnnotationNoteValue } from 'components/EditAnnotations/helpers/utils';
 import { EPropertyType } from 'components/EditMetadata';
 import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { useGetAnnotationById } from 'hooks';
-import { Fragment, useEffect, useState } from 'react';
-import BaseDialog, { IDialog } from '../BaseDialog';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
-import { AnnotationNoteValue } from 'components/EditAnnotations/helpers/utils';
-import {
-    useProjectExtractionAnnotationId,
-    useProjectSelectionMetadata,
-    useUpdateSelectionFilter,
-} from 'pages/Projects/ProjectPage/ProjectStore';
-import SelectionDialogStyles from './SelectionDialog.styles';
+import { useProjectExtractionAnnotationId } from 'pages/Projects/ProjectPage/ProjectStore';
+import { Fragment, useEffect, useState } from 'react';
+import CreateMetaAnalysisSpecificationSelectionStepStyles from './CreateMetaAnalysisSpecificationSelectionStep.styles';
+import NavigationButtons, {
+    ENavigationButton,
+} from 'components/Buttons/NavigationButtons/NavigationButtons';
 
 export const getFilteredAnnotationNotes = (
     annotationNotes: NoteCollectionReturn[],
@@ -84,9 +82,11 @@ const annotationNotesToTableFormat = (
     return tableFormat;
 };
 
-const SelectionDialog: React.FC<IDialog> = (props) => {
-    const updateSelection = useUpdateSelectionFilter();
-    const selectionMetadata = useProjectSelectionMetadata();
+const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
+    onChooseSelection: (selectionKey: string, type: EPropertyType) => void;
+    onNavigate: (button: ENavigationButton) => void;
+    selection: { selectionKey: string | undefined; type: EPropertyType } | undefined;
+}> = (props) => {
     const annotationId = useProjectExtractionAnnotationId();
     const { data: annotation } = useGetAnnotationById(annotationId);
 
@@ -97,24 +97,7 @@ const SelectionDialog: React.FC<IDialog> = (props) => {
               type: EPropertyType;
           }
         | undefined
-    >(undefined);
-
-    const handleSelectFilter = () => {
-        if (selectedValue?.selectionKey) {
-            updateSelection({
-                ...selectedValue,
-            });
-
-            handleCloseDialog();
-        }
-    };
-
-    useEffect(() => {
-        setSelectedValue({
-            selectionKey: selectionMetadata.filter.selectionKey,
-            type: selectionMetadata.filter.type,
-        });
-    }, [selectionMetadata]);
+    >(props.selection);
 
     useEffect(() => {
         setAnnotationsSelected((prev) => {
@@ -127,6 +110,12 @@ const SelectionDialog: React.FC<IDialog> = (props) => {
             return filteredAnnotations;
         });
     }, [selectedValue, annotation]);
+
+    const handleNavigate = (button: ENavigationButton) => {
+        if (selectedValue?.selectionKey && selectedValue?.type !== EPropertyType.NONE)
+            props.onChooseSelection(selectedValue.selectionKey, selectedValue.type);
+        props.onNavigate(button);
+    };
 
     const options = Object.entries(annotation?.note_keys || {})
         .map(([key, value]) => ({
@@ -142,24 +131,14 @@ const SelectionDialog: React.FC<IDialog> = (props) => {
           )
         : [];
 
-    const handleCloseDialog = () => {
-        props.onCloseDialog();
-        setSelectedValue({
-            selectionKey: selectionMetadata.filter.selectionKey,
-            type: selectionMetadata.filter.type,
-        });
-    };
-
     return (
-        <BaseDialog
-            isOpen={props.isOpen}
-            maxWidth="md"
-            fullWidth
-            onCloseDialog={handleCloseDialog}
-            dialogTitle={`${annotationsSelected.length} / ${
-                annotation?.notes?.length || 0
-            } analyses selected`}
-        >
+        <Box>
+            <Box>
+                <Typography gutterBottom>
+                    All the studies within your studyset have all the relevant information (i.e.
+                    coordinates, annotations) needed for a meta-analysis
+                </Typography>
+            </Box>
             <Box>
                 <Typography gutterBottom>
                     Select the <b>annotation inclusion column</b> that you would like to use to
@@ -209,7 +188,7 @@ const SelectionDialog: React.FC<IDialog> = (props) => {
                                         <TableRow>
                                             <TableCell
                                                 sx={[
-                                                    SelectionDialogStyles.tableCell,
+                                                    CreateMetaAnalysisSpecificationSelectionStepStyles.tableCell,
                                                     { maxWidth: '300px' },
                                                 ]}
                                                 rowSpan={analysisDisplayed.analyses.length}
@@ -218,10 +197,12 @@ const SelectionDialog: React.FC<IDialog> = (props) => {
                                             </TableCell>
                                             <TableCell
                                                 sx={[
-                                                    SelectionDialogStyles.tableCell,
+                                                    CreateMetaAnalysisSpecificationSelectionStepStyles.tableCell,
                                                     analysisDisplayed.analyses[0].isSelected
-                                                        ? SelectionDialogStyles.selected
-                                                        : SelectionDialogStyles['not-selected'],
+                                                        ? CreateMetaAnalysisSpecificationSelectionStepStyles.selected
+                                                        : CreateMetaAnalysisSpecificationSelectionStepStyles[
+                                                              'not-selected'
+                                                          ],
                                                 ]}
                                             >
                                                 {analysisDisplayed.analyses[0].analysisName}
@@ -233,10 +214,10 @@ const SelectionDialog: React.FC<IDialog> = (props) => {
                                                 <TableRow key={analysis.analysisId}>
                                                     <TableCell
                                                         sx={[
-                                                            SelectionDialogStyles.tableCell,
+                                                            CreateMetaAnalysisSpecificationSelectionStepStyles.tableCell,
                                                             analysis.isSelected
-                                                                ? SelectionDialogStyles.selected
-                                                                : SelectionDialogStyles[
+                                                                ? CreateMetaAnalysisSpecificationSelectionStepStyles.selected
+                                                                : CreateMetaAnalysisSpecificationSelectionStepStyles[
                                                                       'not-selected'
                                                                   ],
                                                         ]}
@@ -259,21 +240,18 @@ const SelectionDialog: React.FC<IDialog> = (props) => {
 
                 <Box
                     sx={{
-                        display: 'flex',
-                        justifyContent: 'flex-end',
+                        width: '100%',
                     }}
                 >
-                    <Button
-                        onClick={handleSelectFilter}
-                        disabled={selectedValue === undefined}
-                        variant="contained"
-                    >
-                        save
-                    </Button>
+                    <NavigationButtons
+                        onButtonClick={handleNavigate}
+                        nextButtonDisabled={selectedValue === undefined}
+                        nextButtonStyle="contained"
+                    />
                 </Box>
             </Box>
-        </BaseDialog>
+        </Box>
     );
 };
 
-export default SelectionDialog;
+export default CreateMetaAnalysisSpecificationSelectionStep;

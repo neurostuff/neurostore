@@ -1,6 +1,5 @@
 import { Box, Typography, Paper, Button } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import { EAnalysisType } from 'legacy/MetaAnalysis/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import DynamicInputDisplay from '../../../components/MetaAnalysisConfigComponents/DynamicInputDisplay/DynamicInputDisplay';
 import MetaAnalysisSummaryRow from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisSummaryRow/MetaAnalysisSummaryRow';
@@ -14,10 +13,10 @@ import { useSnackbar } from 'notistack';
 
 export const getAnalysisTypeDescription = (name: string | undefined): string => {
     switch (name) {
-        case EAnalysisType.CBMA:
-            return 'Coordinate Based Meta-Analysis';
-        case EAnalysisType.IBMA:
-            return 'Image Based Meta-Analysis';
+        // case EAnalysisType.CBMA:
+        //     return 'Coordinate Based Meta-Analysis';
+        // case EAnalysisType.IBMA:
+        //     return 'Image Based Meta-Analysis';
         default:
             return '';
     }

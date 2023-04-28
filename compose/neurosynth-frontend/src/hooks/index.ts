@@ -6,7 +6,7 @@ import useGetTour from './useGetTour';
 
 import useGetStudyById from './requests/useGetStudyById';
 import useCreateAlgorithmSpecification from './requests/useCreateAlgorithmSpecification';
-import useGetMetaAnalyses from './requests/useGetMetaAnalyses';
+import useGetMetaAnalysesByProjectId from './requests/useGetMetaAnalyses';
 import useGetMetaAnalysisById from './requests/useGetMetaAnalysisById';
 import useGetStudysets from './requests/useGetStudysets';
 import useGetAnnotationsByStudysetId from './requests/useGetAnnotationsByStudysetId';
@@ -43,7 +43,7 @@ export {
     useCreateStudy,
     // META-ANALYSES
     useCreateAlgorithmSpecification,
-    useGetMetaAnalyses,
+    useGetMetaAnalysesByProjectId as useGetMetaAnalyses,
     useGetMetaAnalysisById,
     // STUDYSETS
     useGetStudysets,

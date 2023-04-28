@@ -1,10 +1,10 @@
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import { INeurosynthNodeData } from 'components/PrismaComponent/NeurosynthNode';
-import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
+import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 import { CSSProperties } from 'react';
 import { Edge, MarkerType, Node } from 'reactflow';
-import { INeurosynthProject, IProvenance, ISource, ITag } from 'hooks/requests/useGetProjects';
+import { IProvenance, ISource, ITag } from 'hooks/requests/useGetProjects';
 
 type IPRISMAExclusion = ITag & { numRecords: number };
 

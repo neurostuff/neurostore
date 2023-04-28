@@ -1,6 +1,6 @@
 import { Style } from 'index';
 
-const ProjectStepComponentsStyles: Style = {
+const ProjectComponentsStyles: Style = {
     stepCard: {
         width: '450px',
         borderRadius: '5px',
@@ -48,4 +48,4 @@ const ProjectStepComponentsStyles: Style = {
     },
 };
 
-export default ProjectStepComponentsStyles;
+export default ProjectComponentsStyles;

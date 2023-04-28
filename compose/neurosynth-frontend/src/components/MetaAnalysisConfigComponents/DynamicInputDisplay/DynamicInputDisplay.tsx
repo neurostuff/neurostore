@@ -23,7 +23,7 @@ const DynamicInputDisplay: React.FC<{ dynamicArg: IDynamicValueType }> = (props)
             {valuesList.length > 0 && (
                 <>
                     <Typography sx={DynamicInputDisplayStyles.dynamicInputSection}>
-                        Optional arguments
+                        Arguments
                     </Typography>
                     <Box sx={DynamicInputDisplayStyles.valuesListContainer}>
                         {valuesList.map((value) => (

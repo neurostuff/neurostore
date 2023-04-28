@@ -16,7 +16,6 @@ import CurationStubStudyDraggableContainer, {
 } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import CurationColumnStyles from './CurationColumn.styles';
 import CurationDialog from 'components/Dialogs/CurationDialog/CurationDialog';
-import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import {
     useProjectCurationColumn,
     useProjectCurationExclusionTags,
@@ -26,6 +25,7 @@ import {
 import React from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
+import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 
 export interface ICurationColumn {
     name: string;

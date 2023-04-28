@@ -10,10 +10,14 @@ import {
     StudysetPostBody,
     StudysetReturn,
 } from 'neurosynth-compose-typescript-sdk';
-import { EAnalysisType } from 'legacy/MetaAnalysis/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 import API, { NeurostoreAnnotation } from 'utils/api';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
+
+export enum EAnalysisType {
+    CBMA = 'CBMA',
+    IBMA = 'IBMA',
+}
 
 const useCreateAlgorithmSpecification = () => {
     const createSpecificationMutation = useMutation<

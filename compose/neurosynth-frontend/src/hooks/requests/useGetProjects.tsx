@@ -16,18 +16,6 @@ export interface ISource {
     id: string;
 }
 
-export interface IAlgorithmMetadata {
-    specificationId: string | undefined;
-    metaAnalysisId: string | undefined;
-}
-
-export interface ISelectionMetadata {
-    filter: {
-        selectionKey: string | undefined;
-        type: EPropertyType;
-    };
-}
-
 export interface IPRISMAConfig {
     isPrisma: boolean;
     identification: {
@@ -63,8 +51,6 @@ export interface IExtractionMetadata {
 export interface IProvenance {
     curationMetadata: ICurationMetadata;
     extractionMetadata: IExtractionMetadata;
-    selectionMetadata: ISelectionMetadata;
-    algorithmMetadata: IAlgorithmMetadata;
 }
 
 // define this interface to overwrite provenance type

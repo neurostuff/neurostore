@@ -12,7 +12,6 @@ import { useEffect, useState } from 'react';
 // import { IMetaAnalysisData } from 'components/MetaAnalysisConfigComponents';
 import NavigationButtons from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { useInputValidation, useGetStudysets, useGetAnnotationsByStudysetId } from 'hooks';
-import { EAnalysisType } from 'legacy/MetaAnalysis/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
 import { EPropertyType } from 'components/EditMetadata';
 import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import MetaAnalysisDataStyles from './MetaAnalysisData.styles';

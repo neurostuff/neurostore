@@ -15,9 +15,9 @@ import {
     Button,
 } from '@mui/material';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
-import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
+import ProjectComponentsStyles from '../../ProjectComponents.styles';
 import { useState } from 'react';
-import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionBase';
+import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionDialogBase';
 import useGetExtractionSummary, { IExtractionSummary } from 'hooks/useGetExtractionSummary';
 import ExtractionStepStyles from './ExtractionStep.style';
 import { useGetStudysetById } from 'hooks';
@@ -78,7 +78,7 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
     };
 
     return (
-        <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
+        <Step {...stepProps} expanded={true} sx={ProjectComponentsStyles.step}>
             <StepLabel>
                 <Typography sx={{ color: disabled ? 'muted.main' : 'primary.main' }} variant="h6">
                     <b>Extract & Annotate</b>: Add relevant study data
@@ -103,7 +103,7 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                     </Typography>
                     <Box sx={{ marginTop: '1rem' }}>
                         {extractionStepHasBeenInitialized ? (
-                            <Box sx={[ProjectStepComponentsStyles.stepCard]}>
+                            <Box sx={[ProjectComponentsStyles.stepCard]}>
                                 <Card
                                     sx={{
                                         width: '100%',
@@ -117,12 +117,12 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                         isLoading={getStudysetIsLoading}
                                     >
                                         <CardContent>
-                                            <Box sx={ProjectStepComponentsStyles.stepTitle}>
+                                            <Box sx={ProjectComponentsStyles.stepTitle}>
                                                 <Typography sx={{ color: 'muted.main' }}>
                                                     {studyset?.studies?.length || 0} studies
                                                 </Typography>
                                                 <CircularProgress
-                                                    sx={ProjectStepComponentsStyles.progressCircle}
+                                                    sx={ProjectComponentsStyles.progressCircle}
                                                     variant="determinate"
                                                     value={getPercentageComplete(extractionSummary)}
                                                     color={
@@ -141,11 +141,9 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                                 {studyset?.name || ''}
                                             </Typography>
 
-                                            <Box sx={ProjectStepComponentsStyles.statusContainer}>
+                                            <Box sx={ProjectComponentsStyles.statusContainer}>
                                                 <Box
-                                                    sx={
-                                                        ProjectStepComponentsStyles.statusIconContainer
-                                                    }
+                                                    sx={ProjectComponentsStyles.statusIconContainer}
                                                 >
                                                     <CheckIcon
                                                         sx={ExtractionStepStyles.checkIcon}
@@ -155,9 +153,7 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                                     </Typography>
                                                 </Box>
                                                 <Box
-                                                    sx={
-                                                        ProjectStepComponentsStyles.statusIconContainer
-                                                    }
+                                                    sx={ProjectComponentsStyles.statusIconContainer}
                                                 >
                                                     <BookmarkIcon
                                                         sx={ExtractionStepStyles.saveForLater}
@@ -168,9 +164,7 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                                     </Typography>
                                                 </Box>
                                                 <Box
-                                                    sx={
-                                                        ProjectStepComponentsStyles.statusIconContainer
-                                                    }
+                                                    sx={ProjectComponentsStyles.statusIconContainer}
                                                 >
                                                     <QuestionMarkIcon
                                                         sx={ExtractionStepStyles.uncategorizedIcon}
@@ -202,7 +196,7 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                             <ConfirmationDialog
                                                 onCloseDialog={handleMarkAllAsComplete}
                                                 rejectText="Cancel"
-                                                confirmText="Yes"
+                                                confirmText="Mark all as complete"
                                                 isOpen={markAllAsCompleteConfirmationDialogIsOpen}
                                                 dialogTitle="Are you sure you want to mark all the studies as complete?"
                                                 dialogMessage="The selection phase will be enabled when all studies in the extraction phase have been marked as complete. You can skip or expedite the extraction process by clicking this button. This may result in some studies in the studyset having incomplete or unextracted data."
@@ -224,8 +218,8 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                         ) : (
                             <Box
                                 sx={[
-                                    ProjectStepComponentsStyles.stepCard,
-                                    ProjectStepComponentsStyles.getStartedContainer,
+                                    ProjectComponentsStyles.stepCard,
+                                    ProjectComponentsStyles.getStartedContainer,
                                     { borderColor: disabled ? 'muted.main' : 'primary.main' },
                                 ]}
                             >

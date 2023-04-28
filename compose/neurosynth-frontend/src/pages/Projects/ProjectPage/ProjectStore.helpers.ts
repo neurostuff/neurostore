@@ -9,15 +9,33 @@ import {
     ITag,
 } from 'hooks/requests/useGetProjects';
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
-import {
-    ENeurosynthSourceIds,
-    ENeurosynthTagIds,
-} from 'components/ProjectStepComponents/CurationStep/CurationStep';
 import { v4 as uuidv4 } from 'uuid';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import { StateCreator, StoreMutatorIdentifier } from 'zustand';
 import { ProjectStoreActions } from './ProjectStore';
 import API from 'utils/api';
+
+export enum ENeurosynthSourceIds {
+    NEUROSTORE = 'neurosynth_neurostore_id_source',
+    PUBMED = 'neurosynth_pubmed_id_source',
+    SCOPUS = 'neurosynth_scopus_id_source',
+    WEBOFSCIENCE = 'neurosynth_web_of_science_id_source',
+    PSYCINFO = 'neurosynth_psycinfo_id_source',
+}
+
+export enum ENeurosynthTagIds {
+    UNTAGGED_TAG_ID = 'neurosynth_untagged_tag', // default info tag
+    NEEDS_REVIEW_TAG_ID = 'neurosynth_needs_review_tag', // default info tag
+    UNCATEGORIZED_ID = 'neurosynth_uncategorized_tag', // default info tag
+
+    DUPLICATE_EXCLUSION_ID = 'neurosynth_duplicate_exclusion', // default exclusion
+    IRRELEVANT_EXCLUSION_ID = 'neurosynth_irrelevant_exclusion', // default exclusion
+    REPORTS_NOT_RETRIEVED_EXCLUSION_ID = 'neurosynth_reports_not_retrieved_exclusion', // default exclusion
+    EXCLUDE_EXCLUSION_ID = 'neurosynth_exclude_exclusion', // default exclusion
+    OUT_OF_SCOPE_EXCLUSION_ID = 'neurosynth_out_of_scope_exclusion', // default exclusion
+    INSUFFICIENT_DETAIL_EXCLUSION_ID = 'neurosynth_insufficient_detail_exclusion', // default exclusion
+    LIMITED_RIGOR_EXCLUSION_ID = 'neurosynth_limited_rigor', // default exclusion
+}
 
 export const defaultIdentificationSources = {
     neurostore: {

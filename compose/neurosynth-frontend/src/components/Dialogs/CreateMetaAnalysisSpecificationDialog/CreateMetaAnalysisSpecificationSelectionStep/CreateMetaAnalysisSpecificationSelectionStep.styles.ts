@@ -1,6 +1,6 @@
 import { Style } from 'index';
 
-const SelectionDialogStyles: Style = {
+const CreateMetaAnalysisSpecificationSelectionStepStyles: Style = {
     selected: {
         backgroundColor: '#b7ffb7',
     },
@@ -12,4 +12,4 @@ const SelectionDialogStyles: Style = {
     },
 };
 
-export default SelectionDialogStyles;
+export default CreateMetaAnalysisSpecificationSelectionStepStyles;

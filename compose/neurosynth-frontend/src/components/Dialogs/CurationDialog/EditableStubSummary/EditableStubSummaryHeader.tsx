@@ -8,7 +8,7 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { ITag } from 'hooks/requests/useGetProjects';
 import { useRef, useState } from 'react';
-import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
+import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import NeurosynthConfirmationChip from 'components/NeurosynthConfirmationChip/NeurosynthConfirmationChip';
 import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';

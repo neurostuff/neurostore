@@ -67,7 +67,7 @@ export class SearchCriteria {
         public showUnique: boolean = true,
         public source: Source | undefined = undefined,
         public userId: string | undefined = undefined,
-        public dataType: SearchDataType = SearchDataType.COORDINATE,
+        public dataType: SearchDataType = SearchDataType.BOTH,
         public studysetOwner: string | undefined = undefined
     ) {}
 }

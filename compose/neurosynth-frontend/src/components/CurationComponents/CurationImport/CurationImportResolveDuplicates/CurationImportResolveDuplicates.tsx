@@ -23,7 +23,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { defaultExclusionTags } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
-import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
+import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 import { useHistory } from 'react-router-dom';
 import ReadOnlyStubSummary from '../ReadOnlyStubSummary';
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';

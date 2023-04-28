@@ -8,7 +8,7 @@ import { ICurationStubStudy } from 'components/CurationComponents/CurationStubSt
 import { v4 as uuidv4 } from 'uuid';
 import { ISource } from 'hooks/requests/useGetProjects';
 import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
-import { ENeurosynthSourceIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
+import { ENeurosynthSourceIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 const Cite = require('citation-js');
 require('@citation-js/plugin-enw');
 require('@citation-js/plugin-bibtex');

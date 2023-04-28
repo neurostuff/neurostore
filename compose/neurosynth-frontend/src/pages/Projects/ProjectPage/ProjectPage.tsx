@@ -1,39 +1,20 @@
+import { Box, Link, Tab, Tabs, Typography } from '@mui/material';
+import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
+import EditMetaAnalyses from 'components/ProjectComponents/EditMetaAnalyses/EditMetaAnalyses';
+import ViewMetaAnalyses from 'components/ProjectComponents/ViewMetaAnalyses/ViewMetaAnalyses';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import TextEdit from 'components/TextEdit/TextEdit';
+import useGetProjectById from 'hooks/requests/useGetProjectById';
+import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
 import {
-    Box,
-    Typography,
-    Stepper,
-    ToggleButtonGroup,
-    ToggleButton,
-    Button,
-    Tabs,
-    Tab,
-} from '@mui/material';
-import {
-    // useClearProvenance,
     useInitProjectStore,
-    useProjectAlgorithmMetadata,
-    useProjectCurationColumns,
     useProjectDescription,
-    useProjectExtractionMetadata,
-    useProjectSelectionMetadata,
     useProjectName,
     useUpdateProjectDescription,
     useUpdateProjectName,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import AlgorithmStep from 'components/ProjectStepComponents/AlgorithmStep/AlgorithmStep';
-import CurationStep from 'components/ProjectStepComponents/CurationStep/CurationStep';
-import ExtractionStep from 'components/ProjectStepComponents/ExtractionStep/ExtractionStep';
-import SelectionStep from 'components/ProjectStepComponents/SelectionStep/SelectionStep';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import TextEdit from 'components/TextEdit/TextEdit';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
-import useGetCurationSummary from 'hooks/useGetCurationSummary';
-import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import ProjectPageStyles from './ProjectPage.styles';
-import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
-import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
+import { Route, Switch, useHistory, useLocation, useParams, useRouteMatch } from 'react-router-dom';
 
 export interface IProjectPageLocationState {
     projectPage?: {
@@ -45,63 +26,25 @@ export interface IProjectPageLocationState {
 // const metaAnalysisId = (project?.meta_analyses as MetaAnalysis[]).
 const ProjectPage: React.FC = (props) => {
     const { projectId }: { projectId: string } = useParams();
+    const location = useLocation();
+    const history = useHistory();
     const {
         data: project,
         isError: getProjectIsError,
         isLoading: getProjectIsLoading,
     } = useGetProjectById(projectId);
-    const curationSummary = useGetCurationSummary();
-    const extractionSummary = useGetExtractionSummary(projectId);
-    const [tab, setTab] = useState(0);
 
     const updateProjectName = useUpdateProjectName();
     const updateProjectDescription = useUpdateProjectDescription();
     const initProjectStore = useInitProjectStore();
-    // const clearProvenance = useClearProvenance();
 
     const projectName = useProjectName();
     const projectDescription = useProjectDescription();
-
-    const curationStepHasBeenInitialized = useProjectCurationColumns().length > 0;
-
-    const extractionMetadata = useProjectExtractionMetadata();
-    const extractionStepHasBeenInitialized =
-        !!extractionMetadata.annotationId && !!extractionMetadata.studysetId;
-
-    const disableExtractionStep =
-        curationSummary.total === 0 ||
-        curationSummary.included === 0 ||
-        curationSummary.uncategorized > 0;
-
-    const selectionMetadata = useProjectSelectionMetadata();
-
-    const disableFiltrationStep =
-        extractionSummary?.total === 0 || extractionSummary.total !== extractionSummary.completed;
-
-    const selectionStepHasBeenInitialized = !!selectionMetadata?.filter?.selectionKey;
-    const selectionFilterHasBeenSet = !!selectionMetadata?.filter?.selectionKey;
-
-    // variables realted to algorithm
-    const algorithmMetadata = useProjectAlgorithmMetadata();
-    const algorithmStepHasBeenInitialized =
-        !!algorithmMetadata.specificationId && !!algorithmMetadata.metaAnalysisId;
-
-    // activeStep is 0 indexed.
-    const activeStep =
-        +!!extractionStepHasBeenInitialized +
-        +!disableFiltrationStep +
-        +!!selectionStepHasBeenInitialized;
-
     useEffect(() => {
         initProjectStore(projectId);
     }, [initProjectStore, projectId]);
 
-    const handleTabChange = (event: any, tab: number) => {
-        setTab((prev) => {
-            if (tab === null) return prev;
-            return tab;
-        });
-    };
+    const tab = location.pathname.includes('meta-analyses') ? 1 : 0;
 
     return (
         <StateHandlerComponent isLoading={getProjectIsLoading} isError={getProjectIsError}>
@@ -161,17 +104,18 @@ const ProjectPage: React.FC = (props) => {
                             },
                         }}
                         value={tab}
-                        onChange={handleTabChange}
                     >
                         <Tab
+                            onClick={() => history.push(`/projects/${projectId}/edit`)}
                             sx={{
                                 fontSize: '1.2rem',
                                 color: tab === 0 ? '#ef8a24 !important' : 'primary.main',
                                 fontWeight: tab === 0 ? 'bold' : 'normal',
                             }}
-                            label="Edit Meta-Analyses"
+                            label="Edit Meta-Analyses Data"
                         />
                         <Tab
+                            onClick={() => history.push(`/projects/${projectId}/meta-analyses`)}
                             sx={{
                                 fontSize: '1.2rem',
                                 color: tab === 1 ? '#ef8a24 !important' : 'primary.main',
@@ -182,43 +126,14 @@ const ProjectPage: React.FC = (props) => {
                     </Tabs>
                 </Box>
 
-                {tab === 0 && (
-                    <Stepper
-                        activeStep={activeStep}
-                        orientation="vertical"
-                        sx={[
-                            ProjectPageStyles.stepper,
-                            { display: tab === 0 ? 'initial' : 'none' },
-                        ]}
-                    >
-                        <CurationStep
-                            curationStepHasBeenInitialized={curationStepHasBeenInitialized}
-                        />
-                        <ExtractionStep
-                            extractionStepHasBeenInitialized={extractionStepHasBeenInitialized}
-                            disabled={disableExtractionStep}
-                        />
-                        <SelectionStep
-                            selectionStepHasBeenInitialized={selectionStepHasBeenInitialized}
-                            disabled={disableFiltrationStep}
-                        />
-                        <AlgorithmStep
-                            algorithmStepHasBeenInitialized={algorithmStepHasBeenInitialized}
-                            disabled={!selectionFilterHasBeenSet}
-                        />
-                    </Stepper>
-                )}
-                {tab === 1 && <div>view meta-analysis</div>}
-                {/* <Button
-                onClick={() => {
-                    clearProvenance();
-                }}
-                sx={{ marginTop: '1rem' }}
-                variant="contained"
-                color="error"
-            >
-                Clear Provenance (FOR DEV PURPOSES ONLY)
-            </Button> */}
+                <Switch>
+                    <Route exact path={[`/projects/:projectId`, `/projects/:projectId/edit`]}>
+                        <EditMetaAnalyses />
+                    </Route>
+                    <Route path={`/projects/:projectId/meta-analyses`}>
+                        <ViewMetaAnalyses />
+                    </Route>
+                </Switch>
             </Box>
         </StateHandlerComponent>
     );

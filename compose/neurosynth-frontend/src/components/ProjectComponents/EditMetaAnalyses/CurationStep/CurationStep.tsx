@@ -17,10 +17,10 @@ import {
 } from '@mui/material';
 import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
 import { useHistory, useParams } from 'react-router-dom';
-import ProjectStepComponentsStyles from '../ProjectStepComponents.styles';
+import ProjectComponentsStyles from '../../ProjectComponents.styles';
 import { useState } from 'react';
 import CreateCurationBoardDialog from 'components/Dialogs/CreateCurationBoardDialog/CreateCurationBoardDialog';
-import CurationStepStyles from './CurationStep.style';
+import CurationStepStyles from 'components/ProjectComponents/EditMetaAnalyses/CurationStep/CurationStep.style';
 import useGetCurationSummary, { ICurationSummary } from 'hooks/useGetCurationSummary';
 import { useInitCuration } from 'pages/Projects/ProjectPage/ProjectStore';
 
@@ -29,28 +29,6 @@ enum ECurationBoardTypes {
     SIMPLE,
     CUSTOM,
     SKIP,
-}
-
-export enum ENeurosynthTagIds {
-    UNTAGGED_TAG_ID = 'neurosynth_untagged_tag', // default info tag
-    NEEDS_REVIEW_TAG_ID = 'neurosynth_needs_review_tag', // default info tag
-    UNCATEGORIZED_ID = 'neurosynth_uncategorized_tag', // default info tag
-
-    DUPLICATE_EXCLUSION_ID = 'neurosynth_duplicate_exclusion', // default exclusion
-    IRRELEVANT_EXCLUSION_ID = 'neurosynth_irrelevant_exclusion', // default exclusion
-    REPORTS_NOT_RETRIEVED_EXCLUSION_ID = 'neurosynth_reports_not_retrieved_exclusion', // default exclusion
-    EXCLUDE_EXCLUSION_ID = 'neurosynth_exclude_exclusion', // default exclusion
-    OUT_OF_SCOPE_EXCLUSION_ID = 'neurosynth_out_of_scope_exclusion', // default exclusion
-    INSUFFICIENT_DETAIL_EXCLUSION_ID = 'neurosynth_insufficient_detail_exclusion', // default exclusion
-    LIMITED_RIGOR_EXCLUSION_ID = 'neurosynth_limited_rigor', // default exclusion
-}
-
-export enum ENeurosynthSourceIds {
-    NEUROSTORE = 'neurosynth_neurostore_id_source',
-    PUBMED = 'neurosynth_pubmed_id_source',
-    SCOPUS = 'neurosynth_scopus_id_source',
-    WEBOFSCIENCE = 'neurosynth_web_of_science_id_source',
-    PSYCINFO = 'neurosynth_psycinfo_id_source',
 }
 
 const getPercentageComplete = (curationSummary: ICurationSummary): number => {
@@ -100,7 +78,7 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
     };
 
     return (
-        <Step {...stepProps} expanded={true} sx={ProjectStepComponentsStyles.step}>
+        <Step {...stepProps} expanded={true} sx={ProjectComponentsStyles.step}>
             <StepLabel>
                 <Typography color="primary" variant="h6">
                     <b>Search & Curate</b>: Import, exclude, and include studies of interest
@@ -117,10 +95,17 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                     </Typography>
                     <Box sx={{ marginTop: '1rem' }}>
                         {curationStepHasBeenInitialized ? (
-                            <Box sx={[ProjectStepComponentsStyles.stepCard]}>
-                                <Card sx={{ width: '100%', height: '100%' }}>
+                            <Box sx={[ProjectComponentsStyles.stepCard]}>
+                                <Card
+                                    sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                        minHeight: '165px',
+                                        padding: '8px',
+                                    }}
+                                >
                                     <CardContent>
-                                        <Box sx={ProjectStepComponentsStyles.stepTitle}>
+                                        <Box sx={ProjectComponentsStyles.stepTitle}>
                                             <Typography sx={{ color: 'muted.main' }}>
                                                 {curationSummary.total} studies
                                             </Typography>
@@ -130,7 +115,7 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                                         ? 'success'
                                                         : 'secondary'
                                                 }
-                                                sx={ProjectStepComponentsStyles.progressCircle}
+                                                sx={ProjectComponentsStyles.progressCircle}
                                                 variant="determinate"
                                                 value={getPercentageComplete(curationSummary)}
                                             />
@@ -138,10 +123,8 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                         <Typography gutterBottom variant="h5">
                                             Study Curation Summary
                                         </Typography>
-                                        <Box sx={ProjectStepComponentsStyles.statusContainer}>
-                                            <Box
-                                                sx={ProjectStepComponentsStyles.statusIconContainer}
-                                            >
+                                        <Box sx={ProjectComponentsStyles.statusContainer}>
+                                            <Box sx={ProjectComponentsStyles.statusIconContainer}>
                                                 <PlaylistAddCheckIcon
                                                     sx={CurationStepStyles.checkIcon}
                                                 />
@@ -149,17 +132,13 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                                     {curationSummary.included} included
                                                 </Typography>
                                             </Box>
-                                            <Box
-                                                sx={ProjectStepComponentsStyles.statusIconContainer}
-                                            >
+                                            <Box sx={ProjectComponentsStyles.statusIconContainer}>
                                                 <CloseIcon sx={CurationStepStyles.closeIcon} />
                                                 <Typography sx={{ color: 'error.dark' }}>
                                                     {curationSummary.excluded} excluded
                                                 </Typography>
                                             </Box>
-                                            <Box
-                                                sx={ProjectStepComponentsStyles.statusIconContainer}
-                                            >
+                                            <Box sx={ProjectComponentsStyles.statusIconContainer}>
                                                 <QuestionMarkIcon
                                                     sx={CurationStepStyles.questionMarkIcon}
                                                 />
@@ -172,9 +151,9 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                     <CardActions>
                                         <Button
                                             color="secondary"
-                                            onClick={() =>
-                                                history.push(`/projects/${projectId}/curation`)
-                                            }
+                                            onClick={() => {
+                                                history.push(`/projects/${projectId}/curation`);
+                                            }}
                                             variant="text"
                                         >
                                             continue editing
@@ -185,8 +164,8 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                         ) : (
                             <Box
                                 sx={[
-                                    ProjectStepComponentsStyles.stepCard,
-                                    ProjectStepComponentsStyles.getStartedContainer,
+                                    ProjectComponentsStyles.stepCard,
+                                    ProjectComponentsStyles.getStartedContainer,
                                     { borderColor: 'primary.main' },
                                 ]}
                             >

@@ -12,7 +12,7 @@ import DynamicFormNumericInput from './DynamicFormNumericInput';
 import DynamicFormSelectInput from './DynamicFormSelectInput';
 import DynamicFormStringInput from './DynamicFormStringInput';
 import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
-import { EAnalysisType } from 'legacy/MetaAnalysis/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
+import { EAnalysisType } from 'hooks/requests/useCreateAlgorithmSpecification';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 

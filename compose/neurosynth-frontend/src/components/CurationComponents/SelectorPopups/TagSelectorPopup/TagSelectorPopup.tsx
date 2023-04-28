@@ -6,7 +6,7 @@ import { SystemStyleObject } from '@mui/system';
 import { ITag } from 'hooks/requests/useGetProjects';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
+import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 import {
     useCreateNewCurationInfoTag,
     useProjectCurationInfoTags,

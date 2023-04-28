@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
-import { ENeurosynthTagIds } from 'components/ProjectStepComponents/CurationStep/CurationStep';
+import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import {
     useCreateNewExclusion,

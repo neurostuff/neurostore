@@ -1,6 +1,5 @@
 import { DropResult, ResponderProvided } from '@hello-pangea/dnd';
 import { AxiosResponse } from 'axios';
-import { EPropertyType } from 'components/EditMetadata';
 import {
     IExtractionMetadata,
     INeurosynthProjectReturn,
@@ -58,11 +57,6 @@ export type ProjectStoreActions = {
     addOrUpdateStudyListStatus: (id: string, status: 'COMPLETE' | 'SAVEFORLATER') => void;
     setGivenStudyStatusesAsComplete: (studyIdList: string[]) => void;
     deleteStub: (columnIndex: number, stubId: string) => void;
-    setSelectionFilter: (selectionMetadata: {
-        selectionKey: string | undefined;
-        type: EPropertyType;
-    }) => void;
-    setAlgorithmMetadata: (specificationId: string, metaAnalysisId: string) => void;
 };
 
 const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()(
@@ -99,16 +93,6 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                             annotationId: undefined,
                             studyStatusList: [],
                         },
-                        selectionMetadata: {
-                            filter: {
-                                selectionKey: undefined,
-                                type: EPropertyType.NONE,
-                            },
-                        },
-                        algorithmMetadata: {
-                            specificationId: undefined,
-                            metaAnalysisId: undefined,
-                        },
                     },
 
                     // just for testing purposes
@@ -136,16 +120,6 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                                 studysetId: undefined,
                                 annotationId: undefined,
                                 studyStatusList: [],
-                            },
-                            selectionMetadata: {
-                                filter: {
-                                    selectionKey: undefined,
-                                    type: EPropertyType.NONE,
-                                },
-                            },
-                            algorithmMetadata: {
-                                specificationId: undefined,
-                                metaAnalysisId: undefined,
                             },
                         };
                         const id = useProjectStore.getState().id;
@@ -434,33 +408,6 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                             },
                         }));
                     },
-                    setSelectionFilter: (selectionMetadata) => {
-                        set((state) => ({
-                            ...state,
-                            provenance: {
-                                ...state.provenance,
-                                selectionMetadata: {
-                                    filter: {
-                                        ...state.provenance.selectionMetadata.filter,
-                                        ...selectionMetadata,
-                                    },
-                                },
-                            },
-                        }));
-                    },
-                    setAlgorithmMetadata: (specificationId: string, metaAnalysisId: string) => {
-                        set((state) => ({
-                            ...state,
-                            provenance: {
-                                ...state.provenance,
-                                algorithmMetadata: {
-                                    ...state.provenance.algorithmMetadata,
-                                    specificationId: specificationId,
-                                    metaAnalysisId: metaAnalysisId,
-                                },
-                            },
-                        }));
-                    },
                 };
             },
             {
@@ -489,11 +436,7 @@ export const useProjectCurationSources = () =>
     useProjectStore((state) => state.provenance.curationMetadata.identificationSources);
 export const useProjectExtractionMetadata = () =>
     useProjectStore((state) => state.provenance.extractionMetadata);
-export const useProjectSelectionMetadata = () =>
-    useProjectStore((state) => state.provenance.selectionMetadata);
 export const useProjectId = () => useProjectStore((state) => state.id);
-export const useProjectAlgorithmMetadata = () =>
-    useProjectStore((state) => state.provenance.algorithmMetadata);
 export const useProjectCurationIsPrisma = () =>
     useProjectStore((state) => state.provenance.curationMetadata.prismaConfig.isPrisma);
 export const useProjectCurationPrismaConfig = () =>
@@ -544,16 +487,3 @@ export const useProjectExtractionAddOrUpdateStudyListStatus = () =>
     useProjectStore((state) => state.addOrUpdateStudyListStatus);
 export const useProjectExtractionSetGivenStudyStatusesAsComplete = () =>
     useProjectStore((state) => state.setGivenStudyStatusesAsComplete);
-
-// selection updater hooks
-export const useUpdateSelectionFilter = () => useProjectStore((state) => state.setSelectionFilter);
-
-// algorithm retrieval hooks
-export const useAlgorithmSpecificationId = () =>
-    useProjectStore((state) => state.provenance.algorithmMetadata.specificationId);
-export const useAlgorithmMetaAnalysisId = () =>
-    useProjectStore((state) => state.provenance.algorithmMetadata.metaAnalysisId);
-
-// algorithm updater hooks
-export const useUpdateSpecificationMetadata = () =>
-    useProjectStore((state) => state.setAlgorithmMetadata);
