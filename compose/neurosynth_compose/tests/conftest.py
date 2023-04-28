@@ -484,6 +484,8 @@ def meta_analysis_result_files(tmpdir, auth_client, meta_analysis_results):
     res.save_maps(tmpdir / "maps")
     res.save_tables(tmpdir / "tables")
 
+    if not isfile(DATA_PATH / "meta_result.pkl"):
+        res.save
     return {
         "meta_analysis_id": meta_analysis_results[user_id]["meta_analysis_id"],
         "maps": [f.resolve() for f in pathlib.Path(tmpdir / "maps").glob('*')],
