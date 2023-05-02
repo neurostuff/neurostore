@@ -8,7 +8,7 @@ from nibabel import Nifti1Image
 
 from ..__init__ import create_app
 from ..database import db
-from ..models import NeurovaultFile, MetaAnalysis
+from ..models import NeurovaultFile, NeurovaultCollection, MetaAnalysis
 from .neurostore import neurostore_session
 
 app = create_app()

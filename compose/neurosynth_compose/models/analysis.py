@@ -110,10 +110,11 @@ class MetaAnalysisResult(BaseMixin, db.Model):
     __tablename__ = "meta_analysis_results"
     meta_analysis_id = db.Column(db.Text, db.ForeignKey("meta_analyses.id"))
     neurostore_id = db.Column(db.Text, unique=True)
-    meta_analysis = relationship("MetaAnalysis", backref=backref("results"))
     cli_version = db.Column(db.Text)  # neurosynth-compose cli version
     cli_args = db.Column(db.JSON)  # Dictionary of cli arguments
     method_description = db.Column(db.Text)  # description of the method applied
+
+    meta_analysis = relationship("MetaAnalysis", backref=backref("results"))
 
 
 class NeurovaultCollection(BaseMixin, db.Model):

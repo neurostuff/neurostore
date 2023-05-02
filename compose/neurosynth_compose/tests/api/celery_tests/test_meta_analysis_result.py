@@ -1,5 +1,7 @@
 import pytest
 
+import nibabel as nib
+
 from ...conftest import celery_test
 from ....models import (
     MetaAnalysis,
@@ -75,24 +77,37 @@ def test_upload_neurostore(app, db, user_data, meta_analysis_results):
     pass
 
 
-def test_result_upload(auth_client, app, db, meta_analysis_result_files):
+def test_result_upload(auth_client, app, db, meta_analysis_cached_result_files):
     data = {}
-    data["statistical_maps"] = meta_analysis_result_files['maps']
-    data["cluster_tables"] = [
-        f for f in meta_analysis_result_files['tables'] if 'clust.tsv' in f.name
+    data["files"] = [
+        (open(m, 'rb'), m.name)
+        for m in meta_analysis_cached_result_files['maps']
     ]
-    data["diagnostic_tables"] = [
-        f for f in meta_analysis_result_files['tables'] if 'clust.tsv' not in f.name
-    ]
-    data["method_description"] = meta_analysis_result_files["method_description"]
+    # data["cluster_tables"] = [
+    #     open(f, 'rb')
+    #     for f in meta_analysis_cached_result_files['tables']
+    #     if 'clust.tsv' in f.name
+    # ]
+    # data["cluster_tables"] = data["cluster_tables"][0]
+    # data["diagnostic_tables"] = [
+    #     (f.resolve(), f.resolve(), 'text/plain')
+    #     for f in meta_analysis_cached_result_files['tables']
+    #     if 'clust.tsv' not in f.name
+    # ]
+    data["method_description"] = meta_analysis_cached_result_files["method_description"]
 
     resp = auth_client.post(
         "/api/meta-analysis-results",
-        data={"meta_analysis_id": meta_analysis_result_files["meta_analysis_id"]},
+        data={"meta_analysis_id": meta_analysis_cached_result_files["meta_analysis_id"]},
     )
     result_id = resp.json['id']
-    auth_client.put(f"/api/meta-analysis-results/{result_id}", data=data)
+    auth_client.put(
+        f"/api/meta-analysis-results/{result_id}",
+        data=data,
+        json_dump=False,
+        content_type="multipart/form-data")
 
+# headers={"Accept": "*/*", "Accept-Encoding": ["gzip, deflate, br"]},
 # @celery_test
 # def test_send_task_file_upload_neurovault(
 #     app, db, session, user_data, meta_analysis_results, mock_pynv

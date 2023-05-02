@@ -5,6 +5,7 @@ import pathlib
 
 import schemathesis
 import pytest
+from nimare.results import MetaResult
 import sqlalchemy as sa
 from requests.exceptions import HTTPError
 
@@ -484,8 +485,8 @@ def meta_analysis_result_files(tmpdir, auth_client, meta_analysis_results):
     res.save_maps(tmpdir / "maps")
     res.save_tables(tmpdir / "tables")
 
-    if not isfile(DATA_PATH / "meta_result.pkl"):
-        res.save
+    if not isfile(DATA_PATH / "meta_result.pkl.gz"):
+        res.save(DATA_PATH / "meta_result.pkl.gz")
     return {
         "meta_analysis_id": meta_analysis_results[user_id]["meta_analysis_id"],
         "maps": [f.resolve() for f in pathlib.Path(tmpdir / "maps").glob('*')],
@@ -494,19 +495,21 @@ def meta_analysis_result_files(tmpdir, auth_client, meta_analysis_results):
     }
 
 
-
 @pytest.fixture(scope="session")
 def cached_metaresult():
+    return MetaResult.load(DATA_PATH / "meta_result.pkl.gz")
+
 
 @pytest.fixture(scope="function")
-def meta_analysis_cached_result_files(tmpdir, auth_client):
-    user_id = User.query.filter_by(name=auth_client.username.strip('-id')).one().id
-    res = meta_analysis_results[user_id]["results"]
+def meta_analysis_cached_result_files(tmpdir, auth_client, user_data, cached_metaresult):
+    user_id = auth_client.username
+    meta_analysis_id = MetaAnalysis.query.filter_by(user_id=user_id).first().id
+    res = cached_metaresult
     res.save_maps(tmpdir / "maps")
     res.save_tables(tmpdir / "tables")
 
     return {
-        "meta_analysis_id": meta_analysis_results[user_id]["meta_analysis_id"],
+        "meta_analysis_id": meta_analysis_id,
         "maps": [f.resolve() for f in pathlib.Path(tmpdir / "maps").glob('*')],
         "tables": [f.resolve() for f in pathlib.Path(tmpdir / "tables").glob('*')],
         "method_description": res.description_,

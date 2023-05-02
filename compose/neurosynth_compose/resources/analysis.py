@@ -1,5 +1,7 @@
+import pathlib
+
 import connexion
-from flask import abort, request, jsonify
+from flask import abort, request, jsonify, current_app
 from flask.views import MethodView
 
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
@@ -366,8 +368,75 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             record = self.__class__.update_or_create(data)
         return self.__class__._schema().dump(record)
 
-    def put(self):
-        pass
+    def put(self, id):
+        from .tasks import celery_app
+
+        result = self._model.query.filter_by(id=id).one()
+
+        if request.files:
+            records = []
+            file_dir = pathlib.Path(current_app.config['FILE_DIR'], id)
+            file_dir.mkdir(parents=True, exist_ok=True)
+
+            # save data to upload to neurovault
+            stat_maps = request.files.getlist("statistical_maps")
+            stat_map_fnames = {}
+            for m in stat_maps:
+                m_path = file_dir / m.filename
+                m.save(m_path)
+                stat_map_fnames[m_path] = NeurovaultFile()
+
+            # save data to upload to neurostore
+            cluster_tables = request.files.getlist("cluster_tables")
+            cluster_table_fnames = []
+            for c in cluster_tables:
+                c_path = file_dir / c.filename
+                c.save(c_path)
+                cluster_table_fnames.append(c_path)
+
+            # save data for presenting diagnostics
+            diagnostic_tables = request.files.getlist("diagnostic_tables")
+            diagnostic_table_fnames = []
+            for d in diagnostic_tables:
+                d_path = file_dir / d.filename
+                d.save(d_path)
+                diagnostic_table_fnames.append(d_path)
+
+            # get the collection_id (or create collection)
+            nv_collection = NeurovaultCollection(
+                result=result
+            )
+            create_neurovault_collection(nv_collection)
+            # append the collection to be committed
+            records.append(nv_collection)
+
+            # append the existing NeurovaultFiles to be committed
+            for record in stat_map_fnames.values():
+                record.neurovault_collection = nv_collection
+                records.append(record)
+
+            db.session.add_all(records)
+            db.session.commit()
+
+            # upload the individual statistical maps
+            for fpath, record in stat_map_fnames.items():
+                try:
+                    celery_app.send_task(
+                        "neurovault.upload", args=[fpath, record.id]
+                    )
+                except:  # noqa: E722
+                    setattr(record, "status", "FAILED")
+
+
+
+
+
+
+
+
+
+
+        return {"this": "rocks"}
 
 
 @view_maker
@@ -387,11 +456,13 @@ class NeurovaultCollectionsView(ObjectView, ListView):
 
         import flask
         from pynv import Client
-
+        from datetime import datetime
         from flask import current_app as app
 
         meta_analysis = MetaAnalysis.query.filter_by(id=data["meta_analysis_id"]).one()
-        collection_name = meta_analysis.name
+        collection_name = ":".join(
+            [meta_analysis.name, datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')]
+        )
 
         url = f"{flask.request.host_url}" f"meta-analyses/{meta_analysis.id}"
         try:
@@ -506,3 +577,36 @@ class ProjectsView(ObjectView, ListView):
     _nested = {
         "meta_analyses": "MetaAnalysesView",
     }
+
+
+def create_neurovault_collection(nv_collection):
+    import flask
+    from pynv import Client
+    from datetime import datetime
+    from flask import current_app as app
+
+    meta_analysis = nv_collection.result.meta_analysis
+
+    collection_name = ":".join(
+        [meta_analysis.name, datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')]
+    )
+
+    url = f"{flask.request.host_url.rstrip('/')}/meta-analyses/{meta_analysis.id}"
+    try:
+        api = Client(access_token=app.config["NEUROVAULT_ACCESS_TOKEN"])
+        collection = api.create_collection(
+            collection_name,
+            description=meta_analysis.description,
+            full_dataset_url=url,
+        )
+
+        nv_collection.collection_id = collection["id"]
+
+    except Exception:
+        abort(
+            422,
+            f"Error creating collection named: {collection_name}, "
+            "perhaps one with that name already exists?",
+        )
+
+    return nv_collection

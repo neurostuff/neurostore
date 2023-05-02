@@ -5,7 +5,7 @@ from nimare.nimads import Studyset, Annotation
 
 def load_specification(spec):
     """Returns function to run analysis on dataset."""
-    est_mod = import_module(".".join(["nimare", "meta", "cbma"]))
+    est_mod = import_module(".".join(["nimare", "meta", spec['type']]))
     estimator = getattr(est_mod, spec["estimator"]["type"])
     if spec["estimator"].get("args"):
         if "kernel_transformer" in spec["estimator"].get("args"):
