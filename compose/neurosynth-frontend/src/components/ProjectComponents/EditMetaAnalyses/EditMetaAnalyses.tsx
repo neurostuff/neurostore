@@ -1,4 +1,4 @@
-import { Button, Stepper } from '@mui/material';
+import { Box, Button, Stepper } from '@mui/material';
 import CurationStep from 'components/ProjectComponents/EditMetaAnalyses/CurationStep/CurationStep';
 import useGetCurationSummary from 'hooks/useGetCurationSummary';
 import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
@@ -23,7 +23,8 @@ const EditMetaAnalyses: React.FC = (props) => {
         !!extractionMetadata.annotationId && !!extractionMetadata.studysetId;
 
     const { total, included, uncategorized } = useGetCurationSummary();
-    const disableExtractionStep = total === 0 || included === 0 || uncategorized > 0;
+    const disableExtractionStep =
+        (total === 0 || included === 0 || uncategorized > 0) && !extractionStepHasBeenInitialized;
 
     const extractionSummary = useGetExtractionSummary(projectId);
     const disableSpecificationStep =
@@ -46,14 +47,16 @@ const EditMetaAnalyses: React.FC = (props) => {
                 />
                 <SpecificationStep disabled={disableSpecificationStep} />
             </Stepper>
-            <Button
-                onClick={() => clearProvenance()}
-                variant="contained"
-                sx={{ marginTop: '2rem', marginLeft: '4.5rem' }}
-                color="error"
-            >
-                clear this project (ONLY FOR DEV PURPOSES, IRREVERSIBLE)
-            </Button>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                    onClick={() => clearProvenance()}
+                    variant="text"
+                    sx={{ marginTop: '2rem', marginLeft: '4.5rem' }}
+                    color="error"
+                >
+                    clear this project (ONLY FOR DEV PURPOSES, IRREVERSIBLE)
+                </Button>
+            </Box>
         </>
     );
 };

@@ -26,10 +26,16 @@ const useGetExtractionSummary = (projectId: string) => {
     useEffect(() => {
         setExtractionSummary((prev) => {
             if (!projectId || !studysetId || !studyStatusList) {
-                return prev;
+                return {
+                    savedForLater: 0,
+                    uncategorized: 0,
+                    completed: 0,
+                    total: 0,
+                };
             }
 
             const total = (studyset?.studies || []).length;
+            console.log(studyset?.studies);
 
             // all included studies are in the last column
             const numCompletedStudies = studyStatusList.filter(

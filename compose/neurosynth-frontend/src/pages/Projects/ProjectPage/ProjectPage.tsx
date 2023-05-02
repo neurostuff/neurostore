@@ -4,11 +4,14 @@ import EditMetaAnalyses from 'components/ProjectComponents/EditMetaAnalyses/Edit
 import ViewMetaAnalyses from 'components/ProjectComponents/ViewMetaAnalyses/ViewMetaAnalyses';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
+import { useGetMetaAnalyses } from 'hooks';
+import useGetMetaAnalysesByProjectId from 'hooks/requests/useGetMetaAnalyses';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
 import {
     useInitProjectStore,
     useProjectDescription,
+    useProjectMetaAnalysisCanEdit,
     useProjectName,
     useUpdateProjectDescription,
     useUpdateProjectName,
@@ -26,6 +29,7 @@ export interface IProjectPageLocationState {
 // const metaAnalysisId = (project?.meta_analyses as MetaAnalysis[]).
 const ProjectPage: React.FC = (props) => {
     const { projectId }: { projectId: string } = useParams();
+    const { data: metaAnalyses } = useGetMetaAnalysesByProjectId(projectId);
     const location = useLocation();
     const history = useHistory();
     const {
@@ -33,16 +37,24 @@ const ProjectPage: React.FC = (props) => {
         isError: getProjectIsError,
         isLoading: getProjectIsLoading,
     } = useGetProjectById(projectId);
-
     const updateProjectName = useUpdateProjectName();
     const updateProjectDescription = useUpdateProjectDescription();
     const initProjectStore = useInitProjectStore();
+    const metaAnalysesTabEnabled = useProjectMetaAnalysisCanEdit();
 
     const projectName = useProjectName();
     const projectDescription = useProjectDescription();
     useEffect(() => {
         initProjectStore(projectId);
     }, [initProjectStore, projectId]);
+
+    // we only want this to run once on initial render
+    useEffect(() => {
+        if (!location.pathname.includes('edit') && metaAnalysesTabEnabled) {
+            history.push(`/projects/${projectId}/meta-analyses`);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [metaAnalyses]);
 
     const tab = location.pathname.includes('meta-analyses') ? 1 : 0;
 
@@ -112,10 +124,11 @@ const ProjectPage: React.FC = (props) => {
                                 color: tab === 0 ? '#ef8a24 !important' : 'primary.main',
                                 fontWeight: tab === 0 ? 'bold' : 'normal',
                             }}
-                            label="Edit Meta-Analyses Data"
+                            label="Edit Project"
                         />
                         <Tab
                             onClick={() => history.push(`/projects/${projectId}/meta-analyses`)}
+                            disabled={!metaAnalysesTabEnabled}
                             sx={{
                                 fontSize: '1.2rem',
                                 color: tab === 1 ? '#ef8a24 !important' : 'primary.main',

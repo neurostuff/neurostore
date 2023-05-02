@@ -48,9 +48,14 @@ export interface IExtractionMetadata {
     studysetId: string | undefined;
 }
 
+export interface IMetaAnalysisMetadata {
+    canEditMetaAnalyses: boolean;
+}
+
 export interface IProvenance {
     curationMetadata: ICurationMetadata;
     extractionMetadata: IExtractionMetadata;
+    metaAnalysisMetadata: IMetaAnalysisMetadata;
 }
 
 // define this interface to overwrite provenance type

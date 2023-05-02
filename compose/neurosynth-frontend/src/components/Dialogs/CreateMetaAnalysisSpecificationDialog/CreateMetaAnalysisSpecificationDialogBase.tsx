@@ -1,6 +1,6 @@
 import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import BaseDialog, { IDialog } from '../BaseDialog';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import CreateMetaAnalysisSpecificationSelectionStep from './CreateMetaAnalysisSpecificationSelectionStep/CreateMetaAnalysisSpecificationSelectionStep';
 import { EPropertyType } from 'components/EditMetadata';
@@ -34,6 +34,13 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
         corrector: null,
         correctorArgs: {},
     });
+
+    useEffect(() => {
+        setDetails({
+            name: `${projectName} Meta Analysis`,
+            description: `this is a meta-analysis for ${projectName}`,
+        });
+    }, [projectName]);
 
     const handleCloseDialog = () => {
         props.onCloseDialog();

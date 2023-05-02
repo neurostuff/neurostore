@@ -57,6 +57,7 @@ export type ProjectStoreActions = {
     addOrUpdateStudyListStatus: (id: string, status: 'COMPLETE' | 'SAVEFORLATER') => void;
     setGivenStudyStatusesAsComplete: (studyIdList: string[]) => void;
     deleteStub: (columnIndex: number, stubId: string) => void;
+    allowEditMetaAnalyses: () => void;
 };
 
 const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()(
@@ -93,6 +94,9 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                             annotationId: undefined,
                             studyStatusList: [],
                         },
+                        metaAnalysisMetadata: {
+                            canEditMetaAnalyses: false,
+                        },
                     },
 
                     // just for testing purposes
@@ -120,6 +124,9 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                                 studysetId: undefined,
                                 annotationId: undefined,
                                 studyStatusList: [],
+                            },
+                            metaAnalysisMetadata: {
+                                canEditMetaAnalyses: false,
                             },
                         };
                         const id = useProjectStore.getState().id;
@@ -173,6 +180,18 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                         set((state) => ({
                             ...state,
                             description: description,
+                        }));
+                    },
+                    allowEditMetaAnalyses: () => {
+                        set((state) => ({
+                            ...state,
+                            provenance: {
+                                ...state.provenance,
+                                metaAnalysisMetadata: {
+                                    ...state.provenance.metaAnalysisMetadata,
+                                    canEditMetaAnalyses: true,
+                                },
+                            },
                         }));
                     },
                     handleDrag: (result, provided) => {
@@ -487,3 +506,11 @@ export const useProjectExtractionAddOrUpdateStudyListStatus = () =>
     useProjectStore((state) => state.addOrUpdateStudyListStatus);
 export const useProjectExtractionSetGivenStudyStatusesAsComplete = () =>
     useProjectStore((state) => state.setGivenStudyStatusesAsComplete);
+
+// metaAnalysisAlgorithm updater hooks
+export const useAllowEditMetaAnalyses = () =>
+    useProjectStore((state) => state.allowEditMetaAnalyses);
+
+// metaAnalysisAlgorithm retrieval hooks
+export const useProjectMetaAnalysisCanEdit = () =>
+    useProjectStore((state) => state?.provenance?.metaAnalysisMetadata?.canEditMetaAnalyses);

@@ -10,6 +10,7 @@ const useGetMetaAnalysesByProjectId = (projectId?: string) => {
                 const res = axiosResponse.data.results || [];
                 return projectId ? res.filter((x) => x.project === projectId) : res;
             },
+            enabled: !!projectId,
         }
     );
 };

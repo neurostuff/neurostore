@@ -1,7 +1,8 @@
 import { Box, Button, Step, StepContent, StepLabel, StepProps, Typography } from '@mui/material';
-import CreateMetaAnalysisSpecificationDialogBase from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase';
-import { useState } from 'react';
 import ProjectComponentsStyles from '../../ProjectComponents.styles';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import { useHistory, useParams } from 'react-router-dom';
+import { useAllowEditMetaAnalyses } from 'pages/Projects/ProjectPage/ProjectStore';
 
 interface ISpecificationStep {
     disabled: boolean;
@@ -9,24 +10,23 @@ interface ISpecificationStep {
 
 const SpecificationStep: React.FC<ISpecificationStep & StepProps> = (props) => {
     const { disabled, ...stepProps } = props;
-    const [
-        showCreateMetaAnalysisSpecificationDialog,
-        setShowCreateMetaAnalysisSpecificationDialog,
-    ] = useState(false);
+    const history = useHistory();
+    const { projectId } = useParams<{ projectId: string }>();
+    const allowEditMetaAnalyses = useAllowEditMetaAnalyses();
+
+    const handleClickProceed = () => {
+        allowEditMetaAnalyses();
+        history.push(`/projects/${projectId}/meta-analyses`);
+    };
 
     return (
         <Step {...stepProps} expanded={true} sx={ProjectComponentsStyles.step}>
             <StepLabel>
                 <Typography sx={{ color: disabled ? 'muted.main' : 'primary.main' }} variant="h6">
-                    <b>Select and Specify</b>: Select analyses and create the meta-analysis
-                    specification.
+                    <b>Proceed to Meta-Analyses</b>: Create a meta-analysis specification
                 </Typography>
             </StepLabel>
             <StepContent>
-                <CreateMetaAnalysisSpecificationDialogBase
-                    isOpen={showCreateMetaAnalysisSpecificationDialog}
-                    onCloseDialog={() => setShowCreateMetaAnalysisSpecificationDialog(false)}
-                />
                 <Box sx={{ marginLeft: '2rem' }}>
                     <Typography sx={{ color: 'muted.main' }}>
                         <b>
@@ -35,25 +35,17 @@ const SpecificationStep: React.FC<ISpecificationStep & StepProps> = (props) => {
                         </b>
                     </Typography>
                     <Typography gutterBottom sx={{ color: 'muted.main' }}>
-                        In this step, select the analyses from each study that you want to include
-                        in the meta-analysis based on your analysis annotations
+                        Click the button below to move on to create and run your meta-analysis.
                     </Typography>
-                    <Box
-                        sx={[
-                            ProjectComponentsStyles.stepCard,
-                            {
-                                height: '230px',
-                            },
-                        ]}
-                    >
+                    <Box sx={[ProjectComponentsStyles.stepCard, { height: '230px' }]}>
                         <Button
-                            variant="outlined"
-                            color="success"
-                            onClick={() => setShowCreateMetaAnalysisSpecificationDialog(true)}
+                            endIcon={<ArrowForwardIosIcon />}
+                            color="primary"
+                            onClick={handleClickProceed}
                             disabled={disabled}
                             sx={{ width: '100%', height: '100%' }}
                         >
-                            create new meta-analysis specification
+                            Proceed to Meta-Analyses Page
                         </Button>
                     </Box>
                 </Box>
