@@ -25,6 +25,9 @@ import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
 import { NeurostoreAnnotation } from 'utils/api';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import { useProjectName } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useState } from 'react';
+import EditSpecificationDialog from 'components/Dialogs/EditSpecificationDialog/EditSpecificationDialog';
+import useGetSpecificationById from 'hooks/requests/useGetSpecificationById';
 
 const MetaAnalysisPage: React.FC = (props) => {
     const { startTour } = useGetTour('MetaAnalysisPage');
@@ -55,13 +58,18 @@ const MetaAnalysisPage: React.FC = (props) => {
         isLoading: getMetaAnalysisIsLoading,
     } = useGetMetaAnalysisById(metaAnalysisId);
 
+    const { data: specification } = useGetSpecificationById(
+        (data?.specification as SpecificationReturn | undefined)?.id
+    );
+
     // get request is set to nested: true so below casting is safe
-    const specification = data?.specification as SpecificationReturn;
     const studyset = data?.studyset as StudysetReturn;
     const annotation = data?.annotation as NeurostoreAnnotation;
 
     const thisUserOwnsThisMetaAnalysis = (data?.user || undefined) === (user?.sub || null);
     const viewingThisPageFromProject = !!projectId;
+
+    const [editSpecificationDialogIsOpen, setEditSpecificationDialogIsOpen] = useState(false);
 
     const updateName = (updatedName: string, _label: string) => {
         if (data?.id && specification?.id && studyset?.id && annotation?.id) {
@@ -196,14 +204,26 @@ const MetaAnalysisPage: React.FC = (props) => {
                         }
                     >
                         <Box>
-                            <Button
-                                onClick={() => alert('EDITING SPECIFICATION')}
-                                color="secondary"
-                                variant="outlined"
-                                sx={{ margin: '1rem 0' }}
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    marginTop: '1rem',
+                                }}
                             >
-                                Edit Specification
-                            </Button>
+                                <EditSpecificationDialog
+                                    isOpen={editSpecificationDialogIsOpen}
+                                    onCloseDialog={() => setEditSpecificationDialogIsOpen(false)}
+                                />
+                                <Button
+                                    onClick={() => setEditSpecificationDialogIsOpen(true)}
+                                    color="secondary"
+                                    variant="contained"
+                                    disableElevation
+                                >
+                                    Edit Specification
+                                </Button>
+                            </Box>
 
                             <Typography variant="h6">Details</Typography>
 
@@ -288,7 +308,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                         <Box
                             sx={[
                                 MetaAnalysisPageStyles.runMethodContainer,
-                                { marginRight: '1rem' },
+                                { marginRight: '0.5rem' },
                             ]}
                             data-tour="MetaAnalysisPage-2"
                         >
@@ -319,7 +339,10 @@ const MetaAnalysisPage: React.FC = (props) => {
                             </Box>
                         </Box>
                         <Box
-                            sx={[MetaAnalysisPageStyles.runMethodContainer, { marginLeft: '1rem' }]}
+                            sx={[
+                                MetaAnalysisPageStyles.runMethodContainer,
+                                { marginLeft: '0.5rem' },
+                            ]}
                             data-tour="MetaAnalysisPage-3"
                         >
                             <Typography

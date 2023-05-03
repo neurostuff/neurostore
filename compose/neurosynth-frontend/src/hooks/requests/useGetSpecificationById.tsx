@@ -1,7 +1,7 @@
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
-const useGetSpecification = (specificationId?: string) => {
+const useGetSpecificationById = (specificationId?: string) => {
     return useQuery(
         ['specifications', specificationId],
         () =>
@@ -15,4 +15,4 @@ const useGetSpecification = (specificationId?: string) => {
     );
 };
 
-export default useGetSpecification;
+export default useGetSpecificationById;

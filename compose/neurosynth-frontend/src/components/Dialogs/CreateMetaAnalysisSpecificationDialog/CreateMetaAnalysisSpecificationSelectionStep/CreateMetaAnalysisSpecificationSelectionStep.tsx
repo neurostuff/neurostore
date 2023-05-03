@@ -23,6 +23,7 @@ import CreateMetaAnalysisSpecificationSelectionStepStyles from './CreateMetaAnal
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
+import SelectAnalysesComponent from './SelectAnalysesComponent/SelectAnalysesComponent';
 
 export const getFilteredAnnotationNotes = (
     annotationNotes: NoteCollectionReturn[],
@@ -88,9 +89,6 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
     selection: { selectionKey: string | undefined; type: EPropertyType } | undefined;
 }> = (props) => {
     const annotationId = useProjectExtractionAnnotationId();
-    const { data: annotation } = useGetAnnotationById(annotationId);
-
-    const [annotationsSelected, setAnnotationsSelected] = useState<NoteCollectionReturn[]>([]);
     const [selectedValue, setSelectedValue] = useState<
         | {
               selectionKey: string | undefined;
@@ -99,37 +97,11 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
         | undefined
     >(props.selection);
 
-    useEffect(() => {
-        setAnnotationsSelected((prev) => {
-            if (!selectedValue?.selectionKey) return [];
-            const filteredAnnotations = getFilteredAnnotationNotes(
-                (annotation?.notes || []) as NoteCollectionReturn[],
-                selectedValue.selectionKey
-            );
-
-            return filteredAnnotations;
-        });
-    }, [selectedValue, annotation]);
-
     const handleNavigate = (button: ENavigationButton) => {
         if (selectedValue?.selectionKey && selectedValue?.type !== EPropertyType.NONE)
             props.onChooseSelection(selectedValue.selectionKey, selectedValue.type);
         props.onNavigate(button);
     };
-
-    const options = Object.entries(annotation?.note_keys || {})
-        .map(([key, value]) => ({
-            selectionKey: key,
-            type: value as EPropertyType,
-        }))
-        .filter((x) => x.type === EPropertyType.BOOLEAN);
-
-    const analysesDisplayed = selectedValue?.selectionKey
-        ? annotationNotesToTableFormat(
-              (annotation?.notes || []) as NoteCollectionReturn[],
-              annotationsSelected
-          )
-        : [];
 
     return (
         <Box>
@@ -149,94 +121,11 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                     for the other types in the near future.
                 </Typography>
 
-                <NeurosynthAutocomplete
-                    label="Inclusion Column"
-                    shouldDisable={false}
-                    isOptionEqualToValue={(option, value) =>
-                        option?.selectionKey === value?.selectionKey
-                    }
-                    value={selectedValue}
-                    size="medium"
-                    required={false}
-                    renderOption={(params, option) => (
-                        <ListItem {...params} key={option.selectionKey}>
-                            <ListItemText
-                                sx={{
-                                    color: NeurosynthTableStyles[option.type || EPropertyType.NONE],
-                                }}
-                                primary={option?.selectionKey || ''}
-                            />
-                        </ListItem>
-                    )}
-                    getOptionLabel={(option) => option?.selectionKey || ''}
-                    onChange={(_event, newVal, _reason) => setSelectedValue(newVal || undefined)}
-                    options={options}
+                <SelectAnalysesComponent
+                    selectedValue={selectedValue}
+                    onSelectValue={(val) => setSelectedValue(val)}
+                    annotationdId={annotationId || ''}
                 />
-
-                <Box sx={{ maxHeight: '40vh', overflow: 'auto', margin: '1rem 0' }}>
-                    <TableContainer>
-                        <Table>
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell sx={{ fontWeight: 'bold' }}>Study</TableCell>
-                                    <TableCell sx={{ fontWeight: 'bold' }}>Analyses</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {analysesDisplayed.map((analysisDisplayed) => (
-                                    <Fragment key={analysisDisplayed.studyId}>
-                                        <TableRow>
-                                            <TableCell
-                                                sx={[
-                                                    CreateMetaAnalysisSpecificationSelectionStepStyles.tableCell,
-                                                    { maxWidth: '300px' },
-                                                ]}
-                                                rowSpan={analysisDisplayed.analyses.length}
-                                            >
-                                                {analysisDisplayed.studyName}
-                                            </TableCell>
-                                            <TableCell
-                                                sx={[
-                                                    CreateMetaAnalysisSpecificationSelectionStepStyles.tableCell,
-                                                    analysisDisplayed.analyses[0].isSelected
-                                                        ? CreateMetaAnalysisSpecificationSelectionStepStyles.selected
-                                                        : CreateMetaAnalysisSpecificationSelectionStepStyles[
-                                                              'not-selected'
-                                                          ],
-                                                ]}
-                                            >
-                                                {analysisDisplayed.analyses[0].analysisName}
-                                            </TableCell>
-                                        </TableRow>
-                                        {analysisDisplayed.analyses
-                                            .slice(1, analysisDisplayed.analyses.length)
-                                            .map((analysis) => (
-                                                <TableRow key={analysis.analysisId}>
-                                                    <TableCell
-                                                        sx={[
-                                                            CreateMetaAnalysisSpecificationSelectionStepStyles.tableCell,
-                                                            analysis.isSelected
-                                                                ? CreateMetaAnalysisSpecificationSelectionStepStyles.selected
-                                                                : CreateMetaAnalysisSpecificationSelectionStepStyles[
-                                                                      'not-selected'
-                                                                  ],
-                                                        ]}
-                                                    >
-                                                        {analysis.analysisName}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                    </Fragment>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                    {annotationsSelected.length === 0 && (
-                        <Typography sx={{ color: 'warning.dark', marginTop: '1rem' }}>
-                            No analyses selected
-                        </Typography>
-                    )}
-                </Box>
 
                 <Box
                     sx={{

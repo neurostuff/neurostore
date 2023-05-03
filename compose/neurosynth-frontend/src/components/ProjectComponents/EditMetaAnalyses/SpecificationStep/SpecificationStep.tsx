@@ -23,7 +23,7 @@ const SpecificationStep: React.FC<ISpecificationStep & StepProps> = (props) => {
         <Step {...stepProps} expanded={true} sx={ProjectComponentsStyles.step}>
             <StepLabel>
                 <Typography sx={{ color: disabled ? 'muted.main' : 'primary.main' }} variant="h6">
-                    <b>Proceed to Meta-Analyses</b>: Create a meta-analysis specification
+                    <b>Specify Meta-Analyses</b>: Create a meta-analysis specification
                 </Typography>
             </StepLabel>
             <StepContent>

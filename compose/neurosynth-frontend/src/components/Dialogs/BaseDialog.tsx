@@ -8,6 +8,7 @@ import {
     Breakpoint,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { SystemStyleObject } from '@mui/system';
 
 export interface IDialog extends Omit<IBaseDialog, 'dialogTitle' | 'fullWidth' | 'maxWidth'> {}
 
@@ -16,6 +17,7 @@ interface IBaseDialog {
     dialogTitle: string;
     fullWidth?: boolean;
     maxWidth?: Breakpoint;
+    dialogContentSx?: SystemStyleObject;
     onCloseDialog: () => void;
 }
 
@@ -41,7 +43,7 @@ const BaseDialog: React.FC<IBaseDialog> = (props) => {
                     </IconButton>
                 </Box>
             </DialogTitle>
-            <DialogContent>{props.children}</DialogContent>
+            <DialogContent sx={props.dialogContentSx}>{props.children}</DialogContent>
         </Dialog>
     );
 };

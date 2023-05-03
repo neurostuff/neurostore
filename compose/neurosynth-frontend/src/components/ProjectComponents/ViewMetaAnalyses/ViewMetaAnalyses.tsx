@@ -3,6 +3,7 @@ import { useGetMetaAnalyses } from 'hooks';
 import { useHistory, useParams, useRouteMatch } from 'react-router-dom';
 import { Add } from '@mui/icons-material';
 import { useState } from 'react';
+import EditIcon from '@mui/icons-material/Edit';
 import CreateMetaAnalysisSpecificationDialogBase from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase';
 
 const ViewMetaAnalyses: React.FC = () => {
@@ -31,7 +32,7 @@ const ViewMetaAnalyses: React.FC = () => {
                         </Typography>
                     )}
                 </Box>
-                <Box>
+                <Box sx={{ marginRight: '1%' }}>
                     <Button
                         onClick={() => setCreateMetaAnalysisDialogIsOpen(true)}
                         sx={{ marginBottom: '1rem' }}
@@ -47,8 +48,8 @@ const ViewMetaAnalyses: React.FC = () => {
                     <Card
                         key={metaAnalysis.id || index}
                         sx={{
-                            flex: '0 0 400px',
-                            margin: '0 15px 15px 0',
+                            flex: '0 1 23%',
+                            margin: '10px 1%',
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'space-between',
@@ -56,12 +57,27 @@ const ViewMetaAnalyses: React.FC = () => {
                     >
                         <CardContent>
                             <Box>
+                                <Box
+                                    sx={{ display: 'flex', alignItems: 'center' }}
+                                    color="secondary.main"
+                                >
+                                    <Typography variant="body2">EDITABLE</Typography>
+                                    <EditIcon
+                                        sx={{ marginLeft: '6px', fontSize: '1rem' }}
+                                        fontSize="small"
+                                    />
+                                </Box>
                                 <Typography variant="h6">{metaAnalysis.name || ''}</Typography>
                                 <Typography>{metaAnalysis.description || ''}</Typography>
                             </Box>
                         </CardContent>
                         <CardActions>
-                            <Button onClick={() => handleUpdate(metaAnalysis.id)}>view</Button>
+                            <Button
+                                sx={{ width: '100%' }}
+                                onClick={() => handleUpdate(metaAnalysis.id)}
+                            >
+                                view
+                            </Button>
                         </CardActions>
                     </Card>
                 ))}
