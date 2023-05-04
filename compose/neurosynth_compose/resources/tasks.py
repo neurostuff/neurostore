@@ -1,10 +1,7 @@
+import os
 from pathlib import Path
-import shutil
-from tempfile import mkdtemp
 
 from celery import Celery
-from nibabel import Nifti1Image
-
 
 from ..__init__ import create_app
 from ..database import db
@@ -17,7 +14,7 @@ app.app_context().push()
 
 
 @celery_app.task(name="neurovault.upload", bind=True)
-def file_upload_neurovault(self, data, id):
+def file_upload_neurovault(self, fpath, id):
     from pynv import Client
 
     try:
@@ -30,35 +27,28 @@ def file_upload_neurovault(self, data, id):
     api = Client(access_token=app.config["NEUROVAULT_ACCESS_TOKEN"])
 
     try:
-        tmp_dir = Path(mkdtemp())
-        filename = f"{data['collection_id']}_{data['name']}.nii"
-        file_path = tmp_dir / filename
-        nii = Nifti1Image.from_bytes(data["file"].encode("latin1"))
-        nii.to_filename(file_path)
-
         nv_file = api.add_image(
-            data["collection_id"],
-            file_path.as_posix(),
+            record.collection_id,
+            fpath,
+            # https://github.com/NeuroVault/NeuroVault/blob/e3dc3c7767af12a3a7574eda64dcc9b749da8728/neurovault/apps/statmaps/models.py#LL1409C5-L1421C6
             modality="fMRI-BOLD",
-            map_type=data.get("map_type", "Other"),
-            analysis_level="G",
+            # models.CharField(choices=[('T', 'T map'), ('Z', 'Z map'), ('F', 'F map'), ('X2', 'Chi squared map'), ('P', 'P map (given null hypothesis)'), ('IP', '1-P map ("inverted" probability)'), ('M', 'multivariate-beta map'), ('U', 'univariate-beta map'), ('R', 'ROI/mask'), ('Pa', 'parcellation'), ('A', 'anatomical'), ('V', 'variance'), ('Other', 'other')], help_text='Type of statistic that is the basis of the inference', max_length=200, verbose_name='Map type')),
+            map_type="Other",
+            # https://github.com/NeuroVault/NeuroVault/blob/e3dc3c7767af12a3a7574eda64dcc9b749da8728/neurovault/apps/statmaps/models.py#LL1278C5-L1283C6
+            analysis_level="M",
             is_valid=True,
-            name=data["name"],
+            name=Path(fpath).name,
         )
 
-        data.pop("file")  # remove file as it's been uploaded
-        data["image_id"] = nv_file["id"]
-        data["status"] = "OK"
+        record.image_id = nv_file["id"]
+        record.status = "OK"
 
-        # remove directory and file
-        shutil.rmtree(tmp_dir)
+        # remove file
+        os.remove(fpath)
 
     except Exception as exception:  # noqa: E722
-        data["traceback"] = str(exception)
-        data["status"] = "FAILED"
-
-    for k, v in data.items():
-        setattr(record, k, v)
+        record.traceback = str(exception)
+        record.status = "FAILED"
 
     try:
         db.session.add(record)

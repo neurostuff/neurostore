@@ -375,6 +375,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
         return self.__class__._schema().dump(record)
 
     def put(self, id):
+        from functools import partial
         from .tasks import file_upload_neurovault
         from celery import group
 
@@ -412,12 +413,15 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 diagnostic_table_fnames.append(d_path)
 
             # get the collection_id (or create collection)
-            nv_collection = NeurovaultCollection(
-                result=result
-            )
-            create_neurovault_collection(nv_collection)
-            # append the collection to be committed
-            records.append(nv_collection)
+            if result.neurovault_collection:
+                nv_collection = result.neurovault_collection
+            else:
+                nv_collection = NeurovaultCollection(
+                    result=result
+                )
+                create_neurovault_collection(nv_collection)
+                # append the collection to be committed
+                records.append(nv_collection)
 
             # append the existing NeurovaultFiles to be committed
             for record in stat_map_fnames.values():
@@ -430,7 +434,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             # upload the individual statistical maps
             nv_upload_tasks = []
             for fpath, record in stat_map_fnames.items():
-                nv_upload_tasks.append(file_upload_neurovault.s(fpath, record.id))
+                nv_upload_tasks.append(file_upload_neurovault.s(str(fpath), record.id))
 
             nv_upload_group = group(nv_upload_tasks)
             nv_upload_results = nv_upload_group.apply_async()
@@ -440,15 +444,22 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 neurostore_study=result.meta_analysis.project.neurostore_study,
                 meta_analysis=result.meta_analysis,
             )
+
             # when the images are uploaded, put the data on neurostore
-            nv_upload_results.then(
-                create_or_update_neurostore_analysis,
-                kwargs={
-                    "ns_analysis": ns_analysis,
-                    "cluster_table": neurostore_cluster_table,
-                    "nv_collection": nv_collection,
-                }
+            def celery_ns_analysis(result, ns_analysis, cluster_table, nv_collection):
+                return create_or_update_neurostore_analysis(
+                    ns_analysis, cluster_table, nv_collection
+                )
+
+            cb_ns_analysis = partial(
+                celery_ns_analysis,
+                ns_analysis=ns_analysis,
+                cluster_table=neurostore_cluster_table,
+                nv_collection=nv_collection
             )
+            nv_upload_results.then(cb_ns_analysis)
+            db.session.add(ns_analysis)
+            db.session.commit()
 
         return self.__class__._schema().dump(result)
 
@@ -456,60 +467,6 @@ class MetaAnalysisResultsView(ObjectView, ListView):
 @view_maker
 class NeurovaultCollectionsView(ObjectView, ListView):
     _nested = {"files": "NeurovaultFilesView"}
-
-    @classmethod
-    def _external_request(cls, data, record, id):
-        # analysis, cli_version=None,  cli_args=None,
-        # fmriprep_version=None, estimator=None, force=False):
-        # collection_name = f"{analysis.name} - {analysis.hash_id}"
-        # if force is True:
-        #     timestamp = datetime.datetime.utcnow().strftime(
-        #         '%Y-%m-%d_%H:%M')
-        #     collection_name += f"_{timestamp}"
-        from pathlib import Path
-
-        import flask
-        from pynv import Client
-        from datetime import datetime
-        from flask import current_app as app
-
-        meta_analysis = MetaAnalysis.query.filter_by(id=data["meta_analysis_id"]).one()
-        collection_name = ":".join(
-            [meta_analysis.name, datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')]
-        )
-
-        url = f"{flask.request.host_url}" f"meta-analyses/{meta_analysis.id}"
-        try:
-            api = Client(access_token=app.config["NEUROVAULT_ACCESS_TOKEN"])
-            collection = api.create_collection(
-                collection_name,
-                description=meta_analysis.description,
-                full_dataset_url=url,
-            )
-            data["collection_id"] = collection["id"]
-            for file in data.get("files", []):
-                file["collection_id"] = collection["id"]
-
-            for k, v in data.items():
-                if k not in cls._nested and k not in ["files", "user"]:
-                    setattr(record, k, v)
-
-            db.session.add(record)
-            db.session.commit()
-            db.session.flush()
-
-            committed = True
-        except Exception:
-            abort(
-                422,
-                f"Error creating collection named: {collection_name}, "
-                "perhaps one with that name already exists?",
-            )
-
-        upload_dir = Path(app.config["FILE_DIR"]) / "uploads" / str(collection["id"])
-        upload_dir.mkdir(exist_ok=True, parents=True)
-
-        return committed
 
 
 @view_maker
@@ -537,7 +494,7 @@ def create_neurovault_collection(nv_collection):
 
     meta_analysis = nv_collection.result.meta_analysis
 
-    collection_name = ":".join(
+    collection_name = " : ".join(
         [meta_analysis.name, datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')]
     )
 
@@ -616,7 +573,9 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
             )
 
         ns_analysis.neurostore_id = ns_analysis_res.json['id']
-    except:  # noqa: E722
-        pass
+    except Exception as exception:  # noqa: E722
+        ns_analysis.traceback = str(exception)
+        ns_analysis.status = "FAILED"
+        
 
     return ns_analysis

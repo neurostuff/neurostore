@@ -175,7 +175,7 @@ class NeurostoreAnalysis(BaseMixin, db.Model):
     meta_analysis_id = db.Column(
         db.Text, db.ForeignKey("meta_analyses.id"), unique=True
     )
-    neurstore_study_id = db.Column(db.Text, db.ForeignKey("neurostore_studies.neurostore_id"))
+    neurostore_study_id = db.Column(db.Text, db.ForeignKey("neurostore_studies.neurostore_id"))
     meta_analysis = db.relationship(
         "MetaAnalysis", backref=backref("neurostore_analysis", uselist=False)
     )

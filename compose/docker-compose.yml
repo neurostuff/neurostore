@@ -31,7 +31,7 @@ services:
       - compose_redis
     entrypoint: celery -A neurosynth_compose.resources.tasks.celery_app worker --loglevel=debug
     volumes:
-      - /logs/compose:/logs:rw
+      - ${CELERY_LOG_DIR}:/logs:rw
       - ${FILE_DIR}:/file-data
     env_file:
       - .env
