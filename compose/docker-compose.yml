@@ -11,6 +11,7 @@ services:
     volumes:
       - ./postgres/migrations:/migrations
       - ./:/compose
+      - ${FILE_DIR}:/file-data
     command: /usr/local/bin/gunicorn -w 2 -b :8000 neurosynth_compose.core:app --log-level debug --timeout 120
     env_file:
       - .env
@@ -31,6 +32,7 @@ services:
     entrypoint: celery -A neurosynth_compose.resources.tasks.celery_app worker --loglevel=debug
     volumes:
       - /logs/compose:/logs:rw
+      - ${FILE_DIR}:/file-data
     env_file:
       - .env
 

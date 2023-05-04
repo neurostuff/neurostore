@@ -2,6 +2,7 @@
  Rename this file to config.py and set variables
 """
 import os
+from pathlib import Path
 
 
 class Config(object):
@@ -15,7 +16,7 @@ class Config(object):
         "CELERY_RESULT_BACKEND": os.environ["CELERY_RESULT_BACKEND"],
     }
 
-    FILE_DIR = os.environ.get("FILE_DIR")
+    FILE_DIR = Path('/file-data')
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
     DB_NAME = "compose"

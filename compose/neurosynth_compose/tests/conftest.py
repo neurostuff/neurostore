@@ -20,8 +20,11 @@ from ..models import (
     MetaAnalysis,
     StudysetReference,
     AnnotationReference,
+    NeurostoreStudy,
+    NeurostoreAnalysis,
     Project,
 )
+from ..models.analysis import generate_id
 from auth0.v3.authentication import GetToken
 
 DATA_PATH = pathlib.Path(__file__).parent.resolve() / "data"
@@ -417,17 +420,24 @@ def user_data(app, db, mock_add_users):
                 filter="include",
             )
 
+            ns_study = NeurostoreStudy(neurostore_id=generate_id())
+            ns_analysis = NeurostoreAnalysis(
+                neurostore_id=generate_id(),
+                neurostore_study=ns_study
+            )
             meta_analysis = MetaAnalysis(
                 name=user.id + "'s meta analysis",
                 user=user,
                 specification=specification,
                 studyset=studyset,
                 annotation=annotation,
+                neurostore_analysis=ns_analysis,
             )
 
             project = Project(
                 name=user.id + "'s project",
                 meta_analyses=[meta_analysis],
+                neurostore_study=ns_study,
                 user=user,
                 public=True,
             )

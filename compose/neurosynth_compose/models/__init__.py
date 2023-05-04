@@ -9,6 +9,7 @@ from .analysis import (
     NeurovaultCollection,
     NeurovaultFile,
     NeurostoreStudy,
+    NeurostoreAnalysis,
     Project,
 )
 
@@ -25,6 +26,7 @@ __all__ = [
     "NeurovaultCollection",
     "NeurovaultFile",
     "NeurostoreStudy",
+    "NeurostoreAnalysis",
     "Project",
     "User",
 ]

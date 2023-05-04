@@ -109,7 +109,6 @@ class MetaAnalysis(BaseMixin, db.Model):
 class MetaAnalysisResult(BaseMixin, db.Model):
     __tablename__ = "meta_analysis_results"
     meta_analysis_id = db.Column(db.Text, db.ForeignKey("meta_analyses.id"))
-    neurostore_id = db.Column(db.Text, unique=True)
     cli_version = db.Column(db.Text)  # neurosynth-compose cli version
     cli_args = db.Column(db.JSON)  # Dictionary of cli arguments
     method_description = db.Column(db.Text)  # description of the method applied
@@ -149,17 +148,38 @@ class NeurovaultFile(BaseMixin, db.Model):
 
 
 class NeurostoreStudy(BaseMixin, db.Model):
-    "Neurostore upload of a study"
-    neurostore_id = db.Column(db.Text)
+    """Neurostore upload of a study"""
+    __tablename__ = "neurostore_studies"
+
+    neurostore_id = db.Column(db.Text, unique=True)
     exception = db.Column(db.Text)
     traceback = db.Column(db.Text)
     status = db.Column(db.Text, default="PENDING")
-    result_id = db.Column(
-        db.Text, db.ForeignKey("meta_analysis_results.id"), unique=True
+    project_id = db.Column(
+       db.Text, db.ForeignKey("projects.id")
     )
-    result = db.relationship(
-        "MetaAnalysisResult", backref=backref("neurostore_study", uselist=False)
+    project = db.relationship(
+        "Project", backref=backref("neurostore_study", uselist=False),
     )
+    __table_args__ = (db.CheckConstraint(status.in_(["OK", "FAILED", "PENDING"])),)
+
+
+class NeurostoreAnalysis(BaseMixin, db.Model):
+    """Neurostore upload of an analysis"""
+    __tablename__ = "neurostore_analyses"
+
+    neurostore_id = db.Column(db.Text, unique=True)
+    exception = db.Column(db.Text)
+    traceback = db.Column(db.Text)
+    status = db.Column(db.Text, default="PENDING")
+    meta_analysis_id = db.Column(
+        db.Text, db.ForeignKey("meta_analyses.id"), unique=True
+    )
+    neurstore_study_id = db.Column(db.Text, db.ForeignKey("neurostore_studies.neurostore_id"))
+    meta_analysis = db.relationship(
+        "MetaAnalysis", backref=backref("neurostore_analysis", uselist=False)
+    )
+    neurostore_study = db.relationship("NeurostoreStudy", backref=backref("neurostore_analyses"))
     __table_args__ = (db.CheckConstraint(status.in_(["OK", "FAILED", "PENDING"])),)
 
 

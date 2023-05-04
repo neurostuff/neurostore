@@ -23,6 +23,7 @@ from ..models.analysis import (  # noqa E401
     NeurovaultCollection,
     NeurovaultFile,
     NeurostoreStudy,
+    NeurostoreAnalysis,
     Project,
 )
 from ..models.auth import User
@@ -366,10 +367,16 @@ class MetaAnalysisResultsView(ObjectView, ListView):
 
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
+            # create neurovault collection
+            nv_collection = NeurovaultCollection(result=record)
+            create_neurovault_collection(nv_collection)
+            db.session.add(nv_collection)
+            db.session.commit()
         return self.__class__._schema().dump(record)
 
     def put(self, id):
-        from .tasks import celery_app
+        from .tasks import file_upload_neurovault
+        from celery import group
 
         result = self._model.query.filter_by(id=id).one()
 
@@ -393,6 +400,8 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 c_path = file_dir / c.filename
                 c.save(c_path)
                 cluster_table_fnames.append(c_path)
+
+            neurostore_cluster_table = cluster_table_fnames[0]
 
             # save data for presenting diagnostics
             diagnostic_tables = request.files.getlist("diagnostic_tables")
@@ -419,24 +428,29 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             db.session.commit()
 
             # upload the individual statistical maps
+            nv_upload_tasks = []
             for fpath, record in stat_map_fnames.items():
-                try:
-                    celery_app.send_task(
-                        "neurovault.upload", args=[fpath, record.id]
-                    )
-                except:  # noqa: E722
-                    setattr(record, "status", "FAILED")
+                nv_upload_tasks.append(file_upload_neurovault.s(fpath, record.id))
 
+            nv_upload_group = group(nv_upload_tasks)
+            nv_upload_results = nv_upload_group.apply_async()
 
+            # get the neurostore study
+            ns_analysis = NeurostoreAnalysis(
+                neurostore_study=result.meta_analysis.project.neurostore_study,
+                meta_analysis=result.meta_analysis,
+            )
+            # when the images are uploaded, put the data on neurostore
+            nv_upload_results.then(
+                create_or_update_neurostore_analysis,
+                kwargs={
+                    "ns_analysis": ns_analysis,
+                    "cluster_table": neurostore_cluster_table,
+                    "nv_collection": nv_collection,
+                }
+            )
 
-
-
-
-
-
-
-
-        return {"this": "rocks"}
+        return self.__class__._schema().dump(result)
 
 
 @view_maker
@@ -500,76 +514,12 @@ class NeurovaultCollectionsView(ObjectView, ListView):
 
 @view_maker
 class NeurovaultFilesView(ObjectView, ListView):
-    @classmethod
-    def _external_request(cls, data, record, id):
-        from .tasks import celery_app
-
-        if record.id is None:
-            for k, v in data.items():
-                if k not in cls._nested and k not in ["file", "user"]:
-                    setattr(record, k, v)
-
-            db.session.add(record)
-            db.session.commit()
-        committed = True
-
-        try:
-            data["file"] = data["file"].decode("latin1")
-            task = celery_app.send_task(  # noqa: F841
-                "neurovault.upload", args=[data, record.id]
-            )
-        except:  # noqa: E722
-            setattr(record, "status", "FAILED")
-
-        data.pop("file")
-        return committed
+    pass
 
 
 @view_maker
 class NeurostoreStudiesView(ObjectView, ListView):
-    @classmethod
-    def _external_request(cls, data, record, id):
-        from flask import request
-        from .neurostore import neurostore_session
-        from .tasks import celery_app
-
-        # create study that maps onto project if it exists
-        access_token = request.headers['Authorization']
-        if record.result.neurostore_id is None:
-            ns_ses = neurostore_session(access_token)
-
-            study_data = {
-                "name": getattr(record.result.meta_analysis.project, "name", "Untitled"),
-                "description": getattr(record.result.meta_analysis.project, "description", None),
-            }
-
-            try:
-                ns_study = ns_ses.post("/studies", data=study_data)
-                record.result.neurostore_id = ns_study.json['id']
-            except:  # noqa: E722
-                pass
-
-        if record.id is None:
-            for k, v in data.items():
-                if k not in cls._nested and k not in ["file", "user"]:
-                    setattr(record, k, v)
-
-            db.session.add(record)
-            db.session.commit()
-        committed = True
-
-        neurostore_study_id = record.result.neurostore_id
-        meta_analysis_id = record.result.meta_analysis_id
-        if neurostore_study_id:
-            try:
-                task = celery_app.send_task(  # noqa: F841
-                    "neurostore.upload", args=[data, access_token, record.id, neurostore_study_id, meta_analysis_id]
-                )
-            except:  # noqa: E722
-                setattr(record, "status", "FAILED")
-
-            data.pop("file")
-            return committed
+    pass
 
 
 @view_maker
@@ -610,3 +560,63 @@ def create_neurovault_collection(nv_collection):
         )
 
     return nv_collection
+
+
+def create_or_update_neurostore_study(ns_study):
+    from flask import request
+    from .neurostore import neurostore_session
+
+    access_token = request.headers['Authorization']
+    ns_ses = neurostore_session(access_token)
+
+    study_data = {
+        "name": getattr(ns_study.meta_analysis.project, "name", "Untitled"),
+        "description": getattr(ns_study.meta_analysis.project, "description", None),
+    }
+
+    try:
+        if ns_study.neurostore_id:
+            ns_ses.put(f"/studies/{ns_study.neurostore_id}", data=study_data)
+        else:
+            ns_study_res = ns_ses.post("/studies", data=study_data)
+            ns_study.neurostore_id = ns_study_res.json['id']
+    except:  # noqa: E722
+        pass
+
+    return ns_study
+
+
+def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collection):
+    from flask import request
+    from .neurostore import neurostore_session
+
+    # create study that maps onto project if it exists
+    access_token = request.headers['Authorization']
+
+    ns_ses = neurostore_session(access_token)
+
+    # get the study (project) the (meta)analysis is associated with
+    analysis_data = {
+        "name"
+        "study": ns_analysis.neurostore_study_id,
+        "level": "meta"
+    }
+
+    # parse the cluster table to get coordinates
+
+    # reference the uploaded images on neurovault to associate images
+    try:
+        if ns_analysis.neurostore_id:
+            ns_analysis_res = ns_ses.put(
+                "/analyses/{ns_analysis.neurostore_id}", data=analysis_data
+            )
+        else:
+            ns_analysis_res = ns_ses.post(
+                "/analyses/", data=analysis_data
+            )
+
+        ns_analysis.neurostore_id = ns_analysis_res.json['id']
+    except:  # noqa: E722
+        pass
+
+    return ns_analysis

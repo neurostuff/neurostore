@@ -1,7 +1,5 @@
 import pytest
 
-import nibabel as nib
-
 from ...conftest import celery_test
 from ....models import (
     MetaAnalysis,
@@ -83,17 +81,16 @@ def test_result_upload(auth_client, app, db, meta_analysis_cached_result_files):
         (open(m, 'rb'), m.name)
         for m in meta_analysis_cached_result_files['maps']
     ]
-    # data["cluster_tables"] = [
-    #     open(f, 'rb')
-    #     for f in meta_analysis_cached_result_files['tables']
-    #     if 'clust.tsv' in f.name
-    # ]
-    # data["cluster_tables"] = data["cluster_tables"][0]
-    # data["diagnostic_tables"] = [
-    #     (f.resolve(), f.resolve(), 'text/plain')
-    #     for f in meta_analysis_cached_result_files['tables']
-    #     if 'clust.tsv' not in f.name
-    # ]
+    data["cluster_tables"] = [
+        (open(f, 'rb'), f.name)
+        for f in meta_analysis_cached_result_files['tables']
+        if 'clust.tsv' in f.name
+    ]
+    data["diagnostic_tables"] = [
+        (open(f, 'rb'), f.name)
+        for f in meta_analysis_cached_result_files['tables']
+        if 'clust.tsv' not in f.name
+    ]
     data["method_description"] = meta_analysis_cached_result_files["method_description"]
 
     resp = auth_client.post(
