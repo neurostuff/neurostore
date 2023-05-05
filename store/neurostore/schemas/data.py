@@ -149,6 +149,8 @@ class PointSchema(BaseDataSchema):
     analysis = StringOrNested("AnalysisSchema", use_nested=False)
     values = fields.Nested(PointValueSchema, many=True)
     entities = fields.Nested(EntitySchema, many=True)
+    cluster_size = fields.Float()
+    subpeak = fields.Boolean()
 
     # deserialization
     x = fields.Float(load_only=True)

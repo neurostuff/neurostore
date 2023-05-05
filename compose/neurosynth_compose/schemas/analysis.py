@@ -173,13 +173,13 @@ class MetaAnalysisResultSchema(BaseSchema):
         # place the snapshots into their appropriate location
         if data.get("studyset_snapshot"):
             data['studyset_snapshot'] = {
-                'id': ma.internal_studyset_id,
+                'id': ma.cached_studyset_id,
                 'snapshot': data['studyset_snapshot']
             }
 
         if data.get("annotation_snapshot"):
             data['annotation_snapshot'] = {
-                'id': ma.internal_annotation_id,
+                'id': ma.cached_annotation_id,
                 'snapshot': data['annotation_snapshot']
             }
 

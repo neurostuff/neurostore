@@ -113,13 +113,20 @@ class MockPYNVClient:
 
         return {"id": collection_id}
 
-    def add_image(self, *args, **kwargs):
+    def add_image(self, collection_id, file, **kwargs):
         import random
 
         image_id = random.randint(1, 10000)
         self.files.append(image_id)
 
-        return {"id": image_id}
+        return {
+            "id": image_id,
+            "url": f"http://neurovault.org/images/{image_id}/",
+            "file": f"http://neurovault.org/media/images/{image_id}/name.nii.gz",
+            "target_template_image": "GenericMNI",
+            "map_type": "Z map",
+            "image_type": "statistic_map",
+            }
 
 
 class MockNSSDKClient:
@@ -191,40 +198,6 @@ def celery_app(app, db):
     from .. import make_celery
 
     return make_celery(app)
-
-
-# @pytest.fixture(scope='function', params=[{'real': False}], autouse=True)
-# def use_real_session(db, request):
-#     if request.param.get('real', False):
-#         yield db.session
-
-#         db.drop_all()
-#         db.create_all()
-#     else:
-#         connection = db.engine.connect()
-#         transaction = connection.begin()
-
-#         options = dict(bind=connection, binds={})
-#         session = db.create_scoped_session(options=options)
-
-#         session.begin_nested()
-
-#         # session is actually a scoped_session
-#         # for the `after_transaction_end` event, we need a session instance to
-#         # listen for, hence the `session()` call
-#         @sa.event.listens_for(session(), "after_transaction_end")
-#         def resetart_savepoint(sess, trans):
-#             if trans.nested and not trans._parent.nested:
-#                 session.expire_all()
-#                 session.begin_nested()
-
-#         db.session = session
-
-#         yield session
-
-#         session.remove()
-#         transaction.rollback()
-#         connection.close()
 
 
 @pytest.fixture(scope="function", autouse=True)

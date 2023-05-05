@@ -382,51 +382,14 @@ class MetaAnalysisResultsView(ObjectView, ListView):
         result = self._model.query.filter_by(id=id).one()
 
         if request.files:
-            records = []
-            file_dir = pathlib.Path(current_app.config['FILE_DIR'], id)
-            file_dir.mkdir(parents=True, exist_ok=True)
-
-            # save data to upload to neurovault
             stat_maps = request.files.getlist("statistical_maps")
-            stat_map_fnames = {}
-            for m in stat_maps:
-                m_path = file_dir / m.filename
-                m.save(m_path)
-                stat_map_fnames[m_path] = NeurovaultFile()
-
-            # save data to upload to neurostore
             cluster_tables = request.files.getlist("cluster_tables")
-            cluster_table_fnames = []
-            for c in cluster_tables:
-                c_path = file_dir / c.filename
-                c.save(c_path)
-                cluster_table_fnames.append(c_path)
-
-            neurostore_cluster_table = cluster_table_fnames[0]
-
-            # save data for presenting diagnostics
             diagnostic_tables = request.files.getlist("diagnostic_tables")
-            diagnostic_table_fnames = []
-            for d in diagnostic_tables:
-                d_path = file_dir / d.filename
-                d.save(d_path)
-                diagnostic_table_fnames.append(d_path)
-
-            # get the collection_id (or create collection)
-            if result.neurovault_collection:
-                nv_collection = result.neurovault_collection
-            else:
-                nv_collection = NeurovaultCollection(
-                    result=result
-                )
-                create_neurovault_collection(nv_collection)
-                # append the collection to be committed
-                records.append(nv_collection)
-
-            # append the existing NeurovaultFiles to be committed
-            for record in stat_map_fnames.values():
-                record.neurovault_collection = nv_collection
-                records.append(record)
+            (
+                records, stat_map_fnames, cluster_table_fnames, diagnostic_table_fnames
+            ) = parse_upload_files(
+                result, stat_maps, cluster_tables, diagnostic_tables
+            )
 
             db.session.add_all(records)
             db.session.commit()
@@ -446,7 +409,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             )
 
             # when the images are uploaded, put the data on neurostore
-            def celery_ns_analysis(result, ns_analysis, cluster_table, nv_collection):
+            def celery_ns_analysis(output, ns_analysis, cluster_table, nv_collection):
                 return create_or_update_neurostore_analysis(
                     ns_analysis, cluster_table, nv_collection
                 )
@@ -454,8 +417,8 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             cb_ns_analysis = partial(
                 celery_ns_analysis,
                 ns_analysis=ns_analysis,
-                cluster_table=neurostore_cluster_table,
-                nv_collection=nv_collection
+                cluster_table=cluster_table_fnames[0],
+                nv_collection=result.neurovault_collection
             )
             nv_upload_results.then(cb_ns_analysis)
             db.session.add(ns_analysis)
@@ -560,6 +523,7 @@ def create_or_update_neurostore_study(ns_study):
 def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collection):
     from flask import request, current_app
     from auth0.v3.authentication.get_token import GetToken
+    import pandas as pd
     from .neurostore import neurostore_session
 
     # get access token from user if it exists
@@ -578,28 +542,111 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
 
     ns_ses = neurostore_session(access_token)
 
-    # get the study (project) the (meta)analysis is associated with
+    # get the study(project) the (meta)analysis is associated with
     analysis_data = {
-        "name"
+        "name": ns_analysis.meta_analysis.name or "Untitled",
         "study": ns_analysis.neurostore_study_id,
     }
 
     # parse the cluster table to get coordinates
+    points = []
+    cluster_df = pd.read_csv(cluster_table, sep="\t")
+    for _, row in cluster_df.iterrows():
+        point = {
+            "coordinates": [row.X, row.Y, row.Z],
+            "kind": "center of mass",  # make this dynamic
+            "space": "MNI",  # make this dynamic
+            "values": [{
+                "kind": "Z",
+                "value": row["Peak Stat"],
+            }],
+        }
+        if not pd.isna(row["Cluster Size (mm3)"]):
+            point["subpeak"] = True
+            point["cluster_size"] = row["Cluster Size (mm3)"]
+        else:
+            point["subpeak"] = False
+        points.append(point)
 
     # reference the uploaded images on neurovault to associate images
+    images = []
+    for nv_file in nv_collection.files:
+        image = {
+            "url": nv_file.url,
+            "filename": nv_file.filename,
+            "space": nv_file.space,
+            "value_type": nv_file.value_type,
+        }
+        images.append(image)
+
+    if points:
+        analysis_data["points"] = points
+    if images:
+        analysis_data["images"] = images
+
     try:
+        # if the analysis already exists, update it
         if ns_analysis.neurostore_id:
             ns_analysis_res = ns_ses.put(
-                "/analyses/{ns_analysis.neurostore_id}", data=analysis_data
+                "/api/analyses/{ns_analysis.neurostore_id}", json=analysis_data
             )
         else:
+            # create a new analysis
             ns_analysis_res = ns_ses.post(
-                "/analyses/", data=analysis_data
+                "/api/analyses/", json=analysis_data
             )
 
-        ns_analysis.neurostore_id = ns_analysis_res.json['id']
+        ns_analysis.neurostore_id = ns_analysis_res.json()['id']
     except Exception as exception:  # noqa: E722
         ns_analysis.traceback = str(exception)
         ns_analysis.status = "FAILED"
 
+    db.session.add(ns_analysis)
+    db.session.commit()
+
     return ns_analysis
+
+
+def parse_upload_files(result, stat_maps, cluster_tables, diagnostic_tables):
+    records = []
+    file_dir = pathlib.Path(current_app.config['FILE_DIR'], result.id)
+    file_dir.mkdir(parents=True, exist_ok=True)
+
+    # save data to upload to neurovault
+    stat_map_fnames = {}
+    for m in stat_maps:
+        m_path = file_dir / m.filename
+        m.save(m_path)
+        stat_map_fnames[m_path] = NeurovaultFile()
+
+    # save data to upload to neurostore
+    cluster_table_fnames = []
+    for c in cluster_tables:
+        c_path = file_dir / c.filename
+        c.save(c_path)
+        cluster_table_fnames.append(c_path)
+
+    # save data for presenting diagnostics
+    diagnostic_table_fnames = []
+    for d in diagnostic_tables:
+        d_path = file_dir / d.filename
+        d.save(d_path)
+        diagnostic_table_fnames.append(d_path)
+
+    # get the collection_id (or create collection)
+    if result.neurovault_collection:
+        nv_collection = result.neurovault_collection
+    else:
+        nv_collection = NeurovaultCollection(
+            result=result
+        )
+        create_neurovault_collection(nv_collection)
+        # append the collection to be committed
+        records.append(nv_collection)
+
+    # append the existing NeurovaultFiles to be committed
+    for record in stat_map_fnames.values():
+        record.neurovault_collection = nv_collection
+        records.append(record)
+
+    return records, stat_map_fnames, cluster_table_fnames, diagnostic_table_fnames

@@ -31,8 +31,6 @@ def test_create(auth_client, user_data, endpoint, model, schema):
     if payload.get("annotation"):
         del payload["annotation"]
         payload["cached_annotation_id"] = example.annotation.id
-    if payload.get("project"):
-        payload["project"] = payload["project"].id
     if payload.get("run_key"):
         del payload["run_key"]
 

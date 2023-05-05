@@ -141,6 +141,10 @@ class NeurovaultFile(BaseMixin, db.Model):
         nullable=False,
     )
     image_id = db.Column(db.Integer, unique=True)
+    filename = db.Column(db.Text)
+    url = db.Column(db.Text)
+    space = db.Column(db.Text)
+    value_type = db.Column(db.Text)
     exception = db.Column(db.Text)
     traceback = db.Column(db.Text)
     status = db.Column(db.Text, default="PENDING")
