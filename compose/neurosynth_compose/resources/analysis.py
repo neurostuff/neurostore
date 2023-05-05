@@ -521,34 +521,60 @@ def create_neurovault_collection(nv_collection):
 
 def create_or_update_neurostore_study(ns_study):
     from flask import request
+    from auth0.v3.authentication.get_token import GetToken
     from .neurostore import neurostore_session
 
-    access_token = request.headers['Authorization']
+    access_token = request.headers.get('Authorization')
+    # use the client to authenticate if user credentials were not used
+    if not access_token:
+        domain = current_app.config['AUTH0_BASE_URL'].lstrip("https://")
+        g_token = GetToken(domain)
+        token_resp = g_token.client_credentials(
+            client_id=current_app.config['AUTH0_CLIENT_ID'],
+            client_secret=current_app.config['AUTH0_CLIENT_SECRET'],
+            audience=current_app.config['AUTH0_API_AUDIENCE']
+        )
+        access_token = " ".join([token_resp['token_type'], token_resp['access_token']])
+
     ns_ses = neurostore_session(access_token)
 
     study_data = {
-        "name": getattr(ns_study.meta_analysis.project, "name", "Untitled"),
-        "description": getattr(ns_study.meta_analysis.project, "description", None),
+        "name": getattr(ns_study.project, "name", "Untitled"),
+        "description": getattr(ns_study.project, "description", None),
+        "level": "meta",
     }
 
     try:
         if ns_study.neurostore_id:
-            ns_ses.put(f"/studies/{ns_study.neurostore_id}", data=study_data)
+            ns_ses.put(f"/api/studies/{ns_study.neurostore_id}", json=study_data)
         else:
-            ns_study_res = ns_ses.post("/studies", data=study_data)
-            ns_study.neurostore_id = ns_study_res.json['id']
-    except:  # noqa: E722
-        pass
+            ns_study_res = ns_ses.post("/api/studies/", json=study_data)
+            ns_study.neurostore_id = ns_study_res.json()['id']
+    except Exception as exception:  # noqa: E722
+        ns_study.traceback = str(exception)
+        ns_study.status = "FAILED"
 
     return ns_study
 
 
 def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collection):
-    from flask import request
+    from flask import request, current_app
+    from auth0.v3.authentication.get_token import GetToken
     from .neurostore import neurostore_session
 
-    # create study that maps onto project if it exists
-    access_token = request.headers['Authorization']
+    # get access token from user if it exists
+    access_token = request.headers.get('Authorization')
+
+    # use the client to authenticate if user credentials were not used
+    if not access_token:
+        domain = current_app.config['AUTH0_BASE_URL'].lstrip("https://")
+        g_token = GetToken(domain)
+        token_resp = g_token.client_credentials(
+            client_id=current_app.config['AUTH0_CLIENT_ID'],
+            client_secret=current_app.config['AUTH0_CLIENT_SECRET'],
+            audience=current_app.config['AUTH0_API_AUDIENCE']
+        )
+        access_token = " ".join([token_resp['token_type'], token_resp['access_token']])
 
     ns_ses = neurostore_session(access_token)
 
@@ -556,7 +582,6 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
     analysis_data = {
         "name"
         "study": ns_analysis.neurostore_study_id,
-        "level": "meta"
     }
 
     # parse the cluster table to get coordinates
@@ -576,6 +601,5 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
     except Exception as exception:  # noqa: E722
         ns_analysis.traceback = str(exception)
         ns_analysis.status = "FAILED"
-        
 
     return ns_analysis

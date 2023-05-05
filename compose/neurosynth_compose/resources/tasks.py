@@ -25,19 +25,29 @@ def file_upload_neurovault(self, fpath, id):
 
     # record = NeurovaultFile.query.filter_by(id=id).one()
     api = Client(access_token=app.config["NEUROVAULT_ACCESS_TOKEN"])
+    fname = Path(fpath).name
+
+    map_type = "Other"
+
+    if fname.startswith("z"):
+        map_type = "Z"
+    elif fname.startswith("p"):
+        map_type = "P"
+    elif fname.startswith("stat"):
+        map_type = "U"
 
     try:
         nv_file = api.add_image(
             record.collection_id,
             fpath,
             # https://github.com/NeuroVault/NeuroVault/blob/e3dc3c7767af12a3a7574eda64dcc9b749da8728/neurovault/apps/statmaps/models.py#LL1409C5-L1421C6
-            modality="fMRI-BOLD",
+            modality="Other",  # no good way to determine if all inputs were of the same modality
             # models.CharField(choices=[('T', 'T map'), ('Z', 'Z map'), ('F', 'F map'), ('X2', 'Chi squared map'), ('P', 'P map (given null hypothesis)'), ('IP', '1-P map ("inverted" probability)'), ('M', 'multivariate-beta map'), ('U', 'univariate-beta map'), ('R', 'ROI/mask'), ('Pa', 'parcellation'), ('A', 'anatomical'), ('V', 'variance'), ('Other', 'other')], help_text='Type of statistic that is the basis of the inference', max_length=200, verbose_name='Map type')),
-            map_type="Other",
+            map_type=map_type,
             # https://github.com/NeuroVault/NeuroVault/blob/e3dc3c7767af12a3a7574eda64dcc9b749da8728/neurovault/apps/statmaps/models.py#LL1278C5-L1283C6
             analysis_level="M",
             is_valid=True,
-            name=Path(fpath).name,
+            name=fname,
         )
 
         record.image_id = nv_file["id"]

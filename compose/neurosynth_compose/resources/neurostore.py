@@ -1,3 +1,4 @@
+from flask import current_app
 from requests import Session
 from urllib.parse import urljoin
 
@@ -14,7 +15,7 @@ class LiveServerSession(Session):
 
 def neurostore_session(access_token):
 
-    ns_ses = LiveServerSession(prefix_url="https://neurostore.org/api")
+    ns_ses = LiveServerSession(prefix_url=current_app.config["NEUROSTORE_API_URL"])
 
     auth = {
         "Authorization": access_token

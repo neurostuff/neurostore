@@ -6,10 +6,12 @@ from ....models import (
     MetaAnalysisResult,
     NeurovaultFile,
     NeurovaultCollection,
+    NeurostoreStudy,
     User,
 )
 from ....schemas import ResultUploadSchema
 from ....resources.tasks import file_upload_neurovault, upload_neurostore
+from ....resources.analysis import create_or_update_neurostore_study
 
 
 @pytest.mark.skip(reason="neurovault not currently working.")
@@ -110,6 +112,12 @@ def test_result_upload(auth_client, app, db, meta_analysis_cached_result_files):
     ]
     data["method_description"] = meta_analysis_cached_result_files["method_description"]
 
+    meta_analysis = MetaAnalysis.query.filter_by(
+        id=meta_analysis_cached_result_files["meta_analysis_id"]
+    ).one()
+    ns_study = NeurostoreStudy(project=meta_analysis.project)
+    with app.test_request_context():
+        create_or_update_neurostore_study(ns_study)
     resp = auth_client.post(
         "/api/meta-analysis-results",
         data={"meta_analysis_id": meta_analysis_cached_result_files["meta_analysis_id"]},
