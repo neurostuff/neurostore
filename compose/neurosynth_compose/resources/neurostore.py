@@ -14,12 +14,9 @@ class LiveServerSession(Session):
 
 
 def neurostore_session(access_token):
-
     ns_ses = LiveServerSession(prefix_url=current_app.config["NEUROSTORE_API_URL"])
 
-    auth = {
-        "Authorization": access_token
-    }
+    auth = {"Authorization": access_token}
     ns_ses.headers.update(auth)
 
     return ns_ses

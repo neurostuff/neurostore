@@ -386,10 +386,11 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             cluster_tables = request.files.getlist("cluster_tables")
             diagnostic_tables = request.files.getlist("diagnostic_tables")
             (
-                records, stat_map_fnames, cluster_table_fnames, diagnostic_table_fnames
-            ) = parse_upload_files(
-                result, stat_maps, cluster_tables, diagnostic_tables
-            )
+                records,
+                stat_map_fnames,
+                cluster_table_fnames,
+                diagnostic_table_fnames,
+            ) = parse_upload_files(result, stat_maps, cluster_tables, diagnostic_tables)
 
             db.session.add_all(records)
             db.session.commit()
@@ -418,7 +419,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 celery_ns_analysis,
                 ns_analysis=ns_analysis,
                 cluster_table=cluster_table_fnames[0],
-                nv_collection=result.neurovault_collection
+                nv_collection=result.neurovault_collection,
             )
             nv_upload_results.then(cb_ns_analysis)
             db.session.add(ns_analysis)
@@ -458,7 +459,7 @@ def create_neurovault_collection(nv_collection):
     meta_analysis = nv_collection.result.meta_analysis
 
     collection_name = " : ".join(
-        [meta_analysis.name, datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')]
+        [meta_analysis.name, datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")]
     )
 
     url = f"{flask.request.host_url.rstrip('/')}/meta-analyses/{meta_analysis.id}"
@@ -487,17 +488,17 @@ def create_or_update_neurostore_study(ns_study):
     from auth0.v3.authentication.get_token import GetToken
     from .neurostore import neurostore_session
 
-    access_token = request.headers.get('Authorization')
+    access_token = request.headers.get("Authorization")
     # use the client to authenticate if user credentials were not used
     if not access_token:
-        domain = current_app.config['AUTH0_BASE_URL'].lstrip("https://")
+        domain = current_app.config["AUTH0_BASE_URL"].lstrip("https://")
         g_token = GetToken(domain)
         token_resp = g_token.client_credentials(
-            client_id=current_app.config['AUTH0_CLIENT_ID'],
-            client_secret=current_app.config['AUTH0_CLIENT_SECRET'],
-            audience=current_app.config['AUTH0_API_AUDIENCE']
+            client_id=current_app.config["AUTH0_CLIENT_ID"],
+            client_secret=current_app.config["AUTH0_CLIENT_SECRET"],
+            audience=current_app.config["AUTH0_API_AUDIENCE"],
         )
-        access_token = " ".join([token_resp['token_type'], token_resp['access_token']])
+        access_token = " ".join([token_resp["token_type"], token_resp["access_token"]])
 
     ns_ses = neurostore_session(access_token)
 
@@ -512,7 +513,7 @@ def create_or_update_neurostore_study(ns_study):
             ns_ses.put(f"/api/studies/{ns_study.neurostore_id}", json=study_data)
         else:
             ns_study_res = ns_ses.post("/api/studies/", json=study_data)
-            ns_study.neurostore_id = ns_study_res.json()['id']
+            ns_study.neurostore_id = ns_study_res.json()["id"]
     except Exception as exception:  # noqa: E722
         ns_study.traceback = str(exception)
         ns_study.status = "FAILED"
@@ -527,18 +528,18 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
     from .neurostore import neurostore_session
 
     # get access token from user if it exists
-    access_token = request.headers.get('Authorization')
+    access_token = request.headers.get("Authorization")
 
     # use the client to authenticate if user credentials were not used
     if not access_token:
-        domain = current_app.config['AUTH0_BASE_URL'].lstrip("https://")
+        domain = current_app.config["AUTH0_BASE_URL"].lstrip("https://")
         g_token = GetToken(domain)
         token_resp = g_token.client_credentials(
-            client_id=current_app.config['AUTH0_CLIENT_ID'],
-            client_secret=current_app.config['AUTH0_CLIENT_SECRET'],
-            audience=current_app.config['AUTH0_API_AUDIENCE']
+            client_id=current_app.config["AUTH0_CLIENT_ID"],
+            client_secret=current_app.config["AUTH0_CLIENT_SECRET"],
+            audience=current_app.config["AUTH0_API_AUDIENCE"],
         )
-        access_token = " ".join([token_resp['token_type'], token_resp['access_token']])
+        access_token = " ".join([token_resp["token_type"], token_resp["access_token"]])
 
     ns_ses = neurostore_session(access_token)
 
@@ -556,10 +557,12 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
             "coordinates": [row.X, row.Y, row.Z],
             "kind": "center of mass",  # make this dynamic
             "space": "MNI",  # make this dynamic
-            "values": [{
-                "kind": "Z",
-                "value": row["Peak Stat"],
-            }],
+            "values": [
+                {
+                    "kind": "Z",
+                    "value": row["Peak Stat"],
+                }
+            ],
         }
         if not pd.isna(row["Cluster Size (mm3)"]):
             point["subpeak"] = True
@@ -592,11 +595,9 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
             )
         else:
             # create a new analysis
-            ns_analysis_res = ns_ses.post(
-                "/api/analyses/", json=analysis_data
-            )
+            ns_analysis_res = ns_ses.post("/api/analyses/", json=analysis_data)
 
-        ns_analysis.neurostore_id = ns_analysis_res.json()['id']
+        ns_analysis.neurostore_id = ns_analysis_res.json()["id"]
     except Exception as exception:  # noqa: E722
         ns_analysis.traceback = str(exception)
         ns_analysis.status = "FAILED"
@@ -609,7 +610,7 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
 
 def parse_upload_files(result, stat_maps, cluster_tables, diagnostic_tables):
     records = []
-    file_dir = pathlib.Path(current_app.config['FILE_DIR'], result.id)
+    file_dir = pathlib.Path(current_app.config["FILE_DIR"], result.id)
     file_dir.mkdir(parents=True, exist_ok=True)
 
     # save data to upload to neurovault
@@ -637,9 +638,7 @@ def parse_upload_files(result, stat_maps, cluster_tables, diagnostic_tables):
     if result.neurovault_collection:
         nv_collection = result.neurovault_collection
     else:
-        nv_collection = NeurovaultCollection(
-            result=result
-        )
+        nv_collection = NeurovaultCollection(result=result)
         create_neurovault_collection(nv_collection)
         # append the collection to be committed
         records.append(nv_collection)

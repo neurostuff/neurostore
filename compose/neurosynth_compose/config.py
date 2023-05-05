@@ -16,7 +16,7 @@ class Config(object):
         "CELERY_RESULT_BACKEND": os.environ["CELERY_RESULT_BACKEND"],
     }
 
-    FILE_DIR = Path('/file-data')
+    FILE_DIR = Path("/file-data")
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
     DB_NAME = "compose"

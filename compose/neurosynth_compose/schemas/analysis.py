@@ -35,9 +35,15 @@ class ResultInitSchema(Schema):
 
 
 class ResultUploadSchema(Schema):
-    statistical_maps = fields.Raw(metadata={'type': 'string', 'format': 'binary'}, many=True)
-    cluster_tables = fields.Raw(metadata={'type': 'string', 'format': 'binary'}, many=True)
-    diagnostic_tables = fields.Raw(metadata={'type': 'string', 'format': 'binary'}, many=True)
+    statistical_maps = fields.Raw(
+        metadata={"type": "string", "format": "binary"}, many=True
+    )
+    cluster_tables = fields.Raw(
+        metadata={"type": "string", "format": "binary"}, many=True
+    )
+    diagnostic_tables = fields.Raw(
+        metadata={"type": "string", "format": "binary"}, many=True
+    )
     method_description = fields.String()
 
 
@@ -52,7 +58,9 @@ class StringOrNested(fields.Nested):
         if value is None:
             return None
         nested = (
-            False if self.metadata.get("nested", None) is False else self.context.get("nested")
+            False
+            if self.metadata.get("nested", None) is False
+            else self.context.get("nested")
         )
         nested_attr = self.metadata.get("pluck")
         if nested:
@@ -169,18 +177,18 @@ class MetaAnalysisResultSchema(BaseSchema):
             data["neurovault_collection"]["meta_analysis_id"] = data["meta_analysis_id"]
 
         # get meta-analysis object
-        ma = MetaAnalysis.query.filter_by(id=data['meta_analysis_id'])
+        ma = MetaAnalysis.query.filter_by(id=data["meta_analysis_id"])
         # place the snapshots into their appropriate location
         if data.get("studyset_snapshot"):
-            data['studyset_snapshot'] = {
-                'id': ma.cached_studyset_id,
-                'snapshot': data['studyset_snapshot']
+            data["studyset_snapshot"] = {
+                "id": ma.cached_studyset_id,
+                "snapshot": data["studyset_snapshot"],
             }
 
         if data.get("annotation_snapshot"):
-            data['annotation_snapshot'] = {
-                'id': ma.cached_annotation_id,
-                'snapshot': data['annotation_snapshot']
+            data["annotation_snapshot"] = {
+                "id": ma.cached_annotation_id,
+                "snapshot": data["annotation_snapshot"],
             }
 
         return data
@@ -201,7 +209,9 @@ class MetaAnalysisSchema(BaseSchema):
     annotation = StringOrNested(
         AnnotationSchema, metadata={"pluck": "neurostore_id"}, dump_only=True
     )
-    project_id = StringOrNested("ProjectSchema", metadata={"nested": False}, data_key="project")
+    project_id = StringOrNested(
+        "ProjectSchema", metadata={"nested": False}, data_key="project"
+    )
     cached_studyset_id = fields.Pluck(
         StudysetSchema, "id", load_only=True, attribute="studyset"
     )

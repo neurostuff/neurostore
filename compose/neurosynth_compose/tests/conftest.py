@@ -90,7 +90,7 @@ def mock_ns_session(request):
 
     class MockSession:
         def post(self, path, data):
-            data.update({'id': '123'})
+            data.update({"id": "123"})
             return MockResponse(data)
 
         def put(self, path, data):
@@ -126,7 +126,7 @@ class MockPYNVClient:
             "target_template_image": "GenericMNI",
             "map_type": "Z map",
             "image_type": "statistic_map",
-            }
+        }
 
 
 class MockNSSDKClient:
@@ -150,7 +150,9 @@ def mock_auth(monkeysession):
 @pytest.fixture(scope="session")
 def mock_ns(monkeysession):
     """mock neurostore api"""
-    monkeysession.setattr("neurosynth_compose.resources.neurostore_session", mock_ns_session)
+    monkeysession.setattr(
+        "neurosynth_compose.resources.neurostore_session", mock_ns_session
+    )
 
 
 """
@@ -381,22 +383,21 @@ def user_data(app, db, mock_add_users):
                     "args": {
                         "kernel_transformer": "ALEKernel",
                         "kernel__fwhm": 6.0,
-                    }
+                    },
                 },
                 corrector={
                     "type": "FDR",
                     "args": {
                         "alpha": 0.05,
                         "method": "indep",
-                    }
+                    },
                 },
                 filter="include",
             )
 
             ns_study = NeurostoreStudy(neurostore_id=generate_id())
             ns_analysis = NeurostoreAnalysis(
-                neurostore_id=generate_id(),
-                neurostore_study=ns_study
+                neurostore_id=generate_id(), neurostore_study=ns_study
             )
             meta_analysis = MetaAnalysis(
                 name=user.id + "'s meta analysis",
@@ -437,9 +438,9 @@ def meta_analysis_results(app, db, user_data, mock_add_users):
             meta_schema = MetaAnalysisSchema(context={"nested": True}).dump(
                 meta_analysis
             )
-            studyset_dict = meta_schema['studyset']['snapshot']
-            annotation_dict = meta_schema['annotation']['snapshot']
-            specification_dict = meta_schema['specification']
+            studyset_dict = meta_schema["studyset"]["snapshot"]
+            annotation_dict = meta_schema["annotation"]["snapshot"]
+            specification_dict = meta_schema["specification"]
 
             dataset, estimator, corrector = process_bundle(
                 studyset_dict,
@@ -463,7 +464,7 @@ def result_dir(tmpdir):
 
 @pytest.fixture(scope="function")
 def meta_analysis_result_files(tmpdir, auth_client, meta_analysis_results):
-    user_id = User.query.filter_by(name=auth_client.username.strip('-id')).one().id
+    user_id = User.query.filter_by(name=auth_client.username.strip("-id")).one().id
     res = meta_analysis_results[user_id]["results"]
     res.save_maps(tmpdir / "maps")
     res.save_tables(tmpdir / "tables")
@@ -472,8 +473,8 @@ def meta_analysis_result_files(tmpdir, auth_client, meta_analysis_results):
         res.save(DATA_PATH / "meta_result.pkl.gz")
     return {
         "meta_analysis_id": meta_analysis_results[user_id]["meta_analysis_id"],
-        "maps": [f.resolve() for f in pathlib.Path(tmpdir / "maps").glob('*')],
-        "tables": [f.resolve() for f in pathlib.Path(tmpdir / "tables").glob('*')],
+        "maps": [f.resolve() for f in pathlib.Path(tmpdir / "maps").glob("*")],
+        "tables": [f.resolve() for f in pathlib.Path(tmpdir / "tables").glob("*")],
         "method_description": res.description_,
     }
 
@@ -484,7 +485,9 @@ def cached_metaresult():
 
 
 @pytest.fixture(scope="function")
-def meta_analysis_cached_result_files(tmpdir, auth_client, user_data, cached_metaresult):
+def meta_analysis_cached_result_files(
+    tmpdir, auth_client, user_data, cached_metaresult
+):
     user_id = auth_client.username
     meta_analysis_id = MetaAnalysis.query.filter_by(user_id=user_id).first().id
     res = cached_metaresult
@@ -493,8 +496,8 @@ def meta_analysis_cached_result_files(tmpdir, auth_client, user_data, cached_met
 
     return {
         "meta_analysis_id": meta_analysis_id,
-        "maps": [f.resolve() for f in pathlib.Path(tmpdir / "maps").glob('*')],
-        "tables": [f.resolve() for f in pathlib.Path(tmpdir / "tables").glob('*')],
+        "maps": [f.resolve() for f in pathlib.Path(tmpdir / "maps").glob("*")],
+        "tables": [f.resolve() for f in pathlib.Path(tmpdir / "tables").glob("*")],
         "method_description": res.description_,
     }
 

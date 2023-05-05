@@ -35,7 +35,7 @@ class Device(BaseMixin, db.Model):
     device_name = db.Column(db.String)
     api_key = db.Column(db.String)
     user_id = db.Column("user_id", db.Text, db.ForeignKey("users.id"))
-    user = db.relationship('User', backref=db.backref("devices"))
+    user = db.relationship("User", backref=db.backref("devices"))
 
 
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)

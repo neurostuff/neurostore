@@ -87,7 +87,9 @@ class MetaAnalysis(BaseMixin, db.Model):
     description = db.Column(db.Text)
     specification_id = db.Column(db.Text, db.ForeignKey("specifications.id"))
     neurostore_studyset_id = db.Column(db.Text, db.ForeignKey("studyset_references.id"))
-    neurostore_annotation_id = db.Column(db.Text, db.ForeignKey("annotation_references.id"))
+    neurostore_annotation_id = db.Column(
+        db.Text, db.ForeignKey("annotation_references.id")
+    )
     cached_studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
     cached_annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"))
     project_id = db.Column(db.Text, db.ForeignKey("projects.id"))
@@ -133,6 +135,7 @@ class NeurovaultCollection(BaseMixin, db.Model):
 
 class NeurovaultFile(BaseMixin, db.Model):
     """NV file upload"""
+
     __tablename__ = "neurovault_files"
 
     collection_id = db.Column(
@@ -153,23 +156,24 @@ class NeurovaultFile(BaseMixin, db.Model):
 
 class NeurostoreStudy(BaseMixin, db.Model):
     """Neurostore upload of a study"""
+
     __tablename__ = "neurostore_studies"
 
     neurostore_id = db.Column(db.Text, unique=True)
     exception = db.Column(db.Text)
     traceback = db.Column(db.Text)
     status = db.Column(db.Text, default="PENDING")
-    project_id = db.Column(
-       db.Text, db.ForeignKey("projects.id")
-    )
+    project_id = db.Column(db.Text, db.ForeignKey("projects.id"))
     project = db.relationship(
-        "Project", backref=backref("neurostore_study", uselist=False),
+        "Project",
+        backref=backref("neurostore_study", uselist=False),
     )
     __table_args__ = (db.CheckConstraint(status.in_(["OK", "FAILED", "PENDING"])),)
 
 
 class NeurostoreAnalysis(BaseMixin, db.Model):
     """Neurostore upload of an analysis"""
+
     __tablename__ = "neurostore_analyses"
 
     neurostore_id = db.Column(db.Text, unique=True)
@@ -179,11 +183,15 @@ class NeurostoreAnalysis(BaseMixin, db.Model):
     meta_analysis_id = db.Column(
         db.Text, db.ForeignKey("meta_analyses.id"), unique=True
     )
-    neurostore_study_id = db.Column(db.Text, db.ForeignKey("neurostore_studies.neurostore_id"))
+    neurostore_study_id = db.Column(
+        db.Text, db.ForeignKey("neurostore_studies.neurostore_id")
+    )
     meta_analysis = db.relationship(
         "MetaAnalysis", backref=backref("neurostore_analysis", uselist=False)
     )
-    neurostore_study = db.relationship("NeurostoreStudy", backref=backref("neurostore_analyses"))
+    neurostore_study = db.relationship(
+        "NeurostoreStudy", backref=backref("neurostore_analyses")
+    )
     __table_args__ = (db.CheckConstraint(status.in_(["OK", "FAILED", "PENDING"])),)
 
 
