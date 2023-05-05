@@ -145,7 +145,7 @@ class StudiesView(ObjectView, ListView):
         **{
             "data_type": fields.String(missing=None),
             "studyset_owner": fields.String(missing=None),
-            "level": fields.String(default="group", missing="group")
+            "level": fields.String(default="group", missing="group"),
         },
         **LIST_NESTED_ARGS,
         **LIST_CLONE_ARGS,

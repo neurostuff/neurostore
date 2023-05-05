@@ -204,7 +204,7 @@ def ingest_neurosynth(max_rows=None):
                 doi=None if isinstance(metadata_row.doi, float) else metadata_row.doi,
                 source="neurosynth",
                 source_id=id_,
-                level="group"
+                level="group",
             )
             analyses = []
             points = []
