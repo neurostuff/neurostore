@@ -77,7 +77,7 @@ def test_create_or_update_neurostore_analysis(
         create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collection)
 
 
-@celery_test
+# @celery_test
 def test_result_upload(auth_client, app, db, meta_analysis_cached_result_files):
     data = {}
     data["statistical_maps"] = [
@@ -101,11 +101,23 @@ def test_result_upload(auth_client, app, db, meta_analysis_cached_result_files):
     ns_study = NeurostoreStudy(project=meta_analysis.project)
     with app.test_request_context():
         create_or_update_neurostore_study(ns_study)
+    # use run_key instead of Bearer token
+    auth_client.token = None
+    run_key = (
+        MetaAnalysis.query.filter_by(
+            id=meta_analysis_cached_result_files["meta_analysis_id"]
+        )
+        .one()
+        .run_key
+    )
+
+    headers = {"compose_upload_key": f"{run_key}"}
     resp = auth_client.post(
         "/api/meta-analysis-results",
         data={
             "meta_analysis_id": meta_analysis_cached_result_files["meta_analysis_id"]
         },
+        headers=headers,
     )
     result_id = resp.json["id"]
     upload_result = auth_client.put(
@@ -113,6 +125,7 @@ def test_result_upload(auth_client, app, db, meta_analysis_cached_result_files):
         data=data,
         json_dump=False,
         content_type="multipart/form-data",
+        headers=headers,
     )
 
     assert upload_result.status_code == 200
