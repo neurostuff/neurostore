@@ -1,12 +1,14 @@
-import { Typography, Box } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { AnalysisReturn, ConditionReturn, PointReturn } from 'neurostore-typescript-sdk';
 
-import DisplayPoints from './DisplayPoints/DisplayPoints';
+import DisplayAnalysisWarnings from '../DisplayAnalysisWarnings/DisplayAnalysisWarnings';
 import DisplayConditions from './DisplayConditions/DisplayConditions';
+import DisplayPoints from './DisplayPoints/DisplayPoints';
 
 const DisplayAnalysis: React.FC<AnalysisReturn | undefined> = (props) => {
     return (
         <Box>
+            <DisplayAnalysisWarnings analysisId={props.id || ''} />
             <Box sx={{ marginBottom: '1rem' }}>
                 <Typography gutterBottom sx={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>
                     Details

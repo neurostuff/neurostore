@@ -1,4 +1,5 @@
-import { Box, List, ListItem, ListItemButton, ListItemText } from '@mui/material';
+import { Box, List } from '@mui/material';
+import EditAnalysesListItem from 'components/EditStudyComponents/EditAnalyses/EditAnalysesList/EditAnalysesListItem';
 import { AnalysisReturn } from 'neurostore-typescript-sdk';
 
 const DisplayAnalysesList: React.FC<{
@@ -23,18 +24,35 @@ const DisplayAnalysesList: React.FC<{
                 disablePadding
             >
                 {props.analyses.map((analysis, index) => (
-                    <ListItem key={analysis.id || index} disablePadding divider>
-                        <ListItemButton
-                            onClick={() => props.onSelectAnalysisIndex(index)}
-                            selected={props.selectedIndex === index}
-                        >
-                            <ListItemText
-                                sx={{ wordBreak: 'break-all' }}
-                                primary={analysis.name || ''}
-                                secondary={analysis.description || ''}
-                            />
-                        </ListItemButton>
-                    </ListItem>
+                    <EditAnalysesListItem
+                        key={analysis.id || index}
+                        index={index}
+                        analysisId={analysis.id}
+                        name={analysis.name}
+                        points={analysis.points || []}
+                        description={analysis.description}
+                        selected={props.selectedIndex === index}
+                        onSelectAnalysis={(id, i) => props.onSelectAnalysisIndex(i)}
+                    />
+                    // <ListItem key={analysis.id || index} disablePadding divider>
+                    //     <ListItemButton
+                    //         onClick={() => props.onSelectAnalysisIndex(index)}
+                    //         selected={props.selectedIndex === index}
+                    //     >
+                    //         <ListItemText
+                    //             sx={{ wordBreak: 'break-all' }}
+                    //             primary={analysis.name || ''}
+                    //             secondary={analysis.description || ''}
+                    //         />
+                    //         {(analysis.points?.length || 0) === 0 && (
+                    //             <Tooltip title="There is a potential issue" placement="top">
+                    //                 <ListItemIcon>
+                    //                     <ErrorOutlineIcon color="warning" />
+                    //                 </ListItemIcon>
+                    //             </Tooltip>
+                    //         )}
+                    //     </ListItemButton>
+                    // </ListItem>
                 ))}
             </List>
         </Box>

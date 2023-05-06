@@ -1,9 +1,8 @@
-import { Box, Button, Card, CardActions, CardContent, Typography } from '@mui/material';
+import { Box, Button, Card, CardActions, CardContent, Chip, Typography } from '@mui/material';
 import { useGetMetaAnalyses } from 'hooks';
 import { useHistory, useParams, useRouteMatch } from 'react-router-dom';
 import { Add } from '@mui/icons-material';
 import { useState } from 'react';
-import EditIcon from '@mui/icons-material/Edit';
 import CreateMetaAnalysisSpecificationDialogBase from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase';
 
 const ViewMetaAnalyses: React.FC = () => {
@@ -62,10 +61,6 @@ const ViewMetaAnalyses: React.FC = () => {
                                     color="secondary.main"
                                 >
                                     <Typography variant="body2">EDITABLE</Typography>
-                                    <EditIcon
-                                        sx={{ marginLeft: '6px', fontSize: '1rem' }}
-                                        fontSize="small"
-                                    />
                                 </Box>
                                 <Typography variant="h6">{metaAnalysis.name || ''}</Typography>
                                 <Typography>{metaAnalysis.description || ''}</Typography>

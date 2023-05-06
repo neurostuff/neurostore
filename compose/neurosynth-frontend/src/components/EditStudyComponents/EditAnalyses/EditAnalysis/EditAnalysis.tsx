@@ -1,10 +1,13 @@
-import { Box, Button, Typography } from '@mui/material';
-import EditAnalysisConditions from '../EditAnalysisConditions/EditAnalysisConditions';
-import EditAnalysisDetails from '../EditAnalysisDetails/EditAnalysisDetails';
-import EditAnalysisPoints from '../EditAnalysisPoints/EditAnalysisPoints';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import HelpIcon from '@mui/icons-material/Help';
+import { Box, Button, Chip, Tooltip, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import { useDeleteAnalysis } from 'pages/Studies/StudyStore';
 import { useState } from 'react';
+import EditAnalysisConditions from '../EditAnalysisConditions/EditAnalysisConditions';
+import EditAnalysisDetails from '../EditAnalysisDetails/EditAnalysisDetails';
+import EditAnalysisPoints from '../EditAnalysisPoints/EditAnalysisPoints';
+import DisplayAnalysisWarnings from 'components/DisplayStudy/DisplayAnalyses/DisplayAnalysisWarnings/DisplayAnalysisWarnings';
 
 const EditAnalysis: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void }> = (props) => {
     const deleteAnalysis = useDeleteAnalysis();
@@ -25,6 +28,7 @@ const EditAnalysis: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void
 
     return (
         <Box sx={{ marginBottom: '2rem', width: '100%' }}>
+            <DisplayAnalysisWarnings analysisId={props.analysisId} />
             <Box>
                 <Typography sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
                     Analysis Details
@@ -33,9 +37,17 @@ const EditAnalysis: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void
             </Box>
 
             <Box sx={{ marginTop: '2rem', width: '100%' }}>
-                <Typography sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
-                    Analysis Coordinates
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', margin: '0.5rem 0' }}>
+                    <Typography sx={{ fontWeight: 'bold', marginRight: '1rem' }}>
+                        Analysis Coordinates
+                    </Typography>
+                    <Tooltip
+                        title="To add or remove rows, right click on a cell to open the context menu. You must enter all coordinates in order to save the overall study."
+                        placement="right"
+                    >
+                        <HelpIcon color="primary" />
+                    </Tooltip>
+                </Box>
                 <EditAnalysisPoints analysisId={props.analysisId} />
             </Box>
             <Box sx={{ marginTop: '2rem' }}>

@@ -1,4 +1,4 @@
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { EPropertyType, getType } from 'components/EditMetadata';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetMetaAnalysisById } from 'hooks';
@@ -125,6 +125,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
             isOpen={props.isOpen}
             onCloseDialog={props.onCloseDialog}
             fullWidth
+            dialogTitleSx={{ margin: '0 2rem' }}
             dialogContentSx={{ paddingBottom: '0' }}
             maxWidth="lg"
         >
@@ -132,45 +133,51 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                 isLoading={getMetaAnalysisIsLoading}
                 isError={getMetaAnalysisIsError}
             >
-                <Typography sx={{ fontWeight: 'bold' }} gutterBottom>
-                    Edit Algorithm:
-                </Typography>
-                <SelectSpecificationComponent
-                    algorithm={algorithmSpec}
-                    onSelectSpecification={(update) => setAlgorithmSpec(update)}
-                />
-                <Typography
-                    sx={{ marginBottom: '1rem', fontWeight: 'bold', marginTop: '4rem' }}
-                    gutterBottom
-                >
-                    Edit Analyses Selection:
-                </Typography>
-                <SelectAnalysesComponent
-                    annotationdId={
-                        (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''
-                    }
-                    selectedValue={selectedValue}
-                    onSelectValue={(update) => setSelectedValue(update)}
-                />
                 <Box
                     sx={{
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        position: 'sticky',
-                        backgroundColor: 'white',
-                        padding: '10px 0',
-                        bottom: 0,
+                        margin: '0 2rem',
                     }}
                 >
-                    <LoadingButton
-                        variant="contained"
-                        text="Update"
-                        sx={{ width: '86px' }}
-                        loaderColor="secondary"
-                        isLoading={updateSpecificationIsLoading}
-                        disabled={disable}
-                        onClick={handleUpdateSpecification}
+                    <Typography sx={{ fontWeight: 'bold' }} gutterBottom>
+                        Edit Algorithm:
+                    </Typography>
+                    <SelectSpecificationComponent
+                        algorithm={algorithmSpec}
+                        onSelectSpecification={(update) => setAlgorithmSpec(update)}
                     />
+                    <Typography
+                        sx={{ marginBottom: '1rem', fontWeight: 'bold', marginTop: '5rem' }}
+                        gutterBottom
+                    >
+                        Edit Analyses Selection:
+                    </Typography>
+                    <SelectAnalysesComponent
+                        annotationdId={
+                            (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''
+                        }
+                        selectedValue={selectedValue}
+                        onSelectValue={(update) => setSelectedValue(update)}
+                    />
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            position: 'sticky',
+                            backgroundColor: 'white',
+                            padding: '10px 0',
+                            bottom: 0,
+                        }}
+                    >
+                        <LoadingButton
+                            variant="contained"
+                            text="Update"
+                            sx={{ width: '86px' }}
+                            loaderColor="secondary"
+                            isLoading={updateSpecificationIsLoading}
+                            disabled={disable}
+                            onClick={handleUpdateSpecification}
+                        />
+                    </Box>
                 </Box>
             </StateHandlerComponent>
         </BaseDialog>

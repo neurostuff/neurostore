@@ -71,7 +71,9 @@ const stripTags = (stringWhichMayHaveHTML: any) => {
 };
 
 const replaceString = (val: string) => {
-    return val.replaceAll('−', '-');
+    // replace = ['֊', '‐', '‑', '⁃', '﹣', '－', '‒', '–', '—', '﹘', '−', '-']
+
+    return val.replaceAll(new RegExp('֊|‐|‑|⁃|﹣|－|‒|–|—|﹘|−|-', 'g'), '-');
 };
 
 const handleBeforePaste = (data: any[][], coords: RangeType[]) => {

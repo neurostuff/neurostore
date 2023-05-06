@@ -53,6 +53,7 @@ const EditAnalysesList: React.FC<{
                     <EditAnalysesListItem
                         key={analysis.id || index}
                         analysisId={analysis.id}
+                        points={analysis.points}
                         name={analysis.name}
                         index={index}
                         description={analysis.description}

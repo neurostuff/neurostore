@@ -1,27 +1,28 @@
-import { Box, Breadcrumbs, Typography, Link, Chip, Button } from '@mui/material';
+import BookmarkIcon from '@mui/icons-material/Bookmark';
+import CheckIcon from '@mui/icons-material/Check';
+import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
+import { Box, Button, Chip, Typography } from '@mui/material';
+import ExtractionReconcileDialog from 'components/Dialogs/ExtractionReconcileDialog/ExtractionReconcileDialog';
+import { resolveStudysetAndCurationDifferences } from 'components/ExtractionComponents/Ingestion/helpers/utils';
+import ReadOnlyStudySummaryVirtualizedItem from 'components/ExtractionComponents/ReadOnlyStudySummary';
+import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-import CheckIcon from '@mui/icons-material/Check';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
-import { useEffect, useState } from 'react';
-import { useHistory, useLocation, useParams } from 'react-router-dom';
+import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import { StudyReturn } from 'neurostore-typescript-sdk';
+import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
 import {
     useInitProjectStore,
     useProjectCurationColumn,
-    useProjectExtractionStudysetId,
     useProjectExtractionStudyStatusList,
+    useProjectExtractionStudysetId,
     useProjectName,
     useProjectNumCurationColumns,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import { resolveStudysetAndCurationDifferences } from 'components/ExtractionComponents/Ingestion/helpers/utils';
-import ExtractionReconcileDialog from 'components/Dialogs/ExtractionReconcileDialog/ExtractionReconcileDialog';
-import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
+import { useEffect, useState } from 'react';
+import { useHistory, useLocation, useParams } from 'react-router-dom';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
-import ReadOnlyStudySummaryVirtualizedItem from 'components/ExtractionComponents/ReadOnlyStudySummary';
-import useGetWindowHeight from 'hooks/useGetWindowHeight';
 
 export enum ESelectedChip {
     'COMPLETED' = 'completed',
@@ -209,6 +210,7 @@ const ExtractionPage: React.FC = (props) => {
                                 },
                             ]}
                         />
+                        <ProjectIsLoadingText />
                     </Box>
                     <Box>
                         <Button

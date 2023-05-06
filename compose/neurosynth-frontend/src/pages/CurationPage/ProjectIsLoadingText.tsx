@@ -7,13 +7,6 @@ const ProjectIsLoadingText: React.FC = (props) => {
     useEffect(() => {
         function onStorageUpdate() {
             const isLoading = localStorage.getItem(`updateProjectIsLoading`) === 'true';
-            if (isLoading) {
-                window.onbeforeunload = () => {
-                    return '';
-                };
-            } else {
-                window.onbeforeunload = null;
-            }
             setProjectIsLoading(isLoading);
         }
         window.addEventListener('storage', onStorageUpdate);

@@ -442,6 +442,10 @@ export const setGivenStudyStatusesAsCompleteHelper = (
     }));
 };
 
+const onUnloadHandler = (event: BeforeUnloadEvent) => {
+    return (event.returnValue = 'Are you sure you want to leave?');
+};
+
 type APIDebouncedUpdater = <
     T extends unknown,
     Mps extends [StoreMutatorIdentifier, unknown][] = [],
@@ -458,10 +462,15 @@ type APIDebouncedUpdaterImpl = <T extends unknown>(
 
 const apiDebouncedUpdaterImpl: APIDebouncedUpdaterImpl = (f, name) => (set, get, store) => {
     let timeout: number | NodeJS.Timeout | undefined = undefined;
+    let prevId: string | undefined = undefined;
 
     const debouncedAPIUpdaterSet: typeof set = (...a) => {
-        if (timeout) clearTimeout(timeout);
-        localStorage.setItem(`updateProjectRequest`, 'true');
+        console.log(...a);
+        const currId = (get() as unknown as INeurosynthProjectReturn & ProjectStoreActions).id;
+        if (timeout && currId === prevId) clearTimeout(timeout);
+        prevId = currId;
+
+        window.addEventListener('beforeunload', onUnloadHandler);
 
         timeout = setTimeout(() => {
             const storeData = get() as unknown as INeurosynthProjectReturn & ProjectStoreActions;
@@ -485,10 +494,10 @@ const apiDebouncedUpdaterImpl: APIDebouncedUpdaterImpl = (f, name) => (set, get,
                 update
             ).finally(() => {
                 localStorage.setItem(`updateProjectIsLoading`, 'false');
-                localStorage.setItem(`updateProjectRequest`, 'false');
+                window.removeEventListener('beforeunload', onUnloadHandler);
                 window.dispatchEvent(new Event('storage'));
             });
-        }, 5000);
+        }, 3000);
 
         set(...a);
     };

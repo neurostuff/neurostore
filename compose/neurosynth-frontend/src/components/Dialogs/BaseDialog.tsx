@@ -17,6 +17,7 @@ interface IBaseDialog {
     dialogTitle: string;
     fullWidth?: boolean;
     maxWidth?: Breakpoint;
+    dialogTitleSx?: SystemStyleObject;
     dialogContentSx?: SystemStyleObject;
     onCloseDialog: () => void;
 }
@@ -33,7 +34,7 @@ const BaseDialog: React.FC<IBaseDialog> = (props) => {
             open={props.isOpen}
             onClose={handleCloseDialog}
         >
-            <DialogTitle sx={{ display: 'flex' }}>
+            <DialogTitle sx={[{ display: 'flex' }, props.dialogTitleSx || {}]}>
                 <Box sx={{ display: 'flex', flexGrow: 1, alignItems: 'center' }}>
                     <Typography variant="h6">{props.dialogTitle}</Typography>
                 </Box>
