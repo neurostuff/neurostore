@@ -77,7 +77,7 @@ def test_create_or_update_neurostore_analysis(
         create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collection)
 
 
-# @celery_test
+@celery_test
 def test_result_upload(auth_client, app, db, meta_analysis_cached_result_files):
     data = {}
     data["statistical_maps"] = [
