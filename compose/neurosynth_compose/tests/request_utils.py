@@ -36,6 +36,8 @@ class Client(object):
         """Generic request handler"""
         request_function = getattr(self.client, request)
         headers = headers or self._get_headers()
+        if self._get_headers():
+            headers.update(self._get_headers())
 
         if content_type is None:
             content_type = "application/json"
