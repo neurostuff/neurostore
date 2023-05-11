@@ -1,23 +1,28 @@
 import { Box, Typography } from '@mui/material';
+import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import SelectAnalysesSummaryComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesSummaryComponent/SelectAnalysesSummaryComponent';
 import { EPropertyType, getType } from 'components/EditMetadata';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useGetMetaAnalysisById } from 'hooks';
-import useGetSpecificationById from 'hooks/requests/useGetSpecificationById';
-import { AnnotationReturn, SpecificationReturn } from 'neurosynth-compose-typescript-sdk';
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import BaseDialog, { IDialog } from '../BaseDialog';
-import SelectAnalysesComponent from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent';
-import SelectSpecificationComponent from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationAlgorithmStep/SelectSpecificationComponent/SelectSpecificationComponent';
-import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import {
     IDynamicValueType,
     IMetaAnalysisParamsSpecification,
 } from 'components/MetaAnalysisConfigComponents';
-import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
-import useUpdateSpecification from 'hooks/requests/useUpdateSpecification';
+import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { useGetMetaAnalysisById } from 'hooks';
 import { EAnalysisType } from 'hooks/requests/useCreateAlgorithmSpecification';
-import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import useGetSpecificationById from 'hooks/requests/useGetSpecificationById';
+import useUpdateSpecification from 'hooks/requests/useUpdateSpecification';
+import {
+    AnnotationReturn,
+    SpecificationReturn,
+    StudysetReturn,
+} from 'neurosynth-compose-typescript-sdk';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import BaseDialog, { IDialog } from '../BaseDialog';
+import SelectSpecificationComponent from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationAlgorithmStep/SelectSpecificationComponent/SelectSpecificationComponent';
+import SelectAnalysesComponent from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 
@@ -119,6 +124,8 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
 
     const disable = !algorithmSpec.estimator || !selectedValue?.selectionKey;
 
+    console.log(metaAnalysis);
+
     return (
         <BaseDialog
             dialogTitle="Edit Meta-Analysis Specification"
@@ -129,57 +136,76 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
             dialogContentSx={{ paddingBottom: '0' }}
             maxWidth="lg"
         >
-            <StateHandlerComponent
-                isLoading={getMetaAnalysisIsLoading}
-                isError={getMetaAnalysisIsError}
-            >
-                <Box
-                    sx={{
-                        margin: '0 2rem',
-                    }}
+            <Box sx={{ margin: '1rem 0' }}>
+                <StateHandlerComponent
+                    isLoading={getMetaAnalysisIsLoading}
+                    isError={getMetaAnalysisIsError}
                 >
-                    <Typography sx={{ fontWeight: 'bold' }} gutterBottom>
-                        Edit Algorithm:
-                    </Typography>
-                    <SelectSpecificationComponent
-                        algorithm={algorithmSpec}
-                        onSelectSpecification={(update) => setAlgorithmSpec(update)}
-                    />
-                    <Typography
-                        sx={{ marginBottom: '1rem', fontWeight: 'bold', marginTop: '5rem' }}
-                        gutterBottom
-                    >
-                        Edit Analyses Selection:
-                    </Typography>
-                    <SelectAnalysesComponent
-                        annotationdId={
-                            (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''
-                        }
-                        selectedValue={selectedValue}
-                        onSelectValue={(update) => setSelectedValue(update)}
-                    />
                     <Box
                         sx={{
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            position: 'sticky',
-                            backgroundColor: 'white',
-                            padding: '10px 0',
-                            bottom: 0,
+                            margin: '0 2rem',
                         }}
                     >
-                        <LoadingButton
-                            variant="contained"
-                            text="Update"
-                            sx={{ width: '86px' }}
-                            loaderColor="secondary"
-                            isLoading={updateSpecificationIsLoading}
-                            disabled={disable}
-                            onClick={handleUpdateSpecification}
+                        <Typography sx={{ fontWeight: 'bold' }} gutterBottom>
+                            Edit Algorithm:
+                        </Typography>
+                        <SelectSpecificationComponent
+                            algorithm={algorithmSpec}
+                            onSelectSpecification={(update) => setAlgorithmSpec(update)}
                         />
+                        <Typography
+                            sx={{ marginBottom: '1rem', fontWeight: 'bold', marginTop: '5rem' }}
+                            gutterBottom
+                        >
+                            Edit Analyses Selection:
+                        </Typography>
+                        <SelectAnalysesComponent
+                            annotationdId={
+                                (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''
+                            }
+                            selectedValue={selectedValue}
+                            onSelectValue={(update) => setSelectedValue(update)}
+                        />
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                position: 'sticky',
+                                backgroundColor: 'white',
+                                padding: '10px 0',
+                                bottom: 0,
+                                alignItems: 'center',
+                            }}
+                        >
+                            {/* empty div used for equally spacing and centering components */}
+                            <Box sx={{ width: '86px' }}></Box>
+                            <Box>
+                                <SelectAnalysesSummaryComponent
+                                    studysetId={
+                                        (metaAnalysis?.studyset as StudysetReturn)?.neurostore_id ||
+                                        ''
+                                    }
+                                    annotationdId={
+                                        (metaAnalysis?.annotation as AnnotationReturn)
+                                            ?.neurostore_id || ''
+                                    }
+                                    selectedValue={selectedValue}
+                                />
+                            </Box>
+                            <LoadingButton
+                                disableElevation
+                                variant="contained"
+                                text="Update"
+                                sx={{ width: '86px' }}
+                                loaderColor="secondary"
+                                isLoading={updateSpecificationIsLoading}
+                                disabled={disable}
+                                onClick={handleUpdateSpecification}
+                            />
+                        </Box>
                     </Box>
-                </Box>
-            </StateHandlerComponent>
+                </StateHandlerComponent>
+            </Box>
         </BaseDialog>
     );
 };

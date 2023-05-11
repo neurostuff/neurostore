@@ -26,11 +26,8 @@ const DisplayAnalysesList: React.FC<{
                 {props.analyses.map((analysis, index) => (
                     <EditAnalysesListItem
                         key={analysis.id || index}
+                        analysis={analysis}
                         index={index}
-                        analysisId={analysis.id}
-                        name={analysis.name}
-                        points={analysis.points || []}
-                        description={analysis.description}
                         selected={props.selectedIndex === index}
                         onSelectAnalysis={(id, i) => props.onSelectAnalysisIndex(i)}
                     />

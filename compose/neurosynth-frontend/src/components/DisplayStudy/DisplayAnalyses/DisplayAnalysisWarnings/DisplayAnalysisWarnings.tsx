@@ -1,5 +1,5 @@
-import { Box, Chip } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { Box, Chip } from '@mui/material';
 import { IStorePoint, useStudyAnalysisPoints } from 'pages/Studies/StudyStore';
 
 const DisplayAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
@@ -12,7 +12,7 @@ const DisplayAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
         <Box sx={{ marginBottom: '1rem' }}>
             {noPoints && (
                 <Chip
-                    sx={{ marginRight: '5px' }}
+                    sx={{ margin: '2px' }}
                     icon={<ErrorOutlineIcon />}
                     label="This analysis has no coordinates"
                     color="warning"
@@ -20,6 +20,7 @@ const DisplayAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
             )}
             {coordinatesExistOutsideTheBrain && (
                 <Chip
+                    sx={{ margin: '2px' }}
                     icon={<ErrorOutlineIcon />}
                     label="This analysis may contain coordinates that exist outside the brain"
                     color="warning"

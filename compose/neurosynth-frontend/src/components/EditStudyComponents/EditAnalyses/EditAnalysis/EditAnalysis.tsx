@@ -50,12 +50,13 @@ const EditAnalysis: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void
                 </Box>
                 <EditAnalysisPoints analysisId={props.analysisId} />
             </Box>
-            <Box sx={{ marginTop: '2rem' }}>
+            {/* TODO: This can be added back later when we have a better understanding of where it fits in as currently, all meta-analysis algorithms do not use this */}
+            {/* <Box sx={{ marginTop: '2rem' }}>
                 <Typography sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
                     Analysis Conditions
                 </Typography>
                 <EditAnalysisConditions analysisId={props.analysisId} />
-            </Box>
+            </Box> */}
             <Box sx={{ marginTop: '2rem' }}>
                 <ConfirmationDialog
                     isOpen={dialogIsOpen}

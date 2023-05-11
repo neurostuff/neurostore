@@ -31,7 +31,7 @@ export const getFilteredAnnotationNotes = (
 };
 
 // we can assume that the input is already sorted
-const annotationNotesToTableFormat = (
+const annotationNotesToTableFormatHelper = (
     notes: NoteCollectionReturn[],
     selectedNotes: NoteCollectionReturn[]
 ) => {
@@ -112,7 +112,7 @@ const SelectAnalysesComponent: React.FC<{
         .filter((x) => x.type === EPropertyType.BOOLEAN);
 
     const studiesList = props.selectedValue?.selectionKey
-        ? annotationNotesToTableFormat(
+        ? annotationNotesToTableFormatHelper(
               (annotation?.notes || []) as NoteCollectionReturn[],
               annotationsSelected
           )

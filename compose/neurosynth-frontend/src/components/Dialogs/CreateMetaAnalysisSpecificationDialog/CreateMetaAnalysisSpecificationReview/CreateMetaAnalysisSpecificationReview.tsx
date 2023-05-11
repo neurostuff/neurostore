@@ -25,11 +25,11 @@ import {
     useProjectId,
     useProjectName,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import { getFilteredAnnotationNotes } from '../CreateMetaAnalysisSpecificationSelectionStep/CreateMetaAnalysisSpecificationSelectionStep';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { useHistory } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
+import { getFilteredAnnotationNotes } from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent';
 
 const CreateMetaAnalysisSpecificationReview: React.FC<{
     onNavigate: (button: ENavigationButton) => void;

@@ -1,38 +1,38 @@
-import { ListItem, ListItemButton, ListItemIcon, ListItemText, Tooltip } from '@mui/material';
-import { IStorePoint } from 'pages/Studies/StudyStore';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { ListItem, ListItemButton, ListItemIcon, ListItemText, Tooltip } from '@mui/material';
+import { AnalysisReturn } from 'neurostore-typescript-sdk';
+import { IStoreAnalysis } from 'pages/Studies/StudyStore';
 import React from 'react';
-import { PointReturn } from 'neurostore-typescript-sdk';
 
 const EditAnalysesListItem: React.FC<{
-    analysisId?: string;
-    name?: string | null;
-    points?: IStorePoint[] | (string | PointReturn)[];
-    description?: string | null;
+    analysis: AnalysisReturn | IStoreAnalysis;
     selected: boolean;
     index: number;
     onSelectAnalysis: (analysisId: string, index: number) => void;
 }> = React.memo((props) => {
-    const { name, description, selected, analysisId, points, onSelectAnalysis } = props;
+    const { analysis, selected, onSelectAnalysis } = props;
 
     const handleSelectAnalysis = () => {
-        if (!analysisId) return;
-        onSelectAnalysis(analysisId, props.index);
+        if (!analysis.id) return;
+        onSelectAnalysis(analysis.id, props.index);
     };
 
-    const showWarningIcon = (points?.length || 0) === 0;
+    const coordinatesExistOutsideTheBrain = true;
+    const hasPoints = (analysis?.points?.length || 0) > 0;
+
+    const showWarningIcon = !hasPoints || coordinatesExistOutsideTheBrain;
 
     return (
         <ListItem disablePadding divider>
             <ListItemButton onClick={handleSelectAnalysis} selected={selected}>
                 <ListItemText
                     sx={{ wordBreak: 'break-all' }}
-                    primary={name || ''}
-                    secondary={description || ''}
+                    primary={analysis?.name || ''}
+                    secondary={analysis?.description || ''}
                 />
                 {showWarningIcon && (
-                    <Tooltip title="There is a potential issue" placement="top">
-                        <ListItemIcon>
+                    <Tooltip title="This analysis has a warning" placement="top">
+                        <ListItemIcon sx={{ minWidth: 0 }}>
                             <ErrorOutlineIcon color="warning" />
                         </ListItemIcon>
                     </Tooltip>

@@ -52,11 +52,8 @@ const EditAnalysesList: React.FC<{
                 {analyses.map((analysis, index) => (
                     <EditAnalysesListItem
                         key={analysis.id || index}
-                        analysisId={analysis.id}
-                        points={analysis.points}
-                        name={analysis.name}
+                        analysis={analysis}
                         index={index}
-                        description={analysis.description}
                         onSelectAnalysis={handleSelectAnalysis}
                         selected={(analysis.id || null) === (props.selectedAnalysisId || undefined)}
                     />

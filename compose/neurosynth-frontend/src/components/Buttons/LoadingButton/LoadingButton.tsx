@@ -1,20 +1,6 @@
 import { Button, ButtonProps } from '@mui/material';
-import { SystemStyleObject } from '@mui/system';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import { ColorOptions } from 'index';
-
-type ILoadingButton = {
-    text: string;
-    isLoading?: boolean;
-    sx?: SystemStyleObject | SystemStyleObject[];
-    variant: 'contained' | 'outlined' | 'text';
-    startIcon?: React.ReactNode;
-    endIcon?: React.ReactNode;
-    onClick: () => void;
-    color?: ColorOptions;
-    disabled?: boolean;
-    loaderColor?: ColorOptions;
-};
 
 const LoadingButton: React.FC<
     ButtonProps & {
@@ -26,14 +12,12 @@ const LoadingButton: React.FC<
     const {
         text,
         isLoading = false,
-        sx = {},
+        loaderColor = 'primary',
         variant = 'outlined',
+        onClick = () => {},
         startIcon = undefined,
         endIcon = undefined,
-        color,
-        onClick = () => {},
-        disabled = false,
-        loaderColor = 'primary',
+        ...otherProps
     } = props;
 
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -43,13 +27,11 @@ const LoadingButton: React.FC<
 
     return (
         <Button
-            disabled={disabled}
             onClick={handleClick}
-            sx={sx}
-            color={color}
             startIcon={isLoading ? undefined : startIcon}
             endIcon={isLoading ? undefined : endIcon}
             variant={variant}
+            {...otherProps}
         >
             {isLoading ? <ProgressLoader size="1.5rem" color={loaderColor} /> : text}
         </Button>

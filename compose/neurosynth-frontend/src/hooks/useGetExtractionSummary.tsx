@@ -35,7 +35,6 @@ const useGetExtractionSummary = (projectId: string) => {
             }
 
             const total = (studyset?.studies || []).length;
-            console.log(studyset?.studies);
 
             // all included studies are in the last column
             const numCompletedStudies = studyStatusList.filter(
