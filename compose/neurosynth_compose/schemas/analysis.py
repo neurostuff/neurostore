@@ -260,6 +260,7 @@ class ProjectSchema(BaseSchema):
     name = fields.String(allow_none=True)
     description = fields.String(allow_none=True)
     provenance = fields.Dict(allow_none=True)
+    public = fields.Boolean()
     meta_analyses = StringOrNested(
         MetaAnalysisSchema, metadata={"pluck": "id"}, dump_only=True, many=True
     )
