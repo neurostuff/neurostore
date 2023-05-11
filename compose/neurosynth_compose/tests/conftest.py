@@ -361,11 +361,10 @@ def user_data(app, db, mock_add_users):
         annot_ref = AnnotationReference(id=serialized_annotation["id"])
         for user_info in mock_add_users.values():
             user = User.query.filter_by(id=user_info["id"]).first()
-
             studyset = Studyset(
-                user=user,
-                snapshot=serialized_studyset,
-                studyset_reference=ss_ref,
+                    user=user,
+                    snapshot=serialized_studyset,
+                    studyset_reference=ss_ref,
             )
 
             annotation = Annotation(
@@ -399,26 +398,31 @@ def user_data(app, db, mock_add_users):
             ns_analysis = NeurostoreAnalysis(
                 neurostore_id=generate_id(), neurostore_study=ns_study
             )
-            meta_analysis = MetaAnalysis(
-                name=user.id + "'s meta analysis",
-                user=user,
-                specification=specification,
-                studyset=studyset,
-                annotation=annotation,
-                neurostore_analysis=ns_analysis,
-            )
-
-            project = Project(
-                name=user.id + "'s project",
-                meta_analyses=[meta_analysis],
-                neurostore_study=ns_study,
-                user=user,
-                public=True,
-            )
 
             to_commit.extend(
-                [studyset, annotation, specification, meta_analysis, project]
+                [studyset, annotation, specification, ns_study, ns_analysis]
             )
+            for public in [True, False]:
+                meta_analysis = MetaAnalysis(
+                    name=user.id + "'s meta analysis",
+                    user=user,
+                    specification=specification,
+                    studyset=studyset,
+                    annotation=annotation,
+                    neurostore_analysis=ns_analysis,
+                )
+
+                project = Project(
+                    name=user.id + "'s project",
+                    meta_analyses=[meta_analysis],
+                    neurostore_study=ns_study,
+                    user=user,
+                    public=public,
+                )
+
+                to_commit.extend(
+                    [meta_analysis, project]
+                )
 
         db.session.add_all(to_commit)
         db.session.commit()
