@@ -1,8 +1,8 @@
 import { AxiosError, AxiosResponse } from 'axios';
-import { useMutation } from 'react-query';
+import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
+import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import {
     AnnotationPostBody,
-    MetaAnalysis,
     MetaAnalysisPostBody,
     MetaAnalysisReturn,
     SpecificationPostBody,
@@ -10,9 +10,8 @@ import {
     StudysetPostBody,
     StudysetReturn,
 } from 'neurosynth-compose-typescript-sdk';
+import { useMutation } from 'react-query';
 import API, { NeurostoreAnnotation } from 'utils/api';
-import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
-import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
 
 export enum EAnalysisType {
     CBMA = 'CBMA',
@@ -93,7 +92,7 @@ const useCreateAlgorithmSpecification = () => {
 
             const createdSynthAnnotation = await createSynthAnnotationMutation.mutateAsync({
                 neurostore_id: annotationId,
-                internal_studyset_id: createdSynthStudyset.data.id,
+                cached_studyset_id: createdSynthStudyset.data.id,
             });
             if (!createdSynthAnnotation.data.id)
                 throw new Error('no id from created synth annotation');
@@ -101,8 +100,8 @@ const useCreateAlgorithmSpecification = () => {
             const createdMetaAnalysis = await createMetaAnalysisMutation.mutateAsync({
                 name: metaAnalysisName,
                 description: metaAnalysisDescription,
-                internal_studyset_id: createdSynthStudyset.data.id,
-                internal_annotation_id: createdSynthAnnotation.data.id,
+                cached_studyset_id: createdSynthStudyset.data.id,
+                cached_annotation_id: createdSynthAnnotation.data.id,
                 specification: createdSpec.data.id,
                 project: projectId,
             });

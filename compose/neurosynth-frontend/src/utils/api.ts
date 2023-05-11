@@ -15,11 +15,11 @@ import {
     AnnotationCommon,
 } from '../neurostore-typescript-sdk';
 import {
-    SpecificationApi,
-    MetaAnalysisApi,
-    AnnotationApi as NeurosynthAnnotationApi,
-    StudysetApi as NeurosynthStudysetApi,
-    DefaultApi as ProjectApi,
+    SpecificationsApi,
+    MetaAnalysesApi,
+    AnnotationsApi as NeurosynthAnnotationApi,
+    StudysetsApi as NeurosynthStudysetApi,
+    ProjectsApi,
 } from '../neurosynth-compose-typescript-sdk';
 
 export type NeurostoreAnnotation = AnnotationBase &
@@ -53,11 +53,11 @@ const NeurostoreServices = {
 };
 
 const NeurosynthServices = {
-    MetaAnalysisService: new MetaAnalysisApi(neurosynthConfig),
-    SpecificationsService: new SpecificationApi(neurosynthConfig),
+    MetaAnalysisService: new MetaAnalysesApi(neurosynthConfig),
+    SpecificationsService: new SpecificationsApi(neurosynthConfig),
     StudysetsService: new NeurosynthStudysetApi(neurosynthConfig),
     AnnotationsService: new NeurosynthAnnotationApi(neurosynthConfig),
-    ProjectsService: new ProjectApi(neurosynthConfig),
+    ProjectsService: new ProjectsApi(neurosynthConfig),
 };
 
 const UpdateServicesWithToken = (token: string) => {

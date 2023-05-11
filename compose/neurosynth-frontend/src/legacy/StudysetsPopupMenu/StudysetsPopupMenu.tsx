@@ -83,8 +83,12 @@ const StudysetsPopupMenu: React.FC<IStudysetsPopupMenu> = (props) => {
     ) => {
         if (study?.id && selectedStudyset?.id) {
             const updatedStudysetStudies = checked
-                ? [...(selectedStudyset.studies || []), study.id] // if checked, add the study id
-                : [...(selectedStudyset.studies || []).filter((x) => x !== study.id)]; // if not checked, remove the study id
+                ? [...((selectedStudyset.studies || []) as Array<string>), study.id] // if checked, add the study id
+                : [
+                      ...((selectedStudyset.studies || []) as Array<string>).filter(
+                          (x) => x !== study.id
+                      ),
+                  ]; // if not checked, remove the study id
 
             updateStudyset(
                 {
