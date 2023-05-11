@@ -2,12 +2,17 @@
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 import shortuuid
+import secrets
 
 from ..database import db
 
 
 def generate_id():
     return shortuuid.ShortUUID().random(length=12)
+
+
+def generate_api_key():
+    return secrets.token_urlsafe(16)
 
 
 class BaseMixin(object):
@@ -34,7 +39,6 @@ class Specification(BaseMixin, db.Model):
     filter = db.Column(db.Text)
     contrast = db.Column(db.JSON)
     corrector = db.Column(db.JSON)
-    public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
 
     user = relationship("User", backref=backref("specifications"))
@@ -49,7 +53,6 @@ class Studyset(BaseMixin, db.Model):
     __tablename__ = "studysets"
 
     snapshot = db.Column(db.JSON)
-    public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     neurostore_id = db.Column(db.Text, db.ForeignKey("studyset_references.id"))
 
@@ -66,10 +69,9 @@ class Annotation(BaseMixin, db.Model):
     __tablename__ = "annotations"
 
     snapshot = db.Column(db.JSON)
-    public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     neurostore_id = db.Column(db.Text, db.ForeignKey("annotation_references.id"))
-    internal_studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
+    cached_studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
 
     user = relationship("User", backref=backref("annotations"))
     studyset = relationship("Studyset", backref=backref("annotations"), lazy="joined")
@@ -84,12 +86,18 @@ class MetaAnalysis(BaseMixin, db.Model):
     name = db.Column(db.Text)
     description = db.Column(db.Text)
     specification_id = db.Column(db.Text, db.ForeignKey("specifications.id"))
-    # internal meaning local to the neurosynth-compose database
-    internal_studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
-    internal_annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"))
+    neurostore_studyset_id = db.Column(db.Text, db.ForeignKey("studyset_references.id"))
+    neurostore_annotation_id = db.Column(
+        db.Text, db.ForeignKey("annotation_references.id")
+    )
+    cached_studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
+    cached_annotation_id = db.Column(db.Text, db.ForeignKey("annotations.id"))
     project_id = db.Column(db.Text, db.ForeignKey("projects.id"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     provenance = db.Column(db.JSON)
+    run_key = db.Column(
+        db.Text, default=generate_api_key
+    )  # the API key to use for upload to not have to login
 
     specification = relationship("Specification", backref=backref("meta_analyses"))
     studyset = relationship("Studyset", backref=backref("meta_analyses"), lazy="joined")
@@ -103,10 +111,11 @@ class MetaAnalysis(BaseMixin, db.Model):
 class MetaAnalysisResult(BaseMixin, db.Model):
     __tablename__ = "meta_analysis_results"
     meta_analysis_id = db.Column(db.Text, db.ForeignKey("meta_analyses.id"))
-    neurostore_id = db.Column(db.Text, unique=True)
-    meta_analysis = relationship("MetaAnalysis", backref=backref("results"))
     cli_version = db.Column(db.Text)  # neurosynth-compose cli version
     cli_args = db.Column(db.JSON)  # Dictionary of cli arguments
+    method_description = db.Column(db.Text)  # description of the method applied
+
+    meta_analysis = relationship("MetaAnalysis", backref=backref("results"))
 
 
 class NeurovaultCollection(BaseMixin, db.Model):
@@ -127,15 +136,62 @@ class NeurovaultCollection(BaseMixin, db.Model):
 class NeurovaultFile(BaseMixin, db.Model):
     """NV file upload"""
 
+    __tablename__ = "neurovault_files"
+
     collection_id = db.Column(
         db.Integer,
         db.ForeignKey("neurovault_collections.collection_id"),
         nullable=False,
     )
     image_id = db.Column(db.Integer, unique=True)
+    filename = db.Column(db.Text)
+    url = db.Column(db.Text)
+    space = db.Column(db.Text)
+    value_type = db.Column(db.Text)
     exception = db.Column(db.Text)
     traceback = db.Column(db.Text)
     status = db.Column(db.Text, default="PENDING")
+    __table_args__ = (db.CheckConstraint(status.in_(["OK", "FAILED", "PENDING"])),)
+
+
+class NeurostoreStudy(BaseMixin, db.Model):
+    """Neurostore upload of a study"""
+
+    __tablename__ = "neurostore_studies"
+
+    neurostore_id = db.Column(db.Text, unique=True)
+    exception = db.Column(db.Text)
+    traceback = db.Column(db.Text)
+    status = db.Column(db.Text, default="PENDING")
+    project_id = db.Column(db.Text, db.ForeignKey("projects.id"))
+    project = db.relationship(
+        "Project",
+        backref=backref("neurostore_study", uselist=False),
+    )
+    __table_args__ = (db.CheckConstraint(status.in_(["OK", "FAILED", "PENDING"])),)
+
+
+class NeurostoreAnalysis(BaseMixin, db.Model):
+    """Neurostore upload of an analysis"""
+
+    __tablename__ = "neurostore_analyses"
+
+    neurostore_id = db.Column(db.Text, unique=True)
+    exception = db.Column(db.Text)
+    traceback = db.Column(db.Text)
+    status = db.Column(db.Text, default="PENDING")
+    meta_analysis_id = db.Column(
+        db.Text, db.ForeignKey("meta_analyses.id"), unique=True
+    )
+    neurostore_study_id = db.Column(
+        db.Text, db.ForeignKey("neurostore_studies.neurostore_id")
+    )
+    meta_analysis = db.relationship(
+        "MetaAnalysis", backref=backref("neurostore_analysis", uselist=False)
+    )
+    neurostore_study = db.relationship(
+        "NeurostoreStudy", backref=backref("neurostore_analyses")
+    )
     __table_args__ = (db.CheckConstraint(status.in_(["OK", "FAILED", "PENDING"])),)
 
 
@@ -146,6 +202,7 @@ class Project(BaseMixin, db.Model):
     description = db.Column(db.Text)
     provenance = db.Column(db.JSON)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
+    public = db.Column(db.Boolean, default=False)
 
     user = relationship("User", backref=backref("projects"))
 

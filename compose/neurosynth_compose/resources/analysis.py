@@ -1,5 +1,7 @@
+import pathlib
+
 import connexion
-from flask import abort, request, jsonify
+from flask import abort, request, jsonify, current_app
 from flask.views import MethodView
 
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
@@ -20,6 +22,8 @@ from ..models.analysis import (  # noqa E401
     MetaAnalysisResult,
     NeurovaultCollection,
     NeurovaultFile,
+    NeurostoreStudy,
+    NeurostoreAnalysis,
     Project,
 )
 from ..models.auth import User
@@ -34,6 +38,7 @@ from ..schemas import (  # noqa E401
     MetaAnalysisResultSchema,
     NeurovaultCollectionSchema,
     NeurovaultFileSchema,
+    NeurostoreStudySchema,
     ProjectSchema,
 )
 from .singular import singularize
@@ -108,7 +113,7 @@ class BaseView(MethodView):
 
                 return record
 
-        # update data if there is an external request
+        # check if external request updated the data already
         committed = cls._external_request(data, record, id)
 
         # Update all non-nested attributes
@@ -347,91 +352,95 @@ class AnnotationReferencesResource(ObjectView):
 
 @view_maker
 class MetaAnalysisResultsView(ObjectView, ListView):
-    _nested = {"neurovault_collection": "NeurovaultCollectionsView"}
+    _nested = {
+        "neurovault_collection": "NeurovaultCollectionsView",
+        "specification_snapshot": "SpecificationsView",
+        "studyset_snapshot": "StudysetsView",
+        "annotation_snapshot": "AnnotationsView",
+    }
+
+    def post(self):
+        try:
+            data = parser.parse(self.__class__._schema, request)
+        except ValidationError as e:
+            abort(422, description=f"input does not conform to specification: {str(e)}")
+
+        with db.session.no_autoflush:
+            record = self.__class__.update_or_create(data)
+            # create neurovault collection
+            nv_collection = NeurovaultCollection(result=record)
+            create_neurovault_collection(nv_collection)
+            db.session.add(nv_collection)
+            db.session.commit()
+        return self.__class__._schema().dump(record)
+
+    def put(self, id):
+        from functools import partial
+        from .tasks import file_upload_neurovault
+        from celery import group
+
+        result = self._model.query.filter_by(id=id).one()
+
+        if request.files:
+            stat_maps = request.files.getlist("statistical_maps")
+            cluster_tables = request.files.getlist("cluster_tables")
+            diagnostic_tables = request.files.getlist("diagnostic_tables")
+            (
+                records,
+                stat_map_fnames,
+                cluster_table_fnames,
+                diagnostic_table_fnames,
+            ) = parse_upload_files(result, stat_maps, cluster_tables, diagnostic_tables)
+
+            db.session.add_all(records)
+            db.session.commit()
+
+            # upload the individual statistical maps
+            nv_upload_tasks = []
+            for fpath, record in stat_map_fnames.items():
+                nv_upload_tasks.append(file_upload_neurovault.s(str(fpath), record.id))
+
+            nv_upload_group = group(nv_upload_tasks)
+            nv_upload_results = nv_upload_group.apply_async()
+
+            # get the neurostore study
+            ns_analysis = NeurostoreAnalysis(
+                neurostore_study=result.meta_analysis.project.neurostore_study,
+                meta_analysis=result.meta_analysis,
+            )
+
+            # when the images are uploaded, put the data on neurostore
+            def celery_ns_analysis(output, ns_analysis, cluster_table, nv_collection):
+                return create_or_update_neurostore_analysis(
+                    ns_analysis, cluster_table, nv_collection
+                )
+
+            cb_ns_analysis = partial(
+                celery_ns_analysis,
+                ns_analysis=ns_analysis,
+                cluster_table=cluster_table_fnames[0],
+                nv_collection=result.neurovault_collection,
+            )
+            nv_upload_results.then(cb_ns_analysis)
+            db.session.add(ns_analysis)
+            db.session.commit()
+
+        return self.__class__._schema().dump(result)
 
 
 @view_maker
 class NeurovaultCollectionsView(ObjectView, ListView):
     _nested = {"files": "NeurovaultFilesView"}
 
-    @classmethod
-    def _external_request(cls, data, record, id):
-        # analysis, cli_version=None,  cli_args=None,
-        # fmriprep_version=None, estimator=None, force=False):
-        # collection_name = f"{analysis.name} - {analysis.hash_id}"
-        # if force is True:
-        #     timestamp = datetime.datetime.utcnow().strftime(
-        #         '%Y-%m-%d_%H:%M')
-        #     collection_name += f"_{timestamp}"
-        from pathlib import Path
-
-        import flask
-        from pynv import Client
-
-        from flask import current_app as app
-
-        meta_analysis = MetaAnalysis.query.filter_by(id=data["meta_analysis_id"]).one()
-        collection_name = meta_analysis.name
-
-        url = f"{flask.request.host_url}" f"meta-analyses/{meta_analysis.id}"
-        try:
-            api = Client(access_token=app.config["NEUROVAULT_ACCESS_TOKEN"])
-            collection = api.create_collection(
-                collection_name,
-                description=meta_analysis.description,
-                full_dataset_url=url,
-            )
-            data["collection_id"] = collection["id"]
-            for file in data.get("files", []):
-                file["collection_id"] = collection["id"]
-
-            for k, v in data.items():
-                if k not in cls._nested and k not in ["files", "user"]:
-                    setattr(record, k, v)
-
-            db.session.add(record)
-            db.session.commit()
-            db.session.flush()
-
-            committed = True
-        except Exception:
-            abort(
-                422,
-                f"Error creating collection named: {collection_name}, "
-                "perhaps one with that name already exists?",
-            )
-
-        upload_dir = Path(app.config["FILE_DIR"]) / "uploads" / str(collection["id"])
-        upload_dir.mkdir(exist_ok=True, parents=True)
-
-        return committed
-
 
 @view_maker
 class NeurovaultFilesView(ObjectView, ListView):
-    @classmethod
-    def _external_request(cls, data, record, id):
-        from .tasks import celery_app
+    pass
 
-        if record.id is None:
-            for k, v in data.items():
-                if k not in cls._nested and k not in ["file", "user"]:
-                    setattr(record, k, v)
 
-            db.session.add(record)
-            db.session.commit()
-        committed = True
-
-        try:
-            data["file"] = data["file"].decode("latin1")
-            task = celery_app.send_task(  # noqa: F841
-                "neurovault.upload", args=[data, record.id]
-            )
-        except:  # noqa: E722
-            setattr(record, "status", "FAILED")
-
-        data.pop("file")
-        return committed
+@view_maker
+class NeurostoreStudiesView(ObjectView, ListView):
+    pass
 
 
 @view_maker
@@ -439,3 +448,204 @@ class ProjectsView(ObjectView, ListView):
     _nested = {
         "meta_analyses": "MetaAnalysesView",
     }
+
+
+def create_neurovault_collection(nv_collection):
+    import flask
+    from pynv import Client
+    from datetime import datetime
+    from flask import current_app as app
+
+    meta_analysis = nv_collection.result.meta_analysis
+
+    collection_name = " : ".join(
+        [meta_analysis.name, datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")]
+    )
+
+    url = f"{flask.request.host_url.rstrip('/')}/meta-analyses/{meta_analysis.id}"
+    try:
+        api = Client(access_token=app.config["NEUROVAULT_ACCESS_TOKEN"])
+        collection = api.create_collection(
+            collection_name,
+            description=meta_analysis.description,
+            full_dataset_url=url,
+        )
+
+        nv_collection.collection_id = collection["id"]
+
+    except Exception:
+        abort(
+            422,
+            f"Error creating collection named: {collection_name}, "
+            "perhaps one with that name already exists?",
+        )
+
+    return nv_collection
+
+
+def create_or_update_neurostore_study(ns_study):
+    from flask import request
+    from auth0.v3.authentication.get_token import GetToken
+    from .neurostore import neurostore_session
+
+    access_token = request.headers.get("Authorization")
+    # use the client to authenticate if user credentials were not used
+    if not access_token:
+        domain = current_app.config["AUTH0_BASE_URL"].lstrip("https://")
+        g_token = GetToken(domain)
+        token_resp = g_token.client_credentials(
+            client_id=current_app.config["AUTH0_CLIENT_ID"],
+            client_secret=current_app.config["AUTH0_CLIENT_SECRET"],
+            audience=current_app.config["AUTH0_API_AUDIENCE"],
+        )
+        access_token = " ".join([token_resp["token_type"], token_resp["access_token"]])
+
+    ns_ses = neurostore_session(access_token)
+
+    study_data = {
+        "name": getattr(ns_study.project, "name", "Untitled"),
+        "description": getattr(ns_study.project, "description", None),
+        "level": "meta",
+    }
+
+    try:
+        if ns_study.neurostore_id:
+            ns_ses.put(f"/api/studies/{ns_study.neurostore_id}", json=study_data)
+        else:
+            ns_study_res = ns_ses.post("/api/studies/", json=study_data)
+            ns_study.neurostore_id = ns_study_res.json()["id"]
+    except Exception as exception:  # noqa: E722
+        ns_study.traceback = str(exception)
+        ns_study.status = "FAILED"
+
+    return ns_study
+
+
+def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collection):
+    from flask import request, current_app
+    from auth0.v3.authentication.get_token import GetToken
+    import pandas as pd
+    from .neurostore import neurostore_session
+
+    # get access token from user if it exists
+    access_token = request.headers.get("Authorization")
+
+    # use the client to authenticate if user credentials were not used
+    if not access_token:
+        domain = current_app.config["AUTH0_BASE_URL"].lstrip("https://")
+        g_token = GetToken(domain)
+        token_resp = g_token.client_credentials(
+            client_id=current_app.config["AUTH0_CLIENT_ID"],
+            client_secret=current_app.config["AUTH0_CLIENT_SECRET"],
+            audience=current_app.config["AUTH0_API_AUDIENCE"],
+        )
+        access_token = " ".join([token_resp["token_type"], token_resp["access_token"]])
+
+    ns_ses = neurostore_session(access_token)
+
+    # get the study(project) the (meta)analysis is associated with
+    analysis_data = {
+        "name": ns_analysis.meta_analysis.name or "Untitled",
+        "study": ns_analysis.neurostore_study_id,
+    }
+
+    # parse the cluster table to get coordinates
+    points = []
+    cluster_df = pd.read_csv(cluster_table, sep="\t")
+    for _, row in cluster_df.iterrows():
+        point = {
+            "coordinates": [row.X, row.Y, row.Z],
+            "kind": "center of mass",  # make this dynamic
+            "space": "MNI",  # make this dynamic
+            "values": [
+                {
+                    "kind": "Z",
+                    "value": row["Peak Stat"],
+                }
+            ],
+        }
+        if not pd.isna(row["Cluster Size (mm3)"]):
+            point["subpeak"] = True
+            point["cluster_size"] = row["Cluster Size (mm3)"]
+        else:
+            point["subpeak"] = False
+        points.append(point)
+
+    # reference the uploaded images on neurovault to associate images
+    images = []
+    for nv_file in nv_collection.files:
+        image = {
+            "url": nv_file.url,
+            "filename": nv_file.filename,
+            "space": nv_file.space,
+            "value_type": nv_file.value_type,
+        }
+        images.append(image)
+
+    if points:
+        analysis_data["points"] = points
+    if images:
+        analysis_data["images"] = images
+
+    try:
+        # if the analysis already exists, update it
+        if ns_analysis.neurostore_id:
+            ns_analysis_res = ns_ses.put(
+                "/api/analyses/{ns_analysis.neurostore_id}", json=analysis_data
+            )
+        else:
+            # create a new analysis
+            ns_analysis_res = ns_ses.post("/api/analyses/", json=analysis_data)
+
+        ns_analysis.neurostore_id = ns_analysis_res.json()["id"]
+    except Exception as exception:  # noqa: E722
+        ns_analysis.traceback = str(exception)
+        ns_analysis.status = "FAILED"
+
+    db.session.add(ns_analysis)
+    db.session.commit()
+
+    return ns_analysis
+
+
+def parse_upload_files(result, stat_maps, cluster_tables, diagnostic_tables):
+    records = []
+    file_dir = pathlib.Path(current_app.config["FILE_DIR"], result.id)
+    file_dir.mkdir(parents=True, exist_ok=True)
+
+    # save data to upload to neurovault
+    stat_map_fnames = {}
+    for m in stat_maps:
+        m_path = file_dir / m.filename
+        m.save(m_path)
+        stat_map_fnames[m_path] = NeurovaultFile()
+
+    # save data to upload to neurostore
+    cluster_table_fnames = []
+    for c in cluster_tables:
+        c_path = file_dir / c.filename
+        c.save(c_path)
+        cluster_table_fnames.append(c_path)
+
+    # save data for presenting diagnostics
+    diagnostic_table_fnames = []
+    for d in diagnostic_tables:
+        d_path = file_dir / d.filename
+        d.save(d_path)
+        diagnostic_table_fnames.append(d_path)
+
+    # get the collection_id (or create collection)
+    if result.neurovault_collection:
+        nv_collection = result.neurovault_collection
+    else:
+        nv_collection = NeurovaultCollection(result=result)
+        create_neurovault_collection(nv_collection)
+        # append the collection to be committed
+        records.append(nv_collection)
+
+    # append the existing NeurovaultFiles to be committed
+    for record in stat_map_fnames.values():
+        record.neurovault_collection = nv_collection
+        records.append(record)
+
+    return records, stat_map_fnames, cluster_table_fnames, diagnostic_table_fnames

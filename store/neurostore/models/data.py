@@ -112,6 +112,7 @@ class Study(BaseMixin, db.Model):
     authors = db.Column(db.String)
     year = db.Column(db.Integer)
     public = db.Column(db.Boolean, default=True)
+    level = db.Column(db.String)
     metadata_ = db.Column(JSONB)
     source = db.Column(db.String)
     source_id = db.Column(db.String)
@@ -123,6 +124,8 @@ class Study(BaseMixin, db.Model):
         backref=backref("study"),
         cascade="all, delete, delete-orphan",
     )
+
+    __table_args__ = (db.CheckConstraint(level.in_(["group", "meta"])),)
 
 
 class StudysetStudy(db.Model):
@@ -223,6 +226,7 @@ ImageEntityMap = db.Table(
 
 # purpose of Entity: you have an image/coordinate, but you do not
 # know what level of analysis it represents
+# NOT REALLY USED CURRENTLY
 class Entity(BaseMixin, db.Model):
     __tablename__ = "entities"
 
@@ -233,6 +237,7 @@ class Entity(BaseMixin, db.Model):
     level = db.Column(db.String)
     data = db.Column(JSONB)  # metadata (participants.tsv, or something else)
     analysis = relationship("Analysis", backref=backref("entities"))
+    __table_args__ = (db.CheckConstraint(level.in_(["group", "meta"])),)
 
 
 class Point(BaseMixin, db.Model):
@@ -366,9 +371,7 @@ def add_annotation_analyses_study(study, analyses, collection_adapter):
     new_analyses = set(analyses) - set([a for a in study.analyses])
 
     all_annotations = set(
-        [
-            annot for sss in study.studyset_studies for annot in sss.studyset.annotations
-        ]
+        [annot for sss in study.studyset_studies for annot in sss.studyset.annotations]
     )
 
     new_aas = []

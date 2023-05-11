@@ -121,3 +121,27 @@ def decode_token(token):
     raise AuthError(
         {"code": "invalid_header", "description": "Unable to find appropriate key"}, 401
     )
+
+
+def verify_key(*args, **kwargs):
+    if request.method == "POST":
+        from ..models import MetaAnalysis
+
+        meta_analysis = MetaAnalysis.query.filter_by(
+            id=request.json["meta_analysis_id"]
+        ).one()
+    elif request.method == "PUT":
+        from ..models import MetaAnalysisResult
+
+        result_id = request.view_args["id"]
+        meta_analysis = (
+            MetaAnalysisResult.query.filter_by(id=result_id).one().meta_analysis
+        )
+    run_key = args[0]
+
+    if meta_analysis.run_key != run_key:
+        raise AuthError(
+            {"code": "invalid_key", "description": "Unable to find appropriate key"},
+            401,
+        )
+    return {"sub": "neurosynth_compose"}

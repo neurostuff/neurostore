@@ -8,6 +8,8 @@ from .analysis import (
     MetaAnalysisResult,
     NeurovaultCollection,
     NeurovaultFile,
+    NeurostoreStudy,
+    NeurostoreAnalysis,
     Project,
 )
 
@@ -23,6 +25,8 @@ __all__ = [
     "MetaAnalysisResult",
     "NeurovaultCollection",
     "NeurovaultFile",
+    "NeurostoreStudy",
+    "NeurostoreAnalysis",
     "Project",
     "User",
 ]

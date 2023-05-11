@@ -1,5 +1,7 @@
 from marshmallow import fields, Schema, utils, post_load, pre_dump
 
+from neurosynth_compose.models import MetaAnalysis
+
 
 class BytesField(fields.Field):
     def _deserialize(self, value, attr, data, **kwargs):
@@ -22,6 +24,29 @@ class PGSQLString(fields.String):
             return result.replace("\x00", "\uFFFD")
 
 
+class ResultInitSchema(Schema):
+    meta_analysis_id = fields.String(load_only=True)
+    meta_analysis = fields.Pluck(
+        "MetaAnalysisSchema", "id", attribute="meta_analysis", dump_only=True
+    )
+    studyset_snapshot = fields.Dict()
+    annotation_snapshot = fields.Dict()
+    specification_snapshot = fields.Dict()
+
+
+class ResultUploadSchema(Schema):
+    statistical_maps = fields.Raw(
+        metadata={"type": "string", "format": "binary"}, many=True
+    )
+    cluster_tables = fields.Raw(
+        metadata={"type": "string", "format": "binary"}, many=True
+    )
+    diagnostic_tables = fields.Raw(
+        metadata={"type": "string", "format": "binary"}, many=True
+    )
+    method_description = fields.String()
+
+
 class StringOrNested(fields.Nested):
     #: Default error messages.
     default_error_messages = {
@@ -33,7 +58,9 @@ class StringOrNested(fields.Nested):
         if value is None:
             return None
         nested = (
-            False if self.metadata.get("nested", None) is False else self.context.get("nested")
+            False
+            if self.metadata.get("nested", None) is False
+            else self.context.get("nested")
         )
         nested_attr = self.metadata.get("pluck")
         if nested:
@@ -106,7 +133,7 @@ class SpecificationSchema(BaseSchema):
     type = PGSQLString()
     mask = PGSQLString(allow_none=True)
     transformer = PGSQLString(allow_none=True)
-    estimator = fields.Dict()
+    estimator = fields.Nested("EstimatorSchema")
     contrast = PGSQLString(allow_none=True)
     filter = PGSQLString(allow_none=True)
     corrector = fields.Dict(allow_none=True)
@@ -129,7 +156,7 @@ class AnnotationSchema(BaseSchema):
         AnnotationReferenceSchema, "id", attribute="annotation_reference"
     )
     studyset = fields.Pluck(StudysetSchema, "neurostore_id", dump_only=True)
-    internal_studyset_id = fields.Pluck(
+    cached_studyset_id = fields.Pluck(
         StudysetSchema, "id", load_only=True, attribute="studyset"
     )
 
@@ -139,11 +166,30 @@ class MetaAnalysisResultSchema(BaseSchema):
     cli_version = fields.String()
     estimator = fields.Nested(EstimatorSchema)
     neurovault_collection = fields.Nested("NeurovaultCollectionSchema")
+    studyset_snapshot = fields.Nested("StudysetSchema", load_only=True)
+    annotation_snapshot = fields.Nested("AnnotationSchema", load_only=True)
+    neurostore_study = fields.Nested("NeurostoreStudySchema", load_only=True)
 
     @post_load
-    def propagate_meta_analysis_id(self, data, **kwargs):
+    def process_data(self, data, **kwargs):
+        # propogate meta-analysis id to the neurovault collection
         if data.get("neurovault_collection", None):
             data["neurovault_collection"]["meta_analysis_id"] = data["meta_analysis_id"]
+
+        # get meta-analysis object
+        ma = MetaAnalysis.query.filter_by(id=data["meta_analysis_id"])
+        # place the snapshots into their appropriate location
+        if data.get("studyset_snapshot"):
+            data["studyset_snapshot"] = {
+                "id": ma.cached_studyset_id,
+                "snapshot": data["studyset_snapshot"],
+            }
+
+        if data.get("annotation_snapshot"):
+            data["annotation_snapshot"] = {
+                "id": ma.cached_annotation_id,
+                "snapshot": data["annotation_snapshot"],
+            }
 
         return data
 
@@ -163,13 +209,16 @@ class MetaAnalysisSchema(BaseSchema):
     annotation = StringOrNested(
         AnnotationSchema, metadata={"pluck": "neurostore_id"}, dump_only=True
     )
-    project_id = StringOrNested("ProjectSchema", metadata={"nested": False}, data_key="project")
-    internal_studyset_id = fields.Pluck(
+    project_id = StringOrNested(
+        "ProjectSchema", metadata={"nested": False}, data_key="project"
+    )
+    cached_studyset_id = fields.Pluck(
         StudysetSchema, "id", load_only=True, attribute="studyset"
     )
-    internal_annotation_id = fields.Pluck(
+    cached_annotation_id = fields.Pluck(
         AnnotationSchema, "id", load_only=True, attribute="annotation"
     )
+    run_key = fields.String(dump_only=True)
     results = StringOrNested(MetaAnalysisResultSchema, many=True)
 
 
@@ -197,6 +246,14 @@ class NeurovaultCollectionSchema(BaseSchema):
     @pre_dump
     def test_fnc(self, data, **kwargs):
         return data
+
+
+class NeurostoreStudySchema(BaseSchema):
+    neurostore_id = fields.String()
+    exception = fields.String()
+    traceback = fields.String()
+    status = fields.String()
+    result = fields.String(attribute="result_id", dump_only=True)
 
 
 class ProjectSchema(BaseSchema):
