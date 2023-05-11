@@ -420,8 +420,12 @@ def user_data(app, db, mock_add_users):
                     public=public,
                 )
 
+                empty_project = Project(
+                    name=user.id + "'s empty project",
+                    public=public,
+                )
                 to_commit.extend(
-                    [meta_analysis, project]
+                    [meta_analysis, project, empty_project]
                 )
 
         db.session.add_all(to_commit)
