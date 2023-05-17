@@ -1,22 +1,17 @@
-import { Box, IconButton, TableCell, TableRow, Typography } from '@mui/material';
-import React, { useEffect, useState } from 'react';
-import useGetTour from 'hooks/useGetTour';
-import HelpIcon from '@mui/icons-material/Help';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useGetStudysets } from 'hooks';
-import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import { useAuth0 } from '@auth0/auth0-react';
-import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import { useHistory, useLocation } from 'react-router-dom';
+import HelpIcon from '@mui/icons-material/Help';
+import { Box, IconButton, TableCell, TableRow, Typography } from '@mui/material';
 import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
-import { SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
+import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
+import { useGetStudysets } from 'hooks';
+import useGetTour from 'hooks/useGetTour';
 import { StudysetList } from 'neurostore-typescript-sdk';
-import {
-    addKVPToSearch,
-    getNumStudiesString,
-    getSearchCriteriaFromURL,
-    getURLFromSearchCriteria,
-} from 'pages/helpers/utils';
+import { SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
+import { addKVPToSearch, getNumStudiesString, getSearchCriteriaFromURL } from 'pages/helpers/utils';
+import React, { useEffect, useState } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
 
 const StudysetsPage: React.FC = (props) => {
     const { startTour } = useGetTour('StudysetsPage');

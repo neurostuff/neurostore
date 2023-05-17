@@ -548,7 +548,7 @@ export const useInitProjectStoreIfRequired = () => {
     const clearStudyStore = useClearProjectStore();
     const initStudyStore = useInitProjectStore();
 
-    const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
+    const { projectId } = useParams<{ projectId: string; studyId: string }>();
     const projectIdFromProject = useProjectId();
 
     useEffect(() => {

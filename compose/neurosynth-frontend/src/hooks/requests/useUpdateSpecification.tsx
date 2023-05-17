@@ -1,9 +1,8 @@
 import { AxiosError, AxiosResponse } from 'axios';
+import { SpecificationPostBody, SpecificationReturn } from 'neurosynth-compose-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from 'react-query';
-import { StudyRequest, StudyReturn } from 'neurostore-typescript-sdk';
 import API from 'utils/api';
-import { SpecificationPostBody, SpecificationReturn } from 'neurosynth-compose-typescript-sdk';
 
 const useUpdateSpecification = () => {
     const { enqueueSnackbar } = useSnackbar();

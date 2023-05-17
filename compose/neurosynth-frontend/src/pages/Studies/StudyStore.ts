@@ -3,20 +3,20 @@ import {
     arrayToMetadata,
     metadataToArray,
 } from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
+import { setAnalysesInAnnotationAsIncluded } from 'components/ExtractionComponents/Ingestion/helpers/utils';
 import {
     AnalysisReturn,
     ConditionReturn,
     PointReturn,
     StudyReturn,
 } from 'neurostore-typescript-sdk';
+import { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import API from 'utils/api';
+import { v4 as uuid } from 'uuid';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { storeAnalysesToStudyAnalyses, studyAnalysesToStoreAnalyses } from './StudyStore.helpers';
-import { v4 as uuid } from 'uuid';
-import { setAnalysesInAnnotationAsIncluded } from 'components/ExtractionComponents/Ingestion/helpers/utils';
-import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 
 export interface IStorePoint extends PointReturn {
     isNew: boolean;
@@ -711,7 +711,7 @@ export const useInitStudyStoreIfRequired = () => {
     const clearStudyStore = useClearStudyStore();
     const initStudyStore = useInitStudyStore();
 
-    const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
+    const { studyId } = useParams<{ projectId: string; studyId: string }>();
     const studyIdFromProject = useStudyId();
 
     useEffect(() => {

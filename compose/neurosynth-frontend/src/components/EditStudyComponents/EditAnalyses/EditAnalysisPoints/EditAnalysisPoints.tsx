@@ -1,19 +1,19 @@
-import { Box, Button, Link, Typography } from '@mui/material';
-import React, { useEffect, useRef, useState } from 'react';
 import { HotTable } from '@handsontable/react';
+import { Box, Link, Typography } from '@mui/material';
+import styles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable.module.css';
 import { CellChange, CellValue, ChangeSource, RangeType } from 'handsontable/common';
-import { registerAllModules } from 'handsontable/registry';
 import { Settings } from 'handsontable/plugins/contextMenu';
+import { registerAllModules } from 'handsontable/registry';
+import { ColumnSettings } from 'handsontable/settings';
 import {
+    IStorePoint,
     useCreateAnalysisPoints,
     useDeleteAnalysisPoints,
     useSetIsValid,
     useStudyAnalysisPoints,
     useUpdateAnalysisPoints,
 } from 'pages/Studies/StudyStore';
-import { ColumnSettings } from 'handsontable/settings';
-import styles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable.module.css';
-import { IStorePoint } from 'pages/Studies/StudyStore';
+import React, { useEffect, useRef } from 'react';
 
 export const ROW_HEIGHT = 56;
 
@@ -129,7 +129,8 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
         const updatedPoints = [...points];
         changes.forEach((change) => {
             if (!change) return;
-            const [index, colName, prev, next] = change;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const [index, colName, _prev, next] = change;
             const nextVal = parseNumericString(next);
             updatedPoints[index] = {
                 ...updatedPoints[index],

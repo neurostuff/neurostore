@@ -34,11 +34,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
         isLoading: getMetaAnalysisIsLoading,
         isError: getMetaAnalysisIsError,
     } = useGetSpecificationById((metaAnalysis?.specification as SpecificationReturn)?.id);
-    const {
-        mutate,
-        isLoading: updateSpecificationIsLoading,
-        isError: updateSpecificationIsError,
-    } = useUpdateSpecification();
+    const { mutate, isLoading: updateSpecificationIsLoading } = useUpdateSpecification();
     const [selectedValue, setSelectedValue] = useState<
         | {
               selectionKey: string | undefined;

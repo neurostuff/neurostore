@@ -1,8 +1,7 @@
-import { Box, Breadcrumbs, Link, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import EditAnnotations from 'components/EditAnnotations/EditAnnotations';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import { useProjectId, useProjectName } from 'pages/Projects/ProjectPage/ProjectStore';
-import { NavLink } from 'react-router-dom';
 
 const AnnotationsPage: React.FC = (props) => {
     const projectId = useProjectId();

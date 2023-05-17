@@ -1,13 +1,13 @@
-import { Box, Typography, TableCell, Divider, TableRow, Button } from '@mui/material';
+import { Box, Divider, TableCell, TableRow, Typography } from '@mui/material';
+import { getType } from 'components/EditMetadata';
+import { sortMetadataArrayFn } from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import NeurosynthTable, { getValue } from 'components/Tables/NeurosynthTable/NeurosynthTable';
-import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
-import DisplayStudyStyles from './DisplayStudy.styles';
-import TextExpansion from 'components/TextExpansion/TextExpansion';
-import { sortMetadataArrayFn } from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
-import { getType } from 'components/EditMetadata';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
+import TextExpansion from 'components/TextExpansion/TextExpansion';
+import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import DisplayAnalyses from './DisplayAnalyses/DisplayAnalyses';
+import DisplayStudyStyles from './DisplayStudy.styles';
 
 const DisplayStudy: React.FC<StudyReturn> = (props) => {
     const { name, description, doi, pmid, authors, publication, metadata, analyses = [] } = props;

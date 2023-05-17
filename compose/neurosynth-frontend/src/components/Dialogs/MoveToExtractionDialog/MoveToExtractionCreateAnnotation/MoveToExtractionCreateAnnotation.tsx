@@ -1,16 +1,4 @@
-import {
-    Box,
-    Button,
-    Chip,
-    IconButton,
-    Link,
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableRow,
-    Typography,
-} from '@mui/material';
+import { Box, Chip, Link, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { EPropertyType, IMetadataRowModel } from 'components/EditMetadata';
@@ -21,8 +9,6 @@ import {
     useUpdateExtractionMetadata,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
-import MoveToExtractionCreateAnnotationStyles from './MoveToExtractionCreateAnnotation.styles';
-import CancelIcon from '@mui/icons-material/Cancel';
 
 const MoveToExtractionCreateAnnotation: React.FC<{
     onNavigate: (button: ENavigationButton) => void;

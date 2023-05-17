@@ -8,11 +8,8 @@ import useGetMetaAnalysesByProjectId from 'hooks/requests/useGetMetaAnalyses';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
 import {
-    useClearProjectStore,
-    useInitProjectStore,
     useInitProjectStoreIfRequired,
     useProjectDescription,
-    useProjectId,
     useProjectMetaAnalysisCanEdit,
     useProjectName,
     useUpdateProjectDescription,
@@ -31,19 +28,13 @@ export interface IProjectPageLocationState {
 // const metaAnalysisId = (project?.meta_analyses as MetaAnalysis[]).
 const ProjectPage: React.FC = (props) => {
     const { projectId }: { projectId: string } = useParams();
-    const projectIdFromStore = useProjectId();
     const { data: metaAnalyses } = useGetMetaAnalysesByProjectId(projectId);
     const location = useLocation();
     const history = useHistory();
-    const {
-        data: project,
-        isError: getProjectIsError,
-        isLoading: getProjectIsLoading,
-    } = useGetProjectById(projectId);
+    const { isError: getProjectIsError, isLoading: getProjectIsLoading } =
+        useGetProjectById(projectId);
     const updateProjectName = useUpdateProjectName();
     const updateProjectDescription = useUpdateProjectDescription();
-    const initProjectStore = useInitProjectStore();
-    const clearProjectStore = useClearProjectStore();
     const metaAnalysesTabEnabled = useProjectMetaAnalysisCanEdit();
 
     const projectName = useProjectName();

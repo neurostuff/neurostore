@@ -1,4 +1,4 @@
-import { Box, Typography, Chip, Button, Link } from '@mui/material';
+import { Box, Chip, Link, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
 import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';

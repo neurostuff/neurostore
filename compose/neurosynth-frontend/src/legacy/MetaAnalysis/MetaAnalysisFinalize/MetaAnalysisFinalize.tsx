@@ -1,12 +1,7 @@
-import { Box, Typography, Paper, Button } from '@mui/material';
+import { Box, Paper, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import DynamicInputDisplay from '../../../components/MetaAnalysisConfigComponents/DynamicInputDisplay/DynamicInputDisplay';
-import MetaAnalysisSummaryRow from '../../../components/MetaAnalysisConfigComponents/MetaAnalysisSummaryRow/MetaAnalysisSummaryRow';
-import MetaAnalysisFinalizeStyles from './MetaAnalysisFinalize.styles';
 import React from 'react';
-import { useHistory } from 'react-router-dom';
-import { useSnackbar } from 'notistack';
+import MetaAnalysisFinalizeStyles from './MetaAnalysisFinalize.styles';
 // interface IMetaAnalysisFinalize extends IMetaAnalysisComponents, IEstimatorCorrectorArgs {
 //     onNavigate: (button: ENavigationButton) => void;
 // }
@@ -24,9 +19,6 @@ export const getAnalysisTypeDescription = (name: string | undefined): string => 
 
 const MetaAnalysisFinalize: React.FC = (props) => {
     // const { createMetaAnalysis, isLoading } = useCreateMetaAnalysis();
-    const history = useHistory();
-    // const hasCorrector = !!props.corrector;
-    const { enqueueSnackbar } = useSnackbar();
 
     // const handleCreateMetaAnalysis = async () => {
     //     createMetaAnalysis(

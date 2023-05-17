@@ -101,7 +101,7 @@ export const handleDragEndHelper = (
     result: DropResult,
     provided: ResponderProvided
 ): ICurationColumn[] => {
-    const { destination, source, draggableId } = result;
+    const { destination, source } = result;
     // don't do anything if not dropped to a valid destination, or if the draggable was not moved
     if (
         !destination ||

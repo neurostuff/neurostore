@@ -1,9 +1,9 @@
-import { Box, Breadcrumbs, Link, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import EditStudyAnnotations from 'components/EditAnnotations/EditStudyAnnotations';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import { useProjectId, useProjectName } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useStudyName } from 'pages/Studies/StudyStore';
-import { NavLink, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 const StudyAnnotationsPage: React.FC = (props) => {
     const { studyId } = useParams<{

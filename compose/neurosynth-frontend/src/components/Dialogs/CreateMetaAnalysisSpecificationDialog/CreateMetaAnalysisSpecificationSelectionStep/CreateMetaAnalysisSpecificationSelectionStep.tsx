@@ -1,7 +1,5 @@
 import { Box, Button, Typography } from '@mui/material';
-import NavigationButtons, {
-    ENavigationButton,
-} from 'components/Buttons/NavigationButtons/NavigationButtons';
+import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { EPropertyType } from 'components/EditMetadata';
 import {
     useProjectExtractionAnnotationId,
