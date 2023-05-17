@@ -37,6 +37,7 @@ class ProductionConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = "https://neurosynth.us.auth0.com/oauth/token"
     AUTH0_AUTH_URL = "https://neurosynth.us.auth0.com/authorize"
     AUTH0_API_AUDIENCE = "https://neurostore.org/api/"
+    COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
 
 
 class StagingConfig(Config):
@@ -49,6 +50,7 @@ class StagingConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = "https://neurosynth-staging.us.auth0.com/oauth/token"
     AUTH0_AUTH_URL = "https://neurosynth-staging.us.auth0.com/authorize"
     AUTH0_API_AUDIENCE = "https://neurostore.xyz/api/"
+    COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
 
 
 class DevelopmentConfig(Config):
@@ -61,6 +63,7 @@ class DevelopmentConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = "https://dev-mui7zm42.us.auth0.com/oauth/token"
     AUTH0_AUTH_URL = "https://dev-mui7zm42.us.auth0.com/authorize"
     AUTH0_API_AUDIENCE = "localhost"
+    COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
 
 
 class TestingConfig(Config):
@@ -73,6 +76,7 @@ class TestingConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = "https://dev-mui7zm42.us.auth0.com/oauth/token"
     AUTH0_AUTH_URL = "https://dev-mui7zm42.us.auth0.com/authorize"
     AUTH0_API_AUDIENCE = "localhost"
+    COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
 
 
 class DockerTestConfig(TestingConfig):
