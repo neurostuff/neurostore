@@ -42,6 +42,7 @@ const SpecificationStep: React.FC<ISpecificationStep & StepProps> = (props) => {
                             endIcon={<ArrowForwardIosIcon />}
                             color="primary"
                             onClick={handleClickProceed}
+                            variant={disabled ? 'text' : 'outlined'}
                             disabled={disabled}
                             sx={{ width: '100%', height: '100%' }}
                         >

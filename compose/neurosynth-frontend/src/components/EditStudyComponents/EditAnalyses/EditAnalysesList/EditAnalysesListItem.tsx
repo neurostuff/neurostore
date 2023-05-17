@@ -1,7 +1,8 @@
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { ListItem, ListItemButton, ListItemIcon, ListItemText, Tooltip } from '@mui/material';
-import { AnalysisReturn } from 'neurostore-typescript-sdk';
-import { IStoreAnalysis } from 'pages/Studies/StudyStore';
+import { isCoordinateMNI } from 'components/DisplayStudy/DisplayAnalyses/DisplayAnalysisWarnings/DisplayAnalysisWarnings';
+import { AnalysisReturn, PointReturn } from 'neurostore-typescript-sdk';
+import { IStoreAnalysis, IStorePoint } from 'pages/Studies/StudyStore';
 import React from 'react';
 
 const EditAnalysesListItem: React.FC<{
@@ -17,10 +18,14 @@ const EditAnalysesListItem: React.FC<{
         onSelectAnalysis(analysis.id, props.index);
     };
 
-    const coordinatesExistOutsideTheBrain = true;
+    const coordinatesAreMNI = (
+        (props.analysis.points || []) as Array<IStorePoint> | Array<PointReturn>
+    ).every((x) => {
+        const coordinates = x.coordinates || [0, 0, 0];
+        return isCoordinateMNI(coordinates[0], coordinates[1], coordinates[2]);
+    });
     const hasPoints = (analysis?.points?.length || 0) > 0;
-
-    const showWarningIcon = !hasPoints || coordinatesExistOutsideTheBrain;
+    const showWarningIcon = !hasPoints || !coordinatesAreMNI;
 
     return (
         <ListItem disablePadding divider>

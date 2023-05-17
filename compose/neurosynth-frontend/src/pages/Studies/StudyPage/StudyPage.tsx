@@ -1,14 +1,17 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Button, Box } from '@mui/material';
-import React, { useState, useEffect } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
-import { useGetStudyById } from 'hooks';
 import EditIcon from '@mui/icons-material/Edit';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { Box, Button } from '@mui/material';
 import DisplayStudy from 'components/DisplayStudy/DisplayStudy';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { useGetStudyById } from 'hooks';
+import React, { useEffect, useState } from 'react';
+import { useHistory, useParams } from 'react-router-dom';
+import { useInitStudyStoreIfRequired } from '../StudyStore';
 
 const StudyPage: React.FC = (props) => {
     const { studyId } = useParams<{ studyId: string }>();
+
+    useInitStudyStoreIfRequired();
 
     const [allowEdits, setAllowEdits] = useState(false);
     const history = useHistory();

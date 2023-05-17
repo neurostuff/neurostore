@@ -1,4 +1,7 @@
-import { useProjectExtractionAnnotationId } from 'pages/Projects/ProjectPage/ProjectStore';
+import {
+    useInitProjectStoreIfRequired,
+    useProjectExtractionAnnotationId,
+} from 'pages/Projects/ProjectPage/ProjectStore';
 import { Box } from '@mui/material';
 import { useGetAnnotationById, useUpdateAnnotationById } from 'hooks';
 import AnnotationsHotTable from './AnnotationsHotTable/AnnotationsHotTable';
@@ -18,11 +21,16 @@ import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { ColumnSettings } from 'handsontable/settings';
 import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
 import { createColumns } from './helpers/utils';
+import { useInitStudyStoreIfRequired } from 'pages/Studies/StudyStore';
 
 const hardCodedColumns = ['Study', 'Analysis'];
 
 const EditAnnotations: React.FC = (props) => {
     const annotationId = useProjectExtractionAnnotationId();
+
+    useInitProjectStoreIfRequired();
+    useInitStudyStoreIfRequired();
+
     const { mutate, isLoading: updateAnnotationIsLoading } = useUpdateAnnotationById(annotationId);
     const { data, isLoading: getAnnotationIsLoading, isError } = useGetAnnotationById(annotationId);
 

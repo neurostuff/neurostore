@@ -3,13 +3,19 @@ import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import EditAnalyses from 'components/EditStudyComponents/EditAnalyses/EditAnalyses';
 import EditStudyDetails from 'components/EditStudyComponents/EditStudyDetails/EditStudyDetails';
 import EditStudyMetadata from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
+import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatusButtons/FloatingStatusButtons';
+import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { useSnackbar } from 'notistack';
-import { useEffect } from 'react';
+import {
+    useInitProjectStoreIfRequired,
+    useProjectExtractionAnnotationId,
+} from 'pages/Projects/ProjectPage/ProjectStore';
+import { useQueryClient } from 'react-query';
 import { useHistory, useParams } from 'react-router-dom';
 import {
-    useClearStudyStore,
-    useInitStudyStore,
+    useInitStudyStoreIfRequired,
     useIsValid,
     useStudyHasBeenEdited,
     useStudyId,
@@ -17,19 +23,12 @@ import {
     useStudyName,
     useUpdateStudyInDB,
 } from '../StudyStore';
-import { useProjectExtractionAnnotationId } from 'pages/Projects/ProjectPage/ProjectStore';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
-import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatusButtons/FloatingStatusButtons';
-import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
-import { useQueryClient } from 'react-query';
 
 const EditStudyPage: React.FC = (props) => {
     const queryClient = useQueryClient();
     const { studyId, projectId } = useParams<{ projectId: string; studyId: string }>();
     const { data: project } = useGetProjectById(projectId);
     const isValid = useIsValid();
-    const initStudyStore = useInitStudyStore();
-    const clearStudyStore = useClearStudyStore();
     const studyHasBeenEdited = useStudyHasBeenEdited();
     const storeStudyId = useStudyId();
     const isLoading = useStudyIsLoading();
@@ -39,10 +38,8 @@ const EditStudyPage: React.FC = (props) => {
     const studyName = useStudyName();
     const history = useHistory();
 
-    useEffect(() => {
-        clearStudyStore();
-        initStudyStore(studyId);
-    }, [clearStudyStore, initStudyStore, studyId]);
+    useInitProjectStoreIfRequired();
+    useInitStudyStoreIfRequired();
 
     const handleSave = async () => {
         if (!isValid) {

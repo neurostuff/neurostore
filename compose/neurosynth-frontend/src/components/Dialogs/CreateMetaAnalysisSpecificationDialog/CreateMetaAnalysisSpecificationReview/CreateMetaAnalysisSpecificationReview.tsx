@@ -3,7 +3,6 @@ import {
     Button,
     Divider,
     FormControl,
-    FormHelperText,
     InputLabel,
     MenuItem,
     Select,
@@ -11,6 +10,7 @@ import {
 } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
+import { getFilteredAnnotationNotes } from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent';
 import { EPropertyType } from 'components/EditMetadata';
 import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
 import DynamicInputDisplay from 'components/MetaAnalysisConfigComponents/DynamicInputDisplay/DynamicInputDisplay';
@@ -19,17 +19,16 @@ import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/Neurosynt
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useCreateAlgorithmSpecification, useGetAnnotationById } from 'hooks';
 import { EAnalysisType } from 'hooks/requests/useCreateAlgorithmSpecification';
+import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import { useSnackbar } from 'notistack';
 import {
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectId,
     useProjectName,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
-import { useHistory } from 'react-router-dom';
-import { useSnackbar } from 'notistack';
 import { useState } from 'react';
-import { getFilteredAnnotationNotes } from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent';
+import { useHistory } from 'react-router-dom';
 
 const CreateMetaAnalysisSpecificationReview: React.FC<{
     onNavigate: (button: ENavigationButton) => void;

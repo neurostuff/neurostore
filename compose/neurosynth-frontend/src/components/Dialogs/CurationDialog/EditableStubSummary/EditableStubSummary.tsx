@@ -43,9 +43,12 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
         }
     };
 
-    const handleCloseDialog = () => {
-        if (props.stub?.id) {
-            setDeleteStubConfirmationIsOpen(false);
+    const handleCloseDialog = (confirm?: boolean) => {
+        if (!props.stub?.id) return;
+
+        setDeleteStubConfirmationIsOpen(false);
+
+        if (confirm) {
             deleteStub(props.columnIndex, props.stub?.id);
             props.onMoveToNextStub();
         }

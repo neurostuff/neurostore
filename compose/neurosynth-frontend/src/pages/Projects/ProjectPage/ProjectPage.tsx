@@ -1,23 +1,25 @@
-import { Box, Link, Tab, Tabs, Typography } from '@mui/material';
+import { Box, Tab, Tabs, Typography } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import EditMetaAnalyses from 'components/ProjectComponents/EditMetaAnalyses/EditMetaAnalyses';
 import ViewMetaAnalyses from 'components/ProjectComponents/ViewMetaAnalyses/ViewMetaAnalyses';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
-import { useGetMetaAnalyses } from 'hooks';
 import useGetMetaAnalysesByProjectId from 'hooks/requests/useGetMetaAnalyses';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
 import {
+    useClearProjectStore,
     useInitProjectStore,
+    useInitProjectStoreIfRequired,
     useProjectDescription,
+    useProjectId,
     useProjectMetaAnalysisCanEdit,
     useProjectName,
     useUpdateProjectDescription,
     useUpdateProjectName,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import { useEffect, useState } from 'react';
-import { Route, Switch, useHistory, useLocation, useParams, useRouteMatch } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Route, Switch, useHistory, useLocation, useParams } from 'react-router-dom';
 
 export interface IProjectPageLocationState {
     projectPage?: {
@@ -29,6 +31,7 @@ export interface IProjectPageLocationState {
 // const metaAnalysisId = (project?.meta_analyses as MetaAnalysis[]).
 const ProjectPage: React.FC = (props) => {
     const { projectId }: { projectId: string } = useParams();
+    const projectIdFromStore = useProjectId();
     const { data: metaAnalyses } = useGetMetaAnalysesByProjectId(projectId);
     const location = useLocation();
     const history = useHistory();
@@ -40,13 +43,13 @@ const ProjectPage: React.FC = (props) => {
     const updateProjectName = useUpdateProjectName();
     const updateProjectDescription = useUpdateProjectDescription();
     const initProjectStore = useInitProjectStore();
+    const clearProjectStore = useClearProjectStore();
     const metaAnalysesTabEnabled = useProjectMetaAnalysisCanEdit();
 
     const projectName = useProjectName();
     const projectDescription = useProjectDescription();
-    useEffect(() => {
-        initProjectStore(projectId);
-    }, [initProjectStore, projectId]);
+
+    useInitProjectStoreIfRequired();
 
     // we only want this to run once on initial render
     useEffect(() => {

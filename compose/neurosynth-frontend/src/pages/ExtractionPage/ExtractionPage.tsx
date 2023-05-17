@@ -13,7 +13,7 @@ import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
 import {
-    useInitProjectStore,
+    useInitProjectStoreIfRequired,
     useProjectCurationColumn,
     useProjectExtractionStudyStatusList,
     useProjectExtractionStudysetId,
@@ -21,25 +21,16 @@ import {
     useProjectNumCurationColumns,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useEffect, useState } from 'react';
-import { useHistory, useLocation, useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
+
+const selectedChipLocalStorageKey = 'SELECTED_CHIP';
 
 export enum ESelectedChip {
     'COMPLETED' = 'completed',
     'SAVEDFORLATER' = 'savedforlater',
     'UNCATEGORIZED' = 'uncategorized',
 }
-
-const getSelectedFromURL = (pathname: string | undefined): ESelectedChip => {
-    if (!pathname) return ESelectedChip.UNCATEGORIZED;
-    if (pathname.includes(ESelectedChip.COMPLETED)) {
-        return ESelectedChip.COMPLETED;
-    } else if (pathname.includes(ESelectedChip.SAVEDFORLATER)) {
-        return ESelectedChip.SAVEDFORLATER;
-    } else {
-        return ESelectedChip.UNCATEGORIZED;
-    }
-};
 
 const ReadOnlyStudySummaryFixedSizeListRow: React.FC<
     ListChildComponentProps<{ studies: StudyReturn[]; currentSelectedChip: ESelectedChip }>
@@ -58,20 +49,16 @@ const ReadOnlyStudySummaryFixedSizeListRow: React.FC<
 
 const ExtractionPage: React.FC = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
-    const location = useLocation();
     const history = useHistory();
     const windowHeight = useGetWindowHeight();
+
+    useInitProjectStoreIfRequired();
 
     const projectName = useProjectName();
     const studysetId = useProjectExtractionStudysetId();
     const studyStatusList = useProjectExtractionStudyStatusList();
-    const initProjectStore = useInitProjectStore();
     const numColumns = useProjectNumCurationColumns();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
-
-    useEffect(() => {
-        initProjectStore(projectId);
-    }, [initProjectStore, projectId]);
 
     const {
         data: studyset,
@@ -81,9 +68,10 @@ const ExtractionPage: React.FC = (props) => {
     const { mutate } = useUpdateStudyset();
 
     const [fieldBeingUpdated, setFieldBeingUpdated] = useState('');
-    const [currentChip, setCurrentChip] = useState<ESelectedChip>(
-        getSelectedFromURL(location.search)
-    );
+    const selectedChipInLocalStorage =
+        (localStorage.getItem(selectedChipLocalStorageKey) as ESelectedChip) ||
+        ESelectedChip.UNCATEGORIZED;
+    const [currentChip, setCurrentChip] = useState<ESelectedChip>(selectedChipInLocalStorage);
     const [studiesDisplayedState, setStudiesDisplayedState] = useState<{
         uncategorized: StudyReturn[];
         saveForLater: StudyReturn[];
@@ -97,7 +85,7 @@ const ExtractionPage: React.FC = (props) => {
     const [reconcileDialogIsOpen, setReconcileDialogIsOpen] = useState(false);
 
     useEffect(() => {
-        if (curationIncludedStudies.stubStudies.length > 0 && studyset?.studies) {
+        if ((curationIncludedStudies?.stubStudies?.length || 0) > 0 && studyset?.studies) {
             const { removedFromStudyset, stubsToIngest } = resolveStudysetAndCurationDifferences(
                 curationIncludedStudies.stubStudies,
                 (studyset.studies as StudyReturn[]).map((x) => x.id as string)
@@ -147,7 +135,7 @@ const ExtractionPage: React.FC = (props) => {
     const handleSelectChip = (arg: ESelectedChip) => {
         if (projectId) {
             setCurrentChip(arg);
-            history.push(`/projects/${projectId}/extraction?${arg}`);
+            localStorage.setItem(selectedChipLocalStorageKey, arg);
         }
     };
 

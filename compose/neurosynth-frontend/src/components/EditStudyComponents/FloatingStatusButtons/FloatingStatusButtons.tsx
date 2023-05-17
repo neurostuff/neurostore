@@ -25,7 +25,7 @@ const FloatingStatusButtons: React.FC<{ studyId: string }> = (props) => {
         >
             <Box sx={{ position: 'absolute', right: '-8%' }}>
                 <Box sx={{ marginBottom: '1rem' }}>
-                    <Tooltip placement="right" title="mark as complete">
+                    <Tooltip placement="right" title="move to completed">
                         <IconButton
                             sx={{
                                 backgroundColor:
@@ -38,7 +38,7 @@ const FloatingStatusButtons: React.FC<{ studyId: string }> = (props) => {
                     </Tooltip>
                 </Box>
                 <Box>
-                    <Tooltip placement="right" title="save for later">
+                    <Tooltip placement="right" title="move to save for later">
                         <IconButton
                             sx={{
                                 backgroundColor:

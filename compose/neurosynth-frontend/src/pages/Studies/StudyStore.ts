@@ -15,6 +15,8 @@ import { persist } from 'zustand/middleware';
 import { storeAnalysesToStudyAnalyses, studyAnalysesToStoreAnalyses } from './StudyStore.helpers';
 import { v4 as uuid } from 'uuid';
 import { setAnalysesInAnnotationAsIncluded } from 'components/ExtractionComponents/Ingestion/helpers/utils';
+import { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 
 export interface IStorePoint extends PointReturn {
     isNew: boolean;
@@ -705,3 +707,17 @@ export const useCreateAnalysisPoints = () => useStudyStore((state) => state.crea
 export const useDeleteAnalysisPoints = () => useStudyStore((state) => state.deleteAnalysisPoints);
 export const useSetIsValid = () => useStudyStore((state) => state.setIsValid);
 export const useDeleteAnalysis = () => useStudyStore((state) => state.deleteAnalysis);
+export const useInitStudyStoreIfRequired = () => {
+    const clearStudyStore = useClearStudyStore();
+    const initStudyStore = useInitStudyStore();
+
+    const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
+    const studyIdFromProject = useStudyId();
+
+    useEffect(() => {
+        if (studyId !== studyIdFromProject) {
+            clearStudyStore();
+            initStudyStore(studyId);
+        }
+    }, [clearStudyStore, initStudyStore, studyId, studyIdFromProject]);
+};

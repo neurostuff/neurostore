@@ -1,9 +1,9 @@
-import { Box, Button, Card, CardActions, CardContent, Chip, Typography } from '@mui/material';
-import { useGetMetaAnalyses } from 'hooks';
-import { useHistory, useParams, useRouteMatch } from 'react-router-dom';
 import { Add } from '@mui/icons-material';
-import { useState } from 'react';
+import { Box, Button, Card, CardActions, CardContent, Typography } from '@mui/material';
 import CreateMetaAnalysisSpecificationDialogBase from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase';
+import { useGetMetaAnalyses } from 'hooks';
+import { useState } from 'react';
+import { useHistory, useParams, useRouteMatch } from 'react-router-dom';
 
 const ViewMetaAnalyses: React.FC = () => {
     const path = useRouteMatch();

@@ -5,7 +5,7 @@ import API, { NeurostoreAnnotation } from 'utils/api';
 
 export const getMatchingStudies = async (searchTerm: string): Promise<StudyReturn[]> => {
     try {
-        const study = await API.NeurostoreServices.StudiesService.studiesGet(
+        const res = await API.NeurostoreServices.StudiesService.studiesGet(
             searchTerm,
             undefined,
             undefined,
@@ -23,7 +23,7 @@ export const getMatchingStudies = async (searchTerm: string): Promise<StudyRetur
             undefined
         );
 
-        const databaseHasStubAlready = study.data.results || [];
+        const databaseHasStubAlready = res.data.results || [];
         return databaseHasStubAlready;
     } catch (e) {
         throw new Error('error getting study');

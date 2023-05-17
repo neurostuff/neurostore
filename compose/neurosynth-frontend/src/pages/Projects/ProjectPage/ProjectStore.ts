@@ -27,11 +27,20 @@ import {
 import { persist } from 'zustand/middleware';
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { useParams } from 'react-router-dom';
+import { useEffect } from 'react';
+
+export type ProjectStoreMetadata = {
+    metadata: {
+        shouldUpdate: boolean;
+    };
+};
 
 export type ProjectStoreActions = {
     updateProjectName: (name: string) => void;
     updateProjectDescription: (description: string) => void;
     initProjectStore: (projectId: string | undefined) => void;
+    clearProjectStore: () => void;
     initCuration: (cols: string[], isPrisma: boolean) => void;
     handleDrag: (result: DropResult, provided: ResponderProvided) => void;
     createNewExclusion: (
@@ -60,7 +69,9 @@ export type ProjectStoreActions = {
     allowEditMetaAnalyses: () => void;
 };
 
-const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()(
+const useProjectStore = create<
+    INeurosynthProjectReturn & ProjectStoreActions & ProjectStoreMetadata
+>()(
     apiDebouncedUpdaterImplMiddleware(
         persist(
             (set) => {
@@ -97,6 +108,10 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                         metaAnalysisMetadata: {
                             canEditMetaAnalyses: false,
                         },
+                    },
+
+                    metadata: {
+                        shouldUpdate: false,
                     },
 
                     // just for testing purposes
@@ -152,23 +167,65 @@ const useProjectStore = create<INeurosynthProjectReturn & ProjectStoreActions>()
                             set((state) => ({
                                 ...state,
                                 ...res.data,
+                                metadata: {
+                                    shouldUpdate: true,
+                                },
                             }));
                         }
                     },
-                    initCuration: (cols: string[], isPrisma: boolean) => {
-                        set((state) => {
-                            const update = {
-                                ...state,
-                                provenance: {
-                                    ...state.provenance,
-                                    curationMetadata: {
-                                        ...state.provenance.curationMetadata,
-                                        ...initCurationHelper(cols, isPrisma),
+                    clearProjectStore: () => {
+                        set((state) => ({
+                            name: '',
+                            id: undefined,
+                            meta_analyses: [],
+                            description: '',
+                            provenance: {
+                                curationMetadata: {
+                                    columns: [],
+                                    prismaConfig: {
+                                        isPrisma: false,
+                                        identification: {
+                                            exclusionTags: [],
+                                        },
+                                        screening: {
+                                            exclusionTags: [],
+                                        },
+                                        eligibility: {
+                                            exclusionTags: [],
+                                        },
                                     },
+                                    infoTags: [],
+                                    exclusionTags: [],
+                                    identificationSources: [],
                                 },
-                            };
-                            return update;
-                        });
+                                extractionMetadata: {
+                                    studysetId: undefined,
+                                    annotationId: undefined,
+                                    studyStatusList: [],
+                                },
+                                metaAnalysisMetadata: {
+                                    canEditMetaAnalyses: false,
+                                },
+                            },
+                            metadata: {
+                                shouldUpdate: false,
+                            },
+                        }));
+                    },
+                    initCuration: (cols: string[], isPrisma: boolean) => {
+                        set((state) => ({
+                            ...state,
+                            provenance: {
+                                ...state.provenance,
+                                curationMetadata: {
+                                    ...state.provenance.curationMetadata,
+                                    ...initCurationHelper(cols, isPrisma),
+                                },
+                            },
+                            metadata: {
+                                shouldUpdate: true,
+                            },
+                        }));
                     },
                     updateProjectName: (name: string) => {
                         set((state) => ({
@@ -470,6 +527,7 @@ export const useUpdateProjectName = () => useProjectStore((state) => state.updat
 export const useUpdateProjectDescription = () =>
     useProjectStore((state) => state.updateProjectDescription);
 export const useInitProjectStore = () => useProjectStore((state) => state.initProjectStore);
+export const useClearProjectStore = () => useProjectStore((state) => state.clearProjectStore);
 export const useClearProvenance = () => useProjectStore((state) => state.clearProvenance);
 export const useHandleCurationDrag = () => useProjectStore((state) => state.handleDrag);
 export const useCreateNewCurationInfoTag = () => useProjectStore((state) => state.createNewInfoTag);
@@ -486,6 +544,20 @@ export const useRemoveTagFromStub = () => useProjectStore((state) => state.remov
 export const useSetExclusionFromStub = () => useProjectStore((state) => state.setExclusionForStub);
 export const useCreateNewExclusion = () => useProjectStore((state) => state.createNewExclusion);
 export const useDeleteStub = () => useProjectStore((state) => state.deleteStub);
+export const useInitProjectStoreIfRequired = () => {
+    const clearStudyStore = useClearProjectStore();
+    const initStudyStore = useInitProjectStore();
+
+    const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
+    const projectIdFromProject = useProjectId();
+
+    useEffect(() => {
+        if (projectId !== projectIdFromProject) {
+            clearStudyStore();
+            initStudyStore(projectId);
+        }
+    }, [clearStudyStore, initStudyStore, projectId, projectIdFromProject]);
+};
 
 // extraction updater hooks
 export const useUpdateExtractionMetadata = () =>

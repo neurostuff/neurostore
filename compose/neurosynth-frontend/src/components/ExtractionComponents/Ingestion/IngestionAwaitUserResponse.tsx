@@ -75,7 +75,7 @@ const IngestionAwaitUserResponse: React.FC<{
                             underline="hover"
                             color="primary"
                             target="_blank"
-                            href={`http://localhost:3000/studies/${study.id}`}
+                            href={`${window.location.origin}/studies/${study.id}`}
                         >
                             {study.name}
                         </Link>

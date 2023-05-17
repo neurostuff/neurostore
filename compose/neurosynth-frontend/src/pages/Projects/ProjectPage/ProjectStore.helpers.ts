@@ -12,7 +12,7 @@ import { ICurationColumn } from 'components/CurationComponents/CurationColumn/Cu
 import { v4 as uuidv4 } from 'uuid';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import { StateCreator, StoreMutatorIdentifier } from 'zustand';
-import { ProjectStoreActions } from './ProjectStore';
+import { ProjectStoreActions, ProjectStoreMetadata } from './ProjectStore';
 import API from 'utils/api';
 
 export enum ENeurosynthSourceIds {
@@ -465,18 +465,26 @@ const apiDebouncedUpdaterImpl: APIDebouncedUpdaterImpl = (f, name) => (set, get,
     let prevId: string | undefined = undefined;
 
     const debouncedAPIUpdaterSet: typeof set = (...a) => {
-        console.log(...a);
-        const currId = (get() as unknown as INeurosynthProjectReturn & ProjectStoreActions).id;
-        if (timeout && currId === prevId) clearTimeout(timeout);
-        prevId = currId;
+        // // clear timeout for previous request if it is the same study
+        // if (timeout && getData.id === prevId) clearTimeout(timeout);
+        // prevId = getData.id;
 
+        set(...a);
+
+        const storeData = get() as unknown as INeurosynthProjectReturn &
+            ProjectStoreActions &
+            ProjectStoreMetadata;
+
+        if (timeout && storeData.id === prevId) clearTimeout(timeout);
+        prevId = storeData.id;
         window.addEventListener('beforeunload', onUnloadHandler);
-
         timeout = setTimeout(() => {
-            const storeData = get() as unknown as INeurosynthProjectReturn & ProjectStoreActions;
+            // accessing getData from a closure so we have access to the data when it was first defined when the timeout was initiated
 
-            // project store calls set on init so we need to check that a project ID exists
-            if (!storeData.id) return;
+            if (!storeData.id || !storeData.metadata.shouldUpdate) {
+                window.removeEventListener('beforeunload', onUnloadHandler);
+                return;
+            }
 
             const update: INeurosynthProject = {
                 name: storeData.name,
@@ -486,7 +494,6 @@ const apiDebouncedUpdaterImpl: APIDebouncedUpdaterImpl = (f, name) => (set, get,
                 },
             };
 
-            console.log('update: ', update);
             localStorage.setItem(`updateProjectIsLoading`, 'true');
             window.dispatchEvent(new Event('storage'));
             API.NeurosynthServices.ProjectsService.projectsIdPut(
@@ -498,8 +505,6 @@ const apiDebouncedUpdaterImpl: APIDebouncedUpdaterImpl = (f, name) => (set, get,
                 window.dispatchEvent(new Event('storage'));
             });
         }, 3000);
-
-        set(...a);
     };
     // replace all state updater functions with our custom implementation
     store.setState = debouncedAPIUpdaterSet;

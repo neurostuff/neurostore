@@ -1,28 +1,27 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Button, Typography, Box } from '@mui/material';
-import React, { useState, useEffect } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
-import { useCreateStudy, useGetStudyById, useGetStudysetById, useUpdateStudyset } from 'hooks';
 import EditIcon from '@mui/icons-material/Edit';
-import { StudyReturn } from 'neurostore-typescript-sdk';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
-import { useInitStudyStore } from '../StudyStore';
-import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatusButtons/FloatingStatusButtons';
-import { useUpdateStubField } from 'pages/Projects/ProjectPage/ProjectStore';
-import { useProjectCurationColumns } from 'pages/Projects/ProjectPage/ProjectStore';
+import { Box, Button, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import DisplayStudy from 'components/DisplayStudy/DisplayStudy';
+import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatusButtons/FloatingStatusButtons';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { useCreateStudy, useGetStudyById, useGetStudysetById, useUpdateStudyset } from 'hooks';
+import useGetProjectById from 'hooks/requests/useGetProjectById';
+import { StudyReturn } from 'neurostore-typescript-sdk';
+import {
+    useInitProjectStoreIfRequired,
+    useProjectCurationColumns,
+    useUpdateStubField,
+} from 'pages/Projects/ProjectPage/ProjectStore';
+import React, { useEffect, useState } from 'react';
+import { useHistory, useParams } from 'react-router-dom';
+import { useInitStudyStoreIfRequired } from '../StudyStore';
 
 const ProjectStudyPage: React.FC = (props) => {
     const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
-
-    const initStudyStore = useInitStudyStore();
-
-    useEffect(() => {
-        initStudyStore(studyId);
-    }, [initStudyStore, studyId]);
+    useInitStudyStoreIfRequired();
+    useInitProjectStoreIfRequired();
 
     const [allowEdits, setAllowEdits] = useState(false);
     const history = useHistory();
@@ -116,14 +115,13 @@ const ProjectStudyPage: React.FC = (props) => {
         >
             <FloatingStatusButtons studyId={studyId} />
             {isViewingStudyFromProject && (
-                <Box data-tour="StudyPage-8">
+                <Box sx={{ padding: '0 1rem' }} data-tour="StudyPage-8">
                     <Box
                         sx={{
                             display: 'flex',
                             justifyContent: 'space-between',
                             width: '100%',
                             marginBottom: '0.5rem',
-                            padding: '0 1rem',
                         }}
                     >
                         <NeurosynthBreadcrumbs
@@ -189,7 +187,8 @@ const ProjectStudyPage: React.FC = (props) => {
                         color: 'white',
                         padding: '1rem',
                         zIndex: 10,
-                        marginBottom: '1rem',
+                        margin: '1rem',
+                        borderRadius: '4px',
                     }}
                 >
                     <Box>

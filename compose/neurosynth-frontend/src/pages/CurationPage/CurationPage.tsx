@@ -1,35 +1,33 @@
-import { Box, Button } from '@mui/material';
-import { useParams, useHistory } from 'react-router-dom';
 import SchemaIcon from '@mui/icons-material/Schema';
+import { Box, Button } from '@mui/material';
 import CurationBoard from 'components/CurationComponents/CurationBoard/CurationBoard';
-import { useEffect, useState } from 'react';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import PrismaDialog from 'components/Dialogs/PrismaDialog/PrismaDialog';
-import {
-    useProjectName,
-    useProjectCurationIsPrisma,
-    useInitProjectStore,
-    useProjectExtractionStudysetId,
-} from 'pages/Projects/ProjectPage/ProjectStore';
-import ProjectIsLoadingText from './ProjectIsLoadingText';
+import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import useGetCurationSummary from 'hooks/useGetCurationSummary';
 import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
-import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
+import {
+    useInitProjectStoreIfRequired,
+    useProjectCurationIsPrisma,
+    useProjectExtractionStudysetId,
+    useProjectName,
+} from 'pages/Projects/ProjectPage/ProjectStore';
+import { useState } from 'react';
+import { useHistory, useParams } from 'react-router-dom';
+import ProjectIsLoadingText from './ProjectIsLoadingText';
 
 const CurationPage: React.FC = (props) => {
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
     const { projectId }: { projectId: string | undefined } = useParams();
+
+    useInitProjectStoreIfRequired();
+
     const history = useHistory<IProjectPageLocationState>();
 
     const isPrisma = useProjectCurationIsPrisma();
     const studysetId = useProjectExtractionStudysetId();
     const projectName = useProjectName();
-    const initProjectStore = useInitProjectStore();
     const { included, uncategorized } = useGetCurationSummary();
-
-    useEffect(() => {
-        initProjectStore(projectId);
-    }, [initProjectStore, projectId]);
 
     const handleMoveToExtractionPhase = () => {
         if (studysetId) {
