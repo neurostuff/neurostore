@@ -43,39 +43,53 @@ const ViewMetaAnalyses: React.FC = () => {
                 </Box>
             </Box>
             <Box sx={{ padding: '0.5rem 0', display: 'flex', flexWrap: 'wrap' }}>
-                {(data || []).map((metaAnalysis, index) => (
-                    <Card
-                        key={metaAnalysis.id || index}
-                        sx={{
-                            flex: '0 1 23%',
-                            margin: '10px 1%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'space-between',
-                        }}
-                    >
-                        <CardContent>
-                            <Box>
-                                <Box
-                                    sx={{ display: 'flex', alignItems: 'center' }}
-                                    color="secondary.main"
-                                >
-                                    <Typography variant="body2">EDITABLE</Typography>
+                {(data || []).map((metaAnalysis, index) => {
+                    const date = new Date(metaAnalysis.created_at || '');
+                    return (
+                        <Card
+                            key={metaAnalysis.id || index}
+                            sx={{
+                                flex: '0 1 23%',
+                                margin: '10px 1%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'space-between',
+                            }}
+                        >
+                            <CardContent>
+                                <Box>
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                        }}
+                                    >
+                                        <Typography
+                                            sx={{ color: 'secondary.main' }}
+                                            variant="body2"
+                                        >
+                                            EDITABLE
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            {`${date.toLocaleDateString()} ${date.toLocaleTimeString()}`}
+                                        </Typography>
+                                    </Box>
+                                    <Typography variant="h6">{metaAnalysis.name || ''}</Typography>
+                                    <Typography>{metaAnalysis.description || ''}</Typography>
                                 </Box>
-                                <Typography variant="h6">{metaAnalysis.name || ''}</Typography>
-                                <Typography>{metaAnalysis.description || ''}</Typography>
-                            </Box>
-                        </CardContent>
-                        <CardActions>
-                            <Button
-                                sx={{ width: '100%' }}
-                                onClick={() => handleUpdate(metaAnalysis.id)}
-                            >
-                                view
-                            </Button>
-                        </CardActions>
-                    </Card>
-                ))}
+                            </CardContent>
+                            <CardActions>
+                                <Button
+                                    sx={{ width: '100%' }}
+                                    onClick={() => handleUpdate(metaAnalysis.id)}
+                                >
+                                    view
+                                </Button>
+                            </CardActions>
+                        </Card>
+                    );
+                })}
             </Box>
         </Box>
     );
