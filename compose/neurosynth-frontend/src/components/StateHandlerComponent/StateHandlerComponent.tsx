@@ -7,6 +7,7 @@ export interface IStateHandlerComponent {
     isLoading: boolean;
     loadingText?: string;
     loadingColor?: string;
+    disableShrink?: boolean;
 }
 
 const StateHandlerComponent: React.FC<IStateHandlerComponent> = (props) => {
@@ -28,7 +29,10 @@ const StateHandlerComponent: React.FC<IStateHandlerComponent> = (props) => {
                     alignItems: 'center',
                 }}
             >
-                <ProgressLoader sx={{ color: props.loadingColor, marginRight: '10px' }} />
+                <ProgressLoader
+                    disableShrink={props.disableShrink === undefined ? true : props.disableShrink}
+                    sx={{ color: props.loadingColor, marginRight: '10px' }}
+                />
                 <Typography>{props.loadingText || ''}</Typography>
             </Box>
         );

@@ -1,7 +1,6 @@
 import { Box, Button, Typography } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
 import React, { useEffect, useRef, useState } from 'react';
-import TextExpansionStyles from './TextExpansion.styles';
 
 const TextExpansion: React.FC<{
     text: string;
@@ -43,10 +42,7 @@ const TextExpansion: React.FC<{
 
     return (
         <Box component="div" sx={props.sx || {}}>
-            <Typography
-                sx={[expanded ? {} : TextExpansionStyles.limitToOneLine, props.textSx || {}]}
-                ref={textRef}
-            >
+            <Typography noWrap={!expanded} ref={textRef}>
                 {props.text}
             </Typography>
             {(isOverflowingElement || expanded) && (

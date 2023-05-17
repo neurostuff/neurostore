@@ -1,33 +1,56 @@
-import { Box, Typography, Paper, Button, Link, IconButton, Divider } from '@mui/material';
-import { NavLink, useParams } from 'react-router-dom';
-import TextEdit from 'components/TextEdit/TextEdit';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { useAuth0 } from '@auth0/auth0-react';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import Help from '@mui/icons-material/Help';
+import { Box, Button, IconButton, Link, Paper, Typography } from '@mui/material';
 import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
+import SelectAnalysesSummaryComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesSummaryComponent/SelectAnalysesSummaryComponent';
+import EditSpecificationDialog from 'components/Dialogs/EditSpecificationDialog/EditSpecificationDialog';
+import { getType } from 'components/EditMetadata';
+import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
+import DynamicInputDisplay from 'components/MetaAnalysisConfigComponents/DynamicInputDisplay/DynamicInputDisplay';
+import MetaAnalysisSummaryRow from 'components/MetaAnalysisConfigComponents/MetaAnalysisSummaryRow/MetaAnalysisSummaryRow';
+import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
+import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import TextEdit from 'components/TextEdit/TextEdit';
 import { useGetMetaAnalysisById } from 'hooks';
+import useGetSpecificationById from 'hooks/requests/useGetSpecificationById';
 import useUpdateMetaAnalysis from 'hooks/requests/useUpdateMetaAnalysis';
+import useGetTour from 'hooks/useGetTour';
 import {
     Annotation,
-    ReadOnly,
     Specification,
     SpecificationReturn,
     Studyset,
     StudysetReturn,
 } from 'neurosynth-compose-typescript-sdk';
-import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
-import Help from '@mui/icons-material/Help';
-import useGetTour from 'hooks/useGetTour';
-import { useAuth0 } from '@auth0/auth0-react';
-import MetaAnalysisSummaryRow from 'components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/MetaAnalysisSummaryRow/MetaAnalysisSummaryRow';
-import { getAnalysisTypeDescription } from 'components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/MetaAnalysisFinalize';
-import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
-import DynamicInputDisplay from 'components/MetaAnalysisConfigComponents/MetaAnalysisFinalize/DynamicInputDisplay/DynamicInputDisplay';
-import { IDynamicInputType } from 'components/MetaAnalysisConfigComponents';
+import { useProjectName } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { NeurostoreAnnotation } from 'utils/api';
+import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
+import { EAnalysisType } from 'hooks/requests/useCreateAlgorithmSpecification';
+
+const getAnalysisTypeDescription = (name: string | undefined): string => {
+    switch (name) {
+        case EAnalysisType.CBMA:
+            return 'Coordinate Based Meta-Analysis';
+        case EAnalysisType.IBMA:
+            return 'Image Based Meta-Analysis';
+        default:
+            return '';
+    }
+};
 
 const MetaAnalysisPage: React.FC = (props) => {
     const { startTour } = useGetTour('MetaAnalysisPage');
+    const { projectId, metaAnalysisId } = useParams<{
+        projectId: string;
+        metaAnalysisId: string;
+    }>();
     const { user } = useAuth0();
-    const { metaAnalysisId }: { metaAnalysisId: string } = useParams();
+
+    const projectName = useProjectName();
 
     /**
      * We need to use two separate instances of the same hook so that it only shows
@@ -43,22 +66,28 @@ const MetaAnalysisPage: React.FC = (props) => {
     } = useUpdateMetaAnalysis();
 
     const {
-        data,
+        data: metaAnalysis,
         isError: getMetaAnalysisIsError,
         isLoading: getMetaAnalysisIsLoading,
     } = useGetMetaAnalysisById(metaAnalysisId);
 
-    // get request is set to nested: true so below casting is safe
-    const specification = data?.specification as SpecificationReturn;
-    const studyset = data?.studyset as StudysetReturn;
-    const annotation = data?.annotation as NeurostoreAnnotation;
+    const { data: specification } = useGetSpecificationById(
+        (metaAnalysis?.specification as SpecificationReturn | undefined)?.id
+    );
 
-    const thisUserOwnsThisMetaAnalysis = (data?.user || undefined) === (user?.sub || null);
+    // get request is set to nested: true so below casting is safe
+    const studyset = metaAnalysis?.studyset as StudysetReturn;
+    const annotation = metaAnalysis?.annotation as NeurostoreAnnotation;
+
+    const thisUserOwnsThisMetaAnalysis = (metaAnalysis?.user || undefined) === (user?.sub || null);
+    const viewingThisPageFromProject = !!projectId;
+
+    const [editSpecificationDialogIsOpen, setEditSpecificationDialogIsOpen] = useState(false);
 
     const updateName = (updatedName: string, _label: string) => {
-        if (data?.id && specification?.id && studyset?.id && annotation?.id) {
+        if (metaAnalysis?.id && specification?.id && studyset?.id && annotation?.id) {
             updateMetaAnalysisName({
-                metaAnalysisId: data.id,
+                metaAnalysisId: metaAnalysis.id,
                 metaAnalysis: {
                     name: updatedName,
                 },
@@ -67,9 +96,9 @@ const MetaAnalysisPage: React.FC = (props) => {
     };
 
     const updateDescription = (updatedDescription: string, _label: string) => {
-        if (data?.id && specification?.id && studyset?.id && annotation?.id) {
+        if (metaAnalysis?.id && specification?.id && studyset?.id && annotation?.id) {
             updateMetaAnalysisDescription({
-                metaAnalysisId: data.id,
+                metaAnalysisId: metaAnalysis.id,
                 metaAnalysis: {
                     description: updatedDescription,
                 },
@@ -78,43 +107,20 @@ const MetaAnalysisPage: React.FC = (props) => {
     };
 
     const metaAnalysisDisplayObj = {
-        name: data?.name || '',
-        description: data?.description || '',
-        analysisType: (data?.specification as Specification)?.type || '',
+        name: metaAnalysis?.name || '',
+        description: metaAnalysis?.description || '',
+        analysisType: (metaAnalysis?.specification as Specification)?.type || '',
         analysisTypeDescription: getAnalysisTypeDescription(
-            (data?.specification as Specification)?.type
+            (metaAnalysis?.specification as Specification)?.type
         ),
-        studyset: (data?.studyset as Studyset & ReadOnly)?.id || '',
-        studysetDescription: (data?.studyset as Studyset)?.neurostore_id ? (
-            <Link
-                color="secondary"
-                exact
-                component={NavLink}
-                to={`/studysets/${(data?.studyset as Studyset).neurostore_id}`}
-            >
-                view associated studyset
-            </Link>
-        ) : (
-            ''
-        ),
-        annotation: (data?.annotation as Annotation & ReadOnly)?.id || '',
-        annotationDescription: (data?.annotation as Annotation & ReadOnly)?.id ? (
-            <Link
-                color="secondary"
-                exact
-                component={NavLink}
-                to={`/annotations/${(data?.annotation as Annotation).neurostore_id}`}
-            >
-                view associated annotation
-            </Link>
-        ) : (
-            ''
-        ),
+        studyset: (metaAnalysis?.studyset as Studyset)?.neurostore_id || '',
+        annotation: (metaAnalysis?.annotation as Annotation)?.neurostore_id || '',
         inclusionColumn: specification?.filter || '',
+        inclusionColumnType: getType(specification?.filter || ''),
         estimator: specification?.estimator?.type || '',
-        estimatorArgs: (specification?.estimator?.args || {}) as IDynamicInputType,
+        estimatorArgs: (specification?.estimator?.args || {}) as IDynamicValueType,
         corrector: specification?.corrector?.type || '',
-        correctorArgs: (specification?.corrector?.args || {}) as IDynamicInputType,
+        correctorArgs: (specification?.corrector?.args || {}) as IDynamicValueType,
     };
 
     return (
@@ -124,25 +130,49 @@ const MetaAnalysisPage: React.FC = (props) => {
                 isError={getMetaAnalysisIsError}
                 errorMessage="There was an error getting your meta-analysis"
             >
+                {viewingThisPageFromProject && (
+                    <Box sx={{ marginLeft: '1rem', marginBottom: '1rem' }}>
+                        <NeurosynthBreadcrumbs
+                            breadcrumbItems={[
+                                {
+                                    link: '/projects',
+                                    text: 'Projects',
+                                    isCurrentPage: false,
+                                },
+                                {
+                                    link: `/projects/${projectId}/meta-analyses`,
+                                    text: `${projectName}`,
+                                    isCurrentPage: false,
+                                },
+                                {
+                                    link: '',
+                                    text: metaAnalysis?.name || '',
+                                    isCurrentPage: true,
+                                },
+                            ]}
+                        />
+                    </Box>
+                )}
+
                 <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
-                    <Box sx={{ flexGrow: 1 }}>
+                    <Box sx={{ flexGrow: 1, marginLeft: '1rem' }}>
                         <TextEdit
                             editIconIsVisible={thisUserOwnsThisMetaAnalysis}
                             isLoading={updateMetaAnalysisNameIsLoading}
                             onSave={updateName}
-                            sx={{ fontSize: '1.5rem' }}
+                            sx={{ input: { fontSize: '1.5rem' } }}
                             label="name"
-                            textToEdit={data?.name || ''}
+                            textToEdit={metaAnalysis?.name || ''}
                         >
                             <Box sx={MetaAnalysisPageStyles.displayedText}>
                                 <Typography
                                     sx={[
                                         MetaAnalysisPageStyles.displayedText,
-                                        !data?.name ? MetaAnalysisPageStyles.noData : {},
+                                        !metaAnalysis?.name ? MetaAnalysisPageStyles.noData : {},
                                     ]}
                                     variant="h5"
                                 >
-                                    {data?.name || 'No name'}
+                                    {metaAnalysis?.name || 'No name'}
                                 </Typography>
                             </Box>
                         </TextEdit>
@@ -152,19 +182,20 @@ const MetaAnalysisPage: React.FC = (props) => {
                             isLoading={updateMetaAnalysisDescriptionIsLoading}
                             onSave={updateDescription}
                             label="description"
-                            sx={{ fontSize: '1.25rem' }}
-                            textToEdit={data?.description || ''}
+                            sx={{ input: { fontSize: '1rem' } }}
+                            textToEdit={metaAnalysis?.description || ''}
                         >
                             <Box sx={MetaAnalysisPageStyles.displayedText}>
                                 <Typography
-                                    variant="h6"
                                     sx={[
                                         MetaAnalysisPageStyles.displayedText,
                                         MetaAnalysisPageStyles.description,
-                                        !data?.description ? MetaAnalysisPageStyles.noData : {},
+                                        !metaAnalysis?.description
+                                            ? MetaAnalysisPageStyles.noData
+                                            : {},
                                     ]}
                                 >
-                                    {data?.description || 'No description'}
+                                    {metaAnalysis?.description || 'No description'}
                                 </Typography>
                             </Box>
                         </TextEdit>
@@ -178,13 +209,38 @@ const MetaAnalysisPage: React.FC = (props) => {
 
                 <Box data-tour="MetaAnalysisPage-1" sx={{ margin: '1rem 0' }}>
                     <NeurosynthAccordion
-                        elevation={2}
+                        elevation={0}
+                        accordionSummarySx={{
+                            ':hover': { backgroundColor: 'primary.dark' },
+                            backgroundColor: 'primary.main',
+                            color: 'white',
+                        }}
                         TitleElement={
-                            <Typography variant="h6">Meta-Analysis Specification</Typography>
+                            <Typography variant="h6">View Meta-Analysis Specification</Typography>
                         }
                     >
-                        <Divider sx={{ marginBottom: '1.5rem' }} />
                         <Box>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    marginTop: '1rem',
+                                }}
+                            >
+                                <EditSpecificationDialog
+                                    isOpen={editSpecificationDialogIsOpen}
+                                    onCloseDialog={() => setEditSpecificationDialogIsOpen(false)}
+                                />
+                                <Button
+                                    onClick={() => setEditSpecificationDialogIsOpen(true)}
+                                    color="secondary"
+                                    variant="contained"
+                                    disableElevation
+                                >
+                                    Edit Specification
+                                </Button>
+                            </Box>
+
                             <Typography variant="h6">Details</Typography>
 
                             <MetaAnalysisSummaryRow
@@ -206,15 +262,22 @@ const MetaAnalysisPage: React.FC = (props) => {
                             <MetaAnalysisSummaryRow
                                 title="studyset id"
                                 value={metaAnalysisDisplayObj.studyset}
-                                caption={metaAnalysisDisplayObj.studysetDescription}
                             />
 
                             {metaAnalysisDisplayObj.annotation && (
                                 <MetaAnalysisSummaryRow
-                                    title="annotation"
+                                    title="annotation id"
                                     value={metaAnalysisDisplayObj?.annotation}
-                                    caption={metaAnalysisDisplayObj?.annotationDescription}
-                                />
+                                >
+                                    <SelectAnalysesSummaryComponent
+                                        annotationdId={metaAnalysisDisplayObj?.annotation || ''}
+                                        studysetId={metaAnalysisDisplayObj.studyset}
+                                        selectedValue={{
+                                            selectionKey: metaAnalysisDisplayObj.inclusionColumn,
+                                            type: metaAnalysisDisplayObj.inclusionColumnType,
+                                        }}
+                                    />
+                                </MetaAnalysisSummaryRow>
                             )}
 
                             <MetaAnalysisSummaryRow
@@ -249,68 +312,82 @@ const MetaAnalysisPage: React.FC = (props) => {
                     </NeurosynthAccordion>
                 </Box>
 
-                <Box>
-                    <Typography variant="h6" sx={{ marginBottom: '1rem' }}>
-                        Run your meta-analysis using the following method(s):
-                    </Typography>
+                <Paper
+                    sx={{
+                        marginBottom: '2rem',
+                        padding: '1rem',
+                        backgroundColor: 'secondary.light',
+                    }}
+                >
+                    <Box sx={{ margin: '0rem 0 1rem 1rem', display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ marginRight: '1rem' }}>
+                            <ErrorOutlineIcon sx={{ fontSize: '2rem', color: 'white' }} />
+                        </Box>
+                        <Box>
+                            <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white' }}>
+                                Run your meta-analysis via one of the following methods.
+                            </Typography>
+                            <Typography sx={{ color: 'white' }}>
+                                Once neurosynth-compose has detected the status of your run, it will
+                                appear on this page.
+                            </Typography>
+                        </Box>
+                    </Box>
 
-                    <Paper
-                        data-tour="MetaAnalysisPage-2"
-                        sx={{ padding: '1rem', marginBottom: '1rem' }}
-                    >
-                        <Typography sx={{ fontWeight: 'bold', marginBottom: '1rem' }}>
-                            run your meta-analysis via google colab
-                        </Typography>
-                        <Typography sx={{ marginBottom: '0.5rem' }}>
-                            copy the meta-analysis id below and then click the button to open google
-                            collab
-                        </Typography>
-                        <CodeSnippet linesOfCode={[`${data?.id}`]} />
-                        <Button
-                            sx={{ marginTop: '1rem' }}
-                            variant="contained"
-                            component={Link}
-                            target="_blank"
-                            rel="noopener"
-                            href="https://githubtocolab.com/neurostuff/neurosynth-compose-notebook/blob/main/run_and_explore.ipynb"
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Box
+                            sx={[
+                                MetaAnalysisPageStyles.runMethodContainer,
+                                { marginRight: '0.5rem' },
+                            ]}
+                            data-tour="MetaAnalysisPage-2"
                         >
-                            open google collab
-                        </Button>
-                    </Paper>
-
-                    <Paper
-                        data-tour="MetaAnalysisPage-3"
-                        sx={{ padding: '1rem', marginBottom: '2rem' }}
-                    >
-                        <Typography sx={{ fontWeight: 'bold', marginBottom: '1rem' }}>
-                            run your meta-analysis via docker
-                        </Typography>
-                        <Typography>
-                            Click the "Help" button above to learn more about this in the
-                            documentation
-                        </Typography>
-                        {/* <CodeSnippet
-                        linesOfCode={[
-                            'sudo bash exec ./some-file-name',
-                            'sudo bash exec some-other-command',
-                            'docker-compose up made-up-service',
-                        ]}
-                    /> */}
-                    </Paper>
-
-                    {/* <Paper sx={{ padding: '1rem', marginBottom: '1rem' }}>
-                    <Typography sx={{ fontWeight: 'bold', marginBottom: '2rem' }}>
-                        run your meta-analysis using NiMARE and your own environment
-                    </Typography>
-                    <CodeSnippet
-                        linesOfCode={[
-                            'python some sort of python command here',
-                            'python more python commands',
-                            'bash maybe mix in some bash commands?',
-                        ]}
-                    />
-                </Paper> */}
-                </Box>
+                            <Typography
+                                variant="h6"
+                                sx={{ fontWeight: 'bold', marginBottom: '1rem' }}
+                            >
+                                Online via google colab
+                            </Typography>
+                            <Typography sx={{ marginBottom: '0.5rem' }}>
+                                copy the meta-analysis id below and then click the button to open
+                                google collab
+                            </Typography>
+                            <Box>
+                                <CodeSnippet linesOfCode={[`${metaAnalysis?.id}`]} />
+                            </Box>
+                            <Box>
+                                <Button
+                                    sx={{ marginTop: '1rem' }}
+                                    variant="contained"
+                                    component={Link}
+                                    target="_blank"
+                                    rel="noopener"
+                                    href="https://githubtocolab.com/neurostuff/neurosynth-compose-notebook/blob/main/run_and_explore.ipynb"
+                                >
+                                    open google collab
+                                </Button>
+                            </Box>
+                        </Box>
+                        <Box
+                            sx={[
+                                MetaAnalysisPageStyles.runMethodContainer,
+                                { marginLeft: '0.5rem' },
+                            ]}
+                            data-tour="MetaAnalysisPage-3"
+                        >
+                            <Typography
+                                variant="h6"
+                                sx={{ fontWeight: 'bold', marginBottom: '1rem' }}
+                            >
+                                Locally via docker
+                            </Typography>
+                            <Typography>
+                                Click the "Help" button in the navigation panel at the top to learn
+                                more about this in the documentation
+                            </Typography>
+                        </Box>
+                    </Box>
+                </Paper>
             </StateHandlerComponent>
         </>
     );

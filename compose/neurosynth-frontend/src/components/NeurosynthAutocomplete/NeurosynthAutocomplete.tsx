@@ -1,14 +1,14 @@
+import ErrorIcon from '@mui/icons-material/Error';
 import {
     Autocomplete,
-    TextField,
-    Box,
     AutocompleteRenderOptionState,
+    Box,
     FilterOptionsState,
+    TextField,
 } from '@mui/material';
-import ErrorIcon from '@mui/icons-material/Error';
 import { SystemStyleObject } from '@mui/system';
-import { useInputValidation } from '../../hooks';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
+import { useInputValidation } from '../../hooks';
 
 export interface IAutocompleteObject {
     label: string;
@@ -26,17 +26,20 @@ interface INeurosynthAutocomplete<T> {
         state?: AutocompleteRenderOptionState
     ) => React.ReactNode;
     value: T;
+    freeSolo?: boolean;
     getOptionLabel: (option: T) => string;
     onChange: (_event: any, newVal: T | null, _reason: any) => void;
     options: T[];
     sx?: SystemStyleObject;
     isLoading?: boolean;
     isError?: boolean;
+    noOptionsText?: string;
+    size?: 'small' | 'medium';
     filterOptions?: (options: T[], state: FilterOptionsState<T>) => T[];
 }
 
 const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
-    const { handleChange, handleOnBlur, handleOnFocus, isValid } = useInputValidation(
+    const { handleOnBlur, handleOnFocus, isValid } = useInputValidation(
         props.value,
         (arg: T | undefined | null) => !!arg
     );
@@ -54,19 +57,23 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
         isLoading = false,
         isError = false,
         filterOptions = undefined,
+        noOptionsText = undefined,
+        size = 'small',
     } = props;
 
     const handleOnChange = (_event: any, newVal: T | null, _reason: any) => {
-        handleChange(newVal);
+        // handleChange(newVal);
         onChange(_event, newVal, _reason);
     };
 
     return (
         <Autocomplete
+            noOptionsText={noOptionsText}
             loading={isLoading}
             loadingText="Loading..."
             onFocus={handleOnFocus}
             onBlur={handleOnBlur}
+            size={size}
             disabled={shouldDisable}
             isOptionEqualToValue={isOptionEqualToValue}
             renderOption={renderOption}
@@ -87,8 +94,8 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
                                         <ErrorIcon sx={{ marginLeft: '5px' }} />
                                     </Box>
                                 )}
-                                {isLoading ? <ProgressLoader size={20} /> : null}
-                                {params.InputProps.endAdornment}
+                                {isLoading && <ProgressLoader size={20} />}
+                                {!isError && !isLoading && params.InputProps.endAdornment}
                             </>
                         ),
                     }}

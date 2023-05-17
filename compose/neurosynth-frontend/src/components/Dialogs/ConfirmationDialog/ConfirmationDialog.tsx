@@ -42,19 +42,19 @@ const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Button
                         sx={{ width: '250px', marginRight: '15px' }}
-                        onClick={() => props.onCloseDialog(true, props.data)}
-                        variant="contained"
-                        color="success"
-                    >
-                        {props.confirmText ? props.confirmText : 'Confirm'}
-                    </Button>
-                    <Button
-                        sx={{ width: '250px' }}
                         onClick={() => props.onCloseDialog(false, props.data)}
                         variant="contained"
                         color="error"
                     >
                         {props.rejectText ? props.rejectText : 'Reject'}
+                    </Button>
+                    <Button
+                        sx={{ width: '250px' }}
+                        onClick={() => props.onCloseDialog(true, props.data)}
+                        variant="contained"
+                        color="success"
+                    >
+                        {props.confirmText ? props.confirmText : 'Confirm'}
                     </Button>
                 </Box>
             </DialogContent>

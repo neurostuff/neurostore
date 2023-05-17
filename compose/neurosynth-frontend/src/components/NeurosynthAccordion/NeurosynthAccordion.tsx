@@ -32,7 +32,10 @@ const NeurosynthAccordion: React.FC<INeurosynthAccordion> = (props) => {
         <Accordion sx={sx} expanded={expanded} elevation={elevation}>
             <AccordionSummary
                 onClick={() => setExpanded((prev) => !prev)}
-                sx={accordionSummarySx}
+                sx={{
+                    ...accordionSummarySx,
+                    '.MuiAccordionSummary-expandIconWrapper': { color: 'white' },
+                }}
                 expandIcon={<ExpandMoreOutlined />}
             >
                 {TitleElement}

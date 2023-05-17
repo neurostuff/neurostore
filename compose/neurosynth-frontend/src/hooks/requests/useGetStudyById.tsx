@@ -3,7 +3,7 @@ import { useQuery } from 'react-query';
 import API from 'utils/api';
 
 const useGetStudyById = (studyId: string) => {
-    const { data, isLoading, isError, error } = useQuery(
+    return useQuery(
         ['studies', studyId],
         () => API.NeurostoreServices.StudiesService.studiesIdGet(studyId, true),
         {
@@ -21,16 +21,8 @@ const useGetStudyById = (studyId: string) => {
                 res.data.analyses = sortedAnalyses;
                 return res.data;
             },
-            staleTime: Infinity,
         }
     );
-
-    return {
-        data,
-        isLoading,
-        isError,
-        error,
-    };
 };
 
 export default useGetStudyById;

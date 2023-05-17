@@ -52,7 +52,7 @@ describe('CreateDetailsDialog', () => {
                 onCloseDialog={mockOnCloseDialog}
             />
         );
-        const createButton = screen.getByRole('button', { name: 'Create' });
+        const createButton = screen.getByRole('button', { name: 'create' });
         expect(createButton).toBeDisabled();
     });
 
@@ -103,7 +103,7 @@ describe('CreateDetailsDialog', () => {
         const nameField = screen.getByLabelText('Name *');
         userEvent.type(nameField, 'ABC');
 
-        const createButton = screen.getByRole('button', { name: 'Create' });
+        const createButton = screen.getByRole('button', { name: 'create' });
         userEvent.click(createButton);
 
         expect(mockOnCreateStudyset).toBeCalledWith('ABC', '');
