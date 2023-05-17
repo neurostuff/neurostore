@@ -449,6 +449,21 @@ class ProjectsView(ObjectView, ListView):
         "meta_analyses": "MetaAnalysesView",
     }
 
+    def post(self):
+        try:
+            data = parser.parse(self.__class__._schema, request)
+        except ValidationError as e:
+            abort(422, description=f"input does not conform to specification: {str(e)}")
+
+        with db.session.no_autoflush:
+            record = self.__class__.update_or_create(data)
+            # create neurostore study
+            ns_study = NeurostoreStudy(project=record)
+            create_or_update_neurostore_study(ns_study)
+            db.session.add(ns_study)
+            db.session.commit()
+        return self.__class__._schema().dump(record)
+
 
 def create_neurovault_collection(nv_collection):
     import flask
