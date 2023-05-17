@@ -1,9 +1,13 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import EditIcon from '@mui/icons-material/Edit';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Box, Button, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import DisplayStudy from 'components/DisplayStudy/DisplayStudy';
+import EditStudyAnnotations from 'components/EditAnnotations/EditStudyAnnotations';
+import EditAnalysesStyles from 'components/EditStudyComponents/EditAnalyses/EditAnalyses.styles';
 import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatusButtons/FloatingStatusButtons';
+import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useCreateStudy, useGetStudyById, useGetStudysetById, useUpdateStudyset } from 'hooks';
@@ -16,12 +20,15 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import { useInitStudyStoreIfRequired } from '../StudyStore';
+import { useClearStudyStore, useInitStudyStore, useInitStudyStoreIfRequired } from '../StudyStore';
 
 const ProjectStudyPage: React.FC = (props) => {
     const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
     useInitStudyStoreIfRequired();
     useInitProjectStoreIfRequired();
+
+    const clearStudyStore = useClearStudyStore();
+    const initStudyStore = useInitStudyStore();
 
     const [allowEdits, setAllowEdits] = useState(false);
     const history = useHistory();
@@ -81,6 +88,9 @@ const ProjectStudyPage: React.FC = (props) => {
                     );
                 }
 
+                clearStudyStore();
+                initStudyStore();
+
                 history.push(
                     `/projects/${projectId}/extraction/studies/${clonedStudy.data.id}/edit`
                 );
@@ -90,10 +100,6 @@ const ProjectStudyPage: React.FC = (props) => {
 
     const handleEditStudy = (event: React.MouseEvent) => {
         history.push(`/projects/${projectId}/extraction/studies/${studyId}/edit`);
-    };
-
-    const handleEditStudyAnnotations = (event: React.MouseEvent) => {
-        history.push(`/projects/${projectId}/extraction/studies/${studyId}/annotations`);
     };
 
     useEffect(() => {
@@ -113,6 +119,55 @@ const ProjectStudyPage: React.FC = (props) => {
             isLoading={getStudyIsLoading || getStudyIsFetching || getStudyIsRefetching}
             isError={getStudyIsError}
         >
+            {showCloneMessage && (
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        backgroundColor: 'secondary.light',
+                        position: 'sticky',
+                        top: '1.5rem',
+                        color: 'white',
+                        padding: '1rem',
+                        zIndex: 999,
+                        borderRadius: '4px',
+                        marginBottom: '1rem',
+                        margin: '1rem',
+                    }}
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ width: '50px' }}>
+                            <ErrorOutlineIcon sx={{ fontSize: '2rem' }} />
+                        </Box>
+                        <Box>
+                            <Typography variant="h6">
+                                This study is owned by <b>neurosynth</b> and is <b>read-only</b>
+                            </Typography>
+                            <Typography>
+                                If you would like to make your own edits, then you need to{' '}
+                                <b>clone</b> the study.
+                            </Typography>
+                            <Typography>
+                                Once you clone, your studyset will contain the new study instead of
+                                the current one owned by <b>neurosynth</b>
+                            </Typography>
+                        </Box>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <LoadingButton
+                            text="Clone and Edit"
+                            sx={{ width: '145px' }}
+                            variant="contained"
+                            isLoading={createStudyIsLoading || updateStudysetIsLoading}
+                            color="primary"
+                            loaderColor="secondary"
+                            size="medium"
+                            onClick={handleCloneStudy}
+                        />
+                    </Box>
+                </Box>
+            )}
+
             <FloatingStatusButtons studyId={studyId} />
             {isViewingStudyFromProject && (
                 <Box sx={{ padding: '0 1rem' }} data-tour="StudyPage-8">
@@ -148,73 +203,25 @@ const ProjectStudyPage: React.FC = (props) => {
                                 },
                             ]}
                         />
-                        <Box sx={{ display: 'flex' }}>
-                            <Box>
-                                <Button
-                                    onClick={handleEditStudyAnnotations}
-                                    color="secondary"
-                                    sx={{ width: '190px' }}
-                                    variant="outlined"
-                                    size="small"
-                                >
-                                    Edit Study Annotations
-                                </Button>
-                            </Box>
-                            <Box>
-                                <Button
-                                    onClick={handleEditStudy}
-                                    endIcon={<EditIcon />}
-                                    disabled={!allowEdits}
-                                    size="small"
-                                    sx={{ width: '190px', marginLeft: '10px' }}
-                                    variant="contained"
-                                >
-                                    Edit Study
-                                </Button>
-                            </Box>
-                        </Box>
-                    </Box>
-                </Box>
-            )}
-            {showCloneMessage && (
-                <Box
-                    sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        backgroundColor: 'secondary.main',
-                        position: 'sticky',
-                        top: '1.5rem',
-                        color: 'white',
-                        padding: '1rem',
-                        zIndex: 10,
-                        margin: '1rem',
-                        borderRadius: '4px',
-                    }}
-                >
-                    <Box>
-                        <Typography variant="h6">
-                            This study is owned by <b>neurosynth</b> and is <b>read-only</b>
-                        </Typography>
-                        <Typography>
-                            If you would like to make your own edits, then you need to <b>clone</b>{' '}
-                            the study.
-                        </Typography>
-                        <Typography>
-                            Once you clone, your studyset will contain the new study instead of the
-                            current one owned by <b>neurosynth</b>
-                        </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <LoadingButton
-                            text="Clone and Edit"
-                            sx={{ width: '145px' }}
+                        <Button
+                            onClick={handleEditStudy}
+                            endIcon={<EditIcon />}
+                            disabled={!allowEdits}
+                            size="small"
+                            sx={{ width: '190px', marginLeft: '10px' }}
                             variant="contained"
-                            isLoading={createStudyIsLoading || updateStudysetIsLoading}
-                            color="primary"
-                            loaderColor="secondary"
-                            size="medium"
-                            onClick={handleCloneStudy}
-                        />
+                        >
+                            Edit Study
+                        </Button>
+                    </Box>
+                    <Box sx={{ margin: '1rem 0' }}>
+                        <NeurosynthAccordion
+                            accordionSummarySx={EditAnalysesStyles.accordionSummary}
+                            elevation={0}
+                            TitleElement={<Typography variant="h6">Study Annotations</Typography>}
+                        >
+                            <EditStudyAnnotations />
+                        </NeurosynthAccordion>
                     </Box>
                 </Box>
             )}

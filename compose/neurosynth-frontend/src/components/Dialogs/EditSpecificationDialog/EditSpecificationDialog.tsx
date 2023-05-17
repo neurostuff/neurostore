@@ -120,8 +120,6 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
 
     const disable = !algorithmSpec.estimator || !selectedValue?.selectionKey;
 
-    console.log(metaAnalysis);
-
     return (
         <BaseDialog
             dialogTitle="Edit Meta-Analysis Specification"

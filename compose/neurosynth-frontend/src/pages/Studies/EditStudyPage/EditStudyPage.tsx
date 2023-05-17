@@ -15,6 +15,8 @@ import {
 import { useQueryClient } from 'react-query';
 import { useHistory, useParams } from 'react-router-dom';
 import {
+    useClearStudyStore,
+    useInitStudyStore,
     useInitStudyStoreIfRequired,
     useIsValid,
     useStudyHasBeenEdited,
@@ -23,6 +25,7 @@ import {
     useStudyName,
     useUpdateStudyInDB,
 } from '../StudyStore';
+import { useEffect } from 'react';
 
 const EditStudyPage: React.FC = (props) => {
     const queryClient = useQueryClient();
@@ -37,13 +40,20 @@ const EditStudyPage: React.FC = (props) => {
     const snackbar = useSnackbar();
     const studyName = useStudyName();
     const history = useHistory();
+    const clearStudyStore = useClearStudyStore();
+    const initStudyStore = useInitStudyStore();
 
     useInitProjectStoreIfRequired();
-    useInitStudyStoreIfRequired();
+    // we want to clear and init every time in case the user wants to refresh the page and cancel their edits
+    useEffect(() => {
+        clearStudyStore();
+        initStudyStore(studyId);
+    }, [clearStudyStore, initStudyStore, studyId]);
 
     const handleSave = async () => {
         if (!isValid) {
-            // currently isValid is only used for coordinates. If we want to check validity for multiple things in the future, we may have to create multiple isValid flags
+            // currently isValid is only used for coordinates.
+            // If we want to check validity for multiple things in the future, we may have to create multiple isValid flags
             snackbar.enqueueSnackbar('missing coordinates', { variant: 'warning' });
             return;
         }
@@ -52,6 +62,7 @@ const EditStudyPage: React.FC = (props) => {
             if (studyHasBeenEdited) await updateStudyInDB(annotationId as string);
             snackbar.enqueueSnackbar('study saved successfully', { variant: 'success' });
             queryClient.invalidateQueries('studies');
+            queryClient.invalidateQueries('annotation'); // if analyses are updated, we need to do a request to get new annotations
         } catch (e) {
             snackbar.enqueueSnackbar('there was an error saving the study', {
                 variant: 'error',

@@ -19,10 +19,10 @@ const DisplayAnalysis: React.FC<AnalysisReturn | undefined> = (props) => {
 
             <DisplayPoints points={(props.points || []) as PointReturn[]} />
 
-            <DisplayConditions
+            {/* <DisplayConditions
                 conditions={(props.conditions || []) as ConditionReturn[]}
                 weights={props.weights || []}
-            />
+            /> */}
         </Box>
     );
 };

@@ -1,27 +1,24 @@
-import {
-    useInitProjectStoreIfRequired,
-    useProjectExtractionAnnotationId,
-} from 'pages/Projects/ProjectPage/ProjectStore';
 import { Box } from '@mui/material';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
+import { ColumnSettings } from 'handsontable/settings';
 import { useGetAnnotationById, useUpdateAnnotationById } from 'hooks';
-import AnnotationsHotTable from './AnnotationsHotTable/AnnotationsHotTable';
+import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import { useProjectExtractionAnnotationId } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useStudyAnalyses } from 'pages/Studies/StudyStore';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import AnnotationsHotTable from './AnnotationsHotTable/AnnotationsHotTable';
 import {
     AnnotationNoteValue,
     NoteKeyType,
     annotationNotesToHotData,
+    createColumns,
     hotDataToAnnotationNotes,
     noteKeyArrToObj,
     noteKeyObjToArr,
 } from './helpers/utils';
-import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import { ColumnSettings } from 'handsontable/settings';
-import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
-import { createColumns } from './helpers/utils';
-import { useParams } from 'react-router-dom';
-import { useInitStudyStoreIfRequired, useStudyAnalyses } from 'pages/Studies/StudyStore';
 
 const hardCodedColumns = ['Analysis', 'Description'];
 
@@ -30,19 +27,13 @@ const EditStudyAnnotations: React.FC = (props) => {
     const annotationId = useProjectExtractionAnnotationId();
     const analyses = useStudyAnalyses();
 
-    useInitProjectStoreIfRequired();
-    useInitStudyStoreIfRequired();
-
     const { mutate, isLoading: updateAnnotationIsLoading } = useUpdateAnnotationById(annotationId);
     const { data, isLoading: getAnnotationIsLoading, isError } = useGetAnnotationById(annotationId);
-
     // tracks the changes made to hot table
     const hotTableDataUpdatesRef = useRef<{
-        initialized: boolean;
         hotData: (string | number | boolean | null)[][];
         noteKeys: NoteKeyType[];
     }>({
-        initialized: false,
         hotData: [],
         noteKeys: [],
     });
@@ -62,8 +53,7 @@ const EditStudyAnnotations: React.FC = (props) => {
     });
 
     useEffect(() => {
-        if (data && !hotTableDataUpdatesRef.current.initialized) {
-            hotTableDataUpdatesRef.current.initialized = true;
+        if (data) {
             const noteKeys = noteKeyObjToArr(data.note_keys);
 
             const studyNotes = ((data.notes as NoteCollectionReturn[]) || []).filter(
@@ -161,34 +151,20 @@ const EditStudyAnnotations: React.FC = (props) => {
                     allowAddColumn={false}
                     allowRemoveColumns={false}
                     onChange={handleChange}
+                    size="9rem"
                 />
             </Box>
-            <Box
-                sx={{
-                    position: 'fixed',
-                    bottom: 0,
-                    zIndex: 999,
-                    width: {
-                        xs: '90%',
-                        md: '80%',
-                    },
-                    padding: '1rem 0 1.5rem 0',
-                    backgroundColor: 'white',
-                    textAlign: 'end',
-                }}
-            >
-                <LoadingButton
-                    size="large"
-                    text="save"
-                    disabled={!annotationIsEdited}
-                    isLoading={updateAnnotationIsLoading}
-                    loaderColor="secondary"
-                    color="primary"
-                    variant="contained"
-                    sx={{ width: '300px' }}
-                    onClick={handleClickSave}
-                />
-            </Box>
+            <LoadingButton
+                size="large"
+                text="save"
+                disabled={!annotationIsEdited}
+                isLoading={updateAnnotationIsLoading}
+                loaderColor="secondary"
+                color="primary"
+                variant="contained"
+                sx={{ width: '300px', marginTop: '1rem' }}
+                onClick={handleClickSave}
+            />
         </StateHandlerComponent>
     );
 };

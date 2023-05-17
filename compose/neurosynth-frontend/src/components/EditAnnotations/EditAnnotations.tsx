@@ -143,6 +143,7 @@ const EditAnnotations: React.FC = (props) => {
                     hardCodedReadOnlyCols={hardCodedColumns}
                     allowRemoveColumns
                     onChange={handleChange}
+                    size="full"
                 />
             </Box>
             <Box

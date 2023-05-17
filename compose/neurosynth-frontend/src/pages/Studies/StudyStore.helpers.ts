@@ -9,14 +9,19 @@ import { IStoreAnalysis, IStoreCondition, IStorePoint } from './StudyStore';
 
 export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStoreAnalysis[] => {
     const studyAnalyses: IStoreAnalysis[] = (analyses || []).map((analysis) => {
+        const { entities, ...analysisProps } = analysis;
+        const parsedAnalysis = {
+            ...analysisProps,
+        };
+
         const parsedConditions: IStoreCondition[] = (
-            (analysis.conditions || []) as ConditionReturn[]
+            (parsedAnalysis.conditions || []) as ConditionReturn[]
         ).map((condition) => ({
             ...condition,
             isNew: false,
         }));
 
-        const parsedPoints: IStorePoint[] = (analysis.points as PointReturn[]).map(
+        const parsedPoints: IStorePoint[] = (parsedAnalysis.points as PointReturn[]).map(
             ({ entities, ...args }) => ({
                 ...args,
                 x: (args.coordinates || [])[0],
@@ -27,7 +32,7 @@ export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStor
         );
 
         return {
-            ...analysis,
+            ...parsedAnalysis,
             conditions: parsedConditions,
             points: parsedPoints,
             isNew: false,

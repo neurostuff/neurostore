@@ -76,7 +76,7 @@ const SelectAnalysesSummaryComponent: React.FC<{
 
     return (
         <Box sx={{ display: 'flex' }}>
-            <Typography sx={{ margin: '0 0.5rem' }} variant="caption">
+            <Typography sx={{ marginRight: '0.5rem' }} variant="caption">
                 {count.studies} studies
             </Typography>{' '}
             |
@@ -84,7 +84,7 @@ const SelectAnalysesSummaryComponent: React.FC<{
                 {count.analyses} analyses
             </Typography>{' '}
             |
-            <Typography sx={{ margin: '0 0.5rem' }} variant="caption">
+            <Typography sx={{ marginLeft: '0.5rem' }} variant="caption">
                 {count.coordinates} coordinates
             </Typography>
         </Box>

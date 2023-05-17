@@ -45,7 +45,7 @@ const DisplayAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
                 <Chip
                     sx={{ margin: '2px' }}
                     icon={<ErrorOutlineIcon />}
-                    label="This analysis may contain coordinates that exist outside the brain"
+                    label="This analysis may contain non MNI coordinates"
                     color="warning"
                 />
             )}

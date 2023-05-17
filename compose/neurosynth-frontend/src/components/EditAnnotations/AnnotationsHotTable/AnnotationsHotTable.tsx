@@ -37,8 +37,8 @@ const AnnotationsHotTable: React.FC<{
     noteKeys: NoteKeyType[];
     mergeCells: DetailedSettings[];
     hotColumns: ColumnSettings[];
+    size: string;
 }> = React.memo((props) => {
-    console.log('render');
     const hotTableRef = useRef<HotTable>(null);
     const hotStateRef = useRef<{
         noteKeys: NoteKeyType[];
@@ -46,7 +46,7 @@ const AnnotationsHotTable: React.FC<{
         noteKeys: [],
     });
     const { noteKeys, hotData, mergeCells, onChange, hotColumns, hardCodedReadOnlyCols } = props;
-
+    console.log('render');
     useEffect(() => {
         // make a copy as we don't want to modify the original
         hotStateRef.current.noteKeys = noteKeys.map((x) => ({ ...x }));
@@ -62,14 +62,20 @@ const AnnotationsHotTable: React.FC<{
                 if (timeout) clearTimeout(timeout);
                 timeout = setTimeout(async () => {
                     if (hotTableRef.current?.hotInstance) {
-                        const navHeight = '64px';
-                        const breadCrumbHeight = '44px';
-                        const addMetadataHeight = '1rem + 40px + 25px';
-                        const bottomSaveButtonHeight = '2.5rem + 37px';
-                        const pageMarginHeight = '4rem';
-                        hotTableRef.current.hotInstance.updateSettings({
-                            height: `calc(${currentWindowSize}px - ${navHeight} - ${breadCrumbHeight} - (${addMetadataHeight}) - (${bottomSaveButtonHeight}) - ${pageMarginHeight})`,
-                        });
+                        if (props.size === 'full') {
+                            const navHeight = '64px';
+                            const breadCrumbHeight = '44px';
+                            const addMetadataHeight = '1rem + 40px + 25px';
+                            const bottomSaveButtonHeight = '2.5rem + 37px';
+                            const pageMarginHeight = '4rem';
+                            hotTableRef.current.hotInstance.updateSettings({
+                                height: `calc(${currentWindowSize}px - ${navHeight} - ${breadCrumbHeight} - (${addMetadataHeight}) - (${bottomSaveButtonHeight}) - ${pageMarginHeight})`,
+                            });
+                        } else {
+                            hotTableRef.current.hotInstance.updateSettings({
+                                height: `calc(${props.size})`,
+                            });
+                        }
                     }
                 }, 200);
             }
@@ -81,7 +87,7 @@ const AnnotationsHotTable: React.FC<{
             if (timeout) clearTimeout(timeout);
             window.removeEventListener('resize', handleResize);
         };
-    }, []);
+    }, [props.size]);
 
     const handleRemoveHotColumn = useCallback(
         (colKey: string) => {
