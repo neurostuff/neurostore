@@ -1,7 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { AppBar, Box } from '@mui/material';
 import { EPropertyType } from 'components/EditMetadata';
-import useCreateProject from 'hooks/requests/useCreateProject';
+import { useCreateProject } from 'hooks';
 import { useHistory } from 'react-router-dom';
 import NavDrawer from './NavDrawer/NavDrawer';
 import NavToolbar from './NavToolbar/NavToolbar';
@@ -17,7 +17,7 @@ export const NAVBAR_HEIGHT = 64;
 
 const Navbar: React.FC = (_props) => {
     const { loginWithPopup, logout } = useAuth0();
-    const { mutate, isLoading } = useCreateProject();
+    const { mutate } = useCreateProject();
     const history = useHistory();
 
     const handleLogin = async () => {

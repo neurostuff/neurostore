@@ -72,7 +72,7 @@ describe('SearchBar Component', () => {
 
         const searchButton = screen.getByTestId('SearchIcon');
         userEvent.click(searchButton);
-        expect(onSearchMock).toBeCalledWith('ABCDEF', 'genericSearchStr');
+        expect(onSearchMock).toBeCalledWith({ genericSearchStr: 'ABCDEF' });
     });
 
     it('should invoke a search when enter is pressed', () => {

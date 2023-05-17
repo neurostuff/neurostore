@@ -1,4 +1,5 @@
 import { INavToolbarPopupSubMenu } from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
+import React from 'react';
 import { useState } from 'react';
 
 const MockNavToolbarPopupSubMenu: React.FC<INavToolbarPopupSubMenu> = (props) => {
@@ -17,11 +18,11 @@ const MockNavToolbarPopupSubMenu: React.FC<INavToolbarPopupSubMenu> = (props) =>
             ></button>
             <ul>
                 {showPopup &&
-                    props.options.map((option) => (
-                        <>
+                    props.options.map((option, index) => (
+                        <React.Fragment key={index}>
                             <li>{option.label}</li>
                             <li>{option.secondary}</li>
-                        </>
+                        </React.Fragment>
                     ))}
             </ul>
         </>

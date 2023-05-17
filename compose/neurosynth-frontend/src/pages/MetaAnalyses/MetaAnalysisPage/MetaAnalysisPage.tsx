@@ -17,7 +17,6 @@ import { useGetMetaAnalysisById } from 'hooks';
 import useGetSpecificationById from 'hooks/requests/useGetSpecificationById';
 import useUpdateMetaAnalysis from 'hooks/requests/useUpdateMetaAnalysis';
 import useGetTour from 'hooks/useGetTour';
-import { getAnalysisTypeDescription } from 'legacy/MetaAnalysis/MetaAnalysisFinalize/MetaAnalysisFinalize';
 import {
     Annotation,
     Specification,
@@ -30,6 +29,18 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { NeurostoreAnnotation } from 'utils/api';
 import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
+import { EAnalysisType } from 'hooks/requests/useCreateAlgorithmSpecification';
+
+const getAnalysisTypeDescription = (name: string | undefined): string => {
+    switch (name) {
+        case EAnalysisType.CBMA:
+            return 'Coordinate Based Meta-Analysis';
+        case EAnalysisType.IBMA:
+            return 'Image Based Meta-Analysis';
+        default:
+            return '';
+    }
+};
 
 const MetaAnalysisPage: React.FC = (props) => {
     const { startTour } = useGetTour('MetaAnalysisPage');

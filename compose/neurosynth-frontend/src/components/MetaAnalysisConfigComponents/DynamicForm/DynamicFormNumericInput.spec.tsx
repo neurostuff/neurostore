@@ -70,7 +70,7 @@ describe('DynamicFormNumericInput', () => {
         userEvent.type(input, '3');
 
         expect(mockOnUpdate).toHaveBeenCalledWith({
-            null_iter: '53',
+            null_iter: 53,
         });
     });
 });

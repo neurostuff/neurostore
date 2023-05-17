@@ -29,6 +29,7 @@ import useGetStudysetById from './requests/useGetStudysetById';
 import useCreateAnnotation from './requests/useCreateAnnotation';
 import useDeleteStudyset from './requests/useDeleteStudyset';
 import useCreateStudy from './requests/useCreateStudy';
+import useCreateProject from './requests/useCreateProject';
 
 export {
     useIsMounted,
@@ -68,4 +69,6 @@ export {
     // CONDITIONS
     useGetConditions,
     useCreateCondition,
+    // project
+    useCreateProject,
 };

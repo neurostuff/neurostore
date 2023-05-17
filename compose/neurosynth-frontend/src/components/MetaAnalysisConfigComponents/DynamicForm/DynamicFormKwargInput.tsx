@@ -27,7 +27,6 @@ const DynamicFormKwargInput: React.FC<IDynamicFormInput> = (props) => {
     };
 
     const handleOnAddMetadataRow = (row: IMetadataRowModel) => {
-        console.log(props.value);
         if (row.metadataKey in props.value) return false;
         const newObj = { ...props.value };
         newObj[row.metadataKey] = row.metadataValue;

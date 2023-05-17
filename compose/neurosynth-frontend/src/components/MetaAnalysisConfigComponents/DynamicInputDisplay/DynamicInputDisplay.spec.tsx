@@ -19,7 +19,7 @@ describe('DynamicInputDisplay Component', () => {
 
         render(<DynamicInputDisplay dynamicArg={dynamicArgs} />);
 
-        const title = screen.getByText('Optional arguments');
+        const title = screen.getByText('Arguments');
         expect(title).toBeInTheDocument();
 
         for (const [key, value] of Object.entries(dynamicArgs)) {
