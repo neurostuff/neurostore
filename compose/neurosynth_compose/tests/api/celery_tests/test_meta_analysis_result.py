@@ -111,7 +111,7 @@ def test_result_upload(auth_client, app, db, meta_analysis_cached_result_files):
         .run_key
     )
 
-    headers = {"compose_upload_key": f"{run_key}"}
+    headers = {"Compose-Upload-Key": f"{run_key}"}
     resp = auth_client.post(
         "/api/meta-analysis-results",
         data={
