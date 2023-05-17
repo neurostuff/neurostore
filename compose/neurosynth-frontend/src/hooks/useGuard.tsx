@@ -1,4 +1,3 @@
-import { useAuth0 } from '@auth0/auth0-react';
 import { useSnackbar } from 'notistack';
 import { useEffect } from 'react';
 import { useHistory } from 'react-router-dom';

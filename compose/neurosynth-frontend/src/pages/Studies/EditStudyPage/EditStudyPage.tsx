@@ -12,12 +12,12 @@ import {
     useInitProjectStoreIfRequired,
     useProjectExtractionAnnotationId,
 } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useEffect } from 'react';
 import { useQueryClient } from 'react-query';
 import { useHistory, useParams } from 'react-router-dom';
 import {
     useClearStudyStore,
     useInitStudyStore,
-    useInitStudyStoreIfRequired,
     useIsValid,
     useStudyHasBeenEdited,
     useStudyId,
@@ -25,7 +25,6 @@ import {
     useStudyName,
     useUpdateStudyInDB,
 } from '../StudyStore';
-import { useEffect } from 'react';
 
 const EditStudyPage: React.FC = (props) => {
     const queryClient = useQueryClient();

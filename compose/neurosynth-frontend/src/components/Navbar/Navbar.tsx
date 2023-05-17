@@ -1,11 +1,11 @@
-import { AppBar, Box } from '@mui/material';
 import { useAuth0 } from '@auth0/auth0-react';
-import NavToolbar from './NavToolbar/NavToolbar';
-import NavDrawer from './NavDrawer/NavDrawer';
-import NavbarStyles from './Navbar.styles';
+import { AppBar, Box } from '@mui/material';
+import { EPropertyType } from 'components/EditMetadata';
 import useCreateProject from 'hooks/requests/useCreateProject';
 import { useHistory } from 'react-router-dom';
-import { EPropertyType } from 'components/EditMetadata';
+import NavDrawer from './NavDrawer/NavDrawer';
+import NavToolbar from './NavToolbar/NavToolbar';
+import NavbarStyles from './Navbar.styles';
 
 export interface INav {
     onLogin: () => Promise<void>;

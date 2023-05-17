@@ -1,14 +1,14 @@
+import ErrorIcon from '@mui/icons-material/Error';
 import {
     Autocomplete,
-    TextField,
-    Box,
     AutocompleteRenderOptionState,
+    Box,
     FilterOptionsState,
+    TextField,
 } from '@mui/material';
-import ErrorIcon from '@mui/icons-material/Error';
 import { SystemStyleObject } from '@mui/system';
-import { useInputValidation } from '../../hooks';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
+import { useInputValidation } from '../../hooks';
 
 export interface IAutocompleteObject {
     label: string;
@@ -39,7 +39,7 @@ interface INeurosynthAutocomplete<T> {
 }
 
 const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
-    const { handleChange, handleOnBlur, handleOnFocus, isValid } = useInputValidation(
+    const { handleOnBlur, handleOnFocus, isValid } = useInputValidation(
         props.value,
         (arg: T | undefined | null) => !!arg
     );

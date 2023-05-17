@@ -1,13 +1,11 @@
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import HelpIcon from '@mui/icons-material/Help';
-import { Box, Button, Chip, Tooltip, Typography } from '@mui/material';
+import { Box, Button, Tooltip, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
+import DisplayAnalysisWarnings from 'components/DisplayStudy/DisplayAnalyses/DisplayAnalysisWarnings/DisplayAnalysisWarnings';
 import { useDeleteAnalysis } from 'pages/Studies/StudyStore';
 import { useState } from 'react';
-import EditAnalysisConditions from '../EditAnalysisConditions/EditAnalysisConditions';
 import EditAnalysisDetails from '../EditAnalysisDetails/EditAnalysisDetails';
 import EditAnalysisPoints from '../EditAnalysisPoints/EditAnalysisPoints';
-import DisplayAnalysisWarnings from 'components/DisplayStudy/DisplayAnalyses/DisplayAnalysisWarnings/DisplayAnalysisWarnings';
 
 const EditAnalysis: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void }> = (props) => {
     const deleteAnalysis = useDeleteAnalysis();

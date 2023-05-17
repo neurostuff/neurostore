@@ -1,8 +1,7 @@
 import { Box, Typography } from '@mui/material';
-import { AnalysisReturn, ConditionReturn, PointReturn } from 'neurostore-typescript-sdk';
+import { AnalysisReturn, PointReturn } from 'neurostore-typescript-sdk';
 
 import DisplayAnalysisWarnings from '../DisplayAnalysisWarnings/DisplayAnalysisWarnings';
-import DisplayConditions from './DisplayConditions/DisplayConditions';
 import DisplayPoints from './DisplayPoints/DisplayPoints';
 
 const DisplayAnalysis: React.FC<AnalysisReturn | undefined> = (props) => {
