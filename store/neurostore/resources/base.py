@@ -2,7 +2,7 @@
 Base Classes/functions for constructing views
 """
 import connexion
-from flask import abort, request  # jsonify
+from flask import abort, request, current_app  # jsonify
 from flask.views import MethodView
 
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
@@ -59,6 +59,8 @@ class BaseView(MethodView):
 
         only_ids = set(data.keys()) - set(["id"]) == set()
 
+        # allow compose bot to make changes
+        compose_bot = current_app.config["COMPOSE_AUTH0_CLIENT_ID"] + "@clients"
         if id is None:
             record = cls._model()
             record.user = current_user
@@ -66,7 +68,11 @@ class BaseView(MethodView):
             record = cls._model.query.filter_by(id=id).first()
             if record is None:
                 abort(422)
-            elif record.user_id != current_user.external_id and not only_ids:
+            elif (
+                record.user_id != current_user.external_id
+                and not only_ids
+                and current_user.external_id != compose_bot
+            ):
                 abort(403)
             elif only_ids:
                 to_commit.append(record)
@@ -88,7 +94,7 @@ class BaseView(MethodView):
                 # DO NOT WANT PEOPLE TO BE ABLE TO ADD ANALYSES
                 # TO STUDIES UNLESS THEY OWN THE STUDY
                 v = PrtCls._model.query.filter_by(id=v["id"]).first()
-                if current_user != v.user:
+                if current_user != v.user and current_user != compose_bot:
                     abort(403)
             if k in cls._linked and v is not None:
                 LnCls = getattr(viewdata, cls._linked[k])
