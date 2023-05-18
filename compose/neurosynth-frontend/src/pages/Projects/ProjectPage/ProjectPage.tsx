@@ -28,7 +28,7 @@ export interface IProjectPageLocationState {
 // const metaAnalysisId = (project?.meta_analyses as MetaAnalysis[]).
 const ProjectPage: React.FC = (props) => {
     const { projectId }: { projectId: string } = useParams();
-    const { data: metaAnalyses } = useGetMetaAnalysesByProjectId(projectId);
+    const { data: metaAnalyses } = useGetMetaAnalysesByProjectId(projectId || '');
     const location = useLocation();
     const history = useHistory();
     const { isError: getProjectIsError, isLoading: getProjectIsLoading } =
@@ -44,11 +44,10 @@ const ProjectPage: React.FC = (props) => {
 
     // we only want this to run once on initial render
     useEffect(() => {
-        if (!location.pathname.includes('edit') && metaAnalysesTabEnabled) {
-            history.push(`/projects/${projectId}/meta-analyses`);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [metaAnalyses]);
+        metaAnalysesTabEnabled
+            ? history.replace(`/projects/${projectId}/meta-analyses`)
+            : history.replace(`/projects/${projectId}/edit`);
+    }, [history, metaAnalyses, metaAnalysesTabEnabled, projectId]);
 
     const tab = location.pathname.includes('meta-analyses') ? 1 : 0;
 

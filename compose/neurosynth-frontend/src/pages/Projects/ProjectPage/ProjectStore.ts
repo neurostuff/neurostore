@@ -32,7 +32,7 @@ import { useEffect } from 'react';
 
 export type ProjectStoreMetadata = {
     metadata: {
-        shouldUpdate: boolean;
+        shouldUpdate: boolean; // this flag is for the debouncer
     };
 };
 
@@ -168,6 +168,7 @@ const useProjectStore = create<
                                 ...state,
                                 ...res.data,
                                 metadata: {
+                                    ...state.metadata,
                                     shouldUpdate: true,
                                 },
                             }));
@@ -223,6 +224,7 @@ const useProjectStore = create<
                                 },
                             },
                             metadata: {
+                                ...state.metadata,
                                 shouldUpdate: true,
                             },
                         }));

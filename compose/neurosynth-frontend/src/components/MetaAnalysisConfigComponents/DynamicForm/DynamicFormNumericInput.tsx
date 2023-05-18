@@ -13,6 +13,9 @@ const DynamicFormNumericInput: React.FC<IDynamicFormInput> = (props) => {
 
             <Box sx={{ width: '50%' }}>
                 <TextField
+                    onWheel={(event) => {
+                        event.preventDefault();
+                    }}
                     onChange={(event) => {
                         const parsedValue = parseFloat(event.target.value);
                         if (event.target.value === '') {

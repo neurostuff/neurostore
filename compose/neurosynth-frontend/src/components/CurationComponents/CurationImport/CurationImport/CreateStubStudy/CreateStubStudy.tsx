@@ -139,6 +139,9 @@ const CreateStubStudy: React.FC<IImportArgs> = (props) => {
                     placeholder="2393823"
                 />
                 <TextField
+                    onWheel={(event) => {
+                        event.preventDefault();
+                    }}
                     sx={{ display: 'flex', flex: '1 1 100px' }}
                     onChange={handleUpdateForm}
                     value={form.articleYear}
