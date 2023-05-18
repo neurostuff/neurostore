@@ -2,12 +2,13 @@ import os
 from pathlib import Path
 
 from flask import current_app as app
-from celery import shared_task
+
+from ..core import celery_app
 from ..database import db
 from ..models import NeurovaultFile
 
 
-@shared_task(name="neurovault.upload", bind=True)
+@celery_app.task(name="neurovault.upload", bind=True)
 def file_upload_neurovault(self, fpath, id):
     from pynv import Client
 
