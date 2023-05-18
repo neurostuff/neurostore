@@ -26,11 +26,7 @@ def nested_load(view, options=None):
             nested_view = getattr(data, view._nested[k])
             if nested_view._nested:
                 nested_loads.append(
-                    nested_load(
-                        nested_view, subqueryload(
-                            getattr(view._model, k)
-                        )
-                    )
+                    nested_load(nested_view, subqueryload(getattr(view._model, k)))
                 )
             else:
                 nested_loads.append(subqueryload(getattr(view._model, k)))

@@ -25,8 +25,17 @@ class User(BaseMixin, db.Model, UserMixin):
     active = db.Column(db.Boolean())
     name = db.Column(db.Text)
     external_id = db.Column(db.Text, unique=True)
-    roles = db.relationship('Role', secondary=roles_users,
-                            backref=db.backref('users', lazy='dynamic'))
+    roles = db.relationship(
+        "Role", secondary=roles_users, backref=db.backref("users", lazy="dynamic")
+    )
+
+
+class Device(BaseMixin, db.Model):
+    __tablename__ = "devices"
+    device_name = db.Column(db.String)
+    api_key = db.Column(db.String)
+    user_id = db.Column("user_id", db.Text, db.ForeignKey("users.id"))
+    user = db.relationship("User", backref=db.backref("devices"))
 
 
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)

@@ -7,22 +7,26 @@ import connexion
 
 from .. import models
 from .. import schemas
+from .singular import singularize
 
 
 # https://www.geeksforgeeks.org/python-split-camelcase-string-to-individual-strings/
 def camel_case_split(str):
-    return re.findall(r'[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))', str)
+    return re.findall(r"[A-Z](?:[a-z]+|[A-Z]*(?=[A-Z]|$))", str)
 
 
 def get_current_user():
-    user = connexion.context.get('user')
+    user = connexion.context.get("user")
     if user:
-        return models.User.query.filter_by(external_id=connexion.context['user']).first()
+        return models.User.query.filter_by(
+            external_id=connexion.context["user"]
+        ).first()
     return None
 
 
 def view_maker(cls):
-    basename = camel_case_split(cls.__name__)[0]
+    proc_name = cls.__name__.removesuffix("View").removesuffix("Resource")
+    basename = singularize(proc_name, custom={"MetaAnalyses": "MetaAnalysis"})
 
     class ClassView(cls):
         _model = getattr(models, basename)

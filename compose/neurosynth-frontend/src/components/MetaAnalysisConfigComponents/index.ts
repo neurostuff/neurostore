@@ -1,57 +1,16 @@
-import { StudysetReturn } from 'neurostore-typescript-sdk';
-import {
-    EAnalysisType as EMetaAnalysisType,
-    IMetaAnalysisComponents,
-    IEstimatorCorrectorArgs,
-} from 'pages/MetaAnalyses/MetaAnalysisBuilderPage/MetaAnalysisBuilderPage';
-import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
-import { NeurostoreAnnotation } from 'utils/api';
-
 export const KWARG_STRING = '**kwargs';
 
-interface IMetaAnalysisBuilderStep {
-    onUpdate: (arg: Partial<IMetaAnalysisComponents>) => void;
-    onNext: (button: ENavigationButton) => void;
-}
-
-export interface IMetaAnalysisDetails extends IMetaAnalysisBuilderStep {
+export interface IMetaAnalysisSpecDetails {
     metaAnalysisName: string | undefined;
     metaAnalysisDescription: string | undefined;
-}
-
-export interface IMetaAnalysisData extends IMetaAnalysisBuilderStep {
-    metaAnalysisType: EMetaAnalysisType | undefined;
-    studyset: StudysetReturn | undefined | null;
-    annotation: NeurostoreAnnotation | undefined | null;
-    inclusionColumn: string | undefined | null;
-}
-
-export interface IMetaAnalysisAlgorithm extends IMetaAnalysisBuilderStep {
-    onArgsUpdate: (arg: Partial<IEstimatorCorrectorArgs>) => void;
-    metaAnalysisType: EMetaAnalysisType;
-    estimator: IAutocompleteObject | undefined | null;
-    corrector: IAutocompleteObject | undefined | null;
-    estimatorArgs: IDynamicInputType;
-    correctorArgs: IDynamicInputType;
 }
 
 /**
  * this interface is extremely flexible as we have to account for a number of types including
  * objects (in the case of kwargs)
  */
-export interface IDynamicInputType {
+export interface IDynamicValueType {
     [key: string]: string | boolean | number | null | undefined | { [key: string]: string };
-}
-
-export interface IDynamicForm {
-    onUpdate: (arg: IDynamicInputType) => void;
-    specification: {
-        [key: string]: IParameter;
-    };
-    // values is an object of kvps that associate a dynamic parameter with its value. This is
-    // initialized/populated by defaults when the user selects the given corrector/estimator
-    values: { [key: string]: any };
 }
 
 export interface IDynamicFormInput {
@@ -59,7 +18,7 @@ export interface IDynamicFormInput {
     parameter: IParameter;
     value: any;
 
-    onUpdate: (arg: IDynamicInputType) => void;
+    onUpdate: (arg: IDynamicValueType) => void;
 }
 
 export interface IParameter {

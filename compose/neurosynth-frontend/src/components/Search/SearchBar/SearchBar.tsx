@@ -1,82 +1,64 @@
-import { Paper, InputBase, Button, FormControl, Select, MenuItem, Box } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import React, { useEffect, useState } from 'react';
-import SearchBarStyles from './SearchBar.styles';
-import { SearchBy } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
+import { Button, Box } from '@mui/material';
+import React, { useState } from 'react';
+import { SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
+import SimpleSearch from './SimpleSearch/SimpleSearch';
+import AdvancedSearch from './AdvancedSearch/AdvancedSearch';
 import { useLocation } from 'react-router-dom';
-import { extractSearchedStringFromURL } from 'pages/helpers/utils';
+import { getSearchCriteriaFromURL } from 'pages/helpers/utils';
 
 export interface ISearchBar {
-    onSearch: (searchedString: string, searchBy: SearchBy) => void;
+    onSearch: (searchArgs: Partial<SearchCriteria>) => void;
     searchButtonColor?: string;
 }
 
+const hasMultipleSearchCriteria = (search?: string) => {
+    const searchCriteria = getSearchCriteriaFromURL(search);
+    return (
+        +!!searchCriteria.authorSearch +
+            +!!searchCriteria.descriptionSearch +
+            +!!searchCriteria.genericSearchStr +
+            +!!searchCriteria.nameSearch >
+        1
+    );
+};
+
 const SearchBar: React.FC<ISearchBar> = (props) => {
+    const { onSearch, searchButtonColor = 'primary' } = props;
     const location = useLocation();
+    const [advancedSearch, setAdvancedSearch] = useState(
+        hasMultipleSearchCriteria(location.search)
+    );
 
-    useEffect(() => {
-        setSearchBarParams(extractSearchedStringFromURL(location.search));
-    }, [location.search]);
-
-    // state of the search bar
-    const [searchBarParams, setSearchBarParams] = useState<{
-        searchedString: string;
-        searchBy: SearchBy;
-    }>(extractSearchedStringFromURL(location.search));
-
-    const handleOnSubmit = (event: React.FormEvent) => {
-        event.preventDefault();
-        props.onSearch(searchBarParams.searchedString, searchBarParams.searchBy);
+    const handleOnSearch = (searchArgs: Partial<SearchCriteria>) => {
+        onSearch(searchArgs);
     };
 
     return (
-        <Box data-tour="PublicStudiesPage-2" sx={{ display: 'flex' }}>
-            <Box component="form" sx={{ width: '100%' }} onSubmit={handleOnSubmit}>
-                <Box sx={SearchBarStyles.searchContainer}>
-                    <FormControl variant="outlined">
-                        <Select
-                            sx={SearchBarStyles.select}
-                            autoWidth
-                            value={searchBarParams.searchBy}
-                            onChange={(event) =>
-                                setSearchBarParams((prev) => ({
-                                    ...prev,
-                                    searchBy: event.target.value as SearchBy,
-                                }))
-                            }
-                        >
-                            <MenuItem value={SearchBy.ALL}>All</MenuItem>
-                            <MenuItem value={SearchBy.NAME}>Title</MenuItem>
-                            <MenuItem value={SearchBy.AUTHORS}>Authors</MenuItem>
-                            <MenuItem value={SearchBy.DESCRIPTION}>Description</MenuItem>
-                        </Select>
-                    </FormControl>
-                    <Paper sx={SearchBarStyles.paper} variant="outlined">
-                        <InputBase
-                            value={searchBarParams.searchedString}
-                            onChange={(event) =>
-                                setSearchBarParams((prev) => ({
-                                    ...prev,
-                                    searchedString: event.target.value as string,
-                                }))
-                            }
-                            placeholder="Search for a study"
-                            sx={SearchBarStyles.textfield}
-                        />
-                    </Paper>
-                    <Button
-                        sx={[
-                            SearchBarStyles.iconContainer,
-                            { backgroundColor: props.searchButtonColor || 'primary' },
-                        ]}
-                        variant="contained"
-                        onClick={handleOnSubmit}
-                        size="large"
-                        type="submit"
-                    >
-                        <SearchIcon sx={{ color: 'white' }} />
-                    </Button>
-                </Box>
+        <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
+            <Box sx={{ flexGrow: 1 }}>
+                {advancedSearch ? (
+                    <AdvancedSearch
+                        searchButtonColor={searchButtonColor}
+                        onSearch={handleOnSearch}
+                    />
+                ) : (
+                    <SimpleSearch searchButtonColor={searchButtonColor} onSearch={handleOnSearch} />
+                )}
+            </Box>
+            <Box>
+                <Button
+                    onClick={() => setAdvancedSearch((prev) => !prev)}
+                    variant="outlined"
+                    sx={{
+                        marginLeft: '20px',
+                        borderColor: searchButtonColor,
+                        height: '54px',
+                        width: '166px',
+                        color: searchButtonColor,
+                    }}
+                >
+                    {advancedSearch ? 'Simple' : 'Advanced'} Search
+                </Button>
             </Box>
         </Box>
     );

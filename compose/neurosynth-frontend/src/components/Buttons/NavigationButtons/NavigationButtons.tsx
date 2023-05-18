@@ -1,4 +1,5 @@
 import { Box, Button } from '@mui/material';
+import { ColorOptions } from 'index';
 
 export enum ENavigationButton {
     PREV = 'PREV',
@@ -12,6 +13,8 @@ export interface INavigationButtons {
     nextButtonText?: string;
     prevButtonStyle?: 'contained' | 'outlined' | 'text';
     nextButtonStyle?: 'contained' | 'outlined' | 'text';
+    nextButtonColor?: ColorOptions;
+    prevButtonColor?: ColorOptions;
 
     onButtonClick: (button: ENavigationButton) => void;
 }
@@ -24,6 +27,8 @@ const NavigationButtons: React.FC<INavigationButtons> = (props) => {
         nextButtonText = 'Next',
         prevButtonStyle = 'outlined',
         nextButtonStyle = 'outlined',
+        nextButtonColor = 'primary',
+        prevButtonColor = 'primary',
         onButtonClick,
     } = props;
 
@@ -34,6 +39,7 @@ const NavigationButtons: React.FC<INavigationButtons> = (props) => {
                 variant={prevButtonStyle}
                 onClick={() => onButtonClick(ENavigationButton.PREV)}
                 sx={{ fontSize: '1rem' }}
+                color={prevButtonColor}
             >
                 {prevButtonText}
             </Button>
@@ -42,6 +48,7 @@ const NavigationButtons: React.FC<INavigationButtons> = (props) => {
                 variant={nextButtonStyle}
                 onClick={() => onButtonClick(ENavigationButton.NEXT)}
                 sx={{ fontSize: '1rem' }}
+                color={nextButtonColor}
             >
                 {nextButtonText}
             </Button>

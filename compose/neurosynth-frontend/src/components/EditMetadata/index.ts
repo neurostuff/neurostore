@@ -3,6 +3,8 @@
  */
 
 export interface IEditMetadataModel {
+    keyPlaceholderText?: string;
+    valuePlaceholderText?: string;
     metadata: IMetadataRowModel[];
     onMetadataRowEdit: (update: IMetadataRowModel) => void;
     onMetadataRowDelete: (update: IMetadataRowModel) => void;
@@ -15,6 +17,7 @@ export interface IAddMetadataRowModel {
     keyPlaceholderText?: string;
     showToggleType?: boolean;
     valuePlaceholderText?: string;
+    showMetadataValueInput?: boolean;
     onAddMetadataRow: (row: IMetadataRowModel) => boolean;
 }
 

@@ -84,7 +84,7 @@ describe('SearchContainer Component', () => {
         const search = screen.getByTestId('trigger-search');
         userEvent.click(search);
 
-        expect(mockOnSearch).toHaveBeenCalledWith('searchedstring', 'genericSearchStr');
+        expect(mockOnSearch).toHaveBeenCalledWith({ genericSearchStr: 'searchedstring' });
     });
 
     it('should call the on page change function', () => {

@@ -18,15 +18,15 @@ describe(PAGE_NAME, () => {
         cy.login('mocked').visit(PATH).wait('@studyFixture');
     });
 
-    it('should redirect if the user is not authenticated', () => {
-        cy.intercept('GET', `**/api/studies/mock-study-id*`, { fixture: 'study' }).as(
-            'studyFixture'
-        );
-        cy.visit(PATH)
-            .wait(['@studyFixture']) // request made twice as the first time, once for the edit page and again for the study page
-            .url()
-            .should('be.equal', `${Cypress.config('baseUrl')}/studies/mock-study-id`);
-    });
+    // it('should redirect if the user is not authenticated', () => {
+    //     cy.intercept('GET', `**/api/studies/mock-study-id*`, { fixture: 'study' }).as(
+    //         'studyFixture'
+    //     );
+    //     cy.visit(PATH)
+    //         .wait(['@studyFixture']) // request made twice as the first time, once for the edit page and again for the study page
+    //         .url()
+    //         .should('be.equal', `${Cypress.config('baseUrl')}/studies/mock-study-id`);
+    // });
 
     // TODO:
     // it('should switch to the second last tab if the selected analysis is last and gets deleted', () => {

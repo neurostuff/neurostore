@@ -6,8 +6,15 @@ import sqlalchemy as sa
 from flask_sqlalchemy import __version__ as FLASK_SQL_VER
 from .. import ingest
 from ..models import (
-    User, Study, Studyset, Annotation, AnnotationAnalysis,
-    AnalysisConditions, Point, Image
+    User,
+    Study,
+    Studyset,
+    Annotation,
+    AnnotationAnalysis,
+    AnalysisConditions,
+    Point,
+    Image,
+    Entity,
 )
 from auth0.v3.authentication import GetToken
 
@@ -20,6 +27,7 @@ Test fixtures for bypassing authentication
 @pytest.fixture(scope="session")
 def monkeysession(request):
     from _pytest.monkeypatch import MonkeyPatch
+
     mpatch = MonkeyPatch()
     yield mpatch
     mpatch.undo()
@@ -28,16 +36,18 @@ def monkeysession(request):
 def mock_decode_token(token):
     from jose.jwt import encode
 
-    if token == encode({"sub": "user1-id"}, "abc", algorithm='HS256'):
-        return {'sub': 'user1-id'}
-    elif token == encode({"sub": "user2-id"}, "123", algorithm='HS256'):
-        return {'sub': 'user2-id'}
+    if token == encode({"sub": "user1-id"}, "abc", algorithm="HS256"):
+        return {"sub": "user1-id"}
+    elif token == encode({"sub": "user2-id"}, "123", algorithm="HS256"):
+        return {"sub": "user2-id"}
 
 
 @pytest.fixture(scope="session")
 def mock_auth(monkeysession):
     """mock decode token to get around rate limits"""
-    monkeysession.setenv("BEARERINFO_FUNC", "neurostore.tests.conftest.mock_decode_token")
+    monkeysession.setenv(
+        "BEARERINFO_FUNC", "neurostore.tests.conftest.mock_decode_token"
+    )
 
 
 """
@@ -51,9 +61,9 @@ def app(mock_auth):
     from ..core import app as _app
 
     if "APP_SETTINGS" not in environ:
-        config = 'neurostore.config.TestingConfig'
+        config = "neurostore.config.TestingConfig"
     else:
-        config = environ['APP_SETTINGS']
+        config = environ["APP_SETTINGS"]
     _app.config.from_object(config)
     # _app.config["SQLALCHEMY_ECHO"] = True
 
@@ -87,7 +97,7 @@ def session(db):
     transaction = connection.begin()
 
     options = dict(bind=connection, binds={})
-    if FLASK_SQL_VER.startswith('3.'):
+    if FLASK_SQL_VER.startswith("3."):
         session = db._make_scoped_session(options=options)
     else:
         session = db.create_scoped_session(options=options)
@@ -119,20 +129,20 @@ Data population fixtures
 
 @pytest.fixture(scope="function")
 def auth_client(auth_clients):
-    """ Return authorized client wrapper """
+    """Return authorized client wrapper"""
     return auth_clients[0]
 
 
 @pytest.fixture(scope="function")
 def auth_clients(mock_add_users, app):
-    """ Return authorized client wrapper """
+    """Return authorized client wrapper"""
     from .request_utils import Client
 
     tokens = mock_add_users
     clients = []
     for user in tokens:
         clients.append(
-            Client(token=tokens[user]['token'], username=tokens[user]['external_id'])
+            Client(token=tokens[user]["token"], username=tokens[user]["external_id"])
         )
     return clients
 
@@ -146,30 +156,30 @@ def mock_add_users(app, db, mock_auth):
         {
             "name": "user1",
             "password": "password1",
-            "access_token": encode({"sub": "user1-id"}, "abc", algorithm='HS256'),
+            "access_token": encode({"sub": "user1-id"}, "abc", algorithm="HS256"),
         },
         {
             "name": "user2",
             "password": "password2",
-            "access_token": encode({"sub": "user2-id"}, "123", algorithm='HS256'),
-        }
+            "access_token": encode({"sub": "user2-id"}, "123", algorithm="HS256"),
+        },
     ]
 
     tokens = {}
     for u in users:
-        token_info = mock_decode_token(u['access_token'])
+        token_info = mock_decode_token(u["access_token"])
         user = User(
-            name=u['name'],
-            external_id=token_info['sub'],
+            name=u["name"],
+            external_id=token_info["sub"],
         )
-        if User.query.filter_by(external_id=token_info['sub']).first() is None:
+        if User.query.filter_by(external_id=token_info["sub"]).first() is None:
             db.session.add(user)
             db.session.commit()
 
-        tokens[u['name']] = {
-            'token': u['access_token'],
-            'external_id': token_info['sub'],
-            'id': User.query.filter_by(external_id=token_info['sub']).first().id,
+        tokens[u["name"]] = {
+            "token": u["access_token"],
+            "external_id": token_info["sub"],
+            "id": User.query.filter_by(external_id=token_info["sub"]).first().id,
         }
 
     yield tokens
@@ -177,10 +187,10 @@ def mock_add_users(app, db, mock_auth):
 
 @pytest.fixture(scope="function")
 def add_users(app, db):
-    """ Adds a test user to db """
+    """Adds a test user to db"""
     from neurostore.resources.auth import decode_token
 
-    domain = app.config['AUTH0_BASE_URL'].split('://')[1]
+    domain = app.config["AUTH0_BASE_URL"].split("://")[1]
     token = GetToken(domain)
 
     users = [
@@ -191,34 +201,34 @@ def add_users(app, db):
         {
             "name": "user2",
             "password": "password2",
-        }
+        },
     ]
 
     tokens = {}
     for u in users:
-        name = u['name']
-        passw = u['password']
+        name = u["name"]
+        passw = u["password"]
         payload = token.login(
-            client_id=app.config['AUTH0_CLIENT_ID'],
-            client_secret=app.config['AUTH0_CLIENT_SECRET'],
+            client_id=app.config["AUTH0_CLIENT_ID"],
+            client_secret=app.config["AUTH0_CLIENT_SECRET"],
             username=name + "@email.com",
             password=passw,
-            realm='Username-Password-Authentication',
-            audience=app.config['AUTH0_API_AUDIENCE'],
-            scope='openid',
+            realm="Username-Password-Authentication",
+            audience=app.config["AUTH0_API_AUDIENCE"],
+            scope="openid",
         )
-        token_info = decode_token(payload['access_token'])
+        token_info = decode_token(payload["access_token"])
         user = User(
             name=name,
-            external_id=token_info['sub'],
+            external_id=token_info["sub"],
         )
-        if User.query.filter_by(name=token_info['sub']).first() is None:
+        if User.query.filter_by(name=token_info["sub"]).first() is None:
             db.session.add(user)
             db.session.commit()
 
         tokens[name] = {
-            'token': payload['access_token'],
-            'id': User.query.filter_by(external_id=token_info['sub']).first().id,
+            "token": payload["access_token"],
+            "id": User.query.filter_by(external_id=token_info["sub"]).first().id,
         }
 
     yield tokens
@@ -226,7 +236,7 @@ def add_users(app, db):
 
 @pytest.fixture(scope="function")
 def ingest_neurosynth(session):
-    """ Add a studyset with two subjects """
+    """Add a studyset with two subjects"""
     return ingest.ingest_neurosynth(5)
 
 
@@ -251,67 +261,73 @@ def user_data(session, mock_add_users):
         )
         public_studies = []
         for user_info in mock_add_users.values():
-            user = User.query.filter_by(id=user_info['id']).first()
-            for public in [True, False]:
-                if public:
-                    name = f"{user.id}'s public "
-                else:
-                    name = f"{user.id}'s private "
+            user = User.query.filter_by(id=user_info["id"]).first()
+            for level in ["group", "meta"]:
+                entity = Entity(level=level)
+                for public in [True, False]:
+                    if public:
+                        name = f"{user.id}'s public "
+                    else:
+                        name = f"{user.id}'s private "
 
-                studyset = Studyset(
-                    name=name + "studyset",
-                    description="detailed description",
-                    user=user,
-                    public=public,
-                )
-
-                study = Study(
-                        name=name + 'study',
+                    studyset = Studyset(
+                        name=name + "studyset",
+                        description="detailed description",
                         user=user,
                         public=public,
                     )
 
-                analysis = Analysis(user=user)
+                    study = Study(
+                        name=name + "study",
+                        user=user,
+                        public=public,
+                        metadata_={"topic": "cognition"},
+                        level=level,
+                    )
+                    if public:
+                        study.doi = "123"
 
-                condition = Condition(
-                    name=name + "condition",
-                    user=user,
-                )
+                    analysis = Analysis(user=user, entities=[entity])
 
-                analysis_condition = AnalysisConditions(
-                    condition=condition,
-                    weight=1,
-                )
+                    condition = Condition(
+                        name=name + "condition",
+                        user=user,
+                    )
 
-                point = Point(
-                    x=0,
-                    y=0,
-                    z=0,
-                    user=user,
-                )
+                    analysis_condition = AnalysisConditions(
+                        condition=condition,
+                        weight=1,
+                    )
 
-                image = Image(
-                    url="made up",
-                    filename="also made up",
-                    user=user,
-                )
+                    point = Point(
+                        x=0,
+                        y=0,
+                        z=0,
+                        user=user,
+                    )
 
-                # put together the analysis
-                analysis.images = [image]
-                analysis.points = [point]
-                analysis.analysis_conditions = [analysis_condition]
+                    image = Image(
+                        url="made up",
+                        filename="also made up",
+                        user=user,
+                    )
 
-                # put together the study
-                study.analyses = [analysis]
+                    # put together the analysis
+                    analysis.images = [image]
+                    analysis.points = [point]
+                    analysis.analysis_conditions = [analysis_condition]
 
-                # put together the studyset
-                studyset.studies = [study]
+                    # put together the study
+                    study.analyses = [analysis]
 
-                if public:
-                    public_studies.append(study)
+                    # put together the studyset
+                    studyset.studies = [study]
 
-                # add everything to commit
-                to_commit.append(studyset)
+                    if public:
+                        public_studies.append(study)
+
+                    # add everything to commit
+                    to_commit.append(studyset)
 
         # add public studyset to commit
         public_studyset.studies = public_studies
@@ -334,9 +350,9 @@ def user_data(session, mock_add_users):
                 name = f"{user.id}'s private "
 
             annotation = Annotation(
-                name=name + 'annotation',
-                source='neurostore',
-                note_keys={'food': 'string'},
+                name=name + "annotation",
+                source="neurostore",
+                note_keys={"food": "string"},
                 studyset=studyset,
                 user=user,
             )
@@ -361,7 +377,7 @@ def simple_neurosynth_annotation(session, ingest_neurosynth):
                 AnnotationAnalysis(
                     studyset_study=note.studyset_study,
                     analysis=note.analysis,
-                    note={'animal': note.note['animal']},
+                    note={"animal": note.note["animal"]},
                 )
             )
 
@@ -369,7 +385,7 @@ def simple_neurosynth_annotation(session, ingest_neurosynth):
             name="smol " + annot.name,
             source="neurostore",
             studyset=annot.studyset,
-            note_keys={'animal': 'number'},
+            note_keys={"animal": "number"},
             annotation_analyses=smol_notes,
         )
     session.add(smol_annot)
