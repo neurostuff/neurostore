@@ -398,6 +398,14 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 diagnostic_table_fnames,
             ) = parse_upload_files(result, stat_maps, cluster_tables, diagnostic_tables)
 
+            # parse the first diagnostic table if it exists (for now)
+            # most cases there should only be one diagnostic table
+            if len(diagnostic_table_fnames) > 0:
+                with open(diagnostic_table_fnames[0], "r") as dt:
+                    tsv_data = dt.read()
+                    result.diagnostic_table = tsv_data
+                records.append(result)
+
             db.session.add_all(records)
             db.session.commit()
 
