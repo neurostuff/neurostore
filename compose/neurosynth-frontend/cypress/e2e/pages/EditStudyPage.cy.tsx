@@ -12,10 +12,11 @@ describe(PAGE_NAME, () => {
     });
 
     it('should load', () => {
+        cy.intercept('GET', `**/api/projects*`).as('realProjectsRequest');
         cy.intercept('GET', `**/api/studies/mock-study-id*`, { fixture: 'study' }).as(
             'studyFixture'
         );
-        cy.login('mocked').visit(PATH).wait('@studyFixture');
+        cy.login('mocked').wait('@realProjectsRequest').visit(PATH).wait('@studyFixture');
     });
 
     // it('should redirect if the user is not authenticated', () => {
