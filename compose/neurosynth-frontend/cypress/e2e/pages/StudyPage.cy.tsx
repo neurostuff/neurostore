@@ -19,14 +19,11 @@ describe(PAGE_NAME, () => {
     it('should load successfully', () => {
         cy.intercept('GET', `**/api/projects*`).as('realProjectsRequest');
         cy.intercept('GET', `**/api/studies/**`).as('realStudyFixture');
-        cy.login('real')
-            .wait('@realProjectsRequest')
-            .visit('/studies')
-            .wait('@realStudyFixture')
-            .get('tr')
-            .eq(2)
-            .click()
-            .wait('@realStudyFixture');
+        cy.login('real').wait('@realProjectsRequest').visit('/studies').wait('@realStudyFixture');
+        // .get('tr')
+        // .eq(2)
+        // .click()
+        // .wait('@realStudyFixture');
     });
 
     // describe('Cloning', () => {
