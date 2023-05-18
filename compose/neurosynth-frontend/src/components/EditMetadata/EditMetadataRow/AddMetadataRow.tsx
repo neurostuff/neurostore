@@ -26,6 +26,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
         valuePlaceholderText,
         showToggleType = true,
         allowNoneOption = true,
+        showMetadataValueInput = true,
     } = props;
 
     const [currType, setCurrType] = useState(EPropertyType.STRING);
@@ -85,7 +86,12 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
     return (
         <Box sx={EditMetadataRowStyles.tableRow}>
             {showToggleType && (
-                <Box sx={{ display: 'flex' }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: showMetadataValueInput ? '' : 'flex-end',
+                    }}
+                >
                     <ToggleType
                         type={currType}
                         onToggle={handleToggle}
@@ -114,18 +120,24 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                 {/* This component is added so that the error message doesn't mess up the row alignment */}
                 {/* {isValid && <Box sx={{ height: '22px' }}></Box>} */}
             </Box>
-            <Box
-                sx={[EditMetadataRowStyles.tableCell, EditMetadataRowStyles.key, { width: '100%' }]}
-            >
-                <EditMetadataValue
-                    placeholderText={valuePlaceholderText}
-                    onEditMetadataValue={handleMetadataValueChange}
-                    value={metadataRow.metadataValue}
-                    type={currType}
-                />
-                {/* This component is added so that the error message doesn't mess up the row alignment */}
-                {/* <Box sx={{ height: '22px' }}></Box> */}
-            </Box>
+            {showMetadataValueInput && (
+                <Box
+                    sx={[
+                        EditMetadataRowStyles.tableCell,
+                        EditMetadataRowStyles.key,
+                        { width: '100%' },
+                    ]}
+                >
+                    <EditMetadataValue
+                        placeholderText={valuePlaceholderText}
+                        onEditMetadataValue={handleMetadataValueChange}
+                        value={metadataRow.metadataValue}
+                        type={currType}
+                    />
+                    {/* This component is added so that the error message doesn't mess up the row alignment */}
+                    {/* <Box sx={{ height: '22px' }}></Box> */}
+                </Box>
+            )}
             <Box sx={EditMetadataRowStyles.tableCell}>
                 <Button
                     sx={EditMetadataRowStyles.updateButton}

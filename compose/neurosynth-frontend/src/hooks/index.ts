@@ -5,8 +5,8 @@ import useGuard from './useGuard';
 import useGetTour from './useGetTour';
 
 import useGetStudyById from './requests/useGetStudyById';
-import useCreateMetaAnalysis from './requests/useCreateMetaAnalysis';
-import useGetMetaAnalyses from './requests/useGetMetaAnalyses';
+import useCreateAlgorithmSpecification from './requests/useCreateAlgorithmSpecification';
+import useGetMetaAnalysesByProjectId from './requests/useGetMetaAnalyses';
 import useGetMetaAnalysisById from './requests/useGetMetaAnalysisById';
 import useGetStudysets from './requests/useGetStudysets';
 import useGetAnnotationsByStudysetId from './requests/useGetAnnotationsByStudysetId';
@@ -29,6 +29,7 @@ import useGetStudysetById from './requests/useGetStudysetById';
 import useCreateAnnotation from './requests/useCreateAnnotation';
 import useDeleteStudyset from './requests/useDeleteStudyset';
 import useCreateStudy from './requests/useCreateStudy';
+import useCreateProject from './requests/useCreateProject';
 
 export {
     useIsMounted,
@@ -42,8 +43,8 @@ export {
     useUpdateStudy,
     useCreateStudy,
     // META-ANALYSES
-    useCreateMetaAnalysis,
-    useGetMetaAnalyses,
+    useCreateAlgorithmSpecification,
+    useGetMetaAnalysesByProjectId as useGetMetaAnalyses,
     useGetMetaAnalysisById,
     // STUDYSETS
     useGetStudysets,
@@ -68,4 +69,6 @@ export {
     // CONDITIONS
     useGetConditions,
     useCreateCondition,
+    // project
+    useCreateProject,
 };

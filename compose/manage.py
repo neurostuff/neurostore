@@ -6,9 +6,14 @@ import os
 import click
 from flask_migrate import Migrate
 
-from neurosynth_compose.core import app, db
+from neurosynth_compose import create_app
+
+app = create_app()
+
+from neurosynth_compose.database import db
 from neurosynth_compose import models
 from neurosynth_compose.ingest import neurostore as ingest_nstore
+
 
 app.config.from_object(os.environ["APP_SETTINGS"])
 
@@ -23,8 +28,8 @@ def make_shell_context():
 
 
 @app.cli.command()
-@click.option('--n-studysets', default=None)
-@click.option('--neurostore-url', default="https://neurostore.xyz")
+@click.option("--n-studysets", default=None)
+@click.option("--neurostore-url", default="https://neurostore.org")
 def ingest_neurostore(n_studysets, neurostore_url):
     if n_studysets is not None:
         n_studysets = int(n_studysets)
@@ -32,8 +37,8 @@ def ingest_neurostore(n_studysets, neurostore_url):
 
 
 @app.cli.command()
-@click.option('--n-studysets', default=None)
-@click.option('--neurostore-url', default="https://neurostore.xyz")
+@click.option("--n-studysets", default=None)
+@click.option("--neurostore-url", default="https://neurostore.org")
 def create_meta_analyses(n_studysets, neurostore_url):
     if n_studysets is not None:
         n_studysets = int(n_studysets)

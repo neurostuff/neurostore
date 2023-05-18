@@ -1,152 +1,113 @@
-import { TextField, Button, Typography, Box } from '@mui/material';
-import React, { ChangeEvent, useState } from 'react';
-import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
-import EditStudyDetailsStyles from 'components/EditStudyComponents/EditStudyDetails/EditStudyDetails.styles';
-import EditStudyMetadataStyles from 'components/EditMetadata/EditMetadata.styles';
-import { useUpdateStudy } from 'hooks';
-import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import {
+    Typography,
+    Box,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+    TextField,
+} from '@mui/material';
+import React from 'react';
+import {
+    StudyDetails,
+    useStudyAuthors,
+    useStudyDescription,
+    useStudyDOI,
+    useStudyName,
+    useStudyPMID,
+    useStudyPublication,
+    useStudyYear,
+    useUpdateStudyDetails,
+} from 'pages/Studies/StudyStore';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import EditAnalysesStyles from '../EditAnalyses/EditAnalyses.styles';
 
-export interface IEditStudyDetails {
-    studyId: string;
-    name: string;
-    authors: string;
-    publication: string;
-    doi: string;
-    description: string;
-}
+const EditStudyDetails: React.FC = React.memo((props) => {
+    const name = useStudyName();
+    const description = useStudyDescription();
+    const authors = useStudyAuthors();
+    const publication = useStudyPublication();
+    const doi = useStudyDOI();
+    const pmid = useStudyPMID();
+    const year = useStudyYear();
+    const updateStudyDetails = useUpdateStudyDetails();
 
-const textFieldInputProps = {
-    style: {
-        fontSize: 15,
-    },
-};
-
-const EditStudyDetails: React.FC<IEditStudyDetails> = React.memo((props) => {
-    const [updatedEnabled, setUpdateEnabled] = useState(false);
-    const { isLoading, mutate } = useUpdateStudy();
-
-    // save original details for revert behavior
-    const [originalDetails, setOriginalDetails] = useState<IEditStudyDetails>({ ...props });
-
-    const [details, setDetails] = useState<IEditStudyDetails>({ ...props });
-
-    const handleOnEdit = (event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-        setDetails((prevState) => ({
-            ...prevState,
-            [event.target.name]: event.target.value,
-        }));
-        setUpdateEnabled(true);
-    };
-
-    const handleOnSave = () => {
-        mutate(
-            {
-                studyId: props.studyId,
-                study: {
-                    name: details.name,
-                    authors: details.authors,
-                    publication: details.publication,
-                    doi: details.doi,
-                    description: details.description,
-                },
-            },
-            {
-                onSuccess: () => {
-                    setUpdateEnabled(false);
-                    setOriginalDetails({ ...details });
-                },
-            }
-        );
-    };
-
-    const handleRevertChanges = (event: React.MouseEvent) => {
-        setDetails({ ...originalDetails });
-        setUpdateEnabled(false);
+    const handleUpdate = (update: string, field: keyof StudyDetails) => {
+        let value;
+        if (field === 'year') {
+            const updatedYear = parseInt(update);
+            if (isNaN(updatedYear)) return;
+            value = updatedYear;
+        } else {
+            value = update;
+        }
+        updateStudyDetails(field as keyof StudyDetails, value);
     };
 
     return (
-        <NeurosynthAccordion
-            TitleElement={
-                <Box sx={EditStudyDetailsStyles.accordionTitleContainer}>
-                    <Typography variant="h6">
-                        <b>Edit Study Details</b>
-                    </Typography>
-                    {updatedEnabled && (
-                        <Typography color="secondary" variant="body2">
-                            unsaved changes
-                        </Typography>
-                    )}
-                </Box>
-            }
-            accordionSummarySx={EditStudyMetadataStyles.accordionSummary}
-            sx={updatedEnabled ? EditStudyDetailsStyles.unsavedChanges : {}}
-            elevation={1}
-        >
-            <TextField
-                label="Edit Title"
-                variant="outlined"
-                sx={EditStudyDetailsStyles.textfield}
-                value={details.name}
-                InputProps={textFieldInputProps}
-                name="name"
-                onChange={handleOnEdit}
-            />
-            <TextField
-                label="Edit Authors"
-                sx={EditStudyDetailsStyles.textfield}
-                variant="outlined"
-                value={details.authors}
-                InputProps={textFieldInputProps}
-                name="authors"
-                onChange={handleOnEdit}
-            />
-            <TextField
-                label="Edit Journal"
-                variant="outlined"
-                sx={EditStudyDetailsStyles.textfield}
-                value={details.publication}
-                InputProps={textFieldInputProps}
-                name="publication"
-                onChange={handleOnEdit}
-            />
-            <TextField
-                label="Edit DOI"
-                variant="outlined"
-                sx={EditStudyDetailsStyles.textfield}
-                value={details.doi}
-                InputProps={textFieldInputProps}
-                name="doi"
-                onChange={handleOnEdit}
-            />
-            <TextField
-                label="Edit Description"
-                variant="outlined"
-                sx={EditStudyDetailsStyles.textfield}
-                multiline
-                value={details.description}
-                InputProps={textFieldInputProps}
-                name="description"
-                onChange={handleOnEdit}
-            />
-            <LoadingButton
-                disabled={!updatedEnabled}
-                isLoading={isLoading}
-                onClick={handleOnSave}
-                color="success"
-                variant="contained"
-                text="Save"
-                sx={{ ...EditStudyDetailsStyles.button, marginRight: '15px' }}
-            />
-            <Button
-                disabled={!updatedEnabled}
-                onClick={handleRevertChanges}
-                color="secondary"
-                variant="outlined"
-                sx={EditStudyDetailsStyles.button}
+        <Accordion elevation={0}>
+            <AccordionSummary
+                sx={EditAnalysesStyles.accordionSummary}
+                expandIcon={<ExpandMoreIcon sx={EditAnalysesStyles.accordionExpandIcon} />}
             >
-                Cancel
-            </Button>
-        </NeurosynthAccordion>
+                <Typography sx={{ fontWeight: 'bold', marginRight: '10px' }}>Details</Typography>
+                <Typography>(name, authors, description, doi, pmid, etc)</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+                <Box sx={{ margin: '1rem 0 0.5rem 0' }}>
+                    <TextField
+                        label="name"
+                        sx={{ width: '100%', marginBottom: '1rem' }}
+                        value={name || ''}
+                        onChange={(event) => handleUpdate(event.target.value, 'name')}
+                    />
+                    <TextField
+                        label="authors"
+                        sx={{ width: '100%', marginBottom: '1rem' }}
+                        value={authors || ''}
+                        onChange={(event) => handleUpdate(event.target.value, 'authors')}
+                    />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <TextField
+                            label="pmid"
+                            sx={{ width: '49%', marginBottom: '1rem' }}
+                            value={pmid || ''}
+                            onChange={(event) => handleUpdate(event.target.value, 'pmid')}
+                        />
+                        <TextField
+                            label="doi"
+                            sx={{ width: '49%' }}
+                            value={doi || ''}
+                            onChange={(event) => handleUpdate(event.target.value, 'doi')}
+                        />
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <TextField
+                            onWheel={(event) => {
+                                event.preventDefault();
+                            }}
+                            label="year"
+                            sx={{ width: '49%', marginBottom: '1rem' }}
+                            type="number"
+                            value={year || ''}
+                            onChange={(event) => handleUpdate(event.target.value, 'year')}
+                        />
+                        <TextField
+                            label="journal"
+                            sx={{ width: '49%' }}
+                            value={publication || ''}
+                            onChange={(event) => handleUpdate(event.target.value, 'publication')}
+                        />
+                    </Box>
+                    <TextField
+                        label="description or abstract"
+                        sx={{ width: '100%' }}
+                        value={description || ''}
+                        multiline
+                        onChange={(event) => handleUpdate(event.target.value, 'description')}
+                    />
+                </Box>
+            </AccordionDetails>
+        </Accordion>
     );
 });
 

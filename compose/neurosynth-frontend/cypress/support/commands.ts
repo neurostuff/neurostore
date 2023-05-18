@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import * as jose from 'jose';
 
 /// <reference types="cypress" />
 // ***********************************************
@@ -38,16 +38,57 @@ import jwt from 'jsonwebtoken';
 //   }
 // }
 
-const constructMockAuthJWT = (jwtPayload = {}): string => {
-    return jwt.sign(
-        {
-            ...jwtPayload,
+const constructMockAuthJWT = async (jwtPayload = {}): Promise<string> => {
+    const jwt = await new jose.SignJWT({ ...jwtPayload })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime('2h')
+        .sign(new TextEncoder().encode('SECRET'));
+    return jwt;
+};
+
+const createMockRequest = async (
+    audience: string,
+    client_id: string,
+    domain: string,
+    extraClaims = {}
+) => {
+    const access_token = await constructMockAuthJWT({
+        iss: 'https://dev-mui7zm42.us.auth0.com/',
+        sub: 'auth0|62e0e6c9dd47048572613b4d',
+        aud: ['https://dev-mui7zm42.us.auth0.com/userinfo', audience],
+        iat: 1659719697,
+        exp: 1659806097,
+        azp: 'EmcOFhu0XAINM4EyslaKpZ3u09QlBvef',
+        scope: 'openid profile email',
+    });
+
+    const id_token = await constructMockAuthJWT({
+        'https://neurosynth-compose/loginsCount': 871,
+        nickname: 'test-user',
+        name: 'test-user@gmail.com',
+        picture:
+            'https://s.gravatar.com/avatar/3a6e372ed11e9bc975215430fe82c28f?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fte.png',
+        updated_at: '2022-08-02T18:50:33.106Z',
+        email: 'test-user@gmail.com',
+        email_verified: false,
+        iss: `https://${domain}/`,
+        sub: 'auth0|62e0e6c9dd47048572613b4d',
+        aud: client_id,
+        iat: Math.floor(Date.now() / 1000 + 86400),
+        exp: Math.floor(Date.now() / 1000 + 86400),
+        ...extraClaims,
+    });
+
+    return {
+        body: {
+            access_token: access_token,
+            expires_in: 86400,
+            id_token: id_token,
+            scope: 'openid profile email read:current_user update:current_user_metadata delete:current_user_metadata create:current_user_metadata create:current_user_device_credentials delete:current_user_device_credentials update:current_user_identities',
+            token_type: 'Bearer',
         },
-        'SECRET',
-        {
-            keyid: 'yGR0k3tMAFj3UszOgaA6N',
-        }
-    );
+    };
 };
 
 Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
@@ -63,38 +104,7 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
      */
     if (loginMode === 'mocked') {
         cy.stub(cy, 'request').callsFake(() =>
-            cy.wrap({
-                body: {
-                    access_token: constructMockAuthJWT({
-                        iss: 'https://dev-mui7zm42.us.auth0.com/',
-                        sub: 'auth0|62e0e6c9dd47048572613b4d',
-                        aud: ['https://dev-mui7zm42.us.auth0.com/userinfo', audience],
-                        iat: 1659719697,
-                        exp: 1659806097,
-                        azp: 'EmcOFhu0XAINM4EyslaKpZ3u09QlBvef',
-                        scope: 'openid profile email',
-                    }),
-                    expires_in: 86400,
-                    id_token: constructMockAuthJWT({
-                        'https://neurosynth-compose/loginsCount': 871,
-                        nickname: 'test-user',
-                        name: 'test-user@gmail.com',
-                        picture:
-                            'https://s.gravatar.com/avatar/3a6e372ed11e9bc975215430fe82c28f?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fte.png',
-                        updated_at: '2022-08-02T18:50:33.106Z',
-                        email: 'test-user@gmail.com',
-                        email_verified: false,
-                        iss: `https://${domain}/`,
-                        sub: 'auth0|62e0e6c9dd47048572613b4d',
-                        aud: client_id,
-                        iat: Math.floor(Date.now() / 1000 + 86400),
-                        exp: Math.floor(Date.now() / 1000 + 86400),
-                        ...extraClaims,
-                    }),
-                    scope: 'openid profile email read:current_user update:current_user_metadata delete:current_user_metadata create:current_user_metadata create:current_user_device_credentials delete:current_user_device_credentials update:current_user_identities',
-                    token_type: 'Bearer',
-                },
-            })
+            cy.wrap(createMockRequest(audience, client_id, domain, extraClaims))
         );
     }
 
@@ -115,51 +125,53 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
             client_id,
             client_secret,
         },
-    })
-        .then(({ body }) => {
-            const { access_token, expires_in, id_token } = body;
-            const jwtObject = jwt.decode(id_token, { complete: true }) as jwt.Jwt;
-            const [header, payload, signature] = id_token.split('.');
+    }).then(({ body }) => {
+        const { access_token, expires_in, id_token } = body;
+        console.log({ access_token, id_token });
+        const jwtObject = jose.decodeJwt(id_token);
+        const [header, payload, signature] = id_token.split('.');
 
-            // localstorage object that is used by auth0.
-            // we need this to ensure that auth0-react state gets updated
-            const session = {
-                body: {
-                    access_token,
-                    audience,
-                    client_id,
-                    decodedToken: {
-                        claims: {
-                            ...(jwtObject.payload as jwt.JwtPayload),
-                            __raw: id_token,
-                        },
-                        encoded: {
-                            header,
-                            payload,
-                            signature,
-                        },
-                        header: jwtObject.header,
-                        user: jwtObject.payload as jwt.JwtPayload,
+        // localstorage object that is used by auth0.
+        // we need this to ensure that auth0-react state gets updated
+        const session = {
+            body: {
+                access_token,
+                audience,
+                client_id,
+                decodedToken: {
+                    claims: {
+                        ...jwtObject,
+                        __raw: id_token,
                     },
-                    expires_in,
-                    id_token,
-                    scope: 'openid profile email read:current_user update:current_user_metadata delete:current_user_metadata create:current_user_metadata create:current_user_device_credentials delete:current_user_device_credentials update:current_user_identities',
-                    token_type: 'Bearer',
+                    encoded: {
+                        header,
+                        payload,
+                        signature,
+                    },
+                    header: jwtObject.header,
+                    user: jwtObject.sub,
                 },
-                expiresAt: Math.floor(Date.now() / 1000) + expires_in,
-            };
+                expires_in,
+                id_token,
+                scope: 'openid profile email read:current_user update:current_user_metadata delete:current_user_metadata create:current_user_metadata create:current_user_device_credentials delete:current_user_device_credentials update:current_user_identities',
+                token_type: 'Bearer',
+            },
+            expiresAt: Math.floor(Date.now() / 1000) + expires_in,
+        };
 
-            /**
-             * There are a lot of resources online regarding integration of auth0 and cypress; however, very few of them work.
-             * Finally managed to get it working by adding this in localstorage, which seems to be checked by auth0-react to determine
-             * the isAuthenticated state. This code is in tandem with setting the auth0 provider cacheLocation=localstorage.
-             */
-            cy.addToLocalStorage(
-                `@@auth0spajs@@::${client_id}::${audience}::openid profile email`,
-                JSON.stringify(session)
-            );
-        })
-        .visit('/');
+        /**
+         * There are a lot of resources online regarding integration of auth0 and cypress; however, very few of them work.
+         * Finally managed to get it working by adding this in localstorage, which seems to be checked by auth0-react to determine
+         * the isAuthenticated state. This code is in tandem with setting the auth0 provider cacheLocation=localstorage.
+         */
+        cy.addToLocalStorage(
+            `@@auth0spajs@@::${client_id}::${audience}::openid profile email`,
+            JSON.stringify(session)
+        );
+    });
+
+    // this will always run after the previous commands are complete
+    cy.visit('/');
 });
 
 Cypress.Commands.add('clearSessionStorage', () => {
@@ -173,6 +185,8 @@ Cypress.Commands.add('addToLocalStorage', (key: string, value: string) => {
         window.localStorage.setItem(key, value);
     });
 });
+
+Cypress.Commands.overwrite('log', (subject, message) => cy.task('log', message));
 
 declare global {
     namespace Cypress {

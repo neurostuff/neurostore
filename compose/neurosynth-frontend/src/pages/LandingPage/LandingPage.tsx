@@ -6,14 +6,14 @@ import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PlatformComparisonTable from './PlatformComparisonTable';
-import AuthenticatedLandingPage from './AuthenticatedLandingPage';
 import { useAuth0 } from '@auth0/auth0-react';
 import { Link as ReactRouterLink } from 'react-router-dom';
 import StepperDisplay from './StepperDisplay';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { useGuard } from 'hooks';
 
 const LandingPage = () => {
-    const { isAuthenticated, isLoading } = useAuth0();
+    const { isAuthenticated } = useAuth0();
+    useGuard('/projects', '', isAuthenticated);
 
     const logos: { logoPath: string; alt: string }[] = [
         {
@@ -77,14 +77,6 @@ const LandingPage = () => {
                 'Execute the prepared meta-analysis online or on your machine. NiMARE is the primary execution engine downloading the study-set, annotation, and meta-analysis specification for reproducible analysis.',
         },
     ];
-
-    if (isAuthenticated || isLoading) {
-        return (
-            <StateHandlerComponent isError={false} isLoading={isLoading}>
-                <AuthenticatedLandingPage />;
-            </StateHandlerComponent>
-        );
-    }
 
     return (
         <>

@@ -2,9 +2,7 @@ import { Style } from '../..';
 
 const NavbarStyles: Style = {
     toolbar: {
-        // we must set height due to a bug where the child cannot inherit the min-height property of the parent:
-        // https://stackoverflow.com/questions/8468066/child-inside-parent-with-min-height-100-not-inheriting-height
-        height: '70px',
+        display: 'flex',
         justifyContent: 'space-between',
         width: {
             xs: '90%',
@@ -14,14 +12,39 @@ const NavbarStyles: Style = {
     },
     mdDown: {
         display: {
-            xs: 'flex',
+            xs: 'block',
             md: 'none',
         },
     },
     mdUp: {
         display: {
             xs: 'none',
-            md: 'flex',
+            md: 'block',
+        },
+    },
+    logoContainer: {
+        textDecoration: 'none !important',
+        display: 'flex',
+        color: 'white',
+        alignItems: 'center',
+        '&:hover': {
+            '& img': {
+                opacity: '0.9',
+            },
+            color: '#ef8a24',
+        },
+    },
+    logo: {
+        width: '45px',
+        height: '45px',
+        marginRight: '0.75rem',
+        cursor: 'pointer',
+    },
+    logoText: {
+        fontSize: {
+            md: '0.75rem',
+            lg: '1rem',
+            xl: '1.25rem',
         },
     },
 };

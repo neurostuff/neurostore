@@ -4,7 +4,7 @@ const mockCreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
     return (
         <>
             {props.isOpen && (
-                <div>
+                <div data-testid="mock-create-details-dialog">
                     <h1>{props.titleText}</h1>
                     <button
                         data-testid="mock-create-button"
