@@ -40,11 +40,13 @@ export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStor
     });
 
     return (studyAnalyses || []).sort((a, b) => {
-        const dateA = Date.parse(a.created_at || '');
-        const dateB = Date.parse(b.created_at || '');
-        if (isNaN(dateA) || isNaN(dateB)) return 0;
+        return (a.name || '').localeCompare(b.name || '');
 
-        return dateB - dateA;
+        // previously sorted by date: may want this again in the future
+        // const dateA = Date.parse(a.created_at || '');
+        // const dateB = Date.parse(b.created_at || '');
+        // if (isNaN(dateA) || isNaN(dateB)) return 0;
+        // return dateB - dateA;
     });
 };
 

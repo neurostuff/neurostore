@@ -15,9 +15,6 @@ const useCreateStudyset = () => {
                 queryClient.invalidateQueries('studysets');
                 enqueueSnackbar('Created new studyset successfully', { variant: 'success' });
             },
-            onError: () => {
-                enqueueSnackbar('There was an error creating the studyset', { variant: 'error' });
-            },
         }
     );
 };

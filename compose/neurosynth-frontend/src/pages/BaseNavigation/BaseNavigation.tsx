@@ -9,7 +9,6 @@ import ProjectPage from 'pages/Projects/ProjectPage/ProjectPage';
 import ExtractionPage from 'pages/ExtractionPage/ExtractionPage';
 import CurationImportPage from 'pages/CurationPage/CurationImportPage';
 import AnnotationsPage from 'pages/Annotations/AnnotationsPage/AnnotationsPage';
-import StudyAnnotationsPage from 'pages/Annotations/StudyAnnotationsPage/StudyAnnotationsPage';
 import ProjectStudyPage from 'pages/Studies/ProjectStudyPage/ProjectStudyPage';
 
 const StudysetPage = React.lazy(() => import('../Studysets/StudysetPage/StudysetPage'));
@@ -73,11 +72,6 @@ const BaseNavigation: React.FC = (_props) => {
                 <Route path="/projects/:projectId/extraction/annotations" exact>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <AnnotationsPage />
-                    </Box>
-                </Route>
-                <Route path="/projects/:projectId/extraction/studies/:studyId/annotations" exact>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <StudyAnnotationsPage />
                     </Box>
                 </Route>
                 <Route

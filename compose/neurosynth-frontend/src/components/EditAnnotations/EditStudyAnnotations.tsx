@@ -151,7 +151,7 @@ const EditStudyAnnotations: React.FC = (props) => {
                     allowAddColumn={false}
                     allowRemoveColumns={false}
                     onChange={handleChange}
-                    size="9rem"
+                    size="9.5rem"
                 />
             </Box>
             <LoadingButton

@@ -1,19 +1,14 @@
 import HotTable, { HotTableProps } from '@handsontable/react';
 import { Box } from '@mui/material';
-import { EPropertyType, IMetadataRowModel, getType } from 'components/EditMetadata';
-import AddMetadataRow from 'components/EditMetadata/EditMetadataRow/AddMetadataRow';
+import styles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable.module.css';
+import { EPropertyType } from 'components/EditMetadata';
+import { CellCoords } from 'handsontable';
 import { CellChange, CellValue, ChangeSource } from 'handsontable/common';
 import { registerAllModules } from 'handsontable/registry';
 import { ColumnSettings } from 'handsontable/settings';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import styles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable.module.css';
-import { Cancel } from '@mui/icons-material';
-import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
-import { AnnotationNoteValue, NoteKeyType } from '../helpers/utils';
 import { numericValidator } from 'handsontable/validators';
-import { renderToString } from 'react-dom/server';
-import { CellCoords } from 'handsontable';
-import React from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { AnnotationNoteValue, NoteKeyType } from '../helpers/utils';
 
 const booleanValidator = (value: CellValue, callback: (isValid: boolean) => void) => {
     const isValid =
