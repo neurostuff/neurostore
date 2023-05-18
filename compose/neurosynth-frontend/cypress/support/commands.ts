@@ -115,51 +115,52 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
             client_id,
             client_secret,
         },
-    })
-        .then(({ body }) => {
-            const { access_token, expires_in, id_token } = body;
-            const jwtObject = jwt.decode(id_token, { complete: true }) as jwt.Jwt;
-            const [header, payload, signature] = id_token.split('.');
+    }).then(({ body }) => {
+        const { access_token, expires_in, id_token } = body;
+        const jwtObject = jwt.decode(id_token, { complete: true }) as jwt.Jwt;
+        const [header, payload, signature] = id_token.split('.');
 
-            // localstorage object that is used by auth0.
-            // we need this to ensure that auth0-react state gets updated
-            const session = {
-                body: {
-                    access_token,
-                    audience,
-                    client_id,
-                    decodedToken: {
-                        claims: {
-                            ...(jwtObject.payload as jwt.JwtPayload),
-                            __raw: id_token,
-                        },
-                        encoded: {
-                            header,
-                            payload,
-                            signature,
-                        },
-                        header: jwtObject.header,
-                        user: jwtObject.payload as jwt.JwtPayload,
+        // localstorage object that is used by auth0.
+        // we need this to ensure that auth0-react state gets updated
+        const session = {
+            body: {
+                access_token,
+                audience,
+                client_id,
+                decodedToken: {
+                    claims: {
+                        ...(jwtObject.payload as jwt.JwtPayload),
+                        __raw: id_token,
                     },
-                    expires_in,
-                    id_token,
-                    scope: 'openid profile email read:current_user update:current_user_metadata delete:current_user_metadata create:current_user_metadata create:current_user_device_credentials delete:current_user_device_credentials update:current_user_identities',
-                    token_type: 'Bearer',
+                    encoded: {
+                        header,
+                        payload,
+                        signature,
+                    },
+                    header: jwtObject.header,
+                    user: jwtObject.payload as jwt.JwtPayload,
                 },
-                expiresAt: Math.floor(Date.now() / 1000) + expires_in,
-            };
+                expires_in,
+                id_token,
+                scope: 'openid profile email read:current_user update:current_user_metadata delete:current_user_metadata create:current_user_metadata create:current_user_device_credentials delete:current_user_device_credentials update:current_user_identities',
+                token_type: 'Bearer',
+            },
+            expiresAt: Math.floor(Date.now() / 1000) + expires_in,
+        };
 
-            /**
-             * There are a lot of resources online regarding integration of auth0 and cypress; however, very few of them work.
-             * Finally managed to get it working by adding this in localstorage, which seems to be checked by auth0-react to determine
-             * the isAuthenticated state. This code is in tandem with setting the auth0 provider cacheLocation=localstorage.
-             */
-            cy.addToLocalStorage(
-                `@@auth0spajs@@::${client_id}::${audience}::openid profile email`,
-                JSON.stringify(session)
-            );
-        })
-        .visit('/');
+        /**
+         * There are a lot of resources online regarding integration of auth0 and cypress; however, very few of them work.
+         * Finally managed to get it working by adding this in localstorage, which seems to be checked by auth0-react to determine
+         * the isAuthenticated state. This code is in tandem with setting the auth0 provider cacheLocation=localstorage.
+         */
+        cy.addToLocalStorage(
+            `@@auth0spajs@@::${client_id}::${audience}::openid profile email`,
+            JSON.stringify(session)
+        );
+    });
+
+    // this will always run after the previous commands are complete
+    cy.visit('/');
 });
 
 Cypress.Commands.add('clearSessionStorage', () => {
@@ -173,6 +174,8 @@ Cypress.Commands.add('addToLocalStorage', (key: string, value: string) => {
         window.localStorage.setItem(key, value);
     });
 });
+
+Cypress.Commands.overwrite('log', (subject, message) => cy.task('log', message));
 
 declare global {
     namespace Cypress {

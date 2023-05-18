@@ -27,7 +27,6 @@ from neurostore.models.data import StudysetStudy, _check_type
 
 
 def ingest_neurovault(verbose=False, limit=20, overwrite=False):
-
     # Store existing studies for quick lookup
     all_studies = all_studies = {
         s.doi: s for s in Study.query.filter_by(source="neurovault").all()
@@ -37,7 +36,7 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False):
         if data["DOI"] in all_studies and not overwrite:
             print("Skipping {} (already exists)...".format(data["DOI"]))
             return
-        collection_id = data.pop('id')
+        collection_id = data.pop("id")
         s = Study(
             name=data.pop("name", None),
             description=data.pop("description", None),
@@ -46,7 +45,9 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False):
             publication=data.pop("journal_name", None),
             source_id=collection_id,
             metadata_=data,
-            source="neurovault")
+            source="neurovault",
+            level="group",
+        )
 
         space = data.get("coordinate_space", None)
         # Process images
@@ -59,10 +60,10 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False):
         for img in data["results"]:
             aname = img["name"]
             if aname not in analyses:
-                condition = img.get('cognitive_paradigm_cogatlas')
+                condition = img.get("cognitive_paradigm_cogatlas")
                 analysis_kwargs = {
                     "name": aname,
-                    "description": img['description'],
+                    "description": img["description"],
                     "study": s,
                 }
 
@@ -70,8 +71,11 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False):
                 if condition:
                     cond = next(
                         (
-                            cond for cond in list(conditions) + Condition.query.all()
-                            if cond.name == condition), Condition(name=condition)
+                            cond
+                            for cond in list(conditions) + Condition.query.all()
+                            if cond.name == condition
+                        ),
+                        Condition(name=condition),
                     )
                     conditions.add(cond)
 
@@ -94,7 +98,9 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False):
                 data=img,
                 filename=op.basename(img["file"]),
                 add_date=parse_date(img["add_date"]),
-                entities=[Entity(level="group", label=analysis.name, analysis=analysis)]
+                entities=[
+                    Entity(level="group", label=analysis.name, analysis=analysis)
+                ],
             )
             images.append(image)
 
@@ -109,11 +115,16 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False):
     while True:
         data = requests.get(url).json()
         url = data["next"]
-        studies = list(filter(None, [
-            add_collection(c)
-            for c in data["results"]
-            if c["DOI"] is not None and c["number_of_images"]
-        ]))
+        studies = list(
+            filter(
+                None,
+                [
+                    add_collection(c)
+                    for c in data["results"]
+                    if c["DOI"] is not None and c["number_of_images"]
+                ],
+            )
+        )
         db.session.add_all(studies)
         db.session.commit()
         count += len(studies)
@@ -123,23 +134,31 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False):
 
 def ingest_neurosynth(max_rows=None):
     coords_file = (
-        Path(__file__).parent.parent / "data" / "data-neurosynth_version-7_coordinates.tsv.gz"
+        Path(__file__).parent.parent
+        / "data"
+        / "data-neurosynth_version-7_coordinates.tsv.gz"
     )
     metadata_file = (
-        Path(__file__).parent.parent / "data" / "data-neurosynth_version-7_metadata.tsv.gz"
+        Path(__file__).parent.parent
+        / "data"
+        / "data-neurosynth_version-7_metadata.tsv.gz"
     )
 
-    feature_file = Path(__file__).parent.parent /\
-        "data" /\
-        "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz"
+    feature_file = (
+        Path(__file__).parent.parent
+        / "data"
+        / "data-neurosynth_version-7_vocab-terms_source-abstract_type-tfidf_features.npz"
+    )
 
-    vocab_file = Path(__file__).parent.parent /\
-        "data" /\
-        "data-neurosynth_version-7_vocab-terms_vocabulary.txt"
+    vocab_file = (
+        Path(__file__).parent.parent
+        / "data"
+        / "data-neurosynth_version-7_vocab-terms_vocabulary.txt"
+    )
 
     coord_data = pd.read_table(coords_file, dtype={"id": str})
     coord_data = coord_data.set_index("id")
-    metadata = pd.read_table(metadata_file, dtype={"id": str})
+    metadata = pd.read_table(metadata_file, dtype={"id": str, "doi": str})
     metadata = metadata.set_index("id")
     # load annotations
     features = sparse.load_npz(feature_file).todense()
@@ -158,14 +177,14 @@ def ingest_neurosynth(max_rows=None):
         pmid="21706013",
         doi="10.1038/nmeth.1635",
         authors="Yarkoni T, Poldrack RA, Nichols TE, Van Essen DC, Wager TD",
-        public=True
+        public=True,
     )
 
     studies = []
     to_commit = []
     all_studies = {s.doi: s for s in Study.query.filter_by(source="neurosynth").all()}
     with db.session.no_autoflush:
-        for (metadata_row, annotation_row) in zip(
+        for metadata_row, annotation_row in zip(
             metadata.itertuples(), annotations.itertuples(index=False)
         ):
             id_ = metadata_row.Index
@@ -182,9 +201,10 @@ def ingest_neurosynth(max_rows=None):
                 publication=metadata_row.journal,
                 metadata=md,
                 pmid=id_,
-                doi=metadata_row.doi,
+                doi=None if isinstance(metadata_row.doi, float) else metadata_row.doi,
                 source="neurosynth",
                 source_id=id_,
+                level="group",
             )
             analyses = []
             points = []
@@ -223,7 +243,7 @@ def ingest_neurosynth(max_rows=None):
 
         # collect notes (single annotations) for each analysis
         notes = []
-        for (metadata_row, annotation_row) in zip(
+        for metadata_row, annotation_row in zip(
             metadata.itertuples(), annotations.itertuples(index=False)
         ):
             id_ = metadata_row.Index
@@ -245,19 +265,24 @@ def ingest_neurosynth(max_rows=None):
                 )
 
         # add notes to annotation
-        annot.note_keys = {k: _check_type(v) for k, v in annotation_row._asdict().items()}
+        annot.note_keys = {
+            k: _check_type(v) for k, v in annotation_row._asdict().items()
+        }
         annot.annotation_analyses = notes
         db.session.add(annot)
         db.session.commit()
 
 
 def ingest_neuroquery(max_rows=None):
-
     coords_file = (
-        Path(__file__).parent.parent / "data" / "data-neuroquery_version-1_coordinates.tsv.gz"
+        Path(__file__).parent.parent
+        / "data"
+        / "data-neuroquery_version-1_coordinates.tsv.gz"
     )
     metadata_file = (
-        Path(__file__).parent.parent / "data" / "data-neuroquery_version-1_metadata.tsv.gz"
+        Path(__file__).parent.parent
+        / "data"
+        / "data-neuroquery_version-1_metadata.tsv.gz"
     )
 
     coord_data = pd.read_table(coords_file, dtype={"id": str})
@@ -277,6 +302,7 @@ def ingest_neuroquery(max_rows=None):
             source="neuroquery",
             pmid=id_,
             source_id=id_,
+            level="group",
         )
         analyses = []
         points = []

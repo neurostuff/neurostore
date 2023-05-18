@@ -1,125 +1,111 @@
-import { Typography, Box, Tabs, Tab, Divider } from '@mui/material';
-import React, { useState, SyntheticEvent, useEffect } from 'react';
-import CreateDetailsDialog from '../../Dialogs/CreateDetailsDialog/CreateDetailsDialog';
+import { Add, ExpandMore } from '@mui/icons-material';
+import {
+    Accordion,
+    AccordionDetails,
+    AccordionSummary,
+    Box,
+    Button,
+    Divider,
+    Typography,
+} from '@mui/material';
+import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
+import { useAddOrUpdateAnalysis, useNumStudyAnalyses } from 'pages/Studies/StudyStore';
+import { useState } from 'react';
 import EditAnalysesStyles from './EditAnalyses.styles';
+import EditAnalysesList from './EditAnalysesList/EditAnalysesList';
 import EditAnalysis from './EditAnalysis/EditAnalysis';
-import AddIcon from '@mui/icons-material/Add';
-import { useCreateAnalysis } from 'hooks';
-import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import { AnalysisReturn } from 'neurostore-typescript-sdk';
 
-const EditAnalyses: React.FC<{ analyses: AnalysisReturn[] | undefined; studyId: string }> =
-    React.memo((props) => {
-        const [analyses, setAnalyses] = useState<AnalysisReturn[]>(props.analyses || []);
-        const [selectedAnalysis, setSelectedAnalysis] = useState(0);
-        const [createDetailsDialogIsOpen, setCreateDetailsDialogIsOpen] = useState(false);
+const EditAnalyses: React.FC = (props) => {
+    const numAnalyses = useNumStudyAnalyses();
+    const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
+    const [selectedAnalysisId, setSelectedAnalysisId] = useState<string>();
+    const [createNewAnalysisDialogIsOpen, setCreateNewAnalysisDialogIsOpen] = useState(false);
 
-        const { isLoading, mutate } = useCreateAnalysis();
+    const handleCreateNewAnalysis = (name: string, description: string) => {
+        addOrUpdateAnalysis({
+            name,
+            description,
+            isNew: true,
+            conditions: [],
+        });
+    };
 
-        // we need to cache the analyses into an intermediate state in order to make sure that we do a check first
-        // so that our tab is not selecting an analysis that was just deleted
-        useEffect(() => {
-            if (!props.analyses) {
-                setAnalyses([]);
-            } else {
-                if (props.analyses.length === selectedAnalysis) {
-                    // if we have deleted the last analysis
-                    setSelectedAnalysis(props.analyses.length - 1);
-                }
-                setAnalyses(props.analyses);
-            }
-        }, [props.analyses, selectedAnalysis]);
+    const handleSelectAnalysis = (analysisId: string) => {
+        setSelectedAnalysisId(analysisId);
+    };
 
-        const handleTabChange = (_event: SyntheticEvent, newVal: number) => {
-            setSelectedAnalysis(newVal);
-        };
+    const handleOnDeleteAnalysis = () => {
+        setSelectedAnalysisId(undefined);
+    };
 
-        const handleCreateAnalysis = (name: string, description: string) => {
-            mutate({
-                name,
-                description,
-                study: props.studyId,
-            });
-        };
-
-        const hasAnalyses = !!analyses && analyses.length > 0;
-
-        return (
-            <>
-                <CreateDetailsDialog
-                    isOpen={createDetailsDialogIsOpen}
-                    titleText="Create new analysis"
-                    onCloseDialog={() => setCreateDetailsDialogIsOpen(false)}
-                    onCreate={handleCreateAnalysis}
-                />
-                <Box
-                    sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-end',
-                        marginBottom: '15px',
-                    }}
+    return (
+        <Box>
+            <Accordion elevation={0} defaultExpanded>
+                <AccordionSummary
+                    sx={EditAnalysesStyles.accordionSummary}
+                    expandIcon={<ExpandMore sx={EditAnalysesStyles.accordionExpandIcon} />}
                 >
-                    <Typography variant="h6">
-                        <b>Edit Analyses</b>
-                    </Typography>
-                    <LoadingButton
-                        isLoading={isLoading}
-                        loaderColor="secondary"
-                        color="primary"
-                        sx={{ width: '200px' }}
-                        onClick={() => setCreateDetailsDialogIsOpen(true)}
-                        variant="contained"
-                        startIcon={<AddIcon />}
-                        text="new analysis"
-                    />
-                </Box>
-
-                {hasAnalyses ? (
-                    <>
-                        <Divider />
-                        <Box sx={{ display: 'flex', flexDirection: 'row' }}>
-                            <Box sx={EditAnalysesStyles.matchingSibling}>
-                                <Tabs
-                                    scrollButtons
-                                    sx={EditAnalysesStyles.analysesTabs}
-                                    value={selectedAnalysis}
-                                    TabScrollButtonProps={{
-                                        sx: {
-                                            color: 'primary.main',
-                                        },
-                                    }}
-                                    onChange={handleTabChange}
-                                    orientation="vertical"
-                                    variant="scrollable"
-                                >
-                                    {(analyses as AnalysisReturn[]).map((analysis, index) => (
-                                        <Tab
-                                            sx={EditAnalysesStyles.tab}
-                                            key={analysis.id}
-                                            value={index}
-                                            label={analysis.name}
-                                        />
-                                    ))}
-                                </Tabs>
-                            </Box>
-                            <Box
-                                sx={[
-                                    EditAnalysesStyles.analysisContainer,
-                                    EditAnalysesStyles.heightDefiningSibling,
-                                ]}
+                    <Typography sx={{ fontWeight: 'bold' }}>Analyses</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                    <Box sx={{ width: '100%', margin: '0.5rem 0' }}>
+                        <Box
+                            sx={{
+                                marginBottom: '1rem',
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                            }}
+                        >
+                            {numAnalyses === 0 && (
+                                <Typography sx={{ color: 'warning.dark' }}>
+                                    There are no analyses for this study.
+                                </Typography>
+                            )}
+                            <CreateDetailsDialog
+                                titleText="Create new analysis"
+                                onCreate={handleCreateNewAnalysis}
+                                onCloseDialog={() => setCreateNewAnalysisDialogIsOpen(false)}
+                                isOpen={createNewAnalysisDialogIsOpen}
+                            />
+                            <Button
+                                onClick={() => setCreateNewAnalysisDialogIsOpen(true)}
+                                sx={{
+                                    width: '150px',
+                                    marginLeft: 'auto',
+                                }}
+                                variant="outlined"
+                                startIcon={<Add />}
                             >
-                                <EditAnalysis analysis={analyses[selectedAnalysis]} />
-                            </Box>
+                                analysis
+                            </Button>
                         </Box>
-                    </>
-                ) : (
-                    <Box component="span" sx={{ color: 'warning.dark' }}>
-                        No analyses for this study
+                        {numAnalyses > 0 && (
+                            <>
+                                <Divider />
+                                <Box sx={{ display: 'flex' }}>
+                                    <EditAnalysesList
+                                        selectedAnalysisId={selectedAnalysisId}
+                                        onSelectAnalysis={handleSelectAnalysis}
+                                    />
+                                    <Box
+                                        sx={{
+                                            padding: '1rem 0 1rem 1rem',
+                                            width: 'calc(100% - 250px - 1rem)',
+                                        }}
+                                    >
+                                        <EditAnalysis
+                                            onDeleteAnalysis={handleOnDeleteAnalysis}
+                                            analysisId={selectedAnalysisId}
+                                        />
+                                    </Box>
+                                </Box>
+                            </>
+                        )}
                     </Box>
-                )}
-            </>
-        );
-    });
+                </AccordionDetails>
+            </Accordion>
+        </Box>
+    );
+};
 
 export default EditAnalyses;

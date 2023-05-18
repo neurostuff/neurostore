@@ -12,6 +12,7 @@ from .data import (
     StudysetStudySchema,
     StudysetSnapshot,
     EntitySchema,
+    BooleanOrString,
 )
 
 from .auth import UserSchema
@@ -31,4 +32,5 @@ __all__ = [
     "StudysetStudySchema",
     "StudysetSnapshot",
     "EntitySchema",
+    "BooleanOrString",
 ]

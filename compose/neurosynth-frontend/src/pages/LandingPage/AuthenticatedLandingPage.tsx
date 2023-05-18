@@ -5,7 +5,6 @@ import AutoAwesomeMotionIcon from '@mui/icons-material/AutoAwesomeMotion';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import NeurosynthList from 'components/NeurosynthList/NeurosynthList';
 import { useGetMetaAnalyses, useGetStudies, useGetStudysets, useCreateStudyset } from 'hooks';
-// import { SearchCriteria } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
 import { useAuth0 } from '@auth0/auth0-react';
 import AuthenticatedLandingPageStyles from './AuthenticatedLandingPage.styles';
 import { useHistory } from 'react-router-dom';

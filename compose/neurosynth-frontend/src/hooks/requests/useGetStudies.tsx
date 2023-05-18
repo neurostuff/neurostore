@@ -1,12 +1,12 @@
-import { SearchCriteria } from 'pages/Studies/PublicStudiesPage/PublicStudiesPage';
+import { SearchCriteria, SearchDataType, Source } from 'pages/Studies/StudiesPage/StudiesPage';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
 const useGetStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: boolean) => {
     return useQuery(
         ['studies', { ...searchCriteria }],
-        () =>
-            API.NeurostoreServices.StudiesService.studiesGet(
+        () => {
+            return API.NeurostoreServices.StudiesService.studiesGet(
                 searchCriteria.genericSearchStr || undefined,
                 searchCriteria.sortBy,
                 searchCriteria.pageOfResults,
@@ -17,12 +17,15 @@ const useGetStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: boolea
                 searchCriteria.descriptionSearch || undefined,
                 undefined,
                 searchCriteria.showUnique,
-                searchCriteria.source,
+                searchCriteria.source === Source.ALL ? undefined : searchCriteria.source,
                 searchCriteria.authorSearch || undefined,
                 searchCriteria.userId,
-                searchCriteria.dataType,
-                searchCriteria.studysetOwner || undefined
-            ),
+                searchCriteria.dataType === SearchDataType.BOTH
+                    ? undefined
+                    : searchCriteria.dataType,
+                undefined
+            );
+        },
         {
             enabled,
             select: (res) => {
