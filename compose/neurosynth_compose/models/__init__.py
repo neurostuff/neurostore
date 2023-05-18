@@ -5,12 +5,15 @@ from .analysis import (
     Annotation,
     AnnotationReference,
     MetaAnalysis,
+    MetaAnalysisResult,
+    NeurovaultCollection,
+    NeurovaultFile,
+    NeurostoreStudy,
+    NeurostoreAnalysis,
     Project,
 )
 
-from .auth import (
-    User
-)
+from .auth import User
 
 __all__ = [
     "Specification",
@@ -19,6 +22,11 @@ __all__ = [
     "Annotation",
     "AnnotationReference",
     "MetaAnalysis",
+    "MetaAnalysisResult",
+    "NeurovaultCollection",
+    "NeurovaultFile",
+    "NeurostoreStudy",
+    "NeurostoreAnalysis",
     "Project",
     "User",
 ]

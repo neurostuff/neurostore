@@ -7,15 +7,16 @@ import os
 class Config(object):
     # SERVER_NAME = 'localhost'  # Set to external server name in production
 
-    MIGRATIONS_DIR = '/migrations/migrations'
+    MIGRATIONS_DIR = "/migrations/migrations"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = False
 
-    POSTGRES_HOST = os.environ.get('POSTGRES_HOST')
-    POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', '')
-    DB_NAME = 'neurostore'
-    SQLALCHEMY_DATABASE_URI = f"postgresql://postgres:" \
-        f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+    POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
+    POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
+    DB_NAME = "neurostore"
+    SQLALCHEMY_DATABASE_URI = (
+        f"postgresql://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+    )
     PROPAGATE_EXCEPTIONS = True
 
     GITHUB_CLIENT_ID = "github-id"
@@ -23,12 +24,12 @@ class Config(object):
     DANCE_SECRET_KEY = "temporary"
     JWT_SECRET_KEY = "also_temporary"
 
-    SECURITY_PASSWORD_HASH = 'pbkdf2_sha512'
-    SECURITY_PASSWORD_SALT = 'A_SECRET'
+    SECURITY_PASSWORD_HASH = "pbkdf2_sha512"
+    SECURITY_PASSWORD_SALT = "A_SECRET"
 
 
 class ProductionConfig(Config):
-    ENV = 'production'
+    ENV = "production"
 
     AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")
     AUTH0_CLIENT_SECRET = os.environ.get("AUTH0_CLIENT_SECRET")
@@ -36,10 +37,11 @@ class ProductionConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = "https://neurosynth.us.auth0.com/oauth/token"
     AUTH0_AUTH_URL = "https://neurosynth.us.auth0.com/authorize"
     AUTH0_API_AUDIENCE = "https://neurostore.org/api/"
+    COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
 
 
 class StagingConfig(Config):
-    ENV = 'staging'
+    ENV = "staging"
     DEBUG = True
 
     AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")
@@ -48,10 +50,11 @@ class StagingConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = "https://neurosynth-staging.us.auth0.com/oauth/token"
     AUTH0_AUTH_URL = "https://neurosynth-staging.us.auth0.com/authorize"
     AUTH0_API_AUDIENCE = "https://neurostore.xyz/api/"
+    COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
 
 
 class DevelopmentConfig(Config):
-    ENV = 'development'
+    ENV = "development"
     DEBUG = True
 
     AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")
@@ -60,10 +63,11 @@ class DevelopmentConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = "https://dev-mui7zm42.us.auth0.com/oauth/token"
     AUTH0_AUTH_URL = "https://dev-mui7zm42.us.auth0.com/authorize"
     AUTH0_API_AUDIENCE = "localhost"
+    COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
 
 
 class TestingConfig(Config):
-    ENV = 'testing'
+    ENV = "testing"
     TESTING = True
 
     AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")
@@ -72,14 +76,16 @@ class TestingConfig(Config):
     AUTH0_ACCESS_TOKEN_URL = "https://dev-mui7zm42.us.auth0.com/oauth/token"
     AUTH0_AUTH_URL = "https://dev-mui7zm42.us.auth0.com/authorize"
     AUTH0_API_AUDIENCE = "localhost"
+    COMPOSE_AUTH0_CLIENT_ID = os.environ.get("COMPOSE_AUTH0_CLIENT_ID")
 
 
 class DockerTestConfig(TestingConfig):
-    DB_NAME = 'test_db'
-    POSTGRES_HOST = os.environ.get('POSTGRES_HOST')
-    POSTGRES_PASSWORD = os.environ.get('POSTGRES_PASSWORD', '')
-    SQLALCHEMY_DATABASE_URI = f'postgresql://postgres:' \
-        f'{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}'
+    DB_NAME = "test_db"
+    POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
+    POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
+    SQLALCHEMY_DATABASE_URI = (
+        f"postgresql://postgres:" f"{POSTGRES_PASSWORD}@{POSTGRES_HOST}:5432/{DB_NAME}"
+    )
 
 
 class TravisConfig(TestingConfig):

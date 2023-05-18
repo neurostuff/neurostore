@@ -1,0 +1,7 @@
+.group-title-node > .react-flow__handle {
+    opacity: 0 !important;
+}
+
+/* .abc > .react-flow__handle {
+    background: purple !important;
+} */
