@@ -34,6 +34,11 @@ def test_create(auth_client, user_data, endpoint, model, schema):
     if payload.get("run_key"):
         del payload["run_key"]
 
+    if isinstance(example, MetaAnalysis):
+        del payload["neurostore_analysis_id"]
+        del payload["cached_annotation"]
+        del payload["cached_studyset"]
+
     resp = auth_client.post(f"/api/{endpoint}", data=payload)
 
     assert resp.status_code == 200

@@ -409,11 +409,14 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             nv_upload_group = group(nv_upload_tasks)
             nv_upload_results = nv_upload_group.apply_async()
 
-            # get the neurostore study
-            ns_analysis = NeurostoreAnalysis(
-                neurostore_study=result.meta_analysis.project.neurostore_study,
-                meta_analysis=result.meta_analysis,
-            )
+            # get the neurostore analysis
+            if result.meta_analysis.neurostore_analysis:
+                ns_analysis = result.meta_analysis.neurostore_analysis
+            else:
+                ns_analysis = NeurostoreAnalysis(
+                    neurostore_study=result.meta_analysis.project.neurostore_study,
+                    meta_analysis=result.meta_analysis,
+                )
 
             # when the images are uploaded, put the data on neurostore
             def celery_ns_analysis(output, ns_analysis, cluster_table, nv_collection):
@@ -421,6 +424,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                     ns_analysis, cluster_table, nv_collection
                 )
 
+            # callback for creating analysis after neurovault uploads
             cb_ns_analysis = partial(
                 celery_ns_analysis,
                 ns_analysis=ns_analysis,
