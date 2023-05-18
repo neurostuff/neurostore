@@ -82,6 +82,9 @@ const EditStudyDetails: React.FC = React.memo((props) => {
                     </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                         <TextField
+                            onWheel={(event) => {
+                                event.preventDefault();
+                            }}
                             label="year"
                             sx={{ width: '49%', marginBottom: '1rem' }}
                             type="number"
