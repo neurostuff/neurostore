@@ -7,8 +7,8 @@ from ..database import db
 from ..models import NeurovaultFile
 
 
-@shared_task.task(name="neurovault.upload", bind=True)
-def file_upload_neurovault(self, flask_app, fpath, id):
+@shared_task(name="neurovault.upload", bind=True)
+def file_upload_neurovault(self, fpath, id):
     from pynv import Client
 
     try:
