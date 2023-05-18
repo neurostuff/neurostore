@@ -112,6 +112,7 @@ def test_result_upload(auth_client, app, db, meta_analysis_cached_result_files):
     )
 
     headers = {"Compose-Upload-Key": f"{run_key}"}
+    # with pre-existing snapshots
     resp = auth_client.post(
         "/api/meta-analysis-results",
         data={
