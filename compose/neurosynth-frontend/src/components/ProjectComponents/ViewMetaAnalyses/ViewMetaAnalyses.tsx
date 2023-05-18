@@ -1,6 +1,7 @@
 import { Add } from '@mui/icons-material';
 import { Box, Button, Card, CardActions, CardContent, Typography } from '@mui/material';
 import CreateMetaAnalysisSpecificationDialogBase from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetMetaAnalyses } from 'hooks';
 import { useState } from 'react';
 import { useHistory, useParams, useRouteMatch } from 'react-router-dom';
@@ -9,7 +10,7 @@ const ViewMetaAnalyses: React.FC = () => {
     const path = useRouteMatch();
     const history = useHistory();
     const { projectId }: { projectId: string } = useParams();
-    const { data } = useGetMetaAnalyses(projectId);
+    const { data, isLoading, isError } = useGetMetaAnalyses(projectId);
     const [createMetaAnalysisDialogIsOpen, setCreateMetaAnalysisDialogIsOpen] = useState(false);
     const handleUpdate = (id?: string) => {
         if (!id) return;
@@ -17,7 +18,7 @@ const ViewMetaAnalyses: React.FC = () => {
     };
 
     return (
-        <Box>
+        <StateHandlerComponent isLoading={isLoading} isError={isError}>
             <CreateMetaAnalysisSpecificationDialogBase
                 isOpen={createMetaAnalysisDialogIsOpen}
                 onCloseDialog={() => setCreateMetaAnalysisDialogIsOpen(false)}
@@ -91,7 +92,7 @@ const ViewMetaAnalyses: React.FC = () => {
                     );
                 })}
             </Box>
-        </Box>
+        </StateHandlerComponent>
     );
 };
 
