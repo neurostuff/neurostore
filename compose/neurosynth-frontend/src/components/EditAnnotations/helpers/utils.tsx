@@ -92,6 +92,11 @@ export const annotationNotesToHotData = (
         .sort((a, b) => {
             const firstStudyId = a.study as string;
             const secondStudyId = b.study as string;
+
+            if (a.study === b.study) {
+                return (a.analysis_name || '').localeCompare(b.analysis_name || '');
+            }
+
             return firstStudyId.localeCompare(secondStudyId);
         })
         .forEach((annotationNote, index) => {

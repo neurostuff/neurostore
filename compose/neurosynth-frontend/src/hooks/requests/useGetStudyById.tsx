@@ -11,11 +11,12 @@ const useGetStudyById = (studyId: string) => {
                 const analyses = res.data.analyses as AnalysisReturn[];
 
                 const sortedAnalyses = (analyses || []).sort((a, b) => {
-                    const dateA = Date.parse(a.created_at || '');
-                    const dateB = Date.parse(b.created_at || '');
-                    if (isNaN(dateA) || isNaN(dateB)) return 0;
-
-                    return dateB - dateA;
+                    return (a.name || '').localeCompare(b.name || '');
+                    // this sorts by creation date: we may want this later
+                    // const dateA = Date.parse(a.created_at || '');
+                    // const dateB = Date.parse(b.created_at || '');
+                    // if (isNaN(dateA) || isNaN(dateB)) return 0;
+                    // return dateB - dateA;
                 });
 
                 res.data.analyses = sortedAnalyses;

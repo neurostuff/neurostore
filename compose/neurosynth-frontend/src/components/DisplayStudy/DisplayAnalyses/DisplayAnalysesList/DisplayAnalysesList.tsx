@@ -31,25 +31,6 @@ const DisplayAnalysesList: React.FC<{
                         selected={props.selectedIndex === index}
                         onSelectAnalysis={(id, i) => props.onSelectAnalysisIndex(i)}
                     />
-                    // <ListItem key={analysis.id || index} disablePadding divider>
-                    //     <ListItemButton
-                    //         onClick={() => props.onSelectAnalysisIndex(index)}
-                    //         selected={props.selectedIndex === index}
-                    //     >
-                    //         <ListItemText
-                    //             sx={{ wordBreak: 'break-all' }}
-                    //             primary={analysis.name || ''}
-                    //             secondary={analysis.description || ''}
-                    //         />
-                    //         {(analysis.points?.length || 0) === 0 && (
-                    //             <Tooltip title="There is a potential issue" placement="top">
-                    //                 <ListItemIcon>
-                    //                     <ErrorOutlineIcon color="warning" />
-                    //                 </ListItemIcon>
-                    //             </Tooltip>
-                    //         )}
-                    //     </ListItemButton>
-                    // </ListItem>
                 ))}
             </List>
         </Box>
