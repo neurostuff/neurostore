@@ -175,6 +175,9 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
                         placeholder="2393823"
                     />
                     <TextField
+                        onWheel={(event) => {
+                            event.preventDefault();
+                        }}
                         size="small"
                         onChange={handleUpdateForm}
                         sx={[{ marginLeft: '0.5rem' }]}
