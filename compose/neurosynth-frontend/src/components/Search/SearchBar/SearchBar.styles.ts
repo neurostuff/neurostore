@@ -23,7 +23,8 @@ const SearchBarStyles: Style = {
     },
     paper: {
         flexGrow: 1,
-        borderRadius: '0 !important',
+        borderTopLeftRadius: '0 !important',
+        borderBottomLeftRadius: '0 !important',
         borderLeft: 'none !important',
         justifyContent: 'center',
         display: 'flex',

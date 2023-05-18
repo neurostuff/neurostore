@@ -1,83 +1,52 @@
 from importlib import import_module
 
-from nimare.dataset import Dataset
+from nimare.nimads import Studyset, Annotation
 
 
-def _analysis_to_dict(ns_study, ns_analysis):
-    return {
-        'metadata': {
-                  'authors': ns_study['authors'],
-                  'journal': ns_study['publication'],
-                  'title': ns_study['name'],
-        },
-        'coords': {
-            'space': ns_analysis['points'][0]['space'],
-            'x': [p['coordinates'][0] for p in ns_analysis['points']],
-            'y': [p['coordinates'][1] for p in ns_analysis['points']],
-            'z': [p['coordinates'][2] for p in ns_analysis['points']],
-        }
-    }
+def load_specification(spec):
+    """Returns function to run analysis on dataset."""
+    est_mod = import_module(".".join(["nimare", "meta", spec["type"]]))
+    estimator = getattr(est_mod, spec["estimator"]["type"])
+    if spec["estimator"].get("args"):
+        if "kernel_transformer" in spec["estimator"].get("args"):
+            kernel_mod = import_module(".".join(["nimare", "meta", "kernel"]))
+            spec["estimator"]["args"]["kernel_transformer"] = getattr(
+                kernel_mod, spec["estimator"]["args"]["kernel_transformer"]
+            )
+        est_args = {**spec["estimator"]["args"]}
 
-
-def _study_to_dict(ns_study):
-    return {
-              'metadata': {
-                  'authors': ns_study['authors'],
-                  'journal': ns_study['publication'],
-                  'title': ns_study['name'],
-              },
-              'contrasts': {a['id']: _analysis_to_dict(ns_study, a) for a in ns_study['analyses']}
-    }
-
-
-def convert_neurostore_to_dict(studyset_neurostore):
-    return {s['id']: _study_to_dict(s) for s in studyset_neurostore['studies']}
-
-
-def create_workflow(spec):
-    """returns function to run analysis on dataset"""
-    est_mod = import_module('.'.join(['nimare', 'meta', spec['type']]))
-    estimator = getattr(est_mod, spec['estimator']['algorithm'])
-    if spec['estimator'].get('kernel_transformer'):
-        kern_mod = import_module('.'.join(['nimare', 'meta', 'kernel']))
-        kern = getattr(kern_mod, spec['estimator']['kernel_transformer'])
-        kern_args = spec['estimator'].copy()
-        del kern_args['algorithm']
-        del kern_args['kernel_transformer']
-        estimator_init = estimator(kern(**kern_args))
+        if est_args.get("**kwargs") is not None:
+            for k, v in est_args["**kwargs"].items():
+                est_args[k] = v
+            del est_args["**kwargs"]
+        estimator_init = estimator(**est_args)
     else:
         estimator_init = estimator()
 
-    if spec.get('corrector'):
-        cor_mod = import_module('.'.join(['nimare', 'correct']))
-        corrector = getattr(cor_mod, spec['corrector']['type'] + 'Corrector')
-        corrector_args = spec['corrector'].copy()
-        del corrector_args['type']
-        corrector_init = corrector(**corrector_args)
+    if spec.get("corrector"):
+        cor_mod = import_module(".".join(["nimare", "correct"]))
+        corrector = getattr(cor_mod, spec["corrector"]["type"] + "Corrector")
+        if spec["corrector"].get("args"):
+            cor_args = {**spec["corrector"]["args"]}
+            if cor_args.get("**kwargs") is not None:
+                for k, v in cor_args["**kwargs"].items():
+                    cor_args[k] = v
+                del cor_args["**kwargs"]
+            corrector_init = corrector(**cor_args)
+        else:
+            corrector_init = corrector()
     else:
         corrector_init = None
 
-    if corrector_init:
-        return lambda dset: corrector_init.transform(estimator_init.fit(dset))
-    else:
-        return lambda dset: estimator_init.fit(dset)
+    return estimator_init, corrector_init
 
 
-def filter_analyses(specification, annotation):
-    column = specification['filter']
-    keep_ids = []
-    for annot in annotation['notes']:
-        if annot['note'].get(column):
-            keep_ids.append(f"{annot['study']}-{annot['analysis']}")
-    return keep_ids
-
-
-def run_nimare(meta_analysis):
-    sset = Dataset(convert_neurostore_to_dict(meta_analysis['studyset']['snapshot']))
-    wf = create_workflow(meta_analysis['specification'])
-    selected_analyses = filter_analyses(
-        meta_analysis['specification'],
-        meta_analysis['annotation']['snapshot']
-    )
-    filtered_sset = sset.slice(selected_analyses)
-    return wf(filtered_sset)
+def process_bundle(studyset_dict, annotation_dict, specification_dict):
+    studyset = Studyset(studyset_dict)
+    annotation = Annotation(annotation_dict, studyset)
+    include = specification_dict["filter"]
+    analysis_ids = [n.analysis.id for n in annotation.notes if n.note[f"{include}"]]
+    filtered_studyset = studyset.slice(analyses=analysis_ids)
+    dataset = filtered_studyset.to_dataset()
+    estimator, corrector = load_specification(specification_dict)
+    return dataset, estimator, corrector

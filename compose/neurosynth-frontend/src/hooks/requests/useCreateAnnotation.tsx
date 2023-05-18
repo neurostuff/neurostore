@@ -31,7 +31,6 @@ const useCreateAnnotation = () => {
         {
             onSuccess: () => {
                 queryClient.invalidateQueries('annotations');
-                enqueueSnackbar('annotation created successfully', { variant: 'success' });
             },
             onError: () => {
                 enqueueSnackbar('there was an error creating the annotation', { variant: 'error' });

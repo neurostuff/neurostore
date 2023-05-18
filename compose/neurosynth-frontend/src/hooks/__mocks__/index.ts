@@ -94,6 +94,12 @@ const useGetAnnotationsByStudysetId = jest.fn().mockReturnValue({
     data: mockAnnotations(),
 });
 
+const useCreateProject = jest.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    mutate: jest.fn(),
+});
+
 const useIsMounted = () => {
     return {
         __esModule: true,
@@ -122,4 +128,5 @@ export {
     useGetStudysets,
     useUpdateStudy,
     useGetAnnotationsByStudysetId,
+    useCreateProject,
 };

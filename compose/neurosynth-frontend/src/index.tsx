@@ -7,6 +7,7 @@ import { Auth0Provider } from '@auth0/auth0-react';
 import { grey } from '@mui/material/colors';
 import { SystemStyleObject } from '@mui/system';
 import { BrowserRouter } from 'react-router-dom';
+import * as Sentry from '@sentry/react';
 
 export type Style = Record<string, SystemStyleObject>;
 export type ColorOptions =
@@ -46,9 +47,9 @@ const theme = createTheme({
             contrastText: '#ffffff',
         },
         warning: {
-            main: '#ffe66d',
-            dark: '#b2a14c',
-            contrastText: '#000000',
+            main: '#dfc23a',
+            dark: '#bfa73f',
+            contrastText: '#ffffff',
         },
         success: {
             main: '#4caf50',
@@ -92,6 +93,15 @@ const domain = process.env.REACT_APP_AUTH0_DOMAIN as string;
 const clientId = process.env.REACT_APP_AUTH0_CLIENT_ID as string;
 const audience = process.env.REACT_APP_AUTH0_AUDIENCE as string;
 const env = process.env.REACT_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
+
+if (env !== 'DEV') {
+    Sentry.init({
+        dsn: 'https://348a42291ed44c3baf7e2d94a0dfc08f@o4505036784992256.ingest.sentry.io/4505036786040832',
+        integrations: [new Sentry.BrowserTracing(), new Sentry.Replay()],
+        replaysSessionSampleRate: 0.5,
+        replaysOnErrorSampleRate: 1.0,
+    });
+}
 
 ReactDOM.render(
     <React.StrictMode>
