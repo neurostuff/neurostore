@@ -1,15 +1,11 @@
 import os
 from pathlib import Path
 
-from celery import Celery
+from flask import current_app as app
 
-from ..__init__ import create_app
+from ..core import celery_app
 from ..database import db
 from ..models import NeurovaultFile
-
-app = create_app()
-celery_app = Celery(app.import_name)
-app.app_context().push()
 
 
 @celery_app.task(name="neurovault.upload", bind=True)
@@ -40,7 +36,7 @@ def file_upload_neurovault(self, fpath, id):
             record.collection_id,
             fpath,
             # https://github.com/NeuroVault/NeuroVault/blob/e3dc3c7767af12a3a7574eda64dcc9b749da8728/neurovault/apps/statmaps/models.py#LL1409C5-L1421C6
-            modality="Other",  # no good way to determine if all inputs were of the same modality
+            modality="Other",  # no good way to determine if all inputs were the same modality
             # models.CharField(choices=
             # [
             # ('T', 'T map'),
