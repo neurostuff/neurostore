@@ -162,11 +162,12 @@ class AnnotationSchema(BaseSchema):
 class MetaAnalysisResultSchema(BaseSchema):
     meta_analysis_id = fields.String()
     cli_version = fields.String()
+    cli_args = fields.Dict()
     estimator = fields.Nested(EstimatorSchema)
     neurovault_collection = fields.Pluck("NeurovaultCollectionSchema", "id")
     studyset_snapshot = fields.Pluck("StudysetSchema", "snapshot", load_only=True)
     annotation_snapshot = fields.Pluck("AnnotationSchema", "snapshot", load_only=True)
-    neurostore_study = fields.Pluck("NeurostoreStudySchema", "id", load_only=True)
+    diagnostic_table = fields.String(dump_only=True)
 
     @post_load
     def process_data(self, data, **kwargs):
