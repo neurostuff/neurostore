@@ -1,27 +1,26 @@
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
+import { ColumnSettings } from 'handsontable/settings';
+import { useGetAnnotationById, useUpdateAnnotationById } from 'hooks';
+import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import {
     useInitProjectStoreIfRequired,
     useProjectExtractionAnnotationId,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import { Box } from '@mui/material';
-import { useGetAnnotationById, useUpdateAnnotationById } from 'hooks';
-import AnnotationsHotTable from './AnnotationsHotTable/AnnotationsHotTable';
+import { useInitStudyStoreIfRequired } from 'pages/Studies/StudyStore';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import AnnotationsHotTable from './AnnotationsHotTable/AnnotationsHotTable';
 import {
     AnnotationNoteValue,
     NoteKeyType,
     annotationNotesToHotData,
+    createColumns,
     getMergeCells,
     hotDataToAnnotationNotes,
     noteKeyArrToObj,
     noteKeyObjToArr,
 } from './helpers/utils';
-import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import { ColumnSettings } from 'handsontable/settings';
-import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
-import { createColumns } from './helpers/utils';
-import { useInitStudyStoreIfRequired } from 'pages/Studies/StudyStore';
 
 const hardCodedColumns = ['Study', 'Analysis'];
 
@@ -136,7 +135,6 @@ const EditAnnotations: React.FC = (props) => {
 
     return (
         <StateHandlerComponent isLoading={getAnnotationIsLoading} isError={isError}>
-            {/* <Box> */}
             <AnnotationsHotTable
                 {...initialAnnotationHotState}
                 allowAddColumn
@@ -145,21 +143,6 @@ const EditAnnotations: React.FC = (props) => {
                 onChange={handleChange}
                 size="fitToPage"
             />
-            {/* </Box> */}
-            {/* <Box
-                sx={{
-                    position: 'fixed',
-                    bottom: 0,
-                    zIndex: 999,
-                    width: {
-                        xs: '90%',
-                        md: '80%',
-                    },
-                    padding: '1rem 0 1.5rem 0',
-                    backgroundColor: 'white',
-                    textAlign: 'end',
-                }}
-            > */}
             <LoadingButton
                 size="large"
                 text="save"
@@ -171,7 +154,6 @@ const EditAnnotations: React.FC = (props) => {
                 sx={{ width: '300px' }}
                 onClick={handleClickSave}
             />
-            {/* </Box> */}
         </StateHandlerComponent>
     );
 };
