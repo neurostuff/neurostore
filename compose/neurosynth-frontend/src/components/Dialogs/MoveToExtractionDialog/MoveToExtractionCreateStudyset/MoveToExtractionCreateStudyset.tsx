@@ -3,7 +3,11 @@ import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { useCreateStudyset } from 'hooks';
 import { useSnackbar } from 'notistack';
-import { useUpdateExtractionMetadata } from 'pages/Projects/ProjectPage/ProjectStore';
+import {
+    useProjectDescription,
+    useProjectName,
+    useUpdateExtractionMetadata,
+} from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -12,11 +16,13 @@ const MoveToExtractionCreateStudyset: React.FC<{
 }> = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
     const updateExtractionMetadata = useUpdateExtractionMetadata();
+    const projectName = useProjectName();
+    const projectDescription = useProjectDescription();
     const { mutateAsync: createStudyset, isLoading: createStudysetIsLoading } = useCreateStudyset();
     const { enqueueSnackbar } = useSnackbar();
     const [studysetDetails, setStudysetDetails] = useState({
-        name: '',
-        description: '',
+        name: `Studyset for ${projectName}`,
+        description: projectDescription,
     });
 
     const handleCreateStudyset = async () => {
@@ -103,6 +109,7 @@ const MoveToExtractionCreateStudyset: React.FC<{
                 STUDYSET"
             </Typography>
             <TextField
+                value={studysetDetails.name}
                 onChange={(event) =>
                     setStudysetDetails((prev) => ({ ...prev, name: event.target.value }))
                 }
@@ -110,6 +117,7 @@ const MoveToExtractionCreateStudyset: React.FC<{
                 label="studyset name"
             />
             <TextField
+                value={studysetDetails.description}
                 onChange={(event) =>
                     setStudysetDetails((prev) => ({ ...prev, description: event.target.value }))
                 }
