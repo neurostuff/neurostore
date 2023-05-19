@@ -136,17 +136,17 @@ const EditAnnotations: React.FC = (props) => {
 
     return (
         <StateHandlerComponent isLoading={getAnnotationIsLoading} isError={isError}>
-            <Box>
-                <AnnotationsHotTable
-                    {...initialAnnotationHotState}
-                    allowAddColumn
-                    hardCodedReadOnlyCols={hardCodedColumns}
-                    allowRemoveColumns
-                    onChange={handleChange}
-                    size="full"
-                />
-            </Box>
-            <Box
+            {/* <Box> */}
+            <AnnotationsHotTable
+                {...initialAnnotationHotState}
+                allowAddColumn
+                hardCodedReadOnlyCols={hardCodedColumns}
+                allowRemoveColumns
+                onChange={handleChange}
+                size="fitToPage"
+            />
+            {/* </Box> */}
+            {/* <Box
                 sx={{
                     position: 'fixed',
                     bottom: 0,
@@ -159,19 +159,19 @@ const EditAnnotations: React.FC = (props) => {
                     backgroundColor: 'white',
                     textAlign: 'end',
                 }}
-            >
-                <LoadingButton
-                    size="large"
-                    text="save"
-                    disabled={!annotationIsEdited}
-                    isLoading={updateAnnotationIsLoading}
-                    loaderColor="secondary"
-                    color="primary"
-                    variant="contained"
-                    sx={{ width: '300px' }}
-                    onClick={handleClickSave}
-                />
-            </Box>
+            > */}
+            <LoadingButton
+                size="large"
+                text="save"
+                disabled={!annotationIsEdited}
+                isLoading={updateAnnotationIsLoading}
+                loaderColor="secondary"
+                color="primary"
+                variant="contained"
+                sx={{ width: '300px' }}
+                onClick={handleClickSave}
+            />
+            {/* </Box> */}
         </StateHandlerComponent>
     );
 };

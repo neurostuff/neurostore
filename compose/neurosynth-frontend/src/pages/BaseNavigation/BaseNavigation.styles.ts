@@ -9,7 +9,7 @@ const BaseNavigationStyles: Style = {
             xs: '90%',
             md: '80%',
         },
-        margin: '2% auto',
+        margin: '2rem auto',
     },
     curationPageContainer: {
         marginTop: `${curationPageMargin}rem`,
