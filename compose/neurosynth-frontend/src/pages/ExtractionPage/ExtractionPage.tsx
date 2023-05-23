@@ -203,7 +203,8 @@ const ExtractionPage: React.FC = (props) => {
                     <Box>
                         <Button
                             color="secondary"
-                            variant="outlined"
+                            variant="contained"
+                            disableElevation
                             onClick={() =>
                                 history.push(`/projects/${projectId}/extraction/annotations`)
                             }

@@ -22,6 +22,10 @@ const hotSettings: HotTableProps = {
     fixedColumnsStart: 2,
 };
 
+const convertRemToPx = (rem: number) => {
+    return rem * parseFloat(getComputedStyle(document.documentElement).fontSize);
+};
+
 registerAllModules();
 
 /**
@@ -46,39 +50,68 @@ const AnnotationsHotTable: React.FC<{
         noteKeys: [],
     });
     const { noteKeys, hotData, mergeCells, onChange, hotColumns, hardCodedReadOnlyCols } = props;
-    console.log('render');
     useEffect(() => {
         // make a copy as we don't want to modify the original
         hotStateRef.current.noteKeys = noteKeys.map((x) => ({ ...x }));
     }, [noteKeys]);
 
-    // set handsontable ref height if the (debouneced) window height changes.
+    // set handsontable ref height if the (debounced) window height changes.
     // Must do this via an eventListener to avoid react re renders clearing the HOT State
     useEffect(() => {
         let timeout: any;
+        let originalHOTHeight: number;
         const handleResize = () => {
             const currentWindowSize = window.innerHeight;
-            if (currentWindowSize) {
-                if (timeout) clearTimeout(timeout);
-                timeout = setTimeout(async () => {
-                    if (hotTableRef.current?.hotInstance) {
-                        if (props.size === 'full') {
-                            const navHeight = '64px';
-                            const breadCrumbHeight = '44px';
-                            const addMetadataHeight = '1rem + 40px + 25px';
-                            const bottomSaveButtonHeight = '2.5rem + 37px';
-                            const pageMarginHeight = '4rem';
-                            hotTableRef.current.hotInstance.updateSettings({
-                                height: `calc(${currentWindowSize}px - ${navHeight} - ${breadCrumbHeight} - (${addMetadataHeight}) - (${bottomSaveButtonHeight}) - ${pageMarginHeight})`,
-                            });
-                        } else {
-                            hotTableRef.current.hotInstance.updateSettings({
-                                height: `calc(${props.size})`,
-                            });
-                        }
+            if (!currentWindowSize) return;
+            if (timeout) clearTimeout(timeout);
+            timeout = setTimeout(async () => {
+                if (!hotTableRef.current?.hotInstance) return;
+
+                if (props.size === 'fitToPage') {
+                    const navHeight = 64;
+                    const breadCrumbHeight = 44;
+                    const addMetadataHeightPx = 40 + 25;
+                    const addMetadataHeightRem = 1;
+                    const pageMarginsRem = 4;
+                    const saveButton = 43;
+                    const tablePaddingRem = 1;
+
+                    const spaceTakenBySpreadsheetWithManyRows =
+                        currentWindowSize -
+                        navHeight -
+                        breadCrumbHeight -
+                        convertRemToPx(addMetadataHeightRem) -
+                        addMetadataHeightPx -
+                        convertRemToPx(pageMarginsRem) -
+                        saveButton -
+                        convertRemToPx(tablePaddingRem);
+
+                    const currHotTableHeight =
+                        document.getElementsByClassName('hot-container')[0]?.clientHeight || 0;
+
+                    // update original hotTableHeight with the initial non zero value
+                    if (originalHOTHeight === undefined && currHotTableHeight > 0) {
+                        originalHOTHeight = currHotTableHeight;
                     }
-                }, 200);
-            }
+
+                    if (
+                        currHotTableHeight > spaceTakenBySpreadsheetWithManyRows || // if the initial table exceeds the size of the page space
+                        currHotTableHeight < originalHOTHeight // for the case where we make the window bigger but its still smaller than the initial table size
+                    ) {
+                        hotTableRef.current.hotInstance.updateSettings({
+                            height: spaceTakenBySpreadsheetWithManyRows,
+                        });
+                    } else {
+                        hotTableRef.current.hotInstance.updateSettings({
+                            height: originalHOTHeight,
+                        });
+                    }
+                } else {
+                    hotTableRef.current.hotInstance.updateSettings({
+                        height: `calc(${props.size})`,
+                    });
+                }
+            }, 200);
         };
         window.addEventListener('resize', handleResize);
         handleResize();
@@ -194,6 +227,7 @@ const AnnotationsHotTable: React.FC<{
         <Box>
             {props.allowAddColumn && (
                 <Box
+                    className="neurosynth-annotation-component"
                     sx={{
                         display: 'table',
                         height: '100%',
@@ -207,10 +241,11 @@ const AnnotationsHotTable: React.FC<{
                         onAddMetadataRow={handleAddHotColumn}
                         showMetadataValueInput={false}
                         allowNoneOption={false}
+                        errorMessage="cannot add annotation"
                     />
                 </Box>
             )}
-            <Box style={{ width: '100%', overflow: 'hidden' }}>
+            <Box className="hot-container" style={{ width: '100%', marginBottom: '1rem' }}>
                 {hotData.length > 0 ? (
                     <HotTable
                         {...hotSettings}
