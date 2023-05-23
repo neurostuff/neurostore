@@ -153,11 +153,14 @@ class StudysetSchema(BaseSchema):
     neurostore_id = fields.Pluck(
         StudysetReferenceSchema, "id", attribute="studyset_reference"
     )
+    url = fields.String(dump_only=True)
 
     @post_dump
     def create_neurostore_url(self, data, **kwargs):
         if data.get("neurostore_id", None):
             data['url'] = "/".join([NS_BASE, "studysets", data['neurostore_id']])
+        else:
+            data['url'] = None
         return data
 
 
@@ -170,11 +173,14 @@ class AnnotationSchema(BaseSchema):
     cached_studyset_id = fields.Pluck(
         StudysetSchema, "id", load_only=True, attribute="studyset"
     )
+    url = fields.String(dump_only=True)
 
     @post_dump
     def create_neurostore_url(self, data, **kwargs):
         if data.get("neurostore_id", None):
             data['url'] = "/".join([NS_BASE, "annotations", data['neurostore_id']])
+        else:
+            data['url'] = None
         return data
 
 
@@ -240,6 +246,9 @@ class MetaAnalysisSchema(BaseSchema):
             data['neurostore_url'] = "/".join(
                 [NS_BASE, "analyses", data['neurostore_analysis']['neurostore_id']]
             )
+        else:
+            data['neurostore_url'] = None
+
         return data
 
 
@@ -252,6 +261,7 @@ class NeurovaultFileSchema(BaseSchema):
     file = BytesField()
     name = fields.String()
     map_type = fields.String()
+    url = fields.String(dump_only=True)
     cognitive_contrast_cogatlas = fields.String()
     cognitive_contrast_cogatlas_id = fields.String()
     cognitive_paradigm_cogatlas = fields.String()
@@ -261,6 +271,8 @@ class NeurovaultFileSchema(BaseSchema):
     def create_neurovault_url(self, data, **kwargs):
         if data.get("image_id", None):
             data['url'] = "/".join([NV_BASE, "images", data['image_id']])
+        else:
+            data['url'] = None
         return data
 
 
@@ -319,4 +331,6 @@ class ProjectSchema(BaseSchema):
             data['neurostore_url'] = "/".join(
                 [NS_BASE, "studies", data['neurostore_study']['neurostore_id']]
             )
+        else:
+            data['neurostore_url'] = None
         return data
