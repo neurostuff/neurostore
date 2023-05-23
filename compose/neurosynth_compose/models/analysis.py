@@ -98,12 +98,7 @@ class MetaAnalysis(BaseMixin, db.Model):
     run_key = db.Column(
         db.Text, default=generate_api_key
     )  # the API key to use for upload to not have to login
-    neurostore_id = db.Column(
-        db.Text,
-        db.ForeignKey("neurostore_analyses.neurostore_id"),
-        unique=True,
-        nullable=True,
-    )
+
     specification = relationship("Specification", backref=backref("meta_analyses"))
     studyset = relationship("Studyset", backref=backref("meta_analyses"), lazy="joined")
     annotation = relationship(
@@ -121,8 +116,6 @@ class MetaAnalysisResult(BaseMixin, db.Model):
     method_description = db.Column(db.Text)  # description of the method applied
     diagnostic_table = db.Column(db.Text)
     meta_analysis = relationship("MetaAnalysis", backref=backref("results"))
-    status = db.Column(db.Text, default="PENDING")
-    __table_args__ = (db.CheckConstraint(status.in_(["OK", "FAILED", "PENDING"])),)
 
 
 class NeurovaultCollection(BaseMixin, db.Model):
@@ -170,6 +163,7 @@ class NeurostoreStudy(BaseMixin, db.Model):
     exception = db.Column(db.Text)
     traceback = db.Column(db.Text)
     status = db.Column(db.Text, default="PENDING")
+    project_id = db.Column(db.Text, db.ForeignKey("projects.id"))
     project = db.relationship(
         "Project",
         backref=backref("neurostore_study", uselist=False),
@@ -186,6 +180,9 @@ class NeurostoreAnalysis(BaseMixin, db.Model):
     exception = db.Column(db.Text)
     traceback = db.Column(db.Text)
     status = db.Column(db.Text, default="PENDING")
+    meta_analysis_id = db.Column(
+        db.Text, db.ForeignKey("meta_analyses.id"), unique=True
+    )
     neurostore_study_id = db.Column(
         db.Text, db.ForeignKey("neurostore_studies.neurostore_id")
     )
@@ -206,11 +203,7 @@ class Project(BaseMixin, db.Model):
     provenance = db.Column(db.JSON)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     public = db.Column(db.Boolean, default=False)
-    neurostore_id = db.Column(
-        db.Text,
-        db.ForeignKey("neurostore_studies.neurostore_id"),
-        unique=True,
-    )
+
     user = relationship("User", backref=backref("projects"))
 
 
