@@ -395,14 +395,14 @@ def user_data(app, db, mock_add_users):
             )
 
             ns_study = NeurostoreStudy(neurostore_id=generate_id())
-            ns_analysis = NeurostoreAnalysis(
-                neurostore_id=generate_id(), neurostore_study=ns_study
-            )
 
             to_commit.extend(
-                [studyset, annotation, specification, ns_study, ns_analysis]
+                [studyset, annotation, specification, ns_study]
             )
             for public in [True, False]:
+                ns_analysis = NeurostoreAnalysis(
+                    neurostore_id=generate_id(), neurostore_study=ns_study
+                )
                 meta_analysis = MetaAnalysis(
                     name=user.id + "'s meta analysis",
                     user=user,
@@ -425,7 +425,7 @@ def user_data(app, db, mock_add_users):
                     public=public,
                 )
                 to_commit.extend(
-                    [meta_analysis, project, empty_project]
+                    [meta_analysis, project, empty_project, ns_analysis]
                 )
 
         db.session.add_all(to_commit)

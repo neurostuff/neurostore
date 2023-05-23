@@ -33,9 +33,15 @@ def test_create(auth_client, user_data, endpoint, model, schema):
         payload["cached_annotation_id"] = example.annotation.id
     if payload.get("run_key"):
         del payload["run_key"]
+    if payload.get("url"):
+        del payload["url"]
+    if payload.get("neurostore_url"):
+        del payload["neurostore_url"]
+    if payload.get("neurostore_study"):
+        del payload["neurostore_study"]
 
     if isinstance(example, MetaAnalysis):
-        del payload["neurostore_analysis_id"]
+        del payload["neurostore_analysis"]
         del payload["cached_annotation"]
         del payload["cached_studyset"]
 
