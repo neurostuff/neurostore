@@ -80,7 +80,6 @@ const getHotTableInsertionIndices = (selectedCoords: [number, number, number, nu
             insertBelowIndex: 0,
         };
 
-    // [startRow, startCol, endRow, endCol]
     let topMostIndex = selectedCoords[0][0]; // target startRow of first selected coord
     let bottomMostIndex = selectedCoords[selectedCoords.length - 1][2]; // target endRow of last selected coord
 
@@ -174,21 +173,8 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
         updatePoints(props.analysisId, updatedPoints);
     };
 
-    // startCol: 0
-    // valueIndex: 0, 1, 2
-
-    // startCol: 1
-    // valueIndex: 0, 1
-
-    // startcol: 2
-    // valueIndex: 0
-
     const handleBeforePaste = (data: any[][], coords: RangeType[]) => {
         if (!points) return false;
-
-        console.log({ data, coords });
-
-        // if (coord)
 
         data.forEach((dataRow, rowIndex) => {
             dataRow.forEach((value, valueIndex) => {
