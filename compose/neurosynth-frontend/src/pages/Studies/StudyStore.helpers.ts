@@ -21,15 +21,15 @@ export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStor
             isNew: false,
         }));
 
-        const parsedPoints: IStorePoint[] = (parsedAnalysis.points as PointReturn[]).map(
-            ({ entities, ...args }) => ({
+        const parsedPoints: IStorePoint[] = (parsedAnalysis.points as PointReturn[])
+            .map(({ entities, ...args }) => ({
                 ...args,
                 x: (args.coordinates || [])[0],
                 y: (args.coordinates || [])[1],
                 z: (args.coordinates || [])[2],
                 isNew: false,
-            })
-        );
+            }))
+            .sort((a, b) => (a.id || '').localeCompare(b.id || ''));
 
         return {
             ...parsedAnalysis,

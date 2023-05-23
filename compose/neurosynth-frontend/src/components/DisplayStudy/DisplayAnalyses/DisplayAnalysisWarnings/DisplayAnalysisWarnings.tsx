@@ -27,8 +27,7 @@ const DisplayAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
 
     const noPoints = (points?.length || 0) === 0;
     const allCoordinatesAreMNI = (points || []).every((x) => {
-        const coordinates = x.coordinates || [0, 0, 0];
-        return isCoordinateMNI(coordinates[0], coordinates[1], coordinates[2]);
+        return isCoordinateMNI(x.x || 0, x.y || 0, x.z || 0);
     });
 
     return (
