@@ -1,5 +1,5 @@
 import { HotTable } from '@handsontable/react';
-import { Box, Link, Typography } from '@mui/material';
+import { Box, FormControl, InputLabel, Link, MenuItem, Select, Typography } from '@mui/material';
 import InputNumberDialog from 'components/Dialogs/InputNumberDialog/InputNumberDialog';
 import styles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable.module.css';
 import { CellChange, CellValue, ChangeSource, RangeType } from 'handsontable/common';
@@ -28,7 +28,7 @@ const nonEmptyNumericValidator = (value: CellValue, callback: (isValid: boolean)
     }
 };
 
-const hotTableColHeaders = ['X', 'Y', 'Z', 'Statistic', 'Space'];
+const hotTableColHeaders = ['X', 'Y', 'Z', 'Value', 'Spacial Extent of Cluster', 'Is Sub Cluster'];
 const hotTableColumnSettings: ColumnSettings[] = [
     {
         validator: nonEmptyNumericValidator,
@@ -51,6 +51,11 @@ const hotTableColumnSettings: ColumnSettings[] = [
     {
         className: styles.string,
         data: 'kind',
+        type: 'text',
+    },
+    {
+        className: styles.string,
+        data: 'space',
         type: 'text',
     },
     {
@@ -270,6 +275,34 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
 
     return (
         <Box sx={{ width: '100%' }}>
+            <Box
+                sx={{
+                    margin: '1rem 0',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    width: '550px',
+                }}
+            >
+                <FormControl sx={{ width: '250px' }} size="small" fullWidth>
+                    <InputLabel id="num-col-label">Statistic</InputLabel>
+                    <Select label="Map Type">
+                        <MenuItem value="T">T Map</MenuItem>
+                        <MenuItem value="Z">Z Map</MenuItem>
+                        <MenuItem value="F">F Map</MenuItem>
+                        <MenuItem value="X2">Chi squared map</MenuItem>
+                        <MenuItem value="P">P map (given null hypothesis)</MenuItem>
+                    </Select>
+                </FormControl>
+                <FormControl sx={{ width: '250px' }} size="small" fullWidth>
+                    <InputLabel id="num-col-label">Space</InputLabel>
+                    <Select label="Space">
+                        <MenuItem value="MNI">MNI</MenuItem>
+                        <MenuItem value="TAL">Talairach</MenuItem>
+                        <MenuItem value="Other">Other</MenuItem>
+                        <MenuItem value="Unknown">Unknown</MenuItem>
+                    </Select>
+                </FormControl>
+            </Box>
             <InputNumberDialog
                 isOpen={insertRowsDialogIsOpen}
                 dialogTitle="Enter number of rows to insert"
@@ -288,7 +321,7 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
                 allowRemoveColumn={false}
                 allowInvalid={false}
                 undo={false}
-                colWidths={[50, 50, 50, 150, 150]}
+                colWidths={[50, 50, 50, 150, 150, 100]}
                 manualColumnResize
                 height={height}
                 allowInsertColumn={false}
