@@ -1,8 +1,8 @@
 import { HotTable } from '@handsontable/react';
 import { Box, Link, Typography } from '@mui/material';
+import InputNumberDialog from 'components/Dialogs/InputNumberDialog/InputNumberDialog';
 import styles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable.module.css';
 import { CellChange, CellValue, ChangeSource, RangeType } from 'handsontable/common';
-import { Settings } from 'handsontable/plugins/contextMenu';
 import { registerAllModules } from 'handsontable/registry';
 import { ColumnSettings } from 'handsontable/settings';
 import {
@@ -13,7 +13,7 @@ import {
     useStudyAnalysisPoints,
     useUpdateAnalysisPoints,
 } from 'pages/Studies/StudyStore';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export const ROW_HEIGHT = 56;
 
@@ -34,33 +34,30 @@ const hotTableColumnSettings: ColumnSettings[] = [
         validator: nonEmptyNumericValidator,
         className: styles.number,
         data: 'x',
+        type: 'numeric',
     },
     {
         validator: nonEmptyNumericValidator,
         className: styles.number,
         data: 'y',
+        type: 'numeric',
     },
     {
         validator: nonEmptyNumericValidator,
         className: styles.number,
         data: 'z',
+        type: 'numeric',
     },
     {
         className: styles.string,
         data: 'kind',
+        type: 'text',
     },
     {
         className: styles.string,
         data: 'space',
+        type: 'text',
     },
-];
-
-const hotTableContextMenuSettings: Settings = [
-    'row_above',
-    'row_below',
-    'remove_row',
-    'copy',
-    'cut',
 ];
 
 const stripTags = (stringWhichMayHaveHTML: any) => {
@@ -76,32 +73,25 @@ const replaceString = (val: string) => {
     return val.replaceAll(new RegExp('֊|‐|‑|⁃|﹣|－|‒|–|—|﹘|−|-', 'g'), '-');
 };
 
-const handleBeforePaste = (data: any[][], coords: RangeType[]) => {
-    data.forEach((dataRow, rowIndex) => {
-        dataRow.forEach((value, valueIndex) => {
-            if (typeof value === 'number') return;
+const getHotTableInsertionIndices = (selectedCoords: [number, number, number, number][]) => {
+    if (selectedCoords.length === 0)
+        return {
+            insertAboveIndex: 0,
+            insertBelowIndex: 0,
+        };
 
-            const strippedData = stripTags(value); // strip all HTML tags that were copied over if they exist
-            const replacedData = replaceString(strippedData); // replace minus operator with javascript character code
-            const parsedData = parseInt(replacedData);
-            if (!isNaN(parsedData)) {
-                data[rowIndex][valueIndex] = parsedData;
-            }
-        });
+    // [startRow, startCol, endRow, endCol]
+    let topMostIndex = selectedCoords[0][0]; // target startRow of first selected coord
+    let bottomMostIndex = selectedCoords[selectedCoords.length - 1][2]; // target endRow of last selected coord
+
+    selectedCoords.forEach(([startRow, startCol, endRow, endCol]) => {
+        if (startRow < topMostIndex) topMostIndex = startRow;
+        if (endRow > bottomMostIndex) bottomMostIndex = endRow;
     });
-
-    return true;
-};
-
-const parseNumericString = (val: string | undefined): string | number | undefined => {
-    let newVal: string | number | undefined = val;
-    if (newVal === null || newVal === '') {
-        newVal = undefined;
-    } else if (typeof newVal === 'string') {
-        const parsedVal = parseInt(newVal);
-        newVal = isNaN(parsedVal) ? newVal : parsedVal;
-    }
-    return newVal;
+    return {
+        insertAboveIndex: topMostIndex,
+        insertBelowIndex: bottomMostIndex,
+    };
 };
 
 const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props) => {
@@ -111,6 +101,11 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
     const deletePoints = useDeleteAnalysisPoints();
     const setIsValid = useSetIsValid();
     const hotTableRef = useRef<HotTable>(null);
+    const hotTableMetadata = useRef<{ insertRowsAbove: boolean; insertedRowsViaPaste: any[][] }>({
+        insertRowsAbove: true,
+        insertedRowsViaPaste: [],
+    });
+    const [insertRowsDialogIsOpen, setInsertRowsDialogIsOpen] = useState(false);
 
     useEffect(() => {
         const hotData = hotTableRef.current?.hotInstance?.getData();
@@ -121,6 +116,45 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
         hotTableRef.current?.hotInstance?.validateCells();
     }, [points, setIsValid]);
 
+    useEffect(() => {
+        if (hotTableRef.current?.hotInstance) {
+            hotTableRef.current.hotInstance.updateSettings({
+                contextMenu: {
+                    items: {
+                        row_above: {
+                            name: 'Add rows above',
+                            callback: (key, options) => {
+                                hotTableMetadata.current.insertRowsAbove = true;
+                                setInsertRowsDialogIsOpen(true);
+                            },
+                        },
+                        row_below: {
+                            name: 'Add rows below',
+                            callback: (key, options) => {
+                                hotTableMetadata.current.insertRowsAbove = false;
+                                setInsertRowsDialogIsOpen(true);
+                            },
+                        },
+                        remove_row: {
+                            name: 'Remove row(s)',
+                        },
+                        copy: {
+                            name: 'Copy',
+                        },
+                        cut: {
+                            name: 'Cut',
+                        },
+                    },
+                },
+            });
+        }
+    }, [hotTableRef]);
+
+    // handsontable binds and updates to the data references themselves which means the original data is being mutated.
+    // as we use zustand, this may not be a good idea, so we implement handleAfterChange to
+    //      (1) make a request to zustand in order to make sure it is aware of the update that occurred,
+    //      (2) replace handsontable's data update with our own, and
+    //      (3) utilize handsontable's native validation (which does not get fired if we use beforeChange)
     const handleAfterChange = (changes: CellChange[] | null, source: ChangeSource) => {
         if (!props.analysisId) return;
         if (!changes) return;
@@ -131,23 +165,81 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
             if (!change) return;
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const [index, colName, _prev, next] = change;
-            const nextVal = parseNumericString(next);
             updatedPoints[index] = {
                 ...updatedPoints[index],
-                [colName]: nextVal,
+                [colName]: next,
             };
         });
 
         updatePoints(props.analysisId, updatedPoints);
+    };
 
-        // if the index is greater than the array size, new elements will be added into the array.
-        // we use this to our advantage to determine if rows were copy pasted
-        if (source === 'CopyPaste.paste' && updatedPoints.length > points.length) {
-            const pointsToCreate = updatedPoints.slice(points.length, updatedPoints.length);
-            createPoint(props.analysisId, pointsToCreate, points.length);
+    // startCol: 0
+    // valueIndex: 0, 1, 2
+
+    // startCol: 1
+    // valueIndex: 0, 1
+
+    // startcol: 2
+    // valueIndex: 0
+
+    const handleBeforePaste = (data: any[][], coords: RangeType[]) => {
+        if (!points) return false;
+
+        console.log({ data, coords });
+
+        // if (coord)
+
+        data.forEach((dataRow, rowIndex) => {
+            dataRow.forEach((value, valueIndex) => {
+                if (typeof value === 'number') return;
+                const strippedData = stripTags(value); // strip all HTML tags that were copied over if they exist
+                const replacedData = replaceString(strippedData); // replace minus operator with javascript character code
+
+                data[rowIndex][valueIndex] = replacedData;
+            });
+        });
+
+        let endRowIndex = 0;
+        coords.forEach(({ startCol, startRow, endCol, endRow }) => {
+            if (endRow > endRowIndex) endRowIndex = endRow;
+        });
+
+        if (endRowIndex + data.length > points.length) {
+            const rowsToCreate: any[][] = [];
+            for (let i = points.length - endRowIndex; i < data.length; i++) {
+                rowsToCreate.push(data[i]);
+            }
+
+            hotTableMetadata.current.insertedRowsViaPaste = rowsToCreate;
+        } else {
+            hotTableMetadata.current.insertedRowsViaPaste = [];
         }
 
-        return;
+        return true;
+    };
+
+    const handleBeforeCreateRow = (
+        index: number,
+        amount: number,
+        source?: ChangeSource | undefined
+    ) => {
+        if (props.analysisId && source === 'CopyPaste.paste') {
+            const analysisId = props.analysisId;
+            createPoint(
+                analysisId,
+                hotTableMetadata.current.insertedRowsViaPaste.map((row) => ({
+                    x: undefined,
+                    y: undefined,
+                    z: undefined,
+                    kind: undefined,
+                    space: undefined,
+                    isNew: true,
+                })),
+                index
+            );
+        }
+        return false;
     };
 
     const handleBeforeRemoveRow = (
@@ -164,31 +256,27 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
         return false;
     };
 
-    const handleBeforeCreateRow = (
-        index: number,
-        amount: number,
-        source?: ChangeSource | undefined
-    ) => {
-        if (!props.analysisId) return false;
+    const handleInsertRows = (numRows: number) => {
+        if (hotTableRef.current?.hotInstance && props.analysisId) {
+            const selectedCoords = hotTableRef.current.hotInstance.getSelected();
+            if (!selectedCoords) return;
 
-        if (source === 'ContextMenu.rowAbove' || source === 'ContextMenu.rowBelow') {
-            const addedRowIndex = source === 'ContextMenu.rowAbove' ? index - 1 : index + 1;
+            const { insertAboveIndex, insertBelowIndex } =
+                getHotTableInsertionIndices(selectedCoords);
             createPoint(
                 props.analysisId,
-                [
-                    {
-                        x: undefined,
-                        y: undefined,
-                        z: undefined,
-                        kind: undefined,
-                        space: undefined,
-                        isNew: true,
-                    },
-                ],
-                addedRowIndex
+                [...Array(numRows).keys()].map((num) => ({
+                    x: undefined,
+                    y: undefined,
+                    z: undefined,
+                    kind: undefined,
+                    space: undefined,
+                    isNew: true,
+                })),
+                hotTableMetadata.current.insertRowsAbove ? insertAboveIndex : insertBelowIndex + 1
             );
+            setInsertRowsDialogIsOpen(false);
         }
-        return false;
     };
 
     const totalHeight = 28 + (points?.length || 0) * 23;
@@ -196,13 +284,21 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
 
     return (
         <Box sx={{ width: '100%' }}>
+            <InputNumberDialog
+                isOpen={insertRowsDialogIsOpen}
+                dialogTitle="Enter number of rows to insert"
+                onCloseDialog={() => setInsertRowsDialogIsOpen(false)}
+                onInputNumber={(val) => handleInsertRows(val)}
+                dialogDescription=""
+            />
             <HotTable
                 ref={hotTableRef}
+                outsideClickDeselects={false}
                 licenseKey="non-commercial-and-evaluation"
-                afterChange={handleAfterChange}
+                afterChange={handleAfterChange} // beforeChange results in weird update issues so we use afterChange
                 beforePaste={handleBeforePaste}
-                beforeRemoveRow={handleBeforeRemoveRow}
                 beforeCreateRow={handleBeforeCreateRow}
+                beforeRemoveRow={handleBeforeRemoveRow}
                 allowRemoveColumn={false}
                 allowInvalid={false}
                 undo={false}
@@ -211,9 +307,8 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
                 height={height}
                 allowInsertColumn={false}
                 columns={hotTableColumnSettings}
-                contextMenu={hotTableContextMenuSettings}
                 colHeaders={hotTableColHeaders}
-                data={points || []}
+                data={[...(points || [])]}
             />
             {(!points || points.length === 0) && (
                 <Typography sx={{ color: 'warning.dark', marginTop: '0.5rem' }}>
