@@ -37,8 +37,8 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
 
     useEffect(() => {
         setDetails({
-            name: `${projectName} Meta Analysis`,
-            description: `this is a meta-analysis for ${projectName}`,
+            name: ``,
+            description: ``,
         });
     }, [projectName]);
 

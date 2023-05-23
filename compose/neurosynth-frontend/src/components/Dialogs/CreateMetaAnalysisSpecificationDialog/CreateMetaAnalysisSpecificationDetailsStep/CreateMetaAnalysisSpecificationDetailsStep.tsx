@@ -39,6 +39,7 @@ const CreateMetaAnalysisSpecificationDetailsStep: React.FC<{
                 prevButtonDisabled
                 onButtonClick={props.onNavigate}
                 nextButtonStyle="contained"
+                nextButtonDisabled={!props.details.name}
             />
         </Box>
     );
