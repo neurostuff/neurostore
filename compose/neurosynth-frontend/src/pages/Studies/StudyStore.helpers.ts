@@ -24,6 +24,8 @@ export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStor
         const parsedPoints: IStorePoint[] = (parsedAnalysis.points as PointReturn[])
             .map(({ entities, ...args }) => ({
                 ...args,
+                subpeak: args.subpeak ? args.subpeak : false,
+                cluster_size: args.cluster_size || undefined,
                 x: (args.coordinates || [])[0],
                 y: (args.coordinates || [])[1],
                 z: (args.coordinates || [])[2],

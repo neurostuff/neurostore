@@ -28,7 +28,7 @@ const nonEmptyNumericValidator = (value: CellValue, callback: (isValid: boolean)
     }
 };
 
-const hotTableColHeaders = ['X', 'Y', 'Z', 'Value', 'Spacial Extent of Cluster', 'Is Sub Cluster'];
+const hotTableColHeaders = ['X', 'Y', 'Z', 'Value', 'Cluster Size', 'Subpeak?'];
 const hotTableColumnSettings: ColumnSettings[] = [
     {
         validator: nonEmptyNumericValidator,
@@ -50,18 +50,18 @@ const hotTableColumnSettings: ColumnSettings[] = [
     },
     {
         className: styles.string,
-        data: 'kind',
-        type: 'text',
+        data: 'value.value',
+        type: 'numeric',
     },
     {
         className: styles.string,
-        data: 'space',
-        type: 'text',
+        data: 'cluster_size',
+        type: 'numeric',
     },
     {
         className: styles.string,
-        data: 'space',
-        type: 'text',
+        data: 'subpeak',
+        type: 'checkbox',
     },
 ];
 
@@ -174,7 +174,7 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
                 [colName]: next,
             };
         });
-
+        console.log(updatedPoints);
         updatePoints(props.analysisId, updatedPoints);
     };
 

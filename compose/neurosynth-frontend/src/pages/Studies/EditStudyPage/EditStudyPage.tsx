@@ -53,7 +53,10 @@ const EditStudyPage: React.FC = (props) => {
         if (!isValid) {
             // currently isValid is only used for coordinates.
             // If we want to check validity for multiple things in the future, we may have to create multiple isValid flags
-            snackbar.enqueueSnackbar('missing coordinates', { variant: 'warning' });
+            snackbar.enqueueSnackbar(
+                'A valid analysis needs to have values for statistic, space, and coordinates',
+                { variant: 'warning' }
+            );
             return;
         }
 
