@@ -1,4 +1,4 @@
-import { Box, Divider, TableCell, TableRow, Typography } from '@mui/material';
+import { Box, Divider, Link, TableCell, TableRow, Typography } from '@mui/material';
 import { getType } from 'components/EditMetadata';
 import { sortMetadataArrayFn } from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
@@ -8,6 +8,7 @@ import TextExpansion from 'components/TextExpansion/TextExpansion';
 import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import DisplayAnalyses from './DisplayAnalyses/DisplayAnalyses';
 import DisplayStudyStyles from './DisplayStudy.styles';
+import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
 
 const DisplayStudy: React.FC<StudyReturn> = (props) => {
     const { name, description, doi, pmid, authors, publication, metadata, analyses = [] } = props;
@@ -23,8 +24,26 @@ const DisplayStudy: React.FC<StudyReturn> = (props) => {
                 <Typography>{authors}</Typography>
                 <Box>
                     <Typography>{publication}</Typography>
-                    {doi && <Typography>DOI: {doi}</Typography>}
-                    {pmid && <Typography>PMID: {pmid}</Typography>}
+                    {doi && (
+                        <Link
+                            sx={{ display: 'block', margin: '5px 0' }}
+                            target="_blank"
+                            href={`https://doi.org/${doi}`}
+                            underline="hover"
+                        >
+                            DOI: {doi}
+                        </Link>
+                    )}
+                    {pmid && (
+                        <Link
+                            sx={{ display: 'block', margin: '5px 0' }}
+                            target="_blank"
+                            href={`${PUBMED_ARTICLE_URL_PREFIX}${pmid}`}
+                            underline="hover"
+                        >
+                            PMID: {pmid}
+                        </Link>
+                    )}
                 </Box>
                 <TextExpansion
                     text={description || ''}
