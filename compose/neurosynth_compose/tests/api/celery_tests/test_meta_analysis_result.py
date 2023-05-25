@@ -115,7 +115,7 @@ def test_result_upload(auth_client, app, db, meta_analysis_cached_result_files):
 
     # test with only images upload
     reduced_data = {
-        k: v for k, v in data.items() if k in ['statistical_maps', 'method_description']
+        k: v for k, v in data.items() if k in ["statistical_maps", "method_description"]
     }
     rresp = auth_client.post(
         "/api/meta-analysis-results",
@@ -146,7 +146,9 @@ def test_result_upload(auth_client, app, db, meta_analysis_cached_result_files):
         resp = auth_client.post(
             "/api/meta-analysis-results",
             data={
-                "meta_analysis_id": meta_analysis_cached_result_files["meta_analysis_id"]
+                "meta_analysis_id": meta_analysis_cached_result_files[
+                    "meta_analysis_id"
+                ]
             },
             headers=headers,
         )
@@ -154,7 +156,6 @@ def test_result_upload(auth_client, app, db, meta_analysis_cached_result_files):
         if i >= 5:
             break
         i += 1
-
 
     result_id = resp.json["id"]
     upload_result = auth_client.put(

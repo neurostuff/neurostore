@@ -331,8 +331,7 @@ class MetaAnalysesView(ObjectView, ListView):
             record = self.__class__.update_or_create(data)
             # create neurostore study
             ns_analysis = NeurostoreAnalysis(
-                meta_analysis=record,
-                neurostore_study=record.project.neurostore_study
+                meta_analysis=record, neurostore_study=record.project.neurostore_study
             )
             db.session.add(ns_analysis)
             db.session.commit()
