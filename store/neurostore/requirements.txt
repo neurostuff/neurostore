@@ -28,3 +28,4 @@ openapi-spec-validator~=0.3
 scipy~=1.9
 pytest~=7.1
 orjson~=3.8
+prance
