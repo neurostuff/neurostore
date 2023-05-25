@@ -7,6 +7,7 @@ requirements = [
     "flask_security",
     "email_validator",
     "flask-dance",
+    "Flask-CeleryExt",
     "sqlalchemy-utils",
     "flask-cors",
     "flask-sqlalchemy",

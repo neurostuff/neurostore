@@ -362,9 +362,9 @@ def user_data(app, db, mock_add_users):
         for user_info in mock_add_users.values():
             user = User.query.filter_by(id=user_info["id"]).first()
             studyset = Studyset(
-                    user=user,
-                    snapshot=serialized_studyset,
-                    studyset_reference=ss_ref,
+                user=user,
+                snapshot=serialized_studyset,
+                studyset_reference=ss_ref,
             )
 
             annotation = Annotation(
@@ -394,15 +394,13 @@ def user_data(app, db, mock_add_users):
                 filter="include",
             )
 
-            ns_study = NeurostoreStudy(neurostore_id=generate_id())
-            ns_analysis = NeurostoreAnalysis(
-                neurostore_id=generate_id(), neurostore_study=ns_study
-            )
-
-            to_commit.extend(
-                [studyset, annotation, specification, ns_study, ns_analysis]
-            )
+            to_commit.extend([studyset, annotation, specification])
             for public in [True, False]:
+                ns_study = NeurostoreStudy(neurostore_id=generate_id())
+                ns_analysis = NeurostoreAnalysis(
+                    neurostore_id=generate_id(),
+                    neurostore_study=ns_study,
+                )
                 meta_analysis = MetaAnalysis(
                     name=user.id + "'s meta analysis",
                     user=user,
@@ -420,13 +418,19 @@ def user_data(app, db, mock_add_users):
                     public=public,
                 )
 
+                ns_empty_study = NeurostoreStudy(neurostore_id=generate_id())
                 empty_project = Project(
                     name=user.id + "'s empty project",
                     public=public,
+                    neurostore_study=ns_empty_study,
                 )
-                to_commit.extend(
-                    [meta_analysis, project, empty_project]
-                )
+                to_commit.extend([
+                    meta_analysis,
+                    project,
+                    empty_project,
+                    ns_analysis,
+                    ns_empty_study,
+                ])
 
         db.session.add_all(to_commit)
         db.session.commit()
