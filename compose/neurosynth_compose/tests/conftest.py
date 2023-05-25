@@ -394,12 +394,12 @@ def user_data(app, db, mock_add_users):
                 filter="include",
             )
 
-            ns_study = NeurostoreStudy(neurostore_id=generate_id())
-
-            to_commit.extend([studyset, annotation, specification, ns_study])
+            to_commit.extend([studyset, annotation, specification])
             for public in [True, False]:
+                ns_study = NeurostoreStudy(neurostore_id=generate_id())
                 ns_analysis = NeurostoreAnalysis(
-                    neurostore_id=generate_id(), neurostore_study=ns_study
+                    neurostore_id=generate_id(),
+                    neurostore_study=ns_study,
                 )
                 meta_analysis = MetaAnalysis(
                     name=user.id + "'s meta analysis",
