@@ -494,6 +494,8 @@ class ProjectsView(ObjectView, ListView):
             record = self.__class__.update_or_create(data)
             # create neurostore study
             ns_study = NeurostoreStudy(project=record)
+            db.session.add(ns_study)
+            db.session.commit()
             create_or_update_neurostore_study(ns_study)
             db.session.add(ns_study)
             db.session.commit()

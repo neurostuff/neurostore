@@ -25,6 +25,8 @@ def test_create(auth_client, user_data, endpoint, model, schema):
     user = User.query.filter_by(name="user1").first()
     example = model.query.filter_by(user=user).first()
     payload = schema().dump(example)
+    if payload.get("id"):
+        del payload["id"]
     if payload.get("studyset"):
         del payload["studyset"]
         payload["cached_studyset_id"] = example.studyset.id
@@ -44,6 +46,9 @@ def test_create(auth_client, user_data, endpoint, model, schema):
         del payload["neurostore_analysis"]
         del payload["cached_annotation"]
         del payload["cached_studyset"]
+
+    if isinstance(example, Project):
+        del payload["meta_analyses"]
 
     resp = auth_client.post(f"/api/{endpoint}", data=payload)
 
