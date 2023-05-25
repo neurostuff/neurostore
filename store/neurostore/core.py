@@ -38,8 +38,9 @@ json_schema_handlers[""] = lambda uri: (
 
 # https://github.com/spec-first/connexion/issues/254#issuecomment-504699959
 def get_bundled_specs(main_file):
-    parser = prance.ResolvingParser(str(main_file.absolute()),
-                                    lazy=True, backend='openapi-spec-validator')
+    parser = prance.ResolvingParser(
+        str(main_file.absolute()), lazy=True, backend="openapi-spec-validator"
+    )
     parser.parse()
     return parser.specification
 
