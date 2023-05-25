@@ -321,6 +321,23 @@ class MetaAnalysesView(ObjectView, ListView):
         "results": "MetaAnalysisResultsView",
     }
 
+    def post(self):
+        try:
+            data = parser.parse(self.__class__._schema, request)
+        except ValidationError as e:
+            abort(422, description=f"input does not conform to specification: {str(e)}")
+
+        with db.session.no_autoflush:
+            record = self.__class__.update_or_create(data)
+            # create neurostore study
+            ns_analysis = NeurostoreAnalysis(
+                meta_analysis=record,
+                neurostore_study=record.project.neurostore_study
+            )
+            db.session.add(ns_analysis)
+            db.session.commit()
+        return self.__class__._schema().dump(record)
+
 
 @view_maker
 class AnnotationsView(ObjectView, ListView):
@@ -369,8 +386,8 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             # add snapshots to cached_studyset/annotation (if not already set)
             meta = MetaAnalysis.query.filter_by(id=data["meta_analysis_id"]).one()
             if meta.studyset.snapshot is None or meta.annotation.snapshot is None:
-                meta.studyset.snapshot = data.pop('studyset_snapshot', None)
-                meta.annotation.snapshot = data.pop('annotation_snapshot', None)
+                meta.studyset.snapshot = data.pop("studyset_snapshot", None)
+                meta.annotation.snapshot = data.pop("annotation_snapshot", None)
                 db.session.add(meta)
             record = self.__class__.update_or_create(data)
             # create neurovault collection
@@ -477,6 +494,8 @@ class ProjectsView(ObjectView, ListView):
             record = self.__class__.update_or_create(data)
             # create neurostore study
             ns_study = NeurostoreStudy(project=record)
+            db.session.add(ns_study)
+            db.session.commit()
             create_or_update_neurostore_study(ns_study)
             db.session.add(ns_study)
             db.session.commit()

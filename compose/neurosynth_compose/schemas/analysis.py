@@ -1,4 +1,11 @@
-from marshmallow import fields, Schema, utils, post_load, pre_dump
+from marshmallow import fields, Schema, utils, post_load, post_dump
+
+
+# neurovault api base URL
+NV_BASE = "https://neurovault.org/api"
+
+# neurostore api base URL
+NS_BASE = "https://neurostore.org/api"
 
 
 class BytesField(fields.Field):
@@ -146,6 +153,15 @@ class StudysetSchema(BaseSchema):
     neurostore_id = fields.Pluck(
         StudysetReferenceSchema, "id", attribute="studyset_reference"
     )
+    url = fields.String(dump_only=True)
+
+    @post_dump
+    def create_neurostore_url(self, data, **kwargs):
+        if data.get("neurostore_id", None):
+            data["url"] = "/".join([NS_BASE, "studysets", data["neurostore_id"]])
+        else:
+            data["url"] = None
+        return data
 
 
 class AnnotationSchema(BaseSchema):
@@ -157,6 +173,15 @@ class AnnotationSchema(BaseSchema):
     cached_studyset_id = fields.Pluck(
         StudysetSchema, "id", load_only=True, attribute="studyset"
     )
+    url = fields.String(dump_only=True)
+
+    @post_dump
+    def create_neurostore_url(self, data, **kwargs):
+        if data.get("neurostore_id", None):
+            data["url"] = "/".join([NS_BASE, "annotations", data["neurostore_id"]])
+        else:
+            data["url"] = None
+        return data
 
 
 class MetaAnalysisResultSchema(BaseSchema):
@@ -164,10 +189,11 @@ class MetaAnalysisResultSchema(BaseSchema):
     cli_version = fields.String()
     cli_args = fields.Dict()
     estimator = fields.Nested(EstimatorSchema)
-    neurovault_collection = fields.Pluck("NeurovaultCollectionSchema", "id")
+    neurovault_collection = fields.Nested("NeurovaultCollectionSchema", exclude=("id",))
     studyset_snapshot = fields.Pluck("StudysetSchema", "snapshot", load_only=True)
     annotation_snapshot = fields.Pluck("AnnotationSchema", "snapshot", load_only=True)
     diagnostic_table = fields.String(dump_only=True)
+    status = fields.String()
 
     @post_load
     def process_data(self, data, **kwargs):
@@ -183,12 +209,7 @@ class MetaAnalysisSchema(BaseSchema):
     description = fields.String(allow_none=True)
     provenance = fields.Dict(allow_none=True)
     specification_id = StringOrNested(SpecificationSchema, data_key="specification")
-    neurostore_analysis_id = fields.Pluck(
-        "NeurostoreAnalysisSchema",
-        "neurostore_id",
-        dump_only=True,
-        attribute="neurostore_analysis",
-    )
+    neurostore_analysis = fields.Nested("NeurostoreAnalysisSchema", dump_only=True)
     studyset = StringOrNested(
         StudysetSchema, metadata={"pluck": "neurostore_id"}, dump_only=True
     )
@@ -205,15 +226,35 @@ class MetaAnalysisSchema(BaseSchema):
         AnnotationSchema, "id", load_only=True, attribute="annotation"
     )
     cached_studyset = fields.Pluck(
-        StudysetSchema, "id", dump_only=True, attribute="studyset",
+        StudysetSchema,
+        "id",
+        dump_only=True,
+        attribute="studyset",
     )
     cached_annotation = fields.Pluck(
-        AnnotationSchema, "id", dump_only=True, attribute="annotation",
+        AnnotationSchema,
+        "id",
+        dump_only=True,
+        attribute="annotation",
     )
     run_key = fields.String(dump_only=True)
-    results = StringOrNested(
-        MetaAnalysisResultSchema, metadata={"pluck": "id"}, many=True
+    results = fields.Nested(
+        MetaAnalysisResultSchema, only=("id", "created_at", "updated_at"), many=True
     )
+    neurostore_url = fields.String(dump_only=True)
+
+    @post_dump
+    def create_neurostore_url(self, data, **kwargs):
+        if data.get("neurostore_analysis", None) and data["neurostore_analysis"].get(
+            "neurostore_id", None
+        ):
+            data["neurostore_url"] = "/".join(
+                [NS_BASE, "analyses", data["neurostore_analysis"]["neurostore_id"]]
+            )
+        else:
+            data["neurostore_url"] = None
+
+        return data
 
 
 class NeurovaultFileSchema(BaseSchema):
@@ -225,20 +266,32 @@ class NeurovaultFileSchema(BaseSchema):
     file = BytesField()
     name = fields.String()
     map_type = fields.String()
+    url = fields.String(dump_only=True)
     cognitive_contrast_cogatlas = fields.String()
     cognitive_contrast_cogatlas_id = fields.String()
     cognitive_paradigm_cogatlas = fields.String()
     cognitive_paradigm_cogatlas_id = fields.String()
 
+    @post_dump
+    def create_neurovault_url(self, data, **kwargs):
+        if data.get("image_id", None):
+            data["url"] = "/".join([NV_BASE, "images", data["image_id"]])
+        else:
+            data["url"] = None
+        return data
+
 
 class NeurovaultCollectionSchema(BaseSchema):
     collection_id = fields.String()
-    meta_analysis_id = fields.String()
-    files = fields.Nested(NeurovaultFileSchema, many=True)
-    result = fields.String(attribute="result_id", dump_only=True)
+    url = fields.String(dump_only=True)
+    files = fields.Nested(
+        NeurovaultFileSchema, exclude=("collection_id", "id"), many=True
+    )
 
-    @pre_dump
-    def test_fnc(self, data, **kwargs):
+    @post_dump
+    def create_neurovault_url(self, data, **kwargs):
+        if data.get("collection_id", None):
+            data["url"] = "/".join([NV_BASE, "collections", data["collection_id"]])
         return data
 
 
@@ -247,7 +300,7 @@ class NeurostoreStudySchema(BaseSchema):
     exception = fields.String()
     traceback = fields.String()
     status = fields.String()
-    result = fields.String(attribute="result_id", dump_only=True)
+    analyses = fields.Nested("NeurostoreAnalysisSchema", exclude=("id",), many=True)
 
 
 class NeurostoreAnalysisSchema(BaseSchema):
@@ -255,7 +308,6 @@ class NeurostoreAnalysisSchema(BaseSchema):
     exception = fields.String()
     traceback = fields.String()
     status = fields.String()
-    result = fields.String(attribute="result_id", dump_only=True)
 
 
 class ProjectSchema(BaseSchema):
@@ -274,3 +326,17 @@ class ProjectSchema(BaseSchema):
         load_only=True,
         many=True,
     )
+    neurostore_study = fields.Nested("NeurostoreStudySchema", exclude=("id",))
+    neurostore_url = fields.String(dump_only=True)
+
+    @post_dump
+    def create_neurostore_url(self, data, **kwargs):
+        if data.get("neurostore_study", None) and data["neurostore_study"].get(
+            "neurostore_id", None
+        ):
+            data["neurostore_url"] = "/".join(
+                [NS_BASE, "studies", data["neurostore_study"]["neurostore_id"]]
+            )
+        else:
+            data["neurostore_url"] = None
+        return data
