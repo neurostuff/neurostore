@@ -321,6 +321,23 @@ class MetaAnalysesView(ObjectView, ListView):
         "results": "MetaAnalysisResultsView",
     }
 
+    def post(self):
+        try:
+            data = parser.parse(self.__class__._schema, request)
+        except ValidationError as e:
+            abort(422, description=f"input does not conform to specification: {str(e)}")
+
+        with db.session.no_autoflush:
+            record = self.__class__.update_or_create(data)
+            # create neurostore study
+            ns_analysis = NeurostoreAnalysis(
+                meta_analysis=record,
+                neurostore_study=record.project.neurostore_study
+            )
+            db.session.add(ns_analysis)
+            db.session.commit()
+        return self.__class__._schema().dump(record)
+
 
 @view_maker
 class AnnotationsView(ObjectView, ListView):
