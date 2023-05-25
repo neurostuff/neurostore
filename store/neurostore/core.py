@@ -5,7 +5,6 @@ from authlib.integrations.flask_client import OAuth
 import connexion
 from connexion.json_schema import default_handlers as json_schema_handlers
 from connexion.resolver import MethodViewResolver
-from connexion import spec
 from flask_cors import CORS
 import prance
 
