@@ -40,7 +40,7 @@ const EditAnalysis: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void
                         Analysis Coordinates
                     </Typography>
                     <Tooltip
-                        title="To add or remove rows, right click on a cell to open the context menu. You must enter all coordinates in order to save the overall study."
+                        title="To add or remove rows, right click on a cell to open the context menu. You must enter all coordinates in order to save the overall study. Please note that the ordering of points is not guaranteed."
                         placement="right"
                     >
                         <HelpIcon color="primary" />
