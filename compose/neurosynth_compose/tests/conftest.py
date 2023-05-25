@@ -362,9 +362,9 @@ def user_data(app, db, mock_add_users):
         for user_info in mock_add_users.values():
             user = User.query.filter_by(id=user_info["id"]).first()
             studyset = Studyset(
-                    user=user,
-                    snapshot=serialized_studyset,
-                    studyset_reference=ss_ref,
+                user=user,
+                snapshot=serialized_studyset,
+                studyset_reference=ss_ref,
             )
 
             annotation = Annotation(
@@ -396,9 +396,7 @@ def user_data(app, db, mock_add_users):
 
             ns_study = NeurostoreStudy(neurostore_id=generate_id())
 
-            to_commit.extend(
-                [studyset, annotation, specification, ns_study]
-            )
+            to_commit.extend([studyset, annotation, specification, ns_study])
             for public in [True, False]:
                 ns_analysis = NeurostoreAnalysis(
                     neurostore_id=generate_id(), neurostore_study=ns_study
@@ -424,9 +422,7 @@ def user_data(app, db, mock_add_users):
                     name=user.id + "'s empty project",
                     public=public,
                 )
-                to_commit.extend(
-                    [meta_analysis, project, empty_project, ns_analysis]
-                )
+                to_commit.extend([meta_analysis, project, empty_project, ns_analysis])
 
         db.session.add_all(to_commit)
         db.session.commit()

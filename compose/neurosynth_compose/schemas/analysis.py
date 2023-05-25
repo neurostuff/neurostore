@@ -158,9 +158,9 @@ class StudysetSchema(BaseSchema):
     @post_dump
     def create_neurostore_url(self, data, **kwargs):
         if data.get("neurostore_id", None):
-            data['url'] = "/".join([NS_BASE, "studysets", data['neurostore_id']])
+            data["url"] = "/".join([NS_BASE, "studysets", data["neurostore_id"]])
         else:
-            data['url'] = None
+            data["url"] = None
         return data
 
 
@@ -178,9 +178,9 @@ class AnnotationSchema(BaseSchema):
     @post_dump
     def create_neurostore_url(self, data, **kwargs):
         if data.get("neurostore_id", None):
-            data['url'] = "/".join([NS_BASE, "annotations", data['neurostore_id']])
+            data["url"] = "/".join([NS_BASE, "annotations", data["neurostore_id"]])
         else:
-            data['url'] = None
+            data["url"] = None
         return data
 
 
@@ -226,10 +226,16 @@ class MetaAnalysisSchema(BaseSchema):
         AnnotationSchema, "id", load_only=True, attribute="annotation"
     )
     cached_studyset = fields.Pluck(
-        StudysetSchema, "id", dump_only=True, attribute="studyset",
+        StudysetSchema,
+        "id",
+        dump_only=True,
+        attribute="studyset",
     )
     cached_annotation = fields.Pluck(
-        AnnotationSchema, "id", dump_only=True, attribute="annotation",
+        AnnotationSchema,
+        "id",
+        dump_only=True,
+        attribute="annotation",
     )
     run_key = fields.String(dump_only=True)
     results = fields.Nested(
@@ -239,15 +245,14 @@ class MetaAnalysisSchema(BaseSchema):
 
     @post_dump
     def create_neurostore_url(self, data, **kwargs):
-        if (
-            data.get("neurostore_analysis", None)
-            and data["neurostore_analysis"].get("neurostore_id", None)
+        if data.get("neurostore_analysis", None) and data["neurostore_analysis"].get(
+            "neurostore_id", None
         ):
-            data['neurostore_url'] = "/".join(
-                [NS_BASE, "analyses", data['neurostore_analysis']['neurostore_id']]
+            data["neurostore_url"] = "/".join(
+                [NS_BASE, "analyses", data["neurostore_analysis"]["neurostore_id"]]
             )
         else:
-            data['neurostore_url'] = None
+            data["neurostore_url"] = None
 
         return data
 
@@ -270,21 +275,23 @@ class NeurovaultFileSchema(BaseSchema):
     @post_dump
     def create_neurovault_url(self, data, **kwargs):
         if data.get("image_id", None):
-            data['url'] = "/".join([NV_BASE, "images", data['image_id']])
+            data["url"] = "/".join([NV_BASE, "images", data["image_id"]])
         else:
-            data['url'] = None
+            data["url"] = None
         return data
 
 
 class NeurovaultCollectionSchema(BaseSchema):
     collection_id = fields.String()
     url = fields.String(dump_only=True)
-    files = fields.Nested(NeurovaultFileSchema, exclude=("collection_id", "id"), many=True)
+    files = fields.Nested(
+        NeurovaultFileSchema, exclude=("collection_id", "id"), many=True
+    )
 
     @post_dump
     def create_neurovault_url(self, data, **kwargs):
         if data.get("collection_id", None):
-            data['url'] = "/".join([NV_BASE, "collections", data['collection_id']])
+            data["url"] = "/".join([NV_BASE, "collections", data["collection_id"]])
         return data
 
 
@@ -324,13 +331,12 @@ class ProjectSchema(BaseSchema):
 
     @post_dump
     def create_neurostore_url(self, data, **kwargs):
-        if (
-            data.get("neurostore_study", None)
-            and data["neurostore_study"].get("neurostore_id", None)
+        if data.get("neurostore_study", None) and data["neurostore_study"].get(
+            "neurostore_id", None
         ):
-            data['neurostore_url'] = "/".join(
-                [NS_BASE, "studies", data['neurostore_study']['neurostore_id']]
+            data["neurostore_url"] = "/".join(
+                [NS_BASE, "studies", data["neurostore_study"]["neurostore_id"]]
             )
         else:
-            data['neurostore_url'] = None
+            data["neurostore_url"] = None
         return data

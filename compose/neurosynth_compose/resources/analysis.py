@@ -369,8 +369,8 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             # add snapshots to cached_studyset/annotation (if not already set)
             meta = MetaAnalysis.query.filter_by(id=data["meta_analysis_id"]).one()
             if meta.studyset.snapshot is None or meta.annotation.snapshot is None:
-                meta.studyset.snapshot = data.pop('studyset_snapshot', None)
-                meta.annotation.snapshot = data.pop('annotation_snapshot', None)
+                meta.studyset.snapshot = data.pop("studyset_snapshot", None)
+                meta.annotation.snapshot = data.pop("annotation_snapshot", None)
                 db.session.add(meta)
             record = self.__class__.update_or_create(data)
             # create neurovault collection
