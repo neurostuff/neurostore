@@ -424,13 +424,15 @@ def user_data(app, db, mock_add_users):
                     public=public,
                     neurostore_study=ns_empty_study,
                 )
-                to_commit.extend([
-                    meta_analysis,
-                    project,
-                    empty_project,
-                    ns_analysis,
-                    ns_empty_study,
-                ])
+                to_commit.extend(
+                    [
+                        meta_analysis,
+                        project,
+                        empty_project,
+                        ns_analysis,
+                        ns_empty_study,
+                    ]
+                )
 
         db.session.add_all(to_commit)
         db.session.commit()
