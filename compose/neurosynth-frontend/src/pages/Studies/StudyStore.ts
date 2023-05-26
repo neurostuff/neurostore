@@ -1,46 +1,25 @@
+import { useEffect } from 'react';
+import { persist } from 'zustand/middleware';
+import { useParams } from 'react-router-dom';
+import { create } from 'zustand';
+import {
+    IStoreAnalysis,
+    IStoreCondition,
+    IStorePoint,
+    IStoreStudy,
+    StudyDetails,
+    storeAnalysesToStudyAnalyses,
+    studyAnalysesToStoreAnalyses,
+} from './StudyStore.helpers';
 import { IMetadataRowModel } from 'components/EditMetadata';
+import API from 'utils/api';
 import {
     arrayToMetadata,
     metadataToArray,
 } from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
-import { setAnalysesInAnnotationAsIncluded } from 'components/ExtractionComponents/Ingestion/helpers/utils';
-import {
-    AnalysisReturn,
-    ConditionReturn,
-    PointReturn,
-    StudyReturn,
-} from 'neurostore-typescript-sdk';
-import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import API from 'utils/api';
+import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import { v4 as uuid } from 'uuid';
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { storeAnalysesToStudyAnalyses, studyAnalysesToStoreAnalyses } from './StudyStore.helpers';
-
-export interface IStorePoint extends PointReturn {
-    isNew: boolean;
-}
-
-export interface IStoreAnalysis extends Omit<AnalysisReturn, 'conditions' | 'points'> {
-    isNew: boolean;
-    conditions: IStoreCondition[];
-    points: IStorePoint[];
-}
-
-export interface IStoreCondition extends ConditionReturn {
-    isNew: boolean;
-}
-
-interface StoreStudy extends Omit<StudyReturn, 'metadata' | 'analyses'> {
-    metadata: IMetadataRowModel[];
-    analyses: IStoreAnalysis[];
-}
-
-export type StudyDetails = Pick<
-    StudyReturn,
-    'name' | 'description' | 'publication' | 'authors' | 'doi' | 'pmid' | 'year'
->;
+import { setAnalysesInAnnotationAsIncluded } from 'components/ExtractionComponents/Ingestion/helpers/utils';
 
 export type StudyStoreActions = {
     initStudyStore: (studyId?: string) => void;
@@ -75,7 +54,7 @@ type StudyStoreMetadata = {
 
 const useStudyStore = create<
     {
-        study: StoreStudy;
+        study: IStoreStudy;
         conditions: IStoreCondition[];
         storeMetadata: StudyStoreMetadata;
     } & StudyStoreActions
@@ -343,6 +322,8 @@ const useStudyStore = create<
                                 conditions: [],
                                 weights: [],
                                 points: [],
+                                pointSpace: undefined,
+                                pointStatistic: undefined,
                                 id: uuid(), // this is a temporary ID until one is assigned via neurostore
                             });
                         } else {
@@ -515,8 +496,8 @@ const useStudyStore = create<
                                 x: undefined,
                                 y: undefined,
                                 z: undefined,
-                                kind: undefined,
-                                space: undefined,
+                                cluster_size: undefined,
+                                subpeak: undefined,
                                 ...x,
                                 isNew: true,
                                 id: uuid(), // temporary ID until one is assigned by neurostore
@@ -683,6 +664,22 @@ export const useStudyAnalysisPoints = (analysisId?: string) =>
         const foundAnalysis = state.study.analyses.find((x) => x.id === analysisId);
         if (!foundAnalysis) return null;
         return foundAnalysis.points || null;
+    });
+export const useStudyAnalysisPointSpace = (analysisId?: string) =>
+    useStudyStore((state) => {
+        if (!analysisId) return null;
+
+        const foundAnalysis = state.study.analyses.find((x) => x.id === analysisId);
+        if (!foundAnalysis) return null;
+        return foundAnalysis.pointSpace;
+    });
+export const useStudyAnalysisPointStatistic = (analysisId?: string) =>
+    useStudyStore((state) => {
+        if (!analysisId) return null;
+
+        const foundAnalysis = state.study.analyses.find((x) => x.id === analysisId);
+        if (!foundAnalysis) return null;
+        return foundAnalysis.pointStatistic;
     });
 export const useNumStudyAnalyses = () => useStudyStore((state) => state.study.analyses.length);
 export const useStudyAnalyses = () => useStudyStore((state) => state.study.analyses);

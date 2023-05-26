@@ -8,7 +8,6 @@ import {
 } from '@mui/material';
 import React from 'react';
 import {
-    StudyDetails,
     useStudyAuthors,
     useStudyDescription,
     useStudyDOI,
@@ -20,6 +19,7 @@ import {
 } from 'pages/Studies/StudyStore';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import EditAnalysesStyles from '../EditAnalyses/EditAnalyses.styles';
+import { StudyDetails } from 'pages/Studies/StudyStore.helpers';
 
 const EditStudyDetails: React.FC = React.memo((props) => {
     const name = useStudyName();

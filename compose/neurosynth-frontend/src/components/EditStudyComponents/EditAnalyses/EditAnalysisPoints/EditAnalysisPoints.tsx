@@ -1,19 +1,20 @@
 import { HotTable } from '@handsontable/react';
-import { Box, FormControl, InputLabel, Link, MenuItem, Select, Typography } from '@mui/material';
+import { Box, Link, Typography } from '@mui/material';
 import InputNumberDialog from 'components/Dialogs/InputNumberDialog/InputNumberDialog';
 import styles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable.module.css';
 import { CellChange, CellValue, ChangeSource, RangeType } from 'handsontable/common';
 import { registerAllModules } from 'handsontable/registry';
 import { ColumnSettings } from 'handsontable/settings';
 import {
-    IStorePoint,
     useCreateAnalysisPoints,
     useDeleteAnalysisPoints,
     useSetIsValid,
     useStudyAnalysisPoints,
     useUpdateAnalysisPoints,
 } from 'pages/Studies/StudyStore';
+import { IStorePoint } from 'pages/Studies/StudyStore.helpers';
 import React, { useEffect, useRef, useState } from 'react';
+import EditAnalysisPointSpaceAndStatistic from './EditAnalysisPointSpaceAndStatistic/EditAnalysisPointSpaceAndStatistic';
 
 export const ROW_HEIGHT = 56;
 
@@ -28,7 +29,7 @@ const nonEmptyNumericValidator = (value: CellValue, callback: (isValid: boolean)
     }
 };
 
-const hotTableColHeaders = ['X', 'Y', 'Z', 'Value', 'Cluster Size', 'Subpeak?'];
+const hotTableColHeaders = ['X', 'Y', 'Z', 'Value', 'Cluster Size (mm^3)', 'Subpeak?'];
 const hotTableColumnSettings: ColumnSettings[] = [
     {
         validator: nonEmptyNumericValidator,
@@ -49,17 +50,17 @@ const hotTableColumnSettings: ColumnSettings[] = [
         type: 'numeric',
     },
     {
-        className: styles.string,
-        data: 'value.value',
+        className: styles.number,
+        data: 'value',
         type: 'numeric',
     },
     {
-        className: styles.string,
+        className: styles.number,
         data: 'cluster_size',
         type: 'numeric',
     },
     {
-        className: styles.string,
+        className: styles.boolean,
         data: 'subpeak',
         type: 'checkbox',
     },
@@ -169,12 +170,15 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
             if (!change) return;
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const [index, colName, _prev, next] = change;
+            let newVal = next;
+            if (newVal === null || newVal === '') {
+                newVal = undefined;
+            }
             updatedPoints[index] = {
                 ...updatedPoints[index],
-                [colName]: next,
+                [colName]: newVal,
             };
         });
-        console.log(updatedPoints);
         updatePoints(props.analysisId, updatedPoints);
     };
 
@@ -184,10 +188,14 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
         data.forEach((dataRow, rowIndex) => {
             dataRow.forEach((value, valueIndex) => {
                 if (typeof value === 'number') return;
+
+                // if (value === '') {
+                //     data[rowIndex][valueIndex] = undefined;
+                // } else {
                 const strippedData = stripTags(value); // strip all HTML tags that were copied over if they exist
                 const replacedData = replaceString(strippedData); // replace minus operator with javascript character code
-
                 data[rowIndex][valueIndex] = replacedData;
+                // }
             });
         });
 
@@ -210,6 +218,7 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
         return true;
     };
 
+    // this hook is fired on paste when a paste causes new rows to be created
     const handleBeforeCreateRow = (
         index: number,
         amount: number,
@@ -220,11 +229,8 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
             createPoint(
                 analysisId,
                 hotTableMetadata.current.insertedRowsViaPaste.map((row) => ({
-                    x: undefined,
-                    y: undefined,
-                    z: undefined,
-                    kind: undefined,
-                    space: undefined,
+                    subpeak: undefined,
+                    value: undefined,
                     isNew: true,
                 })),
                 index
@@ -257,11 +263,7 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
             createPoint(
                 props.analysisId,
                 [...Array(numRows).keys()].map((num) => ({
-                    x: undefined,
-                    y: undefined,
-                    z: undefined,
-                    kind: undefined,
-                    space: undefined,
+                    value: undefined,
                     isNew: true,
                 })),
                 hotTableMetadata.current.insertRowsAbove ? insertAboveIndex : insertBelowIndex + 1
@@ -275,34 +277,7 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
 
     return (
         <Box sx={{ width: '100%' }}>
-            <Box
-                sx={{
-                    margin: '1rem 0',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    width: '550px',
-                }}
-            >
-                <FormControl sx={{ width: '250px' }} size="small" fullWidth>
-                    <InputLabel id="num-col-label">Statistic</InputLabel>
-                    <Select label="Map Type">
-                        <MenuItem value="T">T Map</MenuItem>
-                        <MenuItem value="Z">Z Map</MenuItem>
-                        <MenuItem value="F">F Map</MenuItem>
-                        <MenuItem value="X2">Chi squared map</MenuItem>
-                        <MenuItem value="P">P map (given null hypothesis)</MenuItem>
-                    </Select>
-                </FormControl>
-                <FormControl sx={{ width: '250px' }} size="small" fullWidth>
-                    <InputLabel id="num-col-label">Space</InputLabel>
-                    <Select label="Space">
-                        <MenuItem value="MNI">MNI</MenuItem>
-                        <MenuItem value="TAL">Talairach</MenuItem>
-                        <MenuItem value="Other">Other</MenuItem>
-                        <MenuItem value="Unknown">Unknown</MenuItem>
-                    </Select>
-                </FormControl>
-            </Box>
+            <EditAnalysisPointSpaceAndStatistic analysisId={props.analysisId} />
             <InputNumberDialog
                 isOpen={insertRowsDialogIsOpen}
                 dialogTitle="Enter number of rows to insert"
@@ -319,7 +294,7 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
                 beforeCreateRow={handleBeforeCreateRow}
                 beforeRemoveRow={handleBeforeRemoveRow}
                 allowRemoveColumn={false}
-                allowInvalid={false}
+                allowInvalid={true}
                 undo={false}
                 colWidths={[50, 50, 50, 150, 150, 100]}
                 manualColumnResize
@@ -339,11 +314,7 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
                                 props.analysisId,
                                 [
                                     {
-                                        x: undefined,
-                                        y: undefined,
-                                        z: undefined,
-                                        kind: undefined,
-                                        space: undefined,
+                                        value: undefined,
                                         isNew: true,
                                     },
                                 ],

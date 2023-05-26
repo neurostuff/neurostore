@@ -212,16 +212,20 @@ const AnnotationsHotTable: React.FC<{
         }
     };
 
-    const intialHotColumnHeaders = [
+    const initialHotColumnHeaders = [
         ...hardCodedReadOnlyCols,
         ...noteKeys.map((col) =>
             createColumnHeader(
                 col.key,
                 col.type,
-                props.allowRemoveColumns ? handleRemoveHotColumn : undefined
+                props.allowRemoveColumns && col.key !== 'included'
+                    ? handleRemoveHotColumn
+                    : undefined
             )
         ),
     ];
+
+    console.log(initialHotColumnHeaders);
 
     return (
         <Box>
@@ -254,7 +258,7 @@ const AnnotationsHotTable: React.FC<{
                         ref={hotTableRef}
                         preventOverflow="horizontal"
                         mergeCells={mergeCells}
-                        colHeaders={intialHotColumnHeaders}
+                        colHeaders={initialHotColumnHeaders}
                         columns={hotColumns}
                         data={JSON.parse(JSON.stringify(hotData))}
                         afterOnCellMouseUp={handleCellMouseUp}

@@ -124,7 +124,7 @@ const ProjectStudyPage: React.FC = (props) => {
                     sx={{
                         display: 'flex',
                         justifyContent: 'space-between',
-                        backgroundColor: 'secondary.light',
+                        backgroundColor: 'info.light',
                         position: 'sticky',
                         top: '1.5rem',
                         color: 'white',
@@ -151,15 +151,19 @@ const ProjectStudyPage: React.FC = (props) => {
                                 Once you clone, your studyset will contain the new study instead of
                                 the current one owned by <b>neurosynth</b>
                             </Typography>
+                            <Typography>
+                                You do not need to clone a study to update annotations.
+                            </Typography>
                         </Box>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <LoadingButton
                             text="Clone and Edit"
-                            sx={{ width: '145px' }}
+                            sx={{ width: '175px' }}
                             variant="contained"
                             isLoading={createStudyIsLoading || updateStudysetIsLoading}
-                            color="primary"
+                            color="secondary"
+                            disableElevation
                             loaderColor="secondary"
                             size="medium"
                             onClick={handleCloneStudy}
@@ -210,6 +214,8 @@ const ProjectStudyPage: React.FC = (props) => {
                             size="small"
                             sx={{ width: '190px', marginLeft: '10px' }}
                             variant="contained"
+                            disableElevation
+                            color="secondary"
                         >
                             Edit Study
                         </Button>

@@ -1,6 +1,7 @@
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Box, Chip } from '@mui/material';
-import { IStorePoint, useStudyAnalysisPoints } from 'pages/Studies/StudyStore';
+import { useStudyAnalysisPoints } from 'pages/Studies/StudyStore';
+import { IStorePoint } from 'pages/Studies/StudyStore.helpers';
 
 export const isCoordinateMNI = (x: number, y: number, z: number) => {
     const dims = {
@@ -31,10 +32,10 @@ const DisplayAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
     });
 
     return (
-        <Box sx={{ marginBottom: '1rem' }}>
+        <Box>
             {noPoints && (
                 <Chip
-                    sx={{ margin: '2px' }}
+                    sx={{ margin: '2px', marginBottom: '1rem' }}
                     icon={<ErrorOutlineIcon />}
                     label="This analysis has no coordinates"
                     color="warning"
@@ -42,7 +43,7 @@ const DisplayAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
             )}
             {!allCoordinatesAreMNI && (
                 <Chip
-                    sx={{ margin: '2px' }}
+                    sx={{ margin: '2px', marginBottom: '1rem' }}
                     icon={<ErrorOutlineIcon />}
                     label="This analysis may contain non MNI coordinates"
                     color="warning"

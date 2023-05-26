@@ -60,6 +60,7 @@ const DisplayStudyStyles: Style = {
         },
         overflow: 'auto',
         overflowX: 'hidden',
+        margin: '0 1rem',
     },
     accordionSummary: {
         '.MuiAccordionSummary-content': { margin: '0px' },

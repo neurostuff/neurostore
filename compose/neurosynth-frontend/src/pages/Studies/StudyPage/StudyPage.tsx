@@ -55,6 +55,8 @@ const StudyPage: React.FC = (props) => {
                         disabled={!allowEdits}
                         sx={{ width: '190px', marginLeft: 'auto' }}
                         variant="contained"
+                        disableElevation
+                        color="secondary"
                     >
                         Edit Study
                     </Button>

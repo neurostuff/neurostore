@@ -94,7 +94,7 @@ const clientId = process.env.REACT_APP_AUTH0_CLIENT_ID as string;
 const audience = process.env.REACT_APP_AUTH0_AUDIENCE as string;
 const env = process.env.REACT_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
 
-if (env !== 'DEV') {
+if (env === 'PROD') {
     Sentry.init({
         dsn: 'https://348a42291ed44c3baf7e2d94a0dfc08f@o4505036784992256.ingest.sentry.io/4505036786040832',
         integrations: [new Sentry.BrowserTracing(), new Sentry.Replay()],
