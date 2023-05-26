@@ -77,7 +77,7 @@ def test_create_or_update_neurostore_analysis(
         create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collection)
 
 
-@celery_test
+# @celery_test
 def test_result_upload(auth_client, app, db, meta_analysis_cached_result_files):
     data = {}
     data["statistical_maps"] = [
@@ -112,14 +112,51 @@ def test_result_upload(auth_client, app, db, meta_analysis_cached_result_files):
     )
 
     headers = {"Compose-Upload-Key": f"{run_key}"}
-    # with pre-existing snapshots
-    resp = auth_client.post(
+
+    # test with only images upload
+    reduced_data = {
+        k: v for k, v in data.items() if k in ["statistical_maps", "method_description"]
+    }
+    rresp = auth_client.post(
         "/api/meta-analysis-results",
         data={
             "meta_analysis_id": meta_analysis_cached_result_files["meta_analysis_id"]
         },
         headers=headers,
     )
+    rresult_id = rresp.json["id"]
+    rupload_result = auth_client.put(
+        f"/api/meta-analysis-results/{rresult_id}",
+        data=reduced_data,
+        json_dump=False,
+        content_type="multipart/form-data",
+        headers=headers,
+    )
+
+    assert rupload_result.status_code == 200
+
+    # re-open the statistical maps
+    data["statistical_maps"] = [
+        (open(m, "rb"), m.name) for m in meta_analysis_cached_result_files["maps"]
+    ]
+    # with pre-existing snapshots
+    code = None
+    i = 0
+    while code != 200:
+        resp = auth_client.post(
+            "/api/meta-analysis-results",
+            data={
+                "meta_analysis_id": meta_analysis_cached_result_files[
+                    "meta_analysis_id"
+                ]
+            },
+            headers=headers,
+        )
+        code = resp.status_code
+        if i >= 5:
+            break
+        i += 1
+
     result_id = resp.json["id"]
     upload_result = auth_client.put(
         f"/api/meta-analysis-results/{result_id}",

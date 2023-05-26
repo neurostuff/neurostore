@@ -331,8 +331,7 @@ class MetaAnalysesView(ObjectView, ListView):
             record = self.__class__.update_or_create(data)
             # create neurostore study
             ns_analysis = NeurostoreAnalysis(
-                meta_analysis=record,
-                neurostore_study=record.project.neurostore_study
+                meta_analysis=record, neurostore_study=record.project.neurostore_study
             )
             db.session.add(ns_analysis)
             db.session.commit()
@@ -453,7 +452,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             cb_ns_analysis = partial(
                 celery_ns_analysis,
                 ns_analysis=ns_analysis,
-                cluster_table=cluster_table_fnames[0],
+                cluster_table=cluster_table_fnames[0] if cluster_table_fnames else None,
                 nv_collection=result.neurovault_collection,
             )
             nv_upload_results.then(cb_ns_analysis)
@@ -603,25 +602,26 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
 
     # parse the cluster table to get coordinates
     points = []
-    cluster_df = pd.read_csv(cluster_table, sep="\t")
-    for _, row in cluster_df.iterrows():
-        point = {
-            "coordinates": [row.X, row.Y, row.Z],
-            "kind": "center of mass",  # make this dynamic
-            "space": "MNI",  # make this dynamic
-            "values": [
-                {
-                    "kind": "Z",
-                    "value": row["Peak Stat"],
-                }
-            ],
-        }
-        if not pd.isna(row["Cluster Size (mm3)"]):
-            point["subpeak"] = True
-            point["cluster_size"] = row["Cluster Size (mm3)"]
-        else:
-            point["subpeak"] = False
-        points.append(point)
+    if cluster_table:
+        cluster_df = pd.read_csv(cluster_table, sep="\t")
+        for _, row in cluster_df.iterrows():
+            point = {
+                "coordinates": [row.X, row.Y, row.Z],
+                "kind": "center of mass",  # make this dynamic
+                "space": "MNI",  # make this dynamic
+                "values": [
+                    {
+                        "kind": "Z",
+                        "value": row["Peak Stat"],
+                    }
+                ],
+            }
+            if not pd.isna(row["Cluster Size (mm3)"]):
+                point["subpeak"] = True
+                point["cluster_size"] = row["Cluster Size (mm3)"]
+            else:
+                point["subpeak"] = False
+            points.append(point)
 
     # reference the uploaded images on neurovault to associate images
     images = []
