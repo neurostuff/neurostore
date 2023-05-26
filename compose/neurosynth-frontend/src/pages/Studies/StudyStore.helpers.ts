@@ -217,6 +217,8 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
                             kind: pointStatistic?.value,
                         },
                     ],
+                    subpeak: undefined,
+                    cluster_size: undefined,
                     space: pointSpace?.value,
                     id: isNew ? undefined : pointArgs.id, // if the point was created by us in the FE, make undefined so the BE gives it an ID
                 })

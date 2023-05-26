@@ -465,10 +465,6 @@ const apiDebouncedUpdaterImpl: APIDebouncedUpdaterImpl = (f, name) => (set, get,
     let prevId: string | undefined = undefined;
 
     const debouncedAPIUpdaterSet: typeof set = (...a) => {
-        // // clear timeout for previous request if it is the same study
-        // if (timeout && getData.id === prevId) clearTimeout(timeout);
-        // prevId = getData.id;
-
         set(...a);
 
         const storeData = get() as unknown as INeurosynthProjectReturn &

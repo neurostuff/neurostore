@@ -60,6 +60,9 @@ const hotTableColumnSettings: ColumnSettings[] = [
         type: 'numeric',
     },
     {
+        validator: (value: CellValue, callback: (isValid: boolean) => void) => {
+            callback(value === true || value === false || value === undefined);
+        },
         className: styles.boolean,
         data: 'subpeak',
         type: 'checkbox',
@@ -294,7 +297,7 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
                 beforeCreateRow={handleBeforeCreateRow}
                 beforeRemoveRow={handleBeforeRemoveRow}
                 allowRemoveColumn={false}
-                allowInvalid={true}
+                allowInvalid={false}
                 undo={false}
                 colWidths={[50, 50, 50, 150, 150, 100]}
                 manualColumnResize
