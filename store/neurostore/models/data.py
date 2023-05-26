@@ -255,6 +255,8 @@ class Point(BaseMixin, db.Model):
     image = db.Column(db.String)  # what does image represent
     label_id = db.Column(db.Float, default=None)
     analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"))
+    cluster_size = db.Column(db.Float)
+    subpeak = db.Column(db.Boolean)
 
     entities = relationship(
         "Entity", secondary=PointEntityMap, backref=backref("points")
