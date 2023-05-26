@@ -289,8 +289,7 @@ class PointValue(BaseMixin, db.Model):
 
     point_id = db.Column(db.Text, db.ForeignKey("points.id", ondelete="CASCADE"))
     kind = db.Column(db.String)
-    value = db.Column(db.String)
-    dtype = db.Column(db.String, default="str")
+    value = db.Column(db.Float)
     point = relationship("Point", backref=backref("values", lazy="subquery"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("point_values"))
