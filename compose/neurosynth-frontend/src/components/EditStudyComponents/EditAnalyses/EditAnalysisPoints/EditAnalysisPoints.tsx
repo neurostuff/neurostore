@@ -117,12 +117,13 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
 
     // run every time points are updated to validate (in charge of highlighting the cells that are invalid)
     useEffect(() => {
-        const hasEmptyCoordinates = (points || []).some(
-            (x, y, z) => x === undefined || y === undefined || z === undefined
-        );
+        const hasEmptyCoordinates = (points || []).some(({ x, y, z }) => {
+            return x === undefined || y === undefined || z === undefined;
+        });
         setIsValid(!hasEmptyCoordinates);
         hotTableRef.current?.hotInstance?.validateCells();
     }, [points, setIsValid]);
+    console.log(points);
 
     // run once initially to set the custom context menu
     useEffect(() => {

@@ -3,7 +3,7 @@ import {
     AnalysisReturn,
     ConditionRequest,
     ConditionReturn,
-    PointRelationshipsValue,
+    PointRelationshipsValues,
     PointRequest,
     PointReturn,
     PointValue,
@@ -134,8 +134,9 @@ export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStor
 
         let analysisSpace: MapOrSpaceType | undefined;
         let analysisMap: MapOrSpaceType | undefined;
-        const parsedPoints: IStorePoint[] = (parsedAnalysis.points as any[])
+        const parsedPoints: IStorePoint[] = ((parsedAnalysis.points || []) as Array<PointReturn>)
             .map(({ entities, space, subpeak, cluster_size, values, ...args }) => {
+                const typedValues = values as Array<PointValue> | undefined;
                 if (!analysisSpace && !!space) {
                     analysisSpace = {
                         ...(DefaultSpaceTypes[space]
@@ -144,8 +145,8 @@ export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStor
                     };
                 }
 
-                if (!analysisMap && !!(values as PointRelationshipsValue[])?.[0]) {
-                    const kind = values[0].kind;
+                if (!analysisMap && typedValues && typedValues[0].kind) {
+                    const kind = typedValues[0].kind || '';
                     analysisMap = {
                         ...(DefaultMapTypes[kind] ? DefaultMapTypes[kind] : DefaultMapTypes.OTHER),
                     };
@@ -158,7 +159,12 @@ export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStor
                         cluster_size === undefined || cluster_size === null
                             ? undefined
                             : cluster_size,
-                    value: (values as any)?.[0]?.value ? values[0].value : undefined,
+                    value:
+                        typedValues && typedValues[0]
+                            ? typedValues[0].value === null // have to add this check instead of checking if falsy as the value could be 0
+                                ? undefined
+                                : typedValues[0].value
+                            : undefined,
                     x: (args.coordinates || [])[0],
                     y: (args.coordinates || [])[1],
                     z: (args.coordinates || [])[2],
