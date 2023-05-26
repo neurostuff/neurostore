@@ -131,6 +131,7 @@ const useStudyStore = create<
                             },
                         }));
                     } catch (e) {
+                        console.error(e);
                         set((state) => ({
                             ...state,
                             storeMetadata: {
@@ -684,6 +685,7 @@ export const useStudyAnalysisPointStatistic = (analysisId?: string) =>
 export const useNumStudyAnalyses = () => useStudyStore((state) => state.study.analyses.length);
 export const useStudyAnalyses = () => useStudyStore((state) => state.study.analyses);
 export const useIsValid = () => useStudyStore((state) => state.storeMetadata.isValid);
+export const useIsError = () => useStudyStore((state) => state.storeMetadata.isError);
 
 // study action hooks
 export const useInitStudyStore = () => useStudyStore((state) => state.initStudyStore);

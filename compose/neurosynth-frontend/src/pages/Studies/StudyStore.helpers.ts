@@ -3,8 +3,6 @@ import {
     AnalysisReturn,
     ConditionRequest,
     ConditionReturn,
-    PointRelationshipsValues,
-    PointRequest,
     PointReturn,
     PointValue,
 } from 'neurostore-typescript-sdk';
@@ -145,7 +143,7 @@ export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStor
                     };
                 }
 
-                if (!analysisMap && typedValues && typedValues[0].kind) {
+                if (!analysisMap && typedValues && typedValues.length > 0 && typedValues[0].kind) {
                     const kind = typedValues[0].kind || '';
                     analysisMap = {
                         ...(DefaultMapTypes[kind] ? DefaultMapTypes[kind] : DefaultMapTypes.OTHER),
@@ -160,7 +158,7 @@ export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStor
                             ? undefined
                             : cluster_size,
                     value:
-                        typedValues && typedValues[0]
+                        typedValues && typedValues[0] && typedValues.length > 0
                             ? typedValues[0].value === null // have to add this check instead of checking if falsy as the value could be 0
                                 ? undefined
                                 : typedValues[0].value

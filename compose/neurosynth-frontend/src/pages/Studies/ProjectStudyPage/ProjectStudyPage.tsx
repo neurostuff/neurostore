@@ -164,7 +164,7 @@ const ProjectStudyPage: React.FC = (props) => {
                             isLoading={createStudyIsLoading || updateStudysetIsLoading}
                             color="secondary"
                             disableElevation
-                            loaderColor="secondary"
+                            loaderColor="primary"
                             size="medium"
                             onClick={handleCloneStudy}
                         />

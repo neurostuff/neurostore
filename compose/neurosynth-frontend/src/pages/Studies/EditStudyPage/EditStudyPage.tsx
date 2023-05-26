@@ -18,6 +18,7 @@ import { useHistory, useParams } from 'react-router-dom';
 import {
     useClearStudyStore,
     useInitStudyStore,
+    useIsError,
     useIsValid,
     useStudyHasBeenEdited,
     useStudyId,
@@ -31,6 +32,7 @@ const EditStudyPage: React.FC = (props) => {
     const { studyId, projectId } = useParams<{ projectId: string; studyId: string }>();
     const { data: project } = useGetProjectById(projectId);
     const isValid = useIsValid();
+    const isError = useIsError();
     const studyHasBeenEdited = useStudyHasBeenEdited();
     const storeStudyId = useStudyId();
     const isLoading = useStudyIsLoading();
@@ -72,10 +74,12 @@ const EditStudyPage: React.FC = (props) => {
         }
     };
 
+    console.log({ storeStudyId, studyId });
+
     const isEditingFromProject = !!projectId;
 
     return (
-        <StateHandlerComponent isError={false} isLoading={!storeStudyId}>
+        <StateHandlerComponent isError={false} isLoading={!storeStudyId && !isError}>
             {isEditingFromProject ? (
                 <>
                     <FloatingStatusButtons studyId={studyId} />
