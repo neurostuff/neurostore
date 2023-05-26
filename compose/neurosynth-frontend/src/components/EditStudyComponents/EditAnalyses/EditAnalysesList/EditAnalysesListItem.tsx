@@ -30,7 +30,7 @@ const EditAnalysesListItem: React.FC<{
         <ListItem disablePadding divider>
             <ListItemButton onClick={handleSelectAnalysis} selected={selected}>
                 <ListItemText
-                    sx={{ wordBreak: 'break-all' }}
+                    sx={{ wordBreak: 'break-word' }}
                     primary={analysis?.name || ''}
                     secondary={analysis?.description || ''}
                 />

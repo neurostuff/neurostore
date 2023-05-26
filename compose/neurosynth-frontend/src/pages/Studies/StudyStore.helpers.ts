@@ -153,8 +153,11 @@ export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStor
 
                 return {
                     ...args,
-                    subpeak: subpeak === undefined ? undefined : subpeak,
-                    cluster_size: cluster_size === undefined ? undefined : cluster_size,
+                    subpeak: subpeak === undefined || subpeak === null ? undefined : subpeak,
+                    cluster_size:
+                        cluster_size === undefined || cluster_size === null
+                            ? undefined
+                            : cluster_size,
                     value: (values as any)?.[0]?.value ? values[0].value : undefined,
                     x: (args.coordinates || [])[0],
                     y: (args.coordinates || [])[1],
@@ -217,8 +220,6 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
                             kind: pointStatistic?.value,
                         },
                     ],
-                    subpeak: undefined,
-                    cluster_size: undefined,
                     space: pointSpace?.value,
                     id: isNew ? undefined : pointArgs.id, // if the point was created by us in the FE, make undefined so the BE gives it an ID
                 })

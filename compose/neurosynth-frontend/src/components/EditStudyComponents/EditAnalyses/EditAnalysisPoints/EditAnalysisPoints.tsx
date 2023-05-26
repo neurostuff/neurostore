@@ -115,15 +115,16 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
     });
     const [insertRowsDialogIsOpen, setInsertRowsDialogIsOpen] = useState(false);
 
+    // run every time points are updated to validate (in charge of highlighting the cells that are invalid)
     useEffect(() => {
-        const hotData = hotTableRef.current?.hotInstance?.getData();
-        const hasEmptyCoordinates = (hotData || []).some(
-            ([x, y, z, _kind, _space]) => x === undefined || y === undefined || z === undefined
+        const hasEmptyCoordinates = (points || []).some(
+            (x, y, z) => x === undefined || y === undefined || z === undefined
         );
         setIsValid(!hasEmptyCoordinates);
         hotTableRef.current?.hotInstance?.validateCells();
     }, [points, setIsValid]);
 
+    // run once initially to set the custom context menu
     useEffect(() => {
         if (hotTableRef.current?.hotInstance) {
             hotTableRef.current.hotInstance.updateSettings({
@@ -161,8 +162,9 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
     // handsontable binds and updates to the data references themselves which means the original data is being mutated.
     // as we use zustand, this may not be a good idea, so we implement handleAfterChange to
     //      (1) make a request to zustand in order to make sure it is aware of the update that occurred,
-    //      (2) replace handsontable's data update with our own, and
+    //      (2) replace handsontable's data update with our own,
     //      (3) utilize handsontable's native validation (which does not get fired if we use beforeChange)
+    //      (4) replace null or '' values with undefined as hot treats '' and null as valid (isNaN(null) === false)
     const handleAfterChange = (changes: CellChange[] | null, source: ChangeSource) => {
         if (!props.analysisId) return;
         if (!changes) return;
@@ -185,6 +187,8 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
         updatePoints(props.analysisId, updatedPoints);
     };
 
+    // for all pasted data, remove any copied HTML tags and replace minus sign lookalikes with the expected minus sign.
+    // HTML tags can be added when copying from HTML tables and all sorts of non standard minus signs are used to represent negative number.
     const handleBeforePaste = (data: any[][], coords: RangeType[]) => {
         if (!points) return false;
 
@@ -192,16 +196,19 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
             dataRow.forEach((value, valueIndex) => {
                 if (typeof value === 'number') return;
 
-                // if (value === '') {
-                //     data[rowIndex][valueIndex] = undefined;
-                // } else {
-                const strippedData = stripTags(value); // strip all HTML tags that were copied over if they exist
-                const replacedData = replaceString(strippedData); // replace minus operator with javascript character code
-                data[rowIndex][valueIndex] = replacedData;
-                // }
+                let newVal = value;
+
+                newVal = stripTags(newVal); // strip all HTML tags that were copied over if they exist
+                newVal = replaceString(newVal); // replace minus operator with javascript character code
+
+                if (newVal === 'true') newVal = true;
+                else if (newVal === 'false') newVal = false;
+                data[rowIndex][valueIndex] = newVal;
             });
         });
 
+        // if a paste leads to rows being created, we store those rows in a ref for the handleBeforeCreateRow hook to
+        // know how many rows to create
         let endRowIndex = 0;
         coords.forEach(({ startCol, startRow, endCol, endRow }) => {
             if (endRow > endRowIndex) endRowIndex = endRow;
@@ -212,7 +219,6 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
             for (let i = points.length - endRowIndex; i < data.length; i++) {
                 rowsToCreate.push(data[i]);
             }
-
             hotTableMetadata.current.insertedRowsViaPaste = rowsToCreate;
         } else {
             hotTableMetadata.current.insertedRowsViaPaste = [];
@@ -221,7 +227,14 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
         return true;
     };
 
-    // this hook is fired on paste when a paste causes new rows to be created
+    // this hook is fired on paste when a paste causes new rows to be created. We get the ref and retrieve the number of new rows to create.
+    // Normally, handsontable is in charge of creating new rows but we return false here to prevent that.
+    // Instead, we create the rows and update the data source ourselves.
+
+    // Note: after this hook is fired, the copy pasted cell data is set in the data rows that we create.
+    // This is somewhat problematic as it modifies the zustand store object directly instead of calling set, which is exactly why we've been returning false everywhere.
+    // However, there doesn't seem to be any issue with this because a proper zustand update still occurs when a new row
+    // is created (via createPoint), and handleAfterChange is then called which creates another proper zustand update (updatePoints)
     const handleBeforeCreateRow = (
         index: number,
         amount: number,
@@ -278,6 +291,14 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
     const totalHeight = 28 + (points?.length || 0) * 23;
     const height = totalHeight > 500 ? 500 : totalHeight;
 
+    /**
+     * Hook Order:
+     * 1) handleBeforePaste
+     * 2) handleBeforeChange // we don't want to handle data in this hook as returning false here prevents cell validations from running
+     * 3) handleAfterPaste
+     * 4) handleBeforeCreateRow
+     * 5) handleAfterChange
+     */
     return (
         <Box sx={{ width: '100%' }}>
             <EditAnalysisPointSpaceAndStatistic analysisId={props.analysisId} />
