@@ -48,22 +48,6 @@ const createColumns = (noteKeys: NoteKeyType[]) => [
     }),
 ];
 
-// const createColumnHeader = (
-//     colKey: string,
-//     colType: EPropertyType,
-//     updateFunc: (key: string) => void
-// ) =>
-//     `<div style="display: flex; align-items: center; justify-content: center; min-width: 160px">` +
-//     `<div class=${styles[colType]}>${colKey}</div>` +
-//     `<div style="width: 50px;">${renderToString(
-//         <Cancel
-//             onClick={() => updateFunc(colKey)}
-//             sx={{ ':hover': { color: 'error.light', cursor: 'pointer' } }}
-//             color="error"
-//         />
-//     )}</div>` +
-//     `</div>`;
-
 const hotSettings: HotTableProps = {
     fillHandle: false,
     licenseKey: 'non-commercial-and-evaluation',

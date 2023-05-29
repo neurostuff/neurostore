@@ -64,6 +64,11 @@ const DisplayStudy: React.FC<StudyReturn> = (props) => {
                     <Box sx={DisplayStudyStyles.metadataContainer}>
                         <NeurosynthTable
                             tableConfig={{
+                                noDataDisplay: (
+                                    <Typography sx={{ color: 'warning.dark', margin: '1rem' }}>
+                                        No metadata
+                                    </Typography>
+                                ),
                                 tableHeaderBackgroundColor: 'white',
                                 tableElevation: 0,
                             }}

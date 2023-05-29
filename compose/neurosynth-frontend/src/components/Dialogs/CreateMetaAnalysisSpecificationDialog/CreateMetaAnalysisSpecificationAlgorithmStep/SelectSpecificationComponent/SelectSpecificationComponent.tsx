@@ -122,7 +122,7 @@ const SelectSpecificationComponent: React.FC<{
                 </Box>
             )}
 
-            <Typography sx={{ marginBottom: '0.5rem' }} gutterBottom>
+            <Typography sx={{ marginBottom: '0.5rem', marginTop: '1rem' }} gutterBottom>
                 Select the <b>corrector</b> that you would like to use for your meta-analysis
             </Typography>
 

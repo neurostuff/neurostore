@@ -130,6 +130,83 @@ const MetaAnalysisPage: React.FC = (props) => {
                 isError={getMetaAnalysisIsError}
                 errorMessage="There was an error getting your meta-analysis"
             >
+                <Paper
+                    sx={{
+                        marginBottom: '1rem',
+                        padding: '1rem',
+                        backgroundColor: 'info.light',
+                    }}
+                >
+                    <Box sx={{ margin: '0rem 0 1rem 1rem', display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ marginRight: '1rem' }}>
+                            <ErrorOutlineIcon sx={{ fontSize: '2rem', color: 'white' }} />
+                        </Box>
+                        <Box>
+                            <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white' }}>
+                                Run your meta-analysis via one of the following methods.
+                            </Typography>
+                            <Typography sx={{ color: 'white' }}>
+                                Once neurosynth-compose has detected the status of your run, it will
+                                appear on this page.
+                            </Typography>
+                        </Box>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <Box
+                            sx={[
+                                MetaAnalysisPageStyles.runMethodContainer,
+                                { marginRight: '0.5rem' },
+                            ]}
+                            data-tour="MetaAnalysisPage-2"
+                        >
+                            <Typography
+                                variant="h6"
+                                sx={{ fontWeight: 'bold', marginBottom: '1rem' }}
+                            >
+                                Online via google colab
+                            </Typography>
+                            <Typography sx={{ marginBottom: '0.5rem' }}>
+                                copy the meta-analysis id below and then click the button to open
+                                google collab
+                            </Typography>
+                            <Box>
+                                <CodeSnippet linesOfCode={[`${metaAnalysis?.id}`]} />
+                            </Box>
+                            <Box>
+                                <Button
+                                    sx={{ marginTop: '1rem' }}
+                                    variant="contained"
+                                    component={Link}
+                                    target="_blank"
+                                    rel="noopener"
+                                    href="https://githubtocolab.com/neurostuff/neurosynth-compose-notebook/blob/main/run_and_explore.ipynb"
+                                >
+                                    open google collab
+                                </Button>
+                            </Box>
+                        </Box>
+                        <Box
+                            sx={[
+                                MetaAnalysisPageStyles.runMethodContainer,
+                                { marginLeft: '0.5rem' },
+                            ]}
+                            data-tour="MetaAnalysisPage-3"
+                        >
+                            <Typography
+                                variant="h6"
+                                sx={{ fontWeight: 'bold', marginBottom: '1rem' }}
+                            >
+                                Locally via docker
+                            </Typography>
+                            <Typography>
+                                Click the "Help" button in the navigation panel at the top to learn
+                                more about this in the documentation
+                            </Typography>
+                        </Box>
+                    </Box>
+                </Paper>
+
                 {viewingThisPageFromProject && (
                     <Box sx={{ marginLeft: '1rem', marginBottom: '1rem' }}>
                         <NeurosynthBreadcrumbs
@@ -312,11 +389,11 @@ const MetaAnalysisPage: React.FC = (props) => {
                     </NeurosynthAccordion>
                 </Box>
 
-                <Paper
+                {/* <Paper
                     sx={{
                         marginBottom: '2rem',
                         padding: '1rem',
-                        backgroundColor: 'secondary.light',
+                        backgroundColor: 'info.light',
                     }}
                 >
                     <Box sx={{ margin: '0rem 0 1rem 1rem', display: 'flex', alignItems: 'center' }}>
@@ -387,7 +464,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                             </Typography>
                         </Box>
                     </Box>
-                </Paper>
+                </Paper> */}
             </StateHandlerComponent>
         </>
     );

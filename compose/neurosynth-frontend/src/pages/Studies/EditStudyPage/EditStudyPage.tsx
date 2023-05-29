@@ -18,6 +18,7 @@ import { useHistory, useParams } from 'react-router-dom';
 import {
     useClearStudyStore,
     useInitStudyStore,
+    useIsError,
     useIsValid,
     useStudyHasBeenEdited,
     useStudyId,
@@ -31,6 +32,7 @@ const EditStudyPage: React.FC = (props) => {
     const { studyId, projectId } = useParams<{ projectId: string; studyId: string }>();
     const { data: project } = useGetProjectById(projectId);
     const isValid = useIsValid();
+    const isError = useIsError();
     const studyHasBeenEdited = useStudyHasBeenEdited();
     const storeStudyId = useStudyId();
     const isLoading = useStudyIsLoading();
@@ -53,7 +55,10 @@ const EditStudyPage: React.FC = (props) => {
         if (!isValid) {
             // currently isValid is only used for coordinates.
             // If we want to check validity for multiple things in the future, we may have to create multiple isValid flags
-            snackbar.enqueueSnackbar('missing coordinates', { variant: 'warning' });
+            snackbar.enqueueSnackbar(
+                'A valid analysis needs to have values for statistic, space, and coordinates',
+                { variant: 'warning' }
+            );
             return;
         }
 
@@ -69,10 +74,12 @@ const EditStudyPage: React.FC = (props) => {
         }
     };
 
+    console.log({ storeStudyId, studyId });
+
     const isEditingFromProject = !!projectId;
 
     return (
-        <StateHandlerComponent isError={false} isLoading={!storeStudyId}>
+        <StateHandlerComponent isError={false} isLoading={!storeStudyId && !isError}>
             {isEditingFromProject ? (
                 <>
                     <FloatingStatusButtons studyId={studyId} />
