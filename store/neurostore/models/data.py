@@ -76,7 +76,6 @@ class Annotation(BaseMixin, db.Model):
         "AnnotationAnalysis",
         backref=backref("annotation"),
         cascade="all, delete-orphan",
-        lazy="subquery",
     )
 
 
@@ -140,7 +139,6 @@ class StudysetStudy(db.Model):
         "Study",
         backref=backref("studyset_studies"),
         viewonly=True,
-        lazy="subquery",
     )
     studyset = relationship(
         "Studyset", backref=backref("studyset_studies"), viewonly=True
@@ -148,7 +146,7 @@ class StudysetStudy(db.Model):
     annotation_analyses = relationship(
         "AnnotationAnalysis",
         cascade="all, delete-orphan",
-        backref=backref("studyset_study", lazy="subquery"),
+        backref=backref("studyset_study"),
     )
 
 
@@ -178,7 +176,7 @@ class Analysis(BaseMixin, db.Model):
     )
     annotation_analyses = relationship(
         "AnnotationAnalysis",
-        backref=backref("analysis", lazy="subquery"),
+        backref=backref("analysis"),
         cascade="all, delete-orphan",
     )
 
@@ -192,7 +190,7 @@ class Condition(BaseMixin, db.Model):
     user = relationship("User", backref=backref("conditions"))
     analysis_conditions = relationship(
         "AnalysisConditions",
-        backref=backref("condition", lazy="subquery"),
+        backref=backref("condition"),
         cascade="all, delete",
     )
 
@@ -257,6 +255,7 @@ class Point(BaseMixin, db.Model):
     analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"))
     cluster_size = db.Column(db.Float)
     subpeak = db.Column(db.Boolean)
+    order = db.Column(db.Integer)
 
     entities = relationship(
         "Entity", secondary=PointEntityMap, backref=backref("points")
@@ -290,7 +289,7 @@ class PointValue(BaseMixin, db.Model):
     point_id = db.Column(db.Text, db.ForeignKey("points.id", ondelete="CASCADE"))
     kind = db.Column(db.String)
     value = db.Column(db.Float)
-    point = relationship("Point", backref=backref("values", lazy="subquery"))
+    point = relationship("Point", backref=backref("values"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("point_values"))
 

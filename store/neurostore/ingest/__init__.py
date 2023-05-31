@@ -212,6 +212,7 @@ def ingest_neurosynth(max_rows=None):
             for t_id, df in study_coord_data.groupby("table_id"):
                 a = Analysis(name=str(t_id), study=s)
                 analyses.append(a)
+                point_idx = 0
                 for _, p in df.iterrows():
                     point = Point(
                         x=p["x"],
@@ -221,8 +222,10 @@ def ingest_neurosynth(max_rows=None):
                         kind="unknown",
                         analysis=a,
                         entities=[Entity(label=a.name, level="group", analysis=a)],
+                        order=point_idx,
                     )
                     points.append(point)
+                    point_idx += 1
             to_commit.extend(points)
             to_commit.extend(analyses)
             studies.append(s)
@@ -310,6 +313,7 @@ def ingest_neuroquery(max_rows=None):
         for t_id, df in study_coord_data.groupby("table_id"):
             a = Analysis(name=str(t_id), study=s)
             analyses.append(a)
+            point_idx = 0
             for _, p in df.iterrows():
                 point = Point(
                     x=p["x"],
@@ -319,8 +323,10 @@ def ingest_neuroquery(max_rows=None):
                     kind="unknown",
                     analysis=a,
                     entities=[Entity(label=a.name, level="group", analysis=a)],
+                    order=point_idx,
                 )
                 points.append(point)
+                point_idx += 1
 
         db.session.add_all([s] + analyses + points)
         db.session.commit()
