@@ -231,7 +231,7 @@ class ListView(BaseView):
         return content
 
     def create_metadata(self, q):
-        count = len(q.all())
+        count = q.count()
         return {"total_count": count}
 
     def search(self):
