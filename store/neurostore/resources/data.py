@@ -1,6 +1,8 @@
 from marshmallow import EXCLUDE
 from webargs import fields
+from sqlalchemy.orm import joinedload
 import sqlalchemy.sql.expression as sae
+
 
 from .utils import view_maker
 from .base import BaseView, ObjectView, ListView
@@ -194,6 +196,11 @@ class StudiesView(ObjectView, ListView):
             q_distinct = q.distinct(getattr(self._model, unique_col))
             q = q_distinct.union(q_null)
             q = q.order_by(getattr(self._model, unique_col))
+
+        # outerjoin analyses and studysets for faster queries
+        q = q.outerjoin(Analysis).\
+            outerjoin(StudysetStudy).\
+            options(joinedload(Study.analyses), joinedload(Study.studyset_studies))
         return q
 
     def serialize_records(self, records, args):
