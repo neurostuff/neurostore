@@ -38,6 +38,7 @@ def test_put_points(auth_client, session):
                         y=0,
                         z=0,
                         user=user,
+                        order=1,
                     )
                 ],
             )
@@ -63,6 +64,7 @@ def test_post_points(auth_client, ingest_neurosynth, session):
     session.commit()
     post_point = {"analysis": point["analysis"], "space": point["space"]}
     post_point["x"], post_point["y"], post_point["z"] = point["coordinates"]
+    post_point["order"] = 1
     resp = auth_client.post("/api/points/", data=post_point)
 
     assert resp.status_code == 200
