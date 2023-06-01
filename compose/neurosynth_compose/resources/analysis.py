@@ -465,7 +465,9 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             )
             print("IN THE MAIN FUNCTION")
             res = nv_upload_results.then(cb_ns_analysis)
-
+            from time import sleep
+            sleep(10)
+            nv_upload_results.successful()
         return self.__class__._schema().dump(result)
 
 
