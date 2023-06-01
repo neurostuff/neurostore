@@ -456,8 +456,6 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 nv_collection=result.neurovault_collection,
             )
             nv_upload_results.then(cb_ns_analysis)
-            db.session.add(ns_analysis)
-            db.session.commit()
 
         return self.__class__._schema().dump(result)
 
@@ -604,6 +602,7 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
     points = []
     if cluster_table:
         cluster_df = pd.read_csv(cluster_table, sep="\t")
+        point_idx = 0
         for _, row in cluster_df.iterrows():
             point = {
                 "coordinates": [row.X, row.Y, row.Z],
@@ -615,6 +614,7 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
                         "value": row["Peak Stat"],
                     }
                 ],
+                "order": point_idx
             }
             if not pd.isna(row["Cluster Size (mm3)"]):
                 point["subpeak"] = True
@@ -622,7 +622,7 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
             else:
                 point["subpeak"] = False
             points.append(point)
-
+            point_idx += 1
     # reference the uploaded images on neurovault to associate images
     images = []
     for nv_file in nv_collection.files:
@@ -643,13 +643,15 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
         # if the analysis already exists, update it
         if ns_analysis.neurostore_id:
             ns_analysis_res = ns_ses.put(
-                "/api/analyses/{ns_analysis.neurostore_id}", json=analysis_data
+                f"/api/analyses/{ns_analysis.neurostore_id}", json=analysis_data
             )
         else:
             # create a new analysis
             ns_analysis_res = ns_ses.post("/api/analyses/", json=analysis_data)
 
         ns_analysis.neurostore_id = ns_analysis_res.json()["id"]
+
+        ns_analysis.status = "OK"
     except Exception as exception:  # noqa: E722
         ns_analysis.traceback = str(exception)
         ns_analysis.status = "FAILED"
