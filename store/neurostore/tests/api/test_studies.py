@@ -4,6 +4,22 @@ from ..request_utils import decode_json
 from ...models import Studyset, Study, User, Analysis
 
 
+def test_create_study_as_user_and_analysis_as_bot(auth_clients):
+    # create study as user
+    user_auth_client = next(ac for ac in auth_clients if ac.username == 'user1-id')
+
+    study_resp = user_auth_client.post("/api/studies/", data={"name": "test"})
+    study_id = study_resp.json["id"]
+
+    bot_auth_client = next(ac for ac in auth_clients if 'clients' in ac.username)
+    analysis_resp = bot_auth_client.post(
+        "/api/analyses/",
+        data={"name": "test-analysis", "study": study_id}
+    )
+
+    assert analysis_resp.status_code == 200
+
+
 def test_get_studies(auth_client, ingest_neurosynth, ingest_neuroquery):
     # List of studies
     resp = auth_client.get("/api/studies/?nested=true&level=group")

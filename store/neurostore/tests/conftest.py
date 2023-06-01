@@ -35,11 +35,18 @@ def monkeysession(request):
 
 def mock_decode_token(token):
     from jose.jwt import encode
+    import os
 
     if token == encode({"sub": "user1-id"}, "abc", algorithm="HS256"):
         return {"sub": "user1-id"}
     elif token == encode({"sub": "user2-id"}, "123", algorithm="HS256"):
         return {"sub": "user2-id"}
+    elif token == encode(
+        {"sub":  os.environ.get("COMPOSE_AUTH0_CLIENT_ID") + "@clients"},
+        "456",
+        algorithm="HS256",
+    ):
+        return {"sub":  os.environ.get("COMPOSE_AUTH0_CLIENT_ID") + "@clients"}
 
 
 @pytest.fixture(scope="session")
@@ -162,6 +169,15 @@ def mock_add_users(app, db, mock_auth):
             "name": "user2",
             "password": "password2",
             "access_token": encode({"sub": "user2-id"}, "123", algorithm="HS256"),
+        },
+        {
+            "name": "compose_bot",
+            "password": "password3",
+            "access_token": encode(
+                {"sub": app.config["COMPOSE_AUTH0_CLIENT_ID"] + "@clients"},
+                "456",
+                algorithm="HS256",
+            ),
         },
     ]
 
