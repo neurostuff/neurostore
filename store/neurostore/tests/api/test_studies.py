@@ -114,7 +114,7 @@ def test_clone_studies(auth_client, ingest_neurosynth, ingest_neurovault):
 def test_private_studies(user_data, auth_clients):
     from ...resources.users import User
 
-    client1, client2 = auth_clients
+    client1, client2 = auth_clients[0:2]
     id1 = client1.username
     id2 = client2.username
     user1 = User.query.filter_by(external_id=id1).first()
@@ -123,7 +123,7 @@ def test_private_studies(user_data, auth_clients):
     resp2 = client2.get("/api/studies/")
     name_set1 = set(s["name"] for s in resp1.json["results"])
     name_set2 = set(s["name"] for s in resp2.json["results"])
-    assert len(resp1.json["results"]) == len(resp2.json["results"]) == 3
+    assert len(resp1.json["results"]) == len(resp2.json["results"]) == 4
     assert f"{user1.id}'s private study" in (name_set1 - name_set2)
     assert f"{user2.id}'s private study" in (name_set2 - name_set1)
 
@@ -166,7 +166,7 @@ def test_delete_studies(auth_client, ingest_neurosynth, session):
 
 
 def test_getting_studysets_by_owner(auth_clients, user_data):
-    client1, _ = auth_clients
+    client1 = auth_clients[0]
     id1 = client1.username
     user_studysets_db = Studyset.query.filter_by(user_id=id1).all()
     all_studysets_db = Studyset.query.all()
