@@ -674,7 +674,7 @@ def create_or_update_neurostore_analysis(ns_analysis_id, cluster_table, nv_colle
 
         if ns_analysis_res.status_code != 200:
             ns_analysis.status = "FAILED"
-            ns_analysis.traceback = ns_analysis.json()
+            ns_analysis.traceback = ns_analysis_res.json()
         else:
             ns_analysis.neurostore_id = ns_analysis_res.json()["id"]
             ns_analysis.status = "OK"
