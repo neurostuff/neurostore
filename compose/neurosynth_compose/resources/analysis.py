@@ -441,6 +441,9 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                     neurostore_study=result.meta_analysis.project.neurostore_study,
                     meta_analysis=result.meta_analysis,
                 )
+            ns_analysis.exception = "here in the main function"
+            db.session.add(ns_analysis)
+            db.session.commit()
 
             # when the images are uploaded, put the data on neurostore
             def celery_ns_analysis(output, ns_analysis, cluster_table, nv_collection):
