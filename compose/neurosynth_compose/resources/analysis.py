@@ -575,7 +575,9 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
     from auth0.v3.authentication.get_token import GetToken
     import pandas as pd
     from .neurostore import neurostore_session
-
+    ns_analysis.exception = "made it to inside function"
+    db.session.add(ns_analysis)
+    db.session.commit()
     # get access token from user if it exists
     access_token = request.headers.get("Authorization")
 
@@ -591,7 +593,9 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
         access_token = " ".join([token_resp["token_type"], token_resp["access_token"]])
 
     ns_ses = neurostore_session(access_token)
-
+    ns_analysis.exception = "created neurostore session"
+    db.session.add(ns_analysis)
+    db.session.commit()
     # get the study(project) the (meta)analysis is associated with
     analysis_data = {
         "name": ns_analysis.meta_analysis.name or "Untitled",
@@ -623,6 +627,9 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
                 point["subpeak"] = False
             points.append(point)
             point_idx += 1
+    ns_analysis.exception = "created points"
+    db.session.add(ns_analysis)
+    db.session.commit()
     # reference the uploaded images on neurovault to associate images
     images = []
     for nv_file in nv_collection.files:
@@ -633,7 +640,9 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
             "value_type": nv_file.value_type,
         }
         images.append(image)
-
+    ns_analysis.exception = "created images"
+    db.session.add(ns_analysis)
+    db.session.commit()
     if points:
         analysis_data["points"] = points
     if images:
