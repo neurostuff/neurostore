@@ -304,6 +304,7 @@ def user_data(session, mock_add_users):
                         y=0,
                         z=0,
                         user=user,
+                        order=0,
                     )
 
                     image = Image(
