@@ -463,7 +463,9 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 nv_collection=result.neurovault_collection,
             )
             print("IN THE MAIN FUNCTION")
-            nv_upload_results.then(cb_ns_analysis)
+            res = nv_upload_results.then(cb_ns_analysis)
+            from time import sleep
+            sleep(10)
 
         return self.__class__._schema().dump(result)
 
