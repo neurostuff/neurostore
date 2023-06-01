@@ -25,7 +25,6 @@ import {
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectId,
-    useProjectName,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -52,7 +51,6 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
 }> = (props) => {
     const history = useHistory();
     const projectId = useProjectId();
-    const projectName = useProjectName();
     const studysetId = useProjectExtractionStudysetId();
     const annotationId = useProjectExtractionAnnotationId();
     const { data: annotations } = useGetAnnotationById(annotationId);
@@ -70,8 +68,8 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
                 studysetId,
                 annotationId,
                 props.selection?.selectionKey,
-                `${projectName} Meta Analysis`,
-                '',
+                props.details.name,
+                props.details.description,
                 props.algorithm.estimatorArgs,
                 props.algorithm.correctorArgs
             );
