@@ -649,18 +649,12 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
             # create a new analysis
             ns_analysis_res = ns_ses.post("/api/analyses/", json=analysis_data)
 
-<<<<<<< HEAD
         if ns_analysis_res.status_code != 200:
             ns_analysis.status = "FAILED"
             ns_analysis.traceback = ns_analysis.json()
         else:
             ns_analysis.neurostore_id = ns_analysis_res.json()["id"]
             ns_analysis.status = "OK"
-=======
-        ns_analysis.neurostore_id = ns_analysis_res.json()["id"]
-
-        ns_analysis.status = "OK"
->>>>>>> acb3f15ff0e4d1fe7137cbf195f30ff609e41a15
     except Exception as exception:  # noqa: E722
         ns_analysis.traceback = str(exception)
         ns_analysis.status = "FAILED"
