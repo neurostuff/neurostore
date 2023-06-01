@@ -444,6 +444,10 @@ class MetaAnalysisResultsView(ObjectView, ListView):
 
             # when the images are uploaded, put the data on neurostore
             def celery_ns_analysis(output, ns_analysis, cluster_table, nv_collection):
+                print("MADE IT!")
+                ns_analysis.exception = "made it to temporary function"
+                db.session.add(ns_analysis)
+                db.session.commit()
                 return create_or_update_neurostore_analysis(
                     ns_analysis, cluster_table, nv_collection
                 )
@@ -455,6 +459,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 cluster_table=cluster_table_fnames[0] if cluster_table_fnames else None,
                 nv_collection=result.neurovault_collection,
             )
+            print("IN THE MAIN FUNCTION")
             nv_upload_results.then(cb_ns_analysis)
 
         return self.__class__._schema().dump(result)
