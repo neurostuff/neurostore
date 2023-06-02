@@ -196,6 +196,13 @@ class StudiesView(ObjectView, ListView):
             q = q.order_by(getattr(self._model, unique_col))
         return q
 
+    def join_tables(self, q):
+        "join relevant tables to speed up query"
+        q = q.outerjoin(Analysis, self._model.id == Analysis.study_id).\
+            outerjoin(StudysetStudy, self._model.id == StudysetStudy.study_id)
+
+        return q
+
     def serialize_records(self, records, args):
         if args.get("studyset_owner"):
             for study in records:
