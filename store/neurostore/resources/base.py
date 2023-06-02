@@ -220,6 +220,9 @@ class ListView(BaseView):
     def view_search(self, q, args):
         return q
 
+    def join_tables(self, q):
+        return q
+
     def serialize_records(self, records, args):
         """serialize records from search"""
         nested = bool(args.get("nested"))
@@ -231,7 +234,7 @@ class ListView(BaseView):
         return content
 
     def create_metadata(self, q):
-        count = q.count()
+        count = len(q.all())
         return {"total_count": count}
 
     def search(self):
@@ -284,6 +287,9 @@ class ListView(BaseView):
         # if isinstance(attr, ColumnAssociationProxyInstance):
         #     q = q.join(*attr.attr)
         q = q.order_by(getattr(attr, desc)())
+
+        # join the relevant tables for output
+        q = self.join_tables(q)
 
         records = q.paginate(
             page=args["page"], per_page=args["page_size"], error_out=False
