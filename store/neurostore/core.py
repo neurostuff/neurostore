@@ -5,6 +5,7 @@ from authlib.integrations.flask_client import OAuth
 import connexion
 from connexion.json_schema import default_handlers as json_schema_handlers
 from connexion.resolver import MethodViewResolver
+from flask_caching import Cache
 from flask_cors import CORS
 import prance
 
@@ -24,6 +25,8 @@ oauth = OAuth(app)
 
 db = init_db(app)
 
+# enable caching
+cache = Cache(app)
 
 app.secret_key = app.config["JWT_SECRET_KEY"]
 

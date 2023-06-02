@@ -66,6 +66,7 @@ Session / db managment tools
 def app(mock_auth):
     """Session-wide test `Flask` application."""
     from ..core import app as _app
+    from ..core import cache
 
     if "APP_SETTINGS" not in environ:
         config = "neurostore.config.TestingConfig"
@@ -74,12 +75,14 @@ def app(mock_auth):
     _app.config.from_object(config)
     # _app.config["SQLALCHEMY_ECHO"] = True
 
+    cache.clear()
     # Establish an application context before running the tests.
     ctx = _app.app_context()
     ctx.push()
 
     yield _app
 
+    cache.clear()
     ctx.pop()
 
 

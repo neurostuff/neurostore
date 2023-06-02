@@ -13,6 +13,7 @@ from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
 
+from ..core import cache
 from ..database import db
 from .utils import get_current_user
 from .nested import nested_load
@@ -147,6 +148,8 @@ class BaseView(MethodView):
 
 
 class ObjectView(BaseView):
+
+    @cache.cached(60 * 60, query_string=True)
     def get(self, id):
         nested = request.args.get("nested")
         export = request.args.get("export", False)
@@ -173,10 +176,12 @@ class ObjectView(BaseView):
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data, id)
 
+        # clear the cache for this endpoint
+        cache.delete(request.path)
         return self.__class__._schema().dump(record)
 
     def delete(self, id):
-        record = self.__class__._model.query.filter_by(id=id).first()
+        record = self.__class__._model.query.filter_by(id=id).one()
 
         current_user = get_current_user()
         if record.user_id != current_user.external_id:
@@ -185,6 +190,9 @@ class ObjectView(BaseView):
             db.session.delete(record)
 
         db.session.commit()
+
+        # clear the cache for this endpoint
+        cache.delete(request.path)
 
         return 204
 
@@ -237,6 +245,7 @@ class ListView(BaseView):
         count = len(q.all())
         return {"total_count": count}
 
+    @cache.cached(60 * 60, query_string=True)
     def search(self):
         # Parse arguments using webargs
         args = parser.parse(self._user_args, request, location="query")
@@ -317,4 +326,8 @@ class ListView(BaseView):
         nested = bool(request.args.get("nested") or request.args.get("source_id"))
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
+
+        # clear the cache for this endpoint
+        cache.delete(request.path)
+
         return self.__class__._schema(context={"nested": nested}).dump(record)

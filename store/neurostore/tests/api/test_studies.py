@@ -165,6 +165,10 @@ def test_delete_studies(auth_client, ingest_neurosynth, session):
         assert Analysis.query.filter_by(id=analysis).first() is None
 
 
+def test_production_study_query(auth_client, user_data):
+    auth_client.get("/api/studies/?sort=name&page=1&desc=true&page_size=29999&nested=false&unique=true")
+
+
 def test_getting_studysets_by_owner(auth_clients, user_data):
     client1 = auth_clients[0]
     id1 = client1.username

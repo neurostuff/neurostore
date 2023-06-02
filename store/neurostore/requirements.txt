@@ -5,6 +5,7 @@ connexion[swagger-ui]~=2.7
 email-validator~=1.1
 flake8~=3.8
 flask~=2.0
+flask-caching~=2.0
 flask-cors~=3.0
 flask-dance~=3.2
 flask-shell-ipython~=0.4
