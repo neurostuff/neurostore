@@ -7,10 +7,9 @@ from ....models import (
     NeurostoreStudy,
     NeurostoreAnalysis,
 )
-from ....resources.tasks import file_upload_neurovault
+from ....resources.tasks import file_upload_neurovault, create_or_update_neurostore_analysis
 from ....resources.analysis import (
     create_or_update_neurostore_study,
-    create_or_update_neurostore_analysis,
 )
 
 
@@ -73,8 +72,9 @@ def test_create_or_update_neurostore_analysis(
         ]
     )
     db.session.commit()
-    with app.test_request_context():
-        create_or_update_neurostore_analysis(ns_analysis.id, cluster_table, nv_collection.id)
+    create_or_update_neurostore_analysis(
+        ns_analysis.id, cluster_table, nv_collection.id, access_token=None
+    )
 
 
 @celery_test

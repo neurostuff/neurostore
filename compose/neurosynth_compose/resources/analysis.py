@@ -397,8 +397,7 @@ class MetaAnalysisResultsView(ObjectView, ListView):
         return self.__class__._schema().dump(record)
 
     def put(self, id):
-        from functools import partial
-        from .tasks import file_upload_neurovault
+        from .tasks import file_upload_neurovault, create_or_update_neurostore_analysis
         from celery import group
 
         result = self._model.query.filter_by(id=id).one()
@@ -425,14 +424,6 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             db.session.add_all(records)
             db.session.commit()
 
-            # upload the individual statistical maps
-            nv_upload_tasks = []
-            for fpath, record in stat_map_fnames.items():
-                nv_upload_tasks.append(file_upload_neurovault.s(str(fpath), record.id))
-
-            nv_upload_group = group(nv_upload_tasks)
-            nv_upload_results = nv_upload_group.apply_async()
-
             # get the neurostore analysis
             if result.meta_analysis.neurostore_analysis:
                 ns_analysis = result.meta_analysis.neurostore_analysis
@@ -444,21 +435,24 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                 db.session.add(ns_analysis)
                 db.session.commit()
 
-            # when the images are uploaded, put the data on neurostore
-            def celery_ns_analysis(output, ns_analysis_id, cluster_table, nv_collection_id):
-                return create_or_update_neurostore_analysis(
-                    ns_analysis_id, cluster_table, nv_collection_id
-                )
+            # upload the individual statistical maps
+            nv_upload_tasks = []
+            for fpath, record in stat_map_fnames.items():
+                nv_upload_tasks.append(file_upload_neurovault.s(str(fpath), record.id))
 
-            # callback for creating analysis after neurovault uploads
-            cb_ns_analysis = partial(
-                celery_ns_analysis,
+            nv_upload_group = group(nv_upload_tasks)
+
+            # get access token from user if it exists
+            access_token = request.headers.get("Authorization")
+            neurostore_analysis_upload = create_or_update_neurostore_analysis.si(
                 ns_analysis_id=ns_analysis.id,
-                cluster_table=cluster_table_fnames[0] if cluster_table_fnames else None,
+                cluster_table=str(cluster_table_fnames[0]) if cluster_table_fnames else None,
                 nv_collection_id=result.neurovault_collection.id,
+                access_token=access_token,
             )
-            nv_upload_results.then(cb_ns_analysis)
-            nv_upload_results.successful()
+
+            # upload analysis after uploading neurovault images
+            (nv_upload_group | neurostore_analysis_upload).apply_async()
 
         return self.__class__._schema().dump(result)
 
@@ -571,103 +565,6 @@ def create_or_update_neurostore_study(ns_study):
         ns_study.status = "FAILED"
 
     return ns_study
-
-
-def create_or_update_neurostore_analysis(ns_analysis_id, cluster_table, nv_collection_id):
-    from flask import request, current_app
-    from auth0.v3.authentication.get_token import GetToken
-    import pandas as pd
-    from .neurostore import neurostore_session
-    ns_analysis = NeurostoreAnalysis.query.filter_by(id=ns_analysis_id).one()
-    nv_collection = NeurovaultCollection.query.filter_by(id=nv_collection_id).one()
-
-    # get access token from user if it exists
-    access_token = request.headers.get("Authorization")
-
-    # use the client to authenticate if user credentials were not used
-    if not access_token:
-        domain = current_app.config["AUTH0_BASE_URL"].lstrip("https://")
-        g_token = GetToken(domain)
-        token_resp = g_token.client_credentials(
-            client_id=current_app.config["AUTH0_CLIENT_ID"],
-            client_secret=current_app.config["AUTH0_CLIENT_SECRET"],
-            audience=current_app.config["AUTH0_API_AUDIENCE"],
-        )
-        access_token = " ".join([token_resp["token_type"], token_resp["access_token"]])
-
-    ns_ses = neurostore_session(access_token)
-
-    # get the study(project) the (meta)analysis is associated with
-    analysis_data = {
-        "name": ns_analysis.meta_analysis.name or "Untitled",
-        "study": ns_analysis.neurostore_study_id,
-    }
-
-    # parse the cluster table to get coordinates
-    points = []
-    if cluster_table:
-        cluster_df = pd.read_csv(cluster_table, sep="\t")
-        point_idx = 0
-        for _, row in cluster_df.iterrows():
-            point = {
-                "coordinates": [row.X, row.Y, row.Z],
-                "kind": "center of mass",  # make this dynamic
-                "space": "MNI",  # make this dynamic
-                "values": [
-                    {
-                        "kind": "Z",
-                        "value": row["Peak Stat"],
-                    }
-                ],
-                "order": point_idx
-            }
-            if not pd.isna(row["Cluster Size (mm3)"]):
-                point["subpeak"] = True
-                point["cluster_size"] = row["Cluster Size (mm3)"]
-            else:
-                point["subpeak"] = False
-            points.append(point)
-            point_idx += 1
-    # reference the uploaded images on neurovault to associate images
-    images = []
-    for nv_file in nv_collection.files:
-        image = {
-            "url": nv_file.url,
-            "filename": nv_file.filename,
-            "space": nv_file.space,
-            "value_type": nv_file.value_type,
-        }
-        images.append(image)
-
-    if points:
-        analysis_data["points"] = points
-    if images:
-        analysis_data["images"] = images
-
-    try:
-        # if the analysis already exists, update it
-        if ns_analysis.neurostore_id:
-            ns_analysis_res = ns_ses.put(
-                f"/api/analyses/{ns_analysis.neurostore_id}", json=analysis_data
-            )
-        else:
-            # create a new analysis
-            ns_analysis_res = ns_ses.post("/api/analyses/", json=analysis_data)
-
-        if ns_analysis_res.status_code != 200:
-            ns_analysis.status = "FAILED"
-            ns_analysis.traceback = ns_analysis_res.text
-        else:
-            ns_analysis.neurostore_id = ns_analysis_res.json()["id"]
-            ns_analysis.status = "OK"
-    except Exception as exception:  # noqa: E722
-        ns_analysis.traceback = str(exception)
-        ns_analysis.status = "FAILED"
-
-    db.session.add(ns_analysis)
-    db.session.commit()
-
-    return ns_analysis
 
 
 def parse_upload_files(result, stat_maps, cluster_tables, diagnostic_tables):
