@@ -21,7 +21,6 @@ from ..models import (
     StudysetReference,
     AnnotationReference,
     NeurostoreStudy,
-    NeurostoreAnalysis,
     Project,
 )
 from ..models.analysis import generate_id
@@ -397,17 +396,13 @@ def user_data(app, db, mock_add_users):
             to_commit.extend([studyset, annotation, specification])
             for public in [True, False]:
                 ns_study = NeurostoreStudy(neurostore_id=generate_id())
-                ns_analysis = NeurostoreAnalysis(
-                    neurostore_id=generate_id(),
-                    neurostore_study=ns_study,
-                )
+
                 meta_analysis = MetaAnalysis(
                     name=user.id + "'s meta analysis",
                     user=user,
                     specification=specification,
                     studyset=studyset,
                     annotation=annotation,
-                    neurostore_analysis=ns_analysis,
                 )
 
                 project = Project(
@@ -429,7 +424,6 @@ def user_data(app, db, mock_add_users):
                         meta_analysis,
                         project,
                         empty_project,
-                        ns_analysis,
                         ns_empty_study,
                     ]
                 )
