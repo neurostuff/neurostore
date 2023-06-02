@@ -126,6 +126,7 @@ class EntitySchema(BaseDataSchema):
 
     class Meta:
         additional = ("level", "label")
+        allow_none = ("level", "label")
 
 
 class ImageSchema(BaseDataSchema):

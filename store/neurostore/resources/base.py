@@ -94,7 +94,7 @@ class BaseView(MethodView):
                 # DO NOT WANT PEOPLE TO BE ABLE TO ADD ANALYSES
                 # TO STUDIES UNLESS THEY OWN THE STUDY
                 v = PrtCls._model.query.filter_by(id=v["id"]).first()
-                if current_user != v.user and current_user != compose_bot:
+                if current_user != v.user and current_user.external_id != compose_bot:
                     abort(403)
             if k in cls._linked and v is not None:
                 LnCls = getattr(viewdata, cls._linked[k])
@@ -308,7 +308,6 @@ class ListView(BaseView):
             data = self._load_from_source(source, source_id)
         else:
             data = parser.parse(self.__class__._schema, request)
-
         nested = bool(request.args.get("nested") or request.args.get("source_id"))
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
