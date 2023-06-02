@@ -25,21 +25,21 @@ def test_create(auth_client, user_data, endpoint, model, schema):
     user = User.query.filter_by(name="user1").first()
     example = model.query.filter_by(user=user).first()
     payload = schema().dump(example)
-    if payload.get("id"):
+    if "id" in payload:
         del payload["id"]
-    if payload.get("studyset"):
+    if "studyset" in payload:
         del payload["studyset"]
         payload["cached_studyset_id"] = example.studyset.id
-    if payload.get("annotation"):
+    if "annotation" in payload:
         del payload["annotation"]
         payload["cached_annotation_id"] = example.annotation.id
-    if payload.get("run_key"):
+    if "run_key" in payload:
         del payload["run_key"]
-    if payload.get("url"):
+    if "url" in payload:
         del payload["url"]
-    if payload.get("neurostore_url"):
+    if "neurostore_url" in payload:
         del payload["neurostore_url"]
-    if payload.get("neurostore_study"):
+    if "neurostore_study" in payload:
         del payload["neurostore_study"]
 
     if isinstance(example, MetaAnalysis):
