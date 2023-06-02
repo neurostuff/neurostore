@@ -128,6 +128,7 @@ class EntitySchema(BaseDataSchema):
         additional = ("level", "label")
         allow_none = ("level", "label")
 
+
 class ImageSchema(BaseDataSchema):
     # serialization
     analysis = StringOrNested("AnalysisSchema", use_nested=False)

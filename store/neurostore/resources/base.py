@@ -67,7 +67,6 @@ class BaseView(MethodView):
         else:
             record = cls._model.query.filter_by(id=id).first()
             if record is None:
-                print("record is none")
                 abort(422)
             elif (
                 record.user_id != current_user.external_id
@@ -305,12 +304,10 @@ class ListView(BaseView):
         args = parser.parse(self._user_args, request, location="query")
         source_id = args.get("source_id")
         source = args.get("source") or "neurostore"
-        print("the data is next")
         if source_id:
             data = self._load_from_source(source, source_id)
         else:
             data = parser.parse(self.__class__._schema, request)
-        print(data)
         nested = bool(request.args.get("nested") or request.args.get("source_id"))
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
