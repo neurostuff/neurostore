@@ -74,10 +74,10 @@ def test_create_or_update_neurostore_analysis(
     )
     db.session.commit()
     with app.test_request_context():
-        create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collection)
+        create_or_update_neurostore_analysis(ns_analysis.id, cluster_table, nv_collection.id)
 
 
-# @celery_test
+@celery_test
 def test_result_upload(auth_client, app, db, meta_analysis_cached_result_files):
     data = {}
     data["statistical_maps"] = [

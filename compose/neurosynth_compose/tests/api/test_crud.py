@@ -23,45 +23,46 @@ from ...schemas.analysis import StringOrNested
 )
 def test_create(auth_client, user_data, endpoint, model, schema):
     user = User.query.filter_by(name="user1").first()
-    example = model.query.filter_by(user=user).first()
-    payload = schema().dump(example)
-    if payload.get("id"):
-        del payload["id"]
-    if payload.get("studyset"):
-        del payload["studyset"]
-        payload["cached_studyset_id"] = example.studyset.id
-    if payload.get("annotation"):
-        del payload["annotation"]
-        payload["cached_annotation_id"] = example.annotation.id
-    if payload.get("run_key"):
-        del payload["run_key"]
-    if payload.get("url"):
-        del payload["url"]
-    if payload.get("neurostore_url"):
-        del payload["neurostore_url"]
-    if payload.get("neurostore_study"):
-        del payload["neurostore_study"]
+    examples = model.query.filter_by(user=user).all()
+    for example in examples:
+        payload = schema().dump(example)
+        if "id" in payload:
+            del payload["id"]
+        if "studyset" in payload:
+            del payload["studyset"]
+            payload["cached_studyset_id"] = example.studyset.id
+        if "annotation" in payload:
+            del payload["annotation"]
+            payload["cached_annotation_id"] = example.annotation.id
+        if "run_key" in payload:
+            del payload["run_key"]
+        if "url" in payload:
+            del payload["url"]
+        if "neurostore_url" in payload:
+            del payload["neurostore_url"]
+        if "neurostore_study" in payload:
+            del payload["neurostore_study"]
 
-    if isinstance(example, MetaAnalysis):
-        del payload["neurostore_analysis"]
-        del payload["cached_annotation"]
-        del payload["cached_studyset"]
+        if isinstance(example, MetaAnalysis):
+            del payload["neurostore_analysis"]
+            del payload["cached_annotation"]
+            del payload["cached_studyset"]
 
-    if isinstance(example, Project):
-        del payload["meta_analyses"]
+        if isinstance(example, Project):
+            del payload["meta_analyses"]
 
-    resp = auth_client.post(f"/api/{endpoint}", data=payload)
+        resp = auth_client.post(f"/api/{endpoint}", data=payload)
 
-    assert resp.status_code == 200
-    sf = schema().fields
-    # do not check keys if they are nested (difficult to generally check)
-    d_key_sf = {(sf[k].data_key if sf[k].data_key else k): v for k, v in sf.items()}
-    for k, v in payload.items():
-        if not isinstance(
-            d_key_sf.get(k),
-            (StringOrNested, fields.Nested),
-        ):
-            assert v == resp.json[k]
+        assert resp.status_code == 200
+        sf = schema().fields
+        # do not check keys if they are nested (difficult to generally check)
+        d_key_sf = {(sf[k].data_key if sf[k].data_key else k): v for k, v in sf.items()}
+        for k, v in payload.items():
+            if not isinstance(
+                d_key_sf.get(k),
+                (StringOrNested, fields.Nested),
+            ):
+                assert v == resp.json[k]
 
 
 @pytest.mark.parametrize(

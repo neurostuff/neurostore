@@ -441,21 +441,24 @@ class MetaAnalysisResultsView(ObjectView, ListView):
                     neurostore_study=result.meta_analysis.project.neurostore_study,
                     meta_analysis=result.meta_analysis,
                 )
+                db.session.add(ns_analysis)
+                db.session.commit()
 
             # when the images are uploaded, put the data on neurostore
-            def celery_ns_analysis(output, ns_analysis, cluster_table, nv_collection):
+            def celery_ns_analysis(output, ns_analysis_id, cluster_table, nv_collection_id):
                 return create_or_update_neurostore_analysis(
-                    ns_analysis, cluster_table, nv_collection
+                    ns_analysis_id, cluster_table, nv_collection_id
                 )
 
             # callback for creating analysis after neurovault uploads
             cb_ns_analysis = partial(
                 celery_ns_analysis,
-                ns_analysis=ns_analysis,
+                ns_analysis_id=ns_analysis.id,
                 cluster_table=cluster_table_fnames[0] if cluster_table_fnames else None,
-                nv_collection=result.neurovault_collection,
+                nv_collection_id=result.neurovault_collection.id,
             )
             nv_upload_results.then(cb_ns_analysis)
+            nv_upload_results.successful()
 
         return self.__class__._schema().dump(result)
 
@@ -570,11 +573,13 @@ def create_or_update_neurostore_study(ns_study):
     return ns_study
 
 
-def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collection):
+def create_or_update_neurostore_analysis(ns_analysis_id, cluster_table, nv_collection_id):
     from flask import request, current_app
     from auth0.v3.authentication.get_token import GetToken
     import pandas as pd
     from .neurostore import neurostore_session
+    ns_analysis = NeurostoreAnalysis.query.filter_by(id=ns_analysis_id).one()
+    nv_collection = NeurovaultCollection.query.filter_by(id=nv_collection_id).one()
 
     # get access token from user if it exists
     access_token = request.headers.get("Authorization")
@@ -651,7 +656,7 @@ def create_or_update_neurostore_analysis(ns_analysis, cluster_table, nv_collecti
 
         if ns_analysis_res.status_code != 200:
             ns_analysis.status = "FAILED"
-            ns_analysis.traceback = ns_analysis.json()
+            ns_analysis.traceback = ns_analysis_res.text
         else:
             ns_analysis.neurostore_id = ns_analysis_res.json()["id"]
             ns_analysis.status = "OK"
