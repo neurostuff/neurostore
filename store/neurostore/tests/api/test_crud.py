@@ -39,7 +39,8 @@ def test_create(auth_client, user_data, endpoint, model, schema):
     payload = schema(copy=True).dump(model.query.filter_by(user=user).first())
 
     resp = auth_client.post(f"/api/{endpoint}/", data=payload)
-
+    if resp.status_code == 422:
+        print(resp.text)
     assert resp.status_code == 200
     sf = schema().fields
     # do not check keys if they are nested (difficult to generally check)
