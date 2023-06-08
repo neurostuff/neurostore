@@ -1,5 +1,6 @@
 from marshmallow import EXCLUDE
 from webargs import fields
+import sqlalchemy.sql.expression as sae
 
 from .utils import view_maker
 from .base import BaseView, ObjectView, ListView
@@ -7,7 +8,6 @@ from .nested import nested_load
 from ..database import db
 from ..models import (
     Studyset,
-    AbstractStudy,
     Study,
     Analysis,
     AnalysisConditions,
@@ -18,7 +18,6 @@ from ..models.data import StudysetStudy
 
 from ..schemas import (
     BooleanOrString,
-    AbstractStudySchema,
     AnalysisConditionSchema,
     AnnotationAnalysisSchema,
     StudysetStudySchema,
@@ -142,9 +141,6 @@ class AnnotationsView(ObjectView, ListView):
 
 @view_maker
 class StudiesView(ObjectView, ListView):
-
-    _search_model = AbstractStudy
-    _search_schema = AbstractStudySchema
     _view_fields = {
         **{
             "data_type": fields.String(missing=None),
@@ -175,36 +171,46 @@ class StudiesView(ObjectView, ListView):
         # search studies for data_type
         if args.get("data_type"):
             if args["data_type"] == "coordinate":
-                q = q.filter(self._search_model.versions.any(
-                    Study.analyses.any(Analysis.points.any())))
+                q = q.filter(self._model.analyses.any(Analysis.points.any()))
             elif args["data_type"] == "image":
-                q = q.filter(self._search_model.versions.any(
-                    Study.analyses.any(Analysis.images.any())))
+                q = q.filter(self._model.analyses.any(Analysis.images.any()))
             elif args["data_type"] == "both":
-                pass
+                q = q.filter(
+                    sae.or_(
+                        self._model.analyses.any(Analysis.images.any()),
+                        self._model.analyses.any(Analysis.points.any()),
+                    )
+                )
         # filter by level of analysis (group or meta)
-        q = q.filter(self._search_model.level == args.get("level"))
-
+        q = q.filter(self._model.level == args.get("level"))
+        # only return unique studies
+        unique_col = args.get("unique")
+        # doi is the default uniquefier
+        unique_col = (
+            "doi" if isinstance(unique_col, bool) and unique_col else unique_col
+        )
+        if unique_col:
+            q_null = q.filter(getattr(self._model, unique_col).is_(None))
+            q_distinct = q.distinct(getattr(self._model, unique_col))
+            q = q_distinct.union(q_null)
+            q = q.order_by(getattr(self._model, unique_col))
         return q
 
     def join_tables(self, q):
         "join relevant tables to speed up query"
-        q = q.outerjoin(Study, self._search_model.id == Study.abstract_study_id)
+        q = q.outerjoin(Analysis, self._model.id == Analysis.study_id).\
+            outerjoin(StudysetStudy, self._model.id == StudysetStudy.study_id)
 
         return q
 
     def serialize_records(self, records, args):
-        # if args.get("studyset_owner"):
-        #     for study in records:
-        #         study.studysets = study.studysets.filter(
-        #             Studyset.user_id == args.get("studyset_owner")
-        #         ).all()
-        content = self.__class__._search_schema(
-            only=self._only,
-            many=True,
-        ).dump(records)
+        if args.get("studyset_owner"):
+            for study in records:
+                study.studysets = study.studysets.filter(
+                    Studyset.user_id == args.get("studyset_owner")
+                ).all()
 
-        return content
+        return super().serialize_records(records, args)
 
     @classmethod
     def _load_from_source(cls, source, source_id):
