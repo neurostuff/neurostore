@@ -23,6 +23,7 @@ from . import data as viewdata
 
 class BaseView(MethodView):
     _model = None
+    _search_model = None
     _nested = {}
     _parent = {}
     _linked = {}
@@ -234,14 +235,14 @@ class ListView(BaseView):
         return content
 
     def create_metadata(self, q):
-        count = len(q.all())
+        count = q.count()
         return {"total_count": count}
 
     def search(self):
         # Parse arguments using webargs
         args = parser.parse(self._user_args, request, location="query")
 
-        m = self._model  # for brevity
+        m = self._search_model or self._model  # for brevity
         q = m.query
 
         # Search
