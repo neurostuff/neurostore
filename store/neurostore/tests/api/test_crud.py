@@ -3,6 +3,7 @@ from marshmallow import fields
 from ...models import (
     User,
     Studyset,
+    AbstractStudy,
     Study,
     Annotation,
     Analysis,
@@ -12,6 +13,7 @@ from ...models import (
 )
 from ...schemas import (
     StudysetSchema,
+    AbstractStudySchema,
     StudySchema,
     AnnotationSchema,
     AnalysisSchema,
@@ -27,6 +29,7 @@ from ...schemas.data import StringOrNested
     [
         ("studysets", Studyset, StudysetSchema),
         # ("annotations", Annotation, AnnotationSchema), FIX
+        ("abstract-studies", AbstractStudy, AbstractStudySchema),
         ("studies", Study, StudySchema),
         ("analyses", Analysis, AnalysisSchema),
         ("conditions", Condition, ConditionSchema),
@@ -40,6 +43,9 @@ def test_create(auth_client, user_data, endpoint, model, schema):
     rows = model.query.filter_by(user=user).all()
     for row in rows:
         payload = schema(copy=True).dump(row)
+        if model is AbstractStudy:
+            payload['doi'] = payload['doi'] + "new"
+            payload['pmid'] = payload['pmid'] + "new"
 
         resp = auth_client.post(f"/api/{endpoint}/", data=payload)
         if resp.status_code == 422:
@@ -63,6 +69,7 @@ def test_create(auth_client, user_data, endpoint, model, schema):
     [
         ("studysets", Studyset, StudysetSchema),
         ("annotations", Annotation, AnnotationSchema),
+        ("abstract-studies", AbstractStudy, AbstractStudySchema),
         ("studies", Study, StudySchema),
         ("analyses", Analysis, AnalysisSchema),
         ("conditions", Condition, ConditionSchema),
@@ -95,6 +102,7 @@ def test_read(auth_client, user_data, endpoint, model, schema):
     [
         ("studysets", Studyset, StudysetSchema, {"description": "mine"}),
         # ("annotations", Annotation, AnnotationSchema, {'description': 'mine'}), FIX
+        ("abstract-studies", AbstractStudy, AbstractStudySchema, {"description": "mine"}),
         ("studies", Study, StudySchema, {"description": "mine"}),
         ("analyses", Analysis, AnalysisSchema, {"description": "mine"}),
         ("conditions", Condition, ConditionSchema, {"description": "mine"}),
@@ -119,6 +127,7 @@ def test_update(auth_client, user_data, endpoint, model, schema, update):
     [
         ("studysets", Studyset, StudysetSchema),
         ("annotations", Annotation, AnnotationSchema),
+        # ("abstract-studies", AbstractStudy, AbstractStudySchema),
         ("studies", Study, StudySchema),
         ("analyses", Analysis, AnalysisSchema),
         ("conditions", Condition, ConditionSchema),

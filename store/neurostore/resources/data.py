@@ -140,6 +140,48 @@ class AnnotationsView(ObjectView, ListView):
 
 
 @view_maker
+class AbstractStudiesView(ObjectView, ListView):
+    _nested = {
+        "versions": "StudiesView"
+    }
+
+    _view_fields = {
+        "level": fields.String(default="group", missing="group"),
+    }
+
+    _search_fields = (
+        "name",
+        "description",
+        "source_id",
+        "source",
+        "authors",
+        "publication",
+        "doi",
+        "pmid",
+    )
+
+    def view_search(self, q, args):
+        # search studies for data_type
+        if args.get("data_type"):
+            if args["data_type"] == "coordinate":
+                q = q.filter(self._model.versions.any(Study.analyses.any(Analysis.points.any())))
+            elif args["data_type"] == "image":
+                q = q.filter(self._model.versions.any(Study.analyses.any(Analysis.images.any())))
+            elif args["data_type"] == "both":
+                q = q.filter(
+                    sae.or_(
+                        self._model.versions.any(Study.analyses.any(Analysis.points.any())),
+                        self._model.versions.any(Study.analyses.any(Analysis.images.any())),
+                    )
+                )
+        # filter by level of analysis (group or meta)
+        if args.get("level"):
+            q = q.filter(self._model.level == args.get("level"))
+
+        return q
+
+
+@view_maker
 class StudiesView(ObjectView, ListView):
     _view_fields = {
         **{

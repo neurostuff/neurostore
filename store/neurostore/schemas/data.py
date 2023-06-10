@@ -242,7 +242,7 @@ class StudySetStudyInfoSchema(Schema):
 class AbstractStudySchema(BaseDataSchema):
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
-    versions = StringOrNested("Study", many=True)
+    versions = StringOrNested("StudySchema", many=True, use_nested=False)
 
     class Meta:
         additional = (
