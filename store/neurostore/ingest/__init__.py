@@ -43,7 +43,7 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False):
         doi = data.pop("DOI", None)
         abstract_study = None
         if doi:
-            abstract_study = AbstractStudy.query.filter_by(doi=doi).one()
+            abstract_study = AbstractStudy.query.filter_by(doi=doi).one_or_none()
 
         if abstract_study is None:
             abstract_study = AbstractStudy(
