@@ -94,7 +94,7 @@ class BaseView(MethodView):
                 # DO NOT WANT PEOPLE TO BE ABLE TO ADD ANALYSES
                 # TO STUDIES UNLESS THEY OWN THE STUDY
                 v = PrtCls._model.query.filter_by(id=v["id"]).first()
-                if current_user != v.user and current_user != compose_bot:
+                if current_user != v.user and current_user.external_id != compose_bot:
                     abort(403)
             if k in cls._linked and v is not None:
                 LnCls = getattr(viewdata, cls._linked[k])
@@ -220,6 +220,9 @@ class ListView(BaseView):
     def view_search(self, q, args):
         return q
 
+    def join_tables(self, q):
+        return q
+
     def serialize_records(self, records, args):
         """serialize records from search"""
         nested = bool(args.get("nested"))
@@ -231,7 +234,7 @@ class ListView(BaseView):
         return content
 
     def create_metadata(self, q):
-        count = q.count()
+        count = len(q.all())
         return {"total_count": count}
 
     def search(self):
@@ -285,6 +288,9 @@ class ListView(BaseView):
         #     q = q.join(*attr.attr)
         q = q.order_by(getattr(attr, desc)())
 
+        # join the relevant tables for output
+        q = self.join_tables(q)
+
         records = q.paginate(
             page=args["page"], per_page=args["page_size"], error_out=False
         ).items
@@ -308,7 +314,6 @@ class ListView(BaseView):
             data = self._load_from_source(source, source_id)
         else:
             data = parser.parse(self.__class__._schema, request)
-
         nested = bool(request.args.get("nested") or request.args.get("source_id"))
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)

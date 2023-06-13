@@ -4,6 +4,22 @@ from ..request_utils import decode_json
 from ...models import Studyset, Study, User, Analysis
 
 
+def test_create_study_as_user_and_analysis_as_bot(auth_clients):
+    # create study as user
+    user_auth_client = next(ac for ac in auth_clients if ac.username == 'user1-id')
+
+    study_resp = user_auth_client.post("/api/studies/", data={"name": "test"})
+    study_id = study_resp.json["id"]
+
+    bot_auth_client = next(ac for ac in auth_clients if 'clients' in ac.username)
+    analysis_resp = bot_auth_client.post(
+        "/api/analyses/",
+        data={"name": "test-analysis", "study": study_id}
+    )
+
+    assert analysis_resp.status_code == 200
+
+
 def test_get_studies(auth_client, ingest_neurosynth, ingest_neuroquery):
     # List of studies
     resp = auth_client.get("/api/studies/?nested=true&level=group")
@@ -98,7 +114,7 @@ def test_clone_studies(auth_client, ingest_neurosynth, ingest_neurovault):
 def test_private_studies(user_data, auth_clients):
     from ...resources.users import User
 
-    client1, client2 = auth_clients
+    client1, client2 = auth_clients[0:2]
     id1 = client1.username
     id2 = client2.username
     user1 = User.query.filter_by(external_id=id1).first()
@@ -107,7 +123,7 @@ def test_private_studies(user_data, auth_clients):
     resp2 = client2.get("/api/studies/")
     name_set1 = set(s["name"] for s in resp1.json["results"])
     name_set2 = set(s["name"] for s in resp2.json["results"])
-    assert len(resp1.json["results"]) == len(resp2.json["results"]) == 3
+    assert len(resp1.json["results"]) == len(resp2.json["results"]) == 4
     assert f"{user1.id}'s private study" in (name_set1 - name_set2)
     assert f"{user2.id}'s private study" in (name_set2 - name_set1)
 
@@ -150,7 +166,7 @@ def test_delete_studies(auth_client, ingest_neurosynth, session):
 
 
 def test_getting_studysets_by_owner(auth_clients, user_data):
-    client1, _ = auth_clients
+    client1 = auth_clients[0]
     id1 = client1.username
     user_studysets_db = Studyset.query.filter_by(user_id=id1).all()
     all_studysets_db = Studyset.query.all()

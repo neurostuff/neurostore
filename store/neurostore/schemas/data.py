@@ -126,6 +126,7 @@ class EntitySchema(BaseDataSchema):
 
     class Meta:
         additional = ("level", "label")
+        allow_none = ("level", "label")
 
 
 class ImageSchema(BaseDataSchema):
@@ -151,6 +152,7 @@ class PointSchema(BaseDataSchema):
     entities = fields.Nested(EntitySchema, many=True)
     cluster_size = fields.Float(allow_none=True)
     subpeak = fields.Boolean(allow_none=True)
+    order = fields.Integer()
 
     # deserialization
     x = fields.Float(load_only=True)
