@@ -53,7 +53,7 @@ const StudyPage: React.FC = (props) => {
                         onClick={handleEditStudy}
                         endIcon={<EditIcon />}
                         disabled={!allowEdits}
-                        sx={{ width: '190px', marginLeft: 'auto' }}
+                        sx={{ width: '190px', marginLeft: 'auto', marginRight: '15px' }}
                         variant="contained"
                         disableElevation
                         color="secondary"

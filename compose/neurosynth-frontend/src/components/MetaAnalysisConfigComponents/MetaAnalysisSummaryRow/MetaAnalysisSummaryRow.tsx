@@ -12,12 +12,10 @@ const MetaAnalysisSummaryRow: React.FC<IMetaAnalysisSummaryRow> = (props) => {
         <Box sx={{ marginBottom: '1.5rem', width: '100%' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Box sx={MetaAnalysisSummaryRowStyles.colWidth}>
-                    <Typography sx={{ color: 'primary.main', fontWeight: 'bold' }} variant="h6">
-                        {props.title}
-                    </Typography>
+                    <Typography sx={{ color: 'primary.main' }}>{props.title}</Typography>
                 </Box>
                 <Box sx={MetaAnalysisSummaryRowStyles.colWidth}>
-                    <Typography variant="h6">{props.value}</Typography>
+                    <Typography>{props.value}</Typography>
                     <Typography variant="body1" sx={{ color: 'gray' }}>
                         {props.caption || ''}
                     </Typography>

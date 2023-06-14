@@ -50,13 +50,16 @@ const DisplayStudy: React.FC<StudyReturn> = (props) => {
                     sx={{ ...DisplayStudyStyles.spaceBelow, whiteSpace: 'pre-wrap' }}
                 />
             </Box>
-            <Box data-tour="StudyPage-2" sx={{ margin: '15px 0' }}>
+            <Box data-tour="StudyPage-2" sx={{ margin: '15px' }}>
                 <NeurosynthAccordion
-                    accordionSummarySx={DisplayStudyStyles.accordionSummary}
-                    accordionDetailsSx={{ padding: 0 }}
                     elevation={0}
+                    expandIconColor={'primary.main'}
+                    sx={{
+                        border: '1px solid',
+                        borderColor: 'primary.main',
+                    }}
                     TitleElement={
-                        <Typography variant="h6">
+                        <Typography sx={{ color: 'primary.main' }}>
                             <b>Metadata</b>
                         </Typography>
                     }

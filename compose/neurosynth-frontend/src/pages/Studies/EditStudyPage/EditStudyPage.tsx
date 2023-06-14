@@ -1,4 +1,4 @@
-import { Box, Button, Divider } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import EditAnalyses from 'components/EditStudyComponents/EditAnalyses/EditAnalyses';
 import EditStudyDetails from 'components/EditStudyComponents/EditStudyDetails/EditStudyDetails';
@@ -74,8 +74,6 @@ const EditStudyPage: React.FC = (props) => {
         }
     };
 
-    console.log({ storeStudyId, studyId });
-
     const isEditingFromProject = !!projectId;
 
     return (
@@ -127,13 +125,11 @@ const EditStudyPage: React.FC = (props) => {
             )}
             <Box>
                 <EditStudyDetails />
-                <Divider />
             </Box>
             <Box>
                 <EditStudyMetadata />
-                <Divider />
             </Box>
-            <Box>
+            <Box sx={{ marginBottom: '5rem' }}>
                 <EditAnalyses />
             </Box>
             <Box

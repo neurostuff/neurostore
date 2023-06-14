@@ -60,7 +60,7 @@ const ReadOnlyStudySummaryVirtualizedItem: React.FC<
                 >
                     {showMarkAsCompleteButton && (
                         <Box sx={{ marginBottom: '1rem' }}>
-                            <Tooltip placement="right" title="mark as complete">
+                            <Tooltip placement="right" title="move to complete">
                                 <IconButton
                                     size="large"
                                     onClick={(e) => {
@@ -76,7 +76,7 @@ const ReadOnlyStudySummaryVirtualizedItem: React.FC<
                     )}
                     {showMarkAsSaveForLaterbutton && (
                         <Box>
-                            <Tooltip placement="right" title="save for later">
+                            <Tooltip placement="right" title="move to save for later">
                                 <IconButton
                                     size="large"
                                     onClick={(e) => {
