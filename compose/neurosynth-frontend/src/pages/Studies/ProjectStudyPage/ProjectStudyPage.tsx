@@ -5,7 +5,6 @@ import { Box, Button, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import DisplayStudy from 'components/DisplayStudy/DisplayStudy';
 import EditStudyAnnotations from 'components/EditAnnotations/EditStudyAnnotations';
-import EditAnalysesStyles from 'components/EditStudyComponents/EditAnalyses/EditAnalyses.styles';
 import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatusButtons/FloatingStatusButtons';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';

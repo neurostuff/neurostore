@@ -1,6 +1,5 @@
 import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
 import { Box, ListItem, ListItemText, Typography } from '@mui/material';
-import EditAnalysesStyles from 'components/EditStudyComponents/EditAnalyses/EditAnalyses.styles';
 import {
     IDynamicValueType,
     IMetaAnalysisParamsSpecification,
