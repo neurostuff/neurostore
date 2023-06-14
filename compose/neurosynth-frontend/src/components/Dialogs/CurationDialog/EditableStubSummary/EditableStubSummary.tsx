@@ -12,6 +12,7 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
+import FullTextLinkComponent from 'components/FullTextLinkComponent/FullTextLinkComponent';
 
 interface IEditableStubSummary {
     stub: ICurationStubStudy | undefined;
@@ -91,6 +92,7 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                     alignItems: 'center',
                 }}
             >
+                <FullTextLinkComponent paperTitle={props.stub.title} />
                 {props.stub.neurostoreId && (
                     <Link
                         underline="hover"
@@ -99,16 +101,6 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                         sx={{ marginRight: '10px' }}
                     >
                         view study in neurostore
-                    </Link>
-                )}
-                {props.stub.pmid && (
-                    <Link
-                        underline="hover"
-                        target="_blank"
-                        href={`${PUBMED_ARTICLE_URL_PREFIX}${props.stub.pmid}`}
-                        sx={{ marginRight: '10px' }}
-                    >
-                        view study in pubmed
                     </Link>
                 )}
                 <TextEdit
