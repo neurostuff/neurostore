@@ -28,6 +28,13 @@ export const metadataToArray = (metadata: object | undefined): IMetadataRowModel
           }))
         : [];
 
+    if (!(metadata as any).sample_size) {
+        transformedArr.unshift({
+            metadataKey: 'sample_size',
+            metadataValue: null,
+        });
+    }
+
     return transformedArr;
 };
 
