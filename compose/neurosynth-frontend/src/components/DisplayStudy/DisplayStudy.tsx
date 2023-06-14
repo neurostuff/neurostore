@@ -9,6 +9,7 @@ import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import DisplayAnalyses from './DisplayAnalyses/DisplayAnalyses';
 import DisplayStudyStyles from './DisplayStudy.styles';
 import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
+import FullTextLinkComponent from 'components/FullTextLinkComponent/FullTextLinkComponent';
 
 const DisplayStudy: React.FC<StudyReturn> = (props) => {
     const { name, description, doi, pmid, authors, publication, metadata, analyses = [] } = props;
@@ -24,6 +25,10 @@ const DisplayStudy: React.FC<StudyReturn> = (props) => {
                 <Typography>{authors}</Typography>
                 <Box>
                     <Typography>{publication}</Typography>
+                    <FullTextLinkComponent
+                        paperTitle={name || ''}
+                        text="View Full Text For This Study"
+                    />
                     {doi && (
                         <Link
                             sx={{ display: 'block', margin: '5px 0' }}
@@ -58,11 +63,7 @@ const DisplayStudy: React.FC<StudyReturn> = (props) => {
                         border: '1px solid',
                         borderColor: 'primary.main',
                     }}
-                    TitleElement={
-                        <Typography sx={{ color: 'primary.main' }}>
-                            <b>Metadata</b>
-                        </Typography>
-                    }
+                    TitleElement={<Typography sx={{ color: 'primary.main' }}>Metadata</Typography>}
                 >
                     <Box sx={DisplayStudyStyles.metadataContainer}>
                         <NeurosynthTable

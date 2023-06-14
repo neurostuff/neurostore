@@ -17,12 +17,12 @@ const DisplayMetaAnalysisResult: React.FC<{
         props.metaAnalysis?.neurostore_analysis?.neurostore_id || undefined
     );
 
-    console.log({ data, isLoading, isError });
-
     return (
         <Paper sx={{ padding: '1rem', margin: '1rem 0' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Typography variant="h5">Result</Typography>
+                <Typography sx={{ marginBottom: '1rem' }} variant="h5">
+                    Result
+                </Typography>
                 {resultStatus.color === 'error' && (
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <ErrorOutlineIcon color="error" sx={{ marginRight: '10px' }} />
