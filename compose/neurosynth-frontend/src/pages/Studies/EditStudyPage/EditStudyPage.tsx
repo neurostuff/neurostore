@@ -74,8 +74,6 @@ const EditStudyPage: React.FC = (props) => {
         }
     };
 
-    console.log({ storeStudyId, studyId });
-
     const isEditingFromProject = !!projectId;
 
     return (
@@ -127,13 +125,11 @@ const EditStudyPage: React.FC = (props) => {
             )}
             <Box>
                 <EditStudyDetails />
-                <Divider />
             </Box>
             <Box>
                 <EditStudyMetadata />
-                <Divider />
             </Box>
-            <Box>
+            <Box sx={{ marginBottom: '5rem' }}>
                 <EditAnalyses />
             </Box>
             <Box

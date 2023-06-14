@@ -10,14 +10,14 @@ import {
 import { useHistory, useRouteMatch } from 'react-router-dom';
 
 export const getResultStatus = (
-    metaAnalysisObj: MetaAnalysisReturn,
+    metaAnalysisObj: MetaAnalysisReturn | undefined,
     metaAnalysisResult: ResultReturn | undefined
 ): {
     statusText: string;
     color: ColorOptions | 'muted';
 } => {
-    if ((metaAnalysisObj.results || []).length === 0)
-        return { statusText: 'Not yet run', color: 'muted' };
+    if ((metaAnalysisObj?.results || []).length === 0)
+        return { statusText: 'No run detected', color: 'muted' };
 
     if (!metaAnalysisResult)
         return {
@@ -26,7 +26,7 @@ export const getResultStatus = (
         };
 
     if (!metaAnalysisResult?.neurovault_collection?.collection_id)
-        return { statusText: 'Latest Run Failed', color: 'error' };
+        return { statusText: 'Run complete but Neurovault upload failed', color: 'error' };
 
     if (
         metaAnalysisResult.neurovault_collection?.files &&
@@ -39,11 +39,11 @@ export const getResultStatus = (
     ).every((file) => !!file.image_id);
     if (!allFilesAreValid) return { statusText: 'Latest Run Failed', color: 'error' };
 
-    if (!metaAnalysisObj.neurostore_analysis?.neurostore_id) {
-        return { statusText: 'Latest Run Failed', color: 'error' };
+    if (!metaAnalysisObj?.neurostore_analysis?.neurostore_id) {
+        return { statusText: 'Run complete but Neurostore upload failed', color: 'error' };
     }
 
-    return { statusText: 'Run sucessful', color: 'success' };
+    return { statusText: 'Run successful', color: 'success' };
 };
 
 const ViewMetaAnalysis: React.FC<MetaAnalysisReturn> = (props) => {

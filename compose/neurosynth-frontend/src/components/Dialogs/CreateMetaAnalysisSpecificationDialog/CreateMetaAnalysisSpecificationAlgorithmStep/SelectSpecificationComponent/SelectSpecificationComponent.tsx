@@ -101,8 +101,16 @@ const SelectSpecificationComponent: React.FC<{
                 <Box sx={{ margin: '1rem 0' }}>
                     <NeurosynthAccordion
                         elevation={0}
-                        accordionSummarySx={EditAnalysesStyles.accordionSummary}
-                        TitleElement={<Typography>Algorithm arguments</Typography>}
+                        expandIconColor={'secondary.main'}
+                        sx={{
+                            border: '1px solid',
+                            borderColor: 'secondary.main',
+                        }}
+                        TitleElement={
+                            <Typography sx={{ color: 'secondary.main' }}>
+                                Algorithm arguments
+                            </Typography>
+                        }
                     >
                         <DynamicForm
                             onUpdate={(arg) => {
@@ -158,8 +166,16 @@ const SelectSpecificationComponent: React.FC<{
                 <Box sx={{ margin: '1rem 0' }}>
                     <NeurosynthAccordion
                         elevation={0}
-                        accordionSummarySx={EditAnalysesStyles.accordionSummary}
-                        TitleElement={<Typography>Corrector arguments</Typography>}
+                        expandIconColor={'secondary.main'}
+                        sx={{
+                            border: '1px solid',
+                            borderColor: 'secondary.main',
+                        }}
+                        TitleElement={
+                            <Typography sx={{ color: 'secondary.main' }}>
+                                Corrector arguments
+                            </Typography>
+                        }
                     >
                         <DynamicForm
                             onUpdate={(arg) => {

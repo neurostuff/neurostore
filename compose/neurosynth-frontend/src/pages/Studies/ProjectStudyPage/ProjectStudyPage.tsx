@@ -222,9 +222,17 @@ const ProjectStudyPage: React.FC = (props) => {
                     </Box>
                     <Box sx={{ margin: '1rem 0' }}>
                         <NeurosynthAccordion
-                            accordionSummarySx={EditAnalysesStyles.accordionSummary}
                             elevation={0}
-                            TitleElement={<Typography variant="h6">Study Annotations</Typography>}
+                            expandIconColor={'secondary.main'}
+                            sx={{
+                                border: '1px solid',
+                                borderColor: 'secondary.main',
+                            }}
+                            TitleElement={
+                                <Typography sx={{ color: 'secondary.main' }}>
+                                    Study Annotations
+                                </Typography>
+                            }
                         >
                             <EditStudyAnnotations />
                         </NeurosynthAccordion>

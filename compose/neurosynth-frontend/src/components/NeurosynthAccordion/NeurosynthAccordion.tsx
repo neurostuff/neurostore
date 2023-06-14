@@ -10,6 +10,7 @@ interface INeurosynthAccordion {
     accordionSummarySx?: SystemStyleObject;
     accordionDetailsSx?: SystemStyleObject;
     TitleElement?: JSX.Element;
+    expandIconColor?: string;
 }
 
 const NeurosynthAccordion: React.FC<INeurosynthAccordion> = (props) => {
@@ -20,6 +21,7 @@ const NeurosynthAccordion: React.FC<INeurosynthAccordion> = (props) => {
         accordionSummarySx = {},
         accordionDetailsSx = {},
         TitleElement = <b></b>,
+        expandIconColor = 'white',
     } = props;
 
     const [expanded, setExpanded] = useState(defaultExpanded);
@@ -34,7 +36,7 @@ const NeurosynthAccordion: React.FC<INeurosynthAccordion> = (props) => {
                 onClick={() => setExpanded((prev) => !prev)}
                 sx={{
                     ...accordionSummarySx,
-                    '.MuiAccordionSummary-expandIconWrapper': { color: 'white' },
+                    '.MuiAccordionSummary-expandIconWrapper': { color: expandIconColor },
                 }}
                 expandIcon={<ExpandMoreOutlined />}
             >

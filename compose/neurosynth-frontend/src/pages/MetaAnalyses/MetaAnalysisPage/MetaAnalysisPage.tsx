@@ -132,6 +132,8 @@ const MetaAnalysisPage: React.FC = (props) => {
         correctorArgs: (specification?.corrector?.args || {}) as IDynamicValueType,
     };
 
+    const canEditSpecification = (metaAnalysis?.results || []).length === 0;
+
     return (
         <>
             <StateHandlerComponent
@@ -219,38 +221,49 @@ const MetaAnalysisPage: React.FC = (props) => {
                 <Box data-tour="MetaAnalysisPage-1" sx={{ margin: '1rem 0' }}>
                     <NeurosynthAccordion
                         elevation={0}
-                        accordionSummarySx={{
-                            ':hover': { backgroundColor: 'primary.dark' },
-                            backgroundColor: 'primary.main',
-                            color: 'white',
+                        expandIconColor={canEditSpecification ? 'secondary.main' : 'primary.main'}
+                        sx={{
+                            border: '1px solid',
+                            borderColor: canEditSpecification ? 'secondary.main' : 'primary.main',
                         }}
                         TitleElement={
-                            <Typography variant="h6">View Meta-Analysis Specification</Typography>
+                            <Typography
+                                sx={{
+                                    color: canEditSpecification ? 'secondary.main' : 'primary.main',
+                                }}
+                            >
+                                {canEditSpecification ? 'View or Edit' : 'View'} Meta-Analysis
+                                Specification
+                            </Typography>
                         }
                     >
                         <Box>
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    justifyContent: 'flex-end',
-                                    marginTop: '1rem',
-                                }}
-                            >
-                                <EditSpecificationDialog
-                                    isOpen={editSpecificationDialogIsOpen}
-                                    onCloseDialog={() => setEditSpecificationDialogIsOpen(false)}
-                                />
-                                <Button
-                                    onClick={() => setEditSpecificationDialogIsOpen(true)}
-                                    color="secondary"
-                                    variant="contained"
-                                    disableElevation
+                            {canEditSpecification && (
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        justifyContent: 'flex-end',
+                                        marginTop: '1rem',
+                                    }}
                                 >
-                                    Edit Specification
-                                </Button>
-                            </Box>
+                                    <EditSpecificationDialog
+                                        isOpen={editSpecificationDialogIsOpen}
+                                        onCloseDialog={() =>
+                                            setEditSpecificationDialogIsOpen(false)
+                                        }
+                                    />
+                                    <Button
+                                        onClick={() => setEditSpecificationDialogIsOpen(true)}
+                                        color="secondary"
+                                        variant="contained"
+                                        disableElevation
+                                    >
+                                        Edit Specification
+                                    </Button>
+                                </Box>
+                            )}
 
-                            <Typography variant="h6">Details</Typography>
+                            <Typography sx={{ fontWeight: 'bold' }}>Details</Typography>
 
                             <MetaAnalysisSummaryRow
                                 title="meta-analysis name"
@@ -260,7 +273,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                         </Box>
 
                         <Box>
-                            <Typography variant="h6">Data</Typography>
+                            <Typography sx={{ fontWeight: 'bold' }}>Data</Typography>
 
                             <MetaAnalysisSummaryRow
                                 title="analysis type"
@@ -290,13 +303,13 @@ const MetaAnalysisPage: React.FC = (props) => {
                             )}
 
                             <MetaAnalysisSummaryRow
-                                title="inclusion column"
+                                title="annotation"
                                 value={metaAnalysisDisplayObj.inclusionColumn}
                             />
                         </Box>
 
                         <Box>
-                            <Typography variant="h6">Algorithm</Typography>
+                            <Typography sx={{ fontWeight: 'bold' }}>Algorithm</Typography>
 
                             <MetaAnalysisSummaryRow
                                 title="algorithm and optional arguments"
@@ -409,7 +422,12 @@ const MetaAnalysisPage: React.FC = (props) => {
                     </Paper>
                 )}
 
-                {metaAnalysisResult && <DisplayMetaAnalysisResult />}
+                {metaAnalysisResult && (
+                    <DisplayMetaAnalysisResult
+                        metaAnalysis={metaAnalysis}
+                        metaAnalysisResult={metaAnalysisResult}
+                    />
+                )}
             </StateHandlerComponent>
         </>
     );
