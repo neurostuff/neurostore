@@ -162,8 +162,6 @@ const StudiesPage = () => {
         history.push(`/studies?${searchURL}`);
     };
 
-    console.log(studyData?.results);
-
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>
             <Box sx={{ display: 'flex', marginBottom: '1rem' }}>

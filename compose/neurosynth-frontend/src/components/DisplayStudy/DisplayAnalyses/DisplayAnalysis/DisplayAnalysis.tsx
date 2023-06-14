@@ -16,7 +16,7 @@ const DisplayAnalysis: React.FC<AnalysisReturn | undefined> = (props) => {
                 <Typography>{props.description || ''}</Typography>
             </Box>
 
-            <DisplayPoints points={(props.points || []) as PointReturn[]} />
+            <DisplayPoints title="Coordinates" points={(props.points || []) as PointReturn[]} />
 
             {/* <DisplayConditions
                 conditions={(props.conditions || []) as ConditionReturn[]}

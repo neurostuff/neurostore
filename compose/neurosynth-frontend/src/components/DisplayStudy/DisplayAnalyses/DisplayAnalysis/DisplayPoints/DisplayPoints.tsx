@@ -6,7 +6,7 @@ import styles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHo
 
 registerAllModules();
 
-const DisplayPoints: React.FC<{ points: PointReturn[] }> = (props) => {
+const DisplayPoints: React.FC<{ title: string; points: PointReturn[] }> = (props) => {
     const hotData = props.points.map((point) => [
         (point.coordinates || [])[0],
         (point.coordinates || [])[1],
@@ -18,7 +18,7 @@ const DisplayPoints: React.FC<{ points: PointReturn[] }> = (props) => {
     return (
         <Box sx={{ width: '100%' }}>
             <Typography sx={{ fontWeight: 'bold', marginBottom: '0.5rem' }} gutterBottom>
-                Coordinates
+                {props.title}
             </Typography>
             <Box sx={{ width: '100%' }}>
                 {hotData.length === 0 ? (

@@ -19,6 +19,7 @@ import useUpdateMetaAnalysis from 'hooks/requests/useUpdateMetaAnalysis';
 import useGetTour from 'hooks/useGetTour';
 import {
     Annotation,
+    ResultReturn,
     Specification,
     SpecificationReturn,
     Studyset,
@@ -30,6 +31,8 @@ import { useParams } from 'react-router-dom';
 import { NeurostoreAnnotation } from 'utils/api';
 import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
 import { EAnalysisType } from 'hooks/requests/useCreateAlgorithmSpecification';
+import useGetMetaAnalysisResultById from 'hooks/requests/useGetMetaAnalysisResultById';
+import DisplayMetaAnalysisResult from 'components/DisplayMetaAnalysisResult/DisplayMetaAnalysisResult';
 
 const getAnalysisTypeDescription = (name: string | undefined): string => {
     switch (name) {
@@ -70,6 +73,12 @@ const MetaAnalysisPage: React.FC = (props) => {
         isError: getMetaAnalysisIsError,
         isLoading: getMetaAnalysisIsLoading,
     } = useGetMetaAnalysisById(metaAnalysisId);
+    const { data: metaAnalysisResult, isLoading: getMetaAnalysisResultIsLoading } =
+        useGetMetaAnalysisResultById(
+            metaAnalysis?.results && metaAnalysis.results.length
+                ? (metaAnalysis.results[metaAnalysis.results.length - 1] as ResultReturn).id
+                : undefined
+        );
 
     const { data: specification } = useGetSpecificationById(
         (metaAnalysis?.specification as SpecificationReturn | undefined)?.id
@@ -123,92 +132,17 @@ const MetaAnalysisPage: React.FC = (props) => {
         correctorArgs: (specification?.corrector?.args || {}) as IDynamicValueType,
     };
 
+    const canEditSpecification = (metaAnalysis?.results || []).length === 0;
+
     return (
         <>
             <StateHandlerComponent
-                isLoading={getMetaAnalysisIsLoading}
+                isLoading={getMetaAnalysisIsLoading || getMetaAnalysisResultIsLoading}
                 isError={getMetaAnalysisIsError}
                 errorMessage="There was an error getting your meta-analysis"
             >
-                <Paper
-                    sx={{
-                        marginBottom: '1rem',
-                        padding: '1rem',
-                        backgroundColor: 'info.light',
-                    }}
-                >
-                    <Box sx={{ margin: '0rem 0 1rem 1rem', display: 'flex', alignItems: 'center' }}>
-                        <Box sx={{ marginRight: '1rem' }}>
-                            <ErrorOutlineIcon sx={{ fontSize: '2rem', color: 'white' }} />
-                        </Box>
-                        <Box>
-                            <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white' }}>
-                                Run your meta-analysis via one of the following methods.
-                            </Typography>
-                            <Typography sx={{ color: 'white' }}>
-                                Once neurosynth-compose has detected the status of your run, it will
-                                appear on this page.
-                            </Typography>
-                        </Box>
-                    </Box>
-
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Box
-                            sx={[
-                                MetaAnalysisPageStyles.runMethodContainer,
-                                { marginRight: '0.5rem' },
-                            ]}
-                            data-tour="MetaAnalysisPage-2"
-                        >
-                            <Typography
-                                variant="h6"
-                                sx={{ fontWeight: 'bold', marginBottom: '1rem' }}
-                            >
-                                Online via google colab
-                            </Typography>
-                            <Typography sx={{ marginBottom: '0.5rem' }}>
-                                copy the meta-analysis id below and then click the button to open
-                                google collab
-                            </Typography>
-                            <Box>
-                                <CodeSnippet linesOfCode={[`${metaAnalysis?.id}`]} />
-                            </Box>
-                            <Box>
-                                <Button
-                                    sx={{ marginTop: '1rem' }}
-                                    variant="contained"
-                                    component={Link}
-                                    target="_blank"
-                                    rel="noopener"
-                                    href="https://githubtocolab.com/neurostuff/neurosynth-compose-notebook/blob/main/run_and_explore.ipynb"
-                                >
-                                    open google collab
-                                </Button>
-                            </Box>
-                        </Box>
-                        <Box
-                            sx={[
-                                MetaAnalysisPageStyles.runMethodContainer,
-                                { marginLeft: '0.5rem' },
-                            ]}
-                            data-tour="MetaAnalysisPage-3"
-                        >
-                            <Typography
-                                variant="h6"
-                                sx={{ fontWeight: 'bold', marginBottom: '1rem' }}
-                            >
-                                Locally via docker
-                            </Typography>
-                            <Typography>
-                                Click the "Help" button in the navigation panel at the top to learn
-                                more about this in the documentation
-                            </Typography>
-                        </Box>
-                    </Box>
-                </Paper>
-
                 {viewingThisPageFromProject && (
-                    <Box sx={{ marginLeft: '1rem', marginBottom: '1rem' }}>
+                    <Box sx={{ marginBottom: '1rem' }}>
                         <NeurosynthBreadcrumbs
                             breadcrumbItems={[
                                 {
@@ -232,7 +166,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                 )}
 
                 <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
-                    <Box sx={{ flexGrow: 1, marginLeft: '1rem' }}>
+                    <Box sx={{ flexGrow: 1 }}>
                         <TextEdit
                             editIconIsVisible={thisUserOwnsThisMetaAnalysis}
                             isLoading={updateMetaAnalysisNameIsLoading}
@@ -287,38 +221,49 @@ const MetaAnalysisPage: React.FC = (props) => {
                 <Box data-tour="MetaAnalysisPage-1" sx={{ margin: '1rem 0' }}>
                     <NeurosynthAccordion
                         elevation={0}
-                        accordionSummarySx={{
-                            ':hover': { backgroundColor: 'primary.dark' },
-                            backgroundColor: 'primary.main',
-                            color: 'white',
+                        expandIconColor={canEditSpecification ? 'secondary.main' : 'primary.main'}
+                        sx={{
+                            border: '1px solid',
+                            borderColor: canEditSpecification ? 'secondary.main' : 'primary.main',
                         }}
                         TitleElement={
-                            <Typography variant="h6">View Meta-Analysis Specification</Typography>
+                            <Typography
+                                sx={{
+                                    color: canEditSpecification ? 'secondary.main' : 'primary.main',
+                                }}
+                            >
+                                {canEditSpecification ? 'View or Edit' : 'View'} Meta-Analysis
+                                Specification
+                            </Typography>
                         }
                     >
                         <Box>
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    justifyContent: 'flex-end',
-                                    marginTop: '1rem',
-                                }}
-                            >
-                                <EditSpecificationDialog
-                                    isOpen={editSpecificationDialogIsOpen}
-                                    onCloseDialog={() => setEditSpecificationDialogIsOpen(false)}
-                                />
-                                <Button
-                                    onClick={() => setEditSpecificationDialogIsOpen(true)}
-                                    color="secondary"
-                                    variant="contained"
-                                    disableElevation
+                            {canEditSpecification && (
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        justifyContent: 'flex-end',
+                                        marginTop: '1rem',
+                                    }}
                                 >
-                                    Edit Specification
-                                </Button>
-                            </Box>
+                                    <EditSpecificationDialog
+                                        isOpen={editSpecificationDialogIsOpen}
+                                        onCloseDialog={() =>
+                                            setEditSpecificationDialogIsOpen(false)
+                                        }
+                                    />
+                                    <Button
+                                        onClick={() => setEditSpecificationDialogIsOpen(true)}
+                                        color="secondary"
+                                        variant="contained"
+                                        disableElevation
+                                    >
+                                        Edit Specification
+                                    </Button>
+                                </Box>
+                            )}
 
-                            <Typography variant="h6">Details</Typography>
+                            <Typography sx={{ fontWeight: 'bold' }}>Details</Typography>
 
                             <MetaAnalysisSummaryRow
                                 title="meta-analysis name"
@@ -328,7 +273,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                         </Box>
 
                         <Box>
-                            <Typography variant="h6">Data</Typography>
+                            <Typography sx={{ fontWeight: 'bold' }}>Data</Typography>
 
                             <MetaAnalysisSummaryRow
                                 title="analysis type"
@@ -358,13 +303,13 @@ const MetaAnalysisPage: React.FC = (props) => {
                             )}
 
                             <MetaAnalysisSummaryRow
-                                title="inclusion column"
+                                title="annotation"
                                 value={metaAnalysisDisplayObj.inclusionColumn}
                             />
                         </Box>
 
                         <Box>
-                            <Typography variant="h6">Algorithm</Typography>
+                            <Typography sx={{ fontWeight: 'bold' }}>Algorithm</Typography>
 
                             <MetaAnalysisSummaryRow
                                 title="algorithm and optional arguments"
@@ -389,82 +334,100 @@ const MetaAnalysisPage: React.FC = (props) => {
                     </NeurosynthAccordion>
                 </Box>
 
-                {/* <Paper
-                    sx={{
-                        marginBottom: '2rem',
-                        padding: '1rem',
-                        backgroundColor: 'info.light',
-                    }}
-                >
-                    <Box sx={{ margin: '0rem 0 1rem 1rem', display: 'flex', alignItems: 'center' }}>
-                        <Box sx={{ marginRight: '1rem' }}>
-                            <ErrorOutlineIcon sx={{ fontSize: '2rem', color: 'white' }} />
-                        </Box>
-                        <Box>
-                            <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white' }}>
-                                Run your meta-analysis via one of the following methods.
-                            </Typography>
-                            <Typography sx={{ color: 'white' }}>
-                                Once neurosynth-compose has detected the status of your run, it will
-                                appear on this page.
-                            </Typography>
-                        </Box>
-                    </Box>
-
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                {!metaAnalysisResult && (
+                    <Paper
+                        sx={{
+                            marginBottom: '1rem',
+                            padding: '1rem',
+                            backgroundColor: 'info.light',
+                        }}
+                    >
                         <Box
-                            sx={[
-                                MetaAnalysisPageStyles.runMethodContainer,
-                                { marginRight: '0.5rem' },
-                            ]}
-                            data-tour="MetaAnalysisPage-2"
+                            sx={{
+                                margin: '0rem 0 1rem 1rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                            }}
                         >
-                            <Typography
-                                variant="h6"
-                                sx={{ fontWeight: 'bold', marginBottom: '1rem' }}
-                            >
-                                Online via google colab
-                            </Typography>
-                            <Typography sx={{ marginBottom: '0.5rem' }}>
-                                copy the meta-analysis id below and then click the button to open
-                                google collab
-                            </Typography>
-                            <Box>
-                                <CodeSnippet linesOfCode={[`${metaAnalysis?.id}`]} />
+                            <Box sx={{ marginRight: '1rem' }}>
+                                <ErrorOutlineIcon sx={{ fontSize: '2rem', color: 'white' }} />
                             </Box>
                             <Box>
-                                <Button
-                                    sx={{ marginTop: '1rem' }}
-                                    variant="contained"
-                                    component={Link}
-                                    target="_blank"
-                                    rel="noopener"
-                                    href="https://githubtocolab.com/neurostuff/neurosynth-compose-notebook/blob/main/run_and_explore.ipynb"
+                                <Typography
+                                    variant="h6"
+                                    sx={{ fontWeight: 'bold', color: 'white' }}
                                 >
-                                    open google collab
-                                </Button>
+                                    Run your meta-analysis via one of the following methods.
+                                </Typography>
+                                <Typography sx={{ color: 'white' }}>
+                                    Once neurosynth-compose has detected the status of your run, it
+                                    will appear on this page.
+                                </Typography>
                             </Box>
                         </Box>
-                        <Box
-                            sx={[
-                                MetaAnalysisPageStyles.runMethodContainer,
-                                { marginLeft: '0.5rem' },
-                            ]}
-                            data-tour="MetaAnalysisPage-3"
-                        >
-                            <Typography
-                                variant="h6"
-                                sx={{ fontWeight: 'bold', marginBottom: '1rem' }}
+
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Box
+                                sx={[
+                                    MetaAnalysisPageStyles.runMethodContainer,
+                                    { marginRight: '0.5rem' },
+                                ]}
+                                data-tour="MetaAnalysisPage-2"
                             >
-                                Locally via docker
-                            </Typography>
-                            <Typography>
-                                Click the "Help" button in the navigation panel at the top to learn
-                                more about this in the documentation
-                            </Typography>
+                                <Typography
+                                    variant="h6"
+                                    sx={{ fontWeight: 'bold', marginBottom: '1rem' }}
+                                >
+                                    Online via google colab
+                                </Typography>
+                                <Typography sx={{ marginBottom: '0.5rem' }}>
+                                    copy the meta-analysis id below and then click the button to
+                                    open google collab
+                                </Typography>
+                                <Box>
+                                    <CodeSnippet linesOfCode={[`${metaAnalysis?.id}`]} />
+                                </Box>
+                                <Box>
+                                    <Button
+                                        sx={{ marginTop: '1rem' }}
+                                        variant="contained"
+                                        component={Link}
+                                        target="_blank"
+                                        rel="noopener"
+                                        href="https://githubtocolab.com/neurostuff/neurosynth-compose-notebook/blob/main/run_and_explore.ipynb"
+                                    >
+                                        open google collab
+                                    </Button>
+                                </Box>
+                            </Box>
+                            <Box
+                                sx={[
+                                    MetaAnalysisPageStyles.runMethodContainer,
+                                    { marginLeft: '0.5rem' },
+                                ]}
+                                data-tour="MetaAnalysisPage-3"
+                            >
+                                <Typography
+                                    variant="h6"
+                                    sx={{ fontWeight: 'bold', marginBottom: '1rem' }}
+                                >
+                                    Locally via docker
+                                </Typography>
+                                <Typography>
+                                    Click the "Help" button in the navigation panel at the top to
+                                    learn more about this in the documentation
+                                </Typography>
+                            </Box>
                         </Box>
-                    </Box>
-                </Paper> */}
+                    </Paper>
+                )}
+
+                {metaAnalysisResult && (
+                    <DisplayMetaAnalysisResult
+                        metaAnalysis={metaAnalysis}
+                        metaAnalysisResult={metaAnalysisResult}
+                    />
+                )}
             </StateHandlerComponent>
         </>
     );
