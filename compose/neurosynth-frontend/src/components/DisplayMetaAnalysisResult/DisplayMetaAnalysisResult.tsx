@@ -18,7 +18,9 @@ const DisplayMetaAnalysisResult: React.FC<{
         props.metaAnalysis?.neurostore_analysis?.neurostore_id || undefined
     );
 
-    const { points } = studyPointsToStorePoints((data?.points || []) as PointReturn[]);
+    const { points, analysisSpace, analysisMap } = studyPointsToStorePoints(
+        (data?.points || []) as PointReturn[]
+    );
 
     return (
         <Paper sx={{ padding: '1rem', margin: '1rem 0' }}>
@@ -49,7 +51,13 @@ const DisplayMetaAnalysisResult: React.FC<{
                 </Link>
             </Box>
             <StateHandlerComponent isLoading={isLoading} isError={isError}>
-                <DisplayPoints height="200px" title="Peak Coordinates" points={points} />
+                <DisplayPoints
+                    statistic={analysisMap}
+                    space={analysisSpace}
+                    height="200px"
+                    title="Peak Coordinates"
+                    points={points}
+                />
             </StateHandlerComponent>
         </Paper>
     );

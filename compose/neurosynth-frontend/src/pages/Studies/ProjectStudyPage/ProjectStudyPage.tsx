@@ -9,7 +9,7 @@ import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatus
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useCreateStudy, useGetStudyById, useGetStudysetById, useUpdateStudyset } from 'hooks';
+import { useCreateStudy, useGetStudysetById, useUpdateStudyset } from 'hooks';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import {
@@ -60,13 +60,6 @@ const ProjectStudyPage: React.FC = (props) => {
     const updateStubField = useUpdateStubField();
     const curationColumns = useProjectCurationColumns();
     const { isLoading: createStudyIsLoading, mutateAsync: createStudy } = useCreateStudy();
-    const {
-        isLoading: getStudyIsLoading,
-        isError: getStudyIsError,
-        isFetching: getStudyIsFetching,
-        isRefetching: getStudyIsRefetching,
-        data,
-    } = useGetStudyById(studyId);
     const { data: studyset } = useGetStudysetById(
         project?.provenance?.extractionMetadata?.studysetId || undefined
     );
@@ -86,7 +79,7 @@ const ProjectStudyPage: React.FC = (props) => {
                     throw new Error('did not find id for newly created study');
 
                 const allStudies = (studyset?.studies as StudyReturn[]).map((x) => x.id || '');
-                const thisStudyIndex = allStudies.findIndex((x) => x === data?.id || '');
+                const thisStudyIndex = allStudies.findIndex((x) => x === studyId || '');
                 if (thisStudyIndex < 0) throw new Error('could not find study');
 
                 allStudies[thisStudyIndex] = clonedStudy.data.id;
@@ -138,10 +131,7 @@ const ProjectStudyPage: React.FC = (props) => {
     const showCloneMessage = isViewingStudyFromProject && !thisUserOwnsThisStudy;
 
     return (
-        <StateHandlerComponent
-            isLoading={getStudyIsLoading || getStudyIsFetching || getStudyIsRefetching}
-            isError={getStudyIsError}
-        >
+        <StateHandlerComponent isLoading={studyIsLoading} isError={false}>
             {showCloneMessage && (
                 <Box
                     sx={{
@@ -222,7 +212,7 @@ const ProjectStudyPage: React.FC = (props) => {
                                     isCurrentPage: false,
                                 },
                                 {
-                                    text: data?.name || '',
+                                    text: studyName || '',
                                     link: '',
                                     isCurrentPage: true,
                                 },
