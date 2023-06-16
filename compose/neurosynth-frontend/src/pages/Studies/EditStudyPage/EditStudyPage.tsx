@@ -44,8 +44,11 @@ const EditStudyPage: React.FC = (props) => {
     const clearStudyStore = useClearStudyStore();
     const initStudyStore = useInitStudyStore();
 
+    const isEditingFromProject = !!projectId;
+
     useInitProjectStoreIfRequired();
-    // we want to clear and init every time in case the user wants to refresh the page and cancel their edits
+    // instead of the useInitStudyStoreIfRequired hook,
+    // we want to clear and init the study store every time in case the user wants to refresh the page and cancel their edits
     useEffect(() => {
         clearStudyStore();
         initStudyStore(studyId);
@@ -63,18 +66,18 @@ const EditStudyPage: React.FC = (props) => {
         }
 
         try {
-            if (studyHasBeenEdited) await updateStudyInDB(annotationId as string);
+            if (studyHasBeenEdited)
+                await updateStudyInDB(isEditingFromProject ? (annotationId as string) : undefined);
             snackbar.enqueueSnackbar('study saved successfully', { variant: 'success' });
             queryClient.invalidateQueries('studies');
             queryClient.invalidateQueries('annotation'); // if analyses are updated, we need to do a request to get new annotations
         } catch (e) {
+            console.error(e);
             snackbar.enqueueSnackbar('there was an error saving the study', {
                 variant: 'error',
             });
         }
     };
-
-    const isEditingFromProject = !!projectId;
 
     return (
         <StateHandlerComponent isError={false} isLoading={!storeStudyId && !isError}>

@@ -144,6 +144,7 @@ export const setAnalysesInAnnotationAsIncluded = async (annotationId: string) =>
             })),
         });
     } catch (e) {
-        throw new Error('error creating study from stub');
+        console.error(e);
+        throw new Error('error setting annotations as included');
     }
 };

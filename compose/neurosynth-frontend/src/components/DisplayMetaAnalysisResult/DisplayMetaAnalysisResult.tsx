@@ -6,6 +6,7 @@ import useGetAnalysisById from 'hooks/requests/useGetAnalysisById';
 import DisplayPoints from 'components/DisplayStudy/DisplayAnalyses/DisplayAnalysis/DisplayPoints/DisplayPoints';
 import { PointReturn } from 'neurostore-typescript-sdk';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { studyPointsToStorePoints } from 'pages/Studies/StudyStore.helpers';
 
 const DisplayMetaAnalysisResult: React.FC<{
     metaAnalysis: MetaAnalysisReturn | undefined;
@@ -15,6 +16,10 @@ const DisplayMetaAnalysisResult: React.FC<{
 
     const { data, isLoading, isError } = useGetAnalysisById(
         props.metaAnalysis?.neurostore_analysis?.neurostore_id || undefined
+    );
+
+    const { points, analysisSpace, analysisMap } = studyPointsToStorePoints(
+        (data?.points || []) as PointReturn[]
     );
 
     return (
@@ -46,12 +51,13 @@ const DisplayMetaAnalysisResult: React.FC<{
                 </Link>
             </Box>
             <StateHandlerComponent isLoading={isLoading} isError={isError}>
-                <Box sx={{ height: '200px', overflow: 'hidden' }}>
-                    <DisplayPoints
-                        title="Peak Coordinates"
-                        points={(data?.points as Array<PointReturn>) || []}
-                    />
-                </Box>
+                <DisplayPoints
+                    statistic={analysisMap}
+                    space={analysisSpace}
+                    height="200px"
+                    title="Peak Coordinates"
+                    points={points}
+                />
             </StateHandlerComponent>
         </Paper>
     );

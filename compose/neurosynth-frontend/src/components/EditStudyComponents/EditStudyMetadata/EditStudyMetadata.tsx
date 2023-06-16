@@ -28,6 +28,13 @@ export const metadataToArray = (metadata: object | undefined): IMetadataRowModel
           }))
         : [];
 
+    if (!('sample_size' in (metadata || {}))) {
+        transformedArr.unshift({
+            metadataKey: 'sample_size',
+            metadataValue: null,
+        });
+    }
+
     return transformedArr;
 };
 
@@ -78,6 +85,11 @@ const EditStudyMetadata: React.FC = (props) => {
                 borderTop: 'none',
                 borderColor: 'secondary.main',
                 borderRadius: '0 !important',
+            }}
+            accordionSummarySx={{
+                ':hover': {
+                    backgroundColor: '#f2f2f2',
+                },
             }}
             TitleElement={
                 <>
