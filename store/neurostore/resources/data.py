@@ -14,7 +14,7 @@ from ..models import (
     AnnotationAnalysis,
     Entity,
 )
-from ..models.data import StudysetStudy
+from ..models.data import StudysetStudy, BaseStudy
 
 from ..schemas import (
     BooleanOrString,
@@ -140,7 +140,7 @@ class AnnotationsView(ObjectView, ListView):
 
 
 @view_maker
-class AbstractStudiesView(ObjectView, ListView):
+class BaseStudiesView(ObjectView, ListView):
     _nested = {
         "versions": "StudiesView"
     }
@@ -193,7 +193,7 @@ class StudiesView(ObjectView, ListView):
         **LIST_CLONE_ARGS,
     }
     _parent = {
-        "": "AnalysesView",
+        "base_study": "BaseStudiesView",
     }
     _nested = {
         "analyses": "AnalysesView",
@@ -243,8 +243,8 @@ class StudiesView(ObjectView, ListView):
 
     def join_tables(self, q):
         "join relevant tables to speed up query"
-        q = q.outerjoin(Analysis, self._model.id == Analysis.study_id).\
-            outerjoin(StudysetStudy, self._model.id == StudysetStudy.study_id)
+        q = q.join(Analysis).\
+            join(StudysetStudy)
 
         return q
 
@@ -282,6 +282,7 @@ class StudiesView(ObjectView, ListView):
         data["source"] = "neurostore"
         data["source_id"] = source_id
         data["source_updated_at"] = study.updated_at or study.created_at
+        data['base_study'] = {"id": study.base_study_id}
         return data
 
     @classmethod
@@ -291,6 +292,41 @@ class StudiesView(ObjectView, ListView):
     @classmethod
     def load_from_pubmed(cls, source_id):
         pass
+
+    def custom_record_update(record):
+        """Find/create the associated base study"""
+        query = BaseStudy.query
+        has_doi = has_pmid = False
+        base_study = None
+        if record.doi:
+            query.filter_by(doi=record.doi)
+            has_doi = True
+        if record.pmid:
+            query.filter_by(pmid=record.pmid)
+            has_pmid = True
+
+        if query.count() >= 1 and (has_doi or has_pmid):
+            base_study = query.first()
+        elif has_doi or has_pmid:
+            base_study = BaseStudy(
+                name=record.name,
+                doi=record.doi,
+                pmid=record.pmid,
+                description=record.description,
+                publication=record.publication,
+                year=record.year,
+                level=record.level,
+                authors=record.authors,
+                metadata_=record.metadata_,
+            )
+        else:
+            # there is no published study to associate
+            # with this study
+            pass
+
+        record.base_study = base_study
+
+        return record
 
 
 @view_maker

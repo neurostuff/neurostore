@@ -1,7 +1,7 @@
 from .data import (
     StudysetsView,
     AnnotationsView,
-    AbstractStudiesView,
+    BaseStudiesView,
     StudiesView,
     AnalysesView,
     ConditionsView,
@@ -17,7 +17,7 @@ from .users import (
 __all__ = [
     "StudysetsView",
     "AnnotationsView",
-    "AbstractStudiesView",
+    "BaseStudiesView",
     "StudiesView",
     "AnalysesView",
     "ConditionsView",
