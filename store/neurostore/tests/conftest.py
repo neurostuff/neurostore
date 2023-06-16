@@ -7,7 +7,7 @@ from flask_sqlalchemy import __version__ as FLASK_SQL_VER
 from .. import ingest
 from ..models import (
     User,
-    AbstractStudy,
+    BaseStudy,
     Study,
     Studyset,
     Annotation,
@@ -306,7 +306,7 @@ def user_data(session, mock_add_users):
                     if public:
                         study.doi = doi
 
-                    abstract_study = AbstractStudy(
+                    base_study = BaseStudy(
                         name=name + "study",
                         user=user,
                         public=public,
@@ -359,7 +359,7 @@ def user_data(session, mock_add_users):
 
                     # add everything to commit
                     to_commit.append(studyset)
-                    to_commit.append(abstract_study)
+                    to_commit.append(base_study)
 
         # add public studyset to commit
         public_studyset.studies = public_studies

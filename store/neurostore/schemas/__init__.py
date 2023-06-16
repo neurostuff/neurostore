@@ -1,7 +1,7 @@
 from .data import (
     StudySchema,
     AnalysisSchema,
-    AbstractStudySchema,
+    BaseStudySchema,
     ConditionSchema,
     ImageSchema,
     PointSchema,
@@ -21,7 +21,7 @@ from .auth import UserSchema
 __all__ = [
     "StudySchema",
     "AnalysisSchema",
-    "AbstractStudySchema",
+    "BaseStudySchema",
     "ConditionSchema",
     "ImageSchema",
     "PointSchema",

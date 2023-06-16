@@ -1,7 +1,7 @@
 from .data import (
     Studyset,
     Annotation,
-    AbstractStudy,
+    BaseStudy,
     Study,
     Analysis,
     Condition,
@@ -17,7 +17,7 @@ from .auth import User, Role
 __all__ = [
     "Studyset",
     "Annotation",
-    "AbstractStudy",
+    "BaseStudy",
     "Study",
     "Analysis",
     "Condition",

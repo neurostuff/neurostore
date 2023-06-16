@@ -192,6 +192,9 @@ class StudiesView(ObjectView, ListView):
         **LIST_NESTED_ARGS,
         **LIST_CLONE_ARGS,
     }
+    _parent = {
+        "": "AnalysesView",
+    }
     _nested = {
         "analyses": "AnalysesView",
     }
