@@ -19,7 +19,21 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import { useClearStudyStore, useInitStudyStore, useInitStudyStoreIfRequired } from '../StudyStore';
+import {
+    useClearStudyStore,
+    useInitStudyStore,
+    useInitStudyStoreIfRequired,
+    useStudyAnalyses,
+    useStudyAuthors,
+    useStudyDOI,
+    useStudyDescription,
+    useStudyIsLoading,
+    useStudyMetadata,
+    useStudyName,
+    useStudyPMID,
+    useStudyPublication,
+    useStudyUser,
+} from '../StudyStore';
 
 const ProjectStudyPage: React.FC = (props) => {
     const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
@@ -28,6 +42,16 @@ const ProjectStudyPage: React.FC = (props) => {
 
     const clearStudyStore = useClearStudyStore();
     const initStudyStore = useInitStudyStore();
+    const studyUser = useStudyUser();
+    const studyIsLoading = useStudyIsLoading();
+    const studyName = useStudyName();
+    const studyDescription = useStudyDescription();
+    const studyDOI = useStudyDOI();
+    const studyPMID = useStudyPMID();
+    const studyAuthors = useStudyAuthors();
+    const studyPublication = useStudyPublication();
+    const studyMetadata = useStudyMetadata();
+    const studyAnalyses = useStudyAnalyses();
 
     const [allowEdits, setAllowEdits] = useState(false);
     const history = useHistory();
@@ -102,13 +126,13 @@ const ProjectStudyPage: React.FC = (props) => {
     };
 
     useEffect(() => {
-        const userIDAndStudyIDExist = !!user?.sub && !!data?.user;
-        const thisUserOwnsThisStudy = (data?.user || null) === (user?.sub || undefined);
+        const userIDAndStudyIDExist = !!user?.sub && !!studyUser;
+        const thisUserOwnsThisStudy = (studyUser || null) === (user?.sub || undefined);
         const allowEdit = isAuthenticated && userIDAndStudyIDExist && thisUserOwnsThisStudy;
         setAllowEdits(allowEdit);
-    }, [isAuthenticated, user?.sub, data?.user, history]);
+    }, [isAuthenticated, user?.sub, studyUser, history]);
 
-    const thisUserOwnsThisStudy = (data?.user || null) === (user?.sub || undefined);
+    const thisUserOwnsThisStudy = (studyUser || null) === (user?.sub || undefined);
 
     const isViewingStudyFromProject = projectId !== undefined;
     const showCloneMessage = isViewingStudyFromProject && !thisUserOwnsThisStudy;
@@ -124,11 +148,9 @@ const ProjectStudyPage: React.FC = (props) => {
                         display: 'flex',
                         justifyContent: 'space-between',
                         backgroundColor: 'info.light',
-                        position: 'sticky',
                         top: '1.5rem',
                         color: 'white',
                         padding: '1rem',
-                        zIndex: 999,
                         borderRadius: '4px',
                         marginBottom: '1rem',
                         margin: '1rem',
@@ -227,6 +249,11 @@ const ProjectStudyPage: React.FC = (props) => {
                                 border: '1px solid',
                                 borderColor: 'secondary.main',
                             }}
+                            accordionSummarySx={{
+                                ':hover': {
+                                    backgroundColor: '#f2f2f2',
+                                },
+                            }}
                             TitleElement={
                                 <Typography sx={{ color: 'secondary.main' }}>
                                     Study Annotations
@@ -239,7 +266,16 @@ const ProjectStudyPage: React.FC = (props) => {
                 </Box>
             )}
 
-            <DisplayStudy {...data} />
+            <DisplayStudy
+                name={studyName}
+                description={studyDescription}
+                doi={studyDOI}
+                pmid={studyPMID}
+                authors={studyAuthors}
+                publication={studyPublication}
+                metadata={studyMetadata}
+                analyses={studyAnalyses}
+            />
         </StateHandlerComponent>
     );
 };

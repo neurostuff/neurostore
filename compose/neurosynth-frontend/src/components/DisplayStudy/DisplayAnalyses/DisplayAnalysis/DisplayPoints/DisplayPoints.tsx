@@ -1,18 +1,21 @@
 import { HotTable } from '@handsontable/react';
 import { Box, Typography } from '@mui/material';
 import { registerAllModules } from 'handsontable/registry';
-import { PointReturn } from 'neurostore-typescript-sdk';
 import styles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable.module.css';
+import { IStorePoint } from 'pages/Studies/StudyStore.helpers';
 
 registerAllModules();
 
-const DisplayPoints: React.FC<{ title: string; points: PointReturn[] }> = (props) => {
+const DisplayPoints: React.FC<{ title: string; points: IStorePoint[]; height?: string }> = (
+    props
+) => {
     const hotData = props.points.map((point) => [
         (point.coordinates || [])[0],
         (point.coordinates || [])[1],
         (point.coordinates || [])[2],
-        point.kind,
-        point.space,
+        point.value,
+        point.cluster_size,
+        point.subpeak,
     ]);
 
     return (
@@ -29,6 +32,7 @@ const DisplayPoints: React.FC<{ title: string; points: PointReturn[] }> = (props
                     <HotTable
                         manualColumnResize
                         data={hotData}
+                        height={props.height}
                         columns={[
                             {
                                 className: styles.number,
@@ -40,14 +44,17 @@ const DisplayPoints: React.FC<{ title: string; points: PointReturn[] }> = (props
                                 className: styles.number,
                             },
                             {
-                                className: styles.string,
+                                className: styles.number,
                             },
                             {
-                                className: styles.string,
+                                className: styles.number,
+                            },
+                            {
+                                className: styles.boolean,
                             },
                         ]}
-                        colHeaders={['X', 'Y', 'Z', 'Kind', 'Space']}
-                        colWidths={[50, 50, 50, 150, 150]}
+                        colHeaders={['X', 'Y', 'Z', 'Value', 'Cluster Size (mm^3)', 'Subpeak?']}
+                        colWidths={[50, 50, 50, 150, 150, 100]}
                         licenseKey="non-commercial-and-evaluation"
                         readOnly
                     />

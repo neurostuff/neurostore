@@ -41,6 +41,11 @@ const EditAnalyses: React.FC = (props) => {
                 borderColor: 'secondary.main',
                 borderRadius: '0 !important',
             }}
+            accordionSummarySx={{
+                ':hover': {
+                    backgroundColor: '#f2f2f2',
+                },
+            }}
             TitleElement={
                 <Typography sx={{ fontWeight: 'bold', color: 'secondary.main' }}>
                     Analyses

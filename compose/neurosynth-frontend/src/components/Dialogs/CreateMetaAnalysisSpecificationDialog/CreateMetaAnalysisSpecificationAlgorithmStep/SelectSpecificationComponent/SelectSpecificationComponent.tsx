@@ -105,6 +105,11 @@ const SelectSpecificationComponent: React.FC<{
                             border: '1px solid',
                             borderColor: 'secondary.main',
                         }}
+                        accordionSummarySx={{
+                            ':hover': {
+                                backgroundColor: '#f2f2f2',
+                            },
+                        }}
                         TitleElement={
                             <Typography sx={{ color: 'secondary.main' }}>
                                 Algorithm arguments
@@ -169,6 +174,11 @@ const SelectSpecificationComponent: React.FC<{
                         sx={{
                             border: '1px solid',
                             borderColor: 'secondary.main',
+                        }}
+                        accordionSummarySx={{
+                            ':hover': {
+                                backgroundColor: '#f2f2f2',
+                            },
                         }}
                         TitleElement={
                             <Typography sx={{ color: 'secondary.main' }}>

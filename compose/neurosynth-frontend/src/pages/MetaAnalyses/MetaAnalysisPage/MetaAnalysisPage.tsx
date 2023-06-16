@@ -226,6 +226,11 @@ const MetaAnalysisPage: React.FC = (props) => {
                             border: '1px solid',
                             borderColor: canEditSpecification ? 'secondary.main' : 'primary.main',
                         }}
+                        accordionSummarySx={{
+                            ':hover': {
+                                backgroundColor: '#f2f2f2',
+                            },
+                        }}
                         TitleElement={
                             <Typography
                                 sx={{

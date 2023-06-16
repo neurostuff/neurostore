@@ -1,11 +1,11 @@
 import { Box } from '@mui/material';
-import { AnalysisReturn } from 'neurostore-typescript-sdk';
 import DisplayAnalysesList from './DisplayAnalysesList/DisplayAnalysesList';
 import { useState } from 'react';
 import DisplayAnalysis from './DisplayAnalysis/DisplayAnalysis';
+import { IStoreAnalysis } from 'pages/Studies/StudyStore.helpers';
 
 const DisplayAnalyses: React.FC<{
-    analyses: AnalysisReturn[];
+    analyses: IStoreAnalysis[];
 }> = (props) => {
     const [selectedAnalysisIndex, setSelectedAnalysisIndex] = useState(0);
 

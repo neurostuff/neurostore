@@ -25,7 +25,7 @@ export type StudyStoreActions = {
     initStudyStore: (studyId?: string) => void;
     clearStudyStore: () => void;
     updateStudy: (fieldName: keyof StudyDetails, value: string | number) => void;
-    updateStudyInDB: (annotationId: string) => Promise<void>;
+    updateStudyInDB: (annotationId: string | undefined) => Promise<void>;
     addOrUpdateStudyMetadataRow: (row: IMetadataRowModel) => void;
     deleteStudyMetadataRow: (key: string) => void;
     addOrUpdateAnalysis: (analysis: Partial<IStoreAnalysis>) => void;
@@ -223,7 +223,9 @@ const useStudyStore = create<
                             analyses: storeAnalysesToStudyAnalyses(state.study.analyses),
                         });
 
-                        await setAnalysesInAnnotationAsIncluded(annotationId);
+                        if (annotationId) {
+                            await setAnalysesInAnnotationAsIncluded(annotationId);
+                        }
 
                         // we want to reset the store with our new data because if we created any new
                         // analyses, they will now have their own IDs assigned to them by neurostore
@@ -256,7 +258,8 @@ const useStudyStore = create<
                                 isError: true,
                             },
                         }));
-                        throw new Error('error updating study');
+                        console.error(e);
+                        throw new Error('Could not update study in DB');
                     }
                 },
                 addOrUpdateStudyMetadataRow: (row) => {
@@ -686,6 +689,7 @@ export const useNumStudyAnalyses = () => useStudyStore((state) => state.study.an
 export const useStudyAnalyses = () => useStudyStore((state) => state.study.analyses);
 export const useIsValid = () => useStudyStore((state) => state.storeMetadata.isValid);
 export const useIsError = () => useStudyStore((state) => state.storeMetadata.isError);
+export const useStudyUser = () => useStudyStore((state) => state.study.user);
 
 // study action hooks
 export const useInitStudyStore = () => useStudyStore((state) => state.initStudyStore);
