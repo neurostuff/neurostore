@@ -216,20 +216,20 @@ def ingest_neurosynth(max_rows=None):
 
             # find an base_study based on available information
             if doi is not None:
-                abstract_studies = BaseStudy.query.filter(
+                base_studies = BaseStudy.query.filter(
                     or_(BaseStudy.doi == doi, BaseStudy.pmid == pmid)
                 ).all()
 
-                if len(abstract_studies) == 1:
-                    base_study = abstract_studies[0]
-                elif len(abstract_studies) > 1:
-                    source_base_study = abstract_studies[0]
+                if len(base_studies) == 1:
+                    base_study = base_studies[0]
+                elif len(base_studies) > 1:
+                    source_base_study = base_studies[0]
                     # do not overwrite the verions column
                     # we want to append to this column
                     columns = [
                         c for c in source_base_study.__table__.columns if c != "versions"
                     ]
-                    for ab in abstract_studies[1:]:
+                    for ab in base_studies[1:]:
                         for col in columns:
                             source_attr = getattr(source_base_study, col)
                             new_attr = getattr(ab, col)

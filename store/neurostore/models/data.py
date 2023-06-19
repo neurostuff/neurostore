@@ -101,7 +101,7 @@ class AnnotationAnalysis(db.Model):
 
 
 class BaseStudy(BaseMixin, db.Model):
-    __tablename__ = "abstract_studies"
+    __tablename__ = "base_studies"
 
     name = db.Column(db.String)
     description = db.Column(db.String)
@@ -114,7 +114,7 @@ class BaseStudy(BaseMixin, db.Model):
     level = db.Column(db.String)
     metadata_ = db.Column(JSONB)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
-    user = relationship("User", backref=backref("abstract_studies"))
+    user = relationship("User", backref=backref("base_studies"))
     # retrieve versions of same study
     versions = relationship("Study", backref=backref("base_study"))
     __table_args__ = (
@@ -139,7 +139,7 @@ class Study(BaseMixin, db.Model):
     source = db.Column(db.String)
     source_id = db.Column(db.String)
     source_updated_at = db.Column(db.DateTime(timezone=True))
-    base_study_id = db.Column(db.Text, db.ForeignKey('abstract_studies.id'))
+    base_study_id = db.Column(db.Text, db.ForeignKey('base_studies.id'))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("studies"))
     analyses = relationship(
