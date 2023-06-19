@@ -100,6 +100,29 @@ class AnnotationAnalysis(db.Model):
     note = db.Column(MutableDict.as_mutable(JSONB))
 
 
+class BaseStudy(BaseMixin, db.Model):
+    __tablename__ = "abstract_studies"
+
+    name = db.Column(db.String)
+    description = db.Column(db.String)
+    publication = db.Column(db.String)
+    doi = db.Column(db.String, nullable=True)
+    pmid = db.Column(db.String, nullable=True)
+    authors = db.Column(db.String)
+    year = db.Column(db.Integer)
+    public = db.Column(db.Boolean, default=True)
+    level = db.Column(db.String)
+    metadata_ = db.Column(JSONB)
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
+    user = relationship("User", backref=backref("abstract_studies"))
+    # retrieve versions of same study
+    versions = relationship("Study", backref=backref("base_study"))
+    __table_args__ = (
+        db.CheckConstraint(level.in_(["group", "meta"])),
+        db.UniqueConstraint('doi', 'pmid', name='doi_pmid'),
+    )
+
+
 class Study(BaseMixin, db.Model):
     __tablename__ = "studies"
 
@@ -116,6 +139,7 @@ class Study(BaseMixin, db.Model):
     source = db.Column(db.String)
     source_id = db.Column(db.String)
     source_updated_at = db.Column(db.DateTime(timezone=True))
+    base_study_id = db.Column(db.Text, db.ForeignKey('abstract_studies.id'))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("studies"))
     analyses = relationship(
@@ -224,7 +248,7 @@ ImageEntityMap = db.Table(
 
 # purpose of Entity: you have an image/coordinate, but you do not
 # know what level of analysis it represents
-# NOT REALLY USED CURRENTLY
+# NOT USED CURRENTLY
 class Entity(BaseMixin, db.Model):
     __tablename__ = "entities"
 

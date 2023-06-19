@@ -16,7 +16,7 @@ from webargs import fields
 from ..database import db
 from .utils import get_current_user
 from .nested import nested_load
-from ..models import Studyset, User, Annotation
+from ..models import Studyset, BaseStudy, User, Annotation
 from ..schemas.data import StudysetSnapshot
 from . import data as viewdata
 
@@ -27,6 +27,10 @@ class BaseView(MethodView):
     _parent = {}
     _linked = {}
     _composite_key = {}
+
+    def custom_record_update(record):
+        """Custom processing of a record (defined in specific classes)"""
+        return record
 
     @classmethod
     def update_or_create(cls, data, id=None, commit=True):
@@ -94,7 +98,9 @@ class BaseView(MethodView):
                 # DO NOT WANT PEOPLE TO BE ABLE TO ADD ANALYSES
                 # TO STUDIES UNLESS THEY OWN THE STUDY
                 v = PrtCls._model.query.filter_by(id=v["id"]).first()
-                if current_user != v.user and current_user.external_id != compose_bot:
+                if PrtCls._model is BaseStudy:
+                    pass
+                elif current_user != v.user and current_user.external_id != compose_bot:
                     abort(403)
             if k in cls._linked and v is not None:
                 LnCls = getattr(viewdata, cls._linked[k])
@@ -116,6 +122,8 @@ class BaseView(MethodView):
                 except AttributeError:
                     print(k)
                     raise AttributeError
+
+        record = cls.custom_record_update(record)
 
         to_commit.append(record)
 
@@ -292,7 +300,7 @@ class ListView(BaseView):
         q = self.join_tables(q)
 
         records = q.paginate(
-            page=args["page"], per_page=args["page_size"], error_out=False
+            page=args["page"], per_page=args["page_size"], error_out=False,
         ).items
         content = self.serialize_records(records, args)
         metadata = self.create_metadata(q)

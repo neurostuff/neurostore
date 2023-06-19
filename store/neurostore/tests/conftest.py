@@ -7,6 +7,7 @@ from flask_sqlalchemy import __version__ as FLASK_SQL_VER
 from .. import ingest
 from ..models import (
     User,
+    BaseStudy,
     Study,
     Studyset,
     Annotation,
@@ -17,6 +18,7 @@ from ..models import (
     Entity,
 )
 from auth0.v3.authentication import GetToken
+import shortuuid
 
 """
 Test fixtures for bypassing authentication
@@ -292,7 +294,8 @@ def user_data(session, mock_add_users):
                         user=user,
                         public=public,
                     )
-
+                    doi = "doi:" + shortuuid.ShortUUID().random(length=7)
+                    pmid = shortuuid.ShortUUID().random(length=8)
                     study = Study(
                         name=name + "study",
                         user=user,
@@ -301,7 +304,18 @@ def user_data(session, mock_add_users):
                         level=level,
                     )
                     if public:
-                        study.doi = "123"
+                        study.doi = doi
+
+                    base_study = BaseStudy(
+                        name=name + "study",
+                        user=user,
+                        public=public,
+                        metadata_={"topic": "cognition"},
+                        level=level,
+                        doi=doi,
+                        pmid=pmid,
+                        versions=[study],
+                    )
 
                     analysis = Analysis(user=user, entities=[entity])
 
@@ -345,6 +359,7 @@ def user_data(session, mock_add_users):
 
                     # add everything to commit
                     to_commit.append(studyset)
+                    to_commit.append(base_study)
 
         # add public studyset to commit
         public_studyset.studies = public_studies

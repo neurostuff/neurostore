@@ -14,7 +14,7 @@ from ..models import (
     AnnotationAnalysis,
     Entity,
 )
-from ..models.data import StudysetStudy
+from ..models.data import StudysetStudy, BaseStudy
 
 from ..schemas import (
     BooleanOrString,
@@ -140,6 +140,48 @@ class AnnotationsView(ObjectView, ListView):
 
 
 @view_maker
+class BaseStudiesView(ObjectView, ListView):
+    _nested = {
+        "versions": "StudiesView"
+    }
+
+    _view_fields = {
+        "level": fields.String(default="group", missing="group"),
+    }
+
+    _search_fields = (
+        "name",
+        "description",
+        "source_id",
+        "source",
+        "authors",
+        "publication",
+        "doi",
+        "pmid",
+    )
+
+    def view_search(self, q, args):
+        # search studies for data_type
+        if args.get("data_type"):
+            if args["data_type"] == "coordinate":
+                q = q.filter(self._model.versions.any(Study.analyses.any(Analysis.points.any())))
+            elif args["data_type"] == "image":
+                q = q.filter(self._model.versions.any(Study.analyses.any(Analysis.images.any())))
+            elif args["data_type"] == "both":
+                q = q.filter(
+                    sae.or_(
+                        self._model.versions.any(Study.analyses.any(Analysis.points.any())),
+                        self._model.versions.any(Study.analyses.any(Analysis.images.any())),
+                    )
+                )
+        # filter by level of analysis (group or meta)
+        if args.get("level"):
+            q = q.filter(self._model.level == args.get("level"))
+
+        return q
+
+
+@view_maker
 class StudiesView(ObjectView, ListView):
     _view_fields = {
         **{
@@ -149,6 +191,9 @@ class StudiesView(ObjectView, ListView):
         },
         **LIST_NESTED_ARGS,
         **LIST_CLONE_ARGS,
+    }
+    _parent = {
+        "base_study": "BaseStudiesView",
     }
     _nested = {
         "analyses": "AnalysesView",
@@ -198,8 +243,7 @@ class StudiesView(ObjectView, ListView):
 
     def join_tables(self, q):
         "join relevant tables to speed up query"
-        q = q.outerjoin(Analysis, self._model.id == Analysis.study_id).\
-            outerjoin(StudysetStudy, self._model.id == StudysetStudy.study_id)
+        q = q.outerjoin(Analysis)
 
         return q
 
@@ -237,6 +281,7 @@ class StudiesView(ObjectView, ListView):
         data["source"] = "neurostore"
         data["source_id"] = source_id
         data["source_updated_at"] = study.updated_at or study.created_at
+        data['base_study'] = {"id": study.base_study_id}
         return data
 
     @classmethod
@@ -246,6 +291,45 @@ class StudiesView(ObjectView, ListView):
     @classmethod
     def load_from_pubmed(cls, source_id):
         pass
+
+    def custom_record_update(record):
+        """Find/create the associated base study"""
+        # if the study was cloned and the base_study is already known.
+        if record.base_study is not None:
+            return record
+
+        query = BaseStudy.query
+        has_doi = has_pmid = False
+        base_study = None
+        if record.doi:
+            query = query.filter_by(doi=record.doi)
+            has_doi = True
+        if record.pmid:
+            query = query.filter_by(pmid=record.pmid)
+            has_pmid = True
+
+        if query.count() >= 1 and (has_doi or has_pmid):
+            base_study = query.first()
+        elif has_doi or has_pmid:
+            base_study = BaseStudy(
+                name=record.name,
+                doi=record.doi,
+                pmid=record.pmid,
+                description=record.description,
+                publication=record.publication,
+                year=record.year,
+                level=record.level,
+                authors=record.authors,
+                metadata_=record.metadata_,
+            )
+        else:
+            # there is no published study to associate
+            # with this study
+            return record
+
+        record.base_study = base_study
+
+        return record
 
 
 @view_maker

@@ -10,6 +10,8 @@ import pandas as pd
 import requests
 from scipy import sparse
 from dateutil.parser import parse as parse_date
+from sqlalchemy import or_
+
 from neurostore.database import db
 from neurostore.models import (
     Analysis,
@@ -20,6 +22,7 @@ from neurostore.models import (
     Image,
     Point,
     Study,
+    BaseStudy,
     Studyset,
     Entity,
 )
@@ -28,7 +31,7 @@ from neurostore.models.data import StudysetStudy, _check_type
 
 def ingest_neurovault(verbose=False, limit=20, overwrite=False):
     # Store existing studies for quick lookup
-    all_studies = all_studies = {
+    all_studies = {
         s.doi: s for s in Study.query.filter_by(source="neurovault").all()
     }
 
@@ -37,16 +40,34 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False):
             print("Skipping {} (already exists)...".format(data["DOI"]))
             return
         collection_id = data.pop("id")
+        doi = data.pop("DOI", None)
+        base_study = None
+        if doi:
+            base_study = BaseStudy.query.filter_by(doi=doi).one_or_none()
+
+        if base_study is None:
+            base_study = BaseStudy(
+                name=data.pop("name", None),
+                description=data.pop("description", None),
+                doi=data.pop("DOI", None),
+                authors=data.pop("authors", None),
+                publication=data.pop("journal_name", None),
+                metadata_=data,
+                level="group",
+            )
         s = Study(
-            name=data.pop("name", None),
-            description=data.pop("description", None),
-            doi=data.pop("DOI", None),
-            authors=data.pop("authors", None),
-            publication=data.pop("journal_name", None),
+            name=data.pop("name", None) or base_study.name,
+            description=data.pop("description", None) or base_study.description,
+            doi=doi,
+            pmid=base_study.pmid,
+            authors=data.pop("authors", None) or base_study.authors,
+            publication=data.pop("journal_name", None) or base_study.publication,
             source_id=collection_id,
             metadata_=data,
             source="neurovault",
             level="group",
+            base_study=base_study,
+
         )
 
         space = data.get("coordinate_space", None)
@@ -104,7 +125,9 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False):
             )
             images.append(image)
 
-        db.session.add_all([s] + list(analyses.values()) + images + list(conditions))
+        db.session.add_all(
+            [base_study] + [s] + list(analyses.values()) + images + list(conditions)
+        )
         db.session.commit()
         all_studies[s.name] = s
         return s
@@ -187,7 +210,61 @@ def ingest_neurosynth(max_rows=None):
         for metadata_row, annotation_row in zip(
             metadata.itertuples(), annotations.itertuples(index=False)
         ):
-            id_ = metadata_row.Index
+            base_study = None
+            doi = None if isinstance(metadata_row.doi, float) else metadata_row.doi
+            id_ = pmid = metadata_row.Index
+
+            # find an base_study based on available information
+            if doi is not None:
+                abstract_studies = BaseStudy.query.filter(
+                    or_(BaseStudy.doi == doi, BaseStudy.pmid == pmid)
+                ).all()
+
+                if len(abstract_studies) == 1:
+                    base_study = abstract_studies[0]
+                elif len(abstract_studies) > 1:
+                    source_base_study = abstract_studies[0]
+                    # do not overwrite the verions column
+                    # we want to append to this column
+                    columns = [
+                        c for c in source_base_study.__table__.columns if c != "versions"
+                    ]
+                    for ab in abstract_studies[1:]:
+                        for col in columns:
+                            source_attr = getattr(source_base_study, col)
+                            new_attr = getattr(ab, col)
+                            setattr(source_base_study, col, source_attr or new_attr)
+                        source_base_study.versions.extend(ab.versions)
+                        # delete the extraneous record
+                        db.session.delete(ab)
+
+            if doi is None:
+                base_study = BaseStudy.query.filter_by(pmid=pmid).one_or_none()
+
+            if base_study is None:
+                base_study = BaseStudy(
+                    name=metadata_row.title,
+                    doi=doi,
+                    pmid=pmid,
+                    authors=metadata_row.authors,
+                    publication=metadata_row.journal,
+                    year=metadata_row.year,
+                    level="group",
+                )
+            else:
+                # try to update the abstract study if information is missing
+                study_info = {
+                    "name": metadata_row.title,
+                    "doi": doi,
+                    "pmid": pmid,
+                    "authors": metadata_row.authors,
+                    "publication": metadata_row.journal,
+                    "year": metadata_row.year,
+                    "level": "group",
+                }
+                for col, value in study_info.items():
+                    source_attr = getattr(base_study, col)
+                    setattr(base_study, col, source_attr or value)
             study_coord_data = coord_data.loc[[id_]]
             md = {
                 "year": int(metadata_row.year),
@@ -201,10 +278,11 @@ def ingest_neurosynth(max_rows=None):
                 publication=metadata_row.journal,
                 metadata=md,
                 pmid=id_,
-                doi=None if isinstance(metadata_row.doi, float) else metadata_row.doi,
+                doi=doi,
                 source="neurosynth",
                 source_id=id_,
                 level="group",
+                base_study=base_study,
             )
             analyses = []
             points = []
@@ -298,14 +376,26 @@ def ingest_neuroquery(max_rows=None):
 
     # all_studies = {s.pmid: s for s in Study.query.filter(source="neuroquery").all()}
     for id_, metadata_row in metadata.iterrows():
+        base_study = BaseStudy.query.filter_by(pmid=id_).one_or_none()
+
+        if base_study is None:
+            base_study = BaseStudy(
+                name=metadata_row["title"],
+                level="group",
+                pmid=id_
+            )
         study_coord_data = coord_data.loc[[id_]]
         s = Study(
-            name=metadata_row["title"],
-            metadata=dict(),
+            name=metadata_row["title"] or base_study.name,
             source="neuroquery",
             pmid=id_,
+            doi=base_study.doi,
+            year=base_study.year,
+            publication=base_study.publication,
+            authors=base_study.authors,
             source_id=id_,
             level="group",
+            base_study=base_study,
         )
         analyses = []
         points = []
