@@ -243,8 +243,7 @@ class StudiesView(ObjectView, ListView):
 
     def join_tables(self, q):
         "join relevant tables to speed up query"
-        q = q.join(Analysis).\
-            join(StudysetStudy)
+        q = q.outerjoin(Analysis)
 
         return q
 
@@ -295,14 +294,18 @@ class StudiesView(ObjectView, ListView):
 
     def custom_record_update(record):
         """Find/create the associated base study"""
+        # if the study was cloned and the base_study is already known.
+        if record.base_study is not None:
+            return record
+
         query = BaseStudy.query
         has_doi = has_pmid = False
         base_study = None
         if record.doi:
-            query.filter_by(doi=record.doi)
+            query = query.filter_by(doi=record.doi)
             has_doi = True
         if record.pmid:
-            query.filter_by(pmid=record.pmid)
+            query = query.filter_by(pmid=record.pmid)
             has_pmid = True
 
         if query.count() >= 1 and (has_doi or has_pmid):
@@ -322,7 +325,7 @@ class StudiesView(ObjectView, ListView):
         else:
             # there is no published study to associate
             # with this study
-            pass
+            return record
 
         record.base_study = base_study
 
