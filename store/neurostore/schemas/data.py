@@ -275,9 +275,9 @@ class StudySchema(BaseDataSchema):
     source_id = fields.String(
         dump_only=True, metadata={"db_only": True}, allow_none=True
     )
-    studysets = fields.Nested(
-        "StudySetStudyInfoSchema", dump_only=True, metadata={"db_only": True}, many=True
-    )
+    # studysets = fields.Nested(
+    #    "StudySetStudyInfoSchema", dump_only=True, metadata={"db_only": True}, many=True
+    # )
     source_updated_at = fields.DateTime(
         dump_only=True, metadata={"db_only": True}, allow_none=True
     )
