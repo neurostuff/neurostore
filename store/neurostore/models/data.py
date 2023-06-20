@@ -103,17 +103,17 @@ class AnnotationAnalysis(db.Model):
 class BaseStudy(BaseMixin, db.Model):
     __tablename__ = "base_studies"
 
-    name = db.Column(db.String)
-    description = db.Column(db.String)
-    publication = db.Column(db.String)
-    doi = db.Column(db.String, nullable=True)
-    pmid = db.Column(db.String, nullable=True)
-    authors = db.Column(db.String)
-    year = db.Column(db.Integer)
+    name = db.Column(db.String, index=True)
+    description = db.Column(db.String, index=True)
+    publication = db.Column(db.String, index=True)
+    doi = db.Column(db.String, nullable=True, index=True)
+    pmid = db.Column(db.String, nullable=True, index=True)
+    authors = db.Column(db.String, index=True)
+    year = db.Column(db.Integer, index=True)
     public = db.Column(db.Boolean, default=True)
     level = db.Column(db.String)
     metadata_ = db.Column(JSONB)
-    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     user = relationship("User", backref=backref("base_studies"))
     # retrieve versions of same study
     versions = relationship("Study", backref=backref("base_study"))
@@ -126,21 +126,21 @@ class BaseStudy(BaseMixin, db.Model):
 class Study(BaseMixin, db.Model):
     __tablename__ = "studies"
 
-    name = db.Column(db.String)
-    description = db.Column(db.String)
-    publication = db.Column(db.String)
-    doi = db.Column(db.String)
-    pmid = db.Column(db.String)
-    authors = db.Column(db.String)
-    year = db.Column(db.Integer)
+    name = db.Column(db.String, index=True)
+    description = db.Column(db.String, index=True)
+    publication = db.Column(db.String, index=True)
+    doi = db.Column(db.String, index=True)
+    pmid = db.Column(db.String, index=True)
+    authors = db.Column(db.String, index=True)
+    year = db.Column(db.Integer, index=True)
     public = db.Column(db.Boolean, default=True)
     level = db.Column(db.String)
     metadata_ = db.Column(JSONB)
-    source = db.Column(db.String)
-    source_id = db.Column(db.String)
+    source = db.Column(db.String, index=True)
+    source_id = db.Column(db.String, index=True)
     source_updated_at = db.Column(db.DateTime(timezone=True))
     base_study_id = db.Column(db.Text, db.ForeignKey('base_studies.id'))
-    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     user = relationship("User", backref=backref("studies"))
     analyses = relationship(
         "Analysis",
