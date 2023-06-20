@@ -251,6 +251,7 @@ class StudiesView(ObjectView, ListView):
         "join relevant tables to speed up query"
         q = q.options(joinedload('analyses'))
         q = q.options(joinedload('studyset_studies'))
+        q = q.options(joinedload('studysets'))
 
         return q
 
