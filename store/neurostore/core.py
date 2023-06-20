@@ -7,6 +7,7 @@ from connexion.json_schema import default_handlers as json_schema_handlers
 from connexion.resolver import MethodViewResolver
 from flask_cors import CORS
 import prance
+import sqltap.wsgi
 
 from .or_json import ORJSONDecoder, ORJSONEncoder
 from .database import init_db
@@ -23,7 +24,6 @@ app.config.from_object(os.environ["APP_SETTINGS"])
 oauth = OAuth(app)
 
 db = init_db(app)
-
 
 app.secret_key = app.config["JWT_SECRET_KEY"]
 
@@ -71,6 +71,8 @@ auth0 = oauth.register(
     },
 )
 
+if app.debug:
+    app.wsgi_app = sqltap.wsgi.SQLTapMiddleware(app.wsgi_app, path="/api/__sqltap__")
 
 app.json_encoder = ORJSONEncoder
 app.json_decoder = ORJSONDecoder
