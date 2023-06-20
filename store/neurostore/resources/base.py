@@ -218,12 +218,13 @@ class ListView(BaseView):
 
     def __init__(self):
         # Initialize expected arguments based on class attributes
-        self._fulltext_fields = self._multi_search or self._search_fields
+        self._fulltext_fields = self._multi_search
         self._user_args = {
             **LIST_USER_ARGS,
             **self._view_fields,
-            **{f: fields.Str() for f in self._fulltext_fields},
         }
+        if self._fulltext_fields:
+            self._user_args.update({f: fields.Str() for f in self._fulltext_fields})
 
     def view_search(self, q, args):
         return q
@@ -241,9 +242,8 @@ class ListView(BaseView):
         ).dump(records)
         return content
 
-    def create_metadata(self, q):
-        count = len(q.all())
-        return {"total_count": count}
+    def create_metadata(self, q, total):
+        return {"total_count": total}
 
     def search(self):
         # Parse arguments using webargs
@@ -266,10 +266,7 @@ class ListView(BaseView):
 
         # For multi-column search, default to using search fields
         if s is not None and self._fulltext_fields:
-            search_expr = [
-                getattr(m, field).ilike(f"%{s}%") for field in self._fulltext_fields
-            ]
-            q = q.filter(sae.or_(*search_expr))
+            q = q.filter(m.__ts_vector__.match(s))
 
         # Alternatively (or in addition), search on individual fields.
         for field in self._search_fields:
@@ -299,11 +296,12 @@ class ListView(BaseView):
         # join the relevant tables for output
         q = self.join_tables(q)
 
-        records = q.paginate(
+        pagination_query = q.paginate(
             page=args["page"], per_page=args["page_size"], error_out=False,
-        ).items
+        )
+        records = pagination_query.items
         content = self.serialize_records(records, args)
-        metadata = self.create_metadata(q)
+        metadata = self.create_metadata(q, pagination_query.total)
         response = {
             "metadata": metadata,
             "results": content,

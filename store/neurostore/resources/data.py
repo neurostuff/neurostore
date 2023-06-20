@@ -1,6 +1,7 @@
 from marshmallow import EXCLUDE
 from webargs import fields
 import sqlalchemy.sql.expression as sae
+from sqlalchemy.orm import joinedload
 
 from .utils import view_maker
 from .base import BaseView, ObjectView, ListView
@@ -62,6 +63,7 @@ class StudysetsView(ObjectView, ListView):
     _linked = {
         "annotations": "AnnotationsView",
     }
+    _multi_search = ("name", "description")
     _search_fields = ("name", "description", "publication", "doi", "pmid")
 
     def view_search(self, q, args):
@@ -88,6 +90,7 @@ class AnnotationsView(ObjectView, ListView):
         "studyset": "StudysetsView",
     }
 
+    _multi_search = ("name", "description")
     _search_fields = ("name", "description")
 
     def view_search(self, q, args):
@@ -148,6 +151,8 @@ class BaseStudiesView(ObjectView, ListView):
     _view_fields = {
         "level": fields.String(default="group", missing="group"),
     }
+
+    _multi_search = ("name", "description")
 
     _search_fields = (
         "name",
@@ -235,15 +240,16 @@ class StudiesView(ObjectView, ListView):
             "doi" if isinstance(unique_col, bool) and unique_col else unique_col
         )
         if unique_col:
-            q_null = q.filter(getattr(self._model, unique_col).is_(None))
-            q_distinct = q.distinct(getattr(self._model, unique_col))
-            q = q_distinct.union(q_null)
-            q = q.order_by(getattr(self._model, unique_col))
+            subquery = q.distinct(getattr(self._model, unique_col)).subquery()
+            q = q.join(
+                subquery,
+                getattr(self._model, unique_col) == getattr(subquery.c, unique_col)
+            )
         return q
 
     def join_tables(self, q):
         "join relevant tables to speed up query"
-        q = q.outerjoin(Analysis)
+        q = q.options(joinedload('analyses'))
 
         return q
 
