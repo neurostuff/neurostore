@@ -164,7 +164,7 @@ def test_delete_studies(auth_client, ingest_neurosynth, session):
         assert Analysis.query.filter_by(id=analysis).first() is None
 
 
-@pytest.skip("not supporting this feature anymore")
+@pytest.mark.skip("not supporting this feature anymore")
 def test_getting_studysets_by_owner(auth_clients, user_data):
     client1 = auth_clients[0]
     id1 = client1.username
