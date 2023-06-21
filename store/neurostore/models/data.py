@@ -1,5 +1,5 @@
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import event, ForeignKeyConstraint
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.exc import SQLAlchemyError
@@ -8,12 +8,8 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 import shortuuid
 
+from .migration_types import TSVector
 from ..database import db
-
-
-class TSVector(sa.types.TypeDecorator):
-    """Class for full text search"""
-    impl = TSVECTOR
 
 
 def generate_id():
