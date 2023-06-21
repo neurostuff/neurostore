@@ -120,7 +120,8 @@ class BaseStudy(BaseMixin, db.Model):
         TSVector(),
         db.Computed(
             "to_tsvector('english', coalesce(name, '') || ' ' || coalesce(description, ''))",
-            persisted=True)
+            persisted=True,
+        ),
     )
 
     user = relationship("User", backref=backref("base_studies"))
@@ -129,8 +130,8 @@ class BaseStudy(BaseMixin, db.Model):
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
-        db.UniqueConstraint('doi', 'pmid', name='doi_pmid'),
-        sa.Index('ix_base_study___ts_vector__', __ts_vector__, postgresql_using='gin'),
+        db.UniqueConstraint("doi", "pmid", name="doi_pmid"),
+        sa.Index("ix_base_study___ts_vector__", __ts_vector__, postgresql_using="gin"),
     )
 
 
@@ -150,13 +151,14 @@ class Study(BaseMixin, db.Model):
     source = db.Column(db.String, index=True)
     source_id = db.Column(db.String, index=True)
     source_updated_at = db.Column(db.DateTime(timezone=True))
-    base_study_id = db.Column(db.Text, db.ForeignKey('base_studies.id'))
+    base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     __ts_vector__ = db.Column(
         TSVector(),
         db.Computed(
             "to_tsvector('english', coalesce(name, '') || ' ' || coalesce(description, ''))",
-            persisted=True)
+            persisted=True,
+        ),
     )
     user = relationship("User", backref=backref("studies"))
     analyses = relationship(
@@ -167,7 +169,7 @@ class Study(BaseMixin, db.Model):
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
-        sa.Index('ix_study___ts_vector__', __ts_vector__, postgresql_using='gin'),
+        sa.Index("ix_study___ts_vector__", __ts_vector__, postgresql_using="gin"),
     )
 
 

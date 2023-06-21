@@ -31,9 +31,7 @@ from neurostore.models.data import StudysetStudy, _check_type
 
 def ingest_neurovault(verbose=False, limit=20, overwrite=False):
     # Store existing studies for quick lookup
-    all_studies = {
-        s.doi: s for s in Study.query.filter_by(source="neurovault").all()
-    }
+    all_studies = {s.doi: s for s in Study.query.filter_by(source="neurovault").all()}
 
     def add_collection(data):
         if data["DOI"] in all_studies and not overwrite:
@@ -67,7 +65,6 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False):
             source="neurovault",
             level="group",
             base_study=base_study,
-
         )
 
         space = data.get("coordinate_space", None)
@@ -227,7 +224,9 @@ def ingest_neurosynth(max_rows=None):
                     # do not overwrite the verions column
                     # we want to append to this column
                     columns = [
-                        c for c in source_base_study.__table__.columns if c != "versions"
+                        c
+                        for c in source_base_study.__table__.columns
+                        if c != "versions"
                     ]
                     for ab in base_studies[1:]:
                         for col in columns:
@@ -379,11 +378,7 @@ def ingest_neuroquery(max_rows=None):
         base_study = BaseStudy.query.filter_by(pmid=id_).one_or_none()
 
         if base_study is None:
-            base_study = BaseStudy(
-                name=metadata_row["title"],
-                level="group",
-                pmid=id_
-            )
+            base_study = BaseStudy(name=metadata_row["title"], level="group", pmid=id_)
         study_coord_data = coord_data.loc[[id_]]
         s = Study(
             name=metadata_row["title"] or base_study.name,

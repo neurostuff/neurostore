@@ -144,9 +144,7 @@ class AnnotationsView(ObjectView, ListView):
 
 @view_maker
 class BaseStudiesView(ObjectView, ListView):
-    _nested = {
-        "versions": "StudiesView"
-    }
+    _nested = {"versions": "StudiesView"}
 
     _view_fields = {
         "level": fields.String(default="group", missing="group"),
@@ -169,14 +167,22 @@ class BaseStudiesView(ObjectView, ListView):
         # search studies for data_type
         if args.get("data_type"):
             if args["data_type"] == "coordinate":
-                q = q.filter(self._model.versions.any(Study.analyses.any(Analysis.points.any())))
+                q = q.filter(
+                    self._model.versions.any(Study.analyses.any(Analysis.points.any()))
+                )
             elif args["data_type"] == "image":
-                q = q.filter(self._model.versions.any(Study.analyses.any(Analysis.images.any())))
+                q = q.filter(
+                    self._model.versions.any(Study.analyses.any(Analysis.images.any()))
+                )
             elif args["data_type"] == "both":
                 q = q.filter(
                     sae.or_(
-                        self._model.versions.any(Study.analyses.any(Analysis.points.any())),
-                        self._model.versions.any(Study.analyses.any(Analysis.images.any())),
+                        self._model.versions.any(
+                            Study.analyses.any(Analysis.points.any())
+                        ),
+                        self._model.versions.any(
+                            Study.analyses.any(Analysis.images.any())
+                        ),
                     )
                 )
         # filter by level of analysis (group or meta)
@@ -243,13 +249,13 @@ class StudiesView(ObjectView, ListView):
             subquery = q.distinct(getattr(self._model, unique_col)).subquery()
             q = q.join(
                 subquery,
-                getattr(self._model, unique_col) == getattr(subquery.c, unique_col)
+                getattr(self._model, unique_col) == getattr(subquery.c, unique_col),
             )
         return q
 
     def join_tables(self, q):
         "join relevant tables to speed up query"
-        q = q.options(joinedload('analyses'))
+        q = q.options(joinedload("analyses"))
         return q
 
     def serialize_records(self, records, args):
@@ -286,7 +292,7 @@ class StudiesView(ObjectView, ListView):
         data["source"] = "neurostore"
         data["source_id"] = source_id
         data["source_updated_at"] = study.updated_at or study.created_at
-        data['base_study'] = {"id": study.base_study_id}
+        data["base_study"] = {"id": study.base_study_id}
         return data
 
     @classmethod

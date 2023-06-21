@@ -297,7 +297,9 @@ class ListView(BaseView):
         q = self.join_tables(q)
 
         pagination_query = q.paginate(
-            page=args["page"], per_page=args["page_size"], error_out=False,
+            page=args["page"],
+            per_page=args["page_size"],
+            error_out=False,
         )
         records = pagination_query.items
         content = self.serialize_records(records, args)
