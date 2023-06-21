@@ -191,6 +191,11 @@ class BaseStudiesView(ObjectView, ListView):
 
         return q
 
+    def join_tables(self, q):
+        "join relevant tables to speed up query"
+        q = q.options(joinedload("versions"))
+        return q
+
 
 @view_maker
 class StudiesView(ObjectView, ListView):
