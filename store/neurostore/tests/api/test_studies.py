@@ -6,15 +6,14 @@ from ...models import Studyset, Study, User, Analysis
 
 def test_create_study_as_user_and_analysis_as_bot(auth_clients):
     # create study as user
-    user_auth_client = next(ac for ac in auth_clients if ac.username == 'user1-id')
+    user_auth_client = next(ac for ac in auth_clients if ac.username == "user1-id")
 
     study_resp = user_auth_client.post("/api/studies/", data={"name": "test"})
     study_id = study_resp.json["id"]
 
-    bot_auth_client = next(ac for ac in auth_clients if 'clients' in ac.username)
+    bot_auth_client = next(ac for ac in auth_clients if "clients" in ac.username)
     analysis_resp = bot_auth_client.post(
-        "/api/analyses/",
-        data={"name": "test-analysis", "study": study_id}
+        "/api/analyses/", data={"name": "test-analysis", "study": study_id}
     )
 
     assert analysis_resp.status_code == 200
@@ -165,6 +164,7 @@ def test_delete_studies(auth_client, ingest_neurosynth, session):
         assert Analysis.query.filter_by(id=analysis).first() is None
 
 
+@pytest.mark.skip("not supporting this feature anymore")
 def test_getting_studysets_by_owner(auth_clients, user_data):
     client1 = auth_clients[0]
     id1 = client1.username

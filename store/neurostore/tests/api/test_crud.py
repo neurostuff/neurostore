@@ -44,8 +44,8 @@ def test_create(auth_client, user_data, endpoint, model, schema):
     for row in rows:
         payload = schema(copy=True).dump(row)
         if model is BaseStudy:
-            payload['doi'] = payload['doi'] + "new"
-            payload['pmid'] = payload['pmid'] + "new"
+            payload["doi"] = payload["doi"] + "new"
+            payload["pmid"] = payload["pmid"] + "new"
 
         resp = auth_client.post(f"/api/{endpoint}/", data=payload)
         if resp.status_code == 422:
