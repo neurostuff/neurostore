@@ -76,3 +76,5 @@ def test_common_queries(auth_client, ingest_neurosynth):
     study = Study.query.filter(Study.pmid.isnot(None)).first()
 
     pmid_search = auth_client.get(f"/api/studies/?pmid={study.pmid}")
+
+    assert pmid_search.status_code == 200
