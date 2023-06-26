@@ -226,6 +226,9 @@ class ListView(BaseView):
         if self._fulltext_fields:
             self._user_args.update({f: fields.Str() for f in self._fulltext_fields})
 
+        if self._search_fields:
+            self._user_args.update({f: fields.Str() for f in self._search_fields})
+
     def view_search(self, q, args):
         return q
 
