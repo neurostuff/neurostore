@@ -208,6 +208,9 @@ class StudiesView(ObjectView, ListView):
         **LIST_NESTED_ARGS,
         **LIST_CLONE_ARGS,
     }
+
+    _multi_search = ("name", "description")
+
     _parent = {
         "base_study": "BaseStudiesView",
     }

@@ -255,9 +255,6 @@ class ListView(BaseView):
         m = self._model  # for brevity
         q = m.query
 
-        # Search
-        s = args["search"]
-
         # query items that are owned by a user_id
         if args.get("user_id"):
             q = q.filter(m.user_id == args.get("user_id"))
@@ -267,8 +264,14 @@ class ListView(BaseView):
             current_user = get_current_user()
             q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
 
+        # Search
+        s = args["search"]
+
         # For multi-column search, default to using search fields
-        if s is not None and self._fulltext_fields:
+        # temporary fix for pmid search
+        if s is not None and s.isdigit():
+            q = q.filter_by(pmid=s)
+        elif s is not None and self._fulltext_fields:
             q = q.filter(m.__ts_vector__.match(s))
 
         # Alternatively (or in addition), search on individual fields.
