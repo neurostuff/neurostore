@@ -77,4 +77,7 @@ def test_common_queries(auth_client, ingest_neurosynth):
 
     pmid_search = auth_client.get(f"/api/studies/?pmid={study.pmid}")
 
-    assert pmid_search.status_code == 200
+    total_search = auth_client.get(f"/api/studies/?search={study.pmid}")
+
+    assert pmid_search.status_code == total_search.status_code == 200
+    assert len(pmid_search.json['results']) == len(total_search.json['results'])
