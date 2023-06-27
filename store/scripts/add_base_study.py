@@ -1,11 +1,20 @@
 from neurostore.models import BaseStudy, Study
 from neurostore.database import db
 
-base_study_attributes = ['name', 'description', 'doi', 'pmid', 'authors', 'publication', 'metadata_', 'level']
+base_study_attributes = [
+    "name",
+    "description",
+    "doi",
+    "pmid",
+    "authors",
+    "publication",
+    "metadata_",
+    "level",
+]
 base_study_dois = {}
 base_study_pmids = {}
 for study in Study.query:
-    print(f'handling {study.name}')
+    print(f"handling {study.name}")
     base_study = None
     if study.doi:
         base_study = base_study_dois.get(study.doi, None)

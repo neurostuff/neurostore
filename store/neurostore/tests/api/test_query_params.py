@@ -1,4 +1,5 @@
 import pytest
+from ...models import Study
 from ...schemas.data import StudysetSchema, StudySchema, AnalysisSchema, StringOrNested
 
 
@@ -69,3 +70,11 @@ def test_data_type(auth_client, ingest_neurosynth, ingest_neurovault):
 def test_page_size(auth_client, ingest_neurosynth):
     get_page_size = auth_client.get("/api/studies/?page_size=5")
     assert get_page_size.status_code == 200
+
+
+def test_common_queries(auth_client, ingest_neurosynth):
+    study = Study.query.filter(Study.pmid.isnot(None)).first()
+
+    pmid_search = auth_client.get(f"/api/studies/?pmid={study.pmid}")
+
+    assert pmid_search.status_code == 200
