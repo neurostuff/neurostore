@@ -9,8 +9,6 @@ const DisplayAnalyses: React.FC<{
 }> = (props) => {
     const [selectedAnalysisIndex, setSelectedAnalysisIndex] = useState(0);
 
-    console.log(props.analyses);
-
     const handleSelectAnalysis = (index: number) => {
         setSelectedAnalysisIndex(index);
     };

@@ -1,31 +1,31 @@
-import { Draggable, Droppable } from '@hello-pangea/dnd';
 import {
+    Autocomplete,
     Box,
     Button,
+    Divider,
     ListItem,
     ListItemText,
     Paper,
-    Divider,
-    Autocomplete,
     TextField,
 } from '@mui/material';
-import { indexToPRISMAMapping, ITag } from 'hooks/requests/useGetProjects';
-import { useEffect, useMemo, useState } from 'react';
 import CurationStubStudyDraggableContainer, {
     ICurationStubStudy,
 } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import CurationColumnStyles from './CurationColumn.styles';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import CurationDialog from 'components/Dialogs/CurationDialog/CurationDialog';
+import { ITag, indexToPRISMAMapping } from 'hooks/requests/useGetProjects';
+import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import {
     useProjectCurationColumn,
     useProjectCurationExclusionTags,
     useProjectCurationInfoTags,
     useProjectCurationPrismaConfig,
+    usePromoteAllUncategorized,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import React from 'react';
-import { FixedSizeList, ListChildComponentProps } from 'react-window';
-import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
+import React, { useEffect, useMemo, useState } from 'react';
+import { FixedSizeList, ListChildComponentProps } from 'react-window';
+import CurationColumnStyles from './CurationColumn.styles';
 
 export interface ICurationColumn {
     name: string;
@@ -60,25 +60,25 @@ const FixedSizeListRow: React.FC<
     const stub = props.data.stubs[props.index];
 
     return (
-        <Draggable
-            draggableId={stub.id}
+        // <Draggable
+        //     draggableId={stub.id}
+        //     index={props.index}
+        //     isDragDisabled={!!stub?.exclusionTag}
+        //     key={stub.id}
+        // >
+        //     {(provided, snapshot) => (
+        <CurationStubStudyDraggableContainer
+            {...stub}
+            // provided={provided}
+            // snapshot={snapshot}
             index={props.index}
-            isDragDisabled={!!stub?.exclusionTag}
-            key={stub.id}
-        >
-            {(provided, snapshot) => (
-                <CurationStubStudyDraggableContainer
-                    {...stub}
-                    provided={provided}
-                    snapshot={snapshot}
-                    index={props.index}
-                    style={props.style}
-                    isVisible={getVisibility(stub, props.data.selectedTag)}
-                    onSelectStubStudy={props.data.onSelectStub}
-                    columnIndex={props.data.columnIndex}
-                />
-            )}
-        </Draggable>
+            style={props.style}
+            isVisible={getVisibility(stub, props.data.selectedTag)}
+            onSelectStubStudy={props.data.onSelectStub}
+            columnIndex={props.data.columnIndex}
+        />
+        //     )}
+        // </Draggable>
     );
 };
 
@@ -87,8 +87,10 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
     const prismaConfig = useProjectCurationPrismaConfig();
     const infoTags = useProjectCurationInfoTags();
     const exclusionTags = useProjectCurationExclusionTags();
+    const promoteAllUncategorized = usePromoteAllUncategorized();
 
     const [selectedTag, setSelectedTag] = useState<ITag>();
+    const [warningDialogIsOpen, setWarningDialogIsOpen] = useState(false); // TODO: get rid of this
     const windowHeight = useGetWindowHeight();
     const [tags, setTags] = useState<ITag[]>([]);
     const [dialogState, setDialogState] = useState<{
@@ -136,6 +138,14 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
         });
     }, []);
 
+    const handlePromoteAllUnCategorized = (confirm?: boolean) => {
+        if (confirm) {
+            promoteAllUncategorized();
+        }
+
+        setWarningDialogIsOpen(false);
+    };
+
     // This logic was previously in a useEffect hook, but was removed because it caused
     // visual flickering as the filteredStudies took noticable milliseconds to get updated
     const filteredStudies = useMemo(() => {
@@ -167,6 +177,28 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
             >
                 {column.name} ({filteredStudies.length} of {column.stubStudies.length})
             </Button>
+
+            {props.columnIndex === 0 && (
+                <>
+                    <ConfirmationDialog
+                        dialogTitle="Are you sure you want to promote all uncategorized studies?"
+                        dialogMessage="Once you do this, it cannot be undone"
+                        rejectText="Cancel"
+                        confirmText="Promote All"
+                        isOpen={warningDialogIsOpen}
+                        onCloseDialog={handlePromoteAllUnCategorized}
+                    />
+                    <Button
+                        variant="contained"
+                        color="info"
+                        disableElevation
+                        onClick={() => setWarningDialogIsOpen(true)}
+                        sx={{ padding: '8px', marginBottom: '0.75rem' }}
+                    >
+                        Promote all uncategorized studies
+                    </Button>
+                </>
+            )}
 
             <Paper elevation={0} sx={{ width: '100%' }}>
                 <Autocomplete
@@ -200,7 +232,7 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
 
             <Divider sx={{ margin: '1rem 0' }} />
 
-            <Droppable
+            {/* <Droppable
                 mode="virtual"
                 droppableId={column.id}
                 renderClone={(provided, snapshot, rubric) => (
@@ -216,28 +248,28 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
                     />
                 )}
             >
-                {(provided, snapshot) => (
-                    <FixedSizeList
-                        // 212 roughly represents the space taken up by other components above the column like buttons and headers
-                        height={windowHeight - 212 < 0 ? 0 : windowHeight - 212}
-                        outerRef={provided.innerRef}
-                        itemCount={filteredStudies.length}
-                        width="100%"
-                        itemSize={140}
-                        itemKey={(index, data) => data.stubs[index]?.id}
-                        layout="vertical"
-                        itemData={{
-                            stubs: filteredStudies,
-                            columnIndex: props.columnIndex,
-                            onSelectStub: handleSelectStub,
-                            selectedTag: selectedTag,
-                        }}
-                        overscanCount={3}
-                    >
-                        {FixedSizeListRow}
-                    </FixedSizeList>
-                )}
-            </Droppable>
+                {(provided, snapshot) => ( */}
+            <FixedSizeList
+                // 212 roughly represents the space taken up by other components above the column like buttons and headers
+                height={windowHeight - 212 < 0 ? 0 : windowHeight - 212}
+                // outerRef={provided.innerRef}
+                itemCount={filteredStudies.length}
+                width="100%"
+                itemSize={140}
+                itemKey={(index, data) => data.stubs[index]?.id}
+                layout="vertical"
+                itemData={{
+                    stubs: filteredStudies,
+                    columnIndex: props.columnIndex,
+                    onSelectStub: handleSelectStub,
+                    selectedTag: selectedTag,
+                }}
+                overscanCount={3}
+            >
+                {FixedSizeListRow}
+            </FixedSizeList>
+            {/* )}
+            </Droppable> */}
         </Box>
     );
 });

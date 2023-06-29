@@ -23,6 +23,7 @@ import {
     addOrUpdateStudyListStatusHelper,
     deleteStubHelper,
     setGivenStudyStatusesAsCompleteHelper,
+    promoteAllUncategorizedHelper,
 } from './ProjectStore.helpers';
 import { persist } from 'zustand/middleware';
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
@@ -62,6 +63,7 @@ export type ProjectStoreActions = {
     removeTagFromStub: (columnIndex: number, stubId: string, tagId: string) => void;
     setExclusionForStub: (columnIndex: number, stubId: string, exclusion: ITag | null) => void;
     promoteStub: (columnIndex: number, stubId: string) => void;
+    promoteAllUncategorized: () => void; // TODO: improve this
     updateExtractionMetadata: (metadata: Partial<IExtractionMetadata>) => void;
     addOrUpdateStudyListStatus: (id: string, status: 'COMPLETE' | 'SAVEFORLATER') => void;
     setGivenStudyStatusesAsComplete: (studyIdList: string[]) => void;
@@ -442,6 +444,20 @@ const useProjectStore = create<
                             },
                         }));
                     },
+                    promoteAllUncategorized: () => {
+                        set((state) => ({
+                            ...state,
+                            provenance: {
+                                ...state.provenance,
+                                curationMetadata: {
+                                    ...state.provenance.curationMetadata,
+                                    columns: promoteAllUncategorizedHelper(
+                                        state.provenance.curationMetadata.columns
+                                    ),
+                                },
+                            },
+                        }));
+                    },
                     updateExtractionMetadata: (metadata) => {
                         set((state) => ({
                             ...state,
@@ -539,6 +555,8 @@ export const useAddNewCurationStubs = () => useProjectStore((state) => state.add
 export const useInitCuration = () => useProjectStore((state) => state.initCuration);
 export const useUpdateStubField = () => useProjectStore((state) => state.updateStubField);
 export const usePromoteStub = () => useProjectStore((state) => state.promoteStub);
+export const usePromoteAllUncategorized = () =>
+    useProjectStore((state) => state.promoteAllUncategorized);
 export const useCreateCurationSource = () =>
     useProjectStore((state) => state.createNewIdentificationSource);
 export const useAddTagToStub = () => useProjectStore((state) => state.addTagToStub);

@@ -53,12 +53,35 @@ const ResolveImportDuplicates: React.FC<{
             const update = [...prev];
 
             const duplicateList = [...update[duplicateListIndex]];
-            duplicateList[duplicateStubIndex] = {
-                ...duplicateList[duplicateStubIndex],
-                resolution: resolution,
-                exclusionTag: resolution === 'duplicate' ? defaultExclusionTags.duplicate : null,
-            };
-            update[duplicateListIndex] = duplicateList;
+
+            if (resolution === 'duplicate') {
+                duplicateList[duplicateStubIndex] = {
+                    ...duplicateList[duplicateStubIndex],
+                    resolution: 'duplicate',
+                    exclusionTag: defaultExclusionTags.duplicate,
+                };
+                update[duplicateListIndex] = duplicateList;
+            } else {
+                // automatically set all other studies as "duplicate" if the user selects "keep"
+                duplicateList.forEach((duplicate, index, arr) => {
+                    if (index === duplicateStubIndex) {
+                        arr[index] = {
+                            ...arr[index],
+                            resolution: 'not-duplicate',
+                            exclusionTag: null,
+                        };
+                    } else {
+                        arr[index] = {
+                            ...arr[index],
+                            resolution: arr[index].resolution ? arr[index].resolution : 'duplicate',
+                            exclusionTag: arr[index].resolution
+                                ? arr[index].exclusionTag
+                                : defaultExclusionTags.duplicate,
+                        };
+                    }
+                });
+                update[duplicateListIndex] = duplicateList;
+            }
 
             if (update[duplicateListIndex].every((x) => x.resolution)) {
                 setCurrStub((prev) => prev + 1);
@@ -85,15 +108,14 @@ const ResolveImportDuplicates: React.FC<{
     return (
         <Box sx={{ marginTop: '1rem' }}>
             <Typography variant="h6" sx={{ marginBottom: '1rem', color: 'error.dark' }}>
-                {duplicates.length} {duplicates.length > 1 ? 'studies have ' : 'study has '}{' '}
-                potential duplicates in your import
+                Duplicates were found in your import file
             </Typography>
             <Typography sx={{ color: 'gray' }}>
                 Some studies within the list you are importing have been flagged as duplicates.
             </Typography>
             <Typography gutterBottom sx={{ color: 'gray' }}>
-                Resolve below by marking the study of interest as <b>"NOT A DUPLICATE"</b>, and
-                marking the other study/studies as <b>"DUPLICATE"</b>.
+                Resolve below by clicking on the <b>"KEEP THIS STUDY"</b> button for the study that
+                you want. Other studies will be marked as duplicates.
             </Typography>
 
             <Box>
@@ -127,7 +149,7 @@ const ResolveImportDuplicates: React.FC<{
                                     <Box key={stub.id} sx={{ display: 'flex' }}>
                                         <Box
                                             sx={{
-                                                width: 'calc(100% - 280px)',
+                                                width: 'calc(100% - 380px)',
                                                 marginRight: '30px',
                                             }}
                                         >
@@ -135,7 +157,7 @@ const ResolveImportDuplicates: React.FC<{
                                                 <ReadOnlyStubSummary {...stub} />
                                             </Box>
                                         </Box>
-                                        <Box sx={{ width: '250px' }}>
+                                        <Box sx={{ width: '350px' }}>
                                             <ToggleButtonGroup
                                                 exclusive
                                                 value={stub.resolution}
@@ -151,10 +173,10 @@ const ResolveImportDuplicates: React.FC<{
                                                 }
                                             >
                                                 <ToggleButton color="primary" value="not-duplicate">
-                                                    Not a duplicate
+                                                    Keep this study
                                                 </ToggleButton>
                                                 <ToggleButton color="error" value="duplicate">
-                                                    Duplicate
+                                                    This is a duplicate
                                                 </ToggleButton>
                                             </ToggleButtonGroup>
                                         </Box>

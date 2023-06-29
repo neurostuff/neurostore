@@ -57,11 +57,6 @@ const ViewMetaAnalysis: React.FC<MetaAnalysisReturn> = (props) => {
         results && results.length ? (results[results.length - 1] as ResultReturn).id : undefined
     );
 
-    console.log({
-        props,
-        metaAnalysisResult,
-    });
-
     const path = useRouteMatch();
     const history = useHistory();
 

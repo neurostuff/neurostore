@@ -1,18 +1,18 @@
-import { Typography, Box, Button, Link } from '@mui/material';
+import { Box, Button, Link, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import React, { useState } from 'react';
-import TextEdit from 'components/TextEdit/TextEdit';
 import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
+import FullTextLinkComponent from 'components/FullTextLinkComponent/FullTextLinkComponent';
+import TextEdit from 'components/TextEdit/TextEdit';
 import { ISource } from 'hooks/requests/useGetProjects';
-import EditableStubSummaryHeader from './EditableStubSummaryHeader';
+import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
 import {
     useDeleteStub,
     useProjectCurationColumns,
     useUpdateStubField,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
-import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
-import FullTextLinkComponent from 'components/FullTextLinkComponent/FullTextLinkComponent';
+import React, { useState } from 'react';
+import EditableStubSummaryHeader from './EditableStubSummaryHeader';
 
 interface IEditableStubSummary {
     stub: ICurationStubStudy | undefined;
