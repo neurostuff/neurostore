@@ -225,8 +225,6 @@ const AnnotationsHotTable: React.FC<{
         ),
     ];
 
-    console.log(initialHotColumnHeaders);
-
     return (
         <Box>
             {props.allowAddColumn && (

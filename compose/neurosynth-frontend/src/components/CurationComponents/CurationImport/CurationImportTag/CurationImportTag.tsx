@@ -1,132 +1,71 @@
-import { Box, Chip, Divider, Paper, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';
 import { ITag } from 'hooks/requests/useGetProjects';
-import useGetWindowHeight from 'hooks/useGetWindowHeight';
-import { FixedSizeList, ListChildComponentProps } from 'react-window';
-import ReadOnlyStubSummaryVirtualizedItem from './ReadOnlyStubSummaryVirtualizedItem';
-
-const CurationImportTagFixedSizeListRow: React.FC<
-    ListChildComponentProps<{
-        stubs: ICurationStubStudy[];
-    }>
-> = (props) => {
-    const stub = props.data.stubs[props.index];
-
-    return <ReadOnlyStubSummaryVirtualizedItem {...stub} style={props.style} />;
-};
-
 const CurationImportTag: React.FC<{
-    stubs: ICurationStubStudy[];
-    unimportedStubs: string[];
-    onUpdateStubs: (stubs: ICurationStubStudy[]) => void;
     onNavigate: (button: ENavigationButton) => void;
+    onUpdateStubs: (stubs: ICurationStubStudy[]) => void;
+    stubs: ICurationStubStudy[];
 }> = (props) => {
-    const { stubs, onUpdateStubs, onNavigate } = props;
+    const { onUpdateStubs, onNavigate, stubs } = props;
 
-    const windowHeight = useGetWindowHeight();
+    const importName = stubs[0]?.tags[0]?.label;
 
     const handleAddTag = (tag: ITag) => {
-        // check if tag exists already and if so, don't add it
-        if (stubs.length > 0 && stubs[0].tags.findIndex((x) => x.id === tag.id) >= 0) {
-            return;
-        }
-
         const updatedStubs = [...stubs];
-        updatedStubs.forEach((stub) => {
-            stub.tags = [...stub.tags, tag];
+        updatedStubs.forEach((_, index) => {
+            updatedStubs[index] = {
+                ...updatedStubs[index],
+                tags: [tag],
+            };
         });
 
         onUpdateStubs(updatedStubs);
     };
 
-    const handleDeleteTag = (tag: ITag) => {
+    const handleClearInput = () => {
         const updatedStubs = [...stubs];
-        updatedStubs.forEach((stub) => {
-            stub.tags = stub.tags.filter((x) => x.id !== tag.id);
+        updatedStubs.forEach((_, index) => {
+            updatedStubs[index] = {
+                ...updatedStubs[index],
+                tags: [],
+            };
         });
 
         onUpdateStubs(updatedStubs);
     };
-
-    const tags = stubs.length > 0 ? stubs[0].tags : [];
-
-    const fixedListHeight = windowHeight - 465 < 500 ? 500 : windowHeight - 465;
 
     return (
-        <>
-            <Paper elevation={0}>
-                <Box sx={{ paddingTop: '0.5rem' }}>
-                    <Typography gutterBottom sx={{ fontWeight: 'bold' }} variant="h6">
-                        Importing {stubs.length} article(s)
+        <Box sx={{ paddingTop: '0.5rem' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column' }}>
+                <Box sx={{ width: '600px' }}>
+                    <Typography
+                        gutterBottom
+                        sx={{ fontWeight: 'bold', marginRight: '4px' }}
+                        variant="h6"
+                    >
+                        Give your import a name:{' '}
+                        <span style={{ fontWeight: 'normal' }}>{importName || ''}</span>
                     </Typography>
-                    {props.unimportedStubs.length > 0 && (
-                        <>
-                            <Typography color="warning.dark">
-                                We encountered issues importing {props.unimportedStubs.length}{' '}
-                                studies. You may have to create these studies manually:
-                            </Typography>
-                            <Typography color="warning.dark" gutterBottom>
-                                {props.unimportedStubs.reduce((acc, curr, currIndex, arr) => {
-                                    return currIndex === arr.length - 1
-                                        ? `${acc}${curr}`
-                                        : `${acc}${curr}, `;
-                                }, '')}
-                            </Typography>
-                        </>
-                    )}
-                    <Typography sx={{ marginBottom: '0.5rem' }} variant="body1">
-                        Tag all your imported studies
-                    </Typography>
-                    <Box>
-                        <TagSelectorPopup
-                            size="small"
-                            sx={{ width: '500px' }}
-                            onAddTag={handleAddTag}
-                            onCreateTag={handleAddTag}
-                        />
-                        <Box sx={{ marginTop: '0.5rem' }}>
-                            {tags.map((tag) => (
-                                <Chip
-                                    sx={{ margin: '3px' }}
-                                    onDelete={() => handleDeleteTag(tag)}
-                                    label={tag.label}
-                                    key={tag.id}
-                                />
-                            ))}
-                        </Box>
-                    </Box>
+
+                    <TagSelectorPopup
+                        size="medium"
+                        label="import name"
+                        placeholder="start typing or select from previous imports"
+                        sx={{ margin: '1rem 0' }}
+                        onAddTag={handleAddTag}
+                        onCreateTag={handleAddTag}
+                        addOptionText="Set name as"
+                        autoCreateTagOnClick={false}
+                        onClearInput={handleClearInput}
+                    />
                 </Box>
-                <Divider sx={{ marginTop: '0.5rem' }} />
-            </Paper>
-            <Box sx={{ margin: '1rem 0' }}>
-                <Typography sx={{ color: 'gray', fontStyle: 'italic' }}>
-                    Studies marked as "Duplicate" have a red border
-                </Typography>
-                <FixedSizeList
-                    height={fixedListHeight}
-                    itemCount={stubs.length}
-                    width="100%"
-                    itemSize={230}
-                    itemKey={(index, data) => data.stubs[index]?.id}
-                    layout="vertical"
-                    itemData={{
-                        stubs: stubs,
-                    }}
-                    overscanCount={3}
-                >
-                    {CurationImportTagFixedSizeListRow}
-                </FixedSizeList>
             </Box>
-            <NavigationButtons
-                nextButtonStyle="contained"
-                nextButtonDisabled={stubs.length === 0}
-                onButtonClick={onNavigate}
-            />
-        </>
+            <NavigationButtons nextButtonDisabled={!importName} onButtonClick={onNavigate} />
+        </Box>
     );
 };
 

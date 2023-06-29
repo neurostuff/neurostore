@@ -307,6 +307,36 @@ export const promoteStubHelper = (
     return state;
 };
 
+export const promoteAllUncategorizedHelper = (state: ICurationColumn[]): ICurationColumn[] => {
+    if (state.length === 1) return state;
+    const updatedState = [...state];
+    const updatedFirstColStubStudies = [...updatedState[0].stubStudies];
+    const updatedSecondColStubStudies = [...updatedState[1].stubStudies];
+
+    for (let i = 0; i < updatedFirstColStubStudies.length; i++) {
+        const stub = updatedFirstColStubStudies[i];
+        if (stub.exclusionTag === null) {
+            updatedFirstColStubStudies.splice(i, 1);
+            updatedSecondColStubStudies.push({
+                ...stub,
+            });
+            i--;
+        }
+    }
+
+    updatedState[0] = {
+        ...updatedState[0],
+        stubStudies: updatedFirstColStubStudies,
+    };
+
+    updatedState[1] = {
+        ...updatedState[1],
+        stubStudies: updatedSecondColStubStudies,
+    };
+
+    return updatedState;
+};
+
 export const addTagToStubHelper = (
     state: ICurationColumn[],
     columnIndex: number,

@@ -6,6 +6,7 @@ import { ICurationStubStudy } from '../CurationStubStudy/CurationStubStudyDragga
 import CurationImport, { EImportMode } from './CurationImport/CurationImport';
 import CurationImportResolveDuplicates from './CurationImportResolveDuplicates/CurationImportResolveDuplicates';
 import CurationImportSelectMethod from './CurationImportSelectMethod/CurationImportSelectMethod';
+import CurationImportReview from './CurationImportReview/CurationImportReview';
 import CurationImportTag from './CurationImportTag/CurationImportTag';
 
 const CurationImportBase: React.FC = (props) => {
@@ -29,7 +30,7 @@ const CurationImportBase: React.FC = (props) => {
     const handleNavigate = (button: ENavigationButton) => {
         setActiveStep((prev) => {
             if (button === ENavigationButton.NEXT) {
-                if (activeStep < 3) return prev + 1;
+                if (activeStep < 4) return prev + 1;
                 return prev;
             } else {
                 if (activeStep > 0) return prev - 1;
@@ -48,16 +49,19 @@ const CurationImportBase: React.FC = (props) => {
         <Box>
             <Stepper activeStep={activeStep}>
                 <Step>
-                    <StepLabel>Choose Import Method</StepLabel>
+                    <StepLabel>Choose Method</StepLabel>
                 </Step>
                 <Step>
                     <StepLabel>Import</StepLabel>
                 </Step>
                 <Step>
-                    <StepLabel>Tag (optional)</StepLabel>
+                    <StepLabel>Review</StepLabel>
                 </Step>
                 <Step>
-                    <StepLabel>Resolve Duplicates and import</StepLabel>
+                    <StepLabel>Tag</StepLabel>
+                </Step>
+                <Step>
+                    <StepLabel>Resolve Duplicates</StepLabel>
                 </Step>
             </Stepper>
             <Box>
@@ -76,14 +80,20 @@ const CurationImportBase: React.FC = (props) => {
                     />
                 )}
                 {activeStep === 2 && (
-                    <CurationImportTag
+                    <CurationImportReview
                         onNavigate={handleNavigate}
-                        onUpdateStubs={(stubs) => setStubs(stubs)}
                         stubs={stubs}
                         unimportedStubs={unimportedStubs}
                     />
                 )}
                 {activeStep === 3 && (
+                    <CurationImportTag
+                        onUpdateStubs={(stubs) => setStubs(stubs)}
+                        stubs={stubs}
+                        onNavigate={handleNavigate}
+                    />
+                )}
+                {activeStep === 4 && (
                     <CurationImportResolveDuplicates onNavigate={handleNavigate} stubs={stubs} />
                 )}
             </Box>

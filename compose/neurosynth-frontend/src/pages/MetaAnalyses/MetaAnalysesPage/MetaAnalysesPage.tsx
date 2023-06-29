@@ -14,8 +14,6 @@ const MetaAnalysesPage: React.FC = (props) => {
     const { data, isLoading, isError } = useGetMetaAnalyses();
     const { user } = useAuth0();
 
-    console.log(data);
-
     return (
         <>
             <Box

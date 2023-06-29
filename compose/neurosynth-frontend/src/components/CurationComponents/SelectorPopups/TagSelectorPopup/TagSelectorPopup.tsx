@@ -32,9 +32,21 @@ interface ITagSelectorPopup {
     onCreateTag?: (tag: ITag) => void;
     isLoading?: boolean;
     size?: 'small' | 'medium';
+    placeholder?: string;
+    addOptionText?: string;
+    autoCreateTagOnClick?: boolean;
+    onClearInput?: () => void;
 }
 
 const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
+    const {
+        placeholder = 'start typing',
+        addOptionText = 'Add',
+        label = 'select tag',
+        autoCreateTagOnClick = true,
+        onClearInput = () => {},
+    } = props;
+
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(null);
     const [tagOption, setTagOptions] = useState<AutoSelectOption[]>([]);
 
@@ -66,7 +78,7 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
             isAssignable: true,
         };
 
-        createNewInfoTag(newTag);
+        if (autoCreateTagOnClick) createNewInfoTag(newTag);
         setSelectedValue({
             id: newTag.id,
             label: newTag.label,
@@ -102,13 +114,16 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
             // if the user clicks an option, we get an AutoSelectOption and handle it here
         } else {
             setSelectedValue(newValue);
-            if (newValue)
+            if (newValue) {
                 props.onAddTag({
                     id: newValue.id,
                     label: newValue.label,
                     isExclusionTag: false,
                     isAssignable: true,
                 });
+            } else {
+                onClearInput();
+            }
         }
     };
 
@@ -139,8 +154,8 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
                 <TextField
                     {...params}
                     size={props.size}
-                    placeholder="start typing to create a tag"
-                    label={props.label || 'select tag'}
+                    placeholder={placeholder}
+                    label={label || 'select tag'}
                 />
             )}
             filterOptions={(options, params) => {
@@ -155,7 +170,7 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
                 if (params.inputValue !== '' && !optionExists) {
                     filteredValues.push({
                         id: '',
-                        label: `Add "${params.inputValue}"`,
+                        label: `${addOptionText} "${params.inputValue}"`,
                         addOptionActualLabel: params.inputValue,
                     });
                 }

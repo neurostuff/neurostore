@@ -8,8 +8,8 @@ const FullTextLinkComponent: React.FC<{ paperTitle: string; text?: string }> = (
 
     if (isError) {
         return (
-            <Typography sx={{ color: 'error.main' }}>
-                There was an error retrieving the full text
+            <Typography sx={{ color: 'error.main', marginRight: '10px' }}>
+                Error retrieving the full text
             </Typography>
         );
     }

@@ -1,32 +1,22 @@
-import {
-    Accordion,
-    AccordionDetails,
-    AccordionSummary,
-    Box,
-    Chip,
-    ToggleButton,
-    ToggleButtonGroup,
-    Typography,
-} from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
+import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import {
     useProjectCurationColumns,
     useProjectId,
     useUpdateCurationColumns,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import { useEffect, useState } from 'react';
-import { createDuplicateMap } from '../helpers/utils';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { defaultExclusionTags } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
-import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
+import {
+    ENeurosynthTagIds,
+    defaultExclusionTags,
+} from 'pages/Projects/ProjectPage/ProjectStore.helpers';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
-import ReadOnlyStubSummary from '../ReadOnlyStubSummary';
-import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
+import { createDuplicateMap } from '../helpers/utils';
+import DuplicateCase from './DuplicateCase/DuplicateCase';
 
 type IResolveProjectDuplicatesCurationStubStudy = ICurationStubStudy & {
     columnIndex?: number;
@@ -127,60 +117,80 @@ const CurationImportResolveDuplicates: React.FC<{
         });
     }, [columns, props.stubs]);
 
-    const handleResolve = (
-        isImportedStub: boolean,
-        duplicateCaseIndex: number,
-        duplicateStubIndex: number,
-        resolution?: 'duplicate' | 'not-duplicate' | undefined
-    ) => {
-        if (!resolution) return;
+    const handleOnResolve = useCallback(
+        (
+            isImportedStub: boolean,
+            duplicateCaseIndex: number,
+            duplicateStubIndex: number,
+            resolution?: 'duplicate' | 'not-duplicate' | undefined
+        ) => {
+            if (!resolution) return;
 
-        setDuplicates((prev) => {
-            const update = [...prev];
-            if (isImportedStub) {
-                update[duplicateCaseIndex] = {
-                    ...update[duplicateCaseIndex],
-                    importedStub: {
-                        ...update[duplicateCaseIndex].importedStub,
+            setDuplicates((prev) => {
+                const update = [...prev];
+                const updatedProjectDuplicates = [...update[duplicateCaseIndex].projectDuplicates];
+
+                if (isImportedStub) {
+                    update[duplicateCaseIndex] = {
+                        ...update[duplicateCaseIndex],
+                        importedStub: {
+                            ...update[duplicateCaseIndex].importedStub,
+                            resolution: resolution,
+                            exclusionTag:
+                                resolution === 'duplicate' ? defaultExclusionTags.duplicate : null,
+                        },
+                    };
+                } else {
+                    updatedProjectDuplicates[duplicateStubIndex] = {
+                        ...updatedProjectDuplicates[duplicateStubIndex],
                         resolution: resolution,
                         exclusionTag:
                             resolution === 'duplicate' ? defaultExclusionTags.duplicate : null,
-                    },
-                };
-            } else {
-                const updatedProjectDuplicates = [...update[duplicateCaseIndex].projectDuplicates];
-                updatedProjectDuplicates[duplicateStubIndex] = {
-                    ...updatedProjectDuplicates[duplicateStubIndex],
-                    resolution: resolution,
-                    exclusionTag:
-                        resolution === 'duplicate' ? defaultExclusionTags.duplicate : null,
-                };
+                    };
+                }
+
+                if (resolution === 'not-duplicate') {
+                    if (
+                        !isImportedStub &&
+                        update[duplicateCaseIndex].importedStub.resolution === undefined
+                    ) {
+                        update[duplicateCaseIndex].importedStub = {
+                            ...update[duplicateCaseIndex].importedStub,
+                            resolution: 'duplicate',
+                            exclusionTag: defaultExclusionTags.duplicate,
+                        };
+                    }
+                    updatedProjectDuplicates.forEach((projectDuplicate, index) => {
+                        if (projectDuplicate.resolution === undefined) {
+                            updatedProjectDuplicates[index] = {
+                                ...updatedProjectDuplicates[index],
+                                resolution: 'duplicate',
+                                exclusionTag: defaultExclusionTags.duplicate,
+                            };
+                        }
+                    });
+                }
 
                 update[duplicateCaseIndex] = {
                     ...update[duplicateCaseIndex],
                     projectDuplicates: updatedProjectDuplicates,
                 };
-            }
 
-            setCurrStub((prev) => {
-                const duplicateCaseIsResolved =
-                    update[duplicateCaseIndex].importedStub.resolution &&
-                    update[duplicateCaseIndex].projectDuplicates.every((x) => x.resolution);
-
-                return duplicateCaseIsResolved ? prev + 1 : prev;
-            });
-            setDuplicateResolutionComplete((_) => {
-                const allResolved = update.every((duplicateCase) => {
-                    const duplicateCaseIsResolved =
-                        duplicateCase.importedStub.resolution &&
-                        duplicateCase.projectDuplicates.every((x) => x.resolution);
-                    return duplicateCaseIsResolved;
+                setDuplicateResolutionComplete((_) => {
+                    const allResolved = update.every((duplicateCase) => {
+                        const duplicateCaseIsResolved =
+                            duplicateCase.importedStub.resolution &&
+                            duplicateCase.projectDuplicates.every((x) => x.resolution);
+                        return duplicateCaseIsResolved;
+                    });
+                    return allResolved;
                 });
-                return allResolved;
+
+                return update;
             });
-            return update;
-        });
-    };
+        },
+        []
+    );
 
     const handleNavigate = (button: ENavigationButton) => {
         if (button === ENavigationButton.PREV) {
@@ -190,30 +200,74 @@ const CurationImportResolveDuplicates: React.FC<{
             const updatedImport = [...props.stubs];
             const updatedColumns = [...columns];
 
-            duplicates.forEach((duplicateCase) => {
-                updatedImport[duplicateCase.importedStub.index].exclusionTag =
-                    duplicateCase.importedStub.exclusionTag;
+            duplicates.forEach(({ importedStub, projectDuplicates }) => {
+                // update the status of the stub being imported
+                updatedImport[importedStub.index] = {
+                    ...updatedImport[importedStub.index],
+                    exclusionTag: importedStub.exclusionTag,
+                };
 
-                duplicateCase.projectDuplicates.forEach((stub) => {
-                    if (stub.columnIndex !== undefined && stub.studyIndex !== undefined) {
-                        const updatedStubStudies = [
-                            ...updatedColumns[stub.columnIndex].stubStudies,
-                        ];
-
-                        updatedStubStudies[stub.studyIndex] = {
-                            ...updatedStubStudies[stub.studyIndex],
-                            exclusionTag: stub.exclusionTag,
-                        };
-                        updatedColumns[stub.columnIndex].stubStudies = updatedStubStudies;
+                // update the status of all the duplicates in the project
+                projectDuplicates.forEach((projectDuplicateStub) => {
+                    if (
+                        projectDuplicateStub.columnIndex === undefined ||
+                        projectDuplicateStub.studyIndex === undefined
+                    ) {
+                        return;
                     }
+
+                    const updatedStubStudies = [
+                        ...updatedColumns[projectDuplicateStub.columnIndex].stubStudies,
+                    ];
+
+                    if (
+                        projectDuplicateStub.columnIndex > 0 &&
+                        projectDuplicateStub.resolution === 'duplicate'
+                    ) {
+                        // remove stubs that have already been promoted that the user resolved as a duplicate
+                        updatedStubStudies.splice(projectDuplicateStub.studyIndex);
+                        const { columnIndex, studyIndex, resolution, colName, ...stub } =
+                            projectDuplicateStub;
+
+                        // add the stub back to the first column in order to demote it
+                        updatedColumns[0] = {
+                            ...updatedColumns[0],
+                            stubStudies: [stub, ...updatedColumns[0].stubStudies],
+                        };
+                    } else {
+                        updatedStubStudies[projectDuplicateStub.studyIndex] = {
+                            ...updatedStubStudies[projectDuplicateStub.studyIndex],
+                            exclusionTag: projectDuplicateStub.exclusionTag,
+                        };
+                    }
+
+                    updatedColumns[projectDuplicateStub.columnIndex] = {
+                        ...updatedColumns[projectDuplicateStub.columnIndex],
+                        stubStudies: updatedStubStudies,
+                    };
                 });
             });
 
-            updatedColumns[0].stubStudies = [...updatedImport, ...updatedColumns[0].stubStudies];
+            updatedColumns[0] = {
+                ...updatedColumns[0],
+                stubStudies: [...updatedImport, ...updatedColumns[0].stubStudies],
+            };
             updateCurationColumns(updatedColumns);
             history.push(`/projects/${projectId}/curation`);
         }
     };
+
+    const handleOnExpand = React.useCallback((index: number) => {
+        setCurrStub(index);
+    }, []);
+
+    const handlePrevOrNextCase = React.useCallback((nav: ENavigationButton) => {
+        setCurrStub((prev) => {
+            if (nav === ENavigationButton.PREV && prev <= 0) return prev;
+
+            return nav === ENavigationButton.NEXT ? prev + 1 : prev - 1;
+        });
+    }, []);
 
     if (duplicates.length === 0) {
         return (
@@ -229,11 +283,7 @@ const CurationImportResolveDuplicates: React.FC<{
                     duplicates are correctly identified.
                 </Typography>
                 <Box sx={{ marginTop: '1rem' }}>
-                    <NavigationButtons
-                        onButtonClick={handleNavigate}
-                        nextButtonStyle="contained"
-                        nextButtonText="complete import"
-                    />
+                    <NavigationButtons onButtonClick={handleNavigate} nextButtonStyle="contained" />
                 </Box>
             </Box>
         );
@@ -249,133 +299,22 @@ const CurationImportResolveDuplicates: React.FC<{
                 Some studies that you are importing have potential existing duplicates.
             </Typography>
             <Typography gutterBottom sx={{ color: 'gray' }}>
-                Resolve below by marking the study of interest as "Not a duplicate", and marking the
-                other study/studies as "Duplicate".
+                Resolve below by clicking on the <b>"KEEP THIS STUDY"</b> button for the study that
+                you want. Other studies will be marked as duplicates.
             </Typography>
-            {duplicates.map((duplicateCase, duplicateCaseIndex) => {
-                const { importedStub, projectDuplicates } = duplicateCase;
-                const isResolved =
-                    importedStub.resolution && projectDuplicates.every((x) => x.resolution);
 
+            {duplicates.map(({ importedStub, projectDuplicates }, duplicateCaseIndex) => {
                 return (
-                    <Accordion
-                        elevation={0}
+                    <DuplicateCase
                         key={duplicateCaseIndex}
-                        expanded={duplicateCaseIndex === currStub}
-                        onChange={() => setCurrStub(duplicateCaseIndex)}
-                    >
-                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            {isResolved ? (
-                                <CheckCircleOutlineIcon color="success" />
-                            ) : (
-                                <ErrorOutlineIcon color="warning" />
-                            )}
-                            <Typography
-                                sx={{
-                                    color: isResolved ? 'success.dark' : 'warning.dark',
-                                    marginLeft: '1rem',
-                                }}
-                            >
-                                {isResolved ? 'Resolved' : 'Unresolved'}
-                            </Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                            <Typography
-                                sx={{ fontWeight: 'bold', marginBottom: '1rem' }}
-                                variant="h6"
-                            >
-                                This is the study you are importing
-                            </Typography>
-                            <Box sx={{ display: 'flex' }}>
-                                <Box
-                                    sx={{
-                                        width: 'calc(100% - 280px)',
-                                        marginRight: '30px',
-                                    }}
-                                >
-                                    <Box sx={{ width: '100%' }}>
-                                        <ReadOnlyStubSummary {...importedStub} />
-                                    </Box>
-                                </Box>
-                                <Box sx={{ width: '250px' }}>
-                                    <ToggleButtonGroup
-                                        exclusive
-                                        value={importedStub.resolution}
-                                        onChange={(
-                                            _,
-                                            resolution: 'duplicate' | 'not-duplicate' | null
-                                        ) =>
-                                            handleResolve(
-                                                true,
-                                                duplicateCaseIndex,
-                                                0, // not used
-                                                resolution ? resolution : undefined
-                                            )
-                                        }
-                                    >
-                                        <ToggleButton color="primary" value="not-duplicate">
-                                            Not a duplicate
-                                        </ToggleButton>
-                                        <ToggleButton color="error" value="duplicate">
-                                            Duplicate
-                                        </ToggleButton>
-                                    </ToggleButtonGroup>
-                                </Box>
-                            </Box>
-
-                            <Typography
-                                sx={{ fontWeight: 'bold', marginBottom: '1rem' }}
-                                variant="h6"
-                            >
-                                These studies exist within the project
-                            </Typography>
-                            {projectDuplicates.map((stub, duplicateStubIndex) => (
-                                <Box key={stub.id} sx={{ display: 'flex', marginTop: '0.5rem' }}>
-                                    <Box
-                                        sx={{
-                                            width: 'calc(100% - 280px)',
-                                            marginRight: '30px',
-                                        }}
-                                    >
-                                        <Box sx={{ width: '100%' }}>
-                                            <Chip size="small" color="info" label={stub.colName} />
-                                            <ReadOnlyStubSummary {...stub} />
-                                        </Box>
-                                    </Box>
-                                    <Box sx={{ width: '250px' }}>
-                                        {stub.resolution === 'resolved' ? (
-                                            <Typography variant="h6" sx={{ color: 'error.dark' }}>
-                                                Excluded: {stub.exclusionTag?.label}
-                                            </Typography>
-                                        ) : (
-                                            <ToggleButtonGroup
-                                                exclusive
-                                                value={stub.resolution}
-                                                onChange={(
-                                                    _,
-                                                    resolution: 'duplicate' | 'not-duplicate' | null
-                                                ) =>
-                                                    handleResolve(
-                                                        false,
-                                                        duplicateCaseIndex,
-                                                        duplicateStubIndex,
-                                                        resolution ? resolution : undefined
-                                                    )
-                                                }
-                                            >
-                                                <ToggleButton color="primary" value="not-duplicate">
-                                                    Not a duplicate
-                                                </ToggleButton>
-                                                <ToggleButton color="error" value="duplicate">
-                                                    Duplicate
-                                                </ToggleButton>
-                                            </ToggleButtonGroup>
-                                        )}
-                                    </Box>
-                                </Box>
-                            ))}
-                        </AccordionDetails>
-                    </Accordion>
+                        onExpand={handleOnExpand}
+                        onResolve={handleOnResolve}
+                        onPrevOrNextCase={handlePrevOrNextCase}
+                        isExpanded={currStub === duplicateCaseIndex}
+                        index={duplicateCaseIndex}
+                        importedStub={importedStub}
+                        projectDuplicates={projectDuplicates}
+                    />
                 );
             })}
             <Box sx={{ marginTop: '1rem' }}>
