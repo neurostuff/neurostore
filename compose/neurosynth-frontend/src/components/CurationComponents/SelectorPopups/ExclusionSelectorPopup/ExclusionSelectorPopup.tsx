@@ -86,7 +86,7 @@ const ExclusionSelectorPopup: React.FC<IExclusionSelectorPopup> = (props) => {
     }, [prismaConfig, genericExclusionTags, props.columnIndex]);
 
     const handleCreateExclusion = (exclusionName: string) => {
-        const phase = indexToPRISMAMapping(props.columnIndex);
+        const phase = prismaConfig.isPrisma ? indexToPRISMAMapping(props.columnIndex) : undefined;
         const newExclusion = {
             id: uuidv4(),
             label: exclusionName,
