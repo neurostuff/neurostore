@@ -22,6 +22,8 @@ const DisplayMetaAnalysisResult: React.FC<{
         (data?.points || []) as PointReturn[]
     );
 
+    const neurovaultLink = props.metaAnalysisResult?.neurovault_collection?.url || '';
+
     return (
         <Paper sx={{ padding: '1rem', margin: '1rem 0' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -45,7 +47,11 @@ const DisplayMetaAnalysisResult: React.FC<{
                     sx={{ fontWeight: 'normal' }}
                     underline="hover"
                     target="_blank"
-                    href={props.metaAnalysisResult?.neurovault_collection?.url || ''}
+                    href={
+                        neurovaultLink.includes('/api')
+                            ? neurovaultLink.replace(/\/api/, '')
+                            : neurovaultLink
+                    }
                 >
                     Neurovault Collection Link
                 </Link>
