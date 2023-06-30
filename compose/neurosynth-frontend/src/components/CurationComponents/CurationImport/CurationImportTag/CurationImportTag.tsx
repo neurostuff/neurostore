@@ -5,12 +5,18 @@ import NavigationButtons, {
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';
 import { ITag } from 'hooks/requests/useGetProjects';
+import {
+    useCreateNewCurationInfoTag,
+    useProjectCurationInfoTags,
+} from 'pages/Projects/ProjectPage/ProjectStore';
 const CurationImportTag: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
     onUpdateStubs: (stubs: ICurationStubStudy[]) => void;
     stubs: ICurationStubStudy[];
 }> = (props) => {
     const { onUpdateStubs, onNavigate, stubs } = props;
+    const createNewInfoTag = useCreateNewCurationInfoTag();
+    const infoTags = useProjectCurationInfoTags();
 
     const importName = stubs[0]?.tags[0]?.label;
 
@@ -36,6 +42,16 @@ const CurationImportTag: React.FC<{
         });
 
         onUpdateStubs(updatedStubs);
+    };
+
+    const handleNavigate = (nav: ENavigationButton) => {
+        const tagToCreate = stubs[0]?.tags[0];
+
+        if (tagToCreate && !infoTags.some((x) => x.id === tagToCreate.id)) {
+            createNewInfoTag(tagToCreate);
+        }
+
+        onNavigate(nav);
     };
 
     return (
@@ -64,7 +80,7 @@ const CurationImportTag: React.FC<{
                     />
                 </Box>
             </Box>
-            <NavigationButtons nextButtonDisabled={!importName} onButtonClick={onNavigate} />
+            <NavigationButtons nextButtonDisabled={!importName} onButtonClick={handleNavigate} />
         </Box>
     );
 };
