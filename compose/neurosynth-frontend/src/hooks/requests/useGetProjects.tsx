@@ -55,6 +55,7 @@ export interface IProvenance {
     curationMetadata: ICurationMetadata;
     extractionMetadata: IExtractionMetadata;
     metaAnalysisMetadata: IMetaAnalysisMetadata;
+    lastUpdated?: number;
 }
 
 // define this interface to overwrite provenance type
@@ -82,16 +83,14 @@ export const indexToPRISMAMapping = (
     }
 };
 
-const useGetProjects = (authenticatedUser?: string) => {
+const useGetProjects = (isAuthenticated: boolean, authenticatedUser?: string) => {
     return useQuery(
         ['projects', authenticatedUser],
         () => API.NeurosynthServices.ProjectsService.projectsGet(),
         {
             select: (axiosResponse) =>
-                ((axiosResponse.data.results as INeurosynthProjectReturn[]) || []).filter(
-                    (x) => x.user === authenticatedUser
-                ),
-            enabled: !!authenticatedUser,
+                (axiosResponse.data.results as INeurosynthProjectReturn[]) || [],
+            enabled: isAuthenticated && !!authenticatedUser,
         }
     );
 };

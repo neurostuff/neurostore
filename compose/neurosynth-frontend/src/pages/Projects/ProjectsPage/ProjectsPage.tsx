@@ -9,8 +9,8 @@ import { useIsMutating } from 'react-query';
 import { useAuth0 } from '@auth0/auth0-react';
 
 const ProjectsPage: React.FC = (props) => {
-    const { user } = useAuth0();
-    const { data, isError, isLoading, isFetching } = useGetProjects(user?.sub);
+    const { user, isAuthenticated } = useAuth0();
+    const { data, isError, isLoading, isFetching } = useGetProjects(isAuthenticated, user?.sub);
     const createProjectIsFetchingNum = useIsMutating('create-project');
     const history = useHistory();
 

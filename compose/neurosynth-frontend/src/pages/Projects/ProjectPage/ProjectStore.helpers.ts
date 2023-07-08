@@ -476,6 +476,9 @@ const onUnloadHandler = (event: BeforeUnloadEvent) => {
     return (event.returnValue = 'Are you sure you want to leave?');
 };
 
+export type TProjectStore = INeurosynthProjectReturn &
+    ProjectStoreActions & { metadata: ProjectStoreMetadata };
+
 type APIDebouncedUpdater = <
     T extends unknown,
     Mps extends [StoreMutatorIdentifier, unknown][] = [],
@@ -497,9 +500,7 @@ const apiDebouncedUpdaterImpl: APIDebouncedUpdaterImpl = (f, name) => (set, get,
     const debouncedAPIUpdaterSet: typeof set = (...a) => {
         set(...a);
 
-        const storeData = get() as unknown as INeurosynthProjectReturn &
-            ProjectStoreActions &
-            ProjectStoreMetadata;
+        const storeData = get() as unknown as TProjectStore;
 
         if (timeout && storeData.id === prevId) clearTimeout(timeout);
         prevId = storeData.id;
