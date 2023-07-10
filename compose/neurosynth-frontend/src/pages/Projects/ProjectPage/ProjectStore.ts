@@ -237,13 +237,22 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     { projectId: storeData.id as string, project: update },
                     {
                         onError: (err) => {
+                            let enqueueSnackbarFunc:
+                                | ((
+                                      message: SnackbarMessage,
+                                      options?: OptionsObject | undefined
+                                  ) => SnackbarKey)
+                                | undefined;
+                            if (storeData.metadata.enqueueSnackbar) {
+                                enqueueSnackbarFunc = storeData.metadata.enqueueSnackbar;
+                            }
+
                             if (
                                 err?.response?.data?.code &&
                                 err?.response?.data?.code === 'token_expired'
                             ) {
-                                const enqueueSnackbar = storeData.metadata.enqueueSnackbar;
-                                if (enqueueSnackbar) {
-                                    enqueueSnackbar(
+                                if (enqueueSnackbarFunc) {
+                                    enqueueSnackbarFunc(
                                         'Your login session has expired. We will now log you out.',
                                         { variant: 'error' }
                                     );
@@ -253,10 +262,19 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                                     const logout = storeData.metadata.logout;
                                     if (logout) logout();
                                 }, 2000);
+                            } else if (
+                                err?.response?.data?.status &&
+                                err?.response?.data?.status === 401
+                            ) {
+                                if (enqueueSnackbarFunc) {
+                                    enqueueSnackbarFunc(
+                                        'You must log in to make changes. Please log in and try again',
+                                        { variant: 'error' }
+                                    );
+                                }
                             } else {
-                                const enqueueSnackbar = storeData.metadata.enqueueSnackbar;
-                                if (enqueueSnackbar) {
-                                    enqueueSnackbar(
+                                if (enqueueSnackbarFunc) {
+                                    enqueueSnackbarFunc(
                                         'There was an error updating your project. Please refresh the page and try again',
                                         { variant: 'error' }
                                     );

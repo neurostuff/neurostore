@@ -37,6 +37,7 @@ interface ISourceSelectorPopup {
     isError?: boolean;
     helperText?: string;
     excludeSources?: string[];
+    disabled?: boolean;
 }
 
 const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
@@ -130,6 +131,7 @@ const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
             sx={props.sx || { width: '250px' }}
             value={selectedValue || null}
             options={sourceOptions}
+            disabled={props.disabled}
             disableClearable={!!selectedValue}
             isOptionEqualToValue={(option, value) => {
                 return option?.id === value?.id;
