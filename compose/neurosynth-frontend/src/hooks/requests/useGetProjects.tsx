@@ -55,7 +55,6 @@ export interface IProvenance {
     curationMetadata: ICurationMetadata;
     extractionMetadata: IExtractionMetadata;
     metaAnalysisMetadata: IMetaAnalysisMetadata;
-    lastUpdated?: number;
 }
 
 // define this interface to overwrite provenance type

@@ -192,6 +192,7 @@ const EditableStubSummaryHeader: React.FC<IEditableStubSummaryHeader> = React.me
                         sx={{ margin: '3px' }}
                         key={tag.id}
                         onDelete={() => handleRemoveTag(tag.id)}
+                        disabled={!isAuthenticated}
                         label={tag.label}
                     />
                 ))}

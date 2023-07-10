@@ -5,7 +5,11 @@ import { INeurosynthProjectReturn } from './useGetProjects';
 const useGetProjectById = (projectId: string | undefined) => {
     return useQuery(
         ['projects', projectId],
-        () => API.NeurosynthServices.ProjectsService.projectsIdGet(projectId || ''),
+        () =>
+            API.NeurosynthServices.ProjectsService.projectsIdGet(projectId || '').then((res) => {
+                console.log('call');
+                return res;
+            }),
         {
             select: (axiosResponse) => axiosResponse.data as INeurosynthProjectReturn,
             enabled: !!projectId,

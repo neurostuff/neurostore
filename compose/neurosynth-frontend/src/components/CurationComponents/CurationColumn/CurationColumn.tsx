@@ -26,6 +26,7 @@ import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpe
 import React, { useEffect, useMemo, useState } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import CurationColumnStyles from './CurationColumn.styles';
+import { useAuth0 } from '@auth0/auth0-react';
 
 export interface ICurationColumn {
     name: string;
@@ -83,6 +84,7 @@ const FixedSizeListRow: React.FC<
 };
 
 const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => {
+    const { isAuthenticated } = useAuth0();
     const column = useProjectCurationColumn(props.columnIndex);
     const prismaConfig = useProjectCurationPrismaConfig();
     const infoTags = useProjectCurationInfoTags();
@@ -194,6 +196,7 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
                         disableElevation
                         onClick={() => setWarningDialogIsOpen(true)}
                         sx={{ padding: '8px', marginBottom: '0.75rem' }}
+                        disabled={!isAuthenticated}
                     >
                         Promote all uncategorized studies
                     </Button>

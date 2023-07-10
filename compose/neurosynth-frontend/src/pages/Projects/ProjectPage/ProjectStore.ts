@@ -9,7 +9,6 @@ import {
     INeurosynthProject,
     INeurosynthProjectReturn,
     IPRISMAConfig,
-    IProvenance,
     ISource,
     ITag,
 } from 'hooks/requests/useGetProjects';
@@ -106,6 +105,9 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
         id: undefined,
         meta_analyses: [],
         description: '',
+        created_at: undefined,
+        updated_at: undefined,
+        user: undefined,
         provenance: {
             curationMetadata: {
                 columns: [],
@@ -133,7 +135,6 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
             metaAnalysisMetadata: {
                 canEditMetaAnalyses: false,
             },
-            lastUpdated: undefined,
         },
 
         metadata: {
@@ -178,7 +179,6 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                 metaAnalysisMetadata: {
                     canEditMetaAnalyses: false,
                 },
-                lastUpdated: undefined,
             };
             const id = useProjectStore.getState().id;
 
@@ -210,9 +210,13 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     storeData.id as string
                 );
 
-                const serverLastUpdated = (data.provenance as IProvenance)?.lastUpdated;
-                const localLastUpdated = storeData.provenance.lastUpdated;
-                if (serverLastUpdated && localLastUpdated && localLastUpdated < serverLastUpdated) {
+                const serverLastUpdated = data.updated_at;
+                const localLastUpdated = storeData.updated_at;
+                if (
+                    serverLastUpdated &&
+                    localLastUpdated &&
+                    new Date(localLastUpdated).getTime() < new Date(serverLastUpdated).getTime()
+                ) {
                     const enqueueSnackbar = storeData.metadata.enqueueSnackbar;
                     if (enqueueSnackbar) {
                         enqueueSnackbar(
@@ -229,13 +233,18 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     description: storeData.description,
                     provenance: {
                         ...storeData.provenance,
-                        lastUpdated: Date.now(),
                     },
                 };
 
                 updateProject(
                     { projectId: storeData.id as string, project: update },
                     {
+                        onSuccess: (res) => {
+                            set((state) => ({
+                                ...state,
+                                updated_at: res.data.updated_at,
+                            }));
+                        },
                         onError: (err) => {
                             let enqueueSnackbarFunc:
                                 | ((
@@ -275,7 +284,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                             } else {
                                 if (enqueueSnackbarFunc) {
                                     enqueueSnackbarFunc(
-                                        'There was an error updating your project. Please refresh the page and try again',
+                                        'There was an error updating the project.',
                                         { variant: 'error' }
                                     );
                                 }
@@ -320,6 +329,9 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                 id: undefined,
                 meta_analyses: [],
                 description: '',
+                user: undefined,
+                updated_at: undefined,
+                created_at: undefined,
                 provenance: {
                     curationMetadata: {
                         columns: [],
@@ -694,6 +706,7 @@ export const useGetProjectIsLoading = () =>
 export const useUpdateProjectIsLoading = () =>
     useProjectStore((state) => state.metadata.updateProjectIsLoading);
 export const useProjectIsError = () => useProjectStore((state) => state.metadata.isError);
+export const useProjectUser = () => useProjectStore((state) => state.user);
 
 // curation retrieval hooks
 export const useProjectCurationColumns = () =>

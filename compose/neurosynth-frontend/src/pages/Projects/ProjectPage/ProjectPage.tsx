@@ -32,14 +32,14 @@ const ProjectPage: React.FC = (props) => {
     const location = useLocation();
     const history = useHistory();
 
+    useInitProjectStoreIfRequired();
+
     const updateProjectName = useUpdateProjectName();
     const updateProjectDescription = useUpdateProjectDescription();
     const metaAnalysesTabEnabled = useProjectMetaAnalysisCanEdit();
     const getProjectIsLoading = useGetProjectIsLoading();
     const projectName = useProjectName();
     const projectDescription = useProjectDescription();
-
-    useInitProjectStoreIfRequired();
 
     // we only want this to run once on initial render
     useEffect(() => {
