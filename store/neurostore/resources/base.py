@@ -7,6 +7,7 @@ from flask.views import MethodView
 
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
 # from flask import make_response
+import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
@@ -272,7 +273,8 @@ class ListView(BaseView):
         if s is not None and s.isdigit():
             q = q.filter_by(pmid=s)
         elif s is not None and self._fulltext_fields:
-            q = q.filter(m.__ts_vector__.match(s))
+            tsquery = sa.func.websearch_to_tsquery(s, postgresql_regconfig="english")
+            q = q.filter(m.__ts_vector__.op("@@")(tsquery))
 
         # Alternatively (or in addition), search on individual fields.
         for field in self._search_fields:
