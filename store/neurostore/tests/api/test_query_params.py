@@ -80,4 +80,18 @@ def test_common_queries(auth_client, ingest_neurosynth):
     total_search = auth_client.get(f"/api/studies/?search={study.pmid}")
 
     assert pmid_search.status_code == total_search.status_code == 200
-    assert len(pmid_search.json['results']) == len(total_search.json['results'])
+    assert len(pmid_search.json["results"]) == len(total_search.json["results"])
+
+
+def test_multiword_queries(auth_client, ingest_neurosynth):
+    study = Study.query.first()
+    name = study.name
+    word_list = name.split(" ")
+    single_word = word_list[-1]
+    multiple_words = " ".join(word_list[-3:])
+
+    single_word_search = auth_client.get(f"/api/studies/?search={single_word}")
+    assert single_word_search.status_code == 200
+
+    multi_word_search = auth_client.get(f"/api/studies/?search={multiple_words}")
+    assert multi_word_search.status_code == 200
