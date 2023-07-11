@@ -3,43 +3,54 @@ import EditIcon from '@mui/icons-material/Edit';
 import { Box, Button } from '@mui/material';
 import DisplayStudy from 'components/DisplayStudy/DisplayStudy';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useGetStudyById } from 'hooks';
 import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import { useInitStudyStoreIfRequired } from '../StudyStore';
+import {
+    useInitStudyStoreIfRequired,
+    useStudyAnalyses,
+    useStudyAuthors,
+    useStudyDOI,
+    useStudyDescription,
+    useStudyIsLoading,
+    useStudyMetadata,
+    useStudyName,
+    useStudyPMID,
+    useStudyPublication,
+    useStudyUser,
+} from '../StudyStore';
 
 const StudyPage: React.FC = (props) => {
     const { studyId } = useParams<{ studyId: string }>();
 
     useInitStudyStoreIfRequired();
+    const studyUser = useStudyUser();
+    const studyIsLoading = useStudyIsLoading();
+    const studyName = useStudyName();
+    const studyDescription = useStudyDescription();
+    const studyDOI = useStudyDOI();
+    const studyPMID = useStudyPMID();
+    const studyAuthors = useStudyAuthors();
+    const studyPublication = useStudyPublication();
+    const studyMetadata = useStudyMetadata();
+    const studyAnalyses = useStudyAnalyses();
 
     const [allowEdits, setAllowEdits] = useState(false);
     const history = useHistory();
     const { isAuthenticated, user } = useAuth0();
-    const {
-        isLoading: getStudyIsLoading,
-        isError: getStudyIsError,
-        isFetching: getStudyIsFetching,
-        isRefetching: getStudyIsRefetching,
-        data,
-    } = useGetStudyById(studyId);
 
     const handleEditStudy = (event: React.MouseEvent) => {
         history.push(`/studies/${studyId}/edit`);
     };
 
     useEffect(() => {
-        const userIDAndStudyIDExist = !!user?.sub && !!data?.user;
-        const thisUserOwnsThisStudy = (data?.user || null) === (user?.sub || undefined);
+        const userIDAndStudyIDExist = !!user?.sub && !!studyUser;
+        const thisUserOwnsThisStudy = (studyUser || null) === (user?.sub || undefined);
         const allowEdit = isAuthenticated && userIDAndStudyIDExist && thisUserOwnsThisStudy;
         setAllowEdits(allowEdit);
-    }, [isAuthenticated, user?.sub, data?.user, history]);
+    }, [isAuthenticated, user?.sub, studyUser, history]);
 
     return (
-        <StateHandlerComponent
-            isLoading={getStudyIsLoading || getStudyIsFetching || getStudyIsRefetching}
-            isError={getStudyIsError}
-        >
+        <StateHandlerComponent isLoading={studyIsLoading} isError={false}>
             {allowEdits && (
                 <Box
                     sx={{
@@ -53,7 +64,7 @@ const StudyPage: React.FC = (props) => {
                         onClick={handleEditStudy}
                         endIcon={<EditIcon />}
                         disabled={!allowEdits}
-                        sx={{ width: '190px', marginLeft: 'auto' }}
+                        sx={{ width: '190px', marginLeft: 'auto', marginRight: '15px' }}
                         variant="contained"
                         disableElevation
                         color="secondary"
@@ -62,7 +73,16 @@ const StudyPage: React.FC = (props) => {
                     </Button>
                 </Box>
             )}
-            <DisplayStudy {...data} />
+            <DisplayStudy
+                name={studyName}
+                description={studyDescription}
+                doi={studyDOI}
+                pmid={studyPMID}
+                authors={studyAuthors}
+                publication={studyPublication}
+                metadata={studyMetadata}
+                analyses={studyAnalyses}
+            />
         </StateHandlerComponent>
     );
 };

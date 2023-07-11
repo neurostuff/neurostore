@@ -6,15 +6,14 @@ from ...models import Studyset, Study, User, Analysis
 
 def test_create_study_as_user_and_analysis_as_bot(auth_clients):
     # create study as user
-    user_auth_client = next(ac for ac in auth_clients if ac.username == 'user1-id')
+    user_auth_client = next(ac for ac in auth_clients if ac.username == "user1-id")
 
     study_resp = user_auth_client.post("/api/studies/", data={"name": "test"})
     study_id = study_resp.json["id"]
 
-    bot_auth_client = next(ac for ac in auth_clients if 'clients' in ac.username)
+    bot_auth_client = next(ac for ac in auth_clients if "clients" in ac.username)
     analysis_resp = bot_auth_client.post(
-        "/api/analyses/",
-        data={"name": "test-analysis", "study": study_id}
+        "/api/analyses/", data={"name": "test-analysis", "study": study_id}
     )
 
     assert analysis_resp.status_code == 200
@@ -166,9 +165,12 @@ def test_delete_studies(auth_client, ingest_neurosynth, session):
 
 
 def test_production_study_query(auth_client, user_data):
-    auth_client.get("/api/studies/?sort=name&page=1&desc=true&page_size=29999&nested=false&unique=true")
+    auth_client.get(
+        "/api/studies/?sort=name&page=1&desc=true&page_size=29999&nested=false&unique=true"
+    )
 
 
+@pytest.mark.skip("not supporting this feature anymore")
 def test_getting_studysets_by_owner(auth_clients, user_data):
     client1 = auth_clients[0]
     id1 = client1.username
@@ -195,6 +197,15 @@ def test_get_unique_studies(auth_client, user_data, param):
     auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={})
     resp = auth_client.get(f"/api/studies/?unique={param}")
     assert resp.status_code == 200
+
+
+def test_cache_update(auth_client, user_data):
+    study_entry = Study.query.filter_by(user_id=auth_client.username).first()
+    auth_client.get(f"/api/studies/{study_entry.id}")
+    auth_client.get(f"/api/studies/{study_entry.id}?nested=true")
+    auth_client.get(f"/api/studies/{study_entry.id}")
+    auth_client.put(f"/api/studies/{study_entry.id}", data={'name': 'new name'})
+    auth_client.get(f"/api/studies/{study_entry.id}")
 
 
 def test_post_meta_analysis(auth_client, user_data):

@@ -10,7 +10,6 @@ const CreateMetaAnalysisSpecificationDetailsStep: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
 }> = (props) => {
     const handleUpdateDetails = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        console.log(event.target.name);
         props.onUpdateDetails({
             ...props.details,
             [event.target.name]: event.target.value,

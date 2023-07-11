@@ -1,3 +1,4 @@
+import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import ForeignKeyConstraint
 from sqlalchemy.ext.associationproxy import association_proxy
@@ -7,6 +8,7 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
 import shortuuid
 
+from .migration_types import TSVector
 from ..database import db
 
 
@@ -114,23 +116,64 @@ class AnnotationAnalysis(db.Model):
     note = db.Column(MutableDict.as_mutable(JSONB))
 
 
+class BaseStudy(BaseMixin, db.Model):
+    __tablename__ = "base_studies"
+
+    name = db.Column(db.String)
+    description = db.Column(db.String)
+    publication = db.Column(db.String, index=True)
+    doi = db.Column(db.String, nullable=True, index=True)
+    pmid = db.Column(db.String, nullable=True, index=True)
+    authors = db.Column(db.String, index=True)
+    year = db.Column(db.Integer, index=True)
+    public = db.Column(db.Boolean, default=True)
+    level = db.Column(db.String)
+    metadata_ = db.Column(JSONB)
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
+    __ts_vector__ = db.Column(
+        TSVector(),
+        db.Computed(
+            "to_tsvector('english', coalesce(name, '') || ' ' || coalesce(description, ''))",
+            persisted=True,
+        ),
+    )
+
+    user = relationship("User", backref=backref("base_studies"))
+    # retrieve versions of same study
+    versions = relationship("Study", backref=backref("base_study"))
+
+    __table_args__ = (
+        db.CheckConstraint(level.in_(["group", "meta"])),
+        db.UniqueConstraint("doi", "pmid", name="doi_pmid"),
+        sa.Index("ix_base_study___ts_vector__", __ts_vector__, postgresql_using="gin"),
+    )
+
+
 class Study(BaseMixin, db.Model):
     __tablename__ = "studies"
 
     name = db.Column(db.String)
     description = db.Column(db.String)
-    publication = db.Column(db.String)
-    doi = db.Column(db.String)
-    pmid = db.Column(db.String)
-    authors = db.Column(db.String)
-    year = db.Column(db.Integer)
+    publication = db.Column(db.String, index=True)
+    doi = db.Column(db.String, index=True)
+    pmid = db.Column(db.String, index=True)
+    authors = db.Column(db.String, index=True)
+    year = db.Column(db.Integer, index=True)
     public = db.Column(db.Boolean, default=True)
     level = db.Column(db.String)
     metadata_ = db.Column(JSONB)
-    source = db.Column(db.String)
-    source_id = db.Column(db.String)
+    source = db.Column(db.String, index=True)
+    source_id = db.Column(db.String, index=True)
     source_updated_at = db.Column(db.DateTime(timezone=True))
-    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
+    base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"))
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
+    __ts_vector__ = db.Column(
+        TSVector(),
+        db.Computed(
+            "to_tsvector('english', coalesce(name, '') || ' ' || coalesce(description, ''))",
+            persisted=True,
+        ),
+    )
     user = relationship("User", backref=backref("studies"))
     analyses = relationship(
         "Analysis",
@@ -138,7 +181,10 @@ class Study(BaseMixin, db.Model):
         cascade="all, delete, delete-orphan",
     )
 
-    __table_args__ = (db.CheckConstraint(level.in_(["group", "meta"])),)
+    __table_args__ = (
+        db.CheckConstraint(level.in_(["group", "meta"])),
+        sa.Index("ix_study___ts_vector__", __ts_vector__, postgresql_using="gin"),
+    )
 
 
 class StudysetStudy(db.Model):
@@ -238,7 +284,7 @@ ImageEntityMap = db.Table(
 
 # purpose of Entity: you have an image/coordinate, but you do not
 # know what level of analysis it represents
-# NOT REALLY USED CURRENTLY
+# NOT USED CURRENTLY
 class Entity(BaseMixin, db.Model):
     __tablename__ = "entities"
 

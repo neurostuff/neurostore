@@ -123,7 +123,6 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
         setIsValid(!hasEmptyCoordinates);
         hotTableRef.current?.hotInstance?.validateCells();
     }, [points, setIsValid]);
-    console.log(points);
 
     // run once initially to set the custom context menu
     useEffect(() => {

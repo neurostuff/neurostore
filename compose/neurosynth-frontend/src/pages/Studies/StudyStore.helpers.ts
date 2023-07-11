@@ -116,6 +116,60 @@ export type StudyDetails = Pick<
     'name' | 'description' | 'publication' | 'authors' | 'doi' | 'pmid' | 'year'
 >;
 
+export const studyPointsToStorePoints = (
+    points: PointReturn[]
+): {
+    analysisSpace: MapOrSpaceType | undefined;
+    analysisMap: MapOrSpaceType | undefined;
+    points: IStorePoint[];
+} => {
+    let analysisSpace: MapOrSpaceType | undefined;
+    let analysisMap: MapOrSpaceType | undefined;
+    const parsedPoints: IStorePoint[] = ((points || []) as Array<PointReturn>)
+        .map(({ entities, space, subpeak, cluster_size, values, ...args }) => {
+            const typedValues = values as Array<PointValue> | undefined;
+            if (!analysisSpace && !!space) {
+                analysisSpace = {
+                    ...(DefaultSpaceTypes[space]
+                        ? DefaultSpaceTypes[space]
+                        : DefaultSpaceTypes.OTHER),
+                };
+            }
+
+            if (!analysisMap && typedValues && typedValues.length > 0 && typedValues[0].kind) {
+                const kind = typedValues[0].kind || '';
+                analysisMap = {
+                    ...(DefaultMapTypes[kind] ? DefaultMapTypes[kind] : DefaultMapTypes.OTHER),
+                };
+            }
+
+            return {
+                ...args,
+                subpeak: subpeak === null ? undefined : subpeak,
+                cluster_size: cluster_size === null ? undefined : cluster_size,
+                value:
+                    typedValues && typedValues[0] && typedValues.length > 0
+                        ? typedValues[0].value === null // have to add this check instead of checking if falsy as the value could be 0
+                            ? undefined
+                            : typedValues[0].value
+                        : undefined,
+                x: (args.coordinates || [])[0],
+                y: (args.coordinates || [])[1],
+                z: (args.coordinates || [])[2],
+                isNew: false,
+            };
+        })
+        .sort((a, b) => {
+            return (a.order as number) - (b.order as number);
+        });
+
+    return {
+        points: parsedPoints,
+        analysisMap,
+        analysisSpace,
+    };
+};
+
 export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStoreAnalysis[] => {
     const studyAnalyses: IStoreAnalysis[] = (analyses || []).map((analysis) => {
         const { entities, ...analysisProps } = analysis;
@@ -130,53 +184,16 @@ export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStor
             isNew: false,
         }));
 
-        let analysisSpace: MapOrSpaceType | undefined;
-        let analysisMap: MapOrSpaceType | undefined;
-        const parsedPoints: IStorePoint[] = ((parsedAnalysis.points || []) as Array<PointReturn>)
-            .map(({ entities, space, subpeak, cluster_size, values, ...args }) => {
-                const typedValues = values as Array<PointValue> | undefined;
-                if (!analysisSpace && !!space) {
-                    analysisSpace = {
-                        ...(DefaultSpaceTypes[space]
-                            ? DefaultSpaceTypes[space]
-                            : DefaultSpaceTypes.OTHER),
-                    };
-                }
-
-                if (!analysisMap && typedValues && typedValues.length > 0 && typedValues[0].kind) {
-                    const kind = typedValues[0].kind || '';
-                    analysisMap = {
-                        ...(DefaultMapTypes[kind] ? DefaultMapTypes[kind] : DefaultMapTypes.OTHER),
-                    };
-                }
-
-                return {
-                    ...args,
-                    subpeak: subpeak === undefined || subpeak === null ? undefined : subpeak,
-                    cluster_size:
-                        cluster_size === undefined || cluster_size === null
-                            ? undefined
-                            : cluster_size,
-                    value:
-                        typedValues && typedValues[0] && typedValues.length > 0
-                            ? typedValues[0].value === null // have to add this check instead of checking if falsy as the value could be 0
-                                ? undefined
-                                : typedValues[0].value
-                            : undefined,
-                    x: (args.coordinates || [])[0],
-                    y: (args.coordinates || [])[1],
-                    z: (args.coordinates || [])[2],
-                    isNew: false,
-                };
-            })
-            .sort((a, b) => (a.id || '').localeCompare(b.id || ''));
+        const { analysisMap, analysisSpace, points } = studyPointsToStorePoints(
+            (analysis.points || []) as PointReturn[]
+        );
 
         return {
             ...parsedAnalysis,
             pointSpace: analysisSpace,
             pointStatistic: analysisMap,
             conditions: parsedConditions,
-            points: parsedPoints,
+            points: points,
             isNew: false,
         };
     });
@@ -216,7 +233,10 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
             );
 
             const scrubbedPoints: any[] = points.map(
-                ({ isNew, created_at, updated_at, user, coordinates, value, ...pointArgs }) => ({
+                (
+                    { isNew, created_at, updated_at, user, coordinates, value, ...pointArgs },
+                    index
+                ) => ({
                     ...pointArgs,
                     values: [
                         {
@@ -226,6 +246,7 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
                     ],
                     space: pointSpace?.value,
                     id: isNew ? undefined : pointArgs.id, // if the point was created by us in the FE, make undefined so the BE gives it an ID
+                    order: index,
                 })
             );
             return {

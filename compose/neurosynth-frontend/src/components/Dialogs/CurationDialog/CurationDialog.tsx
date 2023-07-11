@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import EditableStubSummary from 'components/Dialogs/CurationDialog/EditableStubSummary/EditableStubSummary';
 import CurationStubListItem from './CurationStubListItem/CurationStubListItem';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
@@ -38,6 +38,7 @@ const CurationDialogFixedSizeListRow: React.FC<
 
 const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
     const [stubs, setStubs] = useState<ICurationStubStudy[]>(props.stubs);
+    const scrollableBoxRef = useRef<HTMLDivElement>(null);
     const selectedStub: ICurationStubStudy | undefined = props.stubs.find(
         (stub) => stub.id === props.selectedStubId
     );
@@ -58,6 +59,12 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
             props.onSetSelectedStub(nextStub.id);
         }
     };
+
+    useEffect(() => {
+        if (scrollableBoxRef.current) {
+            scrollableBoxRef.current.scrollTo(0, 0);
+        }
+    }, [selectedStub?.id]);
 
     // cant use useRef as the listRef does not exist due to it being rendered
     // later as a dialog. useEffect also does not keep track of useRef value changes
@@ -123,7 +130,7 @@ const CurationDialog: React.FC<ICurationDialog & IDialog> = (props) => {
                         {CurationDialogFixedSizeListRow}
                     </FixedSizeList>
                 </Box>
-                <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+                <Box ref={scrollableBoxRef} sx={{ flexGrow: 1, overflowY: 'auto' }}>
                     <EditableStubSummary
                         onMoveToNextStub={handleMoveToNextStub}
                         columnIndex={props.columnIndex}

@@ -73,7 +73,6 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
     };
 
     const handleChooseSelection = (selectionKey: string, type: EPropertyType) => {
-        console.log({ selectionKey, type });
         setSelection({
             selectionKey,
             type,

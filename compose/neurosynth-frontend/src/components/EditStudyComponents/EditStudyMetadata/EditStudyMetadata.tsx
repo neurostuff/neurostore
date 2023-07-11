@@ -1,14 +1,13 @@
-import { Typography, Box, Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import { Typography, Box } from '@mui/material';
 import EditMetadata from 'components/EditMetadata/EditMetadata';
 import { IMetadataRowModel } from 'components/EditMetadata';
 import React, { useCallback } from 'react';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
     useAddOrUpdateMetadata,
     useDeleteMetadataRow,
     useStudyMetadata,
 } from 'pages/Studies/StudyStore';
-import EditAnalysesStyles from '../EditAnalyses/EditAnalyses.styles';
+import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 
 export interface IEditStudyMetadata {
     studyId: string;
@@ -28,6 +27,13 @@ export const metadataToArray = (metadata: object | undefined): IMetadataRowModel
               metadataValue: (metadata as unknown as { [key: string]: any })[key],
           }))
         : [];
+
+    if (!('sample_size' in (metadata || {}))) {
+        transformedArr.unshift({
+            metadataKey: 'sample_size',
+            metadataValue: null,
+        });
+    }
 
     return transformedArr;
 };
@@ -71,24 +77,39 @@ const EditStudyMetadata: React.FC = (props) => {
     );
 
     return (
-        <Accordion elevation={0}>
-            <AccordionSummary
-                sx={EditAnalysesStyles.accordionSummary}
-                expandIcon={<ExpandMoreIcon sx={EditAnalysesStyles.accordionExpandIcon} />}
-            >
-                <Typography sx={{ fontWeight: 'bold' }}>Metadata</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-                <Box sx={{ margin: '1rem 0 0.5rem 0' }}>
-                    <EditMetadata
-                        onMetadataRowAdd={handleMetadataRowAdd}
-                        onMetadataRowEdit={handleMetadataRowEdit}
-                        onMetadataRowDelete={handleMetadataRowDelete}
-                        metadata={metadata}
-                    />
-                </Box>
-            </AccordionDetails>
-        </Accordion>
+        <NeurosynthAccordion
+            elevation={0}
+            expandIconColor="secondary.main"
+            sx={{
+                border: '1px solid',
+                borderTop: 'none',
+                borderColor: 'secondary.main',
+                borderRadius: '0 !important',
+            }}
+            accordionSummarySx={{
+                ':hover': {
+                    backgroundColor: '#f2f2f2',
+                },
+            }}
+            TitleElement={
+                <>
+                    <Typography
+                        sx={{ fontWeight: 'bold', marginRight: '10px', color: 'secondary.main' }}
+                    >
+                        Metadata
+                    </Typography>
+                </>
+            }
+        >
+            <Box sx={{ margin: '1rem 0 0.5rem 0' }}>
+                <EditMetadata
+                    onMetadataRowAdd={handleMetadataRowAdd}
+                    onMetadataRowEdit={handleMetadataRowEdit}
+                    onMetadataRowDelete={handleMetadataRowDelete}
+                    metadata={metadata}
+                />
+            </Box>
+        </NeurosynthAccordion>
     );
 };
 

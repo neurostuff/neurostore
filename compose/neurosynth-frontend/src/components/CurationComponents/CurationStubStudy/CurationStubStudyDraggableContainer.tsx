@@ -1,10 +1,8 @@
-import { DraggableProvided, DraggableStateSnapshot, DraggableStyle } from '@hello-pangea/dnd';
 import { Box, Paper } from '@mui/material';
 import { ISource, ITag } from 'hooks/requests/useGetProjects';
-import CurationStubStudyStyles from './CurationStubStudy.styles';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import React from 'react';
 import CurationStubStudy from './CurationStubStudy';
+import CurationStubStudyStyles from './CurationStubStudy.styles';
 
 export interface ICurationStubStudy {
     id: string;
@@ -23,24 +21,24 @@ export interface ICurationStubStudy {
     neurostoreId?: string;
 }
 
-const handleAnimation = (style: DraggableStyle | undefined, snapshot: DraggableStateSnapshot) => {
-    if (!snapshot.isDropAnimating) {
-        return style;
-    }
-    return {
-        ...style,
-        // cannot be 0, but make it super tiny
-        transitionDuration: `0.001s`,
-    };
-};
+// const handleAnimation = (style: DraggableStyle | undefined, snapshot: DraggableStateSnapshot) => {
+//     if (!snapshot.isDropAnimating) {
+//         return style;
+//     }
+//     return {
+//         ...style,
+//         // cannot be 0, but make it super tiny
+//         transitionDuration: `0.001s`,
+//     };
+// };
 
 const CurationStubStudyDraggableContainer: React.FC<
     ICurationStubStudy & {
         index: number;
         isVisible: boolean;
         columnIndex: number;
-        provided: DraggableProvided;
-        snapshot: DraggableStateSnapshot;
+        // provided: DraggableProvided;
+        // snapshot: DraggableStateSnapshot;
         style: React.CSSProperties;
         onSelectStubStudy: (stubId: string) => void;
     }
@@ -49,33 +47,31 @@ const CurationStubStudyDraggableContainer: React.FC<
         <Paper
             onClick={() => props.onSelectStubStudy(props.id)}
             elevation={1}
-            {...props.provided.draggableProps}
-            ref={props.provided.innerRef}
+            // {...props.provided.draggableProps}
+            // ref={props.provided.innerRef}
             style={{
-                ...handleAnimation(props.provided.draggableProps.style, props.snapshot),
+                // ...handleAnimation(props.provided.draggableProps.style, props.snapshot),
                 ...props.style,
                 ...{
                     display: props.isVisible ? 'flex' : 'none',
-                    height: props.isVisible
-                        ? props.snapshot.isDragging
-                            ? '132px'
-                            : '120px'
-                        : '0px',
+                    height: props.isVisible ? '120px' : '0px',
                     paddingTop: '7px',
-                    paddingBottom: props.snapshot.isDragging ? '0px' : '5px',
-                    marginBottom: props.snapshot.isDragging ? '0px' : '8px',
-                    backgroundColor: props.snapshot.isDragging ? 'lightgray' : '',
+                    paddingBottom: '5px',
+                    marginBottom: '8px',
+                    // backgroundColor: props.snapshot.isDragging ? 'lightgray' : '',
                 },
             }}
             sx={CurationStubStudyStyles.stubStudyContainer}
         >
             {!props?.exclusionTag ? (
                 <Box
-                    {...props.provided.dragHandleProps}
+                    // remove drag and drop for now as it is unused
+                    // {...props.provided.dragHandleProps}
                     sx={{ display: 'flex', alignItems: 'center', width: '30px' }}
                 >
                     <Box>
-                        <DragIndicatorIcon sx={{ color: 'gray' }} />
+                        {/* remove drag and drop for now as it is unused */}
+                        {/* <DragIndicatorIcon sx={{ color: 'gray' }} /> */}
                     </Box>
                 </Box>
             ) : (

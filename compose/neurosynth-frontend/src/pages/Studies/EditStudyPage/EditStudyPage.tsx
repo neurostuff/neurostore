@@ -1,4 +1,4 @@
-import { Box, Button, Divider } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import EditAnalyses from 'components/EditStudyComponents/EditAnalyses/EditAnalyses';
 import EditStudyDetails from 'components/EditStudyComponents/EditStudyDetails/EditStudyDetails';
@@ -44,8 +44,11 @@ const EditStudyPage: React.FC = (props) => {
     const clearStudyStore = useClearStudyStore();
     const initStudyStore = useInitStudyStore();
 
+    const isEditingFromProject = !!projectId;
+
     useInitProjectStoreIfRequired();
-    // we want to clear and init every time in case the user wants to refresh the page and cancel their edits
+    // instead of the useInitStudyStoreIfRequired hook,
+    // we want to clear and init the study store every time in case the user wants to refresh the page and cancel their edits
     useEffect(() => {
         clearStudyStore();
         initStudyStore(studyId);
@@ -63,20 +66,18 @@ const EditStudyPage: React.FC = (props) => {
         }
 
         try {
-            if (studyHasBeenEdited) await updateStudyInDB(annotationId as string);
+            if (studyHasBeenEdited)
+                await updateStudyInDB(isEditingFromProject ? (annotationId as string) : undefined);
             snackbar.enqueueSnackbar('study saved successfully', { variant: 'success' });
             queryClient.invalidateQueries('studies');
             queryClient.invalidateQueries('annotation'); // if analyses are updated, we need to do a request to get new annotations
         } catch (e) {
+            console.error(e);
             snackbar.enqueueSnackbar('there was an error saving the study', {
                 variant: 'error',
             });
         }
     };
-
-    console.log({ storeStudyId, studyId });
-
-    const isEditingFromProject = !!projectId;
 
     return (
         <StateHandlerComponent isError={false} isLoading={!storeStudyId && !isError}>
@@ -127,13 +128,11 @@ const EditStudyPage: React.FC = (props) => {
             )}
             <Box>
                 <EditStudyDetails />
-                <Divider />
             </Box>
             <Box>
                 <EditStudyMetadata />
-                <Divider />
             </Box>
-            <Box>
+            <Box sx={{ marginBottom: '5rem' }}>
                 <EditAnalyses />
             </Box>
             <Box

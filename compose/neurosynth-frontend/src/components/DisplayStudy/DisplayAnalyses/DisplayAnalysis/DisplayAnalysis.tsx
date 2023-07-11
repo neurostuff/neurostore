@@ -1,10 +1,10 @@
 import { Box, Typography } from '@mui/material';
-import { AnalysisReturn, PointReturn } from 'neurostore-typescript-sdk';
 
 import DisplayAnalysisWarnings from '../DisplayAnalysisWarnings/DisplayAnalysisWarnings';
 import DisplayPoints from './DisplayPoints/DisplayPoints';
+import { IStoreAnalysis } from 'pages/Studies/StudyStore.helpers';
 
-const DisplayAnalysis: React.FC<AnalysisReturn | undefined> = (props) => {
+const DisplayAnalysis: React.FC<IStoreAnalysis | undefined> = (props) => {
     return (
         <Box>
             <DisplayAnalysisWarnings analysisId={props.id || ''} />
@@ -16,7 +16,12 @@ const DisplayAnalysis: React.FC<AnalysisReturn | undefined> = (props) => {
                 <Typography>{props.description || ''}</Typography>
             </Box>
 
-            <DisplayPoints points={(props.points || []) as PointReturn[]} />
+            <DisplayPoints
+                statistic={props.pointStatistic}
+                space={props.pointSpace}
+                title="Coordinates"
+                points={props.points || []}
+            />
 
             {/* <DisplayConditions
                 conditions={(props.conditions || []) as ConditionReturn[]}

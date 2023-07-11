@@ -1,6 +1,7 @@
 from marshmallow import EXCLUDE
 from webargs import fields
 import sqlalchemy.sql.expression as sae
+from sqlalchemy.orm import joinedload
 
 from .utils import view_maker
 from .base import BaseView, ObjectView, ListView
@@ -14,7 +15,7 @@ from ..models import (
     AnnotationAnalysis,
     Entity,
 )
-from ..models.data import StudysetStudy
+from ..models.data import StudysetStudy, BaseStudy
 
 from ..schemas import (
     BooleanOrString,
@@ -28,6 +29,7 @@ from ..schemas.data import StudysetSnapshot
 __all__ = [
     "StudysetsView",
     "AnnotationsView",
+    "BaseStudiesView",
     "StudiesView",
     "AnalysesView",
     "ConditionsView",
@@ -62,6 +64,7 @@ class StudysetsView(ObjectView, ListView):
     _linked = {
         "annotations": "AnnotationsView",
     }
+    _multi_search = ("name", "description")
     _search_fields = ("name", "description", "publication", "doi", "pmid")
 
     def view_search(self, q, args):
@@ -88,6 +91,7 @@ class AnnotationsView(ObjectView, ListView):
         "studyset": "StudysetsView",
     }
 
+    _multi_search = ("name", "description")
     _search_fields = ("name", "description")
 
     def view_search(self, q, args):
@@ -140,6 +144,61 @@ class AnnotationsView(ObjectView, ListView):
 
 
 @view_maker
+class BaseStudiesView(ObjectView, ListView):
+    _nested = {"versions": "StudiesView"}
+
+    _view_fields = {
+        "level": fields.String(default="group", missing="group"),
+    }
+
+    _multi_search = ("name", "description")
+
+    _search_fields = (
+        "name",
+        "description",
+        "source_id",
+        "source",
+        "authors",
+        "publication",
+        "doi",
+        "pmid",
+    )
+
+    def view_search(self, q, args):
+        # search studies for data_type
+        if args.get("data_type"):
+            if args["data_type"] == "coordinate":
+                q = q.filter(
+                    self._model.versions.any(Study.analyses.any(Analysis.points.any()))
+                )
+            elif args["data_type"] == "image":
+                q = q.filter(
+                    self._model.versions.any(Study.analyses.any(Analysis.images.any()))
+                )
+            elif args["data_type"] == "both":
+                q = q.filter(
+                    sae.or_(
+                        self._model.versions.any(
+                            Study.analyses.any(Analysis.points.any())
+                        ),
+                        self._model.versions.any(
+                            Study.analyses.any(Analysis.images.any())
+                        ),
+                    )
+                )
+        # filter by level of analysis (group or meta)
+        if args.get("level"):
+            q = q.filter(self._model.level == args.get("level"))
+
+        return q
+
+    def join_tables(self, q):
+        "join relevant tables to speed up query"
+        q = q.options(joinedload("versions"))
+        return q
+
+
+@view_maker
 class StudiesView(ObjectView, ListView):
     _view_fields = {
         **{
@@ -150,11 +209,18 @@ class StudiesView(ObjectView, ListView):
         **LIST_NESTED_ARGS,
         **LIST_CLONE_ARGS,
     }
+
+    _multi_search = ("name", "description")
+
+    _parent = {
+        "base_study": "BaseStudiesView",
+    }
     _nested = {
         "analyses": "AnalysesView",
     }
     _linked = {
-        "studyset": "StudysetsView",
+        # "studysets": "StudysetsView",
+        "studyset_studies": "StudysetStudiesResource",
     }
     _search_fields = (
         "name",
@@ -190,17 +256,16 @@ class StudiesView(ObjectView, ListView):
             "doi" if isinstance(unique_col, bool) and unique_col else unique_col
         )
         if unique_col:
-            q_null = q.filter(getattr(self._model, unique_col).is_(None))
-            q_distinct = q.distinct(getattr(self._model, unique_col))
-            q = q_distinct.union(q_null)
-            q = q.order_by(getattr(self._model, unique_col))
+            subquery = q.distinct(getattr(self._model, unique_col)).subquery()
+            q = q.join(
+                subquery,
+                getattr(self._model, unique_col) == getattr(subquery.c, unique_col),
+            )
         return q
 
     def join_tables(self, q):
         "join relevant tables to speed up query"
-        q = q.outerjoin(Analysis, self._model.id == Analysis.study_id).\
-            outerjoin(StudysetStudy, self._model.id == StudysetStudy.study_id)
-
+        q = q.options(joinedload("analyses"))
         return q
 
     def serialize_records(self, records, args):
@@ -237,6 +302,7 @@ class StudiesView(ObjectView, ListView):
         data["source"] = "neurostore"
         data["source_id"] = source_id
         data["source_updated_at"] = study.updated_at or study.created_at
+        data["base_study"] = {"id": study.base_study_id}
         return data
 
     @classmethod
@@ -246,6 +312,45 @@ class StudiesView(ObjectView, ListView):
     @classmethod
     def load_from_pubmed(cls, source_id):
         pass
+
+    def custom_record_update(record):
+        """Find/create the associated base study"""
+        # if the study was cloned and the base_study is already known.
+        if record.base_study is not None:
+            return record
+
+        query = BaseStudy.query
+        has_doi = has_pmid = False
+        base_study = None
+        if record.doi:
+            query = query.filter_by(doi=record.doi)
+            has_doi = True
+        if record.pmid:
+            query = query.filter_by(pmid=record.pmid)
+            has_pmid = True
+
+        if query.count() >= 1 and (has_doi or has_pmid):
+            base_study = query.first()
+        elif has_doi or has_pmid:
+            base_study = BaseStudy(
+                name=record.name,
+                doi=record.doi,
+                pmid=record.pmid,
+                description=record.description,
+                publication=record.publication,
+                year=record.year,
+                level=record.level,
+                authors=record.authors,
+                metadata_=record.metadata_,
+            )
+        else:
+            # there is no published study to associate
+            # with this study
+            return record
+
+        record.base_study = base_study
+
+        return record
 
 
 @view_maker

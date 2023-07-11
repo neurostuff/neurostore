@@ -7,7 +7,7 @@ from marshmallow import (
     pre_load,
 )
 from flask import request
-import orjson as json
+import orjson
 from marshmallow.decorators import post_load
 from pyld import jsonld
 import pandas as pd
@@ -119,6 +119,7 @@ class ConditionSchema(BaseDataSchema):
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
+        render_module = orjson
 
 
 class EntitySchema(BaseDataSchema):
@@ -127,6 +128,7 @@ class EntitySchema(BaseDataSchema):
     class Meta:
         additional = ("level", "label")
         allow_none = ("level", "label")
+        render_module = orjson
 
 
 class ImageSchema(BaseDataSchema):
@@ -138,18 +140,20 @@ class ImageSchema(BaseDataSchema):
     class Meta:
         additional = ("url", "filename", "space", "value_type")
         allow_none = ("url", "filename", "space", "value_type")
+        render_module = orjson
 
 
 class PointValueSchema(BaseDataSchema):
     class Meta:
         additional = allow_none = ("kind", "value")
+        render_module = orjson
 
 
 class PointSchema(BaseDataSchema):
     # serialization
     analysis = StringOrNested("AnalysisSchema", use_nested=False)
     values = fields.Nested(PointValueSchema, many=True)
-    entities = fields.Nested(EntitySchema, many=True)
+    entities = fields.Nested(EntitySchema, many=True, load_only=True)
     cluster_size = fields.Float(allow_none=True)
     subpeak = fields.Boolean(allow_none=True)
     order = fields.Integer()
@@ -162,6 +166,7 @@ class PointSchema(BaseDataSchema):
     class Meta:
         additional = ("kind", "space", "coordinates", "image", "label_id")
         allow_none = ("kind", "space", "coordinates", "image", "label_id")
+        render_module = orjson
 
     @pre_load
     def process_values(self, data, **kwargs):
@@ -177,6 +182,9 @@ class AnalysisConditionSchema(BaseDataSchema):
     condition = StringOrNested(ConditionSchema)
     analysis_id = fields.String(data_key="analysis")
 
+    class Meta:
+        render_module = orjson
+
 
 class StudysetStudySchema(BaseDataSchema):
     studyset_id = fields.String()
@@ -190,6 +198,9 @@ class StudysetStudySchema(BaseDataSchema):
     def filter_values(self, data, **kwargs):
         pass
 
+    class Meta:
+        render_module = orjson
+
 
 class AnalysisSchema(BaseDataSchema):
     # serialization
@@ -200,11 +211,12 @@ class AnalysisSchema(BaseDataSchema):
     images = StringOrNested(ImageSchema, many=True)
     points = StringOrNested(PointSchema, many=True)
     weights = fields.List(fields.Float())
-    entities = fields.Nested(EntitySchema, many=True)
+    entities = fields.Nested(EntitySchema, many=True, load_only=True)
 
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
+        render_module = orjson
 
     @pre_load
     def load_values(self, data, **kwargs):
@@ -238,6 +250,38 @@ class StudySetStudyInfoSchema(Schema):
     name = fields.String(dump_only=True)
     description = fields.String(dump_only=True)
 
+    class Meta:
+        render_module = orjson
+
+
+class BaseStudySchema(BaseDataSchema):
+    metadata = fields.Dict(attribute="metadata_", dump_only=True)
+    metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
+    versions = StringOrNested("StudySchema", many=True, use_nested=False)
+
+    class Meta:
+        additional = (
+            "name",
+            "description",
+            "publication",
+            "doi",
+            "pmid",
+            "authors",
+            "year",
+            "level",
+        )
+        allow_none = (
+            "name",
+            "description",
+            "publication",
+            "doi",
+            "pmid",
+            "authors",
+            "year",
+            "level",
+        )
+        render_module = orjson
+
 
 class StudySchema(BaseDataSchema):
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
@@ -247,9 +291,9 @@ class StudySchema(BaseDataSchema):
     source_id = fields.String(
         dump_only=True, metadata={"db_only": True}, allow_none=True
     )
-    studysets = fields.Nested(
-        "StudySetStudyInfoSchema", dump_only=True, metadata={"db_only": True}, many=True
-    )
+    # studysets = fields.Nested(
+    #    "StudySetStudyInfoSchema", dump_only=True, metadata={"db_only": True}, many=True
+    # )
     source_updated_at = fields.DateTime(
         dump_only=True, metadata={"db_only": True}, allow_none=True
     )
@@ -275,6 +319,7 @@ class StudySchema(BaseDataSchema):
             "year",
             "level",
         )
+        render_module = orjson
 
 
 class StudysetSchema(BaseDataSchema):
@@ -286,6 +331,7 @@ class StudysetSchema(BaseDataSchema):
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")
         allow_none = ("name", "description", "publication", "doi", "pmid")
+        render_module = orjson
 
 
 class AnnotationAnalysisSchema(BaseDataSchema):
@@ -308,6 +354,9 @@ class AnnotationAnalysisSchema(BaseDataSchema):
     publication = fields.Function(
         lambda aa: aa.studyset_study.study.publication, dump_only=True
     )
+
+    class Meta:
+        render_module = orjson
 
     @post_load
     def add_id(self, data, **kwargs):
@@ -348,6 +397,7 @@ class AnnotationSchema(BaseDataSchema):
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
+        render_module = orjson
 
     @pre_load
     def add_studyset_id(self, data, **kwargs):
@@ -567,7 +617,7 @@ class StudysetSnapshot(object):
         }
 
     def serialize(self, studyset_dict):
-        return json.dumps(studyset_dict)
+        return orjson.dumps(studyset_dict)
 
     def dump_and_serialize(self, studyset):
         return self.serialize(self.dump(studyset))

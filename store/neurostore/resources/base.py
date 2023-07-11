@@ -1,12 +1,15 @@
 """
 Base Classes/functions for constructing views
 """
+import re
+
 import connexion
 from flask import abort, request, current_app  # jsonify
 from flask.views import MethodView
 
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
 # from flask import make_response
+import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
@@ -17,7 +20,7 @@ from ..core import cache
 from ..database import db
 from .utils import get_current_user
 from .nested import nested_load
-from ..models import Studyset, User, Annotation
+from ..models import StudysetStudy, Studyset, BaseStudy, User, Annotation
 from ..schemas.data import StudysetSnapshot
 from . import data as viewdata
 
@@ -28,6 +31,10 @@ class BaseView(MethodView):
     _parent = {}
     _linked = {}
     _composite_key = {}
+
+    def custom_record_update(record):
+        """Custom processing of a record (defined in specific classes)"""
+        return record
 
     @classmethod
     def update_or_create(cls, data, id=None, commit=True):
@@ -95,7 +102,9 @@ class BaseView(MethodView):
                 # DO NOT WANT PEOPLE TO BE ABLE TO ADD ANALYSES
                 # TO STUDIES UNLESS THEY OWN THE STUDY
                 v = PrtCls._model.query.filter_by(id=v["id"]).first()
-                if current_user != v.user and current_user.external_id != compose_bot:
+                if PrtCls._model is BaseStudy:
+                    pass
+                elif current_user != v.user and current_user.external_id != compose_bot:
                     abort(403)
             if k in cls._linked and v is not None:
                 LnCls = getattr(viewdata, cls._linked[k])
@@ -117,6 +126,8 @@ class BaseView(MethodView):
                 except AttributeError:
                     print(k)
                     raise AttributeError
+
+        record = cls.custom_record_update(record)
 
         to_commit.append(record)
 
@@ -145,6 +156,56 @@ class BaseView(MethodView):
                 abort(400)
 
         return record
+
+
+CAMEL_CASE_MATCH = re.compile(r'(?<!^)(?=[A-Z])')
+
+
+def clear_cache(cls, record, path, only_nested=False, previous_cls=None):
+    if only_nested:
+        cache_dict = cache.nested_endpoint_dict
+        other_cache_dict = cache.endpoint_dict
+    else:
+        cache_dict = cache.endpoint_dict
+        other_cache_dict = cache.nested_endpoint_dict
+    # clear the cache for this endpoint
+    for key in cache_dict.get(path, []):
+        cache.delete(key)
+        if key in cache_dict.get(path):
+            cache_dict[path].remove(key)
+        if key in other_cache_dict.get(path, []):
+            other_cache_dict[path].remove(key)
+    # clear cache for base endpoint
+    endpoint_path = '/'.join(request.path.split('/')[:-1]) + "/"
+    for key in cache_dict.get(endpoint_path, []):
+        cache.delete(key)
+        if key in cache_dict[endpoint_path]:
+            cache_dict[endpoint_path].remove(key)
+        if key in other_cache_dict.get(endpoint_path, []):
+            other_cache_dict[endpoint_path].remove(key)
+    # clear cache for all parent objects
+    for parent, parent_view_name in cls._parent.items():
+        parent_record = getattr(record, parent)
+        if parent_record:
+            parent_path = '/api/' + CAMEL_CASE_MATCH.sub('-', parent_view_name).lower() + f'/{parent_record.id}'
+            parent_class = getattr(viewdata, parent_view_name)
+            if parent_class is previous_cls:
+                return
+            clear_cache(parent_class, parent_record, parent_path, only_nested=True, previous_cls=cls)
+
+    for link, link_view_name in cls._linked.items():
+        linked_records = getattr(record, link)
+        linked_records = [linked_records] if not isinstance(linked_records, list) else linked_records
+
+        for linked_record in linked_records:
+            if isinstance(linked_record, StudysetStudy):
+                linked_record = linked_record.studyset
+                link_view_name = "StudysetsView"
+            linked_path = '/api/' + CAMEL_CASE_MATCH.sub('-', link_view_name).lower() + f'/{linked_record.id}'
+            linked_class = getattr(viewdata, link_view_name)
+            if linked_class is previous_cls:
+                return
+            clear_cache(linked_class, linked_record, linked_path, only_nested=True, previous_cls=cls)
 
 
 class ObjectView(BaseView):
@@ -176,8 +237,9 @@ class ObjectView(BaseView):
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data, id)
 
-        # clear the cache for this endpoint
-        cache.delete(request.path)
+        # clear relevant caches
+        clear_cache(self.__class__, record, request.path)
+
         return self.__class__._schema().dump(record)
 
     def delete(self, id):
@@ -218,12 +280,16 @@ class ListView(BaseView):
 
     def __init__(self):
         # Initialize expected arguments based on class attributes
-        self._fulltext_fields = self._multi_search or self._search_fields
+        self._fulltext_fields = self._multi_search
         self._user_args = {
             **LIST_USER_ARGS,
             **self._view_fields,
-            **{f: fields.Str() for f in self._fulltext_fields},
         }
+        if self._fulltext_fields:
+            self._user_args.update({f: fields.Str() for f in self._fulltext_fields})
+
+        if self._search_fields:
+            self._user_args.update({f: fields.Str() for f in self._search_fields})
 
     def view_search(self, q, args):
         return q
@@ -241,9 +307,8 @@ class ListView(BaseView):
         ).dump(records)
         return content
 
-    def create_metadata(self, q):
-        count = len(q.all())
-        return {"total_count": count}
+    def create_metadata(self, q, total):
+        return {"total_count": total}
 
     @cache.cached(60 * 60, query_string=True)
     def search(self):
@@ -252,9 +317,6 @@ class ListView(BaseView):
 
         m = self._model  # for brevity
         q = m.query
-
-        # Search
-        s = args["search"]
 
         # query items that are owned by a user_id
         if args.get("user_id"):
@@ -265,12 +327,16 @@ class ListView(BaseView):
             current_user = get_current_user()
             q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
 
+        # Search
+        s = args["search"]
+
         # For multi-column search, default to using search fields
-        if s is not None and self._fulltext_fields:
-            search_expr = [
-                getattr(m, field).ilike(f"%{s}%") for field in self._fulltext_fields
-            ]
-            q = q.filter(sae.or_(*search_expr))
+        # temporary fix for pmid search
+        if s is not None and s.isdigit():
+            q = q.filter_by(pmid=s)
+        elif s is not None and self._fulltext_fields:
+            tsquery = sa.func.websearch_to_tsquery(s, postgresql_regconfig="english")
+            q = q.filter(m.__ts_vector__.op("@@")(tsquery))
 
         # Alternatively (or in addition), search on individual fields.
         for field in self._search_fields:
@@ -300,11 +366,14 @@ class ListView(BaseView):
         # join the relevant tables for output
         q = self.join_tables(q)
 
-        records = q.paginate(
-            page=args["page"], per_page=args["page_size"], error_out=False
-        ).items
+        pagination_query = q.paginate(
+            page=args["page"],
+            per_page=args["page_size"],
+            error_out=False,
+        )
+        records = pagination_query.items
         content = self.serialize_records(records, args)
-        metadata = self.create_metadata(q)
+        metadata = self.create_metadata(q, pagination_query.total)
         response = {
             "metadata": metadata,
             "results": content,

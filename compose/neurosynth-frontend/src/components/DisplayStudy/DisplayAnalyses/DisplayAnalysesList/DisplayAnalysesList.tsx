@@ -1,9 +1,9 @@
 import { Box, List } from '@mui/material';
 import EditAnalysesListItem from 'components/EditStudyComponents/EditAnalyses/EditAnalysesList/EditAnalysesListItem';
-import { AnalysisReturn } from 'neurostore-typescript-sdk';
+import { IStoreAnalysis } from 'pages/Studies/StudyStore.helpers';
 
 const DisplayAnalysesList: React.FC<{
-    analyses: AnalysisReturn[];
+    analyses: IStoreAnalysis[];
     selectedIndex: number;
     onSelectAnalysisIndex: (index: number) => void;
 }> = (props) => {

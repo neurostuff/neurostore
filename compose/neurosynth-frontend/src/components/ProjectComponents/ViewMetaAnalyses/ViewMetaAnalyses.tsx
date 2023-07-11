@@ -1,21 +1,16 @@
 import { Add } from '@mui/icons-material';
-import { Box, Button, Card, CardActions, CardContent, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import CreateMetaAnalysisSpecificationDialogBase from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetMetaAnalyses } from 'hooks';
 import { useState } from 'react';
-import { useHistory, useParams, useRouteMatch } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import ViewMetaAnalysis from './ViewMetaAnalysis';
 
 const ViewMetaAnalyses: React.FC = () => {
-    const path = useRouteMatch();
-    const history = useHistory();
     const { projectId }: { projectId: string } = useParams();
     const { data, isLoading, isError } = useGetMetaAnalyses(projectId);
     const [createMetaAnalysisDialogIsOpen, setCreateMetaAnalysisDialogIsOpen] = useState(false);
-    const handleUpdate = (id?: string) => {
-        if (!id) return;
-        history.push(`${path.url}/${id}`);
-    };
 
     return (
         <StateHandlerComponent isLoading={isLoading} isError={isError}>
@@ -38,59 +33,16 @@ const ViewMetaAnalyses: React.FC = () => {
                         sx={{ marginBottom: '1rem' }}
                         variant="contained"
                         startIcon={<Add />}
+                        disableElevation
                     >
                         Meta-Analysis Specification
                     </Button>
                 </Box>
             </Box>
             <Box sx={{ padding: '0.5rem 0', display: 'flex', flexWrap: 'wrap' }}>
-                {(data || []).map((metaAnalysis, index) => {
-                    const date = new Date(metaAnalysis.created_at || '');
-                    return (
-                        <Card
-                            key={metaAnalysis.id || index}
-                            sx={{
-                                flex: '0 1 23%',
-                                margin: '10px 1%',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'space-between',
-                            }}
-                        >
-                            <CardContent>
-                                <Box>
-                                    <Box
-                                        sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                        }}
-                                    >
-                                        <Typography
-                                            sx={{ color: 'secondary.main' }}
-                                            variant="body2"
-                                        >
-                                            EDITABLE
-                                        </Typography>
-                                        <Typography variant="body2">
-                                            {`${date.toLocaleDateString()} ${date.toLocaleTimeString()}`}
-                                        </Typography>
-                                    </Box>
-                                    <Typography variant="h6">{metaAnalysis.name || ''}</Typography>
-                                    <Typography>{metaAnalysis.description || ''}</Typography>
-                                </Box>
-                            </CardContent>
-                            <CardActions>
-                                <Button
-                                    sx={{ width: '100%' }}
-                                    onClick={() => handleUpdate(metaAnalysis.id)}
-                                >
-                                    view
-                                </Button>
-                            </CardActions>
-                        </Card>
-                    );
-                })}
+                {(data || []).map((metaAnalysis, index) => (
+                    <ViewMetaAnalysis key={metaAnalysis.id || index} {...metaAnalysis} />
+                ))}
             </Box>
         </StateHandlerComponent>
     );

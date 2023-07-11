@@ -19,7 +19,7 @@ const ReadOnlyStubSummary: React.FC<ICurationStubStudy> = (props) => {
     } = props;
 
     return (
-        <Box sx={{ padding: '0.25rem', paddingBottom: '1rem' }}>
+        <Box sx={{ padding: '0.25rem' }}>
             {neurostoreId && (
                 <Link
                     underline="hover"

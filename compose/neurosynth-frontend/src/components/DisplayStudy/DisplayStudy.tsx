@@ -5,13 +5,23 @@ import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccord
 import NeurosynthTable, { getValue } from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
-import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import DisplayAnalyses from './DisplayAnalyses/DisplayAnalyses';
 import DisplayStudyStyles from './DisplayStudy.styles';
 import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
+import FullTextLinkComponent from 'components/FullTextLinkComponent/FullTextLinkComponent';
+import { IStoreStudy } from 'pages/Studies/StudyStore.helpers';
 
-const DisplayStudy: React.FC<StudyReturn> = (props) => {
-    const { name, description, doi, pmid, authors, publication, metadata, analyses = [] } = props;
+const DisplayStudy: React.FC<IStoreStudy> = (props) => {
+    const {
+        name,
+        description,
+        doi,
+        pmid,
+        authors,
+        publication,
+        metadata = [],
+        analyses = [],
+    } = props;
 
     return (
         <Box>
@@ -24,6 +34,10 @@ const DisplayStudy: React.FC<StudyReturn> = (props) => {
                 <Typography>{authors}</Typography>
                 <Box>
                     <Typography>{publication}</Typography>
+                    <FullTextLinkComponent
+                        paperTitle={name || ''}
+                        text="View Full Text For This Study"
+                    />
                     {doi && (
                         <Link
                             sx={{ display: 'block', margin: '5px 0' }}
@@ -50,16 +64,20 @@ const DisplayStudy: React.FC<StudyReturn> = (props) => {
                     sx={{ ...DisplayStudyStyles.spaceBelow, whiteSpace: 'pre-wrap' }}
                 />
             </Box>
-            <Box data-tour="StudyPage-2" sx={{ margin: '15px 0' }}>
+            <Box data-tour="StudyPage-2" sx={{ margin: '15px' }}>
                 <NeurosynthAccordion
-                    accordionSummarySx={DisplayStudyStyles.accordionSummary}
-                    accordionDetailsSx={{ padding: 0 }}
                     elevation={0}
-                    TitleElement={
-                        <Typography variant="h6">
-                            <b>Metadata</b>
-                        </Typography>
-                    }
+                    expandIconColor={'primary.main'}
+                    sx={{
+                        border: '1px solid',
+                        borderColor: 'primary.main',
+                    }}
+                    accordionSummarySx={{
+                        ':hover': {
+                            backgroundColor: '#f2f2f2',
+                        },
+                    }}
+                    TitleElement={<Typography sx={{ color: 'primary.main' }}>Metadata</Typography>}
                 >
                     <Box sx={DisplayStudyStyles.metadataContainer}>
                         <NeurosynthTable
@@ -76,15 +94,19 @@ const DisplayStudy: React.FC<StudyReturn> = (props) => {
                                 { text: 'Name', key: 'name', styles: { fontWeight: 'bold' } },
                                 { text: 'Value', key: 'value', styles: { fontWeight: 'bold' } },
                             ]}
-                            rows={Object.entries(metadata || {})
-                                .sort((a, b) => sortMetadataArrayFn(a[0], b[0]))
-                                .map(([key, value]) => (
-                                    <TableRow key={key}>
-                                        <TableCell>{key}</TableCell>
+                            rows={metadata
+                                .sort((a, b) => sortMetadataArrayFn(a.metadataKey, b.metadataKey))
+                                .map(({ metadataKey, metadataValue }) => (
+                                    <TableRow key={metadataKey}>
+                                        <TableCell>{metadataKey}</TableCell>
                                         <TableCell
-                                            sx={{ color: NeurosynthTableStyles[getType(value)] }}
+                                            sx={{
+                                                color: NeurosynthTableStyles[
+                                                    getType(metadataValue)
+                                                ],
+                                            }}
                                         >
-                                            {getValue(value)}
+                                            {getValue(metadataValue)}
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -115,7 +137,7 @@ const DisplayStudy: React.FC<StudyReturn> = (props) => {
                     <>
                         <Box sx={{ marginBottom: '1rem', padding: '0 1rem' }}>
                             <Divider />
-                            <DisplayAnalyses analyses={analyses as AnalysisReturn[]} />
+                            <DisplayAnalyses analyses={analyses} />
                         </Box>
                     </>
                 )}
