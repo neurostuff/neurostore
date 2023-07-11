@@ -7,7 +7,7 @@ from marshmallow import (
     pre_load,
 )
 from flask import request
-import orjson as json
+import orjson
 from marshmallow.decorators import post_load
 from pyld import jsonld
 import pandas as pd
@@ -119,7 +119,7 @@ class ConditionSchema(BaseDataSchema):
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
-        render_module = json
+        render_module = orjson
 
 
 class EntitySchema(BaseDataSchema):
@@ -128,7 +128,7 @@ class EntitySchema(BaseDataSchema):
     class Meta:
         additional = ("level", "label")
         allow_none = ("level", "label")
-        render_module = json
+        render_module = orjson
 
 
 class ImageSchema(BaseDataSchema):
@@ -140,13 +140,13 @@ class ImageSchema(BaseDataSchema):
     class Meta:
         additional = ("url", "filename", "space", "value_type")
         allow_none = ("url", "filename", "space", "value_type")
-        render_module = json
+        render_module = orjson
 
 
 class PointValueSchema(BaseDataSchema):
     class Meta:
         additional = allow_none = ("kind", "value")
-        render_module = json
+        render_module = orjson
 
 
 class PointSchema(BaseDataSchema):
@@ -166,7 +166,7 @@ class PointSchema(BaseDataSchema):
     class Meta:
         additional = ("kind", "space", "coordinates", "image", "label_id")
         allow_none = ("kind", "space", "coordinates", "image", "label_id")
-        render_module = json
+        render_module = orjson
 
     @pre_load
     def process_values(self, data, **kwargs):
@@ -183,7 +183,7 @@ class AnalysisConditionSchema(BaseDataSchema):
     analysis_id = fields.String(data_key="analysis")
 
     class Meta:
-        render_module = json
+        render_module = orjson
 
 
 class StudysetStudySchema(BaseDataSchema):
@@ -199,7 +199,7 @@ class StudysetStudySchema(BaseDataSchema):
         pass
 
     class Meta:
-        render_module = json
+        render_module = orjson
 
 
 class AnalysisSchema(BaseDataSchema):
@@ -216,7 +216,7 @@ class AnalysisSchema(BaseDataSchema):
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
-        render_module = json
+        render_module = orjson
 
     @pre_load
     def load_values(self, data, **kwargs):
@@ -251,7 +251,7 @@ class StudySetStudyInfoSchema(Schema):
     description = fields.String(dump_only=True)
 
     class Meta:
-        render_module = json
+        render_module = orjson
 
 
 class BaseStudySchema(BaseDataSchema):
@@ -280,7 +280,7 @@ class BaseStudySchema(BaseDataSchema):
             "year",
             "level",
         )
-        render_module = json
+        render_module = orjson
 
 
 class StudySchema(BaseDataSchema):
@@ -319,7 +319,7 @@ class StudySchema(BaseDataSchema):
             "year",
             "level",
         )
-        render_module = json
+        render_module = orjson
 
 
 class StudysetSchema(BaseDataSchema):
@@ -331,7 +331,7 @@ class StudysetSchema(BaseDataSchema):
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")
         allow_none = ("name", "description", "publication", "doi", "pmid")
-        render_module = json
+        render_module = orjson
 
 
 class AnnotationAnalysisSchema(BaseDataSchema):
@@ -356,7 +356,7 @@ class AnnotationAnalysisSchema(BaseDataSchema):
     )
 
     class Meta:
-        render_module = json
+        render_module = orjson
 
     @post_load
     def add_id(self, data, **kwargs):
@@ -397,7 +397,7 @@ class AnnotationSchema(BaseDataSchema):
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
-        render_module = json
+        render_module = orjson
 
     @pre_load
     def add_studyset_id(self, data, **kwargs):
@@ -617,7 +617,7 @@ class StudysetSnapshot(object):
         }
 
     def serialize(self, studyset_dict):
-        return json.dumps(studyset_dict)
+        return orjson.dumps(studyset_dict)
 
     def dump_and_serialize(self, studyset):
         return self.serialize(self.dump(studyset))
