@@ -1,7 +1,5 @@
 /// <reference types="cypress" />
 
-import { mockStudysets } from 'testing/mockData';
-
 export {};
 
 const PATH = '/studysets';
@@ -15,8 +13,8 @@ describe(PAGE_NAME, () => {
 
     it('should load successfully', () => {
         cy.intercept('GET', `**/api/projects*`).as('realProjectsRequest');
-        cy.intercept('GET', `**/api/studysets/**`).as('realStudysetRequest');
-        cy.login('real').wait('@realProjectsRequest').visit(PATH).wait('@realStudysetRequest');
+        cy.intercept('GET', `**/api/studysets*`).as('realStudysetRequest');
+        cy.visit(PATH).wait('@realStudysetRequest');
     });
 
     // describe('Search', () => {

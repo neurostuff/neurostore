@@ -16,7 +16,8 @@ describe(PAGE_NAME, () => {
         cy.intercept('GET', `**/api/studies/mock-study-id*`, { fixture: 'study' }).as(
             'studyFixture'
         );
-        cy.login('mocked').wait('@realProjectsRequest').visit(PATH).wait('@studyFixture');
+        cy.visit(PATH).wait('@studyFixture');
+        // cy.login('mocked').wait('@realProjectsRequest').visit(PATH).wait('@studyFixture');
     });
 
     // it('should redirect if the user is not authenticated', () => {

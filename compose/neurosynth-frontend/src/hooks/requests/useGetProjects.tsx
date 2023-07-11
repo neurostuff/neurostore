@@ -82,14 +82,14 @@ export const indexToPRISMAMapping = (
     }
 };
 
-const useGetProjects = (isAuthenticated: boolean, authenticatedUser?: string) => {
+const useGetProjects = (authenticatedUser?: string) => {
     return useQuery(
         ['projects', authenticatedUser],
         () => API.NeurosynthServices.ProjectsService.projectsGet(),
         {
             select: (axiosResponse) =>
                 (axiosResponse.data.results as INeurosynthProjectReturn[]) || [],
-            enabled: isAuthenticated && !!authenticatedUser,
+            enabled: !!authenticatedUser,
         }
     );
 };
