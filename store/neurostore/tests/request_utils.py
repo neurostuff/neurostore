@@ -6,7 +6,8 @@ class Client(object):
     def __init__(self, token, test_client=None, prepend="", username=None):
         if test_client is None:
             from ..core import app
-            if not getattr(app, 'test_client', None):
+
+            if not getattr(app, "test_client", None):
                 app = app._app
             test_client = app.test_client()
             self.client_flask = True

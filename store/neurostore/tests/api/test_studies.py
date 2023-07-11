@@ -204,7 +204,7 @@ def test_cache_update(auth_client, user_data):
     auth_client.get(f"/api/studies/{study_entry.id}")
     auth_client.get(f"/api/studies/{study_entry.id}?nested=true")
     auth_client.get(f"/api/studies/{study_entry.id}")
-    auth_client.put(f"/api/studies/{study_entry.id}", data={'name': 'new name'})
+    auth_client.put(f"/api/studies/{study_entry.id}", data={"name": "new name"})
     auth_client.get(f"/api/studies/{study_entry.id}")
 
 

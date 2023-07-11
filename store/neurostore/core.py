@@ -33,7 +33,7 @@ class EndPointsCache(Cache):
             self.endpoint_dict[endpoint] = []
         # keep track of caches at this endpoint
         self.endpoint_dict[endpoint].append(args[0])
-        if 'nested' in request.args:
+        if "nested" in request.args:
             if endpoint not in self.nested_endpoint_dict:
                 self.nested_endpoint_dict[endpoint] = []
             self.nested_endpoint_dict[endpoint].append(args[0])

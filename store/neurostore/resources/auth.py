@@ -6,7 +6,7 @@ from jose import jwt
 
 from ..core import app
 
-if not getattr(app, 'errorhandler', None):
+if not getattr(app, "errorhandler", None):
     app = app._app
 
 

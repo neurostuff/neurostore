@@ -12,8 +12,8 @@ def nested_load(view, options=None):
     nested attributes.
     """
     nested_keys = list(view._nested.keys())
-    if 'entities' in nested_keys:
-        nested_keys.remove('entities')
+    if "entities" in nested_keys:
+        nested_keys.remove("entities")
     if len(nested_keys) == 1:
         if options:
             options = options.joinedload(getattr(view._model, nested_keys[0]))

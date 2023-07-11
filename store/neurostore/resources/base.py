@@ -20,7 +20,14 @@ from ..core import cache
 from ..database import db
 from .utils import get_current_user
 from .nested import nested_load
-from ..models import StudysetStudy, AnnotationAnalysis, Studyset, BaseStudy, User, Annotation
+from ..models import (
+    StudysetStudy,
+    AnnotationAnalysis,
+    Studyset,
+    BaseStudy,
+    User,
+    Annotation,
+)
 from ..schemas.data import StudysetSnapshot
 from . import data as viewdata
 
@@ -158,7 +165,7 @@ class BaseView(MethodView):
         return record
 
 
-CAMEL_CASE_MATCH = re.compile(r'(?<!^)(?=[A-Z])')
+CAMEL_CASE_MATCH = re.compile(r"(?<!^)(?=[A-Z])")
 
 
 def clear_cache(cls, record, path, only_nested=False, previous_cls=None):
@@ -176,7 +183,7 @@ def clear_cache(cls, record, path, only_nested=False, previous_cls=None):
         if key in other_cache_dict.get(path, []):
             other_cache_dict[path].remove(key)
     # clear cache for base endpoint
-    endpoint_path = '/'.join(path.split('/')[:-1]) + "/"
+    endpoint_path = "/".join(path.split("/")[:-1]) + "/"
     for key in cache_dict.get(endpoint_path, []):
         cache.delete(key)
         if key in cache_dict[endpoint_path]:
@@ -187,9 +194,11 @@ def clear_cache(cls, record, path, only_nested=False, previous_cls=None):
     for parent, parent_view_name in cls._parent.items():
         parent_record = getattr(record, parent)
         if parent_record:
-            parent_path = '/api/' + CAMEL_CASE_MATCH.sub(
-                '-', parent_view_name.rstrip("View")
-                ).lower() + f'/{parent_record.id}'
+            parent_path = (
+                "/api/"
+                + CAMEL_CASE_MATCH.sub("-", parent_view_name.rstrip("View")).lower()
+                + f"/{parent_record.id}"
+            )
             parent_class = getattr(viewdata, parent_view_name)
             if previous_cls and parent_class in previous_cls:
                 return
@@ -202,13 +211,18 @@ def clear_cache(cls, record, path, only_nested=False, previous_cls=None):
             else:
                 only_nested = True
             clear_cache(
-                parent_class, parent_record, parent_path, only_nested=only_nested, previous_cls=previous_cls,
+                parent_class,
+                parent_record,
+                parent_path,
+                only_nested=only_nested,
+                previous_cls=previous_cls,
             )
 
     for link, link_view_name in cls._linked.items():
         linked_records = getattr(record, link)
-        linked_records = [linked_records] if not isinstance(
-            linked_records, list) else linked_records
+        linked_records = (
+            [linked_records] if not isinstance(linked_records, list) else linked_records
+        )
 
         for linked_record in linked_records:
             if isinstance(linked_record, StudysetStudy):
@@ -217,9 +231,11 @@ def clear_cache(cls, record, path, only_nested=False, previous_cls=None):
             if isinstance(linked_record, AnnotationAnalysis):
                 linked_record = linked_record.annotation
                 link_view_name = "AnnotationsView"
-            linked_path = '/api/' + CAMEL_CASE_MATCH.sub(
-                '-', link_view_name.rstrip("View")
-                ).lower() + f'/{linked_record.id}'
+            linked_path = (
+                "/api/"
+                + CAMEL_CASE_MATCH.sub("-", link_view_name.rstrip("View")).lower()
+                + f"/{linked_record.id}"
+            )
             linked_class = getattr(viewdata, link_view_name)
             if previous_cls and linked_class in previous_cls:
                 return
@@ -232,12 +248,15 @@ def clear_cache(cls, record, path, only_nested=False, previous_cls=None):
             else:
                 only_nested = True
             clear_cache(
-                linked_class, linked_record, linked_path, only_nested=only_nested, previous_cls=previous_cls,
+                linked_class,
+                linked_record,
+                linked_path,
+                only_nested=only_nested,
+                previous_cls=previous_cls,
             )
 
 
 class ObjectView(BaseView):
-
     @cache.cached(60 * 60, query_string=True)
     def get(self, id):
         nested = request.args.get("nested")

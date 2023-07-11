@@ -111,7 +111,6 @@ def add_annotation_analyses_study(study, analyses, collection_adapter):
 event.listen(Annotation, "before_insert", check_note_columns, retval=True)
 
 
-
 # create notes when annotation is first created
 event.listen(Studyset.annotations, "append", create_blank_notes)
 

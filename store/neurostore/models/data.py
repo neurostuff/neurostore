@@ -355,4 +355,5 @@ class PointValue(BaseMixin, db.Model):
 
 
 from . import event_listeners  # noqa E402
+
 del event_listeners
