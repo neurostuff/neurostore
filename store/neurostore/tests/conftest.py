@@ -73,6 +73,8 @@ def app(mock_auth):
         config = "neurostore.config.TestingConfig"
     else:
         config = environ["APP_SETTINGS"]
+    if not getattr(_app, 'config', None):
+        _app = _app._app
     _app.config.from_object(config)
     # _app.config["SQLALCHEMY_ECHO"] = True
 
