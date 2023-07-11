@@ -74,7 +74,7 @@ auth0 = oauth.register(
 
 if app.debug:
     app.wsgi_app = sqltap.wsgi.SQLTapMiddleware(app.wsgi_app, path="/api/__sqltap__")
-    profile_app = ProfilerMiddleware(app)
+    app = ProfilerMiddleware(app)
 
 app.json_encoder = ORJSONEncoder
 app.json_decoder = ORJSONDecoder
