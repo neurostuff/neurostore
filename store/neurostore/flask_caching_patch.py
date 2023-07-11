@@ -695,7 +695,7 @@ class Cache:
 
             new_args.append(arg)
 
-        new_args.extend(args[len(arg_names) :])
+        new_args.extend(args[len(arg_names):])
         return (
             tuple(new_args),
             OrderedDict(
