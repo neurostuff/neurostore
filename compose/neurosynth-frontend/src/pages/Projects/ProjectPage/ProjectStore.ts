@@ -27,6 +27,7 @@ import {
     addTagToStubHelper,
     createNewExclusionHelper,
     deleteStubHelper,
+    handleDragEndHelper,
     initCurationHelper,
     promoteAllUncategorizedHelper,
     promoteStubHelper,
@@ -423,20 +424,20 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
             get().updateProjectInDBDebounced();
         },
         handleDrag: (result, provided) => {
-            // set((state) => ({
-            //     ...state,
-            //     provenance: {
-            //         ...state.provenance,
-            //         curationMetadata: {
-            //             ...state.provenance.curationMetadata,
-            //             columns: handleDragEndHelper(
-            //                 state.provenance.curationMetadata.columns,
-            //                 result,
-            //                 provided
-            //             ),
-            //         },
-            //     },
-            // }));
+            set((state) => ({
+                ...state,
+                provenance: {
+                    ...state.provenance,
+                    curationMetadata: {
+                        ...state.provenance.curationMetadata,
+                        columns: handleDragEndHelper(
+                            state.provenance.curationMetadata.columns,
+                            result,
+                            provided
+                        ),
+                    },
+                },
+            }));
         },
         createNewExclusion: (newExclusion, phase) => {
             set((state) => ({

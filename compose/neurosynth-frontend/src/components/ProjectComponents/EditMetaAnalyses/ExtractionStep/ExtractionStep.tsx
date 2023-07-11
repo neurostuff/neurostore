@@ -68,13 +68,13 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
         !extractionStepHasBeenInitialized && !!location?.state?.projectPage?.openCurationDialog
     );
 
-    const handleMarkAllAsComplete = () => {
-        if (studyset?.studies) {
+    const handleMarkAllAsComplete = (confirm: boolean | undefined) => {
+        if (studyset?.studies && confirm) {
             setGivenStudyStatusesAsComplete(
                 (studyset.studies as StudyReturn[]).map((x) => x.id || '')
             );
-            setMarkAllAsCompleteConfirmationDialogIsOpen(false);
         }
+        setMarkAllAsCompleteConfirmationDialogIsOpen(false);
     };
 
     return (
