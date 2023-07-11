@@ -22,9 +22,13 @@ class QuickstartUser(HttpUser):
     @task(3)
     def view_studyset_and_studies(self):
         result = self.client.get("/studysets/?page_size=100")
+        if result.status_code != 200:
+            return
         studyset_ids = [ss['id'] for ss in result.json()['results']]
         studyset_id = random.choice(studyset_ids)
         studyset = self.client.get(f"/studysets/{studyset_id}")
+        if studyset.status_code != 200:
+            return
         study_ids = [s for s in studyset.json()['studies']]
         for study_id in study_ids:
             self.client.get(f"/studies/{study_id}?nested=true")
