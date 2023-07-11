@@ -46,7 +46,7 @@ def test_post_analyses(auth_client, ingest_neurosynth, session):
     session.add(analysis_db.study)
     session.commit()
     for k in ["user", "id", "created_at", "updated_at", "entities"]:
-        analysis.pop(k)
+        analysis.pop(k, None)
     resp = auth_client.post("/api/analyses/", data=analysis)
 
     assert resp.status_code == 200

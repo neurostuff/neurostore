@@ -88,9 +88,7 @@ const useGetProjects = (authenticatedUser?: string) => {
         () => API.NeurosynthServices.ProjectsService.projectsGet(),
         {
             select: (axiosResponse) =>
-                ((axiosResponse.data.results as INeurosynthProjectReturn[]) || []).filter(
-                    (x) => x.user === authenticatedUser
-                ),
+                (axiosResponse.data.results as INeurosynthProjectReturn[]) || [],
             enabled: !!authenticatedUser,
         }
     );

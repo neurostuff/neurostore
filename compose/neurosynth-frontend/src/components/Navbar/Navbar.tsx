@@ -22,6 +22,7 @@ const Navbar: React.FC = (_props) => {
 
     const handleLogin = async () => {
         await loginWithPopup();
+        history.push('/');
     };
 
     const handleLogout = () => logout({ returnTo: window.location.origin });
