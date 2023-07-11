@@ -1,6 +1,8 @@
 """
 Base Classes/functions for constructing views
 """
+import re
+
 import connexion
 from flask import abort, request, current_app  # jsonify
 from flask.views import MethodView
@@ -14,10 +16,18 @@ from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
 
+from ..core import cache
 from ..database import db
 from .utils import get_current_user
 from .nested import nested_load
-from ..models import Studyset, BaseStudy, User, Annotation
+from ..models import (
+    StudysetStudy,
+    AnnotationAnalysis,
+    Studyset,
+    BaseStudy,
+    User,
+    Annotation,
+)
 from ..schemas.data import StudysetSnapshot
 from . import data as viewdata
 
@@ -155,7 +165,99 @@ class BaseView(MethodView):
         return record
 
 
+CAMEL_CASE_MATCH = re.compile(r"(?<!^)(?=[A-Z])")
+
+
+def clear_cache(cls, record, path, only_nested=False, previous_cls=None):
+    if only_nested:
+        cache_dict = cache.nested_endpoint_dict
+        other_cache_dict = cache.endpoint_dict
+    else:
+        cache_dict = cache.endpoint_dict
+        other_cache_dict = cache.nested_endpoint_dict
+    # clear the cache for this endpoint
+    for key in cache_dict.get(path, []):
+        cache.delete(key)
+        if key in cache_dict.get(path):
+            cache_dict[path].remove(key)
+        if key in other_cache_dict.get(path, []):
+            other_cache_dict[path].remove(key)
+    # clear cache for base endpoint
+    endpoint_path = "/".join(path.split("/")[:-1]) + "/"
+    for key in cache_dict.get(endpoint_path, []):
+        cache.delete(key)
+        if key in cache_dict[endpoint_path]:
+            cache_dict[endpoint_path].remove(key)
+        if key in other_cache_dict.get(endpoint_path, []):
+            other_cache_dict[endpoint_path].remove(key)
+    # clear cache for all parent objects
+    for parent, parent_view_name in cls._parent.items():
+        parent_record = getattr(record, parent)
+        if parent_record:
+            parent_path = (
+                "/api/"
+                + CAMEL_CASE_MATCH.sub("-", parent_view_name.rstrip("View")).lower()
+                + f"/{parent_record.id}"
+            )
+            parent_class = getattr(viewdata, parent_view_name)
+            if previous_cls and parent_class in previous_cls:
+                return
+            if previous_cls is None:
+                previous_cls = [cls]
+            else:
+                previous_cls.append(cls)
+            if isinstance(parent_record, Annotation):
+                only_nested = False
+            else:
+                only_nested = True
+            clear_cache(
+                parent_class,
+                parent_record,
+                parent_path,
+                only_nested=only_nested,
+                previous_cls=previous_cls,
+            )
+
+    for link, link_view_name in cls._linked.items():
+        linked_records = getattr(record, link)
+        linked_records = (
+            [linked_records] if not isinstance(linked_records, list) else linked_records
+        )
+
+        for linked_record in linked_records:
+            if isinstance(linked_record, StudysetStudy):
+                linked_record = linked_record.studyset
+                link_view_name = "StudysetsView"
+            if isinstance(linked_record, AnnotationAnalysis):
+                linked_record = linked_record.annotation
+                link_view_name = "AnnotationsView"
+            linked_path = (
+                "/api/"
+                + CAMEL_CASE_MATCH.sub("-", link_view_name.rstrip("View")).lower()
+                + f"/{linked_record.id}"
+            )
+            linked_class = getattr(viewdata, link_view_name)
+            if previous_cls and linked_class in previous_cls:
+                return
+            if previous_cls is None:
+                previous_cls = [cls]
+            else:
+                previous_cls.append(cls)
+            if isinstance(linked_record, Annotation):
+                only_nested = False
+            else:
+                only_nested = True
+            clear_cache(
+                linked_class,
+                linked_record,
+                linked_path,
+                only_nested=only_nested,
+                previous_cls=previous_cls,
+            )
+
+
 class ObjectView(BaseView):
+    @cache.cached(60 * 60, query_string=True)
     def get(self, id):
         nested = request.args.get("nested")
         export = request.args.get("export", False)
@@ -182,10 +284,13 @@ class ObjectView(BaseView):
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data, id)
 
+        # clear relevant caches
+        clear_cache(self.__class__, record, request.path)
+
         return self.__class__._schema().dump(record)
 
     def delete(self, id):
-        record = self.__class__._model.query.filter_by(id=id).first()
+        record = self.__class__._model.query.filter_by(id=id).one()
 
         current_user = get_current_user()
         if record.user_id != current_user.external_id:
@@ -194,6 +299,9 @@ class ObjectView(BaseView):
             db.session.delete(record)
 
         db.session.commit()
+
+        # clear relevant caches
+        clear_cache(self.__class__, record, request.path)
 
         return 204
 
@@ -249,6 +357,7 @@ class ListView(BaseView):
     def create_metadata(self, q, total):
         return {"total_count": total}
 
+    @cache.cached(60 * 60, query_string=True)
     def search(self):
         # Parse arguments using webargs
         args = parser.parse(self._user_args, request, location="query")
@@ -333,4 +442,8 @@ class ListView(BaseView):
         nested = bool(request.args.get("nested") or request.args.get("source_id"))
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
+
+        # clear the cache for this endpoint
+        cache.delete(request.path)
+
         return self.__class__._schema(context={"nested": nested}).dump(record)

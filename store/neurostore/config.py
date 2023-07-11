@@ -2,6 +2,7 @@
  Rename this file to config.py and set variables
 """
 import os
+from pathlib import Path
 
 
 class Config(object):
@@ -11,6 +12,10 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = False
 
+    FILE_DIR = Path("/file-data")
+    CACHE_DIR = FILE_DIR / "cache"
+    CACHE_TYPE = "FileSystemCache"
+    CACHE_DEFAULT_TIMEOUT = 0
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
     DB_NAME = "neurostore"

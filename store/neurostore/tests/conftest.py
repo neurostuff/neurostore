@@ -68,22 +68,25 @@ Session / db managment tools
 def app(mock_auth):
     """Session-wide test `Flask` application."""
     from ..core import app as _app
+    from ..core import cache
 
     if "APP_SETTINGS" not in environ:
         config = "neurostore.config.TestingConfig"
     else:
         config = environ["APP_SETTINGS"]
-    if not getattr(_app, 'config', None):
+    if not getattr(_app, "config", None):
         _app = _app._app
     _app.config.from_object(config)
     # _app.config["SQLALCHEMY_ECHO"] = True
 
+    cache.clear()
     # Establish an application context before running the tests.
     ctx = _app.app_context()
     ctx.push()
 
     yield _app
 
+    cache.clear()
     ctx.pop()
 
 
@@ -104,6 +107,8 @@ def db(app):
 def session(db):
     """Creates a new db session for a test.
     Changes in session are rolled back"""
+    from ..core import cache
+
     connection = db.engine.connect()
     transaction = connection.begin()
 
@@ -125,9 +130,11 @@ def session(db):
             session.begin_nested()
 
     db.session = session
+    cache.clear()
 
     yield session
 
+    cache.clear()
     session.remove()
     transaction.rollback()
     connection.close()

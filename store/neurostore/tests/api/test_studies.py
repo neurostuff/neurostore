@@ -164,6 +164,12 @@ def test_delete_studies(auth_client, ingest_neurosynth, session):
         assert Analysis.query.filter_by(id=analysis).first() is None
 
 
+def test_production_study_query(auth_client, user_data):
+    auth_client.get(
+        "/api/studies/?sort=name&page=1&desc=true&page_size=29999&nested=false&unique=true"
+    )
+
+
 @pytest.mark.skip("not supporting this feature anymore")
 def test_getting_studysets_by_owner(auth_clients, user_data):
     client1 = auth_clients[0]
@@ -191,6 +197,15 @@ def test_get_unique_studies(auth_client, user_data, param):
     auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={})
     resp = auth_client.get(f"/api/studies/?unique={param}")
     assert resp.status_code == 200
+
+
+def test_cache_update(auth_client, user_data):
+    study_entry = Study.query.filter_by(user_id=auth_client.username).first()
+    auth_client.get(f"/api/studies/{study_entry.id}")
+    auth_client.get(f"/api/studies/{study_entry.id}?nested=true")
+    auth_client.get(f"/api/studies/{study_entry.id}")
+    auth_client.put(f"/api/studies/{study_entry.id}", data={"name": "new name"})
+    auth_client.get(f"/api/studies/{study_entry.id}")
 
 
 def test_post_meta_analysis(auth_client, user_data):

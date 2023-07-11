@@ -29,6 +29,7 @@ from ..schemas.data import StudysetSnapshot
 __all__ = [
     "StudysetsView",
     "AnnotationsView",
+    "BaseStudiesView",
     "StudiesView",
     "AnalysesView",
     "ConditionsView",
@@ -218,7 +219,8 @@ class StudiesView(ObjectView, ListView):
         "analyses": "AnalysesView",
     }
     _linked = {
-        "studyset": "StudysetsView",
+        # "studysets": "StudysetsView",
+        "studyset_studies": "StudysetStudiesResource",
     }
     _search_fields = (
         "name",
@@ -362,6 +364,9 @@ class AnalysesView(ObjectView, ListView):
     }
     _parent = {
         "study": "StudiesView",
+    }
+    _linked = {
+        "annotation_analyses": "AnnotationAnalysesResource",
     }
     _search_fields = ("name", "description")
 
