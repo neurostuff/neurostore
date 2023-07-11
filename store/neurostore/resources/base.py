@@ -20,7 +20,7 @@ from ..core import cache
 from ..database import db
 from .utils import get_current_user
 from .nested import nested_load
-from ..models import StudysetStudy, Studyset, BaseStudy, User, Annotation
+from ..models import StudysetStudy, AnnotationAnalysis, Studyset, BaseStudy, User, Annotation
 from ..schemas.data import StudysetSnapshot
 from . import data as viewdata
 
@@ -176,7 +176,7 @@ def clear_cache(cls, record, path, only_nested=False, previous_cls=None):
         if key in other_cache_dict.get(path, []):
             other_cache_dict[path].remove(key)
     # clear cache for base endpoint
-    endpoint_path = '/'.join(request.path.split('/')[:-1]) + "/"
+    endpoint_path = '/'.join(path.split('/')[:-1]) + "/"
     for key in cache_dict.get(endpoint_path, []):
         cache.delete(key)
         if key in cache_dict[endpoint_path]:
@@ -187,25 +187,53 @@ def clear_cache(cls, record, path, only_nested=False, previous_cls=None):
     for parent, parent_view_name in cls._parent.items():
         parent_record = getattr(record, parent)
         if parent_record:
-            parent_path = '/api/' + CAMEL_CASE_MATCH.sub('-', parent_view_name).lower() + f'/{parent_record.id}'
+            parent_path = '/api/' + CAMEL_CASE_MATCH.sub(
+                '-', parent_view_name.rstrip("View")
+                ).lower() + f'/{parent_record.id}'
             parent_class = getattr(viewdata, parent_view_name)
-            if parent_class is previous_cls:
+            if previous_cls and parent_class in previous_cls:
                 return
-            clear_cache(parent_class, parent_record, parent_path, only_nested=True, previous_cls=cls)
+            if previous_cls is None:
+                previous_cls = [cls]
+            else:
+                previous_cls.append(cls)
+            if isinstance(parent_record, Annotation):
+                only_nested = False
+            else:
+                only_nested = True
+            clear_cache(
+                parent_class, parent_record, parent_path, only_nested=only_nested, previous_cls=previous_cls,
+            )
 
     for link, link_view_name in cls._linked.items():
         linked_records = getattr(record, link)
-        linked_records = [linked_records] if not isinstance(linked_records, list) else linked_records
+        linked_records = [linked_records] if not isinstance(
+            linked_records, list) else linked_records
 
         for linked_record in linked_records:
             if isinstance(linked_record, StudysetStudy):
                 linked_record = linked_record.studyset
                 link_view_name = "StudysetsView"
-            linked_path = '/api/' + CAMEL_CASE_MATCH.sub('-', link_view_name).lower() + f'/{linked_record.id}'
+            if isinstance(linked_record, AnnotationAnalysis):
+                linked_record = linked_record.annotation
+                link_view_name = "AnnotationsView"
+            linked_path = '/api/' + CAMEL_CASE_MATCH.sub(
+                '-', link_view_name.rstrip("View")
+                ).lower() + f'/{linked_record.id}'
             linked_class = getattr(viewdata, link_view_name)
-            if linked_class is previous_cls:
+            if previous_cls and linked_class in previous_cls:
                 return
-            clear_cache(linked_class, linked_record, linked_path, only_nested=True, previous_cls=cls)
+            if previous_cls is None:
+                previous_cls = [cls]
+            else:
+                previous_cls.append(cls)
+            if isinstance(linked_record, Annotation):
+                only_nested = False
+            else:
+                only_nested = True
+            clear_cache(
+                linked_class, linked_record, linked_path, only_nested=only_nested, previous_cls=previous_cls,
+            )
 
 
 class ObjectView(BaseView):
@@ -253,8 +281,8 @@ class ObjectView(BaseView):
 
         db.session.commit()
 
-        # clear the cache for this endpoint
-        cache.delete(request.path)
+        # clear relevant caches
+        clear_cache(self.__class__, record, request.path)
 
         return 204
 

@@ -352,3 +352,7 @@ class PointValue(BaseMixin, db.Model):
     point = relationship("Point", backref=backref("values"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("point_values"))
+
+
+from . import event_listeners  # noqa E402
+del event_listeners

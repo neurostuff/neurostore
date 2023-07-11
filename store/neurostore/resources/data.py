@@ -365,6 +365,9 @@ class AnalysesView(ObjectView, ListView):
     _parent = {
         "study": "StudiesView",
     }
+    _linked = {
+        "annotation_analyses": "AnnotationAnalysesResource",
+    }
     _search_fields = ("name", "description")
 
 
