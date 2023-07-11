@@ -461,7 +461,7 @@ class Cache:
                 # used as a key for cache. Turn them into bytes so that the
                 # hash function will accept them
                 # JK: add authorization information as a part of the cache
-                authorization = request.headers.get("Authorization")
+                authorization = request.headers.get("Authorization", "")
                 args_as_bytes = (str(args_as_sorted_tuple) + authorization).encode()
                 cache_hash = hash_method(args_as_bytes)
 
