@@ -13,7 +13,7 @@ describe(PAGE_NAME, () => {
 
     it('should load successfully', () => {
         cy.intercept('GET', `**/api/projects*`).as('realProjectsRequest');
-        cy.intercept('GET', `**/api/studysets*`).as('realStudysetRequest');
+        cy.intercept('GET', `**/api/studysets/**`).as('realStudysetRequest');
         cy.visit(PATH).wait('@realStudysetRequest');
     });
 
