@@ -5,9 +5,9 @@ import ViewMetaAnalyses from 'components/ProjectComponents/ViewMetaAnalyses/View
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
 import useGetMetaAnalysesByProjectId from 'hooks/requests/useGetMetaAnalyses';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
 import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
 import {
+    useGetProjectIsLoading,
     useInitProjectStoreIfRequired,
     useProjectDescription,
     useProjectMetaAnalysisCanEdit,
@@ -31,16 +31,15 @@ const ProjectPage: React.FC = (props) => {
     const { data: metaAnalyses } = useGetMetaAnalysesByProjectId(projectId || '');
     const location = useLocation();
     const history = useHistory();
-    const { isError: getProjectIsError, isLoading: getProjectIsLoading } =
-        useGetProjectById(projectId);
+
+    useInitProjectStoreIfRequired();
+
     const updateProjectName = useUpdateProjectName();
     const updateProjectDescription = useUpdateProjectDescription();
     const metaAnalysesTabEnabled = useProjectMetaAnalysisCanEdit();
-
+    const getProjectIsLoading = useGetProjectIsLoading();
     const projectName = useProjectName();
     const projectDescription = useProjectDescription();
-
-    useInitProjectStoreIfRequired();
 
     // we only want this to run once on initial render
     useEffect(() => {
@@ -52,7 +51,7 @@ const ProjectPage: React.FC = (props) => {
     const tab = location.pathname.includes('meta-analyses') ? 1 : 0;
 
     return (
-        <StateHandlerComponent isLoading={getProjectIsLoading} isError={getProjectIsError}>
+        <StateHandlerComponent isLoading={getProjectIsLoading} isError={false}>
             <Box sx={{ marginBottom: '5rem' }}>
                 <Box sx={{ marginBottom: '0.5rem', display: 'flex' }}>
                     <NeurosynthBreadcrumbs

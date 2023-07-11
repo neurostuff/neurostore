@@ -26,6 +26,8 @@ import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpe
 import React, { useEffect, useMemo, useState } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import CurationColumnStyles from './CurationColumn.styles';
+import { useAuth0 } from '@auth0/auth0-react';
+import { Draggable, Droppable } from '@hello-pangea/dnd';
 
 export interface ICurationColumn {
     name: string;
@@ -60,29 +62,30 @@ const FixedSizeListRow: React.FC<
     const stub = props.data.stubs[props.index];
 
     return (
-        // <Draggable
-        //     draggableId={stub.id}
-        //     index={props.index}
-        //     isDragDisabled={!!stub?.exclusionTag}
-        //     key={stub.id}
-        // >
-        //     {(provided, snapshot) => (
-        <CurationStubStudyDraggableContainer
-            {...stub}
-            // provided={provided}
-            // snapshot={snapshot}
+        <Draggable
+            draggableId={stub.id}
             index={props.index}
-            style={props.style}
-            isVisible={getVisibility(stub, props.data.selectedTag)}
-            onSelectStubStudy={props.data.onSelectStub}
-            columnIndex={props.data.columnIndex}
-        />
-        //     )}
-        // </Draggable>
+            isDragDisabled={!!stub?.exclusionTag}
+            key={stub.id}
+        >
+            {(provided, snapshot) => (
+                <CurationStubStudyDraggableContainer
+                    {...stub}
+                    provided={provided}
+                    snapshot={snapshot}
+                    index={props.index}
+                    style={props.style}
+                    isVisible={getVisibility(stub, props.data.selectedTag)}
+                    onSelectStubStudy={props.data.onSelectStub}
+                    columnIndex={props.data.columnIndex}
+                />
+            )}
+        </Draggable>
     );
 };
 
 const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => {
+    const { isAuthenticated } = useAuth0();
     const column = useProjectCurationColumn(props.columnIndex);
     const prismaConfig = useProjectCurationPrismaConfig();
     const infoTags = useProjectCurationInfoTags();
@@ -194,6 +197,7 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
                         disableElevation
                         onClick={() => setWarningDialogIsOpen(true)}
                         sx={{ padding: '8px', marginBottom: '0.75rem' }}
+                        disabled={!isAuthenticated}
                     >
                         Promote all uncategorized studies
                     </Button>
@@ -232,7 +236,7 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
 
             <Divider sx={{ margin: '1rem 0' }} />
 
-            {/* <Droppable
+            <Droppable
                 mode="virtual"
                 droppableId={column.id}
                 renderClone={(provided, snapshot, rubric) => (
@@ -248,28 +252,28 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
                     />
                 )}
             >
-                {(provided, snapshot) => ( */}
-            <FixedSizeList
-                // 212 roughly represents the space taken up by other components above the column like buttons and headers
-                height={windowHeight - 212 < 0 ? 0 : windowHeight - 212}
-                // outerRef={provided.innerRef}
-                itemCount={filteredStudies.length}
-                width="100%"
-                itemSize={140}
-                itemKey={(index, data) => data.stubs[index]?.id}
-                layout="vertical"
-                itemData={{
-                    stubs: filteredStudies,
-                    columnIndex: props.columnIndex,
-                    onSelectStub: handleSelectStub,
-                    selectedTag: selectedTag,
-                }}
-                overscanCount={3}
-            >
-                {FixedSizeListRow}
-            </FixedSizeList>
-            {/* )}
-            </Droppable> */}
+                {(provided, snapshot) => (
+                    <FixedSizeList
+                        // 212 roughly represents the space taken up by other components above the column like buttons and headers
+                        height={windowHeight - 212 < 0 ? 0 : windowHeight - 212}
+                        outerRef={provided.innerRef}
+                        itemCount={filteredStudies.length}
+                        width="100%"
+                        itemSize={140}
+                        itemKey={(index, data) => data.stubs[index]?.id}
+                        layout="vertical"
+                        itemData={{
+                            stubs: filteredStudies,
+                            columnIndex: props.columnIndex,
+                            onSelectStub: handleSelectStub,
+                            selectedTag: selectedTag,
+                        }}
+                        overscanCount={3}
+                    >
+                        {FixedSizeListRow}
+                    </FixedSizeList>
+                )}
+            </Droppable>
         </Box>
     );
 });

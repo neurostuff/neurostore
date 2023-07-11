@@ -13,6 +13,7 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import React, { useState } from 'react';
 import EditableStubSummaryHeader from './EditableStubSummaryHeader';
+import { useAuth0 } from '@auth0/auth0-react';
 
 interface IEditableStubSummary {
     stub: ICurationStubStudy | undefined;
@@ -21,6 +22,7 @@ interface IEditableStubSummary {
 }
 
 const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
+    const { isAuthenticated } = useAuth0();
     const updateStubField = useUpdateStubField();
     const curationColumns = useProjectCurationColumns();
     const deleteStub = useDeleteStub();
@@ -272,6 +274,7 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
             <Box sx={{ margin: '1rem 0' }}>
                 <IdentificationSourcePopup
                     label="source"
+                    disabled={!isAuthenticated}
                     onAddSource={(source) => handleUpdateStub(source, 'identificationSource')}
                     onCreateSource={(source) => handleUpdateStub(source, 'identificationSource')}
                     initialValue={props.stub.identificationSource}
@@ -291,6 +294,7 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                     onClick={() => setDeleteStubConfirmationIsOpen(true)}
                     variant="contained"
                     disableElevation
+                    disabled={!isAuthenticated}
                     color="error"
                 >
                     Delete study

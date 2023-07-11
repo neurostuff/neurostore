@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Navbar from './Navbar';
 import { QueryClient, QueryClientProvider } from 'react-query';
+import { Router } from 'react-router-dom';
 
 jest.mock('@auth0/auth0-react');
 jest.mock('components/Navbar/NavDrawer/NavDrawer.tsx');
@@ -10,6 +11,12 @@ jest.mock('components/Navbar/NavToolbar/NavToolbar.tsx');
 jest.mock('hooks');
 
 describe('Navbar', () => {
+    const historyMock = {
+        push: jest.fn(),
+        location: {},
+        listen: jest.fn(),
+    };
+
     afterAll(() => {
         jest.clearAllMocks();
     });
@@ -19,7 +26,9 @@ describe('Navbar', () => {
     it('should render', () => {
         render(
             <QueryClientProvider client={queryClient}>
-                <Navbar />
+                <Router history={historyMock as any}>
+                    <Navbar />
+                </Router>
             </QueryClientProvider>
         );
 
@@ -30,7 +39,9 @@ describe('Navbar', () => {
     it('should call the auth0 login method when logging in', () => {
         render(
             <QueryClientProvider client={queryClient}>
-                <Navbar />
+                <Router history={historyMock as any}>
+                    <Navbar />
+                </Router>
             </QueryClientProvider>
         );
 
@@ -42,7 +53,9 @@ describe('Navbar', () => {
     it('should call the auth0 logout method when logging out', () => {
         render(
             <QueryClientProvider client={queryClient}>
-                <Navbar />
+                <Router history={historyMock as any}>
+                    <Navbar />
+                </Router>
             </QueryClientProvider>
         );
 
