@@ -149,7 +149,7 @@ class PointSchema(BaseDataSchema):
     # serialization
     analysis = StringOrNested("AnalysisSchema", use_nested=False)
     values = fields.Nested(PointValueSchema, many=True)
-    entities = fields.Nested(EntitySchema, many=True)
+    entities = fields.Nested(EntitySchema, many=True, load_only=True)
     cluster_size = fields.Float(allow_none=True)
     subpeak = fields.Boolean(allow_none=True)
     order = fields.Integer()
@@ -200,7 +200,7 @@ class AnalysisSchema(BaseDataSchema):
     images = StringOrNested(ImageSchema, many=True)
     points = StringOrNested(PointSchema, many=True)
     weights = fields.List(fields.Float())
-    entities = fields.Nested(EntitySchema, many=True)
+    entities = fields.Nested(EntitySchema, many=True, load_only=True)
 
     class Meta:
         additional = ("name", "description")
