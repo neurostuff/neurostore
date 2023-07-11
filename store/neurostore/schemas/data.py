@@ -119,6 +119,7 @@ class ConditionSchema(BaseDataSchema):
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
+        render_module = json
 
 
 class EntitySchema(BaseDataSchema):
@@ -127,6 +128,7 @@ class EntitySchema(BaseDataSchema):
     class Meta:
         additional = ("level", "label")
         allow_none = ("level", "label")
+        render_module = json
 
 
 class ImageSchema(BaseDataSchema):
@@ -138,11 +140,13 @@ class ImageSchema(BaseDataSchema):
     class Meta:
         additional = ("url", "filename", "space", "value_type")
         allow_none = ("url", "filename", "space", "value_type")
+        render_module = json
 
 
 class PointValueSchema(BaseDataSchema):
     class Meta:
         additional = allow_none = ("kind", "value")
+        render_module = json
 
 
 class PointSchema(BaseDataSchema):
@@ -162,6 +166,7 @@ class PointSchema(BaseDataSchema):
     class Meta:
         additional = ("kind", "space", "coordinates", "image", "label_id")
         allow_none = ("kind", "space", "coordinates", "image", "label_id")
+        render_module = json
 
     @pre_load
     def process_values(self, data, **kwargs):
@@ -177,6 +182,9 @@ class AnalysisConditionSchema(BaseDataSchema):
     condition = StringOrNested(ConditionSchema)
     analysis_id = fields.String(data_key="analysis")
 
+    class Meta:
+        render_module = json
+
 
 class StudysetStudySchema(BaseDataSchema):
     studyset_id = fields.String()
@@ -189,6 +197,9 @@ class StudysetStudySchema(BaseDataSchema):
     @pre_dump
     def filter_values(self, data, **kwargs):
         pass
+
+    class Meta:
+        render_module = json
 
 
 class AnalysisSchema(BaseDataSchema):
@@ -205,6 +216,7 @@ class AnalysisSchema(BaseDataSchema):
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
+        render_module = json
 
     @pre_load
     def load_values(self, data, **kwargs):
@@ -238,6 +250,9 @@ class StudySetStudyInfoSchema(Schema):
     name = fields.String(dump_only=True)
     description = fields.String(dump_only=True)
 
+    class Meta:
+        render_module = json
+
 
 class BaseStudySchema(BaseDataSchema):
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
@@ -265,6 +280,7 @@ class BaseStudySchema(BaseDataSchema):
             "year",
             "level",
         )
+        render_module = json
 
 
 class StudySchema(BaseDataSchema):
@@ -303,6 +319,7 @@ class StudySchema(BaseDataSchema):
             "year",
             "level",
         )
+        render_module = json
 
 
 class StudysetSchema(BaseDataSchema):
@@ -314,6 +331,7 @@ class StudysetSchema(BaseDataSchema):
     class Meta:
         additional = ("name", "description", "publication", "doi", "pmid")
         allow_none = ("name", "description", "publication", "doi", "pmid")
+        render_module = json
 
 
 class AnnotationAnalysisSchema(BaseDataSchema):
@@ -336,6 +354,9 @@ class AnnotationAnalysisSchema(BaseDataSchema):
     publication = fields.Function(
         lambda aa: aa.studyset_study.study.publication, dump_only=True
     )
+
+    class Meta:
+        render_module = json
 
     @post_load
     def add_id(self, data, **kwargs):
@@ -376,6 +397,7 @@ class AnnotationSchema(BaseDataSchema):
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
+        render_module = json
 
     @pre_load
     def add_studyset_id(self, data, **kwargs):
