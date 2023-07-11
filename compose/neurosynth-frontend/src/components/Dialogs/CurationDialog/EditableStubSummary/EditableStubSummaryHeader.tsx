@@ -20,6 +20,7 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import React from 'react';
 import { defaultInfoTags } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
+import { useAuth0 } from '@auth0/auth0-react';
 
 interface IEditableStubSummaryHeader {
     type: 'excluded' | 'included' | 'default';
@@ -29,6 +30,7 @@ interface IEditableStubSummaryHeader {
 }
 
 const EditableStubSummaryHeader: React.FC<IEditableStubSummaryHeader> = React.memo((props) => {
+    const { isAuthenticated } = useAuth0();
     const addTagsRef = useRef<HTMLButtonElement>(null);
 
     const [exclusionTagSelectorIsOpen, setExclusionTagSelectorIsOpen] = useState(false);
@@ -109,6 +111,7 @@ const EditableStubSummaryHeader: React.FC<IEditableStubSummaryHeader> = React.me
                                 text="promote"
                                 onClick={handlePromote}
                                 variant="outlined"
+                                disabled={!isAuthenticated}
                                 color="success"
                                 sx={{ marginRight: '10px', width: '160px' }}
                                 startIcon={<CheckCircleOutlineIcon />}
@@ -129,6 +132,7 @@ const EditableStubSummaryHeader: React.FC<IEditableStubSummaryHeader> = React.me
                             width: '160px',
                         }}
                         disabled={
+                            !isAuthenticated ||
                             !!props.stub.tags.find(
                                 (x) => x.id === ENeurosynthTagIds.NEEDS_REVIEW_TAG_ID
                             )
@@ -140,6 +144,7 @@ const EditableStubSummaryHeader: React.FC<IEditableStubSummaryHeader> = React.me
                         onClosePopup={() => setExclusionTagSelectorIsOpen(false)}
                         onAddExclusion={handleAddExclusion}
                         onCreateExclusion={handleAddExclusion}
+                        disabled={!isAuthenticated}
                         columnIndex={props.columnIndex}
                     />
                 </>
@@ -169,6 +174,7 @@ const EditableStubSummaryHeader: React.FC<IEditableStubSummaryHeader> = React.me
                         </Box>
                     </NeurosynthPopper>
                     <Button
+                        disabled={!isAuthenticated}
                         startIcon={<StyleIcon />}
                         ref={addTagsRef}
                         onClick={() => setTagSelectorIsOpen(true)}
@@ -186,6 +192,7 @@ const EditableStubSummaryHeader: React.FC<IEditableStubSummaryHeader> = React.me
                         sx={{ margin: '3px' }}
                         key={tag.id}
                         onDelete={() => handleRemoveTag(tag.id)}
+                        disabled={!isAuthenticated}
                         label={tag.label}
                     />
                 ))}
