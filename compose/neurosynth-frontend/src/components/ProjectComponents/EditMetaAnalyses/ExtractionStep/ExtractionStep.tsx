@@ -49,7 +49,7 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
         data: studyset,
         isError: getStudysetIsError,
         isLoading: getStudysetIsLoading,
-    } = useGetStudysetById(studysetId);
+    } = useGetStudysetById(studysetId, false);
     const { extractionStepHasBeenInitialized, disabled, ...stepProps } = props;
     const extractionSummary = useGetExtractionSummary(projectId);
     const history = useHistory();
