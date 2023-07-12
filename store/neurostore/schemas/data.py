@@ -552,21 +552,6 @@ class StudysetSnapshot(object):
                                     "space": p.space,
                                     "image": p.image,
                                     "label_id": p.label_id,
-                                    "entities": [
-                                        {
-                                            "id": e.id,
-                                            "created_at": self._serialize_dt(
-                                                e.created_at
-                                            ),
-                                            "updated_at": self._serialize_dt(
-                                                e.updated_at
-                                            ),
-                                            "level": e.level,
-                                            "label": e.label,
-                                            "analysis": a.id,
-                                        }
-                                        for e in p.entities
-                                    ],
                                     "values": [
                                         {
                                             "kind": v.kind,
@@ -585,21 +570,6 @@ class StudysetSnapshot(object):
                                     "user": i.user_id,
                                     "analysis": a.id,
                                     "analysis_name": a.name,
-                                    "entities": [
-                                        {
-                                            "id": i.id,
-                                            "created_at": self._serialize_dt(
-                                                i.created_at
-                                            ),
-                                            "updated_at": self._serialize_dt(
-                                                i.updated_at
-                                            ),
-                                            "level": e.level,
-                                            "label": e.label,
-                                            "analysis": a.id,
-                                        }
-                                        for e in i.entities
-                                    ],
                                     "url": i.url,
                                     "space": i.space,
                                     "value_type": i.value_type,
