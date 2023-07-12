@@ -346,7 +346,7 @@ class ListView(BaseView):
 
     def serialize_records(self, records, args):
         """serialize records from search"""
-        nested = args.get("nested") == 'true'
+        nested = args.get("nested")
         content = self.__class__._schema(
             only=self._only,
             many=True,
