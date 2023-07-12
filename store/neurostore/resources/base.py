@@ -176,7 +176,8 @@ def clear_cache(cls, record, path, only_nested=False, previous_cls=None):
         cache_dict = cache.endpoint_dict
         other_cache_dict = cache.nested_endpoint_dict
     # clear the cache for this endpoint
-    for key in cache_dict.get(path, []):
+
+    for key in cache_dict.get(path, [])[:]:
         cache.delete(key)
         if key in cache_dict.get(path):
             cache_dict[path].remove(key)
@@ -184,7 +185,7 @@ def clear_cache(cls, record, path, only_nested=False, previous_cls=None):
             other_cache_dict[path].remove(key)
     # clear cache for base endpoint
     endpoint_path = "/".join(path.split("/")[:-1]) + "/"
-    for key in cache_dict.get(endpoint_path, []):
+    for key in cache_dict.get(endpoint_path, [])[:]:
         cache.delete(key)
         if key in cache_dict[endpoint_path]:
             cache_dict[endpoint_path].remove(key)
