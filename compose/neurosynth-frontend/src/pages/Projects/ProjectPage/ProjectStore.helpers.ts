@@ -1,19 +1,16 @@
 import { DropResult, ResponderProvided } from '@hello-pangea/dnd';
+import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
+import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import {
     ICurationMetadata,
-    INeurosynthProject,
     INeurosynthProjectReturn,
     IPRISMAConfig,
     ISource,
     IStudyExtractionStatus,
     ITag,
 } from 'hooks/requests/useGetProjects';
-import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 import { v4 as uuidv4 } from 'uuid';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import { StateCreator, StoreMutatorIdentifier } from 'zustand';
 import { ProjectStoreActions, ProjectStoreMetadata } from './ProjectStore';
-import API from 'utils/api';
 
 export enum ENeurosynthSourceIds {
     NEUROSTORE = 'neurosynth_neurostore_id_source',
@@ -463,6 +460,26 @@ export const addOrUpdateStudyListStatusHelper = (
     return updatedState;
 };
 
+export const replaceStudyListStatusIdHelper = (
+    state: IStudyExtractionStatus[],
+    idToFindAndReplace: string,
+    replaceWithId: string
+) => {
+    const updatedState = [...state];
+
+    const foundStudyStatusIndex = updatedState.findIndex((x) => x.id === idToFindAndReplace);
+    const foundStudyStatusReplacementIndex = updatedState.findIndex((x) => x.id === replaceWithId); // check that this doesnt exist too so we dont have a duplicate
+    if (foundStudyStatusIndex < 0 || foundStudyStatusReplacementIndex >= 0) {
+        return updatedState;
+    }
+
+    updatedState[foundStudyStatusIndex] = {
+        ...updatedState[foundStudyStatusIndex],
+        id: replaceWithId,
+    };
+    return updatedState;
+};
+
 export const setGivenStudyStatusesAsCompleteHelper = (
     studyIds: string[]
 ): IStudyExtractionStatus[] => {
@@ -472,71 +489,5 @@ export const setGivenStudyStatusesAsCompleteHelper = (
     }));
 };
 
-const onUnloadHandler = (event: BeforeUnloadEvent) => {
-    return (event.returnValue = 'Are you sure you want to leave?');
-};
-
 export type TProjectStore = INeurosynthProjectReturn &
     ProjectStoreActions & { metadata: ProjectStoreMetadata };
-
-type APIDebouncedUpdater = <
-    T extends unknown,
-    Mps extends [StoreMutatorIdentifier, unknown][] = [],
-    Mcs extends [StoreMutatorIdentifier, unknown][] = []
->(
-    f: StateCreator<T, Mps, Mcs>,
-    name?: string
-) => StateCreator<T, Mps, Mcs>;
-
-type APIDebouncedUpdaterImpl = <T extends unknown>(
-    f: StateCreator<T, [], []>,
-    name?: string
-) => StateCreator<T, [], []>;
-
-const apiDebouncedUpdaterImpl: APIDebouncedUpdaterImpl = (f, name) => (set, get, store) => {
-    let timeout: number | NodeJS.Timeout | undefined = undefined;
-    let prevId: string | undefined = undefined;
-
-    const debouncedAPIUpdaterSet: typeof set = (...a) => {
-        set(...a);
-
-        const storeData = get() as unknown as TProjectStore;
-
-        if (timeout && storeData.id === prevId) clearTimeout(timeout);
-        prevId = storeData.id;
-        window.addEventListener('beforeunload', onUnloadHandler);
-        timeout = setTimeout(() => {
-            // accessing getData from a closure so we have access to the data when it was first defined when the timeout was initiated
-
-            if (!storeData.id || !storeData.metadata.shouldUpdate) {
-                window.removeEventListener('beforeunload', onUnloadHandler);
-                return;
-            }
-
-            const update: INeurosynthProject = {
-                name: storeData.name,
-                description: storeData.description,
-                provenance: {
-                    ...storeData.provenance,
-                },
-            };
-
-            localStorage.setItem(`updateProjectIsLoading`, 'true');
-            window.dispatchEvent(new Event('storage'));
-            API.NeurosynthServices.ProjectsService.projectsIdPut(
-                storeData.id || '',
-                update
-            ).finally(() => {
-                localStorage.setItem(`updateProjectIsLoading`, 'false');
-                window.removeEventListener('beforeunload', onUnloadHandler);
-                window.dispatchEvent(new Event('storage'));
-            });
-        }, 3000);
-    };
-    // replace all state updater functions with our custom implementation
-    store.setState = debouncedAPIUpdaterSet;
-    return f(debouncedAPIUpdaterSet, get, store);
-};
-
-export const apiDebouncedUpdaterImplMiddleware =
-    apiDebouncedUpdaterImpl as unknown as APIDebouncedUpdater;

@@ -69,7 +69,6 @@ export const updateStudyset = async (
     studysetId: string,
     currStudyset: string[]
 ): Promise<StudysetReturn> => {
-    // add study to studyset and handle update currStudyset
     try {
         // 2. add the stub to the studyset
         const updatedStudyset = await API.NeurostoreServices.StudySetsService.studysetsIdPut(

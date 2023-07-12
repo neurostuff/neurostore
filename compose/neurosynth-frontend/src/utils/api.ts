@@ -61,6 +61,7 @@ const NeurosynthServices = {
 };
 
 const UpdateServicesWithToken = (token: string) => {
+    console.log(token);
     neurostoreConfig.accessToken = token;
     neurosynthConfig.accessToken = token;
 };

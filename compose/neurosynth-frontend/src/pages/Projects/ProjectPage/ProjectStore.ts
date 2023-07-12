@@ -32,6 +32,7 @@ import {
     promoteAllUncategorizedHelper,
     promoteStubHelper,
     removeTagFromStubHelper,
+    replaceStudyListStatusIdHelper,
     setExclusionForStubHelper,
     setGivenStudyStatusesAsCompleteHelper,
     updateStubFieldHelper,
@@ -90,6 +91,7 @@ export type ProjectStoreActions = {
     promoteAllUncategorized: () => void; // TODO: improve this
     updateExtractionMetadata: (metadata: Partial<IExtractionMetadata>) => void;
     addOrUpdateStudyListStatus: (id: string, status: 'COMPLETE' | 'SAVEFORLATER') => void;
+    replaceStudyListStatusId: (idToFindAndReplace: string, replaceWithId: string) => void;
     setGivenStudyStatusesAsComplete: (studyIdList: string[]) => void;
     deleteStub: (columnIndex: number, stubId: string) => void;
     allowEditMetaAnalyses: () => void;
@@ -183,7 +185,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
             };
             const id = useProjectStore.getState().id;
 
-            await API.NeurosynthServices.ProjectsService.projectsIdPut(id || '', {
+            const res = await API.NeurosynthServices.ProjectsService.projectsIdPut(id || '', {
                 provenance: emptyProvenance,
             });
             set((state) => ({
@@ -191,6 +193,8 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                 provenance: {
                     ...emptyProvenance,
                 },
+                updated_at: res.data.updated_at,
+                created_at: res.data.created_at,
             }));
         },
         updateProjectInDBDebounced: () => {
@@ -438,6 +442,8 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     },
                 },
             }));
+
+            get().updateProjectInDBDebounced();
         },
         createNewExclusion: (newExclusion, phase) => {
             set((state) => ({
@@ -681,6 +687,25 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
 
             get().updateProjectInDBDebounced();
         },
+        replaceStudyListStatusId: (idToFindAndReplace, replaceWithId) => {
+            set((state) => ({
+                ...state,
+                provenance: {
+                    ...state.provenance,
+                    extractionMetadata: {
+                        ...state.provenance.extractionMetadata,
+                        studyStatusList: [
+                            ...replaceStudyListStatusIdHelper(
+                                state.provenance.extractionMetadata.studyStatusList,
+                                idToFindAndReplace,
+                                replaceWithId
+                            ),
+                        ],
+                    },
+                },
+            }));
+            get().updateProjectInDBDebounced();
+        },
         setGivenStudyStatusesAsComplete: (studyIdList: string[]) => {
             set((state) => ({
                 ...state,
@@ -786,7 +811,6 @@ export const useInitProjectStoreIfRequired = () => {
 
     useEffect(() => {
         if (projectId && projectId !== projectIdFromProject) {
-            console.log('init project');
             clearProjectStore();
             initProjectStore(data);
             updateProjectMetadata({
@@ -800,6 +824,7 @@ export const useInitProjectStoreIfRequired = () => {
             });
         } else {
             updateProjectMetadata({
+                updateProject: mutate, // must pass in mutate func as it gets redefined when component unmounts
                 getProjectIsLoading: getProjectIsLoading,
                 updateProjectIsLoading: useUpdateProjectIsLoading,
                 isError: isError,
@@ -838,6 +863,8 @@ export const useProjectExtractionStudyStatus = (studyId: string) =>
     );
 export const useProjectExtractionAddOrUpdateStudyListStatus = () =>
     useProjectStore((state) => state.addOrUpdateStudyListStatus);
+export const useProjectExtractionReplaceStudyListStatusId = () =>
+    useProjectStore((state) => state.replaceStudyListStatusId);
 export const useProjectExtractionSetGivenStudyStatusesAsComplete = () =>
     useProjectStore((state) => state.setGivenStudyStatusesAsComplete);
 

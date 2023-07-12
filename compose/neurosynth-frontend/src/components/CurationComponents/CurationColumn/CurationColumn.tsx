@@ -1,3 +1,5 @@
+import { useAuth0 } from '@auth0/auth0-react';
+import { Draggable, Droppable } from '@hello-pangea/dnd';
 import {
     Autocomplete,
     Box,
@@ -26,8 +28,6 @@ import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpe
 import React, { useEffect, useMemo, useState } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import CurationColumnStyles from './CurationColumn.styles';
-import { useAuth0 } from '@auth0/auth0-react';
-import { Draggable, Droppable } from '@hello-pangea/dnd';
 
 export interface ICurationColumn {
     name: string;
@@ -155,6 +155,8 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
         return column.stubStudies.filter((stub) => getVisibility(stub, selectedTag));
     }, [column.stubStudies, selectedTag]);
 
+    const hasUncategorizedStudies = column.stubStudies.some((x) => x.exclusionTag === null);
+
     return (
         <Box sx={CurationColumnStyles.columnContainer}>
             <CurationDialog
@@ -196,7 +198,11 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
                         color="info"
                         disableElevation
                         onClick={() => setWarningDialogIsOpen(true)}
-                        sx={{ padding: '8px', marginBottom: '0.75rem' }}
+                        sx={{
+                            padding: '8px',
+                            marginBottom: '0.75rem',
+                            display: hasUncategorizedStudies ? 'block' : 'none',
+                        }}
                         disabled={!isAuthenticated}
                     >
                         Promote all uncategorized studies
