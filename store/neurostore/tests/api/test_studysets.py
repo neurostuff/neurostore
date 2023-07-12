@@ -43,7 +43,7 @@ def test_add_study_to_studyset(auth_client, ingest_neurosynth):
     nested_resp = auth_client.get(f"/api/studysets/{dset_id}?nested=true")
     non_nested_resp = auth_client.get(f"/api/studysets/{dset_id}?nested=false")
 
-    assert len(nested_resp.json['studies']) == len(non_nested_resp.json['studies'])
+    assert len(nested_resp.json["studies"]) == len(non_nested_resp.json["studies"])
 
 
 def test_get_nested_nonnested_studysets(auth_client, ingest_neurosynth):
@@ -51,5 +51,5 @@ def test_get_nested_nonnested_studysets(auth_client, ingest_neurosynth):
     non_nested = auth_client.get(f"/api/studysets/{studyset_id}?nested=false")
     nested = auth_client.get(f"/api/studysets/{studyset_id}?nested=true")
 
-    assert isinstance(non_nested.json['studies'][0], str)
-    assert isinstance(nested.json['studies'][0], dict)
+    assert isinstance(non_nested.json["studies"][0], str)
+    assert isinstance(nested.json["studies"][0], dict)
