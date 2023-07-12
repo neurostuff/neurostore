@@ -1,7 +1,7 @@
 """
 Utilities for changing the loading structure for queries
 """
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import subqueryload
 from sqlalchemy.orm.strategy_options import _UnboundLoad
 from . import data
 
@@ -16,9 +16,9 @@ def nested_load(view, options=None):
         nested_keys.remove("entities")
     if len(nested_keys) == 1:
         if options:
-            options = options.joinedload(getattr(view._model, nested_keys[0]))
+            options = options.subqueryload(getattr(view._model, nested_keys[0]))
         else:
-            options = joinedload(getattr(view._model, nested_keys[0]))
+            options = subqueryload(getattr(view._model, nested_keys[0]))
         nested_view = getattr(data, view._nested[nested_keys[0]])
         if nested_view._nested:
             options = nested_load(nested_view, options)
@@ -28,10 +28,10 @@ def nested_load(view, options=None):
             nested_view = getattr(data, view._nested[k])
             if nested_view._nested:
                 nested_loads.append(
-                    nested_load(nested_view, joinedload(getattr(view._model, k)))
+                    nested_load(nested_view, subqueryload(getattr(view._model, k)))
                 )
             else:
-                nested_loads.append(joinedload(getattr(view._model, k)))
+                nested_loads.append(subqueryload(getattr(view._model, k)))
         if options:
             options = options.options(*nested_loads)
         else:
