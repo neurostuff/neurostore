@@ -21,8 +21,6 @@ flask_caching.CachedResponse = CachedResponse
 
 
 class EndPointsCache(Cache):
-    # def __init__(*args, **kwargs):
-    #     super().__init__(*args, **kwargs)
     nested_endpoint_dict = {}
     endpoint_dict = {}
 
