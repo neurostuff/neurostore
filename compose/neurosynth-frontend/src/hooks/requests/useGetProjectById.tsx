@@ -7,7 +7,6 @@ const useGetProjectById = (projectId: string | undefined) => {
         ['projects', projectId],
         () =>
             API.NeurosynthServices.ProjectsService.projectsIdGet(projectId || '').then((res) => {
-                console.log('call');
                 return res;
             }),
         {

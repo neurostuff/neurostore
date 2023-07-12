@@ -10,14 +10,10 @@ const useGetStudysetById = (studysetId?: string, nested?: boolean) => {
         AxiosResponse<StudysetReturn>,
         AxiosError,
         StudysetReturn,
-        [string, string | undefined]
+        [string, string | undefined, boolean | undefined]
     >(
-        ['studysets', studysetId],
-        () =>
-            API.NeurostoreServices.StudySetsService.studysetsIdGet(
-                studysetId || '',
-                nested === undefined ? true : nested
-            ),
+        ['studysets', studysetId, nested],
+        () => API.NeurostoreServices.StudySetsService.studysetsIdGet(studysetId || '', nested),
         {
             enabled: !!studysetId,
             onError: (err) => {

@@ -16,6 +16,8 @@ import {
     useUpdateStubField,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useEffect, useState } from 'react';
+import { useQueryClient } from 'react-query';
+import IngestionAwaitUserResponse from './IngestionAwaitUserResponse';
 import {
     createStudyFromStub,
     getMatchingStudies,
@@ -23,8 +25,6 @@ import {
     setAnalysesInAnnotationAsIncluded,
     updateStudyset,
 } from './helpers/utils';
-import IngestionAwaitUserResponse from './IngestionAwaitUserResponse';
-import { useQueryClient } from 'react-query';
 
 const Ingestion: React.FC<{
     onComplete: () => void;
@@ -33,7 +33,7 @@ const Ingestion: React.FC<{
     const annotationId = useProjectExtractionAnnotationId();
     const numColumns = useProjectNumCurationColumns();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
-    const { data: studyset, refetch, isRefetching } = useGetStudysetById(studysetId, false);
+    const { data: studyset, isRefetching } = useGetStudysetById(studysetId, false);
     const updateStubField = useUpdateStubField();
     const queryClient = useQueryClient();
 
@@ -68,7 +68,7 @@ const Ingestion: React.FC<{
         const { removedFromStudyset, stubsToIngest, validStudiesInStudyset } =
             resolveStudysetAndCurationDifferences(
                 curationIncludedStudies.stubStudies,
-                (studyset.studies as StudyReturn[]).map((x) => x.id as string)
+                studyset.studies as string[]
             );
 
         setCurrentIngestionState((prev) => {
@@ -220,7 +220,6 @@ const Ingestion: React.FC<{
     };
 
     const handleButtonClick = async () => {
-        await refetch();
         queryClient.refetchQueries('annotation');
         props.onComplete();
     };
@@ -278,7 +277,8 @@ const Ingestion: React.FC<{
                     <Typography>Summary:</Typography>
                     {currentIngestionState.stubsToIngest.length > 0 && (
                         <Typography>
-                            Ingested {currentIngestionState.stubsToIngest.length} into neurostore
+                            Ingested {currentIngestionState.stubsToIngest.length} studies into
+                            neurostore
                         </Typography>
                     )}
                     {currentIngestionState.studiesRemovedFromStudyset.length > 0 && (

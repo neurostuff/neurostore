@@ -21,7 +21,6 @@ const useUpdateStudyset = () => {
         {
             onSuccess: () => {
                 queryClient.invalidateQueries('studysets');
-                enqueueSnackbar('studyset updated successfully', { variant: 'success' });
             },
             onError: () => {
                 enqueueSnackbar('there was an error updating the studyset', { variant: 'error' });

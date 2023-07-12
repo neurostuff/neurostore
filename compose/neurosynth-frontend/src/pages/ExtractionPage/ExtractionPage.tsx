@@ -85,7 +85,11 @@ const ExtractionPage: React.FC = (props) => {
     const [reconcileDialogIsOpen, setReconcileDialogIsOpen] = useState(false);
 
     useEffect(() => {
-        if ((curationIncludedStudies?.stubStudies?.length || 0) > 0 && studyset?.studies) {
+        if (
+            !getStudysetIsLoading &&
+            (curationIncludedStudies?.stubStudies?.length || 0) > 0 &&
+            studyset?.studies
+        ) {
             const { removedFromStudyset, stubsToIngest } = resolveStudysetAndCurationDifferences(
                 curationIncludedStudies.stubStudies,
                 (studyset.studies as StudyReturn[]).map((x) => x.id as string)
@@ -93,7 +97,7 @@ const ExtractionPage: React.FC = (props) => {
 
             setShowReconcilePrompt(removedFromStudyset.length > 0 || stubsToIngest.length > 0);
         }
-    }, [curationIncludedStudies, studyset?.studies]);
+    }, [curationIncludedStudies, getStudysetIsLoading, studyset?.studies]);
 
     useEffect(() => {
         if (studyStatusList && studyset?.studies) {
