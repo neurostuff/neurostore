@@ -259,7 +259,7 @@ def clear_cache(cls, record, path, only_nested=False, previous_cls=None):
 class ObjectView(BaseView):
     @cache.cached(60 * 60, query_string=True)
     def get(self, id):
-        nested = request.args.get("nested")
+        nested = request.args.get("nested") == 'true'
         export = request.args.get("export", False)
         q = self._model.query
         if nested or self._model is Annotation:
@@ -346,7 +346,7 @@ class ListView(BaseView):
 
     def serialize_records(self, records, args):
         """serialize records from search"""
-        nested = bool(args.get("nested"))
+        nested = args.get("nested") == 'true'
         content = self.__class__._schema(
             only=self._only,
             many=True,
@@ -439,7 +439,7 @@ class ListView(BaseView):
             data = self._load_from_source(source, source_id)
         else:
             data = parser.parse(self.__class__._schema, request)
-        nested = bool(request.args.get("nested") or request.args.get("source_id"))
+        nested = bool(request.args.get("nested") == 'true' or request.args.get("source_id"))
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
 
