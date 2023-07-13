@@ -6,7 +6,7 @@ import API from 'utils/api';
 const useGetAnalysisById = (analysisId: string | undefined) => {
     return useQuery(
         ['analyses', analysisId],
-        () => API.NeurostoreServices.AnalysesService.analysesIdGet(analysisId || '', false),
+        () => API.NeurostoreServices.AnalysesService.analysesIdGet(analysisId || '', true),
         {
             select: (res: AxiosResponse<AnalysisReturn>) => res.data,
             enabled: !!analysisId,

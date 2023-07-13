@@ -1,4 +1,4 @@
-import { Stepper } from '@mui/material';
+import { Box, Button, Stepper } from '@mui/material';
 import CurationStep from 'components/ProjectComponents/EditMetaAnalyses/CurationStep/CurationStep';
 import ExtractionStep from 'components/ProjectComponents/EditMetaAnalyses/ExtractionStep/ExtractionStep';
 import SpecificationStep from 'components/ProjectComponents/EditMetaAnalyses/SpecificationStep/SpecificationStep';
@@ -10,9 +10,11 @@ import {
     useProjectExtractionMetadata,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useParams } from 'react-router-dom';
+import { useClearProvenance } from 'pages/Projects/ProjectPage/ProjectStore';
 
 const EditMetaAnalyses: React.FC = (props) => {
     const { projectId }: { projectId: string } = useParams();
+    const clearProvenance = useClearProvenance();
 
     const curationStepHasBeenInitialized = useProjectCurationColumns().length > 0;
 
@@ -39,16 +41,16 @@ const EditMetaAnalyses: React.FC = (props) => {
                 disabled={disableExtractionStep}
             />
             <SpecificationStep disabled={disableSpecificationStep} />
-            {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <Button
-                        onClick={() => clearProvenance()}
-                        variant="text"
-                        sx={{ marginTop: '2rem', marginLeft: '4.5rem' }}
-                        color="error"
-                    >
-                        clear this project (ONLY FOR DEV PURPOSES, IRREVERSIBLE)
-                    </Button>
-                </Box> */}
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                    onClick={() => clearProvenance()}
+                    variant="text"
+                    sx={{ marginTop: '2rem', marginLeft: '4.5rem' }}
+                    color="error"
+                >
+                    clear this project (ONLY FOR DEV PURPOSES, IRREVERSIBLE)
+                </Button>
+            </Box>
         </Stepper>
     );
 };

@@ -15,13 +15,13 @@ import { StudyReturn } from 'neurostore-typescript-sdk';
 import {
     useInitProjectStoreIfRequired,
     useProjectCurationColumns,
+    useProjectExtractionReplaceStudyListStatusId,
     useUpdateStubField,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import {
     useClearStudyStore,
-    useInitStudyStore,
     useInitStudyStoreIfRequired,
     useStudyAnalyses,
     useStudyAuthors,
@@ -41,7 +41,6 @@ const ProjectStudyPage: React.FC = (props) => {
     useInitProjectStoreIfRequired();
 
     const clearStudyStore = useClearStudyStore();
-    const initStudyStore = useInitStudyStore();
     const studyUser = useStudyUser();
     const studyIsLoading = useStudyIsLoading();
     const studyName = useStudyName();
@@ -53,34 +52,32 @@ const ProjectStudyPage: React.FC = (props) => {
     const studyMetadata = useStudyMetadata();
     const studyAnalyses = useStudyAnalyses();
 
+    const { data: project } = useGetProjectById(projectId);
+    const replaceStudyListStatusId = useProjectExtractionReplaceStudyListStatusId();
+    const updateStubField = useUpdateStubField();
+
     const [allowEdits, setAllowEdits] = useState(false);
     const history = useHistory();
     const { isAuthenticated, user } = useAuth0();
-    const { data: project } = useGetProjectById(projectId);
-    const updateStubField = useUpdateStubField();
     const curationColumns = useProjectCurationColumns();
     const { isLoading: createStudyIsLoading, mutateAsync: createStudy } = useCreateStudy();
-    const { data: studyset } = useGetStudysetById(
-        project?.provenance?.extractionMetadata?.studysetId || undefined
-    );
+    const {
+        data: studyset,
+        refetch,
+        isRefetching,
+    } = useGetStudysetById(project?.provenance?.extractionMetadata?.studysetId || undefined, true);
     const { mutateAsync: updateStudyset, isLoading: updateStudysetIsLoading } = useUpdateStudyset();
 
     const handleCloneStudy = async () => {
         if (studyset?.studies && project?.provenance?.extractionMetadata?.studysetId) {
             try {
-                const clonedStudy = await createStudy(studyId, {
-                    onSuccess: (res) => {
-                        const createdStudyId = res.data.id as string;
-                        history.push(`/studies/${createdStudyId}`);
-                    },
-                });
+                const allStudies = (studyset?.studies as StudyReturn[]).map((x) => x.id || '');
+                const thisStudyIndex = allStudies.findIndex((x) => x === studyId);
+                if (thisStudyIndex < 0) throw new Error('could not find study');
 
+                const clonedStudy = await createStudy(studyId);
                 if (!clonedStudy.data?.id)
                     throw new Error('did not find id for newly created study');
-
-                const allStudies = (studyset?.studies as StudyReturn[]).map((x) => x.id || '');
-                const thisStudyIndex = allStudies.findIndex((x) => x === studyId || '');
-                if (thisStudyIndex < 0) throw new Error('could not find study');
 
                 allStudies[thisStudyIndex] = clonedStudy.data.id;
 
@@ -90,6 +87,8 @@ const ProjectStudyPage: React.FC = (props) => {
                         studies: allStudies,
                     },
                 });
+
+                await refetch();
 
                 // we are cloning this study so the stub needs to refer to this study instead of the original
                 const matchingStub = curationColumns[curationColumns.length - 1].stubStudies.find(
@@ -102,10 +101,10 @@ const ProjectStudyPage: React.FC = (props) => {
                         'neurostoreId',
                         clonedStudy.data.id
                     );
+                    replaceStudyListStatusId(studyId, clonedStudy.data.id);
                 }
 
                 clearStudyStore();
-                initStudyStore();
 
                 history.push(
                     `/projects/${projectId}/extraction/studies/${clonedStudy.data.id}/edit`
@@ -172,7 +171,9 @@ const ProjectStudyPage: React.FC = (props) => {
                             text="Clone and Edit"
                             sx={{ width: '175px' }}
                             variant="contained"
-                            isLoading={createStudyIsLoading || updateStudysetIsLoading}
+                            isLoading={
+                                createStudyIsLoading || updateStudysetIsLoading || isRefetching
+                            }
                             color="secondary"
                             disableElevation
                             loaderColor="primary"

@@ -73,7 +73,8 @@ const ViewMetaAnalysis: React.FC<MetaAnalysisReturn> = (props) => {
     return (
         <Card
             sx={{
-                flex: '0 1 23%',
+                flex: '0 1',
+                flexBasis: 'calc(94% / 3)',
                 margin: '10px 1%',
                 display: 'flex',
                 flexDirection: 'column',
@@ -98,8 +99,10 @@ const ViewMetaAnalysis: React.FC<MetaAnalysisReturn> = (props) => {
                     </Box>
 
                     <Box sx={{ marginTop: '5px' }}>
-                        <Typography variant="h6">{name || ''}</Typography>
-                        <Typography>{description || ''}</Typography>
+                        <Typography variant="h6" gutterBottom>
+                            {name || ''}
+                        </Typography>
+                        <Typography sx={{ color: 'muted.main' }}>{description || ''}</Typography>
                     </Box>
                 </StateHandlerComponent>
             </CardContent>
