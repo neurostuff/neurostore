@@ -8,8 +8,8 @@ def test_get_nested_and_not_nested_analyses(auth_client, ingest_neurosynth):
     non_nested = auth_client.get(f"/api/analyses/{analysis_id}?nested=false")
     nested = auth_client.get(f"/api/analyses/{analysis_id}?nested=true")
 
-    assert isinstance(non_nested.json['points'][0], str)
-    assert isinstance(nested.json['points'][0], dict)
+    assert isinstance(non_nested.json["points"][0], str)
+    assert isinstance(nested.json["points"][0], dict)
 
 
 def test_get_analyses(auth_client, ingest_neurosynth):
@@ -103,8 +103,24 @@ def test_update_points_analyses(auth_client, ingest_neurovault, session):
     points = analysis["points"]
 
     payload = {"points": points[:-1]}
+    # cache the get endpoints
+    auth_client.get(f"/api/analyses/{analysis_db.id}?nested=false")
+    auth_client.get(f"/api/analyses/{analysis_db.id}?nested=true")
+    auth_client.get(f"/api/analyses/{analysis_db.id}")
 
     update_points = auth_client.put(f"/api/analyses/{analysis_db.id}", data=payload)
 
     assert update_points.status_code == 200
     assert payload["points"] == update_points.json["points"]
+
+    # see if cache updated
+    nested_get = auth_client.get(f"/api/analyses/{analysis_db.id}?nested=false")
+    nonnested_get = auth_client.get(f"/api/analyses/{analysis_db.id}?nested=true")
+    get = auth_client.get(f"/api/analyses/{analysis_db.id}")
+
+    assert (
+        set(p["id"] for p in nested_get.json["points"])
+        == set(p for p in nonnested_get.json["points"])
+        == set(p for p in get.json["points"])
+        == set(p for p in payload["points"])
+    )

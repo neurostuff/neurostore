@@ -168,28 +168,20 @@ class BaseView(MethodView):
 CAMEL_CASE_MATCH = re.compile(r"(?<!^)(?=[A-Z])")
 
 
-def clear_cache(cls, record, path, only_nested=False, previous_cls=None):
-    if only_nested:
-        cache_dict = cache.nested_endpoint_dict
-        other_cache_dict = cache.endpoint_dict
+def clear_cache(cls, record, path, previous_cls=None):
+    # redis cache get keys
+    if path.count("/") >= 3:
+        keys = cache.cache._write_client.keys(f"*{path}*")
+        keys = [k.decode("utf8") for k in keys]
+        cache.delete_many(*keys)
+        base_path = "/".join(path.split("/")[:-1]) + "/"
     else:
-        cache_dict = cache.endpoint_dict
-        other_cache_dict = cache.nested_endpoint_dict
-    # clear the cache for this endpoint
-    for key in cache_dict.get(path, []):
-        cache.delete(key)
-        if key in cache_dict.get(path):
-            cache_dict[path].remove(key)
-        if key in other_cache_dict.get(path, []):
-            other_cache_dict[path].remove(key)
-    # clear cache for base endpoint
-    endpoint_path = "/".join(path.split("/")[:-1]) + "/"
-    for key in cache_dict.get(endpoint_path, []):
-        cache.delete(key)
-        if key in cache_dict[endpoint_path]:
-            cache_dict[endpoint_path].remove(key)
-        if key in other_cache_dict.get(endpoint_path, []):
-            other_cache_dict[endpoint_path].remove(key)
+        base_path = path
+
+    base_keys = cache.cache._write_client.keys(f"*{base_path}/_*")
+    base_keys = [k.decode("utf8") for k in base_keys]
+    cache.delete_many(*base_keys)
+
     # clear cache for all parent objects
     for parent, parent_view_name in cls._parent.items():
         parent_record = getattr(record, parent)
@@ -206,18 +198,14 @@ def clear_cache(cls, record, path, only_nested=False, previous_cls=None):
                 previous_cls = [cls]
             else:
                 previous_cls.append(cls)
-            if isinstance(parent_record, Annotation):
-                only_nested = False
-            else:
-                only_nested = True
             clear_cache(
                 parent_class,
                 parent_record,
                 parent_path,
-                only_nested=only_nested,
                 previous_cls=previous_cls,
             )
 
+    # clear cache for all linked objects
     for link, link_view_name in cls._linked.items():
         linked_records = getattr(record, link)
         linked_records = (
@@ -243,23 +231,37 @@ def clear_cache(cls, record, path, only_nested=False, previous_cls=None):
                 previous_cls = [cls]
             else:
                 previous_cls.append(cls)
-            if isinstance(linked_record, Annotation):
-                only_nested = False
-            else:
-                only_nested = True
             clear_cache(
                 linked_class,
                 linked_record,
                 linked_path,
-                only_nested=only_nested,
                 previous_cls=previous_cls,
             )
 
 
+def cache_key_creator(*args, **kwargs):
+    # relevant pieces of information
+    # 1. the query arguments
+    # 2. the path
+    # 3. the user
+    path = request.path
+    user = get_current_user().id if get_current_user() else ""
+    args_as_sorted_tuple = tuple(
+        sorted(pair for pair in request.args.items(multi=True))
+    )
+    query_args = str(args_as_sorted_tuple)
+
+    cache_key = "_".join([path, query_args, user])
+
+    return cache_key
+
+
 class ObjectView(BaseView):
-    @cache.cached(60 * 60, query_string=True)
+    @cache.cached(
+        60 * 60, query_string=True, make_cache_key=cache_key_creator, key_prefix=None
+    )
     def get(self, id):
-        nested = request.args.get("nested") == 'true'
+        nested = request.args.get("nested") == "true"
         export = request.args.get("export", False)
         q = self._model.query
         if nested or self._model is Annotation:
@@ -357,7 +359,7 @@ class ListView(BaseView):
     def create_metadata(self, q, total):
         return {"total_count": total}
 
-    @cache.cached(60 * 60, query_string=True)
+    @cache.cached(60 * 60, query_string=True, make_cache_key=cache_key_creator)
     def search(self):
         # Parse arguments using webargs
         args = parser.parse(self._user_args, request, location="query")
@@ -439,7 +441,9 @@ class ListView(BaseView):
             data = self._load_from_source(source, source_id)
         else:
             data = parser.parse(self.__class__._schema, request)
-        nested = bool(request.args.get("nested") == 'true' or request.args.get("source_id"))
+        nested = bool(
+            request.args.get("nested") == "true" or request.args.get("source_id")
+        )
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
 
