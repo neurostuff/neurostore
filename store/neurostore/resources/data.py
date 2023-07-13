@@ -149,6 +149,8 @@ class BaseStudiesView(ObjectView, ListView):
 
     _view_fields = {
         "level": fields.String(default="group", missing="group"),
+        "flat": fields.Boolean(default=False),
+        "info": fields.Boolean(default=False),
     }
 
     _multi_search = ("name", "description")
@@ -192,6 +194,12 @@ class BaseStudiesView(ObjectView, ListView):
 
         return q
 
+    def serialize_records(self, records, args, exclude=tuple()):
+        if args.get("flat"):
+            exclude = ("versions",)
+
+        return super().serialize_records(records, args, exclude)
+
     def join_tables(self, q):
         "join relevant tables to speed up query"
         q = q.options(joinedload("versions"))
@@ -205,6 +213,8 @@ class StudiesView(ObjectView, ListView):
             "data_type": fields.String(missing=None),
             "studyset_owner": fields.String(missing=None),
             "level": fields.String(default="group", missing="group"),
+            "flat": fields.Boolean(default=False),
+            "info": fields.Boolean(default=False),
         },
         **LIST_NESTED_ARGS,
         **LIST_CLONE_ARGS,
@@ -268,14 +278,19 @@ class StudiesView(ObjectView, ListView):
         q = q.options(joinedload("analyses"))
         return q
 
-    def serialize_records(self, records, args):
+    def serialize_records(self, records, args, exclude=tuple()):
         if args.get("studyset_owner"):
             for study in records:
                 study.studysets = study.studysets.filter(
                     Studyset.user_id == args.get("studyset_owner")
                 ).all()
+        if args.get("flat"):
+            exclude = ("analyses",)
 
-        return super().serialize_records(records, args)
+        if args.get("flat"):
+            exclude = ("analyses",)
+
+        return super().serialize_records(records, args, exclude)
 
     @classmethod
     def _load_from_source(cls, source, source_id):

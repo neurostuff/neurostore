@@ -322,7 +322,6 @@ LIST_USER_ARGS = {
 
 
 class ListView(BaseView):
-    _only = None
     _search_fields = []
     _multi_search = None
     _view_fields = {}
@@ -346,13 +345,12 @@ class ListView(BaseView):
     def join_tables(self, q):
         return q
 
-    def serialize_records(self, records, args):
+    def serialize_records(self, records, args, exclude=tuple()):
         """serialize records from search"""
-        nested = args.get("nested")
-        content = self.__class__._schema(
-            only=self._only,
+        content = self._schema(
+            exclude=exclude,
             many=True,
-            context={"nested": nested},
+            context=args,
         ).dump(records)
         return content
 
@@ -413,7 +411,8 @@ class ListView(BaseView):
         q = q.order_by(getattr(attr, desc)())
 
         # join the relevant tables for output
-        q = self.join_tables(q)
+        if not args.get("flat"):
+            q = self.join_tables(q)
 
         pagination_query = q.paginate(
             page=args["page"],

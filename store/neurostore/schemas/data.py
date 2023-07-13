@@ -1,3 +1,5 @@
+import sys
+
 from marshmallow import (
     fields,
     Schema,
@@ -39,15 +41,24 @@ class StringOrNested(fields.Nested):
         self.use_nested = kwargs.get("use_nested", True)
 
     def _serialize(self, value, attr, obj, **ser_kwargs):
+        if isinstance(self.nested, str):
+            self.nested = getattr(sys.modules[__name__], self.nested)
         if value is None:
             return None
         if self.use_nested and (self.context.get("nested") or self.context.get("copy")):
             nested_schema = self.nested(context=self.context)
             return nested_schema.dump(value, many=self.many)
+        elif self.context.get("info"):
+            info_fields = ["id", "updated_at", "created_at", "source", "user"]
+            nested_schema = self.nested(context=self.context, only=info_fields)
+            return nested_schema.dump(value, many=self.many)
         else:
             return [v.id for v in value] if self.many else value.id
 
     def _deserialize(self, value, attr, data, **ser_kwargs):
+        if isinstance(self.nested, str):
+            self.nested = getattr(sys.modules[__name__], self.nested)
+
         if isinstance(value, list):
             if self.context.get("copy"):
                 return self.schema.load(
