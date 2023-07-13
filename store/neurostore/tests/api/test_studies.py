@@ -242,3 +242,13 @@ def test_post_meta_analysis(auth_client, user_data):
     }
     resp = auth_client.post("/api/studies/", data=study_data)
     assert resp.status_code == 200
+
+
+def test_studies_flat(auth_client, ingest_neurosynth):
+    flat_resp = auth_client.get("/api/studies/?flat=true")
+    reg_resp = auth_client.get("/api/studies/?flat=false")
+
+    assert flat_resp.status_code == reg_resp.status_code == 200
+
+    assert "analyses" not in flat_resp.json["results"][0]
+    assert "analyses" in reg_resp.json["results"][0]
