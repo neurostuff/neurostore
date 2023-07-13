@@ -119,7 +119,7 @@ def test_update_points_analyses(auth_client, ingest_neurovault, session):
     get = auth_client.get(f"/api/analyses/{analysis_db.id}")
 
     assert (
-        set(p['id'] for p in nested_get.json["points"])
+        set(p["id"] for p in nested_get.json["points"])
         == set(p for p in nonnested_get.json["points"])
         == set(p for p in get.json["points"])
         == set(p for p in payload["points"])

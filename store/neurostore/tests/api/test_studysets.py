@@ -79,7 +79,7 @@ def test_hot_swap_study_in_studyset(auth_client, ingest_neurosynth):
         set(study_ids)
         == set([s for s in add_study.json["studies"]])
         == set([s for s in add_study_non_nested.json["studies"]])
-        == set([s['id'] for s in add_study_nested.json["studies"]])
+        == set([s["id"] for s in add_study_nested.json["studies"]])
     )
 
     # clone study
@@ -101,5 +101,5 @@ def test_hot_swap_study_in_studyset(auth_client, ingest_neurosynth):
         set(new_study_ids)
         == set(s for s in clone_ss.json["studies"])
         == set(s for s in clone_ss_non_nested.json["studies"])
-        == set(s['id'] for s in clone_ss_nested.json["studies"])
+        == set(s["id"] for s in clone_ss_nested.json["studies"])
     )

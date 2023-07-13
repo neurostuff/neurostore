@@ -170,16 +170,16 @@ CAMEL_CASE_MATCH = re.compile(r"(?<!^)(?=[A-Z])")
 
 def clear_cache(cls, record, path, previous_cls=None):
     # redis cache get keys
-    if path.count('/') >= 3:
+    if path.count("/") >= 3:
         keys = cache.cache._write_client.keys(f"*{path}*")
-        keys = [k.decode('utf8') for k in keys]
+        keys = [k.decode("utf8") for k in keys]
         cache.delete_many(*keys)
         base_path = "/".join(path.split("/")[:-1]) + "/"
     else:
         base_path = path
 
     base_keys = cache.cache._write_client.keys(f"*{base_path}/_*")
-    base_keys = [k.decode('utf8') for k in base_keys]
+    base_keys = [k.decode("utf8") for k in base_keys]
     cache.delete_many(*base_keys)
 
     # clear cache for all parent objects
@@ -245,19 +245,21 @@ def cache_key_creator(*args, **kwargs):
     # 2. the path
     # 3. the user
     path = request.path
-    user = get_current_user().id if get_current_user() else ''
+    user = get_current_user().id if get_current_user() else ""
     args_as_sorted_tuple = tuple(
-                    sorted(pair for pair in request.args.items(multi=True))
-                )
+        sorted(pair for pair in request.args.items(multi=True))
+    )
     query_args = str(args_as_sorted_tuple)
 
-    cache_key = '_'.join([path, query_args, user])
+    cache_key = "_".join([path, query_args, user])
 
     return cache_key
 
 
 class ObjectView(BaseView):
-    @cache.cached(60 * 60, query_string=True, make_cache_key=cache_key_creator, key_prefix=None)
+    @cache.cached(
+        60 * 60, query_string=True, make_cache_key=cache_key_creator, key_prefix=None
+    )
     def get(self, id):
         nested = request.args.get("nested") == "true"
         export = request.args.get("export", False)
