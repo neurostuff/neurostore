@@ -28,6 +28,8 @@ export type NeurostoreAnnotation = AnnotationBase &
     AnnotationReturnRelationships &
     AnnotationCommon;
 
+const env = process.env.REACT_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
+
 const NEUROSTORE_API_DOMAIN = process.env.REACT_APP_NEUROSTORE_API_DOMAIN as string;
 const NEUROSYNTH_API_DOMAIN = process.env.REACT_APP_NEUROSYNTH_API_DOMAIN as string;
 
@@ -61,7 +63,7 @@ const NeurosynthServices = {
 };
 
 const UpdateServicesWithToken = (token: string) => {
-    console.log(token);
+    if (env === 'DEV' || env === 'STAGING') console.log(token);
     neurostoreConfig.accessToken = token;
     neurosynthConfig.accessToken = token;
 };
