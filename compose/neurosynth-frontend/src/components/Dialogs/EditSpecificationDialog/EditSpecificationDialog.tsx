@@ -86,7 +86,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
             correctorArgs:
                 (specification?.corrector?.args as { [key: string]: any } | undefined) || {},
         });
-    }, [specification]);
+    }, [specification, props.isOpen]); // add isOpen so that on close/open, the selected val, estimator & corrector are reset
 
     const handleUpdateSpecification = () => {
         if (!specification?.id || !algorithmSpec.estimator?.label || !selectedValue?.selectionKey)
@@ -130,76 +130,72 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
             dialogContentSx={{ paddingBottom: '0' }}
             maxWidth="lg"
         >
-            <Box sx={{ margin: '1rem 0' }}>
-                <StateHandlerComponent
-                    isLoading={getMetaAnalysisIsLoading}
-                    isError={getMetaAnalysisIsError}
+            <StateHandlerComponent
+                isLoading={getMetaAnalysisIsLoading}
+                isError={getMetaAnalysisIsError}
+            >
+                <Box
+                    sx={{
+                        margin: '1rem 2rem',
+                    }}
                 >
+                    <Typography sx={{ marginBottom: '1rem', fontWeight: 'bold' }} gutterBottom>
+                        Edit Analyses Selection:
+                    </Typography>
+                    <SelectAnalysesComponent
+                        annotationdId={
+                            (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''
+                        }
+                        selectedValue={selectedValue}
+                        onSelectValue={(update) => setSelectedValue(update)}
+                    />
+
+                    <Typography sx={{ fontWeight: 'bold', marginTop: '3rem' }} gutterBottom>
+                        Edit Algorithm:
+                    </Typography>
+                    <SelectSpecificationComponent
+                        algorithm={algorithmSpec}
+                        onSelectSpecification={(update) => setAlgorithmSpec(update)}
+                    />
+
                     <Box
                         sx={{
-                            margin: '0 2rem',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            position: 'sticky',
+                            backgroundColor: 'white',
+                            padding: '10px 0',
+                            bottom: 0,
+                            alignItems: 'center',
+                            zIndex: 99,
                         }}
                     >
-                        <Typography sx={{ fontWeight: 'bold' }} gutterBottom>
-                            Edit Algorithm:
-                        </Typography>
-                        <SelectSpecificationComponent
-                            algorithm={algorithmSpec}
-                            onSelectSpecification={(update) => setAlgorithmSpec(update)}
-                        />
-                        <Typography
-                            sx={{ marginBottom: '1rem', fontWeight: 'bold', marginTop: '5rem' }}
-                            gutterBottom
-                        >
-                            Edit Analyses Selection:
-                        </Typography>
-                        <SelectAnalysesComponent
-                            annotationdId={
-                                (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''
-                            }
-                            selectedValue={selectedValue}
-                            onSelectValue={(update) => setSelectedValue(update)}
-                        />
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                position: 'sticky',
-                                backgroundColor: 'white',
-                                padding: '10px 0',
-                                bottom: 0,
-                                alignItems: 'center',
-                            }}
-                        >
-                            {/* empty div used for equally spacing and centering components */}
-                            <Box sx={{ width: '86px' }}></Box>
-                            <Box>
-                                <SelectAnalysesSummaryComponent
-                                    studysetId={
-                                        (metaAnalysis?.studyset as StudysetReturn)?.neurostore_id ||
-                                        ''
-                                    }
-                                    annotationdId={
-                                        (metaAnalysis?.annotation as AnnotationReturn)
-                                            ?.neurostore_id || ''
-                                    }
-                                    selectedValue={selectedValue}
-                                />
-                            </Box>
-                            <LoadingButton
-                                disableElevation
-                                variant="contained"
-                                text="Update"
-                                sx={{ width: '86px' }}
-                                loaderColor="secondary"
-                                isLoading={updateSpecificationIsLoading}
-                                disabled={disable}
-                                onClick={handleUpdateSpecification}
+                        {/* empty div used for equally spacing and centering components */}
+                        <Box>
+                            <SelectAnalysesSummaryComponent
+                                studysetId={
+                                    (metaAnalysis?.studyset as StudysetReturn)?.neurostore_id || ''
+                                }
+                                annotationdId={
+                                    (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id ||
+                                    ''
+                                }
+                                selectedValue={selectedValue}
                             />
                         </Box>
+                        <LoadingButton
+                            disableElevation
+                            variant="contained"
+                            text="Update"
+                            sx={{ width: '86px' }}
+                            loaderColor="secondary"
+                            isLoading={updateSpecificationIsLoading}
+                            disabled={disable}
+                            onClick={handleUpdateSpecification}
+                        />
                     </Box>
-                </StateHandlerComponent>
-            </Box>
+                </Box>
+            </StateHandlerComponent>
         </BaseDialog>
     );
 };

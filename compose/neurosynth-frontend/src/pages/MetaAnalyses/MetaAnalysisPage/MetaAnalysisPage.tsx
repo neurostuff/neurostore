@@ -25,7 +25,10 @@ import {
     Studyset,
     StudysetReturn,
 } from 'neurosynth-compose-typescript-sdk';
-import { useProjectName } from 'pages/Projects/ProjectPage/ProjectStore';
+import {
+    useInitProjectStoreIfRequired,
+    useProjectName,
+} from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { NeurostoreAnnotation } from 'utils/api';
@@ -53,6 +56,7 @@ const MetaAnalysisPage: React.FC = (props) => {
     }>();
     const { user } = useAuth0();
 
+    useInitProjectStoreIfRequired();
     const projectName = useProjectName();
 
     /**

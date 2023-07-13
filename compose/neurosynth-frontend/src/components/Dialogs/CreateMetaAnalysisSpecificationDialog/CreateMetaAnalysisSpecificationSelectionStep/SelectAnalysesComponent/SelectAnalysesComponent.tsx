@@ -89,20 +89,31 @@ const SelectAnalysesComponent: React.FC<{
         value: { selectionKey: string | undefined; type: EPropertyType } | undefined
     ) => void;
 }> = (props) => {
-    const { data: annotation } = useGetAnnotationById(props.annotationdId);
+    const { annotationdId, selectedValue, onSelectValue } = props;
+    const [selectionOccurred, setSelectionOccurred] = useState(false);
+    const { data: annotation } = useGetAnnotationById(annotationdId);
     const [annotationsSelected, setAnnotationsSelected] = useState<NoteCollectionReturn[]>([]);
 
     useEffect(() => {
+        if (selectedValue?.selectionKey) {
+            setSelectionOccurred(true);
+        } else if (!selectionOccurred && 'included' in (annotation?.note_keys || {})) {
+            onSelectValue({ selectionKey: 'included', type: EPropertyType.BOOLEAN });
+            setSelectionOccurred(true);
+        }
+    }, [selectedValue?.selectionKey, annotation, onSelectValue, selectionOccurred]);
+
+    useEffect(() => {
         setAnnotationsSelected((prev) => {
-            if (!props.selectedValue?.selectionKey) return [];
+            if (!selectedValue?.selectionKey) return [];
             const filteredAnnotations = getFilteredAnnotationNotes(
                 (annotation?.notes || []) as NoteCollectionReturn[],
-                props.selectedValue.selectionKey
+                selectedValue.selectionKey
             );
 
             return filteredAnnotations;
         });
-    }, [props.selectedValue, annotation]);
+    }, [selectedValue, annotation]);
 
     const options = Object.entries(annotation?.note_keys || {})
         .map(([key, value]) => ({
@@ -111,7 +122,7 @@ const SelectAnalysesComponent: React.FC<{
         }))
         .filter((x) => x.type === EPropertyType.BOOLEAN);
 
-    const studiesList = props.selectedValue?.selectionKey
+    const studiesList = selectedValue?.selectionKey
         ? annotationNotesToTableFormatHelper(
               (annotation?.notes || []) as NoteCollectionReturn[],
               annotationsSelected
@@ -126,7 +137,7 @@ const SelectAnalysesComponent: React.FC<{
                 isOptionEqualToValue={(option, value) =>
                     option?.selectionKey === value?.selectionKey
                 }
-                value={props.selectedValue}
+                value={selectedValue}
                 size="medium"
                 required={false}
                 renderOption={(params, option) => (
@@ -140,7 +151,7 @@ const SelectAnalysesComponent: React.FC<{
                     </ListItem>
                 )}
                 getOptionLabel={(option) => option?.selectionKey || ''}
-                onChange={(_event, newVal, _reason) => props.onSelectValue(newVal || undefined)}
+                onChange={(_event, newVal, _reason) => onSelectValue(newVal || undefined)}
                 options={options}
             />
             <Box sx={{ maxHeight: '40vh', overflow: 'auto', margin: '1rem 0' }}>
