@@ -13,9 +13,9 @@ class Config(object):
     WTF_CSRF_ENABLED = False
 
     FILE_DIR = Path("/file-data")
-    CACHE_DIR = FILE_DIR / "cache"
-    CACHE_TYPE = "FileSystemCache"
-    CACHE_DEFAULT_TIMEOUT = 0
+    CACHE_TYPE = "RedisCache"
+    CACHE_REDIS_URL = "redis://store_redis:6379/0"
+    CACHE_KEY_PREFIX = None
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
     POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "")
     DB_NAME = "neurostore"

@@ -4,6 +4,9 @@ services:
     image: neurostore
     restart: always
     build: ./neurostore
+    depends_on:
+      - store_pgsql
+      - store_redis
     expose:
       - "8000"
     volumes:
@@ -15,6 +18,11 @@ services:
       - .env
     container_name: neurostore
   
+  store_redis:
+    image: redis
+    expose:
+      - '6379'
+
   store_nginx:
     image: store_nginx
     restart: always

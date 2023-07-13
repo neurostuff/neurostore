@@ -6,37 +6,43 @@ from authlib.integrations.flask_client import OAuth
 import connexion
 from connexion.json_schema import default_handlers as json_schema_handlers
 from connexion.resolver import MethodViewResolver
-from flask import request
-import flask_caching
+from flask_caching import Cache
 from flask_cors import CORS
 import prance
 import sqltap.wsgi
 
 from .or_json import ORJSONDecoder, ORJSONEncoder
 from .database import init_db
-from .flask_caching_patch import Cache, CachedResponse
+# from .flask_caching_patch import Cache, CachedResponse
 
-flask_caching.Cache = Cache
-flask_caching.CachedResponse = CachedResponse
+# flask_caching.Cache = Cache
+# flask_caching.CachedResponse = CachedResponse
 
+    
+# class EndPointsCache(Cache):
+#     nested_endpoint_dict = {}
+#     endpoint_dict = {}
 
-class EndPointsCache(Cache):
-    nested_endpoint_dict = {}
-    endpoint_dict = {}
+#     def set(self, *args, **kwargs):
+#         # import pdb; pdb.set_trace()
+#         cached = super().set(*args, **kwargs)
+#         endpoint = args[0].split("_")[0]
+#         if endpoint not in self.endpoint_dict:
+#             self.endpoint_dict[endpoint] = []
+#         # keep track of caches at this endpoint
+#         self.endpoint_dict[endpoint].append(args[0])
+#         if "nested" in request.args:
+#             if endpoint not in self.nested_endpoint_dict:
+#                 self.nested_endpoint_dict[endpoint] = []
+#             self.nested_endpoint_dict[endpoint].append(args[0])
 
-    def set(self, *args, **kwargs):
-        cached = super().set(*args, **kwargs)
-        endpoint = args[0].split("_")[0]
-        if endpoint not in self.endpoint_dict:
-            self.endpoint_dict[endpoint] = []
-        # keep track of caches at this endpoint
-        self.endpoint_dict[endpoint].append(args[0])
-        if "nested" in request.args:
-            if endpoint not in self.nested_endpoint_dict:
-                self.nested_endpoint_dict[endpoint] = []
-            self.nested_endpoint_dict[endpoint].append(args[0])
+#         return cached
 
-        return cached
+#     def clear(self) -> bool:
+#         # import pdb; pdb.set_trace()
+#         self.nested_endpoint_dict = {}
+#         self.endpoint_dict = {}
+#         return self.cache.clear()
 
 
 connexion_app = connexion.FlaskApp(
@@ -52,7 +58,7 @@ oauth = OAuth(app)
 db = init_db(app)
 
 # enable caching
-cache = EndPointsCache(app)
+cache = Cache(app)
 
 app.secret_key = app.config["JWT_SECRET_KEY"]
 
