@@ -34,8 +34,8 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
         <Box>
             <Box>
                 <Typography gutterBottom>
-                    All the studies within your studyset have all the relevant information (i.e.
-                    coordinates, annotations) needed for a meta-analysis
+                    At this time, all of the studies within your studyset should have all the
+                    relevant information (i.e. coordinates, annotations) needed for a meta-analysis
                 </Typography>
             </Box>
             <Box>
@@ -62,12 +62,6 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                         alignItems: 'center',
                     }}
                 >
-                    <Button
-                        variant="outlined"
-                        onClick={() => handleNavigate(ENavigationButton.PREV)}
-                    >
-                        back
-                    </Button>
                     <SelectAnalysesSummaryComponent
                         annotationdId={annotationId || ''}
                         studysetId={studysetId || ''}

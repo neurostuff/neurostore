@@ -104,13 +104,13 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
             <Box>
                 <Stepper activeStep={activeStep}>
                     <Step>
-                        <StepLabel>Enter Details</StepLabel>
-                    </Step>
-                    <Step>
                         <StepLabel>Select Analyses</StepLabel>
                     </Step>
                     <Step>
                         <StepLabel>Enter Specification</StepLabel>
+                    </Step>
+                    <Step>
+                        <StepLabel>Enter Details</StepLabel>
                     </Step>
                     <Step>
                         <StepLabel>Review</StepLabel>
@@ -118,23 +118,26 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
                 </Stepper>
                 <Box sx={{ marginTop: '1rem' }}>
                     {activeStep === 0 && (
-                        <CreateMetaAnalysisSpecificationDetailsStep
-                            details={details}
-                            onUpdateDetails={handleUpdateDetails}
-                            onNavigate={handleNavigate}
-                        />
-                    )}
-                    {activeStep === 1 && (
                         <CreateMetaAnalysisSpecificationSelectionStep
                             onChooseSelection={handleChooseSelection}
                             selection={selection}
                             onNavigate={handleNavigate}
                         />
                     )}
-                    {activeStep === 2 && (
+                    {activeStep === 1 && (
                         <CreateMetaAnalysisSpecificationAlgorithmStep
                             onChooseAlgorithm={handleChooseAlgorithm}
                             algorithm={algorithm}
+                            onNavigate={handleNavigate}
+                        />
+                    )}
+                    {activeStep === 2 && (
+                        <CreateMetaAnalysisSpecificationDetailsStep
+                            details={details}
+                            selectionKey={selection?.selectionKey}
+                            algorithmName={algorithm?.estimator?.label}
+                            correctorName={algorithm?.corrector?.label}
+                            onUpdateDetails={handleUpdateDetails}
                             onNavigate={handleNavigate}
                         />
                     )}
