@@ -460,7 +460,8 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
             base_study = None
             doi = None if isinstance(metadata_row.doi, float) else metadata_row.doi
             id_ = pmid = metadata_row.Index
-
+            if pmid == '28246034':
+                import pdb;pdb.set_trace()
             # find an base_study based on available information
             if doi is not None:
                 base_studies = BaseStudy.query.filter(
