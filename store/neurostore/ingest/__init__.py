@@ -448,6 +448,8 @@ def load_ace_files(coordinates_file, metadata_file, text_file):
 
 def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
     to_commit = []
+    # see if there are duplicates for the newly created base_studies
+    all_base_studies = []
     with db.session.no_autoflush:
         all_studies = {
             s.pmid: s for s in Study.query.filter_by(source="neurosynth").all()
@@ -484,6 +486,10 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
                         source_base_study.versions.extend(ab.versions)
                         # delete the extraneous record
                         db.session.delete(ab)
+                # see if it exists in the already created base_studies
+                created_bs = [bs for bs in all_base_studies if bs.doi == doi and bs.pmid == pmid]
+                if created_bs:
+                    base_study = created_bs[0]
 
             if doi is None:
                 base_study = BaseStudy.query.filter_by(pmid=pmid).one_or_none()
