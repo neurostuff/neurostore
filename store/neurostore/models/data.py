@@ -140,7 +140,11 @@ class BaseStudy(BaseMixin, db.Model):
 
     user = relationship("User", backref=backref("base_studies"))
     # retrieve versions of same study
-    versions = relationship("Study", backref=backref("base_study"))
+    versions = relationship(
+        "Study",
+        backref=backref("base_study"),
+        cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
