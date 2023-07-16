@@ -515,9 +515,12 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
                     source_attr = getattr(base_study, col)
                     setattr(base_study, col, source_attr or value)
 
+            # append base study to commit
+            to_commit.append(base_study)
+
             s = all_studies.get(pmid, Study())
 
-            # try to update the abstract study if information is missing
+            # try to update the study if information is missing
             study_info = {
                 "name": metadata_row.title,
                 "doi": doi,
@@ -536,7 +539,10 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
             analyses = []
             points = []
 
-            study_coord_data = coordinates_df.loc[[id_]]
+            try:
+                study_coord_data = coordinates_df.loc[[id_]]
+            except KeyError:
+                print(f"pmid: {id_} has no coordinates")
             for t_id, df in study_coord_data.groupby("table_id"):
                 a = (
                     Analysis.query.filter_by(table_id=str(t_id)).one_or_none()
@@ -570,6 +576,8 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
                     point_idx += 1
             to_commit.extend(points)
             to_commit.extend(analyses)
+            # append study as version of study
+            base_study.versions.append(s)
 
     db.session.add_all(to_commit)
     db.session.commit()
