@@ -472,7 +472,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
                     # do not overwrite the verions column
                     # we want to append to this column
                     columns = [
-                        c
+                        c.name
                         for c in source_base_study.__table__.columns
                         if c != "versions"
                     ]
