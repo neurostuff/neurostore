@@ -432,7 +432,9 @@ def ingest_neuroquery(max_rows=None):
 
 def load_ace_files(coordinates_file, metadata_file, text_file):
     coordinates_df = pd.read_table(coordinates_file, sep=",", dtype={"pmid": str})
-    metadata_df = pd.read_table(metadata_file, sep=",", dtype={"pmid": str})
+    metadata_df = pd.read_table(
+        metadata_file, sep=",", dtype={"pmid": str, "publication_year": int}
+    )
     text_df = pd.read_table(text_file, sep=",", dtype={"pmid": str})
 
     # preprocessing
