@@ -432,9 +432,7 @@ def ingest_neuroquery(max_rows=None):
 
 def load_ace_files(coordinates_file, metadata_file, text_file):
     coordinates_df = pd.read_table(coordinates_file, sep=",", dtype={"pmid": str})
-    metadata_df = pd.read_table(
-        metadata_file, sep=",", dtype={"pmid": str, "publication_year": int}
-    )
+    metadata_df = pd.read_table(metadata_file, sep=",", dtype={"pmid": str})
     text_df = pd.read_table(text_file, sep=",", dtype={"pmid": str})
 
     # preprocessing
@@ -462,6 +460,11 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
             base_study = None
             doi = None if isinstance(metadata_row.doi, float) else metadata_row.doi
             id_ = pmid = metadata_row.Index
+            metadata_row.publication_year = (
+                None
+                if metadata_row.publication_year is np.nan
+                else int(metadata_row.publication_year)
+            )
             # find an base_study based on available information
             if doi is not None:
                 base_studies = BaseStudy.query.filter(
@@ -501,7 +504,9 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
                 else:
                     # see if it exists in the already created base_studies
                     created_bs = [
-                        bs for bs in all_base_studies if bs.doi == doi and bs.pmid == pmid
+                        bs
+                        for bs in all_base_studies
+                        if bs.doi == doi and bs.pmid == pmid
                     ]
                     if created_bs:
                         base_study = created_bs[0]
