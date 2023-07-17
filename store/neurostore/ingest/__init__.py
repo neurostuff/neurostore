@@ -460,7 +460,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
             base_study = None
             doi = None if isinstance(metadata_row.doi, float) else metadata_row.doi
             id_ = pmid = metadata_row.Index
-            metadata_row.publication_year = (
+            year = (
                 None
                 if metadata_row.publication_year is np.nan
                 else int(metadata_row.publication_year)
@@ -522,7 +522,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
                     authors=metadata_row.authors,
                     publication=metadata_row.journal,
                     description=text_row.abstract,
-                    year=metadata_row.publication_year,
+                    year=year,
                     level="group",
                 )
             else:
@@ -534,7 +534,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
                     "description": text_row.abstract,
                     "authors": metadata_row.authors,
                     "publication": metadata_row.journal,
-                    "year": metadata_row.publication_year,
+                    "year": year,
                     "level": "group",
                 }
                 for col, value in study_info.items():
@@ -554,7 +554,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
                 "description": text_row.abstract,
                 "authors": metadata_row.authors,
                 "publication": metadata_row.journal,
-                "year": metadata_row.publication_year,
+                "year": year,
                 "level": "group",
                 "source": "neurosynth",
             }
