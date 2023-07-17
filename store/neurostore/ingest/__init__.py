@@ -474,7 +474,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
                         filter(
                             lambda bs: bs.pmid == pmid and bs.doi == doi, base_studies
                         ),
-                        None
+                        base_studies[0],
                     )
                     other_base_studies = [
                         bs for bs in base_studies if bs.id != source_base_study.id
@@ -494,6 +494,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
                         source_base_study.versions.extend(ab.versions)
                         # delete the extraneous record
                         db.session.delete(ab)
+
                     base_study = source_base_study
                 else:
                     # see if it exists in the already created base_studies
