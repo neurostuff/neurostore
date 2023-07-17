@@ -12,6 +12,8 @@ import {
 import { useParams } from 'react-router-dom';
 import { useClearProvenance } from 'pages/Projects/ProjectPage/ProjectStore';
 
+const env = process.env.REACT_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
+
 const EditMetaAnalyses: React.FC = (props) => {
     const { projectId }: { projectId: string } = useParams();
     const clearProvenance = useClearProvenance();
@@ -41,16 +43,18 @@ const EditMetaAnalyses: React.FC = (props) => {
                 disabled={disableExtractionStep}
             />
             <SpecificationStep disabled={disableSpecificationStep} />
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button
-                    onClick={() => clearProvenance()}
-                    variant="text"
-                    sx={{ marginTop: '2rem', marginLeft: '4.5rem' }}
-                    color="error"
-                >
-                    clear this project (ONLY FOR DEV PURPOSES, IRREVERSIBLE)
-                </Button>
-            </Box>
+            {(env === 'DEV' || env === 'STAGING') && (
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                        onClick={() => clearProvenance()}
+                        variant="text"
+                        sx={{ marginTop: '2rem', marginLeft: '4.5rem' }}
+                        color="error"
+                    >
+                        clear this project (ONLY FOR DEV PURPOSES, IRREVERSIBLE)
+                    </Button>
+                </Box>
+            )}
         </Stepper>
     );
 };
