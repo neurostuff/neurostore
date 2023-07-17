@@ -23,7 +23,11 @@ const useGetStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: boolea
                 searchCriteria.dataType === SearchDataType.BOTH
                     ? undefined
                     : searchCriteria.dataType,
-                undefined
+                undefined,
+                searchCriteria.level,
+                searchCriteria.pmid,
+                searchCriteria.doi,
+                searchCriteria.flat
             );
         },
         {
