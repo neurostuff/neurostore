@@ -460,8 +460,6 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
             base_study = None
             doi = None if isinstance(metadata_row.doi, float) else metadata_row.doi
             id_ = pmid = metadata_row.Index
-            if pmid == '28246034':
-                import pdb;pdb.set_trace()
             # find an base_study based on available information
             if doi is not None:
                 base_studies = BaseStudy.query.filter(
@@ -471,7 +469,16 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
                 if len(base_studies) == 1:
                     base_study = base_studies[0]
                 elif len(base_studies) > 1:
-                    source_base_study = base_studies[0]
+                    # find the first abstract study with both pmid and doi
+                    source_base_study = next(
+                        filter(
+                            lambda bs: bs.pmid == pmid and bs.doi == doi, base_studies
+                        ),
+                        None
+                    )
+                    other_base_studies = [
+                        bs for bs in base_studies if bs.id != source_base_study.id
+                    ]
                     # do not overwrite the verions column
                     # we want to append to this column
                     columns = [
@@ -479,7 +486,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
                         for c in source_base_study.__table__.columns
                         if c != "versions"
                     ]
-                    for ab in base_studies[1:]:
+                    for ab in other_base_studies:
                         for col in columns:
                             source_attr = getattr(source_base_study, col)
                             new_attr = getattr(ab, col)
@@ -487,10 +494,14 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
                         source_base_study.versions.extend(ab.versions)
                         # delete the extraneous record
                         db.session.delete(ab)
-                # see if it exists in the already created base_studies
-                created_bs = [bs for bs in all_base_studies if bs.doi == doi and bs.pmid == pmid]
-                if created_bs:
-                    base_study = created_bs[0]
+                    base_study = source_base_study
+                else:
+                    # see if it exists in the already created base_studies
+                    created_bs = [
+                        bs for bs in all_base_studies if bs.doi == doi and bs.pmid == pmid
+                    ]
+                    if created_bs:
+                        base_study = created_bs[0]
 
             if doi is None:
                 base_study = BaseStudy.query.filter_by(pmid=pmid).one_or_none()
