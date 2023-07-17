@@ -462,7 +462,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
             id_ = pmid = metadata_row.Index
             year = (
                 None
-                if metadata_row.publication_year is np.nan
+                if np.isnan(metadata_row.publication_year)
                 else int(metadata_row.publication_year)
             )
             # find an base_study based on available information
