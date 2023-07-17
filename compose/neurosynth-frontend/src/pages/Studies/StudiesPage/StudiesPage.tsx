@@ -68,7 +68,11 @@ export class SearchCriteria {
         public source: Source | undefined = undefined,
         public userId: string | undefined = undefined,
         public dataType: SearchDataType = SearchDataType.BOTH,
-        public studysetOwner: string | undefined = undefined
+        public studysetOwner: string | undefined = undefined,
+        public level: 'group' | 'meta' | undefined = undefined,
+        public pmid: string | undefined = undefined,
+        public doi: string | undefined = undefined,
+        public flat: 'true' | 'false' | undefined = 'true'
     ) {}
 }
 

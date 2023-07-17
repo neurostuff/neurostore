@@ -9,7 +9,12 @@ import { useGetStudysets } from 'hooks';
 import useGetTour from 'hooks/useGetTour';
 import { StudysetList } from 'neurostore-typescript-sdk';
 import { SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
-import { addKVPToSearch, getNumStudiesString, getSearchCriteriaFromURL } from 'pages/helpers/utils';
+import {
+    addKVPToSearch,
+    getNumStudiesString,
+    getSearchCriteriaFromURL,
+    getURLFromSearchCriteria,
+} from 'pages/helpers/utils';
 import React, { useEffect, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 
@@ -83,8 +88,9 @@ const StudysetsPage: React.FC = (props) => {
     };
 
     const handleSearch = (search: Partial<SearchCriteria>) => {
-        // const searchURL = getURLFromSearchCriteria({ [searchBy]: searchString });
-        // history.push(`/studysets?${searchURL}`);
+        const searchURL = getURLFromSearchCriteria(search);
+        console.log(searchURL);
+        history.push(`/studysets?${searchURL}`);
     };
 
     return (
