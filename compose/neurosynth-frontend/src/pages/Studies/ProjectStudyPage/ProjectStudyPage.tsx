@@ -15,6 +15,7 @@ import { StudyReturn } from 'neurostore-typescript-sdk';
 import {
     useInitProjectStoreIfRequired,
     useProjectCurationColumns,
+    useProjectExtractionAnnotationId,
     useProjectExtractionReplaceStudyListStatusId,
     useUpdateStubField,
 } from 'pages/Projects/ProjectPage/ProjectStore';
@@ -34,6 +35,7 @@ import {
     useStudyPublication,
     useStudyUser,
 } from '../StudyStore';
+import { setAnalysesInAnnotationAsIncluded } from 'components/ExtractionComponents/Ingestion/helpers/utils';
 
 const ProjectStudyPage: React.FC = (props) => {
     const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
@@ -51,6 +53,7 @@ const ProjectStudyPage: React.FC = (props) => {
     const studyPublication = useStudyPublication();
     const studyMetadata = useStudyMetadata();
     const studyAnalyses = useStudyAnalyses();
+    const annotationId = useProjectExtractionAnnotationId();
 
     const { data: project } = useGetProjectById(projectId);
     const replaceStudyListStatusId = useProjectExtractionReplaceStudyListStatusId();
@@ -87,6 +90,8 @@ const ProjectStudyPage: React.FC = (props) => {
                         studies: allStudies,
                     },
                 });
+
+                await setAnalysesInAnnotationAsIncluded(annotationId || '');
 
                 await refetch();
 
