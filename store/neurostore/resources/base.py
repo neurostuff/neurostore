@@ -32,6 +32,23 @@ from ..schemas.data import StudysetSnapshot
 from . import data as viewdata
 
 
+def create_user():
+    from auth0.v3.authentication.users import Users
+    auth = request.headers.get("Authorization", None)
+    token = auth.split()[1]
+    profile_info = Users(current_app.config["AUTH0_BASE_URL"]).userinfo(access_token=token)
+    profile_info["name"]
+
+    # user signed up with auth0, but has not made any queries yet...
+    # should have endpoint to "create user" after sign on with auth0
+    current_user = User(
+        external_id=connexion.context["user"],
+        name=profile_info.get("name", "Unknown")
+    )
+
+    return current_user
+
+
 class BaseView(MethodView):
     _model = None
     _nested = {}
@@ -64,9 +81,8 @@ class BaseView(MethodView):
 
         current_user = get_current_user()
         if not current_user:
-            # user signed up with auth0, but has not made any queries yet...
-            # should have endpoint to "create user" after sign on with auth0
-            current_user = User(external_id=connexion.context["user"])
+            current_user = create_user()
+
             db.session.add(current_user)
             db.session.commit()
 

@@ -242,20 +242,22 @@ def add_users(app, db):
             password=passw,
             realm="Username-Password-Authentication",
             audience=app.config["AUTH0_API_AUDIENCE"],
-            scope="openid",
+            scope="openid profile email",
         )
         token_info = decode_token(payload["access_token"])
-        user = User(
-            name=name,
-            external_id=token_info["sub"],
-        )
-        if User.query.filter_by(name=token_info["sub"]).first() is None:
-            db.session.add(user)
-            db.session.commit()
+        # do not add user1 into database
+        if name != "user1":
+            user = User(
+                name=name,
+                external_id=token_info["sub"],
+            )
+            if User.query.filter_by(name=token_info["sub"]).first() is None:
+                db.session.add(user)
+                db.session.commit()
 
         tokens[name] = {
             "token": payload["access_token"],
-            "id": User.query.filter_by(external_id=token_info["sub"]).first().id,
+            "external_id": token_info["sub"],
         }
 
     yield tokens
