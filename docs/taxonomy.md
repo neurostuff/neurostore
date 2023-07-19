@@ -45,7 +45,7 @@ The study is connected to the original journal it was published in.
 
 ### Functions
 
-Studies can be created, cloned, and edited to accomodate your needs for your meta-analysis
+Studies can be created, cloned, and edited to accommodate your needs for your meta-analysis
 
 ## Analysis
 

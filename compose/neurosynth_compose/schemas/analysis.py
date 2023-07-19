@@ -197,7 +197,7 @@ class MetaAnalysisResultSchema(BaseSchema):
 
     @post_load
     def process_data(self, data, **kwargs):
-        # propogate meta-analysis id to the neurovault collection
+        # propagate meta-analysis id to the neurovault collection
         if data.get("neurovault_collection", None):
             data["neurovault_collection"]["meta_analysis_id"] = data["meta_analysis_id"]
 
