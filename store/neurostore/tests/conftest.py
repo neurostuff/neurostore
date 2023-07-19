@@ -278,6 +278,11 @@ def ingest_neuroquery(session):
 
 
 @pytest.fixture(scope="function")
+def ingest_ace(session):
+    return ingest.ingest_ace()
+
+
+@pytest.fixture(scope="function")
 def user_data(session, mock_add_users):
     to_commit = []
     with session.no_autoflush:

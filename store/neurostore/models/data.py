@@ -140,7 +140,9 @@ class BaseStudy(BaseMixin, db.Model):
 
     user = relationship("User", backref=backref("base_studies"))
     # retrieve versions of same study
-    versions = relationship("Study", backref=backref("base_study"))
+    versions = relationship(
+        "Study", backref=backref("base_study"), cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
@@ -216,6 +218,8 @@ class Analysis(BaseMixin, db.Model):
     study_id = db.Column(db.Text, db.ForeignKey("studies.id", ondelete="CASCADE"))
     name = db.Column(db.String)
     description = db.Column(db.String)
+    # used to keep track of neurosynth analyses (in case of neurosynth/ace updates)
+    table_id = db.Column(db.String)
     points = relationship(
         "Point",
         backref=backref("analysis"),
