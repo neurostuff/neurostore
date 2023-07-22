@@ -20,8 +20,8 @@ describe('CreateDetailsDialog', () => {
             />
         );
         const text = screen.getByText('some title text');
-        const nameField = screen.getByLabelText('Name *'); // added to indicate it is required
-        const descriptionField = screen.getByLabelText('Description');
+        const nameField = screen.getByLabelText('name *'); // added to indicate it is required
+        const descriptionField = screen.getByLabelText('description');
         expect(text).toBeInTheDocument();
         expect(nameField).toBeInTheDocument();
         expect(descriptionField).toBeInTheDocument();
@@ -66,7 +66,7 @@ describe('CreateDetailsDialog', () => {
             />
         );
 
-        const nameField = screen.getByLabelText('Name *');
+        const nameField = screen.getByLabelText('name *');
         userEvent.type(nameField, 'ABC');
 
         const displayNameFieldText = screen.getByDisplayValue('ABC');
@@ -83,7 +83,7 @@ describe('CreateDetailsDialog', () => {
             />
         );
 
-        const descriptionField = screen.getByLabelText('Description');
+        const descriptionField = screen.getByLabelText('description');
         userEvent.type(descriptionField, 'ABC');
 
         const displayDescriptionFieldText = screen.getByDisplayValue('ABC');
@@ -100,7 +100,7 @@ describe('CreateDetailsDialog', () => {
             />
         );
 
-        const nameField = screen.getByLabelText('Name *');
+        const nameField = screen.getByLabelText('name *');
         userEvent.type(nameField, 'ABC');
 
         const createButton = screen.getByRole('button', { name: 'create' });
