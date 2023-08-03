@@ -10,6 +10,7 @@ import ExtractionPage from 'pages/ExtractionPage/ExtractionPage';
 import CurationImportPage from 'pages/CurationPage/CurationImportPage';
 import AnnotationsPage from 'pages/Annotations/AnnotationsPage/AnnotationsPage';
 import ProjectStudyPage from 'pages/Studies/ProjectStudyPage/ProjectStudyPage';
+import CurationPageNew from 'components/Curation2.0/CurationPageNew';
 
 const StudysetPage = React.lazy(() => import('../Studysets/StudysetPage/StudysetPage'));
 const StudysetsPage = React.lazy(() => import('../Studysets/StudysetsPage/StudysetsPage'));
@@ -57,6 +58,11 @@ const BaseNavigation: React.FC = (_props) => {
                 <Route path="/projects/:projectId/curation" exact>
                     <Box sx={BaseNavigationStyles.curationPageContainer}>
                         <CurationPage />
+                    </Box>
+                </Route>
+                <Route path="/projects/:projectId/curation2" exact>
+                    <Box sx={[BaseNavigationStyles.curationPageContainer, { marginRight: '1rem' }]}>
+                        <CurationPageNew />
                     </Box>
                 </Route>
                 <Route path="/projects/:projectId/curation/import" exact>
