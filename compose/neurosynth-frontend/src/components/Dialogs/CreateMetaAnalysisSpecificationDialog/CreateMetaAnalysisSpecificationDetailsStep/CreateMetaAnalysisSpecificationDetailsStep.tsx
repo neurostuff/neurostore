@@ -3,7 +3,7 @@ import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { useGetMetaAnalyses } from 'hooks';
-import { useProjectName } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useProjectName } from 'stores/ProjectStore';
 import { ChangeEvent, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 

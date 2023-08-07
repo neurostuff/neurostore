@@ -5,7 +5,7 @@ import ViewMetaAnalyses from 'components/ProjectComponents/ViewMetaAnalyses/View
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
 import useGetMetaAnalysesByProjectId from 'hooks/requests/useGetMetaAnalyses';
-import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
+import ProjectIsLoadingText from 'pages/Projects/CurationPage/ProjectIsLoadingText';
 import {
     useGetProjectIsLoading,
     useInitProjectStoreIfRequired,
@@ -14,7 +14,7 @@ import {
     useProjectName,
     useUpdateProjectDescription,
     useUpdateProjectName,
-} from 'pages/Projects/ProjectPage/ProjectStore';
+} from 'stores/ProjectStore';
 import { useEffect } from 'react';
 import { Route, Switch, useHistory, useLocation, useParams } from 'react-router-dom';
 

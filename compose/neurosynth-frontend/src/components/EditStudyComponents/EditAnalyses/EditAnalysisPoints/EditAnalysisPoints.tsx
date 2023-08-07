@@ -11,8 +11,8 @@ import {
     useSetIsValid,
     useStudyAnalysisPoints,
     useUpdateAnalysisPoints,
-} from 'pages/Studies/StudyStore';
-import { IStorePoint } from 'pages/Studies/StudyStore.helpers';
+} from 'stores/StudyStore';
+import { IStorePoint } from 'stores/StudyStore.helpers';
 import React, { useEffect, useRef, useState } from 'react';
 import EditAnalysisPointSpaceAndStatistic from './EditAnalysisPointSpaceAndStatistic/EditAnalysisPointSpaceAndStatistic';
 

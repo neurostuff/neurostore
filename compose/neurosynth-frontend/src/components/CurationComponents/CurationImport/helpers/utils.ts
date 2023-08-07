@@ -1,4 +1,4 @@
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 
 // a study is defined as a duplicate if it has either a matching PMID, DOI, or title.
 // We must account for the case where a study has a missing PMID, DOI, or title as well.

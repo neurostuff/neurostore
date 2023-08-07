@@ -4,7 +4,7 @@ import { EPropertyType } from 'components/EditMetadata';
 import {
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
-} from 'pages/Projects/ProjectPage/ProjectStore';
+} from 'stores/ProjectStore';
 import { useState } from 'react';
 import SelectAnalysesComponent from './SelectAnalysesComponent/SelectAnalysesComponent';
 import SelectAnalysesSummaryComponent from './SelectAnalysesSummaryComponent/SelectAnalysesSummaryComponent';

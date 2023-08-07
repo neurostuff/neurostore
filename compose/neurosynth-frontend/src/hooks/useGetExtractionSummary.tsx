@@ -1,7 +1,7 @@
 import {
     useProjectExtractionStudysetId,
     useProjectExtractionStudyStatusList,
-} from 'pages/Projects/ProjectPage/ProjectStore';
+} from 'stores/ProjectStore';
 import { useEffect, useState } from 'react';
 import useGetStudysetById from './requests/useGetStudysetById';
 

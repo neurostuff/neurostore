@@ -18,7 +18,7 @@ import {
     useProjectExtractionAnnotationId,
     useProjectExtractionReplaceStudyListStatusId,
     useUpdateStubField,
-} from 'pages/Projects/ProjectPage/ProjectStore';
+} from 'stores/ProjectStore';
 import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import {
@@ -34,7 +34,7 @@ import {
     useStudyPMID,
     useStudyPublication,
     useStudyUser,
-} from '../StudyStore';
+} from '../../../stores/StudyStore';
 import { setAnalysesInAnnotationAsIncluded } from 'components/ExtractionComponents/Ingestion/helpers/utils';
 
 const ProjectStudyPage: React.FC = (props) => {

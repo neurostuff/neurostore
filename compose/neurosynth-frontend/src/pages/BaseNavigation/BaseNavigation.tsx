@@ -6,11 +6,11 @@ import BaseNavigationStyles from './BaseNavigation.styles';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import NotFoundPage from 'pages/NotFound/NotFoundPage';
 import ProjectPage from 'pages/Projects/ProjectPage/ProjectPage';
-import ExtractionPage from 'pages/ExtractionPage/ExtractionPage';
-import CurationImportPage from 'pages/CurationPage/CurationImportPage';
-import AnnotationsPage from 'pages/Annotations/AnnotationsPage/AnnotationsPage';
+import ExtractionPage from 'pages/Projects/ExtractionPage/ExtractionPage';
+import CurationImportPage from 'pages/Projects/CurationPage/CurationImportPage';
+import AnnotationsPage from 'pages/Projects/AnnotationsPage/AnnotationsPage';
 import ProjectStudyPage from 'pages/Studies/ProjectStudyPage/ProjectStudyPage';
-import CurationPageNew from 'components/Curation2.0/CurationPageNew';
+import CurationPageNew from 'components/CurationBeta/CurationPageNew';
 
 const StudysetPage = React.lazy(() => import('../Studysets/StudysetPage/StudysetPage'));
 const StudysetsPage = React.lazy(() => import('../Studysets/StudysetsPage/StudysetsPage'));
@@ -27,7 +27,7 @@ const MetaAnalysisPage = React.lazy(
 
 const ProjectsPage = React.lazy(() => import('../Projects/ProjectsPage/ProjectsPage'));
 
-const CurationPage = React.lazy(() => import('../CurationPage/CurationPage'));
+const CurationPage = React.lazy(() => import('../Projects/CurationPage/CurationPage'));
 
 const BaseNavigation: React.FC = (_props) => {
     return (

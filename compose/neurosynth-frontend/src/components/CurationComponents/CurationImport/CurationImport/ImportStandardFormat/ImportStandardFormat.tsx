@@ -4,11 +4,10 @@ import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { ChangeEvent, useEffect, useState } from 'react';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { ICurationStubStudy, ISource } from 'interfaces/project/curation.interface';
 import { v4 as uuidv4 } from 'uuid';
-import { ISource } from 'hooks/requests/useGetProjects';
 import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
-import { ENeurosynthSourceIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
+import { ENeurosynthSourceIds } from 'stores/ProjectStore.helpers';
 const Cite = require('citation-js');
 require('@citation-js/plugin-enw');
 require('@citation-js/plugin-bibtex');

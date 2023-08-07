@@ -6,7 +6,7 @@ import useGetAnalysisById from 'hooks/requests/useGetAnalysisById';
 import DisplayPoints from 'components/DisplayStudy/DisplayAnalyses/DisplayAnalysis/DisplayPoints/DisplayPoints';
 import { PointReturn } from 'neurostore-typescript-sdk';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { studyPointsToStorePoints } from 'pages/Studies/StudyStore.helpers';
+import { studyPointsToStorePoints } from 'stores/StudyStore.helpers';
 
 const DisplayMetaAnalysisResult: React.FC<{
     metaAnalysis: MetaAnalysisReturn | undefined;

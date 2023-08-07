@@ -9,8 +9,8 @@ import {
     useStudyPublication,
     useStudyYear,
     useUpdateStudyDetails,
-} from 'pages/Studies/StudyStore';
-import { StudyDetails } from 'pages/Studies/StudyStore.helpers';
+} from 'stores/StudyStore';
+import { StudyDetails } from 'stores/StudyStore.helpers';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 
 const EditStudyDetails: React.FC = React.memo((props) => {

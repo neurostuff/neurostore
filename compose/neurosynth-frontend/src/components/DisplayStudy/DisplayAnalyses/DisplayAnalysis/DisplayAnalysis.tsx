@@ -2,7 +2,7 @@ import { Box, Typography } from '@mui/material';
 
 import DisplayAnalysisWarnings from '../DisplayAnalysisWarnings/DisplayAnalysisWarnings';
 import DisplayPoints from './DisplayPoints/DisplayPoints';
-import { IStoreAnalysis } from 'pages/Studies/StudyStore.helpers';
+import { IStoreAnalysis } from 'stores/StudyStore.helpers';
 
 const DisplayAnalysis: React.FC<IStoreAnalysis | undefined> = (props) => {
     return (

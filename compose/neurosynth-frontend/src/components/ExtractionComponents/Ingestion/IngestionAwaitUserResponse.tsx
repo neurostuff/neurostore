@@ -1,6 +1,6 @@
 import { Box, Button, Link, Typography } from '@mui/material';
 import ReadOnlyStubSummary from 'components/CurationComponents/CurationImport/ReadOnlyStubSummary';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 
 const IngestionAwaitUserResponse: React.FC<{

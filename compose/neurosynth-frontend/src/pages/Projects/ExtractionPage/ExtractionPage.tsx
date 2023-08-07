@@ -11,7 +11,7 @@ import TextEdit from 'components/TextEdit/TextEdit';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import { StudyReturn } from 'neurostore-typescript-sdk';
-import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
+import ProjectIsLoadingText from 'pages/Projects/CurationPage/ProjectIsLoadingText';
 import {
     useInitProjectStoreIfRequired,
     useProjectCurationColumn,
@@ -19,7 +19,7 @@ import {
     useProjectExtractionStudysetId,
     useProjectName,
     useProjectNumCurationColumns,
-} from 'pages/Projects/ProjectPage/ProjectStore';
+} from 'stores/ProjectStore';
 import { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';

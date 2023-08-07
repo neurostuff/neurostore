@@ -2,13 +2,9 @@ import { Box, Typography } from '@mui/material';
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';
-import { ITag } from 'hooks/requests/useGetProjects';
-import {
-    useCreateNewCurationInfoTag,
-    useProjectCurationInfoTags,
-} from 'pages/Projects/ProjectPage/ProjectStore';
+import { ICurationStubStudy, ITag } from 'interfaces/project/curation.interface';
+import { useCreateNewCurationInfoTag, useProjectCurationInfoTags } from 'stores/ProjectStore';
 const CurationImportTag: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
     onUpdateStubs: (stubs: ICurationStubStudy[]) => void;

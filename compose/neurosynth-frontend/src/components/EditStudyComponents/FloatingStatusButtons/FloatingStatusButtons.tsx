@@ -4,7 +4,7 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import {
     useProjectExtractionAddOrUpdateStudyListStatus,
     useProjectExtractionStudyStatus,
-} from 'pages/Projects/ProjectPage/ProjectStore';
+} from 'stores/ProjectStore';
 
 const FloatingStatusButtons: React.FC<{ studyId: string }> = (props) => {
     const extractionStatus = useProjectExtractionStudyStatus(props.studyId);

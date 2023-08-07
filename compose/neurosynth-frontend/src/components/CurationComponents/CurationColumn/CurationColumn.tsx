@@ -10,12 +10,10 @@ import {
     Paper,
     TextField,
 } from '@mui/material';
-import CurationStubStudyDraggableContainer, {
-    ICurationStubStudy,
-} from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import CurationStubStudyDraggableContainer from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import CurationDialog from 'components/Dialogs/CurationDialog/CurationDialog';
-import { ITag, indexToPRISMAMapping } from 'hooks/requests/useGetProjects';
+import { indexToPRISMAMapping } from 'hooks/requests/useGetProjects';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import {
     useProjectCurationColumn,
@@ -23,17 +21,12 @@ import {
     useProjectCurationInfoTags,
     useProjectCurationPrismaConfig,
     usePromoteAllUncategorized,
-} from 'pages/Projects/ProjectPage/ProjectStore';
-import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
+} from 'stores/ProjectStore';
+import { ENeurosynthTagIds } from 'stores/ProjectStore.helpers';
 import React, { useEffect, useMemo, useState } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import CurationColumnStyles from './CurationColumn.styles';
-
-export interface ICurationColumn {
-    name: string;
-    id: string;
-    stubStudies: ICurationStubStudy[];
-}
+import { ICurationStubStudy, ITag } from 'interfaces/project/curation.interface';
 
 export const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined): boolean => {
     let isVisible = false;

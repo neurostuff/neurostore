@@ -2,19 +2,20 @@ import { Box, Button, ButtonGroup, TextField } from '@mui/material';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
-import { indexToPRISMAMapping, ITag } from 'hooks/requests/useGetProjects';
+import { indexToPRISMAMapping } from 'hooks/requests/useGetProjects';
+import { ITag } from 'interfaces/project/curation.interface';
 import { useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
-import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
+import { ENeurosynthTagIds } from 'stores/ProjectStore.helpers';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import {
     useCreateNewExclusion,
     useProjectCurationExclusionTags,
     useProjectCurationPrismaConfig,
-} from 'pages/Projects/ProjectPage/ProjectStore';
+} from 'stores/ProjectStore';
 
 interface IExclusionSelectorPopup {
     onAddExclusion: (tag: ITag) => void;

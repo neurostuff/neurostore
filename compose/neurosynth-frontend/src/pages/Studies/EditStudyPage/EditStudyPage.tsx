@@ -11,7 +11,7 @@ import { useSnackbar } from 'notistack';
 import {
     useInitProjectStoreIfRequired,
     useProjectExtractionAnnotationId,
-} from 'pages/Projects/ProjectPage/ProjectStore';
+} from 'stores/ProjectStore';
 import { useEffect } from 'react';
 import { useQueryClient } from 'react-query';
 import { useHistory, useParams } from 'react-router-dom';
@@ -25,7 +25,7 @@ import {
     useStudyIsLoading,
     useStudyName,
     useUpdateStudyInDB,
-} from '../StudyStore';
+} from '../../../stores/StudyStore';
 
 const EditStudyPage: React.FC = (props) => {
     const queryClient = useQueryClient();

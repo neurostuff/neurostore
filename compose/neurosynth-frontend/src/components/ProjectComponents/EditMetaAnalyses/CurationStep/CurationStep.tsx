@@ -18,17 +18,21 @@ import {
 import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
 import { useHistory, useParams } from 'react-router-dom';
 import ProjectComponentsStyles from '../../ProjectComponents.styles';
-import { useState } from 'react';
-import CreateCurationBoardDialog from 'components/Dialogs/CreateCurationBoardDialog/CreateCurationBoardDialog';
 import CurationStepStyles from 'components/ProjectComponents/EditMetaAnalyses/CurationStep/CurationStep.style';
 import useGetCurationSummary, { ICurationSummary } from 'hooks/useGetCurationSummary';
-import { useInitCuration } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useInitCuration } from 'stores/ProjectStore';
 
 enum ECurationBoardTypes {
     PRISMA,
     SIMPLE,
-    CUSTOM,
     SKIP,
+}
+
+export enum EDefaultPRISMAStepNames {
+    IDENTIFICATION = 'identification',
+    SCREENING = 'screening',
+    ELIGIBILITY = 'eligibility',
+    INCLUDED = 'included',
 }
 
 const getPercentageComplete = (curationSummary: ICurationSummary): number => {
@@ -46,7 +50,6 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
     const { projectId }: { projectId: string } = useParams();
     const curationSummary = useGetCurationSummary();
     const history = useHistory();
-    const [dialogIsOpen, setDialogIsOpen] = useState(false);
     const { curationStepHasBeenInitialized, ...stepProps } = props;
 
     const initCuration = useInitCuration();
@@ -54,13 +57,18 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
     const handleCreateCreationBoard = (curationBoardType: ECurationBoardTypes) => {
         switch (curationBoardType) {
             case ECurationBoardTypes.PRISMA:
-                createBoard(['identification', 'screening', 'eligibility', 'included'], true);
+                createBoard(
+                    [
+                        EDefaultPRISMAStepNames.IDENTIFICATION,
+                        EDefaultPRISMAStepNames.SCREENING,
+                        EDefaultPRISMAStepNames.ELIGIBILITY,
+                        EDefaultPRISMAStepNames.INCLUDED,
+                    ],
+                    true
+                );
                 break;
             case ECurationBoardTypes.SIMPLE:
                 createBoard(['not included', 'included'], false);
-                break;
-            case ECurationBoardTypes.CUSTOM:
-                setDialogIsOpen(true);
                 break;
             case ECurationBoardTypes.SKIP:
                 // TODO: implement this
@@ -169,14 +177,6 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                     { borderColor: 'primary.main' },
                                 ]}
                             >
-                                <CreateCurationBoardDialog
-                                    onCloseDialog={() => setDialogIsOpen(false)}
-                                    createButtonIsLoading={false}
-                                    onCreateCurationBoard={(curationBoardColumns: string[]) => {
-                                        createBoard(curationBoardColumns, false);
-                                    }}
-                                    isOpen={dialogIsOpen}
-                                />
                                 <NavToolbarPopupSubMenu
                                     options={[
                                         {
@@ -197,21 +197,6 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                                     ECurationBoardTypes.SIMPLE
                                                 ),
                                         },
-                                        {
-                                            label: 'Custom',
-                                            secondary:
-                                                'Specify how many columns you want for a custom inclusion/exclusion workflow',
-                                            onClick: () =>
-                                                handleCreateCreationBoard(
-                                                    ECurationBoardTypes.CUSTOM
-                                                ),
-                                        },
-                                        // { TBD
-                                        //     label: 'Semi-Automated Meta-Analysis',
-                                        //     secondary:
-                                        //         'All imported studies will be automatically included',
-                                        //     onClick: () => {},
-                                        // },
                                     ]}
                                     buttonProps={{
                                         endIcon: <KeyboardArrowDown />,

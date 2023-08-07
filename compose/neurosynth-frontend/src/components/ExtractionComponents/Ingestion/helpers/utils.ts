@@ -1,5 +1,5 @@
 import { AxiosResponse } from 'axios';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 import { NoteCollectionReturn, StudyReturn, StudysetReturn } from 'neurostore-typescript-sdk';
 import API, { NeurostoreAnnotation } from 'utils/api';
 

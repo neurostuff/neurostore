@@ -11,13 +11,12 @@ import {
     useProjectCurationIsPrisma,
     useProjectExtractionStudysetId,
     useProjectName,
-} from 'pages/Projects/ProjectPage/ProjectStore';
+} from 'stores/ProjectStore';
 import { useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
-import CurationBase from './CurationBase';
+import ProjectIsLoadingText from './ProjectIsLoadingText';
 
-const CurationPageNew: React.FC = (props) => {
+const CurationPage: React.FC = (props) => {
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
     const { projectId }: { projectId: string | undefined } = useParams();
 
@@ -76,14 +75,14 @@ const CurationPageNew: React.FC = (props) => {
                         />
                         <ProjectIsLoadingText />
                     </Box>
-                    <Box>
-                        {/* <Button
+                    <Box sx={{ marginRight: '1rem' }}>
+                        <Button
                             variant="outlined"
                             sx={{ marginRight: '1rem' }}
                             onClick={() => history.push(`/projects/${projectId}/curation/import`)}
                         >
                             import studies
-                        </Button> */}
+                        </Button>
                         {isPrisma && (
                             <>
                                 <PrismaDialog
@@ -93,6 +92,7 @@ const CurationPageNew: React.FC = (props) => {
                                 <Button
                                     onClick={() => setPrismaIsOpen(true)}
                                     variant="outlined"
+                                    sx={{ marginRight: '1rem' }}
                                     endIcon={<SchemaIcon />}
                                 >
                                     PRISMA diagram
@@ -102,7 +102,6 @@ const CurationPageNew: React.FC = (props) => {
                         {canMoveToExtractionPhase && (
                             <Button
                                 onClick={handleMoveToExtractionPhase}
-                                sx={{ marginLeft: '1rem' }}
                                 variant="contained"
                                 color="success"
                                 disableElevation
@@ -112,11 +111,11 @@ const CurationPageNew: React.FC = (props) => {
                         )}
                     </Box>
                 </Box>
-                <Box>
-                    <CurationBase />
+                <Box sx={{ height: '100%', overflow: 'hidden' }}>
+                    <CurationBoard />
                 </Box>
             </Box>
         </StateHandlerComponent>
     );
 };
-export default CurationPageNew;
+export default CurationPage;

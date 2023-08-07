@@ -3,7 +3,7 @@ import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import Ingestion from 'components/ExtractionComponents/Ingestion/Ingestion';
-import { useProjectId } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useProjectId } from 'stores/ProjectStore';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 

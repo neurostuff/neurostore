@@ -1,6 +1,6 @@
 import { Box, List } from '@mui/material';
 import EditAnalysesListItem from 'components/EditStudyComponents/EditAnalyses/EditAnalysesList/EditAnalysesListItem';
-import { IStoreAnalysis } from 'pages/Studies/StudyStore.helpers';
+import { IStoreAnalysis } from 'stores/StudyStore.helpers';
 
 const DisplayAnalysesList: React.FC<{
     analyses: IStoreAnalysis[];

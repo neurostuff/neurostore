@@ -2,7 +2,7 @@ import { Box, Button, Step, StepContent, StepLabel, StepProps, Typography } from
 import ProjectComponentsStyles from '../../ProjectComponents.styles';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { useHistory, useParams } from 'react-router-dom';
-import { useAllowEditMetaAnalyses } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useAllowEditMetaAnalyses } from 'stores/ProjectStore';
 
 interface ISpecificationStep {
     disabled: boolean;

@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import { useUpdateProjectIsLoading } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useUpdateProjectIsLoading } from 'stores/ProjectStore';
 
 const ProjectIsLoadingText: React.FC = (props) => {
     const updateProjectIsLoading = useUpdateProjectIsLoading();

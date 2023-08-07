@@ -25,7 +25,7 @@ import {
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectId,
-} from 'pages/Projects/ProjectPage/ProjectStore';
+} from 'stores/ProjectStore';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 

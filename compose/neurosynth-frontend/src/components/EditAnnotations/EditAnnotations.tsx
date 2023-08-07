@@ -7,8 +7,8 @@ import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import {
     useInitProjectStoreIfRequired,
     useProjectExtractionAnnotationId,
-} from 'pages/Projects/ProjectPage/ProjectStore';
-import { useInitStudyStoreIfRequired } from 'pages/Studies/StudyStore';
+} from 'stores/ProjectStore';
+import { useInitStudyStoreIfRequired } from 'stores/StudyStore';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import AnnotationsHotTable from './AnnotationsHotTable/AnnotationsHotTable';
 import {

@@ -2,7 +2,7 @@ import { Step, StepLabel, Stepper, Box } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ICurationStubStudy } from '../CurationStubStudy/CurationStubStudyDraggableContainer';
+import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 import CurationImport, { EImportMode } from './CurationImport/CurationImport';
 import CurationImportResolveDuplicates from './CurationImportResolveDuplicates/CurationImportResolveDuplicates';
 import CurationImportSelectMethod from './CurationImportSelectMethod/CurationImportSelectMethod';

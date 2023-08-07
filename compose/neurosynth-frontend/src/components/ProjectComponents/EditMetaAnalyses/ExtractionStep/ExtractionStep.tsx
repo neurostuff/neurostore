@@ -26,7 +26,7 @@ import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPag
 import {
     useProjectExtractionSetGivenStudyStatusesAsComplete,
     useProjectExtractionStudysetId,
-} from 'pages/Projects/ProjectPage/ProjectStore';
+} from 'stores/ProjectStore';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 

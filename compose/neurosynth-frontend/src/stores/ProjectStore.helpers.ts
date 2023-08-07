@@ -1,16 +1,14 @@
 import { DropResult, ResponderProvided } from '@hello-pangea/dnd';
-import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import {
+    ICurationColumn,
     ICurationMetadata,
-    INeurosynthProjectReturn,
+    ICurationStubStudy,
     IPRISMAConfig,
     ISource,
-    IStudyExtractionStatus,
     ITag,
-} from 'hooks/requests/useGetProjects';
+} from 'interfaces/project/curation.interface';
+import { IStudyExtractionStatus } from 'interfaces/project/extraction.interface';
 import { v4 as uuidv4 } from 'uuid';
-import { ProjectStoreActions, ProjectStoreMetadata } from './ProjectStore';
 
 export enum ENeurosynthSourceIds {
     NEUROSTORE = 'neurosynth_neurostore_id_source',
@@ -488,6 +486,3 @@ export const setGivenStudyStatusesAsCompleteHelper = (
         status: 'COMPLETE',
     }));
 };
-
-export type TProjectStore = INeurosynthProjectReturn &
-    ProjectStoreActions & { metadata: ProjectStoreMetadata };

@@ -5,12 +5,9 @@ import SpecificationStep from 'components/ProjectComponents/EditMetaAnalyses/Spe
 import useGetCurationSummary from 'hooks/useGetCurationSummary';
 import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import ProjectPageStyles from 'pages/Projects/ProjectPage/ProjectPage.styles';
-import {
-    useProjectCurationColumns,
-    useProjectExtractionMetadata,
-} from 'pages/Projects/ProjectPage/ProjectStore';
+import { useProjectCurationColumns, useProjectExtractionMetadata } from 'stores/ProjectStore';
 import { useParams } from 'react-router-dom';
-import { useClearProvenance } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useClearProvenance } from 'stores/ProjectStore';
 
 const env = process.env.REACT_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
 

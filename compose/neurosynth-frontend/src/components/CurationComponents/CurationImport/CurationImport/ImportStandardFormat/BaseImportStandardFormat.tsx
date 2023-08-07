@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 import { useState } from 'react';
 import { hasDuplicates } from '../../helpers/utils';
 import { IImportArgs } from '../CurationImport';

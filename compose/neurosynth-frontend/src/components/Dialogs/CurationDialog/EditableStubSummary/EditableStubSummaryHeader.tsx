@@ -1,14 +1,13 @@
 import { Box, Button, IconButton, Tooltip, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import StyleIcon from '@mui/icons-material/Style';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { ICurationStubStudy, ITag } from 'interfaces/project/curation.interface';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import ExclusionSelectorPopup from 'components/CurationComponents/SelectorPopups/ExclusionSelectorPopup/ExclusionSelectorPopup';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import { ITag } from 'hooks/requests/useGetProjects';
 import { useRef, useState } from 'react';
-import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
+import { ENeurosynthTagIds } from 'stores/ProjectStore.helpers';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import NeurosynthConfirmationChip from 'components/NeurosynthConfirmationChip/NeurosynthConfirmationChip';
 import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';
@@ -17,9 +16,9 @@ import {
     usePromoteStub,
     useSetExclusionFromStub,
     useRemoveTagFromStub,
-} from 'pages/Projects/ProjectPage/ProjectStore';
+} from 'stores/ProjectStore';
 import React from 'react';
-import { defaultInfoTags } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
+import { defaultInfoTags } from 'stores/ProjectStore.helpers';
 import { useAuth0 } from '@auth0/auth0-react';
 
 interface IEditableStubSummaryHeader {

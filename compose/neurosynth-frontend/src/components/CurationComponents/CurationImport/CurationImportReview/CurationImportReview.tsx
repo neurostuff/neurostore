@@ -2,7 +2,7 @@ import { Box, Paper, Typography } from '@mui/material';
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';

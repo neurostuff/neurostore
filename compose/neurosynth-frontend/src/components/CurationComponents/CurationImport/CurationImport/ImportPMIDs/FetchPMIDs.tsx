@@ -1,8 +1,8 @@
 import { Box } from '@mui/material';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import useGetPubmedIDs from 'hooks/requests/useGetPubMedIds';
-import { defaultIdentificationSources } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
+import { defaultIdentificationSources } from 'stores/ProjectStore.helpers';
 import React from 'react';
 import { useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';

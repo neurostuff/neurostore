@@ -17,7 +17,7 @@ import {
     useStudyPMID,
     useStudyPublication,
     useStudyUser,
-} from '../StudyStore';
+} from '../../../stores/StudyStore';
 
 const StudyPage: React.FC = (props) => {
     const { studyId } = useParams<{ studyId: string }>();

@@ -1,35 +1,50 @@
 import SchemaIcon from '@mui/icons-material/Schema';
 import { Box, Button } from '@mui/material';
-import CurationBoard from 'components/CurationComponents/CurationBoard/CurationBoard';
 import PrismaDialog from 'components/Dialogs/PrismaDialog/PrismaDialog';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import useGetCurationSummary from 'hooks/useGetCurationSummary';
+import ProjectIsLoadingText from 'pages/Projects/CurationPage/ProjectIsLoadingText';
 import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
+import { useState } from 'react';
+import { useHistory, useParams } from 'react-router-dom';
 import {
     useInitProjectStoreIfRequired,
     useProjectCurationIsPrisma,
     useProjectExtractionStudysetId,
     useProjectName,
-} from 'pages/Projects/ProjectPage/ProjectStore';
-import { useState } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
-import ProjectIsLoadingText from './ProjectIsLoadingText';
+} from 'stores/ProjectStore';
+import CurationBase from 'components/CurationBeta/CurationBase';
+import { useSnackbar } from 'notistack';
 
 const CurationPage: React.FC = (props) => {
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
     const { projectId }: { projectId: string | undefined } = useParams();
 
-    useInitProjectStoreIfRequired();
-
     const history = useHistory<IProjectPageLocationState>();
+    const { enqueueSnackbar } = useSnackbar();
 
+    useInitProjectStoreIfRequired();
     const isPrisma = useProjectCurationIsPrisma();
     const studysetId = useProjectExtractionStudysetId();
     const projectName = useProjectName();
     const { included, uncategorized } = useGetCurationSummary();
 
     const handleMoveToExtractionPhase = () => {
+        if (included === 0) {
+            enqueueSnackbar('At least 1 study must be included to move to extraction phase', {
+                variant: 'warning',
+            });
+            return;
+        }
+
+        if (uncategorized > 0) {
+            enqueueSnackbar('All studies must be categorized to move to extraction phase', {
+                variant: 'warning',
+            });
+            return;
+        }
+
         if (studysetId) {
             history.push(`/projects/${projectId}/extraction`);
         } else {
@@ -40,8 +55,6 @@ const CurationPage: React.FC = (props) => {
             });
         }
     };
-
-    const canMoveToExtractionPhase = included > 0 && uncategorized === 0;
 
     return (
         <StateHandlerComponent isError={false} isLoading={false}>
@@ -75,14 +88,7 @@ const CurationPage: React.FC = (props) => {
                         />
                         <ProjectIsLoadingText />
                     </Box>
-                    <Box sx={{ marginRight: '1rem' }}>
-                        <Button
-                            variant="outlined"
-                            sx={{ marginRight: '1rem' }}
-                            onClick={() => history.push(`/projects/${projectId}/curation/import`)}
-                        >
-                            import studies
-                        </Button>
+                    <Box>
                         {isPrisma && (
                             <>
                                 <PrismaDialog
@@ -92,27 +98,25 @@ const CurationPage: React.FC = (props) => {
                                 <Button
                                     onClick={() => setPrismaIsOpen(true)}
                                     variant="outlined"
-                                    sx={{ marginRight: '1rem' }}
                                     endIcon={<SchemaIcon />}
                                 >
                                     PRISMA diagram
                                 </Button>
                             </>
                         )}
-                        {canMoveToExtractionPhase && (
-                            <Button
-                                onClick={handleMoveToExtractionPhase}
-                                variant="contained"
-                                color="success"
-                                disableElevation
-                            >
-                                Move To Extraction Phase
-                            </Button>
-                        )}
+                        <Button
+                            onClick={handleMoveToExtractionPhase}
+                            sx={{ marginLeft: '1rem' }}
+                            variant="contained"
+                            color="success"
+                            disableElevation
+                        >
+                            Move To Extraction Phase
+                        </Button>
                     </Box>
                 </Box>
-                <Box sx={{ height: '100%', overflow: 'hidden' }}>
-                    <CurationBoard />
+                <Box>
+                    <CurationBase />
                 </Box>
             </Box>
         </StateHandlerComponent>

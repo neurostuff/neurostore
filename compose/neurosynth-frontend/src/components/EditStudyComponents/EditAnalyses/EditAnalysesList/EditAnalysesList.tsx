@@ -1,5 +1,5 @@
 import { Box, List } from '@mui/material';
-import { useStudyAnalyses } from 'pages/Studies/StudyStore';
+import { useStudyAnalyses } from 'stores/StudyStore';
 import { useEffect, useState } from 'react';
 import EditAnalysesListItem from './EditAnalysesListItem';
 

@@ -1,17 +1,7 @@
 import { LogoutOptions, useAuth0 } from '@auth0/auth0-react';
 import { DropResult, ResponderProvided } from '@hello-pangea/dnd';
 import { AxiosError, AxiosResponse } from 'axios';
-import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import useGetProjectById from 'hooks/requests/useGetProjectById';
-import {
-    IExtractionMetadata,
-    INeurosynthProject,
-    INeurosynthProjectReturn,
-    IPRISMAConfig,
-    ISource,
-    ITag,
-} from 'hooks/requests/useGetProjects';
 import useUpdateProject from 'hooks/requests/useUpdateProject';
 import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { OptionsObject, SnackbarKey, SnackbarMessage, useSnackbar } from 'notistack';
@@ -21,7 +11,6 @@ import { useParams } from 'react-router-dom';
 import API from 'utils/api';
 import { create } from 'zustand';
 import {
-    TProjectStore,
     addNewStubsHelper,
     addOrUpdateStudyListStatusHelper,
     addTagToStubHelper,
@@ -37,6 +26,15 @@ import {
     setGivenStudyStatusesAsCompleteHelper,
     updateStubFieldHelper,
 } from './ProjectStore.helpers';
+import { INeurosynthProject, INeurosynthProjectReturn } from 'interfaces/project/project.interface';
+import {
+    ICurationColumn,
+    ICurationStubStudy,
+    IPRISMAConfig,
+    ISource,
+    ITag,
+} from 'interfaces/project/curation.interface';
+import { IExtractionMetadata } from 'interfaces/project/extraction.interface';
 
 export type ProjectStoreMetadata = {
     shouldUpdate: boolean; // this flag is for the debouncer
@@ -96,6 +94,9 @@ export type ProjectStoreActions = {
     deleteStub: (columnIndex: number, stubId: string) => void;
     allowEditMetaAnalyses: () => void;
 };
+
+type TProjectStore = INeurosynthProjectReturn &
+    ProjectStoreActions & { metadata: ProjectStoreMetadata };
 
 const onUnloadHandler = (event: BeforeUnloadEvent) => {
     return (event.returnValue = 'Are you sure you want to leave?');

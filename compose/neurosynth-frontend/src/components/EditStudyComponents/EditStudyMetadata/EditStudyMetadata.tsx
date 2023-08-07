@@ -6,7 +6,7 @@ import {
     useAddOrUpdateMetadata,
     useDeleteMetadataRow,
     useStudyMetadata,
-} from 'pages/Studies/StudyStore';
+} from 'stores/StudyStore';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 
 export interface IEditStudyMetadata {

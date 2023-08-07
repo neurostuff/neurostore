@@ -1,6 +1,6 @@
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 import { StudyReturn } from 'neurostore-typescript-sdk';
-import { defaultIdentificationSources } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
+import { defaultIdentificationSources } from 'stores/ProjectStore.helpers';
 import { v4 as uuidv4 } from 'uuid';
 
 export const studiesToStubs = (studies: StudyReturn[]): ICurationStubStudy[] => {

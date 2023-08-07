@@ -1,4 +1,4 @@
-import { useProjectCurationColumns } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useProjectCurationColumns } from 'stores/ProjectStore';
 import { useEffect, useState } from 'react';
 
 export interface ICurationSummary {

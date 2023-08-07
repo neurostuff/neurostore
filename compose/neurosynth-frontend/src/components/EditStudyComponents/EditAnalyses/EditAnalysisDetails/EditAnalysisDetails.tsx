@@ -3,8 +3,8 @@ import {
     useAddOrUpdateAnalysis,
     useStudyAnalysisDescription,
     useStudyAnalysisName,
-} from 'pages/Studies/StudyStore';
-import { IStoreAnalysis } from 'pages/Studies/StudyStore.helpers';
+} from 'stores/StudyStore';
+import { IStoreAnalysis } from 'stores/StudyStore.helpers';
 
 const EditAnalysisDetails: React.FC<{ analysisId?: string }> = (props) => {
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();

@@ -16,7 +16,7 @@ import {
     getSearchCriteriaFromURL,
     getURLFromSearchCriteria,
 } from 'pages/helpers/utils';
-import { useProjectId } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useProjectId } from 'stores/ProjectStore';
 import { IImportArgs } from '../CurationImport';
 import { studiesToStubs } from './helpers/utils';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';

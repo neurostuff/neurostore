@@ -8,10 +8,10 @@ import {
     ToggleButtonGroup,
     ToggleButton,
 } from '@mui/material';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 import { useEffect, useState } from 'react';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { defaultExclusionTags } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
+import { defaultExclusionTags } from 'stores/ProjectStore.helpers';
 import { createDuplicateMap } from '../../helpers/utils';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';

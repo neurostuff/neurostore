@@ -1,6 +1,6 @@
 import { Box, Button, Typography } from '@mui/material';
 import Ingestion from 'components/ExtractionComponents/Ingestion/Ingestion';
-import { useProjectExtractionStudysetId } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useProjectExtractionStudysetId } from 'stores/ProjectStore';
 import { useState } from 'react';
 import { useQueryClient } from 'react-query';
 import BaseDialog, { IDialog } from '../BaseDialog';

@@ -9,7 +9,7 @@ import DisplayAnalyses from './DisplayAnalyses/DisplayAnalyses';
 import DisplayStudyStyles from './DisplayStudy.styles';
 import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
 import FullTextLinkComponent from 'components/FullTextLinkComponent/FullTextLinkComponent';
-import { IStoreStudy } from 'pages/Studies/StudyStore.helpers';
+import { IStoreStudy } from 'stores/StudyStore.helpers';
 
 const DisplayStudy: React.FC<IStoreStudy> = (props) => {
     const {

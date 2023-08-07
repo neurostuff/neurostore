@@ -11,7 +11,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import CurationStepGroupsStyles from './CurationStepGroups.styles';
 
-const CurationStepGroups: React.FC = (props) => {
+const CurationGroupListItems: React.FC = (props) => {
     return (
         <Box>
             <List disablePadding>
@@ -62,4 +62,4 @@ const CurationStepGroups: React.FC = (props) => {
     );
 };
 
-export default CurationStepGroups;
+export default CurationGroupListItems;

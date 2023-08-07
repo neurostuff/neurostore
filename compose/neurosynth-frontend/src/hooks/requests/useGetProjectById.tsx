@@ -1,6 +1,6 @@
+import { INeurosynthProjectReturn } from 'interfaces/project/project.interface';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
-import { INeurosynthProjectReturn } from './useGetProjects';
 
 const useGetProjectById = (projectId: string | undefined) => {
     return useQuery(

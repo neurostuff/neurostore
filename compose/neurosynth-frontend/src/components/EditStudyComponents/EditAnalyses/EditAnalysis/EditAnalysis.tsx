@@ -2,7 +2,7 @@ import HelpIcon from '@mui/icons-material/Help';
 import { Box, Button, Tooltip, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import DisplayAnalysisWarnings from 'components/DisplayStudy/DisplayAnalyses/DisplayAnalysisWarnings/DisplayAnalysisWarnings';
-import { useDeleteAnalysis } from 'pages/Studies/StudyStore';
+import { useDeleteAnalysis } from 'stores/StudyStore';
 import { useState } from 'react';
 import EditAnalysisDetails from '../EditAnalysisDetails/EditAnalysisDetails';
 import EditAnalysisPoints from '../EditAnalysisPoints/EditAnalysisPoints';

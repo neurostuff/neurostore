@@ -1,5 +1,5 @@
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 import CreateStubStudy from './CreateStubStudy/CreateStubStudy';
 import BaseImportFromNeurostore from './ImportFromNeurostore/BaseImportFromNeurostore';
 import BaseImportPMIDs from './ImportPMIDs/BaseImportPMIDs';

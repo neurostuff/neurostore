@@ -1,7 +1,7 @@
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Box, Chip } from '@mui/material';
-import { useStudyAnalysisPoints } from 'pages/Studies/StudyStore';
-import { IStorePoint } from 'pages/Studies/StudyStore.helpers';
+import { useStudyAnalysisPoints } from 'stores/StudyStore';
+import { IStorePoint } from 'stores/StudyStore.helpers';
 
 export const isCoordinateMNI = (x: number, y: number, z: number) => {
     const dims = {

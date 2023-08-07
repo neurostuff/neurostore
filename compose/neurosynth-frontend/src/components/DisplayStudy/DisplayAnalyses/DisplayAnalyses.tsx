@@ -2,7 +2,7 @@ import { Box } from '@mui/material';
 import DisplayAnalysesList from './DisplayAnalysesList/DisplayAnalysesList';
 import { useState } from 'react';
 import DisplayAnalysis from './DisplayAnalysis/DisplayAnalysis';
-import { IStoreAnalysis } from 'pages/Studies/StudyStore.helpers';
+import { IStoreAnalysis } from 'stores/StudyStore.helpers';
 
 const DisplayAnalyses: React.FC<{
     analyses: IStoreAnalysis[];

@@ -7,7 +7,7 @@ import {
     useProjectDescription,
     useProjectName,
     useUpdateExtractionMetadata,
-} from 'pages/Projects/ProjectPage/ProjectStore';
+} from 'stores/ProjectStore';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 

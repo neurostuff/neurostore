@@ -15,9 +15,9 @@ import {
     useDeleteConditionFromAnalysis,
     useStudyAnalysisConditions,
     useStudyAnalysisWeights,
-} from 'pages/Studies/StudyStore';
+} from 'stores/StudyStore';
 import { useSnackbar } from 'notistack';
-import { IStoreCondition } from 'pages/Studies/StudyStore.helpers';
+import { IStoreCondition } from 'stores/StudyStore.helpers';
 
 const EditAnalysisConditions: React.FC<{ analysisId: string }> = React.memo((props) => {
     const conditions = useStudyAnalysisConditions(props.analysisId);

@@ -3,7 +3,7 @@ import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import { useEffect, useRef, useState } from 'react';
 import EditableStubSummary from 'components/Dialogs/CurationDialog/EditableStubSummary/EditableStubSummary';
 import CurationStubListItem from './CurationStubListItem/CurationStubListItem';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import React from 'react';

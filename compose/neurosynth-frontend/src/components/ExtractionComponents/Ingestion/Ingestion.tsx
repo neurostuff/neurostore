@@ -4,7 +4,7 @@
 import { Box } from '@mui/material';
 import Typography from '@mui/material/Typography';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import { useGetStudysetById } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
@@ -14,7 +14,7 @@ import {
     useProjectExtractionStudysetId,
     useProjectNumCurationColumns,
     useUpdateStubField,
-} from 'pages/Projects/ProjectPage/ProjectStore';
+} from 'stores/ProjectStore';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from 'react-query';
 import IngestionAwaitUserResponse from './IngestionAwaitUserResponse';

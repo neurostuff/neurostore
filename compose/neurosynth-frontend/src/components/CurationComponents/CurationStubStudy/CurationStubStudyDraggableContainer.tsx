@@ -1,27 +1,10 @@
+import { DraggableProvided, DraggableStateSnapshot, DraggableStyle } from '@hello-pangea/dnd';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { Box, Paper } from '@mui/material';
-import { ISource, ITag } from 'hooks/requests/useGetProjects';
 import React from 'react';
 import CurationStubStudy from './CurationStubStudy';
 import CurationStubStudyStyles from './CurationStubStudy.styles';
-import { DraggableProvided, DraggableStateSnapshot, DraggableStyle } from '@hello-pangea/dnd';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-
-export interface ICurationStubStudy {
-    id: string;
-    title: string;
-    authors: string;
-    keywords: string;
-    pmid: string;
-    doi: string;
-    articleYear: string | undefined;
-    journal: string;
-    abstractText: string;
-    articleLink: string;
-    exclusionTag: ITag | null;
-    identificationSource: ISource;
-    tags: ITag[];
-    neurostoreId?: string;
-}
+import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 
 const handleAnimation = (style: DraggableStyle | undefined, snapshot: DraggableStateSnapshot) => {
     if (!snapshot.isDropAnimating) {

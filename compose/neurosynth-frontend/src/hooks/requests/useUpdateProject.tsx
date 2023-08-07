@@ -1,8 +1,8 @@
 import { AxiosError, AxiosResponse } from 'axios';
+import { INeurosynthProject } from 'interfaces/project/project.interface';
 import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { useMutation } from 'react-query';
 import API from 'utils/api';
-import { INeurosynthProject } from './useGetProjects';
 
 const useUpdateProject = () => {
     return useMutation<
