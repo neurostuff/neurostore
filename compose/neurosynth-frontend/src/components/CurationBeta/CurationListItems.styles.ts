@@ -1,6 +1,6 @@
 import { Style } from 'index';
 
-const CurationStepGroupsStyles: Style = {
+const CurationListItemsStyles: Style = {
     listItem: {
         '& .MuiListItemButton-root.Mui-selected': {
             backgroundColor: 'white',
@@ -10,6 +10,9 @@ const CurationStepGroupsStyles: Style = {
         borderTopLeftRadius: '4px',
         borderBottomLeftRadius: '4px',
     },
+    listSubheader: {
+        backgroundColor: 'rgb(242, 242, 242)',
+    },
 };
 
-export default CurationStepGroupsStyles;
+export default CurationListItemsStyles;

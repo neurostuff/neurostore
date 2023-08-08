@@ -3,11 +3,11 @@ import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { SystemStyleObject } from '@mui/system';
+import { ISource } from 'interfaces/project/curation.interface';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { defaultIdentificationSources } from 'stores/ProjectStore.helpers';
 import { v4 as uuidv4 } from 'uuid';
-import { useCreateCurationSource, useProjectCurationSources } from 'stores/ProjectStore';
-import { ISource } from 'interfaces/project/curation.interface';
 
 interface AutoSelectOption {
     id: string;
@@ -37,6 +37,16 @@ interface ISourceSelectorPopup {
     disabled?: boolean;
 }
 
+const defaultIdentificationSourcesList = Object.entries(defaultIdentificationSources).map(
+    ([key, value]) => {
+        return {
+            id: value.id,
+            label: value.label,
+            addOptionActualLabel: null,
+        };
+    }
+);
+
 const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(
@@ -44,13 +54,10 @@ const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
     );
     const [sourceOptions, setSourceOptions] = useState<AutoSelectOption[]>([]);
 
-    const sources = useProjectCurationSources();
-    const createNewSource = useCreateCurationSource();
-
     useEffect(() => {
-        if (sources) {
+        if (defaultIdentificationSourcesList) {
             setSourceOptions((_) => {
-                const updatedSources = sources
+                const updatedSources = defaultIdentificationSourcesList
                     .filter(
                         (originalSource) =>
                             !(props.excludeSources || []).includes(originalSource.id)
@@ -64,26 +71,23 @@ const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
                 return updatedSources;
             });
         }
-    }, [sources, props.excludeSources]);
+    }, [props.excludeSources]);
 
     useEffect(() => {
         setSelectedValue(props.initialValue || null);
     }, [props.initialValue]);
 
     const handleCreateSource = (sourceName: string) => {
-        if (projectId && sources) {
-            const newSource: ISource = {
+        if (projectId) {
+            const newSource: AutoSelectOption = {
                 id: uuidv4(),
                 label: sourceName,
+                addOptionActualLabel: null,
             };
 
-            createNewSource(newSource);
+            setSourceOptions((sourceOptions) => [...sourceOptions, newSource]);
 
-            setSelectedValue({
-                id: newSource.id,
-                label: newSource.label,
-                addOptionActualLabel: null,
-            });
+            setSelectedValue(newSource);
 
             if (props.onCreateSource) props.onCreateSource(newSource);
         }

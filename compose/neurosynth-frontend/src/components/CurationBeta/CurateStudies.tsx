@@ -41,7 +41,11 @@ const CurateStudies: React.FC = (props) => {
                 'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Esse quis dicta at commodi accusantium est suscipit, laudantium quia nihil necessitatibus cupiditate, eveniet magni eaque qui, unde officiis? Repellendus, illum unde?',
             articleLink: 'https://google.com',
             exclusionTag: null,
-            identificationSource: defaultIdentificationSources.neurostore,
+            import: {
+                id: '',
+                name: '',
+                source: defaultIdentificationSources.neurostore,
+            },
             tags: [
                 {
                     id: 'test tag 1',
@@ -64,7 +68,11 @@ const CurateStudies: React.FC = (props) => {
                 'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Esse quis dicta at commodi accusantium est suscipit, laudantium quia nihil necessitatibus cupiditate, eveniet magni eaque qui, unde officiis? Repellendus, illum unde?',
             articleLink: 'https://google.com',
             exclusionTag: null,
-            identificationSource: defaultIdentificationSources.neurostore,
+            import: {
+                id: '',
+                name: '',
+                source: defaultIdentificationSources.neurostore,
+            },
             tags: [
                 {
                     id: 'test tag 1',
@@ -87,7 +95,11 @@ const CurateStudies: React.FC = (props) => {
                 'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Esse quis dicta at commodi accusantium est suscipit, laudantium quia nihil necessitatibus cupiditate, eveniet magni eaque qui, unde officiis? Repellendus, illum unde?',
             articleLink: 'https://google.com',
             exclusionTag: null,
-            identificationSource: defaultIdentificationSources.neurostore,
+            import: {
+                id: '',
+                name: '',
+                source: defaultIdentificationSources.neurostore,
+            },
             tags: [
                 {
                     id: 'test tag 1',
@@ -110,7 +122,11 @@ const CurateStudies: React.FC = (props) => {
                 'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Esse quis dicta at commodi accusantium est suscipit, laudantium quia nihil necessitatibus cupiditate, eveniet magni eaque qui, unde officiis? Repellendus, illum unde?',
             articleLink: 'https://google.com',
             exclusionTag: null,
-            identificationSource: defaultIdentificationSources.neurostore,
+            import: {
+                id: '',
+                name: '',
+                source: defaultIdentificationSources.neurostore,
+            },
             tags: [
                 {
                     id: 'test tag 1',
@@ -133,7 +149,11 @@ const CurateStudies: React.FC = (props) => {
                 'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Esse quis dicta at commodi accusantium est suscipit, laudantium quia nihil necessitatibus cupiditate, eveniet magni eaque qui, unde officiis? Repellendus, illum unde?',
             articleLink: 'https://google.com',
             exclusionTag: null,
-            identificationSource: defaultIdentificationSources.neurostore,
+            import: {
+                id: '',
+                name: '',
+                source: defaultIdentificationSources.neurostore,
+            },
             tags: [
                 {
                     id: 'test tag 1',
@@ -156,7 +176,11 @@ const CurateStudies: React.FC = (props) => {
                 'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Esse quis dicta at commodi accusantium est suscipit, laudantium quia nihil necessitatibus cupiditate, eveniet magni eaque qui, unde officiis? Repellendus, illum unde?',
             articleLink: 'https://google.com',
             exclusionTag: null,
-            identificationSource: defaultIdentificationSources.neurostore,
+            import: {
+                id: '',
+                name: '',
+                source: defaultIdentificationSources.neurostore,
+            },
             tags: [
                 {
                     id: 'test tag 1',
@@ -179,7 +203,11 @@ const CurateStudies: React.FC = (props) => {
                 'Lorem ipsum dolor sit, amet consectetur adipisicing elit. Esse quis dicta at commodi accusantium est suscipit, laudantium quia nihil necessitatibus cupiditate, eveniet magni eaque qui, unde officiis? Repellendus, illum unde?',
             articleLink: 'https://google.com',
             exclusionTag: null,
-            identificationSource: defaultIdentificationSources.neurostore,
+            import: {
+                id: '',
+                name: '',
+                source: defaultIdentificationSources.neurostore,
+            },
             tags: [
                 {
                     id: 'test tag 1',

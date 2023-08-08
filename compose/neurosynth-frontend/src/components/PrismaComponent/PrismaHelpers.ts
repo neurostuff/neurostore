@@ -98,7 +98,7 @@ class NeurosynthPRISMAHelper {
         const map = new Map<string, { source: ISource; count: number }>();
 
         studies.forEach((study) => {
-            const sourceId = study.identificationSource.id;
+            const sourceId = study.import.source.id;
             const mapObj = map.get(sourceId);
 
             if (mapObj) {
@@ -108,7 +108,7 @@ class NeurosynthPRISMAHelper {
                 });
             } else {
                 map.set(sourceId, {
-                    source: study.identificationSource,
+                    source: study.import.source,
                     count: 1,
                 });
             }

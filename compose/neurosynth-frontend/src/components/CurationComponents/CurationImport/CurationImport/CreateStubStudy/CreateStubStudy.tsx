@@ -3,7 +3,7 @@ import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
-import { ISource } from 'interfaces/project/curation.interface';
+import { IImport, ISource } from 'interfaces/project/curation.interface';
 import { ChangeEvent, useState } from 'react';
 import CreateStubStudyStyles from './CreateStubStudy.styles';
 import { v4 as uuidv4 } from 'uuid';
@@ -25,7 +25,7 @@ const CreateStubStudy: React.FC<IImportArgs> = (props) => {
         journal: string;
         articleLink: string;
         abstract: string;
-        identificationSource: ISource | null;
+        import: IImport | null;
     }>({
         name: '',
         authors: '',
@@ -36,7 +36,7 @@ const CreateStubStudy: React.FC<IImportArgs> = (props) => {
         journal: '',
         articleLink: '',
         abstract: '',
-        identificationSource: null,
+        import: null,
     });
 
     const handleUpdateForm = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -68,7 +68,7 @@ const CreateStubStudy: React.FC<IImportArgs> = (props) => {
         if (button === ENavigationButton.PREV) {
             props.onNavigate(button);
         } else {
-            if (!form.identificationSource) return;
+            if (!form.import) return;
             props.onImportStubs([
                 {
                     id: uuidv4(),
@@ -83,13 +83,13 @@ const CreateStubStudy: React.FC<IImportArgs> = (props) => {
                     articleLink: form.articleLink,
                     exclusionTag: null,
                     tags: [],
-                    identificationSource: form.identificationSource as ISource,
+                    import: form.import as IImport,
                 },
             ]);
         }
     };
 
-    const disableCreateButton = form.name.length === 0 || !form.identificationSource;
+    const disableCreateButton = form.name.length === 0 || !form.import;
 
     return (
         <Box sx={{ padding: '10px 0', margin: '2rem 0' }}>
@@ -166,7 +166,7 @@ const CreateStubStudy: React.FC<IImportArgs> = (props) => {
                 <Box sx={{ width: '50%', marginLeft: '7.5px' }}>
                     <IdentificationSourcePopup
                         required
-                        initialValue={form.identificationSource || undefined}
+                        initialValue={undefined}
                         onAddSource={handleAddSource}
                         onCreateSource={handleAddSource}
                         sx={{ width: '100%' }}

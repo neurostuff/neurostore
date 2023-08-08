@@ -72,7 +72,6 @@ export type ProjectStoreActions = {
         arg: keyof Omit<IPRISMAConfig, 'isPrisma'> | undefined
     ) => void;
     createNewInfoTag: (newTag: ITag) => void;
-    createNewIdentificationSource: (newSource: ISource) => void;
     addNewStubs: (stubs: ICurationStubStudy[]) => void;
     updateCurationColumns: (columns: ICurationColumn[]) => void;
     clearProvenance: () => void;
@@ -129,7 +128,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                 },
                 infoTags: [],
                 exclusionTags: [],
-                identificationSources: [],
+                imports: [],
             },
             extractionMetadata: {
                 studysetId: undefined,
@@ -173,7 +172,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     },
                     infoTags: [],
                     exclusionTags: [],
-                    identificationSources: [],
+                    imports: [],
                 },
                 extractionMetadata: {
                     studysetId: undefined,
@@ -355,7 +354,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                         },
                         infoTags: [],
                         exclusionTags: [],
-                        identificationSources: [],
+                        imports: [],
                     },
                     extractionMetadata: {
                         studysetId: undefined,
@@ -490,23 +489,6 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                             stubId,
                             newTag
                         ),
-                    },
-                },
-            }));
-
-            get().updateProjectInDBDebounced();
-        },
-        createNewIdentificationSource: (newSource: ISource) => {
-            set((state) => ({
-                ...state,
-                provenance: {
-                    ...state.provenance,
-                    curationMetadata: {
-                        ...state.provenance.curationMetadata,
-                        identificationSources: [
-                            ...state.provenance.curationMetadata.identificationSources,
-                            { ...newSource },
-                        ],
                     },
                 },
             }));
@@ -744,8 +726,6 @@ export const useProjectNumCurationColumns = () =>
     useProjectStore((state) => state.provenance.curationMetadata.columns.length);
 export const useProjectCurationColumn = (columnIndex: number) =>
     useProjectStore((state) => state.provenance.curationMetadata.columns[columnIndex]);
-export const useProjectCurationSources = () =>
-    useProjectStore((state) => state.provenance.curationMetadata.identificationSources);
 export const useProjectExtractionMetadata = () =>
     useProjectStore((state) => state.provenance.extractionMetadata);
 export const useProjectId = () => useProjectStore((state) => state.id);
@@ -775,8 +755,6 @@ export const useUpdateStubField = () => useProjectStore((state) => state.updateS
 export const usePromoteStub = () => useProjectStore((state) => state.promoteStub);
 export const usePromoteAllUncategorized = () =>
     useProjectStore((state) => state.promoteAllUncategorized);
-export const useCreateCurationSource = () =>
-    useProjectStore((state) => state.createNewIdentificationSource);
 export const useAddTagToStub = () => useProjectStore((state) => state.addTagToStub);
 export const useRemoveTagFromStub = () => useProjectStore((state) => state.removeTagFromStub);
 export const useSetExclusionFromStub = () => useProjectStore((state) => state.setExclusionForStub);

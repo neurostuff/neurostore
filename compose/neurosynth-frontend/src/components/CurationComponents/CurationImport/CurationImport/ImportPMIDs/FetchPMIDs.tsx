@@ -63,7 +63,11 @@ const FetchPMIDs: React.FC<{
                 articleLink: x.articleLink,
                 exclusionTag: null,
                 tags: [],
-                identificationSource: defaultIdentificationSources.pubmed,
+                import: {
+                    id: '',
+                    name: '',
+                    source: defaultIdentificationSources.pubmed,
+                },
             };
         });
         props.onStubsUploaded(stubs, unimportedStubs);

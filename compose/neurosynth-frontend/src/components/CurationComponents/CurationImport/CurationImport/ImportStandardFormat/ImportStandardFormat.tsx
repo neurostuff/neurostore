@@ -111,7 +111,11 @@ const ImportStandardFormat: React.FC<{
                         article.URL ||
                         (article.PMID ? `https://pubmed.ncbi.nlm.nih.gov/${article.PMID}` : ''),
                     exclusionTag: null,
-                    identificationSource: source,
+                    import: {
+                        id: '',
+                        name: '',
+                        source: source,
+                    },
                     tags: [],
                 })
             );

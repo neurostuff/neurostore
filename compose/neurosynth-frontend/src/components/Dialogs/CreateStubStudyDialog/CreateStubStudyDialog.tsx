@@ -4,7 +4,7 @@ import IdentificationSourcePopup from 'components/CurationComponents/SelectorPop
 import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import CreateStubStudyDialogStyles from 'components/Dialogs/CreateStubStudyDialog/CreateStubStudyDialog.styles';
-import { ISource, ITag } from 'interfaces/project/curation.interface';
+import { IImport, ISource, ITag } from 'interfaces/project/curation.interface';
 import { useAddNewCurationStubs } from 'stores/ProjectStore';
 import React, { ChangeEvent, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -26,7 +26,7 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
         doi: string;
         journal: string;
         abstract: string;
-        identificationSource: ISource | null;
+        import: IImport | null;
         tags: ITag[];
     }>({
         name: '',
@@ -38,7 +38,7 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
         journal: '',
         abstract: '',
         tags: [],
-        identificationSource: null,
+        import: null,
     });
 
     const handleUpdateForm = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -82,7 +82,7 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
     };
 
     const handleCreateStudy = () => {
-        if (!form.identificationSource) return;
+        if (!form.import) return;
 
         addNewStubs([
             {
@@ -98,7 +98,7 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
                 articleLink: form.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${form.pmid}` : '',
                 exclusionTag: null,
                 tags: [...form.tags],
-                identificationSource: form.identificationSource as ISource,
+                import: form.import as IImport,
             },
         ]);
 
@@ -116,7 +116,7 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
             journal: '',
             abstract: '',
             tags: [],
-            identificationSource: null,
+            import: null,
         });
         setFormFieldTouched({
             name: false,
@@ -125,8 +125,7 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
         props.onCloseDialog();
     };
 
-    const disableCreateButton =
-        form.name.length === 0 || form.pmid.length === 0 || !form.identificationSource;
+    const disableCreateButton = form.name.length === 0 || form.pmid.length === 0 || !form.import;
 
     return (
         <BaseDialog
@@ -224,7 +223,7 @@ const CreateStubStudyDialog: React.FC<IDialog> = (props) => {
                     <IdentificationSourcePopup
                         required
                         size="small"
-                        initialValue={form.identificationSource || undefined}
+                        initialValue={undefined}
                         onAddSource={handleAddSource}
                         onCreateSource={handleAddSource}
                         sx={{ width: '100%' }}

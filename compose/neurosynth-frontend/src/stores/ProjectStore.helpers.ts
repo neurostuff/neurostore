@@ -169,9 +169,7 @@ export const initCurationHelper = (cols: string[], isPrisma: boolean): ICuration
             ...value,
         })),
         infoTags: Object.entries(defaultInfoTags).map(([key, value]) => ({ ...value })),
-        identificationSources: Object.entries(defaultIdentificationSources).map(([key, value]) => ({
-            ...value,
-        })),
+        imports: [],
     };
 
     if (isPrisma) {

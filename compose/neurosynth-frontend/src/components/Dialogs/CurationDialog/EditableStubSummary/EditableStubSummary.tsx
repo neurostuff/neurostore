@@ -272,7 +272,7 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                     disabled={!isAuthenticated}
                     onAddSource={(source) => handleUpdateStub(source, 'identificationSource')}
                     onCreateSource={(source) => handleUpdateStub(source, 'identificationSource')}
-                    initialValue={props.stub.identificationSource}
+                    initialValue={undefined}
                     size="small"
                 />
             </Box>

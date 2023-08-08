@@ -1,9 +1,9 @@
 export interface ICurationMetadata {
     columns: ICurationColumn[];
     prismaConfig: IPRISMAConfig;
-    infoTags: ITag[];
+    infoTags: ITag[]; // only holds needsReview tag. In the future, this functionality may be extended
     exclusionTags: ITag[]; // for non prisma workflows, we ignore prismaConfig and use exclusionTags. This property will not be used for the prisma workflow.
-    identificationSources: ISource[];
+    imports: (IImport & { numStudies: number })[];
 }
 
 export interface IPRISMAConfig {
@@ -37,9 +37,9 @@ export interface ICurationStubStudy {
     abstractText: string;
     articleLink: string;
     exclusionTag: ITag | null;
-    identificationSource: ISource;
     tags: ITag[];
     neurostoreId?: string;
+    import: IImport;
 }
 
 export interface ITag {
@@ -47,6 +47,12 @@ export interface ITag {
     id: string;
     isExclusionTag: boolean;
     isAssignable: boolean; // whether or not this tag can be attached to a study
+}
+
+export interface IImport {
+    id: string;
+    name: string;
+    source: ISource;
 }
 
 export interface ISource {

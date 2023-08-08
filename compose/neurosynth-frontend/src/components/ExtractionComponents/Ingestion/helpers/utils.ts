@@ -34,8 +34,7 @@ export const createStudyFromStub = async (stub: ICurationStubStudy): Promise<Stu
     try {
         const metadata: { [key: string]: any } = {};
         if (stub.articleLink) metadata.articleLink = stub.articleLink;
-        if (stub.identificationSource)
-            metadata.identificationSource = stub.identificationSource.label;
+        if (stub.import) metadata.identificationSource = stub.import.name;
         if (stub.keywords) metadata.keywords = stub.keywords;
         if (stub.tags.length > 0) {
             stub.tags.forEach((tag, index) => {

@@ -1,8 +1,8 @@
 import { Badge, Box, Divider, Tab, Tabs, Typography } from '@mui/material';
-import CurationBaseStyles from './CurationBase.styles';
 import { useState } from 'react';
-import CurateInterface from './CurateInterface';
 import { useProjectCurationColumns } from 'stores/ProjectStore';
+import CurationBaseStyles from './CurationBase.styles';
+import CurationContainer from './CurationContainer';
 
 const CurationBase: React.FC = (props) => {
     const [tabIndex, setTabIndex] = useState(0);
@@ -36,7 +36,7 @@ const CurationBase: React.FC = (props) => {
 
             <Divider sx={{ marginBottom: '1rem' }} />
 
-            <CurateInterface curationStep={columns[tabIndex]} />
+            <CurationContainer selectedColumn={columns[tabIndex]} />
         </Box>
     );
 };
