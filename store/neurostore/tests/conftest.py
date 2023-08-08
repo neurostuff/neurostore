@@ -65,6 +65,45 @@ Session / db managment tools
 
 
 @pytest.fixture(scope="session")
+def real_app():
+    """Session-wide test `Flask` application."""
+    from ..core import app as _app
+    from ..core import cache
+
+    if "APP_SETTINGS" not in environ:
+        config = "neurostore.config.TestingConfig"
+    else:
+        config = environ["APP_SETTINGS"]
+    if not getattr(_app, "config", None):
+        _app = _app._app
+    _app.config.from_object(config)
+    # _app.config["SQLALCHEMY_ECHO"] = True
+
+    cache.clear()
+    # Establish an application context before running the tests.
+    ctx = _app.app_context()
+    ctx.push()
+
+    yield _app
+
+    cache.clear()
+    ctx.pop()
+
+
+@pytest.fixture(scope="session")
+def real_db(real_app):
+    """Session-wide test database."""
+    _db.init_app(real_app)
+    _db.create_all()
+
+    yield _db
+
+    _db.session.remove()
+    sa.orm.close_all_sessions()
+    _db.drop_all()
+
+
+@pytest.fixture(scope="session")
 def app(mock_auth):
     """Session-wide test `Flask` application."""
     from ..core import app as _app
@@ -213,11 +252,11 @@ def mock_add_users(app, db, mock_auth):
 
 
 @pytest.fixture(scope="function")
-def add_users(app, db):
+def add_users(real_app, real_db):
     """Adds a test user to db"""
     from neurostore.resources.auth import decode_token
 
-    domain = app.config["AUTH0_BASE_URL"].split("://")[1]
+    domain = real_app.config["AUTH0_BASE_URL"].split("://")[1]
     token = GetToken(domain)
 
     users = [
@@ -236,12 +275,12 @@ def add_users(app, db):
         name = u["name"]
         passw = u["password"]
         payload = token.login(
-            client_id=app.config["AUTH0_CLIENT_ID"],
-            client_secret=app.config["AUTH0_CLIENT_SECRET"],
+            client_id=real_app.config["AUTH0_CLIENT_ID"],
+            client_secret=real_app.config["AUTH0_CLIENT_SECRET"],
             username=name + "@email.com",
             password=passw,
             realm="Username-Password-Authentication",
-            audience=app.config["AUTH0_API_AUDIENCE"],
+            audience=real_app.config["AUTH0_API_AUDIENCE"],
             scope="openid profile email",
         )
         token_info = decode_token(payload["access_token"])
@@ -252,8 +291,8 @@ def add_users(app, db):
                 external_id=token_info["sub"],
             )
             if User.query.filter_by(name=token_info["sub"]).first() is None:
-                db.session.add(user)
-                db.session.commit()
+                real_db.session.add(user)
+                real_db.session.commit()
 
         tokens[name] = {
             "token": payload["access_token"],
