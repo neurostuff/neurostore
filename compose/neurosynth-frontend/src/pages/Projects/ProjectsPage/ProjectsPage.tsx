@@ -2,7 +2,7 @@ import { Box, IconButton, Typography, TableRow, TableCell } from '@mui/material'
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import HelpIcon from '@mui/icons-material/Help';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
-import useGetProjects from 'hooks/requests/useGetProjects';
+import useGetProjects from 'hooks/projects/useGetProjects';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { useHistory } from 'react-router-dom';
 import { useIsMutating } from 'react-query';

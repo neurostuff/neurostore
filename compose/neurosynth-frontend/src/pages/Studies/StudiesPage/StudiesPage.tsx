@@ -15,6 +15,7 @@ import {
     getSearchCriteriaFromURL,
     getURLFromSearchCriteria,
 } from 'pages/helpers/utils';
+import { NeurosynthStudyList } from 'hooks/studies/useGetStudies';
 
 export enum SortBy {
     TITLE = 'name',
@@ -83,7 +84,7 @@ const StudiesPage = () => {
     const { user, isLoading: authenticationIsLoading } = useAuth0();
 
     // cached data returned from the api
-    const [studyData, setStudyData] = useState<StudyList>();
+    const [studyData, setStudyData] = useState<NeurosynthStudyList>();
 
     // state of the current search
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({

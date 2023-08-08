@@ -7,7 +7,7 @@ import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthT
 import TextExpansion from 'components/TextExpansion/TextExpansion';
 import DisplayAnalyses from './DisplayAnalyses/DisplayAnalyses';
 import DisplayStudyStyles from './DisplayStudy.styles';
-import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
+import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
 import FullTextLinkComponent from 'components/FullTextLinkComponent/FullTextLinkComponent';
 import { IStoreStudy } from 'pages/Studies/StudyStore.helpers';
 

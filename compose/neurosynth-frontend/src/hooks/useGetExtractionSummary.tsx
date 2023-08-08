@@ -3,7 +3,7 @@ import {
     useProjectExtractionStudyStatusList,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useEffect, useState } from 'react';
-import useGetStudysetById from './requests/useGetStudysetById';
+import useGetStudysetById from './studysets/useGetStudysetById';
 
 export interface IExtractionSummary {
     savedForLater: number;

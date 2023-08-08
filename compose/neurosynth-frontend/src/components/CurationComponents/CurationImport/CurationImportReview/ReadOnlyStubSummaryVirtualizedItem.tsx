@@ -1,6 +1,6 @@
 import { Box, Divider, Link, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
+import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
 
 /**
  * Study summary for studies that are being imported and tagged. We cannot reuse the ReadOnlyStubSummary easily here because

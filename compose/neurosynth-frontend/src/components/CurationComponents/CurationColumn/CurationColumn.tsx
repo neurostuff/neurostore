@@ -15,7 +15,6 @@ import CurationStubStudyDraggableContainer, {
 } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import CurationDialog from 'components/Dialogs/CurationDialog/CurationDialog';
-import { ITag, indexToPRISMAMapping } from 'hooks/requests/useGetProjects';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import {
     useProjectCurationColumn,
@@ -28,6 +27,7 @@ import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpe
 import React, { useEffect, useMemo, useState } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import CurationColumnStyles from './CurationColumn.styles';
+import { ITag, indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
 
 export interface ICurationColumn {
     name: string;

@@ -1,6 +1,6 @@
 import { Box, Link, Typography } from '@mui/material';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
-import useGetFullText from 'hooks/requests/useGetFullText';
+import useGetFullText from 'hooks/external/useGetFullText';
 
 const FullTextLinkComponent: React.FC<{ paperTitle: string; text?: string }> = (props) => {
     const { paperTitle, text = 'article full text' } = props;

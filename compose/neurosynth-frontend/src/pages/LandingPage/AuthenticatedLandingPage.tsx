@@ -4,7 +4,12 @@ import PsychologyIcon from '@mui/icons-material/Psychology';
 import AutoAwesomeMotionIcon from '@mui/icons-material/AutoAwesomeMotion';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import NeurosynthList from 'components/NeurosynthList/NeurosynthList';
-import { useGetMetaAnalyses, useGetStudies, useGetStudysets, useCreateStudyset } from 'hooks';
+import {
+    useGetMetaAnalysesByProjectId,
+    useGetStudies,
+    useGetStudysets,
+    useCreateStudyset,
+} from 'hooks';
 import { useAuth0 } from '@auth0/auth0-react';
 import AuthenticatedLandingPageStyles from './AuthenticatedLandingPage.styles';
 import { useHistory } from 'react-router-dom';
@@ -36,7 +41,7 @@ const AuthenticatedLandingPage: React.FC = (props) => {
         data: metaAnalyses,
         isLoading: getMetaAnalysesIsLoading,
         isError: getMetaAnalysesIsError,
-    } = useGetMetaAnalyses(user?.sub);
+    } = useGetMetaAnalysesByProjectId(user?.sub);
 
     const [dialogIsOpen, setDialogIsOpen] = useState(false);
 

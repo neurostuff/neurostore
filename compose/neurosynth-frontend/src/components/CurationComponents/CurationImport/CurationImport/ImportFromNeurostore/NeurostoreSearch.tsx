@@ -1,25 +1,25 @@
+import { useAuth0 } from '@auth0/auth0-react';
 import { Box, TableCell, TableRow } from '@mui/material';
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
-import { StudyList } from 'neurostore-typescript-sdk';
-import { SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
-import { useEffect, useState } from 'react';
-import { useGetStudies } from 'hooks';
-import { useAuth0 } from '@auth0/auth0-react';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useGetStudies } from 'hooks';
+import { NeurosynthStudyList } from 'hooks/studies/useGetStudies';
+import { useProjectId } from 'pages/Projects/ProjectPage/ProjectStore';
+import { SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
 import {
     addKVPToSearch,
     getSearchCriteriaFromURL,
     getURLFromSearchCriteria,
 } from 'pages/helpers/utils';
-import { useProjectId } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useEffect, useState } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
 import { IImportArgs } from '../CurationImport';
 import { studiesToStubs } from './helpers/utils';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 
 const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
     const { user, isLoading: authenticationIsLoading } = useAuth0();
@@ -28,7 +28,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
     const projectId = useProjectId();
 
     // cached data returned from the api
-    const [studyData, setStudyData] = useState<StudyList>();
+    const [studyData, setStudyData] = useState<NeurosynthStudyList>();
 
     // state of the current search
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({

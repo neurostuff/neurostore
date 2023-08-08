@@ -5,7 +5,7 @@ import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/Confirmati
 import FullTextLinkComponent from 'components/FullTextLinkComponent/FullTextLinkComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
 import { ISource } from 'hooks/requests/useGetProjects';
-import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
+import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
 import {
     useDeleteStub,
     useProjectCurationColumns,
