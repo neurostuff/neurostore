@@ -5,8 +5,7 @@ import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import { useGetStudysets } from 'hooks';
-import useGetTour from 'hooks/useGetTour';
+import { useGetStudysets, useGetTour } from 'hooks';
 import { StudysetList } from 'neurostore-typescript-sdk';
 import { SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
 import {

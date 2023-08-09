@@ -1,5 +1,6 @@
 import { Box } from '@mui/material';
-import { useHandleCurationDrag, useProjectNumCurationColumns } from 'stores/ProjectStore';
+import { useProjectNumCurationColumns } from 'stores/ProjectStore/getters';
+import { useHandleCurationDrag } from 'stores/ProjectStore/setters';
 import CurationColumn from '../CurationColumn/CurationColumn';
 import CurationBoardStyles from './CurationBoard.styles';
 import { DragDropContext } from '@hello-pangea/dnd';

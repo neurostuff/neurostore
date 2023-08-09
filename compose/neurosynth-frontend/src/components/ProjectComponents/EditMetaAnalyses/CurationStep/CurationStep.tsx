@@ -19,8 +19,9 @@ import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopup
 import { useHistory, useParams } from 'react-router-dom';
 import ProjectComponentsStyles from '../../ProjectComponents.styles';
 import CurationStepStyles from 'components/ProjectComponents/EditMetaAnalyses/CurationStep/CurationStep.style';
-import useGetCurationSummary, { ICurationSummary } from 'hooks/useGetCurationSummary';
-import { useInitCuration } from 'stores/ProjectStore';
+import { useInitCuration } from 'stores/ProjectStore/setters';
+import { useGetCurationSummary } from 'hooks';
+import { ICurationSummary } from 'hooks/projects/models';
 
 enum ECurationBoardTypes {
     PRISMA,

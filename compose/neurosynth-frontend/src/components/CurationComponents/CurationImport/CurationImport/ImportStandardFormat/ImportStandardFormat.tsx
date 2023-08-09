@@ -7,7 +7,7 @@ import { ChangeEvent, useEffect, useState } from 'react';
 import { ICurationStubStudy, ISource } from 'interfaces/project/curation.interface';
 import { v4 as uuidv4 } from 'uuid';
 import SourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
-import { ENeurosynthSourceIds } from 'stores/ProjectStore.helpers';
+import { ENeurosynthSourceIds } from 'stores/ProjectStore/models';
 const Cite = require('citation-js');
 require('@citation-js/plugin-enw');
 require('@citation-js/plugin-bibtex');

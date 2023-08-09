@@ -4,8 +4,9 @@ import { ENavigationButton } from 'components/Buttons/NavigationButtons/Navigati
 import { EPropertyType, IMetadataRowModel } from 'components/EditMetadata';
 import AddMetadataRow from 'components/EditMetadata/EditMetadataRow/AddMetadataRow';
 import { useCreateAnnotation } from 'hooks';
-import { useProjectExtractionStudysetId, useUpdateExtractionMetadata } from 'stores/ProjectStore';
 import { useState } from 'react';
+import { useProjectExtractionStudysetId } from 'stores/ProjectStore/getters';
+import { useUpdateExtractionMetadata } from 'stores/ProjectStore/setters';
 
 const MoveToExtractionCreateAnnotation: React.FC<{
     onNavigate: (button: ENavigationButton) => void;

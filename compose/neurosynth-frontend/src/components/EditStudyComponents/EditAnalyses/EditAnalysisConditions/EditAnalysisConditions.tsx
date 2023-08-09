@@ -10,14 +10,13 @@ import {
 import React from 'react';
 import ConditionSelector from './ConditionSelector/ConditionSelector';
 import EditAnalysisConditionsStyles from './EditAnalysisConditions.styles';
+import { useSnackbar } from 'notistack';
+import { IStoreCondition } from 'stores/StudyStore/models';
+import { useStudyAnalysisConditions, useStudyAnalysisWeights } from 'stores/StudyStore/getters';
 import {
     useAddOrUpdateConditionWeightPairForAnalysis,
     useDeleteConditionFromAnalysis,
-    useStudyAnalysisConditions,
-    useStudyAnalysisWeights,
-} from 'stores/StudyStore';
-import { useSnackbar } from 'notistack';
-import { IStoreCondition } from 'stores/StudyStore.helpers';
+} from 'stores/StudyStore/setters';
 
 const EditAnalysisConditions: React.FC<{ analysisId: string }> = React.memo((props) => {
     const conditions = useStudyAnalysisConditions(props.analysisId);

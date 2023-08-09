@@ -8,13 +8,6 @@ import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import { useGetStudysetById } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
-import {
-    useProjectCurationColumn,
-    useProjectExtractionAnnotationId,
-    useProjectExtractionStudysetId,
-    useProjectNumCurationColumns,
-    useUpdateStubField,
-} from 'stores/ProjectStore';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from 'react-query';
 import IngestionAwaitUserResponse from './IngestionAwaitUserResponse';
@@ -25,6 +18,13 @@ import {
     setAnalysesInAnnotationAsIncluded,
     updateStudyset,
 } from './helpers/utils';
+import {
+    useProjectExtractionStudysetId,
+    useProjectExtractionAnnotationId,
+    useProjectNumCurationColumns,
+    useProjectCurationColumn,
+} from 'stores/ProjectStore/getters';
+import { useUpdateStubField } from 'stores/ProjectStore/setters';
 
 const Ingestion: React.FC<{
     onComplete: () => void;

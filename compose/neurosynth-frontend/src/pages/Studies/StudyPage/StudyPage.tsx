@@ -6,18 +6,18 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import {
-    useInitStudyStoreIfRequired,
-    useStudyAnalyses,
-    useStudyAuthors,
-    useStudyDOI,
-    useStudyDescription,
-    useStudyIsLoading,
-    useStudyMetadata,
-    useStudyName,
-    useStudyPMID,
-    useStudyPublication,
     useStudyUser,
-} from '../../../stores/StudyStore';
+    useStudyIsLoading,
+    useStudyName,
+    useStudyDescription,
+    useStudyDOI,
+    useStudyPMID,
+    useStudyAuthors,
+    useStudyPublication,
+    useStudyMetadata,
+    useStudyAnalyses,
+} from 'stores/StudyStore/getters';
+import { useInitStudyStoreIfRequired } from 'stores/StudyStore/setters';
 
 const StudyPage: React.FC = (props) => {
     const { studyId } = useParams<{ studyId: string }>();

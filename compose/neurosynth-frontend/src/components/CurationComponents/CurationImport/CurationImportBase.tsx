@@ -8,7 +8,7 @@ import CurationImportResolveDuplicates from './CurationImportResolveDuplicates/C
 import CurationImportSelectMethod from './CurationImportSelectMethod/CurationImportSelectMethod';
 import CurationImportReview from './CurationImportReview/CurationImportReview';
 import CurationImportLabel from './CurationImportLabel/CurationImportLabel';
-import { defaultIdentificationSources } from 'stores/ProjectStore.helpers';
+import { defaultIdentificationSources } from 'stores/ProjectStore/models';
 
 const CurationImportBase: React.FC = (props) => {
     const [importSource, setImportSource] = useState<ISource>();
@@ -26,22 +26,23 @@ const CurationImportBase: React.FC = (props) => {
     }, [location?.search]);
 
     useEffect(() => {
-        switch (importMode) {
-            case EImportMode.NEUROSTORE_IMPORT:
-                setImportSource(defaultIdentificationSources.neurostore);
-                break;
-            case EImportMode.FILE_IMPORT:
-            case EImportMode.MANUAL_CREATE:
-                if (stubs[0]?.import?.source) {
-                    setImportSource(stubs[0].import.source);
-                }
-                break;
-            case EImportMode.PUBMED_IMPORT:
-                setImportSource(defaultIdentificationSources.pubmed);
-                break;
-            default:
-                break;
-        }
+        setImportSource((prev) => {
+            switch (importMode) {
+                case EImportMode.NEUROSTORE_IMPORT:
+                    return defaultIdentificationSources.neurostore;
+                case EImportMode.FILE_IMPORT:
+                case EImportMode.MANUAL_CREATE:
+                    if (stubs[0]?.import?.source) {
+                        return stubs[0].import.source;
+                    } else {
+                        return prev;
+                    }
+                case EImportMode.PUBMED_IMPORT:
+                    return defaultIdentificationSources.pubmed;
+                default:
+                    return prev;
+            }
+        });
     }, [importMode, stubs]);
 
     const handleChangeImportMode = (newImportMode: EImportMode) => {

@@ -18,16 +18,16 @@ import MetaAnalysisSummaryRow from 'components/MetaAnalysisConfigComponents/Meta
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useCreateAlgorithmSpecification, useGetAnnotationById } from 'hooks';
-import { EAnalysisType } from 'hooks/requests/useCreateAlgorithmSpecification';
+import { EAnalysisType } from 'hooks/metaAnalyses/models';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
-import {
-    useProjectExtractionAnnotationId,
-    useProjectExtractionStudysetId,
-    useProjectId,
-} from 'stores/ProjectStore';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import {
+    useProjectId,
+    useProjectExtractionStudysetId,
+    useProjectExtractionAnnotationId,
+} from 'stores/ProjectStore/getters';
 
 const CreateMetaAnalysisSpecificationReview: React.FC<{
     onNavigate: (button: ENavigationButton) => void;

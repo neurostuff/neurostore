@@ -9,33 +9,30 @@ import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatus
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useCreateStudy, useGetStudysetById, useUpdateStudyset } from 'hooks';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
+import { useCreateStudy, useGetStudysetById, useUpdateStudyset, useGetProjectById } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import {
-    useInitProjectStoreIfRequired,
     useProjectCurationColumns,
     useProjectExtractionAnnotationId,
     useProjectExtractionReplaceStudyListStatusId,
-    useUpdateStubField,
-} from 'stores/ProjectStore';
+} from 'stores/ProjectStore/getters';
 import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
-import {
-    useClearStudyStore,
-    useInitStudyStoreIfRequired,
-    useStudyAnalyses,
-    useStudyAuthors,
-    useStudyDOI,
-    useStudyDescription,
-    useStudyIsLoading,
-    useStudyMetadata,
-    useStudyName,
-    useStudyPMID,
-    useStudyPublication,
-    useStudyUser,
-} from '../../../stores/StudyStore';
 import { setAnalysesInAnnotationAsIncluded } from 'components/ExtractionComponents/Ingestion/helpers/utils';
+import { useInitProjectStoreIfRequired, useUpdateStubField } from 'stores/ProjectStore/setters';
+import {
+    useStudyUser,
+    useStudyIsLoading,
+    useStudyName,
+    useStudyDescription,
+    useStudyDOI,
+    useStudyPMID,
+    useStudyAuthors,
+    useStudyPublication,
+    useStudyMetadata,
+    useStudyAnalyses,
+} from 'stores/StudyStore/getters';
+import { useInitStudyStoreIfRequired, useClearStudyStore } from 'stores/StudyStore/setters';
 
 const ProjectStudyPage: React.FC = (props) => {
     const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();

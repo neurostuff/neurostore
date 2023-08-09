@@ -4,19 +4,21 @@ import EditMetaAnalyses from 'components/ProjectComponents/EditMetaAnalyses/Edit
 import ViewMetaAnalyses from 'components/ProjectComponents/ViewMetaAnalyses/ViewMetaAnalyses';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
-import useGetMetaAnalysesByProjectId from 'hooks/requests/useGetMetaAnalyses';
 import ProjectIsLoadingText from 'pages/Projects/CurationPage/ProjectIsLoadingText';
-import {
-    useGetProjectIsLoading,
-    useInitProjectStoreIfRequired,
-    useProjectDescription,
-    useProjectMetaAnalysisCanEdit,
-    useProjectName,
-    useUpdateProjectDescription,
-    useUpdateProjectName,
-} from 'stores/ProjectStore';
 import { useEffect } from 'react';
 import { Route, Switch, useHistory, useLocation, useParams } from 'react-router-dom';
+import { useGetMetaAnalysesByProjectId } from 'hooks';
+import {
+    useProjectMetaAnalysisCanEdit,
+    useGetProjectIsLoading,
+    useProjectName,
+    useProjectDescription,
+} from 'stores/ProjectStore/getters';
+import {
+    useInitProjectStoreIfRequired,
+    useUpdateProjectName,
+    useUpdateProjectDescription,
+} from 'stores/ProjectStore/setters';
 
 export interface IProjectPageLocationState {
     projectPage?: {

@@ -5,7 +5,7 @@ import EditableStubSummary from 'components/Dialogs/CurationDialog/EditableStubS
 import CurationStubListItem from './CurationStubListItem/CurationStubListItem';
 import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
-import useGetWindowHeight from 'hooks/useGetWindowHeight';
+import { useGetWindowHeight } from 'hooks';
 import React from 'react';
 
 interface ICurationDialog {

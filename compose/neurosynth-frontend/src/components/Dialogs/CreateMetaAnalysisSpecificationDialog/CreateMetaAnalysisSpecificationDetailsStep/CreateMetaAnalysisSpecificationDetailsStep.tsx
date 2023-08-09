@@ -2,10 +2,10 @@ import { Box, TextField } from '@mui/material';
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { useGetMetaAnalyses } from 'hooks';
-import { useProjectName } from 'stores/ProjectStore';
+import { useGetMetaAnalysesByProjectId } from 'hooks';
 import { ChangeEvent, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { useProjectName } from 'stores/ProjectStore/getters';
 
 const CreateMetaAnalysisSpecificationDetailsStep: React.FC<{
     details: { name: string; description: string };
@@ -16,7 +16,7 @@ const CreateMetaAnalysisSpecificationDetailsStep: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
 }> = (props) => {
     const { projectId } = useParams<{ projectId: string | undefined }>();
-    const { data } = useGetMetaAnalyses(projectId);
+    const { data } = useGetMetaAnalysesByProjectId(projectId);
     const { details, selectionKey, algorithmName, correctorName, onUpdateDetails, onNavigate } =
         props;
     const projectName = useProjectName();

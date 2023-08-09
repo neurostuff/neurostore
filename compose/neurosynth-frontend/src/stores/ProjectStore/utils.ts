@@ -8,76 +8,8 @@ import {
     ITag,
 } from 'interfaces/project/curation.interface';
 import { IStudyExtractionStatus } from 'interfaces/project/extraction.interface';
+import { defaultExclusionTags, ENeurosynthTagIds } from './models';
 import { v4 as uuidv4 } from 'uuid';
-
-export enum ENeurosynthSourceIds {
-    NEUROSTORE = 'neurosynth_neurostore_id_source',
-    PUBMED = 'neurosynth_pubmed_id_source',
-    SCOPUS = 'neurosynth_scopus_id_source',
-    WEBOFSCIENCE = 'neurosynth_web_of_science_id_source',
-    PSYCINFO = 'neurosynth_psycinfo_id_source',
-}
-
-export enum ENeurosynthTagIds {
-    UNTAGGED_TAG_ID = 'neurosynth_untagged_tag', // default info tag
-    NEEDS_REVIEW_TAG_ID = 'neurosynth_needs_review_tag', // default info tag
-    UNCATEGORIZED_ID = 'neurosynth_uncategorized_tag', // default info tag
-
-    DUPLICATE_EXCLUSION_ID = 'neurosynth_duplicate_exclusion', // default exclusion
-    IRRELEVANT_EXCLUSION_ID = 'neurosynth_irrelevant_exclusion', // default exclusion
-    REPORTS_NOT_RETRIEVED_EXCLUSION_ID = 'neurosynth_reports_not_retrieved_exclusion', // default exclusion
-    EXCLUDE_EXCLUSION_ID = 'neurosynth_exclude_exclusion', // default exclusion
-    OUT_OF_SCOPE_EXCLUSION_ID = 'neurosynth_out_of_scope_exclusion', // default exclusion
-    INSUFFICIENT_DETAIL_EXCLUSION_ID = 'neurosynth_insufficient_detail_exclusion', // default exclusion
-    LIMITED_RIGOR_EXCLUSION_ID = 'neurosynth_limited_rigor', // default exclusion
-}
-
-export const defaultIdentificationSources = {
-    neurostore: {
-        id: ENeurosynthSourceIds.NEUROSTORE,
-        label: 'Neurostore',
-    },
-    pubmed: {
-        id: ENeurosynthSourceIds.PUBMED,
-        label: 'PubMed',
-    },
-    scopus: {
-        id: ENeurosynthSourceIds.SCOPUS,
-        label: 'Scopus',
-    },
-    webOfScience: {
-        id: ENeurosynthSourceIds.WEBOFSCIENCE,
-        label: 'Web of Science',
-    },
-    psycInfo: {
-        id: ENeurosynthSourceIds.PSYCINFO,
-        label: 'PsycInfo',
-    },
-};
-
-export const defaultExclusionTags = {
-    exclusion: {
-        id: ENeurosynthTagIds.EXCLUDE_EXCLUSION_ID,
-        label: 'Exclude',
-        isExclusionTag: true,
-        isAssignable: true,
-    },
-    duplicate: {
-        id: ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID,
-        label: 'Duplicate',
-        isExclusionTag: true,
-        isAssignable: true,
-    },
-};
-
-export const defaultInfoTags = {
-    needsReview: {
-        id: ENeurosynthTagIds.NEEDS_REVIEW_TAG_ID,
-        label: 'Needs Review',
-        isExclusionTag: false,
-        isAssignable: false,
-    },
-};
 
 export const handleDragEndHelper = (
     state: ICurationColumn[],

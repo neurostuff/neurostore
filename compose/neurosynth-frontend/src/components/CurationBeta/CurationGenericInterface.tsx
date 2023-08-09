@@ -1,7 +1,7 @@
 import CurateStudies from 'components/CurationBeta/CurateStudies';
 import CurationListItems, { ICurationListItem } from 'components/CurationBeta/CurationListItems';
 import { IImport } from 'interfaces/project/curation.interface';
-import { defaultExclusionTags, defaultIdentificationSources } from 'stores/ProjectStore.helpers';
+import { defaultExclusionTags, defaultIdentificationSources } from 'stores/ProjectStore/models';
 import CurationLayout from './CurationLayout';
 
 const CurationGenericInterface: React.FC = (props) => {

@@ -13,20 +13,19 @@ import {
 import CurationStubStudyDraggableContainer from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import CurationDialog from 'components/Dialogs/CurationDialog/CurationDialog';
-import { indexToPRISMAMapping } from 'hooks/requests/useGetProjects';
-import useGetWindowHeight from 'hooks/useGetWindowHeight';
-import {
-    useProjectCurationColumn,
-    useProjectCurationExclusionTags,
-    useProjectCurationImports,
-    useProjectCurationPrismaConfig,
-    usePromoteAllUncategorized,
-} from 'stores/ProjectStore';
-import { ENeurosynthTagIds } from 'stores/ProjectStore.helpers';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useGetWindowHeight } from 'hooks';
+import React, { useMemo, useState } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import CurationColumnStyles from './CurationColumn.styles';
 import { ICurationStubStudy, ITag } from 'interfaces/project/curation.interface';
+import { ENeurosynthTagIds } from 'stores/ProjectStore/models';
+import {
+    useProjectCurationColumn,
+    useProjectCurationPrismaConfig,
+    useProjectCurationImports,
+    useProjectCurationExclusionTags,
+} from 'stores/ProjectStore/getters';
+import { usePromoteAllUncategorized } from 'stores/ProjectStore/setters';
 
 export const getVisibility = (stub: ICurationStubStudy, selectedTag: ITag | undefined): boolean => {
     let isVisible = false;

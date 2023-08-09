@@ -2,7 +2,7 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { ListItem, ListItemButton, ListItemIcon, ListItemText, Tooltip } from '@mui/material';
 import { isCoordinateMNI } from 'components/DisplayStudy/DisplayAnalyses/DisplayAnalysisWarnings/DisplayAnalysisWarnings';
 import { AnalysisReturn, PointReturn } from 'neurostore-typescript-sdk';
-import { IStoreAnalysis, IStorePoint } from 'stores/StudyStore.helpers';
+import { IStoreAnalysis, IStorePoint } from 'stores/StudyStore/models';
 import React from 'react';
 
 const EditAnalysesListItem: React.FC<{

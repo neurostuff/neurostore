@@ -1,10 +1,7 @@
 import { Box, TextField } from '@mui/material';
-import {
-    useAddOrUpdateAnalysis,
-    useStudyAnalysisDescription,
-    useStudyAnalysisName,
-} from 'stores/StudyStore';
-import { IStoreAnalysis } from 'stores/StudyStore.helpers';
+import { useStudyAnalysisName, useStudyAnalysisDescription } from 'stores/StudyStore/getters';
+import { IStoreAnalysis } from 'stores/StudyStore/models';
+import { useAddOrUpdateAnalysis } from 'stores/StudyStore/setters';
 
 const EditAnalysisDetails: React.FC<{ analysisId?: string }> = (props) => {
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();

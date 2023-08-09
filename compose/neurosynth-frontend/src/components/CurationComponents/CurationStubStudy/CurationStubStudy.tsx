@@ -1,8 +1,8 @@
 import { Box, Chip, Tooltip, Typography } from '@mui/material';
-import { useProjectCurationIsLastColumn } from 'stores/ProjectStore';
 import React from 'react';
 import CurationStubStudyStyles from './CurationStubStudy.styles';
 import { ICurationStubStudy } from 'interfaces/project/curation.interface';
+import { useProjectCurationIsLastColumn } from 'stores/ProjectStore/getters';
 
 const CurationStubStudy: React.FC<
     ICurationStubStudy & {

@@ -1,7 +1,10 @@
 import { Box, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from '@mui/material';
-import { useAddOrUpdateAnalysis } from 'stores/StudyStore';
-import { useStudyAnalysisPointSpace, useStudyAnalysisPointStatistic } from 'stores/StudyStore';
-import { DefaultMapTypes, DefaultSpaceTypes, MapOrSpaceType } from 'stores/StudyStore.helpers';
+import {
+    useStudyAnalysisPointStatistic,
+    useStudyAnalysisPointSpace,
+} from 'stores/StudyStore/getters';
+import { MapOrSpaceType, DefaultMapTypes, DefaultSpaceTypes } from 'stores/StudyStore/models';
+import { useAddOrUpdateAnalysis } from 'stores/StudyStore/setters';
 
 const statisticTypeOptions: MapOrSpaceType[] = Object.keys(DefaultMapTypes).map((key) => {
     return {

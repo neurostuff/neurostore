@@ -3,9 +3,9 @@ import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import Ingestion from 'components/ExtractionComponents/Ingestion/Ingestion';
-import { useProjectId } from 'stores/ProjectStore';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import { useProjectId } from 'stores/ProjectStore/getters';
 
 const MoveToExtractionIngest: React.FC<{
     onNavigate: (button: ENavigationButton) => void;

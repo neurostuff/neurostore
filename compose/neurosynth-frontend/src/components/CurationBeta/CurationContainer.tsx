@@ -1,6 +1,6 @@
 import { EDefaultPRISMAStepNames } from 'components/ProjectComponents/EditMetaAnalyses/CurationStep/CurationStep';
 import { ICurationColumn } from 'interfaces/project/curation.interface';
-import { useProjectCurationIsPrisma } from 'stores/ProjectStore';
+import { useProjectCurationIsPrisma } from 'stores/ProjectStore/getters';
 import CurationGenericInterface from './CurationGenericInterface';
 import CurationPRISMAIdentificationInterface from './CurationPRISMAIdentificationInterface';
 

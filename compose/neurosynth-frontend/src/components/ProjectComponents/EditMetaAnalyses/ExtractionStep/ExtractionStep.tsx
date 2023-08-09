@@ -18,17 +18,18 @@ import { useHistory, useLocation, useParams } from 'react-router-dom';
 import ProjectComponentsStyles from '../../ProjectComponents.styles';
 import { useState } from 'react';
 import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionDialogBase';
-import useGetExtractionSummary, { IExtractionSummary } from 'hooks/useGetExtractionSummary';
+import { useGetExtractionSummary } from 'hooks';
 import ExtractionStepStyles from './ExtractionStep.style';
 import { useGetStudysetById } from 'hooks';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
-import {
-    useProjectExtractionSetGivenStudyStatusesAsComplete,
-    useProjectExtractionStudysetId,
-} from 'stores/ProjectStore';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import { StudyReturn } from 'neurostore-typescript-sdk';
+import {
+    useProjectExtractionStudysetId,
+    useProjectExtractionSetGivenStudyStatusesAsComplete,
+} from 'stores/ProjectStore/getters';
+import { IExtractionSummary } from 'hooks/projects/models';
 
 interface IExtractionStep {
     extractionStepHasBeenInitialized: boolean;

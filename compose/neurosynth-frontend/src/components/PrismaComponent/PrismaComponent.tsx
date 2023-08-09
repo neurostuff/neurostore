@@ -12,12 +12,12 @@ import 'reactflow/dist/style.css';
 import NeurosynthNode from './NeurosynthNode';
 import { useEffect, useState } from 'react';
 import NeurosynthPRISMAHelper, { IPrismaGroup } from './PrismaHelpers';
+import { INeurosynthProject } from 'interfaces/project/project.interface';
 import {
     useProjectCurationColumns,
     useProjectCurationIsPrisma,
     useProjectProvenance,
-} from 'stores/ProjectStore';
-import { INeurosynthProject } from 'interfaces/project/project.interface';
+} from 'stores/ProjectStore/getters';
 
 const nodeTypes = { NeurosynthNode: NeurosynthNode };
 

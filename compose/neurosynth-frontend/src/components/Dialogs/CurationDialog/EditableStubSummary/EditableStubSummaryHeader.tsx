@@ -8,13 +8,13 @@ import ExclusionSelectorPopup from 'components/CurationComponents/SelectorPopups
 import NeurosynthConfirmationChip from 'components/NeurosynthConfirmationChip/NeurosynthConfirmationChip';
 import { ICurationStubStudy, ITag } from 'interfaces/project/curation.interface';
 import React, { useRef, useState } from 'react';
+import { ENeurosynthTagIds, defaultInfoTags } from 'stores/ProjectStore/models';
 import {
     useAddTagToStub,
     usePromoteStub,
     useRemoveTagFromStub,
     useSetExclusionFromStub,
-} from 'stores/ProjectStore';
-import { ENeurosynthTagIds, defaultInfoTags } from 'stores/ProjectStore.helpers';
+} from 'stores/ProjectStore/setters';
 
 interface IEditableStubSummaryHeader {
     type: 'excluded' | 'included' | 'default';

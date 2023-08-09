@@ -1,6 +1,6 @@
 import { Box, Divider, Link, Typography } from '@mui/material';
+import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/external/utils';
 import { ICurationStubStudy } from 'interfaces/project/curation.interface';
-import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
 
 /**
  * Study summary for studies that are being imported and tagged. We cannot reuse the ReadOnlyStubSummary easily here because

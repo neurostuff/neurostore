@@ -13,26 +13,29 @@ import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccord
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
-import { useGetMetaAnalysisById } from 'hooks';
-import useGetSpecificationById from 'hooks/requests/useGetSpecificationById';
-import useUpdateMetaAnalysis from 'hooks/requests/useUpdateMetaAnalysis';
-import useGetTour from 'hooks/useGetTour';
 import {
-    Annotation,
+    useGetMetaAnalysisById,
+    useGetMetaAnalysisResultById,
+    useGetTour,
+    useUpdateMetaAnalysis,
+    useGetSpecificationById,
+} from 'hooks';
+import DisplayMetaAnalysisResult from 'components/DisplayMetaAnalysisResult/DisplayMetaAnalysisResult';
+import { EAnalysisType } from 'hooks/metaAnalyses/models';
+import { StudysetReturn } from 'neurostore-typescript-sdk';
+import {
     ResultReturn,
-    Specification,
     SpecificationReturn,
+    Specification,
     Studyset,
-    StudysetReturn,
+    Annotation,
 } from 'neurosynth-compose-typescript-sdk';
-import { useInitProjectStoreIfRequired, useProjectName } from 'stores/ProjectStore';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useProjectName } from 'stores/ProjectStore/getters';
+import { useInitProjectStoreIfRequired } from 'stores/ProjectStore/setters';
 import { NeurostoreAnnotation } from 'utils/api';
 import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
-import { EAnalysisType } from 'hooks/requests/useCreateAlgorithmSpecification';
-import useGetMetaAnalysisResultById from 'hooks/requests/useGetMetaAnalysisResultById';
-import DisplayMetaAnalysisResult from 'components/DisplayMetaAnalysisResult/DisplayMetaAnalysisResult';
 
 const getAnalysisTypeDescription = (name: string | undefined): string => {
     switch (name) {

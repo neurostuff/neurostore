@@ -1,13 +1,6 @@
-import { useProjectCurationColumns } from 'stores/ProjectStore';
+import { useProjectCurationColumns } from 'stores/ProjectStore/getters';
 import { useEffect, useState } from 'react';
-
-export interface ICurationSummary {
-    total: number;
-    included: number;
-    uncategorized: number;
-    excluded: number;
-}
-
+import { ICurationSummary } from 'hooks/projects/models';
 const useGetCurationSummary = () => {
     const columns = useProjectCurationColumns();
 

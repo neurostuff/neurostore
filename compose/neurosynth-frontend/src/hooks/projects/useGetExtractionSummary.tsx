@@ -1,16 +1,10 @@
+import { useState, useEffect } from 'react';
 import {
     useProjectExtractionStudysetId,
     useProjectExtractionStudyStatusList,
-} from 'stores/ProjectStore';
-import { useEffect, useState } from 'react';
-import useGetStudysetById from './requests/useGetStudysetById';
-
-export interface IExtractionSummary {
-    savedForLater: number;
-    uncategorized: number;
-    completed: number;
-    total: number;
-}
+} from 'stores/ProjectStore/getters';
+import { useGetStudysetById } from 'hooks';
+import { IExtractionSummary } from 'hooks/projects/models';
 
 const useGetExtractionSummary = (projectId: string) => {
     const studysetId = useProjectExtractionStudysetId();

@@ -5,16 +5,16 @@ import styles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHo
 import { CellChange, CellValue, ChangeSource, RangeType } from 'handsontable/common';
 import { registerAllModules } from 'handsontable/registry';
 import { ColumnSettings } from 'handsontable/settings';
+import React, { useEffect, useRef, useState } from 'react';
+import EditAnalysisPointSpaceAndStatistic from './EditAnalysisPointSpaceAndStatistic/EditAnalysisPointSpaceAndStatistic';
+import { useStudyAnalysisPoints } from 'stores/StudyStore/getters';
+import { IStorePoint } from 'stores/StudyStore/models';
 import {
+    useUpdateAnalysisPoints,
     useCreateAnalysisPoints,
     useDeleteAnalysisPoints,
     useSetIsValid,
-    useStudyAnalysisPoints,
-    useUpdateAnalysisPoints,
-} from 'stores/StudyStore';
-import { IStorePoint } from 'stores/StudyStore.helpers';
-import React, { useEffect, useRef, useState } from 'react';
-import EditAnalysisPointSpaceAndStatistic from './EditAnalysisPointSpaceAndStatistic/EditAnalysisPointSpaceAndStatistic';
+} from 'stores/StudyStore/setters';
 
 export const ROW_HEIGHT = 56;
 

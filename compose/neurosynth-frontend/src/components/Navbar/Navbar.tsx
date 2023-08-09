@@ -6,7 +6,7 @@ import { useHistory } from 'react-router-dom';
 import NavDrawer from './NavDrawer/NavDrawer';
 import NavToolbar from './NavToolbar/NavToolbar';
 import NavbarStyles from './Navbar.styles';
-import { initCurationHelper } from 'stores/ProjectStore.helpers';
+import { initCurationHelper } from 'stores/ProjectStore/utils';
 
 export interface INav {
     onLogin: () => Promise<void>;

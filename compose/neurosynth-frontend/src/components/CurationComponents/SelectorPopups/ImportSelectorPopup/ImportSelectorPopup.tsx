@@ -3,10 +3,10 @@ import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { SystemStyleObject } from '@mui/system';
-import { useEffect, useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { useCreateNewCurationImport, useProjectCurationImports } from 'stores/ProjectStore';
 import { IImport } from 'interfaces/project/curation.interface';
+import { useEffect, useState } from 'react';
+import { useProjectCurationImports } from 'stores/ProjectStore/getters';
+import { v4 as uuidv4 } from 'uuid';
 
 interface AutoSelectOption {
     id: string;
@@ -45,7 +45,6 @@ const ImportSelectorPopup: React.FC<IImportSelectorPopup> = (props) => {
     const [tagOption, setTagOptions] = useState<AutoSelectOption[]>([]);
 
     const imports = useProjectCurationImports();
-    const createImport = useCreateNewCurationImport();
 
     useEffect(() => {
         const filteredTagOptions = imports.map((anImport) => ({

@@ -2,12 +2,14 @@ import { Box, Button, Stepper } from '@mui/material';
 import CurationStep from 'components/ProjectComponents/EditMetaAnalyses/CurationStep/CurationStep';
 import ExtractionStep from 'components/ProjectComponents/EditMetaAnalyses/ExtractionStep/ExtractionStep';
 import SpecificationStep from 'components/ProjectComponents/EditMetaAnalyses/SpecificationStep/SpecificationStep';
-import useGetCurationSummary from 'hooks/useGetCurationSummary';
-import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
+import { useGetExtractionSummary, useGetCurationSummary } from 'hooks';
 import ProjectPageStyles from 'pages/Projects/ProjectPage/ProjectPage.styles';
-import { useProjectCurationColumns, useProjectExtractionMetadata } from 'stores/ProjectStore';
 import { useParams } from 'react-router-dom';
-import { useClearProvenance } from 'stores/ProjectStore';
+import {
+    useProjectCurationColumns,
+    useProjectExtractionMetadata,
+} from 'stores/ProjectStore/getters';
+import { useClearProvenance } from 'stores/ProjectStore/setters';
 
 const env = process.env.REACT_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
 

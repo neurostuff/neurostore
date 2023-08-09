@@ -1,17 +1,17 @@
 import { Typography, Box, TextField } from '@mui/material';
 import React from 'react';
-import {
-    useStudyAuthors,
-    useStudyDescription,
-    useStudyDOI,
-    useStudyName,
-    useStudyPMID,
-    useStudyPublication,
-    useStudyYear,
-    useUpdateStudyDetails,
-} from 'stores/StudyStore';
-import { StudyDetails } from 'stores/StudyStore.helpers';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
+import {
+    useStudyName,
+    useStudyDescription,
+    useStudyAuthors,
+    useStudyPublication,
+    useStudyDOI,
+    useStudyPMID,
+    useStudyYear,
+} from 'stores/StudyStore/getters';
+import { StudyDetails } from 'stores/StudyStore/models';
+import { useUpdateStudyDetails } from 'stores/StudyStore/setters';
 
 const EditStudyDetails: React.FC = React.memo((props) => {
     const name = useStudyName();

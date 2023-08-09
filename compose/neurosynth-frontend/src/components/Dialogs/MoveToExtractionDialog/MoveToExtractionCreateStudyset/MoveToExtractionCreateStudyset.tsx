@@ -3,13 +3,10 @@ import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { useCreateStudyset } from 'hooks';
 import { useSnackbar } from 'notistack';
-import {
-    useProjectDescription,
-    useProjectName,
-    useUpdateExtractionMetadata,
-} from 'stores/ProjectStore';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useProjectName, useProjectDescription } from 'stores/ProjectStore/getters';
+import { useUpdateExtractionMetadata } from 'stores/ProjectStore/setters';
 
 const MoveToExtractionCreateStudyset: React.FC<{
     onNavigate: (button: ENavigationButton) => void;

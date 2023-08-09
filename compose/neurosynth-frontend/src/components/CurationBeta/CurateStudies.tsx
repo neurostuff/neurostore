@@ -2,8 +2,8 @@ import { Box } from '@mui/material';
 import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 import CurationStubListItem from 'components/Dialogs/CurationDialog/CurationStubListItem/CurationStubListItem';
 import EditableStubSummary from 'components/Dialogs/CurationDialog/EditableStubSummary/EditableStubSummary';
-import useGetWindowHeight from 'hooks/useGetWindowHeight';
-import { defaultIdentificationSources } from 'stores/ProjectStore.helpers';
+import { useGetWindowHeight } from 'hooks';
+import { defaultIdentificationSources } from 'stores/ProjectStore/models';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 
 const CurationDialogFixedSizeListRow: React.FC<

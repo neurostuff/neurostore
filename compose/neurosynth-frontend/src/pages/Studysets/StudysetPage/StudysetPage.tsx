@@ -15,8 +15,8 @@ import {
     useGetAnnotationsByStudysetId,
     useGetStudysetById,
     useUpdateStudyset,
+    useGetTour,
 } from 'hooks';
-import useGetTour from 'hooks/useGetTour';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import { useState } from 'react';
 import { useIsFetching } from 'react-query';

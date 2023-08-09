@@ -2,17 +2,14 @@ import { Box, Typography } from '@mui/material';
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import {
-    useProjectCurationColumns,
-    useProjectId,
-    useUpdateCurationColumns,
-} from 'stores/ProjectStore';
-import { ENeurosynthTagIds, defaultExclusionTags } from 'stores/ProjectStore.helpers';
+import { ENeurosynthTagIds, defaultExclusionTags } from 'stores/ProjectStore/models';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { createDuplicateMap } from '../helpers/utils';
 import DuplicateCase from './DuplicateCase/DuplicateCase';
 import { ICurationColumn, ICurationStubStudy } from 'interfaces/project/curation.interface';
+import { useProjectId, useProjectCurationColumns } from 'stores/ProjectStore/getters';
+import { useUpdateCurationColumns } from 'stores/ProjectStore/setters';
 
 type IResolveProjectDuplicatesCurationStubStudy = ICurationStubStudy & {
     columnIndex?: number;

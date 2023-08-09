@@ -1,6 +1,6 @@
 import { Badge, Box, Divider, Tab, Tabs, Typography } from '@mui/material';
 import { useState } from 'react';
-import { useProjectCurationColumns } from 'stores/ProjectStore';
+import { useProjectCurationColumns } from 'stores/ProjectStore/getters';
 import CurationBaseStyles from './CurationBase.styles';
 import CurationContainer from './CurationContainer';
 

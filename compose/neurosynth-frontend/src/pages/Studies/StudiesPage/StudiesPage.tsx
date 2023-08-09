@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Typography, Box, IconButton, TableRow, TableCell } from '@mui/material';
 import HelpIcon from '@mui/icons-material/Help';
-import useGetTour from 'hooks/useGetTour';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useGetStudies } from 'hooks';
+import { useGetStudies, useGetTour } from 'hooks';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useHistory, useLocation } from 'react-router-dom';
 import { StudyList } from 'neurostore-typescript-sdk';

@@ -3,19 +3,19 @@ import { Box, Button } from '@mui/material';
 import PrismaDialog from 'components/Dialogs/PrismaDialog/PrismaDialog';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import useGetCurationSummary from 'hooks/useGetCurationSummary';
+import { useGetCurationSummary } from 'hooks';
 import ProjectIsLoadingText from 'pages/Projects/CurationPage/ProjectIsLoadingText';
 import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
 import { useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
+import CurationBase from 'components/CurationBeta/CurationBase';
+import { useSnackbar } from 'notistack';
 import {
-    useInitProjectStoreIfRequired,
     useProjectCurationIsPrisma,
     useProjectExtractionStudysetId,
     useProjectName,
-} from 'stores/ProjectStore';
-import CurationBase from 'components/CurationBeta/CurationBase';
-import { useSnackbar } from 'notistack';
+} from 'stores/ProjectStore/getters';
+import { useInitProjectStoreIfRequired } from 'stores/ProjectStore/setters';
 
 const CurationPage: React.FC = (props) => {
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);

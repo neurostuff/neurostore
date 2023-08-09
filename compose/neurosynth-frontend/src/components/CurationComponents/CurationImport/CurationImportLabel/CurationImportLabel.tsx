@@ -5,70 +5,56 @@ import NavigationButtons, {
 import ImportSelectorPopup from 'components/CurationComponents/SelectorPopups/ImportSelectorPopup/ImportSelectorPopup';
 import { ICurationStubStudy, IImport, ISource } from 'interfaces/project/curation.interface';
 import { useState } from 'react';
-import { useCreateNewCurationImport, useProjectCurationImports } from 'stores/ProjectStore';
+import { useProjectCurationImports } from 'stores/ProjectStore/getters';
+import { useCreateNewCurationImport } from 'stores/ProjectStore/setters';
+
 const CurationImportLabel: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
     onUpdateStubs: (stubs: ICurationStubStudy[]) => void;
     stubs: ICurationStubStudy[];
     source: ISource | undefined;
 }> = (props) => {
-    const { onUpdateStubs, onNavigate, stubs } = props;
+    const { onUpdateStubs, onNavigate, stubs, source } = props;
     const createImport = useCreateNewCurationImport();
     const imports = useProjectCurationImports();
     const [newImport, setNewImport] = useState<Partial<IImport>>();
 
     const handleAddImport = (anImport: Partial<IImport>) => {
-        const updatedStubs = [...stubs];
-        updatedStubs.forEach((_, index) => {
-            updatedStubs[index] = {
-                ...updatedStubs[index],
-            };
-        });
-
-        onUpdateStubs(updatedStubs);
+        setNewImport(anImport);
     };
 
     const handleClearInput = () => {
-        const updatedStubs = [...stubs];
-        updatedStubs.forEach((_, index) => {
-            updatedStubs[index] = {
-                ...updatedStubs[index],
-                tags: [],
-            };
-        });
-
-        onUpdateStubs(updatedStubs);
+        setNewImport(undefined);
     };
 
     const handleNavigate = (nav: ENavigationButton) => {
-        const tagToCreate = stubs[0]?.tags[0];
-
-        if (newImport?.id && newImport.name && props.source) {
-            const importToCreate: IImport = {
-                id: newImport.id,
-                name: newImport.name,
-                source: props.source,
-            };
-
-            if (tagToCreate && !imports.some((x) => x.id === tagToCreate.id)) {
-                createImport(importToCreate.name, importToCreate.source);
-            }
-
+        if (nav === ENavigationButton.PREV) {
             onNavigate(nav);
+            return;
         }
+
+        if (!newImport?.name || !newImport?.id || !source) return;
+
+        const importToCreate: IImport = {
+            id: newImport.id,
+            name: newImport.name,
+            source: source,
+        };
+
+        if (!imports.some((x) => x.id === importToCreate.id)) {
+            createImport(importToCreate);
+        }
+
+        onNavigate(nav);
     };
 
     return (
         <Box sx={{ paddingTop: '0.5rem' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column' }}>
                 <Box sx={{ width: '600px' }}>
-                    <Typography
-                        gutterBottom
-                        sx={{ fontWeight: 'bold', marginRight: '4px' }}
-                        variant="h6"
-                    >
+                    <Typography gutterBottom sx={{ marginRight: '4px' }} variant="h6">
                         Give your import a name:{' '}
-                        <span style={{ fontWeight: 'normal' }}>{newImport?.name || ''}</span>
+                        <span style={{ fontWeight: 'bold' }}>{newImport?.name || ''}</span>
                     </Typography>
 
                     <ImportSelectorPopup
@@ -84,6 +70,7 @@ const CurationImportLabel: React.FC<{
                 </Box>
             </Box>
             <NavigationButtons
+                nextButtonStyle="contained"
                 nextButtonDisabled={!newImport?.name}
                 onButtonClick={handleNavigate}
             />

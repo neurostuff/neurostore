@@ -5,7 +5,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useHistory, useParams } from 'react-router-dom';
 import { ESelectedChip } from 'pages/Projects/ExtractionPage/ExtractionPage';
-import { useProjectExtractionAddOrUpdateStudyListStatus } from 'stores/ProjectStore';
+import { useProjectExtractionAddOrUpdateStudyListStatus } from 'stores/ProjectStore/getters';
 
 const ReadOnlyStudySummaryVirtualizedItem: React.FC<
     StudyReturn & { currentSelectedChip: ESelectedChip; style: React.CSSProperties }

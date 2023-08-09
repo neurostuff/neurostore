@@ -3,12 +3,13 @@ import SourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopu
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import FullTextLinkComponent from 'components/FullTextLinkComponent/FullTextLinkComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
-import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
-import { useDeleteStub, useProjectCurationColumns, useUpdateStubField } from 'stores/ProjectStore';
 import React, { useState } from 'react';
 import EditableStubSummaryHeader from './EditableStubSummaryHeader';
 import { useAuth0 } from '@auth0/auth0-react';
 import { ICurationStubStudy, ISource } from 'interfaces/project/curation.interface';
+import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/external/utils';
+import { useProjectCurationColumns } from 'stores/ProjectStore/getters';
+import { useUpdateStubField, useDeleteStub } from 'stores/ProjectStore/setters';
 
 interface IEditableStubSummary {
     stub: ICurationStubStudy | undefined;

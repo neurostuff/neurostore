@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import EditAnnotations from 'components/EditAnnotations/EditAnnotations';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
-import { useProjectId, useProjectName } from 'stores/ProjectStore';
+import { useProjectId, useProjectName } from 'stores/ProjectStore/getters';
 
 const AnnotationsPage: React.FC = (props) => {
     const projectId = useProjectId();

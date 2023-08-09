@@ -6,7 +6,7 @@ import { SystemStyleObject } from '@mui/system';
 import { ISource } from 'interfaces/project/curation.interface';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { defaultIdentificationSources } from 'stores/ProjectStore.helpers';
+import { defaultIdentificationSources } from 'stores/ProjectStore/models';
 import { v4 as uuidv4 } from 'uuid';
 
 interface AutoSelectOption {

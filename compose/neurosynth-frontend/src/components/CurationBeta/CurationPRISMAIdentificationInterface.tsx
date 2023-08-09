@@ -1,26 +1,16 @@
-import { Box, Button } from '@mui/material';
-import CurationListItems, { ICurationListItem } from 'components/CurationBeta/CurationListItems';
 import UploadIcon from '@mui/icons-material/Upload';
+import { Box, Button } from '@mui/material';
 import CurateStudies from 'components/CurationBeta/CurateStudies';
-import { defaultExclusionTags, defaultIdentificationSources } from 'stores/ProjectStore.helpers';
+import CurationListItems, { ICurationListItem } from 'components/CurationBeta/CurationListItems';
+import { defaultExclusionTags } from 'stores/ProjectStore/models';
 import CurationLayout from './CurationLayout';
-import { IImport } from 'interfaces/project/curation.interface';
+import React from 'react';
+import { useProjectCurationImports, useProjectCurationColumns } from 'stores/ProjectStore/getters';
 
-const CurationPRISMAIdentificationInterface: React.FC = (props) => {
-    const imports: (IImport & { numStudies: number })[] = [
-        {
-            id: 'a',
-            name: 'WoS Import',
-            source: defaultIdentificationSources.neurostore,
-            numStudies: 43,
-        },
-        {
-            id: 'b',
-            name: 'RIS Import',
-            source: defaultIdentificationSources.psycInfo,
-            numStudies: 21,
-        },
-    ];
+const CurationPRISMAIdentificationInterface: React.FC = React.memo((_props) => {
+    const imports = useProjectCurationImports();
+    const columns = useProjectCurationColumns();
+    console.log(columns);
 
     const listItems: ICurationListItem[] = [];
     listItems.push({
@@ -35,7 +25,7 @@ const CurationPRISMAIdentificationInterface: React.FC = (props) => {
             id: anImport.id,
             type: 'listItem' as 'listItem' | 'header',
             label: anImport.name,
-            number: anImport.numStudies,
+            number: 3,
         };
     });
 
@@ -66,6 +56,6 @@ const CurationPRISMAIdentificationInterface: React.FC = (props) => {
             }
         />
     );
-};
+});
 
 export default CurationPRISMAIdentificationInterface;

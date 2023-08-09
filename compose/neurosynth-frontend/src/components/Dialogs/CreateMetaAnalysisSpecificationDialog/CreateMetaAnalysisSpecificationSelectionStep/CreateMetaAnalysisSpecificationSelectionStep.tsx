@@ -1,13 +1,13 @@
 import { Box, Button, Typography } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { EPropertyType } from 'components/EditMetadata';
-import {
-    useProjectExtractionAnnotationId,
-    useProjectExtractionStudysetId,
-} from 'stores/ProjectStore';
 import { useState } from 'react';
 import SelectAnalysesComponent from './SelectAnalysesComponent/SelectAnalysesComponent';
 import SelectAnalysesSummaryComponent from './SelectAnalysesSummaryComponent/SelectAnalysesSummaryComponent';
+import {
+    useProjectExtractionAnnotationId,
+    useProjectExtractionStudysetId,
+} from 'stores/ProjectStore/getters';
 
 const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
     onChooseSelection: (selectionKey: string, type: EPropertyType) => void;

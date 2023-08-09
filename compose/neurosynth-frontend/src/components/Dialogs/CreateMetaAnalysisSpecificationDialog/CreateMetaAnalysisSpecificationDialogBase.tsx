@@ -9,7 +9,7 @@ import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
 import CreateMetaAnalysisSpecificationReview from './CreateMetaAnalysisSpecificationReview/CreateMetaAnalysisSpecificationReview';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import CreateMetaAnalysisSpecificationDetailsStep from './CreateMetaAnalysisSpecificationDetailsStep/CreateMetaAnalysisSpecificationDetailsStep';
-import { useProjectName } from 'stores/ProjectStore';
+import { useProjectName } from 'stores/ProjectStore/getters';
 
 const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => {
     const projectName = useProjectName();

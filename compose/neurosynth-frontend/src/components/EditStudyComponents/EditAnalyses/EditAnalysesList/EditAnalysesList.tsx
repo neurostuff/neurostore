@@ -1,7 +1,7 @@
 import { Box, List } from '@mui/material';
-import { useStudyAnalyses } from 'stores/StudyStore';
 import { useEffect, useState } from 'react';
 import EditAnalysesListItem from './EditAnalysesListItem';
+import { useStudyAnalyses } from 'stores/StudyStore/getters';
 
 const EditAnalysesList: React.FC<{
     onSelectAnalysis: (analysisId: string) => void;

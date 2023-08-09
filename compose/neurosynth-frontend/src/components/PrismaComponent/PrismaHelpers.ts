@@ -1,5 +1,5 @@
 import { INeurosynthNodeData } from 'components/PrismaComponent/NeurosynthNode';
-import { ENeurosynthTagIds } from 'stores/ProjectStore.helpers';
+import { ENeurosynthTagIds } from 'stores/ProjectStore/models';
 import { CSSProperties } from 'react';
 import { Edge, MarkerType, Node } from 'reactflow';
 import {

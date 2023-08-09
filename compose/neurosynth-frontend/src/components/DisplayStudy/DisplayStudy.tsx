@@ -7,9 +7,9 @@ import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthT
 import TextExpansion from 'components/TextExpansion/TextExpansion';
 import DisplayAnalyses from './DisplayAnalyses/DisplayAnalyses';
 import DisplayStudyStyles from './DisplayStudy.styles';
-import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
 import FullTextLinkComponent from 'components/FullTextLinkComponent/FullTextLinkComponent';
-import { IStoreStudy } from 'stores/StudyStore.helpers';
+import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/external/utils';
+import { IStoreStudy } from 'stores/StudyStore/models';
 
 const DisplayStudy: React.FC<IStoreStudy> = (props) => {
     const {

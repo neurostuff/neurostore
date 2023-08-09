@@ -9,20 +9,20 @@ import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBr
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
-import useGetWindowHeight from 'hooks/useGetWindowHeight';
+import { useGetWindowHeight } from 'hooks';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import ProjectIsLoadingText from 'pages/Projects/CurationPage/ProjectIsLoadingText';
-import {
-    useInitProjectStoreIfRequired,
-    useProjectCurationColumn,
-    useProjectExtractionStudyStatusList,
-    useProjectExtractionStudysetId,
-    useProjectName,
-    useProjectNumCurationColumns,
-} from 'stores/ProjectStore';
 import { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
+import {
+    useProjectName,
+    useProjectExtractionStudysetId,
+    useProjectExtractionStudyStatusList,
+    useProjectNumCurationColumns,
+    useProjectCurationColumn,
+} from 'stores/ProjectStore/getters';
+import { useInitProjectStoreIfRequired } from 'stores/ProjectStore/setters';
 
 const selectedChipLocalStorageKey = 'SELECTED_CHIP';
 

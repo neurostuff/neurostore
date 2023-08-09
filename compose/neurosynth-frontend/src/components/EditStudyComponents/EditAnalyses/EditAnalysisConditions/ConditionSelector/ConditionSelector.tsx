@@ -1,9 +1,10 @@
 import { createFilterOptions, ListItem, ListItemText } from '@mui/material';
-import React, { useState } from 'react';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
-import { useConditions, useCreateCondition } from 'stores/StudyStore';
-import { IStoreCondition } from 'stores/StudyStore.helpers';
+import { useCreateCondition } from 'stores/StudyStore/setters';
+import { useState } from 'react';
+import { useConditions } from 'stores/StudyStore/getters';
+import { IStoreCondition } from 'stores/StudyStore/models';
 
 interface AutoSelectOption {
     id: string;

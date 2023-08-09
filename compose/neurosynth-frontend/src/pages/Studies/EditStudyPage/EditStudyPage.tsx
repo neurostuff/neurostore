@@ -6,26 +6,26 @@ import EditStudyMetadata from 'components/EditStudyComponents/EditStudyMetadata/
 import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatusButtons/FloatingStatusButtons';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import useGetProjectById from 'hooks/requests/useGetProjectById';
+import { useGetProjectById } from 'hooks';
 import { useSnackbar } from 'notistack';
-import {
-    useInitProjectStoreIfRequired,
-    useProjectExtractionAnnotationId,
-} from 'stores/ProjectStore';
 import { useEffect } from 'react';
 import { useQueryClient } from 'react-query';
 import { useHistory, useParams } from 'react-router-dom';
+import { useProjectExtractionAnnotationId } from 'stores/ProjectStore/getters';
+import { useInitProjectStoreIfRequired } from 'stores/ProjectStore/setters';
 import {
-    useClearStudyStore,
-    useInitStudyStore,
-    useIsError,
     useIsValid,
+    useIsError,
     useStudyHasBeenEdited,
     useStudyId,
     useStudyIsLoading,
     useStudyName,
+} from 'stores/StudyStore/getters';
+import {
     useUpdateStudyInDB,
-} from '../../../stores/StudyStore';
+    useClearStudyStore,
+    useInitStudyStore,
+} from 'stores/StudyStore/setters';
 
 const EditStudyPage: React.FC = (props) => {
     const queryClient = useQueryClient();

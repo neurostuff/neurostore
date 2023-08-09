@@ -1,19 +1,7 @@
 import axios from 'axios';
 import { AxiosResponse } from 'axios';
 import { useQuery } from 'react-query';
-
-interface ISemanticScholarResponse {
-    data: {
-        externalIds: {
-            CorpusId?: number;
-            DOI?: string;
-            PubMed?: string;
-        }[];
-        isOpenAccess: boolean;
-        openAccessPdf: null | { status: string; url: string };
-        paperId: string;
-    }[];
-}
+import { ISemanticScholarResponse } from 'hooks/external/models';
 
 const useGetFullText = (paperTitle: string) => {
     return useQuery(

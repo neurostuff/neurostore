@@ -1,17 +1,17 @@
 import { Box } from '@mui/material';
 import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import useGetPubmedIDs from 'hooks/requests/useGetPubMedIds';
-import { defaultIdentificationSources } from 'stores/ProjectStore.helpers';
+import { defaultIdentificationSources } from 'stores/ProjectStore/models';
 import React from 'react';
 import { useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { useGetPubMedIds } from 'hooks';
 
 const FetchPMIDs: React.FC<{
     pubmedIds: string[];
     onStubsUploaded: (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => void;
 }> = React.memo((props) => {
-    const results = useGetPubmedIDs(props.pubmedIds);
+    const results = useGetPubMedIds(props.pubmedIds);
     const isLoading = results.some((x) => x.isLoading);
     const isError = results.some((x) => x.isError);
     const isSuccess = results.every((x) => x.isSuccess);

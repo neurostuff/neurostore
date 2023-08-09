@@ -5,8 +5,6 @@ import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mer
 import { ColumnSettings } from 'handsontable/settings';
 import { useGetAnnotationById, useUpdateAnnotationById } from 'hooks';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
-import { useProjectExtractionAnnotationId } from 'stores/ProjectStore';
-import { useStudyAnalyses } from 'stores/StudyStore';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import AnnotationsHotTable from './AnnotationsHotTable/AnnotationsHotTable';
@@ -19,6 +17,8 @@ import {
     noteKeyArrToObj,
     noteKeyObjToArr,
 } from './helpers/utils';
+import { useProjectExtractionAnnotationId } from 'stores/ProjectStore/getters';
+import { useStudyAnalyses } from 'stores/StudyStore/getters';
 
 const hardCodedColumns = ['Analysis', 'Description'];
 

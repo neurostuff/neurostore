@@ -1,6 +1,6 @@
 import { Box, Chip, ListItem, ListItemButton, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'interfaces/project/curation.interface';
-import { ENeurosynthTagIds } from 'stores/ProjectStore.helpers';
+import { ENeurosynthTagIds } from 'stores/ProjectStore/models';
 import React from 'react';
 
 interface ICurationStubListItem {

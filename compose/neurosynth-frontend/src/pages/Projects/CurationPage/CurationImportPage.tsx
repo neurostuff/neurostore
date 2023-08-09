@@ -1,7 +1,8 @@
 import { Box } from '@mui/material';
 import CurationImportBase from 'components/CurationComponents/CurationImport/CurationImportBase';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
-import { useInitProjectStoreIfRequired, useProjectId, useProjectName } from 'stores/ProjectStore';
+import { useProjectId, useProjectName } from 'stores/ProjectStore/getters';
+import { useInitProjectStoreIfRequired } from 'stores/ProjectStore/setters';
 
 const CurationImportPage: React.FC = (props) => {
     useInitProjectStoreIfRequired();

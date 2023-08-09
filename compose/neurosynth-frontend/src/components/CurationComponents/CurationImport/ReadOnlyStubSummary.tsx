@@ -1,7 +1,7 @@
 import { Box, Chip, Link, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
-import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
+import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/external/utils';
 
 const ReadOnlyStubSummary: React.FC<ICurationStubStudy> = (props) => {
     const {

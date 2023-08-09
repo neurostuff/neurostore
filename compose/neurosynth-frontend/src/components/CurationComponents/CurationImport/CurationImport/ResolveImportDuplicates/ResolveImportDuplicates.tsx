@@ -11,7 +11,7 @@ import {
 import { ICurationStubStudy } from 'interfaces/project/curation.interface';
 import { useEffect, useState } from 'react';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { defaultExclusionTags } from 'stores/ProjectStore.helpers';
+import { defaultExclusionTags } from 'stores/ProjectStore/models';
 import { createDuplicateMap } from '../../helpers/utils';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
