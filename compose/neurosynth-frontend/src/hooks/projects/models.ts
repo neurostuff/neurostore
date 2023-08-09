@@ -1,3 +1,5 @@
+import { IImport } from 'interfaces/project/curation.interface';
+
 export interface IExtractionSummary {
     savedForLater: number;
     uncategorized: number;
@@ -11,3 +13,5 @@ export interface ICurationSummary {
     uncategorized: number;
     excluded: number;
 }
+
+export type ICurationImportSummary = IImport & { numStudies: number };

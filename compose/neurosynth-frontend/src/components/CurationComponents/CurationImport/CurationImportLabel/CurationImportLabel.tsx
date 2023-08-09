@@ -45,6 +45,13 @@ const CurationImportLabel: React.FC<{
             createImport(importToCreate);
         }
 
+        const updatedStubs = stubs.map((stub) => ({
+            ...stub,
+            import: importToCreate,
+        }));
+
+        onUpdateStubs(updatedStubs);
+
         onNavigate(nav);
     };
 

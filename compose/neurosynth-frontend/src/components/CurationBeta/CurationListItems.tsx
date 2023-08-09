@@ -20,9 +20,9 @@ export interface ICurationListItem {
 
 const CurationListItems: React.FC<{
     listItems: ICurationListItem[];
+    selectedListItemId: string;
+    onSelectListItem: (id: string) => void;
 }> = (props) => {
-    const [selectedId, setSelectedId] = useState(props.listItems[1]?.id);
-
     return (
         <Box>
             <List disablePadding>
@@ -34,13 +34,13 @@ const CurationListItems: React.FC<{
                             </ListSubheader>
                         ) : (
                             <ListItem
-                                onClick={() => setSelectedId(listItem.id)}
+                                onClick={() => props.onSelectListItem(listItem.id)}
                                 sx={CurationListItemsStyles.listItem}
                                 disablePadding
                             >
                                 <ListItemButton
                                     sx={CurationListItemsStyles.listItemButton}
-                                    selected={listItem.id === selectedId}
+                                    selected={listItem.id === props.selectedListItemId}
                                 >
                                     {listItem.listItemButtonContents || (
                                         <>

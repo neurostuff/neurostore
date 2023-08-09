@@ -3,8 +3,9 @@ import { ICurationColumn } from 'interfaces/project/curation.interface';
 import { useProjectCurationIsPrisma } from 'stores/ProjectStore/getters';
 import CurationGenericInterface from './CurationGenericInterface';
 import CurationPRISMAIdentificationInterface from './CurationPRISMAIdentificationInterface';
+import React from 'react';
 
-const CurationContainer: React.FC<{ selectedColumn: ICurationColumn }> = (props) => {
+const CurationContainer: React.FC<{ selectedColumn: ICurationColumn }> = React.memo((props) => {
     const isPRISMA = useProjectCurationIsPrisma();
 
     if (isPRISMA && props.selectedColumn?.name === EDefaultPRISMAStepNames.IDENTIFICATION) {
@@ -12,6 +13,6 @@ const CurationContainer: React.FC<{ selectedColumn: ICurationColumn }> = (props)
     }
 
     return <CurationGenericInterface />;
-};
+});
 
 export default CurationContainer;

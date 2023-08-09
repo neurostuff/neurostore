@@ -1,3 +1,5 @@
+import { ICurationStubStudy } from 'interfaces/project/curation.interface';
+import { useEffect, useState } from 'react';
 import useProjectStore from 'stores/ProjectStore/store';
 
 // higher level project retrieval hooks
@@ -14,6 +16,22 @@ export const useUpdateProjectIsLoading = () =>
 // curation retrieval hooks
 export const useProjectCurationColumns = () =>
     useProjectStore((state) => state.provenance.curationMetadata.columns);
+export const useProjectCurationAllStubs = () => {
+    const columns = useProjectCurationColumns();
+    const [allStubs, setAllStubs] = useState<ICurationStubStudy[]>([]);
+    useEffect(() => {
+        setAllStubs(() => {
+            const stubs = columns.reduce((acc, curr) => {
+                acc.push(...curr.stubStudies);
+                return acc;
+            }, [] as ICurationStubStudy[]);
+            return stubs;
+        });
+    }, [columns]);
+
+    return allStubs;
+};
+
 export const useProjectCurationIsLastColumn = (columnIndex: number) =>
     useProjectStore((state) => state.provenance.curationMetadata.columns.length <= columnIndex + 1);
 export const useProjectNumCurationColumns = () =>

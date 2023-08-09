@@ -1,6 +1,6 @@
-import { useProjectCurationColumns } from 'stores/ProjectStore/getters';
-import { useEffect, useState } from 'react';
 import { ICurationSummary } from 'hooks/projects/models';
+import { useEffect, useState } from 'react';
+import { useProjectCurationColumns } from 'stores/ProjectStore/getters';
 const useGetCurationSummary = () => {
     const columns = useProjectCurationColumns();
 

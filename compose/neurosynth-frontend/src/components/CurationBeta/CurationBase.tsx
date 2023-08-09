@@ -10,7 +10,7 @@ const CurationBase: React.FC = (props) => {
 
     return (
         <Box>
-            <Tabs onChange={(event, value) => setTabIndex(value)} value={tabIndex}>
+            <Tabs onChange={(_event, value) => setTabIndex(value)} value={tabIndex}>
                 {columns.map((column, index) => {
                     const hasUncategorizedStubs = column.stubStudies.some((x) => !x.exclusionTag);
                     return (

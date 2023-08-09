@@ -51,7 +51,13 @@ const CurationGenericInterface: React.FC = (props) => {
 
     return (
         <CurationLayout
-            listItems={<CurationListItems listItems={listItems} />}
+            listItems={
+                <CurationListItems
+                    selectedListItemId=""
+                    onSelectListItem={() => {}}
+                    listItems={listItems}
+                />
+            }
             mainInterface={<CurateStudies />}
         />
     );
