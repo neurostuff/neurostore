@@ -47,7 +47,7 @@ const defaultIdentificationSourcesList = Object.entries(defaultIdentificationSou
     }
 );
 
-const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
+const SourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(
         props.initialValue || null
@@ -176,4 +176,4 @@ const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
     );
 };
 
-export default IdentificationSourcePopup;
+export default SourcePopup;

@@ -2,26 +2,26 @@ import { Box, Typography } from '@mui/material';
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';
-import { ICurationStubStudy, ITag } from 'interfaces/project/curation.interface';
-import { useCreateNewCurationInfoTag, useProjectCurationInfoTags } from 'stores/ProjectStore';
-const CurationImportTag: React.FC<{
+import ImportSelectorPopup from 'components/CurationComponents/SelectorPopups/ImportSelectorPopup/ImportSelectorPopup';
+import { ICurationStubStudy, IImport, ISource } from 'interfaces/project/curation.interface';
+import { useState } from 'react';
+import { useCreateNewCurationImport, useProjectCurationImports } from 'stores/ProjectStore';
+const CurationImportLabel: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
     onUpdateStubs: (stubs: ICurationStubStudy[]) => void;
     stubs: ICurationStubStudy[];
+    source: ISource | undefined;
 }> = (props) => {
     const { onUpdateStubs, onNavigate, stubs } = props;
-    const createNewInfoTag = useCreateNewCurationInfoTag();
-    const infoTags = useProjectCurationInfoTags();
+    const createImport = useCreateNewCurationImport();
+    const imports = useProjectCurationImports();
+    const [newImport, setNewImport] = useState<Partial<IImport>>();
 
-    const importName = stubs[0]?.tags[0]?.label;
-
-    const handleAddTag = (tag: ITag) => {
+    const handleAddImport = (anImport: Partial<IImport>) => {
         const updatedStubs = [...stubs];
         updatedStubs.forEach((_, index) => {
             updatedStubs[index] = {
                 ...updatedStubs[index],
-                tags: [tag],
             };
         });
 
@@ -43,11 +43,19 @@ const CurationImportTag: React.FC<{
     const handleNavigate = (nav: ENavigationButton) => {
         const tagToCreate = stubs[0]?.tags[0];
 
-        if (tagToCreate && !infoTags.some((x) => x.id === tagToCreate.id)) {
-            createNewInfoTag(tagToCreate);
-        }
+        if (newImport?.id && newImport.name && props.source) {
+            const importToCreate: IImport = {
+                id: newImport.id,
+                name: newImport.name,
+                source: props.source,
+            };
 
-        onNavigate(nav);
+            if (tagToCreate && !imports.some((x) => x.id === tagToCreate.id)) {
+                createImport(importToCreate.name, importToCreate.source);
+            }
+
+            onNavigate(nav);
+        }
     };
 
     return (
@@ -60,25 +68,27 @@ const CurationImportTag: React.FC<{
                         variant="h6"
                     >
                         Give your import a name:{' '}
-                        <span style={{ fontWeight: 'normal' }}>{importName || ''}</span>
+                        <span style={{ fontWeight: 'normal' }}>{newImport?.name || ''}</span>
                     </Typography>
 
-                    <TagSelectorPopup
+                    <ImportSelectorPopup
                         size="medium"
                         label="import name"
-                        placeholder="start typing or select from previous imports"
+                        placeholder="start typing or select from previous imports if they exist"
                         sx={{ margin: '1rem 0' }}
-                        onAddTag={handleAddTag}
-                        onCreateTag={handleAddTag}
+                        onSelectImport={handleAddImport}
+                        onCreateImport={handleAddImport}
                         addOptionText="Set name as"
-                        autoCreateTagOnClick={false}
                         onClearInput={handleClearInput}
                     />
                 </Box>
             </Box>
-            <NavigationButtons nextButtonDisabled={!importName} onButtonClick={handleNavigate} />
+            <NavigationButtons
+                nextButtonDisabled={!newImport?.name}
+                onButtonClick={handleNavigate}
+            />
         </Box>
     );
 };
 
-export default CurationImportTag;
+export default CurationImportLabel;

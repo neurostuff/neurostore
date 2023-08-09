@@ -1,5 +1,5 @@
 import { Box, Button, Link, Typography } from '@mui/material';
-import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
+import SourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import FullTextLinkComponent from 'components/FullTextLinkComponent/FullTextLinkComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
@@ -267,7 +267,7 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
             </TextEdit>
 
             <Box sx={{ margin: '1rem 0' }}>
-                <IdentificationSourcePopup
+                <SourcePopup
                     label="source"
                     disabled={!isAuthenticated}
                     onAddSource={(source) => handleUpdateStub(source, 'identificationSource')}

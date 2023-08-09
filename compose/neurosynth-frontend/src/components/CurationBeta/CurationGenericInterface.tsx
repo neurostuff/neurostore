@@ -5,18 +5,16 @@ import { defaultExclusionTags, defaultIdentificationSources } from 'stores/Proje
 import CurationLayout from './CurationLayout';
 
 const CurationGenericInterface: React.FC = (props) => {
-    const imports: (IImport & { numStudies: number })[] = [
+    const imports: IImport[] = [
         {
             id: 'a',
             name: 'WoS Import',
             source: defaultIdentificationSources.neurostore,
-            numStudies: 43,
         },
         {
             id: 'b',
             name: 'RIS Import',
             source: defaultIdentificationSources.psycInfo,
-            numStudies: 21,
         },
     ];
 
@@ -33,7 +31,7 @@ const CurationGenericInterface: React.FC = (props) => {
             id: anImport.id,
             type: 'listItem' as 'listItem' | 'header',
             label: anImport.name,
-            number: anImport.numStudies,
+            number: 4,
         };
     });
 

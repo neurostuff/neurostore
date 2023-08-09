@@ -18,7 +18,7 @@ import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import {
     useProjectCurationColumn,
     useProjectCurationExclusionTags,
-    useProjectCurationInfoTags,
+    useProjectCurationImports,
     useProjectCurationPrismaConfig,
     usePromoteAllUncategorized,
 } from 'stores/ProjectStore';
@@ -81,7 +81,7 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
     const { isAuthenticated } = useAuth0();
     const column = useProjectCurationColumn(props.columnIndex);
     const prismaConfig = useProjectCurationPrismaConfig();
-    const infoTags = useProjectCurationInfoTags();
+    const infoTags = useProjectCurationImports();
     const exclusionTags = useProjectCurationExclusionTags();
     const promoteAllUncategorized = usePromoteAllUncategorized();
 
@@ -97,35 +97,35 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
         stubId: undefined,
     });
 
-    useEffect(() => {
-        if (prismaConfig.isPrisma) {
-            const phase = indexToPRISMAMapping(props.columnIndex);
-            const exclusionTagsForThisColumn = phase ? prismaConfig[phase]?.exclusionTags : [];
-            setTags(
-                [...infoTags, ...exclusionTagsForThisColumn].sort((a, b) => {
-                    if (a.isExclusionTag && b.isExclusionTag) {
-                        return a.label.localeCompare(b.label);
-                    } else if (!a.isExclusionTag && !b.isExclusionTag) {
-                        return +a.isAssignable - +b.isAssignable;
-                    } else {
-                        return +b.isExclusionTag - +a.isExclusionTag;
-                    }
-                })
-            );
-        } else {
-            setTags(
-                [...infoTags, ...exclusionTags].sort((a, b) => {
-                    if (a.isExclusionTag && b.isExclusionTag) {
-                        return a.label.localeCompare(b.label);
-                    } else if (!a.isExclusionTag && !b.isExclusionTag) {
-                        return +a.isAssignable - +b.isAssignable;
-                    } else {
-                        return +b.isExclusionTag - +a.isExclusionTag;
-                    }
-                })
-            );
-        }
-    }, [exclusionTags, infoTags, prismaConfig, props.columnIndex]);
+    // useEffect(() => {
+    //     if (prismaConfig.isPrisma) {
+    //         const phase = indexToPRISMAMapping(props.columnIndex);
+    //         const exclusionTagsForThisColumn = phase ? prismaConfig[phase]?.exclusionTags : [];
+    //         setTags(
+    //             [...infoTags, ...exclusionTagsForThisColumn].sort((a, b) => {
+    //                 if (a.isExclusionTag && b.isExclusionTag) {
+    //                     return a.label.localeCompare(b.label);
+    //                 } else if (!a.isExclusionTag && !b.isExclusionTag) {
+    //                     return +a.isAssignable - +b.isAssignable;
+    //                 } else {
+    //                     return +b.isExclusionTag - +a.isExclusionTag;
+    //                 }
+    //             })
+    //         );
+    //     } else {
+    //         setTags(
+    //             [...infoTags, ...exclusionTags].sort((a, b) => {
+    //                 if (a.isExclusionTag && b.isExclusionTag) {
+    //                     return a.label.localeCompare(b.label);
+    //                 } else if (!a.isExclusionTag && !b.isExclusionTag) {
+    //                     return +a.isAssignable - +b.isAssignable;
+    //                 } else {
+    //                     return +b.isExclusionTag - +a.isExclusionTag;
+    //                 }
+    //             })
+    //         );
+    //     }
+    // }, [exclusionTags, infoTags, prismaConfig, props.columnIndex]);
 
     const handleSelectStub = React.useCallback((stubId: string) => {
         setDialogState({

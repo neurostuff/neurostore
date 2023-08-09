@@ -6,7 +6,7 @@ import NavigationButtons, {
 import { ChangeEvent, useEffect, useState } from 'react';
 import { ICurationStubStudy, ISource } from 'interfaces/project/curation.interface';
 import { v4 as uuidv4 } from 'uuid';
-import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
+import SourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
 import { ENeurosynthSourceIds } from 'stores/ProjectStore.helpers';
 const Cite = require('citation-js');
 require('@citation-js/plugin-enw');
@@ -192,7 +192,7 @@ const ImportStandardFormat: React.FC<{
                     Enter the source that you imported your data from. If you don't see it below,
                     start typing in the input to add it.
                 </Typography>
-                <IdentificationSourcePopup
+                <SourcePopup
                     excludeSources={[ENeurosynthSourceIds.NEUROSTORE]}
                     sx={{ width: '100%', maxWidth: '600px' }}
                     onAddSource={handleAddSource}

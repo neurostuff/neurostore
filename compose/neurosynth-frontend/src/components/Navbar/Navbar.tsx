@@ -6,6 +6,7 @@ import { useHistory } from 'react-router-dom';
 import NavDrawer from './NavDrawer/NavDrawer';
 import NavToolbar from './NavToolbar/NavToolbar';
 import NavbarStyles from './Navbar.styles';
+import { initCurationHelper } from 'stores/ProjectStore.helpers';
 
 export interface INav {
     onLogin: () => Promise<void>;
@@ -33,24 +34,7 @@ const Navbar: React.FC = (_props) => {
                 name,
                 description,
                 provenance: {
-                    curationMetadata: {
-                        columns: [],
-                        prismaConfig: {
-                            isPrisma: false,
-                            identification: {
-                                exclusionTags: [],
-                            },
-                            screening: {
-                                exclusionTags: [],
-                            },
-                            eligibility: {
-                                exclusionTags: [],
-                            },
-                        },
-                        infoTags: [],
-                        exclusionTags: [],
-                        identificationSources: [],
-                    },
+                    curationMetadata: initCurationHelper([], false),
                     extractionMetadata: {
                         studysetId: null,
                         annotationId: null,

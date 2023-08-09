@@ -1,25 +1,20 @@
-import { Box, Button, IconButton, Tooltip, Typography } from '@mui/material';
+import { useAuth0 } from '@auth0/auth0-react';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CloseIcon from '@mui/icons-material/Close';
-import StyleIcon from '@mui/icons-material/Style';
-import { ICurationStubStudy, ITag } from 'interfaces/project/curation.interface';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import ExclusionSelectorPopup from 'components/CurationComponents/SelectorPopups/ExclusionSelectorPopup/ExclusionSelectorPopup';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import { useRef, useState } from 'react';
-import { ENeurosynthTagIds } from 'stores/ProjectStore.helpers';
-import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import NeurosynthConfirmationChip from 'components/NeurosynthConfirmationChip/NeurosynthConfirmationChip';
-import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';
+import { ICurationStubStudy, ITag } from 'interfaces/project/curation.interface';
+import React, { useRef, useState } from 'react';
 import {
     useAddTagToStub,
     usePromoteStub,
-    useSetExclusionFromStub,
     useRemoveTagFromStub,
+    useSetExclusionFromStub,
 } from 'stores/ProjectStore';
-import React from 'react';
-import { defaultInfoTags } from 'stores/ProjectStore.helpers';
-import { useAuth0 } from '@auth0/auth0-react';
+import { ENeurosynthTagIds, defaultInfoTags } from 'stores/ProjectStore.helpers';
 
 interface IEditableStubSummaryHeader {
     type: 'excluded' | 'included' | 'default';
@@ -155,34 +150,6 @@ const EditableStubSummaryHeader: React.FC<IEditableStubSummaryHeader> = React.me
         <Box sx={{ minWidth: '700px' }}>
             <Box sx={{ display: 'flex' }}>
                 <Box sx={{ display: 'flex', marginBottom: '8px' }}>{categorizeHeader}</Box>
-                <Box sx={{ marginLeft: 'auto' }}>
-                    <NeurosynthPopper
-                        open={tagSelectorIsOpen}
-                        anchorElement={addTagsRef?.current}
-                        placement="bottom-start"
-                        onClickAway={() => {
-                            setTagSelectorIsOpen(false);
-                        }}
-                    >
-                        <Box sx={{ marginTop: '6px' }}>
-                            <TagSelectorPopup
-                                label="select tag"
-                                onAddTag={(tag) => handleAddTag(tag)}
-                                onCreateTag={(tag) => handleAddTag(tag)}
-                            />
-                        </Box>
-                    </NeurosynthPopper>
-                    <Button
-                        disabled={!isAuthenticated}
-                        startIcon={<StyleIcon />}
-                        ref={addTagsRef}
-                        onClick={() => setTagSelectorIsOpen(true)}
-                        size="medium"
-                        variant="outlined"
-                    >
-                        add tags
-                    </Button>
-                </Box>
             </Box>
 
             <Box>

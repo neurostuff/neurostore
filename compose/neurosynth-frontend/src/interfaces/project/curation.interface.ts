@@ -3,7 +3,7 @@ export interface ICurationMetadata {
     prismaConfig: IPRISMAConfig;
     infoTags: ITag[]; // only holds needsReview tag. In the future, this functionality may be extended
     exclusionTags: ITag[]; // for non prisma workflows, we ignore prismaConfig and use exclusionTags. This property will not be used for the prisma workflow.
-    imports: (IImport & { numStudies: number })[];
+    imports: IImport[];
 }
 
 export interface IPRISMAConfig {

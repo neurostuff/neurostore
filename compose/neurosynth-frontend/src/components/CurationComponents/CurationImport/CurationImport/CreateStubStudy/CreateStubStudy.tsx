@@ -2,7 +2,7 @@ import { Box, TextField } from '@mui/material';
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
+import SourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
 import { IImport, ISource } from 'interfaces/project/curation.interface';
 import { ChangeEvent, useState } from 'react';
 import CreateStubStudyStyles from './CreateStubStudy.styles';
@@ -60,7 +60,11 @@ const CreateStubStudy: React.FC<IImportArgs> = (props) => {
     const handleAddSource = (source: ISource) => {
         setForm((prev) => ({
             ...prev,
-            identificationSource: source,
+            import: {
+                id: '', // will be replaced later
+                name: '', // will be replaced later
+                source: source,
+            },
         }));
     };
 
@@ -164,7 +168,7 @@ const CreateStubStudy: React.FC<IImportArgs> = (props) => {
                     />
                 </Box>
                 <Box sx={{ width: '50%', marginLeft: '7.5px' }}>
-                    <IdentificationSourcePopup
+                    <SourcePopup
                         required
                         initialValue={undefined}
                         onAddSource={handleAddSource}

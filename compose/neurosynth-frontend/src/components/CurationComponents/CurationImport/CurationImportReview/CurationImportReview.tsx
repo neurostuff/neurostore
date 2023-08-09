@@ -54,34 +54,9 @@ const CurationImportReview: React.FC<{
                             </Typography>
                         </>
                     )}
-                    {/* <Typography sx={{ marginBottom: '0.5rem' }} variant="body1">
-                        Tag all your imported studies
-                    </Typography>
-                    <Box>
-                        <TagSelectorPopup
-                            size="small"
-                            sx={{ width: '500px' }}
-                            onAddTag={handleAddTag}
-                            onCreateTag={handleAddTag}
-                        />
-                        <Box sx={{ marginTop: '0.5rem' }}>
-                            {tags.map((tag) => (
-                                <Chip
-                                    sx={{ margin: '3px' }}
-                                    onDelete={() => handleDeleteTag(tag)}
-                                    label={tag.label}
-                                    key={tag.id}
-                                />
-                            ))}
-                        </Box>
-                    </Box> */}
                 </Box>
-                {/* <Divider sx={{ marginTop: '0.5rem' }} /> */}
             </Paper>
             <Box sx={{ margin: '1rem 0', backgroundColor: '#f6f6f6' }}>
-                {/* <Typography sx={{ color: 'gray', fontStyle: 'italic' }}>
-                    Studies marked as "Duplicate" have a red border
-                </Typography> */}
                 <FixedSizeList
                     height={fixedListHeight}
                     itemCount={nonExcludedStubs.length}

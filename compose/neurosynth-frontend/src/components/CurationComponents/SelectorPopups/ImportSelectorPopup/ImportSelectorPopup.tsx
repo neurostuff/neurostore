@@ -5,9 +5,8 @@ import ListItemText from '@mui/material/ListItemText';
 import { SystemStyleObject } from '@mui/system';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { ENeurosynthTagIds } from 'stores/ProjectStore.helpers';
-import { useCreateNewCurationInfoTag, useProjectCurationInfoTags } from 'stores/ProjectStore';
-import { ITag } from 'interfaces/project/curation.interface';
+import { useCreateNewCurationImport, useProjectCurationImports } from 'stores/ProjectStore';
+import { IImport } from 'interfaces/project/curation.interface';
 
 interface AutoSelectOption {
     id: string;
@@ -22,66 +21,54 @@ const filterOptions = createFilterOptions<AutoSelectOption>({
     trim: true,
 });
 
-interface ITagSelectorPopup {
+interface IImportSelectorPopup {
     label?: string;
     sx?: SystemStyleObject;
-    onAddTag: (tag: ITag) => void;
-    onCreateTag?: (tag: ITag) => void;
+    onSelectImport: (anImport: Partial<IImport>) => void;
+    onCreateImport?: (anImport: Partial<IImport>) => void;
     isLoading?: boolean;
     size?: 'small' | 'medium';
     placeholder?: string;
     addOptionText?: string;
-    autoCreateTagOnClick?: boolean;
     onClearInput?: () => void;
 }
 
-const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
+const ImportSelectorPopup: React.FC<IImportSelectorPopup> = (props) => {
     const {
         placeholder = 'start typing',
         addOptionText = 'Add',
-        label = 'select tag',
-        autoCreateTagOnClick = true,
+        label = 'select import',
         onClearInput = () => {},
     } = props;
 
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(null);
     const [tagOption, setTagOptions] = useState<AutoSelectOption[]>([]);
 
-    const infoTags = useProjectCurationInfoTags();
-    const createNewInfoTag = useCreateNewCurationInfoTag();
+    const imports = useProjectCurationImports();
+    const createImport = useCreateNewCurationImport();
 
     useEffect(() => {
-        const filteredTagOptions = infoTags
-            .filter(
-                (x) =>
-                    x.id !== ENeurosynthTagIds.UNTAGGED_TAG_ID &&
-                    x.id !== ENeurosynthTagIds.NEEDS_REVIEW_TAG_ID &&
-                    x.id !== ENeurosynthTagIds.UNCATEGORIZED_ID
-            )
-            .map((tag) => ({
-                id: tag.id,
-                label: tag.label,
-                addOptionActualLabel: null,
-            }));
+        const filteredTagOptions = imports.map((anImport) => ({
+            id: anImport.id,
+            label: anImport.name,
+            addOptionActualLabel: null,
+        }));
 
         setTagOptions(filteredTagOptions);
-    }, [infoTags]);
+    }, [imports]);
 
-    const handleCreateTag = (tagName: string) => {
-        const newTag: ITag = {
+    const handleCreateImport = (importName: string) => {
+        const newImport: Partial<IImport> = {
             id: uuidv4(),
-            label: tagName,
-            isExclusionTag: false,
-            isAssignable: true,
+            name: importName,
         };
 
-        if (autoCreateTagOnClick) createNewInfoTag(newTag);
         setSelectedValue({
-            id: newTag.id,
-            label: newTag.label,
+            id: newImport.id as string,
+            label: newImport.name as string,
             addOptionActualLabel: null,
         });
-        if (props.onCreateTag) props.onCreateTag(newTag);
+        if (props.onCreateImport) props.onCreateImport(newImport);
     };
 
     const handleChange = (
@@ -96,27 +83,23 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
             if (foundValue) {
                 // do not create a new tag if an identical label exists
                 setSelectedValue(foundValue);
-                props.onAddTag({
+                props.onSelectImport({
                     id: foundValue.id,
-                    label: foundValue.label,
-                    isExclusionTag: false,
-                    isAssignable: true,
+                    name: foundValue.label,
                 });
             } else {
-                handleCreateTag(newValue);
+                handleCreateImport(newValue);
             }
             // if user selects the "Add ..." option, we get an AutoSelectOption and handle it here
         } else if (newValue && newValue.addOptionActualLabel) {
-            handleCreateTag(newValue.addOptionActualLabel);
+            handleCreateImport(newValue.addOptionActualLabel);
             // if the user clicks an option, we get an AutoSelectOption and handle it here
         } else {
             setSelectedValue(newValue);
             if (newValue) {
-                props.onAddTag({
+                props.onSelectImport({
                     id: newValue.id,
-                    label: newValue.label,
-                    isExclusionTag: false,
-                    isAssignable: true,
+                    name: newValue.label,
                 });
             } else {
                 onClearInput();
@@ -177,4 +160,4 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
     );
 };
 
-export default TagSelectorPopup;
+export default ImportSelectorPopup;

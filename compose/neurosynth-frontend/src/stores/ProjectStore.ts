@@ -71,7 +71,7 @@ export type ProjectStoreActions = {
         newExclusion: ITag,
         arg: keyof Omit<IPRISMAConfig, 'isPrisma'> | undefined
     ) => void;
-    createNewInfoTag: (newTag: ITag) => void;
+    createImport: (name: string, source: ISource) => void;
     addNewStubs: (stubs: ICurationStubStudy[]) => void;
     updateCurationColumns: (columns: ICurationColumn[]) => void;
     clearProvenance: () => void;
@@ -462,19 +462,8 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
 
             get().updateProjectInDBDebounced();
         },
-        createNewInfoTag: (newTag: ITag) => {
-            set((state) => ({
-                ...state,
-                provenance: {
-                    ...state.provenance,
-                    curationMetadata: {
-                        ...state.provenance.curationMetadata,
-                        infoTags: [...state.provenance.curationMetadata.infoTags, { ...newTag }],
-                    },
-                },
-            }));
-
-            get().updateProjectInDBDebounced();
+        createImport: (name, source) => {
+            // TODO: complete this
         },
         addTagToStub: (columnIndex, stubId, newTag) => {
             set((state) => ({
@@ -733,8 +722,8 @@ export const useProjectCurationIsPrisma = () =>
     useProjectStore((state) => state.provenance.curationMetadata.prismaConfig.isPrisma);
 export const useProjectCurationPrismaConfig = () =>
     useProjectStore((state) => state.provenance.curationMetadata.prismaConfig);
-export const useProjectCurationInfoTags = () =>
-    useProjectStore((state) => state.provenance.curationMetadata.infoTags);
+export const useProjectCurationImports = () =>
+    useProjectStore((state) => state.provenance.curationMetadata.imports);
 export const useProjectCurationExclusionTags = () =>
     useProjectStore((state) => state.provenance.curationMetadata.exclusionTags);
 
@@ -746,7 +735,7 @@ export const useInitProjectStore = () => useProjectStore((state) => state.initPr
 export const useClearProjectStore = () => useProjectStore((state) => state.clearProjectStore);
 export const useClearProvenance = () => useProjectStore((state) => state.clearProvenance);
 export const useHandleCurationDrag = () => useProjectStore((state) => state.handleDrag);
-export const useCreateNewCurationInfoTag = () => useProjectStore((state) => state.createNewInfoTag);
+export const useCreateNewCurationImport = () => useProjectStore((state) => state.createImport);
 export const useUpdateCurationColumns = () =>
     useProjectStore((state) => state.updateCurationColumns);
 export const useAddNewCurationStubs = () => useProjectStore((state) => state.addNewStubs);

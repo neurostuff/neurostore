@@ -71,18 +71,6 @@ export const defaultExclusionTags = {
 };
 
 export const defaultInfoTags = {
-    untagged: {
-        id: ENeurosynthTagIds.UNTAGGED_TAG_ID,
-        label: 'Untagged studies',
-        isExclusionTag: false,
-        isAssignable: false,
-    },
-    uncategorized: {
-        id: ENeurosynthTagIds.UNCATEGORIZED_ID,
-        label: 'Uncategorized Studies',
-        isExclusionTag: false,
-        isAssignable: false,
-    },
     needsReview: {
         id: ENeurosynthTagIds.NEEDS_REVIEW_TAG_ID,
         label: 'Needs Review',
@@ -168,7 +156,7 @@ export const initCurationHelper = (cols: string[], isPrisma: boolean): ICuration
         exclusionTags: Object.entries(defaultExclusionTags).map(([key, value]) => ({
             ...value,
         })),
-        infoTags: Object.entries(defaultInfoTags).map(([key, value]) => ({ ...value })),
+        infoTags: [],
         imports: [],
     };
 

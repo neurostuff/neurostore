@@ -2,11 +2,7 @@ import { Typography, Box } from '@mui/material';
 import EditMetadata from 'components/EditMetadata/EditMetadata';
 import { IMetadataRowModel } from 'components/EditMetadata';
 import React, { useCallback } from 'react';
-import {
-    useAddOrUpdateMetadata,
-    useDeleteMetadataRow,
-    useStudyMetadata,
-} from 'stores/StudyStore';
+import { useAddOrUpdateMetadata, useDeleteMetadataRow, useStudyMetadata } from 'stores/StudyStore';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 
 export interface IEditStudyMetadata {

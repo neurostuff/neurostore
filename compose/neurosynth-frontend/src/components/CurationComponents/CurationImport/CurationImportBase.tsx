@@ -2,14 +2,16 @@ import { Step, StepLabel, Stepper, Box } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ICurationStubStudy } from 'interfaces/project/curation.interface';
+import { ICurationStubStudy, ISource } from 'interfaces/project/curation.interface';
 import CurationImport, { EImportMode } from './CurationImport/CurationImport';
 import CurationImportResolveDuplicates from './CurationImportResolveDuplicates/CurationImportResolveDuplicates';
 import CurationImportSelectMethod from './CurationImportSelectMethod/CurationImportSelectMethod';
 import CurationImportReview from './CurationImportReview/CurationImportReview';
-import CurationImportTag from './CurationImportTag/CurationImportTag';
+import CurationImportLabel from './CurationImportLabel/CurationImportLabel';
+import { defaultIdentificationSources } from 'stores/ProjectStore.helpers';
 
 const CurationImportBase: React.FC = (props) => {
+    const [importSource, setImportSource] = useState<ISource>();
     const [activeStep, setActiveStep] = useState(0);
     const [importMode, setImportMode] = useState<EImportMode>(EImportMode.NEUROSTORE_IMPORT);
     const [stubs, setStubs] = useState<ICurationStubStudy[]>([]);
@@ -22,6 +24,25 @@ const CurationImportBase: React.FC = (props) => {
             setActiveStep(1);
         }
     }, [location?.search]);
+
+    useEffect(() => {
+        switch (importMode) {
+            case EImportMode.NEUROSTORE_IMPORT:
+                setImportSource(defaultIdentificationSources.neurostore);
+                break;
+            case EImportMode.FILE_IMPORT:
+            case EImportMode.MANUAL_CREATE:
+                if (stubs[0]?.import?.source) {
+                    setImportSource(stubs[0].import.source);
+                }
+                break;
+            case EImportMode.PUBMED_IMPORT:
+                setImportSource(defaultIdentificationSources.pubmed);
+                break;
+            default:
+                break;
+        }
+    }, [importMode, stubs]);
 
     const handleChangeImportMode = (newImportMode: EImportMode) => {
         setImportMode(newImportMode);
@@ -58,7 +79,7 @@ const CurationImportBase: React.FC = (props) => {
                     <StepLabel>Review</StepLabel>
                 </Step>
                 <Step>
-                    <StepLabel>Tag</StepLabel>
+                    <StepLabel>Label Import</StepLabel>
                 </Step>
                 <Step>
                     <StepLabel>Resolve Duplicates</StepLabel>
@@ -87,10 +108,11 @@ const CurationImportBase: React.FC = (props) => {
                     />
                 )}
                 {activeStep === 3 && (
-                    <CurationImportTag
+                    <CurationImportLabel
                         onUpdateStubs={(stubs) => setStubs(stubs)}
                         stubs={stubs}
                         onNavigate={handleNavigate}
+                        source={importSource}
                     />
                 )}
                 {activeStep === 4 && (
