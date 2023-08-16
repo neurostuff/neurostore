@@ -36,8 +36,9 @@ def create_user():
     from auth0.v3.authentication.users import Users
     auth = request.headers.get("Authorization", None)
     token = auth.split()[1]
-    profile_info = Users(current_app.config["AUTH0_BASE_URL"]).userinfo(access_token=token)
-    profile_info["name"]
+    profile_info = Users(
+        current_app.config["AUTH0_BASE_URL"].removeprefix("https://")
+    ).userinfo(access_token=token)
 
     # user signed up with auth0, but has not made any queries yet...
     # should have endpoint to "create user" after sign on with auth0

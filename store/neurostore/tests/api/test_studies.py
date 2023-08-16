@@ -4,7 +4,7 @@ from ..request_utils import decode_json
 from ...models import Studyset, Study, User, Analysis
 
 
-def test_create_study_as_user_and_analysis_as_bot(auth_clients):
+def test_create_study_as_user_and_analysis_as_bot(auth_clients, session):
     # create study as user
     user_auth_client = next(ac for ac in auth_clients if ac.username == "user1-id")
 
@@ -19,7 +19,7 @@ def test_create_study_as_user_and_analysis_as_bot(auth_clients):
     assert analysis_resp.status_code == 200
 
 
-def test_get_studies(auth_client, ingest_neurosynth, ingest_neuroquery):
+def test_get_studies(auth_client, ingest_neurosynth, ingest_neuroquery, session):
     # List of studies
     resp = auth_client.get("/api/studies/?nested=true&level=group")
     assert resp.status_code == 200
@@ -62,7 +62,7 @@ def test_get_studies(auth_client, ingest_neurosynth, ingest_neuroquery):
         },
     ],
 )
-def test_put_studies(auth_client, ingest_neurosynth, data):
+def test_put_studies(auth_client, ingest_neurosynth, data, session):
     study_entry = Study.query.first()
     study_clone = auth_client.post(
         f"/api/studies/?source_id={study_entry.id}", data={}
@@ -87,7 +87,7 @@ def test_put_studies(auth_client, ingest_neurosynth, data):
     assert put_resp.json["metadata"] == updated_study_entry.metadata_
 
 
-def test_clone_studies(auth_client, ingest_neurosynth, ingest_neurovault):
+def test_clone_studies(auth_client, ingest_neurosynth, ingest_neurovault, session):
     study_entry = Study.query.filter(Study.metadata_.isnot(None)).first()
     resp = auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={})
     data = resp.json
@@ -110,7 +110,7 @@ def test_clone_studies(auth_client, ingest_neurosynth, ingest_neurovault):
     )
 
 
-def test_private_studies(user_data, auth_clients):
+def test_private_studies(user_data, auth_clients, session):
     from ...resources.users import User
 
     client1, client2 = auth_clients[0:2]
@@ -136,7 +136,7 @@ def test_private_studies(user_data, auth_clients):
     assert user1_get.status_code == 200
 
 
-def test_post_studies(auth_client, ingest_neurosynth):
+def test_post_studies(auth_client, ingest_neurosynth, session):
     payload = auth_client.get("/api/analyses/").json["results"]
     analyses = [analysis["id"] for analysis in payload]
     my_study = {
@@ -164,14 +164,14 @@ def test_delete_studies(auth_client, ingest_neurosynth, session):
         assert Analysis.query.filter_by(id=analysis).first() is None
 
 
-def test_production_study_query(auth_client, user_data):
+def test_production_study_query(auth_client, user_data, session):
     auth_client.get(
         "/api/studies/?sort=name&page=1&desc=true&page_size=29999&nested=false&unique=true"
     )
 
 
 @pytest.mark.skip("not supporting this feature anymore")
-def test_getting_studysets_by_owner(auth_clients, user_data):
+def test_getting_studysets_by_owner(auth_clients, user_data, session):
     client1 = auth_clients[0]
     id1 = client1.username
     user_studysets_db = Studyset.query.filter_by(user_id=id1).all()
@@ -191,7 +191,7 @@ def test_getting_studysets_by_owner(auth_clients, user_data):
 
 
 @pytest.mark.parametrize("param", ["true", "false", "doi", "name", "pmid"])
-def test_get_unique_studies(auth_client, user_data, param):
+def test_get_unique_studies(auth_client, user_data, param, session):
     # clone a study owned by the user
     study_entry = Study.query.filter_by(user_id=auth_client.username).first()
     auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={})
@@ -199,7 +199,7 @@ def test_get_unique_studies(auth_client, user_data, param):
     assert resp.status_code == 200
 
 
-def test_cache_update(auth_client, user_data):
+def test_cache_update(auth_client, user_data, session):
     study_entry = Study.query.filter_by(user_id=auth_client.username).first()
     auth_client.get(f"/api/studies/{study_entry.id}")
     auth_client.get(f"/api/studies/{study_entry.id}?nested=true")
@@ -208,7 +208,7 @@ def test_cache_update(auth_client, user_data):
     auth_client.get(f"/api/studies/{study_entry.id}")
 
 
-def test_post_meta_analysis(auth_client, user_data):
+def test_post_meta_analysis(auth_client, user_data, session):
     study_data = {
         "name": "meta-analysis",
         "analyses": [
@@ -244,7 +244,7 @@ def test_post_meta_analysis(auth_client, user_data):
     assert resp.status_code == 200
 
 
-def test_studies_flat(auth_client, ingest_neurosynth):
+def test_studies_flat(auth_client, ingest_neurosynth, session):
     flat_resp = auth_client.get("/api/studies/?flat=true")
     reg_resp = auth_client.get("/api/studies/?flat=false")
 

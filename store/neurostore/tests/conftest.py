@@ -20,19 +20,36 @@ from ..models import (
 from auth0.v3.authentication import GetToken
 import shortuuid
 
+
+"""
+Test selection arguments
+"""
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--auth",
+        action="store_true",
+        default=False,
+        help="Run authentication tests",
+    )
+
+
+auth_test = pytest.mark.skipif(
+    "not config.getoption('--auth')",
+    reason="Only run when --auth is given",
+)
+
 """
 Test fixtures for bypassing authentication
 """
 
 
 # https://github.com/pytest-dev/pytest/issues/363#issuecomment-406536200
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=False)
 def monkeysession(request):
-    from _pytest.monkeypatch import MonkeyPatch
-
-    mpatch = MonkeyPatch()
-    yield mpatch
-    mpatch.undo()
+    with pytest.MonkeyPatch.context() as mp:
+        yield mp
 
 
 def mock_decode_token(token):
@@ -117,7 +134,12 @@ def app(mock_auth):
         _app = _app._app
     _app.config.from_object(config)
     # _app.config["SQLALCHEMY_ECHO"] = True
-
+    # https://docs.sqlalchemy.org/en/14/errors.html#error-3o7r
+    _app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "max_overflow": -1,
+        "pool_timeout": 5,
+        "pool_size": 0
+    }
     cache.clear()
     # Establish an application context before running the tests.
     ctx = _app.app_context()
@@ -142,7 +164,7 @@ def db(app):
     _db.drop_all()
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="function")
 def session(db):
     """Creates a new db session for a test.
     Changes in session are rolled back"""
@@ -290,7 +312,7 @@ def add_users(real_app, real_db):
                 name=name,
                 external_id=token_info["sub"],
             )
-            if User.query.filter_by(name=token_info["sub"]).first() is None:
+            if User.query.filter_by(external_id=token_info["sub"]).first() is None:
                 real_db.session.add(user)
                 real_db.session.commit()
 

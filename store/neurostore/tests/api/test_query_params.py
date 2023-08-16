@@ -12,7 +12,7 @@ from ...schemas.data import StudysetSchema, StudySchema, AnalysisSchema, StringO
         ("analyses", AnalysisSchema()),
     ],
 )
-def test_nested(auth_client, ingest_neurosynth, nested, resource_schema):
+def test_nested(auth_client, ingest_neurosynth, nested, resource_schema, session):
     resource, schema = resource_schema
     resp = auth_client.get(f"/api/{resource}/?nested={nested}")
     fields = [
@@ -33,7 +33,7 @@ def test_nested(auth_client, ingest_neurosynth, nested, resource_schema):
                 continue
 
 
-def test_user_id(auth_client, user_data):
+def test_user_id(auth_client, user_data, session):
     from ...resources.users import User
 
     id_ = auth_client.username
@@ -43,7 +43,7 @@ def test_user_id(auth_client, user_data):
         assert study["user"] == user.external_id
 
 
-def test_source_id(auth_client, ingest_neurosynth):
+def test_source_id(auth_client, ingest_neurosynth, session):
     from ...resources.data import Study
 
     study = Study.query.first()
@@ -53,7 +53,7 @@ def test_source_id(auth_client, ingest_neurosynth):
     assert post.json == get.json["results"][0]
 
 
-def test_data_type(auth_client, ingest_neurosynth, ingest_neurovault):
+def test_data_type(auth_client, ingest_neurosynth, ingest_neurovault, session):
     get_coord = auth_client.get("/api/studies/?data_type=coordinate")
     assert get_coord.status_code == 200
     get_img = auth_client.get("/api/studies/?data_type=image")
@@ -67,12 +67,12 @@ def test_data_type(auth_client, ingest_neurosynth, ingest_neurovault):
     )
 
 
-def test_page_size(auth_client, ingest_neurosynth):
+def test_page_size(auth_client, ingest_neurosynth, session):
     get_page_size = auth_client.get("/api/studies/?page_size=5")
     assert get_page_size.status_code == 200
 
 
-def test_common_queries(auth_client, ingest_neurosynth):
+def test_common_queries(auth_client, ingest_neurosynth, session):
     study = Study.query.filter(Study.pmid.isnot(None)).first()
 
     pmid_search = auth_client.get(f"/api/studies/?pmid={study.pmid}")
@@ -83,7 +83,7 @@ def test_common_queries(auth_client, ingest_neurosynth):
     assert len(pmid_search.json["results"]) == len(total_search.json["results"])
 
 
-def test_multiword_queries(auth_client, ingest_neurosynth):
+def test_multiword_queries(auth_client, ingest_neurosynth, session):
     study = Study.query.first()
     name = study.name
     word_list = name.split(" ")
