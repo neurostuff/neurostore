@@ -155,7 +155,7 @@ def mock_ns(monkeysession):
 
 
 """
-Session / db managment tools
+Session / db management tools
 """
 
 
