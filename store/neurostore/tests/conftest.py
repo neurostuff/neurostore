@@ -77,7 +77,7 @@ def mock_auth(monkeysession):
 
 
 """
-Session / db managment tools
+Session / db management tools
 """
 
 

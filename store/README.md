@@ -9,7 +9,7 @@ First, set up the main environment variables in `.env` (see: `.env.example`).
 
 Edit the `.env` template to set the correct variables
 
-## Initalizing backend
+## Initializing backend
 Create the network, build the containers, and start services using the development configuration:
 
     docker network create nginx-proxy

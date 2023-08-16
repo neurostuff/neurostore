@@ -5,7 +5,7 @@ def test_get_conditions(auth_client, ingest_neurovault, session):
 
 
 def test_post_conditions(auth_client, ingest_neurovault, session):
-    my_condition = {"name": "ice cream", "description": "suprise, it's rocky road!"}
+    my_condition = {"name": "ice cream", "description": "surprise, it's rocky road!"}
     post_resp = auth_client.post("/api/conditions/", data=my_condition)
     assert post_resp.status_code == 200
     post_data = post_resp.json
