@@ -4,16 +4,26 @@ services:
     image: neurostore
     restart: always
     build: ./neurostore
+    depends_on:
+      - store_pgsql
+      - store_redis
     expose:
       - "8000"
     volumes:
       - ./postgres/migrations:/migrations
       - ./:/neurostore
-    command: /usr/local/bin/gunicorn -w 2 -b :8000 neurostore.core:app --log-level debug --timeout 120
+      - ${FILE_DIR}:/file-data
+      - ${ACE_DIR}:/ace
+    command: /usr/local/bin/gunicorn -w 8 -b :8000 neurostore.core:app --log-level debug --timeout 120
     env_file:
       - .env
     container_name: neurostore
   
+  store_redis:
+    image: redis
+    expose:
+      - '6379'
+
   store_nginx:
     image: store_nginx
     restart: always

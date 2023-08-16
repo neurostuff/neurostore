@@ -10,6 +10,9 @@ from neurostore.core import app, db
 from neurostore import ingest
 from neurostore import models
 
+if not getattr(app, 'config', None):
+    app = app._app
+
 app.config.from_object(os.environ["APP_SETTINGS"])
 
 
@@ -23,7 +26,7 @@ def make_shell_context():
 
 
 @app.cli.command()
-@click.option('--max-rows', default=None, help='ingest neurosynth')
+@click.option("--max-rows", default=None, help="ingest neurosynth")
 def ingest_neurosynth(max_rows):
     if max_rows is not None:
         max_rows = int(max_rows)
@@ -31,8 +34,12 @@ def ingest_neurosynth(max_rows):
 
 
 @app.cli.command()
-@click.option('--verbose/-v', default=False, help='increase verbosity downloading neurovault')
-@click.option('--limit/-l', default=None, help='number of neurovault studies to download')
+@click.option(
+    "--verbose/-v", default=False, help="increase verbosity downloading neurovault"
+)
+@click.option(
+    "--limit/-l", default=None, help="number of neurovault studies to download"
+)
 def ingest_neurovault(verbose, limit):
     if limit is not None:
         limit = int(limit)
@@ -40,7 +47,7 @@ def ingest_neurovault(verbose, limit):
 
 
 @app.cli.command()
-@click.option('--max-rows', default=None, help='ingest neurosynth')
+@click.option("--max-rows", default=None, help="ingest neurosynth")
 def ingest_neuroquery(max_rows):
     if max_rows is not None:
         max_rows = int(max_rows)

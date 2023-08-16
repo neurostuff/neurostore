@@ -4,6 +4,7 @@ from sqlalchemy import engine_from_config, pool
 from logging.config import fileConfig
 import logging
 
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -77,6 +78,7 @@ def run_migrations_online():
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
+        user_module_prefix="neurostore.models.migration_types.",  # custom column types
         process_revision_directives=process_revision_directives,
         **current_app.extensions["migrate"].configure_args
     )

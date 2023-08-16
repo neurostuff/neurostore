@@ -5,11 +5,13 @@ connexion[swagger-ui]~=2.7
 email-validator~=1.1
 flake8~=3.8
 flask~=2.0
+flask-caching~=2.0
 flask-cors~=3.0
 flask-dance~=3.2
 flask-shell-ipython~=0.4
 flask-migrate~=2.5
 flask-security~=3.0
+flask-sqlalchemy==3.0.2 # fix multiple instance error: https://flask-sqlalchemy.palletsprojects.com/en/3.0.x/changes/#version-3-0-3
 gunicorn~=20.0
 ipython~=7.19
 pandas~=1.2
@@ -17,9 +19,11 @@ pip-chill~=1.0
 psycopg2-binary~=2.8
 pyld~=2.0
 python-jose~=3.3
+redis
 shortuuid~=1.0
 sqlalchemy~=1.4
 sqlalchemy-utils~=0.36
+sqltap
 webargs~=7.0
 wheel~=0.36
 wrapt~=1.12
@@ -27,3 +31,4 @@ openapi-spec-validator~=0.3
 scipy~=1.9
 pytest~=7.1
 orjson~=3.8
+prance

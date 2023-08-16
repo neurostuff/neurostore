@@ -4,17 +4,18 @@ import { useSnackbar } from 'notistack';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
-const useGetStudysetById = (studysetId: string) => {
+const useGetStudysetById = (studysetId?: string, nested?: boolean) => {
     const { enqueueSnackbar } = useSnackbar();
-    const { data, isLoading, isError, error } = useQuery<
+    const { data, isLoading, isError, error, refetch, isRefetching } = useQuery<
         AxiosResponse<StudysetReturn>,
         AxiosError,
         StudysetReturn,
-        string[]
+        [string, string | undefined, boolean | undefined]
     >(
-        ['studysets', studysetId],
-        () => API.NeurostoreServices.StudySetsService.studysetsIdGet(studysetId, true),
+        ['studysets', studysetId, nested],
+        () => API.NeurostoreServices.StudySetsService.studysetsIdGet(studysetId || '', nested),
         {
+            enabled: !!studysetId,
             onError: (err) => {
                 enqueueSnackbar('there was an error retrieving the studyset', { variant: 'error' });
             },
@@ -27,6 +28,8 @@ const useGetStudysetById = (studysetId: string) => {
         isLoading,
         isError,
         error,
+        refetch,
+        isRefetching,
     };
 };
 

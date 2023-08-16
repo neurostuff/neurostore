@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { ChangeEvent, useEffect, useState } from 'react';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 
 export interface ICreateDetailsDialog {
     isOpen: boolean;
@@ -17,6 +18,8 @@ export interface ICreateDetailsDialog {
     onCloseDialog: () => void;
     titleText: string;
     initName?: string;
+    nameLabel?: string;
+    descriptionLabel?: string;
 }
 
 const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
@@ -65,7 +68,7 @@ const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
             </DialogTitle>
             <DialogContent>
                 <TextField
-                    label="Name"
+                    label={props.nameLabel || 'name'}
                     value={newDetails.name}
                     name="name"
                     id="dialog-name"
@@ -78,7 +81,7 @@ const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
                     sx={{ width: '100%', margin: '5px 0 1rem 0' }}
                 />
                 <TextField
-                    label="Description"
+                    label={props.descriptionLabel || 'description'}
                     multiline
                     id="dialog-description"
                     onChange={handleOnChange}
@@ -89,23 +92,22 @@ const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Button
                         sx={{ width: '150px' }}
-                        onClick={() => {
-                            props.onCreate(newDetails.name, newDetails.description);
-                            handleOnClose();
-                        }}
-                        variant="contained"
-                        disabled={newDetails.name.length === 0}
-                    >
-                        Create
-                    </Button>
-                    <Button
-                        sx={{ width: '150px' }}
                         onClick={handleOnClose}
                         variant="outlined"
                         color="error"
                     >
                         Cancel
                     </Button>
+                    <LoadingButton
+                        variant="contained"
+                        sx={{ width: '150px' }}
+                        disabled={newDetails.name.length === 0}
+                        text="create"
+                        onClick={() => {
+                            props.onCreate(newDetails.name, newDetails.description);
+                            handleOnClose();
+                        }}
+                    />
                 </Box>
             </DialogContent>
         </Dialog>

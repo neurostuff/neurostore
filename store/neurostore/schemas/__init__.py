@@ -1,6 +1,7 @@
 from .data import (
     StudySchema,
     AnalysisSchema,
+    BaseStudySchema,
     ConditionSchema,
     ImageSchema,
     PointSchema,
@@ -12,6 +13,7 @@ from .data import (
     StudysetStudySchema,
     StudysetSnapshot,
     EntitySchema,
+    BooleanOrString,
 )
 
 from .auth import UserSchema
@@ -19,6 +21,7 @@ from .auth import UserSchema
 __all__ = [
     "StudySchema",
     "AnalysisSchema",
+    "BaseStudySchema",
     "ConditionSchema",
     "ImageSchema",
     "PointSchema",
@@ -31,4 +34,5 @@ __all__ = [
     "StudysetStudySchema",
     "StudysetSnapshot",
     "EntitySchema",
+    "BooleanOrString",
 ]

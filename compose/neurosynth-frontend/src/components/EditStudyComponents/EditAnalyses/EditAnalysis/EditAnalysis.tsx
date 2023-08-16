@@ -1,67 +1,73 @@
-import { Tabs, Tab, Box } from '@mui/material';
-import React, { SyntheticEvent, useState } from 'react';
-import EditAnalysisDetails from './EditAnalysisDetails/EditAnalysisDetails';
-import EditAnalysisPoints from './EditAnalysisPoints/EditAnalysisPoints';
-import EditAnalysisStyles from './EditAnalysis.styles';
-import EditAnalysisConditions from './EditAnalysisConditions/EditAnalysisConditions';
-import EditAnalysisImages from './EditAnalysisImages/EditAnalysisImages';
-import { AnalysisReturn, ConditionReturn, PointReturn } from 'neurostore-typescript-sdk';
+import HelpIcon from '@mui/icons-material/Help';
+import { Box, Button, Tooltip, Typography } from '@mui/material';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
+import DisplayAnalysisWarnings from 'components/DisplayStudy/DisplayAnalyses/DisplayAnalysisWarnings/DisplayAnalysisWarnings';
+import { useDeleteAnalysis } from 'pages/Studies/StudyStore';
+import { useState } from 'react';
+import EditAnalysisDetails from '../EditAnalysisDetails/EditAnalysisDetails';
+import EditAnalysisPoints from '../EditAnalysisPoints/EditAnalysisPoints';
 
-const EditAnalysis: React.FC<{ analysis: AnalysisReturn | undefined }> = (props) => {
-    const [editTab, setEditTab] = useState(0);
+const EditAnalysis: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void }> = (props) => {
+    const deleteAnalysis = useDeleteAnalysis();
+
+    const [dialogIsOpen, setDialogIsOpen] = useState(false);
+
+    if (!props.analysisId) {
+        return <Typography sx={{ color: 'warning.dark' }}>No analysis selected</Typography>;
+    }
+
+    const handleCloseDialog = (confirm?: boolean) => {
+        if (confirm && props.analysisId) {
+            deleteAnalysis(props.analysisId);
+            props.onDeleteAnalysis();
+        }
+        setDialogIsOpen(false);
+    };
 
     return (
-        <>
-            {props.analysis && (
-                <>
-                    <Tabs
-                        sx={EditAnalysisStyles.editTabs}
-                        TabScrollButtonProps={{
-                            sx: {
-                                color: 'primary.main',
-                            },
-                        }}
-                        value={editTab}
-                        onChange={(_event: SyntheticEvent, newValue: number) => {
-                            setEditTab(newValue);
-                        }}
+        <Box sx={{ marginBottom: '2rem', width: '100%' }}>
+            <DisplayAnalysisWarnings analysisId={props.analysisId} />
+            <Box>
+                <Typography sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
+                    Analysis Details
+                </Typography>
+                <EditAnalysisDetails analysisId={props.analysisId} />
+            </Box>
+
+            <Box sx={{ marginTop: '2rem', width: '100%' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', margin: '0.5rem 0' }}>
+                    <Typography sx={{ fontWeight: 'bold', marginRight: '1rem' }}>
+                        Analysis Coordinates
+                    </Typography>
+                    <Tooltip
+                        title="To add or remove rows, right click on a cell to open the context menu. You must enter all coordinates in order to save the overall study. Please note that the ordering of points is not guaranteed."
+                        placement="right"
                     >
-                        <Tab sx={[EditAnalysisStyles.tab]} value={0} label="Coordinates" />
-                        <Tab sx={[EditAnalysisStyles.tab]} value={1} label="Conditions" />
-                        <Tab sx={EditAnalysisStyles.tab} value={2} label="Images" />
-                        <Tab sx={[EditAnalysisStyles.tab]} value={3} label="General" />
-                    </Tabs>
-                    <Box>
-                        {editTab === 0 && (
-                            <EditAnalysisPoints
-                                analysisId={props.analysis.id}
-                                studyId={props.analysis.study}
-                                points={props.analysis.points as PointReturn[] | undefined}
-                            />
-                        )}
-                        {editTab === 1 && (
-                            <EditAnalysisConditions
-                                studyId={props.analysis.study}
-                                analysisId={props.analysis.id || ''}
-                                conditions={
-                                    props.analysis.conditions as ConditionReturn[] | undefined
-                                }
-                                weights={props.analysis.weights}
-                            />
-                        )}
-                        {editTab === 2 && <EditAnalysisImages />}
-                        {editTab === 3 && (
-                            <EditAnalysisDetails
-                                studyId={props.analysis.study || ''}
-                                analysisId={props.analysis.id || ''}
-                                name={props.analysis.name || ''}
-                                description={props.analysis.description || ''}
-                            />
-                        )}
-                    </Box>
-                </>
-            )}
-        </>
+                        <HelpIcon color="primary" />
+                    </Tooltip>
+                </Box>
+                <EditAnalysisPoints analysisId={props.analysisId} />
+            </Box>
+            {/* TODO: This can be added back later when we have a better understanding of where it fits in as currently, all meta-analysis algorithms do not use this */}
+            {/* <Box sx={{ marginTop: '2rem' }}>
+                <Typography sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
+                    Analysis Conditions
+                </Typography>
+                <EditAnalysisConditions analysisId={props.analysisId} />
+            </Box> */}
+            <Box sx={{ marginTop: '2rem' }}>
+                <ConfirmationDialog
+                    isOpen={dialogIsOpen}
+                    dialogTitle="Are you sure you want to delete this analysis?"
+                    onCloseDialog={handleCloseDialog}
+                    confirmText="delete analysis"
+                    rejectText="cancel"
+                />
+                <Button onClick={() => setDialogIsOpen(true)} variant="outlined" color="error">
+                    Delete Analysis
+                </Button>
+            </Box>
+        </Box>
     );
 };
 

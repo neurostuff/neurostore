@@ -1,37 +1,34 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Typography, Box, Button, IconButton, Link, TableRow, TableCell } from '@mui/material';
-import { useState } from 'react';
-import { useParams } from 'react-router';
-import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
-import { useHistory } from 'react-router';
 import AddIcon from '@mui/icons-material/Add';
-import TextExpansion from 'components/TextExpansion/TextExpansion';
+import HelpIcon from '@mui/icons-material/Help';
+import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
+import { Box, Button, IconButton, Link, TableCell, TableRow, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
+import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import TextEdit from 'components/TextEdit/TextEdit';
-import StudysetPageStyles from './StudysetPage.styles';
-import HelpIcon from '@mui/icons-material/Help';
-import useGetTour from 'hooks/useGetTour';
+import TextExpansion from 'components/TextExpansion/TextExpansion';
 import {
     useCreateAnnotation,
-    useDeleteStudyset,
     useGetAnnotationsByStudysetId,
     useGetStudysetById,
     useUpdateStudyset,
 } from 'hooks';
+import useGetTour from 'hooks/useGetTour';
 import { StudyReturn } from 'neurostore-typescript-sdk';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { useState } from 'react';
 import { useIsFetching } from 'react-query';
+import { useHistory, useParams } from 'react-router';
 import { NavLink } from 'react-router-dom';
-import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
-import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
+import StudysetPageStyles from './StudysetPage.styles';
 
 const StudysetsPage: React.FC = (props) => {
     const { startTour } = useGetTour('StudysetPage');
     const { user, isAuthenticated } = useAuth0();
     const history = useHistory();
 
-    const [deleteStudysetConfirmationIsOpen, setDeleteStudysetConfirmationIsOpen] = useState(false);
     const [
         deleteStudyFromStudysetConfirmationIsOpen,
         setDeleteStudyFromStudysetConfirmationIsOpen,
@@ -60,7 +57,6 @@ const StudysetsPage: React.FC = (props) => {
         params?.studysetId
     );
     const { mutate: createAnnotation } = useCreateAnnotation();
-    const { mutate: deleteStudyset } = useDeleteStudyset();
 
     const thisUserOwnsthisStudyset = (studyset?.user || undefined) === (user?.sub || null);
 
@@ -90,16 +86,6 @@ const StudysetsPage: React.FC = (props) => {
                 break;
             default:
                 break;
-        }
-    };
-
-    const handleCloseDeleteStudysetDialog = async (confirm: boolean | undefined) => {
-        setDeleteStudysetConfirmationIsOpen(false);
-
-        if (studyset?.id && confirm) {
-            deleteStudyset(studyset?.id, {
-                onSuccess: () => history.push('/userstudysets'),
-            });
         }
     };
 
@@ -151,7 +137,7 @@ const StudysetsPage: React.FC = (props) => {
                         isLoading={updateStudysetNameIsLoading}
                         editIconIsVisible={thisUserOwnsthisStudyset}
                         onSave={handleUpdateField}
-                        sx={{ fontSize: '1.5rem' }}
+                        sx={{ input: { fontSize: '1.5rem' }, width: '50%' }}
                         label="name"
                         textToEdit={studyset?.name || ''}
                     >
@@ -170,7 +156,7 @@ const StudysetsPage: React.FC = (props) => {
                     <TextEdit
                         isLoading={updateStudysetPublicationIsLoading}
                         editIconIsVisible={thisUserOwnsthisStudyset}
-                        sx={{ fontSize: '1.25rem' }}
+                        sx={{ input: { fontSize: '1.25rem' }, width: '50%' }}
                         onSave={handleUpdateField}
                         label="publication"
                         textToEdit={studyset?.publication || ''}
@@ -190,7 +176,7 @@ const StudysetsPage: React.FC = (props) => {
                     <TextEdit
                         isLoading={updateStudysetDoiIsLoading}
                         editIconIsVisible={thisUserOwnsthisStudyset}
-                        sx={{ fontSize: '1.25rem' }}
+                        sx={{ input: { fontSize: '1.25rem' }, width: '50%' }}
                         label="doi"
                         onSave={handleUpdateField}
                         textToEdit={studyset?.doi || ''}
@@ -210,7 +196,7 @@ const StudysetsPage: React.FC = (props) => {
                     <TextEdit
                         isLoading={updateStudysetDescriptionIsLoading}
                         editIconIsVisible={thisUserOwnsthisStudyset}
-                        sx={{ fontSize: '1.25rem' }}
+                        sx={{ input: { fontSize: '1.25rem' }, width: '50%' }}
                         onSave={handleUpdateField}
                         label="description"
                         textToEdit={studyset?.description || ''}
@@ -272,10 +258,6 @@ const StudysetsPage: React.FC = (props) => {
                             onCloseDialog={() => setCreateDetailsIsOpen(false)}
                         />
                     </Box>
-                    {/* <AnnotationsTable
-                        studysetId={params.studysetId}
-                        annotations={annotations || []}
-                    /> */}
                     <NeurosynthTable
                         tableConfig={{
                             isLoading: getAnnotationsIsLoading,
@@ -422,26 +404,6 @@ const StudysetsPage: React.FC = (props) => {
                     rejectText="No"
                     onCloseDialog={handleCloseDeleteStudyFromStudysetDialog}
                 />
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                <ConfirmationDialog
-                    dialogTitle="Are you sure you want to delete the studyset?"
-                    dialogMessage="You will not be able to undo this action"
-                    confirmText="Yes"
-                    rejectText="No"
-                    isOpen={deleteStudysetConfirmationIsOpen}
-                    onCloseDialog={handleCloseDeleteStudysetDialog}
-                />
-                <Button
-                    data-tour="StudysetPage-6"
-                    onClick={() => setDeleteStudysetConfirmationIsOpen(true)}
-                    variant="contained"
-                    sx={{ width: '200px' }}
-                    color="error"
-                    disabled={!isAuthenticated || !thisUserOwnsthisStudyset}
-                >
-                    Delete studyset
-                </Button>
             </Box>
         </StateHandlerComponent>
     );

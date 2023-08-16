@@ -6,12 +6,23 @@ import { IEditMetadataModel, getType } from '.';
 import { Box, Divider } from '@mui/material';
 
 const EditMetadata: React.FC<IEditMetadataModel> = React.memo((props) => {
-    const { metadata, onMetadataRowEdit, onMetadataRowDelete, onMetadataRowAdd } = props;
+    const {
+        keyPlaceholderText,
+        valuePlaceholderText,
+        metadata,
+        onMetadataRowEdit,
+        onMetadataRowDelete,
+        onMetadataRowAdd,
+    } = props;
 
     return (
         <>
             <Box sx={[EditMetadataStyles.table, { height: '70px' }]}>
-                <AddMetadataRow onAddMetadataRow={onMetadataRowAdd} />
+                <AddMetadataRow
+                    keyPlaceholderText={keyPlaceholderText}
+                    valuePlaceholderText={valuePlaceholderText}
+                    onAddMetadataRow={onMetadataRowAdd}
+                />
             </Box>
             <Divider sx={EditMetadataStyles.hr} />
             {metadata.length === 0 && (

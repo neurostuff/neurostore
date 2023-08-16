@@ -1,109 +1,97 @@
-import { AppBar } from '@mui/material';
-import NavbarToolbar from './NavbarToolbar/NavbarToolbar';
 import { useAuth0 } from '@auth0/auth0-react';
-import { NavOptionsModel } from '.';
+import { AppBar, Box } from '@mui/material';
+import { EPropertyType } from 'components/EditMetadata';
+import { useCreateProject } from 'hooks';
+import { useHistory } from 'react-router-dom';
+import NavDrawer from './NavDrawer/NavDrawer';
+import NavToolbar from './NavToolbar/NavToolbar';
+import NavbarStyles from './Navbar.styles';
 
-const authenticatedNavItems: NavOptionsModel[] = [
-    { label: 'HOME', path: '/', children: null },
-    {
-        label: 'STUDIES',
-        path: '',
-        disabled: false,
-        className: 'tour-studies-tab',
-        authenticationRequired: false,
-        children: [
-            {
-                label: 'Public Studies',
-                path: '/studies',
-                children: null,
-            },
-            {
-                label: 'My Studies',
-                path: '/userstudies',
-                children: null,
-                authenticationRequired: true,
-            },
-        ],
-    },
-    {
-        label: 'STUDYSETS',
-        path: '',
-        className: 'tour-studysets-tab',
-        disabled: false,
-        authenticationRequired: false,
-        children: [
-            { label: 'Public Studysets', path: '/studysets', children: null },
-            {
-                label: 'My Studysets',
-                path: '/userstudysets',
-                children: null,
-                authenticationRequired: true,
-            },
-        ],
-    },
-    {
-        label: 'META-ANALYSES',
-        path: '',
-        className: 'tour-meta-analyses-tab',
-        disabled: false,
-        authenticationRequired: false,
-        children: [
-            { label: 'Public Meta-Analyses', path: '/meta-analyses', children: null },
-            {
-                label: 'My Meta-Analyses',
-                path: '/usermeta-analyses',
-                children: null,
-                authenticationRequired: true,
-            },
-            {
-                label: 'Create New Meta-Analysis',
-                path: '/meta-analyses/build',
-                children: null,
-                authenticationRequired: true,
-            },
-        ],
-    },
-];
+export interface INav {
+    onLogin: () => Promise<void>;
+    onLogout: () => void;
+    onCreateProject: (name: string, description: string) => void;
+}
 
-const nonAuthenticatedNavItems: NavOptionsModel[] = [
-    {
-        label: 'HOME',
-        path: '/',
-        children: null,
-    },
-    {
-        label: 'STUDIES',
-        path: '/studies',
-        children: null,
-    },
-    {
-        label: 'STUDYSETS',
-        path: '/studysets',
-        children: null,
-    },
-    {
-        label: 'META-ANALYSES',
-        path: '/meta-analyses',
-        children: null,
-    },
-];
+export const NAVBAR_HEIGHT = 64;
 
 const Navbar: React.FC = (_props) => {
-    const { loginWithPopup, logout, isAuthenticated } = useAuth0();
+    const { loginWithPopup, logout } = useAuth0();
+    const { mutate } = useCreateProject();
+    const history = useHistory();
 
     const handleLogin = async () => {
         await loginWithPopup();
+        history.push('/');
     };
 
     const handleLogout = () => logout({ returnTo: window.location.origin });
 
+    const handleCreateProject = (name: string, description: string) => {
+        mutate(
+            {
+                name,
+                description,
+                provenance: {
+                    curationMetadata: {
+                        columns: [],
+                        prismaConfig: {
+                            isPrisma: false,
+                            identification: {
+                                exclusionTags: [],
+                            },
+                            screening: {
+                                exclusionTags: [],
+                            },
+                            eligibility: {
+                                exclusionTags: [],
+                            },
+                        },
+                        infoTags: [],
+                        exclusionTags: [],
+                        identificationSources: [],
+                    },
+                    extractionMetadata: {
+                        studysetId: null,
+                        annotationId: null,
+                        studyStatusList: [],
+                    },
+                    selectionMetadata: {
+                        filter: {
+                            selectionKey: null,
+                            type: EPropertyType.NONE,
+                        },
+                    },
+                    algorithmMetadata: {
+                        specificationId: null,
+                    },
+                },
+            },
+            {
+                onSuccess: (arg) => {
+                    history.push(`/projects/${arg.data.id || ''}`);
+                },
+            }
+        );
+    };
+
     return (
-        <AppBar position="static" elevation={0}>
-            <NavbarToolbar
-                logout={handleLogout}
-                login={handleLogin}
-                navOptions={isAuthenticated ? authenticatedNavItems : nonAuthenticatedNavItems}
-            />
+        // declare size as this is used to calculate height of other views such as the curation board
+        <AppBar sx={{ height: `${NAVBAR_HEIGHT}px` }} position="static" elevation={0}>
+            <Box sx={NavbarStyles.mdUp}>
+                <NavToolbar
+                    onCreateProject={handleCreateProject}
+                    onLogin={handleLogin}
+                    onLogout={handleLogout}
+                />
+            </Box>
+            <Box sx={NavbarStyles.mdDown}>
+                <NavDrawer
+                    onCreateProject={handleCreateProject}
+                    onLogin={handleLogin}
+                    onLogout={handleLogout}
+                />
+            </Box>
         </AppBar>
     );
 };

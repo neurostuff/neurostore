@@ -1,9 +1,25 @@
 import pytest
 from marshmallow import fields
-from ...models import User, Studyset, Study, Annotation, Analysis, Condition, Image, Point
+from ...models import (
+    User,
+    Studyset,
+    BaseStudy,
+    Study,
+    Annotation,
+    Analysis,
+    Condition,
+    Image,
+    Point,
+)
 from ...schemas import (
-    StudysetSchema, StudySchema, AnnotationSchema, AnalysisSchema,
-    ConditionSchema, ImageSchema, PointSchema
+    StudysetSchema,
+    BaseStudySchema,
+    StudySchema,
+    AnnotationSchema,
+    AnalysisSchema,
+    ConditionSchema,
+    ImageSchema,
+    PointSchema,
 )
 from ...schemas.data import StringOrNested
 
@@ -13,28 +29,37 @@ from ...schemas.data import StringOrNested
     [
         ("studysets", Studyset, StudysetSchema),
         # ("annotations", Annotation, AnnotationSchema), FIX
+        ("base-studies", BaseStudy, BaseStudySchema),
         ("studies", Study, StudySchema),
         ("analyses", Analysis, AnalysisSchema),
         ("conditions", Condition, ConditionSchema),
         ("images", Image, ImageSchema),
         ("points", Point, PointSchema),
-    ]
+    ],
 )
 def test_create(auth_client, user_data, endpoint, model, schema):
     user = User.query.filter_by(name="user1").first()
-    payload = schema(copy=True).dump(
-        model.query.filter_by(user=user).first()
-    )
 
-    resp = auth_client.post(f"/api/{endpoint}/", data=payload)
+    rows = model.query.filter_by(user=user).all()
+    for row in rows:
+        payload = schema(copy=True).dump(row)
+        if model is BaseStudy:
+            payload["doi"] = payload["doi"] + "new"
+            payload["pmid"] = payload["pmid"] + "new"
 
-    assert resp.status_code == 200
+        resp = auth_client.post(f"/api/{endpoint}/", data=payload)
+        if resp.status_code == 422:
+            print(resp.text)
+            print(payload)
+            print(auth_client.username)
+        assert resp.status_code == 200
     sf = schema().fields
     # do not check keys if they are nested (difficult to generally check)
     d_key_sf = {(sf[k].data_key if sf[k].data_key else k): v for k, v in sf.items()}
     for k, v in payload.items():
         if not isinstance(
-            d_key_sf.get(k), (StringOrNested, fields.Nested),
+            d_key_sf.get(k),
+            (StringOrNested, fields.Nested),
         ):
             assert v == resp.json[k]
 
@@ -44,42 +69,46 @@ def test_create(auth_client, user_data, endpoint, model, schema):
     [
         ("studysets", Studyset, StudysetSchema),
         ("annotations", Annotation, AnnotationSchema),
+        ("base-studies", BaseStudy, BaseStudySchema),
         ("studies", Study, StudySchema),
         ("analyses", Analysis, AnalysisSchema),
         ("conditions", Condition, ConditionSchema),
         ("images", Image, ImageSchema),
         ("points", Point, PointSchema),
-    ]
+    ],
 )
 def test_read(auth_client, user_data, endpoint, model, schema):
     user = User.query.filter_by(name="user1").first()
+    query = True
     if hasattr(model, "public"):
         query = (model.user == user) | (model.public == True)  # noqa E712
-    else:
-        query = True
+    if hasattr(model, "level"):
+        query = (query) & (model.level == "group")
+
     expected_results = model.query.filter(query).all()
 
     resp = auth_client.get(f"/api/{endpoint}/")
 
     assert resp.status_code == 200
-    assert len(expected_results) == len(resp.json['results'])
+    assert len(expected_results) == len(resp.json["results"])
 
     query_ids = set([res.id for res in expected_results])
-    resp_ids = set([res['id'] for res in resp.json['results']])
+    resp_ids = set([res["id"] for res in resp.json["results"]])
     assert query_ids == resp_ids
 
 
 @pytest.mark.parametrize(
     "endpoint,model,schema,update",
     [
-        ("studysets", Studyset, StudysetSchema, {'description': 'mine'}),
+        ("studysets", Studyset, StudysetSchema, {"description": "mine"}),
         # ("annotations", Annotation, AnnotationSchema, {'description': 'mine'}), FIX
-        ("studies", Study, StudySchema, {'description': 'mine'}),
-        ("analyses", Analysis, AnalysisSchema, {'description': 'mine'}),
-        ("conditions", Condition, ConditionSchema, {'description': 'mine'}),
-        ("images", Image, ImageSchema, {'filename': 'changed'}),
-        ("points", Point, PointSchema, {'space': 'MNI'}),
-    ]
+        ("base-studies", BaseStudy, BaseStudySchema, {"description": "mine"}),
+        ("studies", Study, StudySchema, {"description": "mine"}),
+        ("analyses", Analysis, AnalysisSchema, {"description": "mine"}),
+        ("conditions", Condition, ConditionSchema, {"description": "mine"}),
+        ("images", Image, ImageSchema, {"filename": "changed"}),
+        ("points", Point, PointSchema, {"space": "MNI"}),
+    ],
 )
 def test_update(auth_client, user_data, endpoint, model, schema, update):
     user = User.query.filter_by(name="user1").first()
@@ -98,12 +127,13 @@ def test_update(auth_client, user_data, endpoint, model, schema, update):
     [
         ("studysets", Studyset, StudysetSchema),
         ("annotations", Annotation, AnnotationSchema),
+        # ("base-studies", BaseStudy, BaseStudySchema),
         ("studies", Study, StudySchema),
         ("analyses", Analysis, AnalysisSchema),
         ("conditions", Condition, ConditionSchema),
         ("images", Image, ImageSchema),
         ("points", Point, PointSchema),
-    ]
+    ],
 )
 def test_delete(auth_client, mock_auth, user_data, endpoint, model, schema, session):
     user = User.query.filter_by(name="user1").first()

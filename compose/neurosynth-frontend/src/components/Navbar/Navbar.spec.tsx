@@ -2,41 +2,65 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Navbar from './Navbar';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { Router } from 'react-router-dom';
 
 jest.mock('@auth0/auth0-react');
-
-// mock navbar tool bar
-jest.mock('./NavbarToolbar/NavbarToolbar');
+jest.mock('components/Navbar/NavDrawer/NavDrawer.tsx');
+jest.mock('components/Navbar/NavToolbar/NavToolbar.tsx');
+jest.mock('hooks');
 
 describe('Navbar', () => {
+    const historyMock = {
+        push: jest.fn(),
+        location: {},
+        listen: jest.fn(),
+    };
+
     afterAll(() => {
         jest.clearAllMocks();
     });
 
+    const queryClient = new QueryClient();
+
     it('should render', () => {
-        render(<Navbar />);
-        const loginButton = screen.getByTestId('login');
-        const logoutButton = screen.getByTestId('logout');
+        render(
+            <QueryClientProvider client={queryClient}>
+                <Router history={historyMock as any}>
+                    <Navbar />
+                </Router>
+            </QueryClientProvider>
+        );
 
-        expect(loginButton).toBeInTheDocument();
-        expect(logoutButton).toBeInTheDocument();
+        expect(screen.getByTestId('mock-nav-drawer')).toBeInTheDocument();
+        expect(screen.getByTestId('mock-nav-toolbar')).toBeInTheDocument();
     });
 
     it('should call the auth0 login method when logging in', () => {
-        render(<Navbar />);
+        render(
+            <QueryClientProvider client={queryClient}>
+                <Router history={historyMock as any}>
+                    <Navbar />
+                </Router>
+            </QueryClientProvider>
+        );
 
-        const loginButton = screen.getByTestId('login');
-        userEvent.click(loginButton);
+        userEvent.click(screen.getByTestId('toolbar-trigger-login'));
 
-        expect(useAuth0().loginWithPopup).toBeCalled();
+        expect(useAuth0().loginWithPopup).toHaveBeenCalled();
     });
 
-    it('should call the auth0 login method when logging in', () => {
-        render(<Navbar />);
+    it('should call the auth0 logout method when logging out', () => {
+        render(
+            <QueryClientProvider client={queryClient}>
+                <Router history={historyMock as any}>
+                    <Navbar />
+                </Router>
+            </QueryClientProvider>
+        );
 
-        const logoutButton = screen.getByTestId('logout');
-        userEvent.click(logoutButton);
+        userEvent.click(screen.getByTestId('toolbar-trigger-logout'));
 
-        expect(useAuth0().logout).toBeCalled();
+        expect(useAuth0().logout).toHaveBeenCalled();
     });
 });

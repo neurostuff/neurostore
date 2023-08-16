@@ -7,6 +7,8 @@ class Client(object):
         if test_client is None:
             from ..core import app
 
+            if not getattr(app, "test_client", None):
+                app = app._app
             test_client = app.test_client()
             self.client_flask = True
         else:
@@ -19,7 +21,7 @@ class Client(object):
 
     def _get_headers(self):
         if self.token is not None:
-            return {'Authorization': 'Bearer %s' % self.token}
+            return {"Authorization": "Bearer %s" % self.token}
         else:
             return None
 
@@ -33,7 +35,7 @@ class Client(object):
         content_type=None,
         json_dump=True,
     ):
-        """ Generic request handler """
+        """Generic request handler"""
         request_function = getattr(self.client, request)
         headers = headers or self._get_headers()
 

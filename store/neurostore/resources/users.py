@@ -4,11 +4,11 @@ from webargs.flaskparser import parser
 
 from .data import ListView, ObjectView
 from ..models.auth import User
-from ..schemas import UserSchema # noqa E401
+from ..schemas import UserSchema  # noqa E401
 from ..database import db
 
 
-class UserListView(ListView):
+class UsersView(ObjectView, ListView):
     _model = User
     _schema = UserSchema
 
@@ -29,13 +29,10 @@ class UserListView(ListView):
 
         return self.__class__._schema().dump(record)
 
-
-class UserView(ObjectView):
-    _model = User
-    _schema = UserSchema
-
     def put(self, id):
-        current_user = User.query.filter_by(external_id=connexion.context['user']).first()
+        current_user = User.query.filter_by(
+            external_id=connexion.context["user"]
+        ).first()
         data = parser.parse(self.__class__._schema, request)
         if id != data["id"] or id != current_user.id:
             return abort(422)

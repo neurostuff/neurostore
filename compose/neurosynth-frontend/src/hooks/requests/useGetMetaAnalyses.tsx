@@ -1,17 +1,17 @@
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
-const useGetMetaAnalyses = (userId?: string) => {
+const useGetMetaAnalysesByProjectId = (projectId?: string) => {
     return useQuery(
-        ['meta-analyses', userId],
+        ['meta-analyses', projectId],
         () => API.NeurosynthServices.MetaAnalysisService.metaAnalysesGet(false),
         {
             select: (axiosResponse) => {
                 const res = axiosResponse.data.results || [];
-                return userId ? res.filter((x) => x.user === userId) : res;
+                return projectId ? res.filter((x) => x.project === projectId) : res;
             },
         }
     );
 };
 
-export default useGetMetaAnalyses;
+export default useGetMetaAnalysesByProjectId;

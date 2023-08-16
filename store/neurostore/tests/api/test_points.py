@@ -7,7 +7,7 @@ from ...models import User, Analysis, Study
 def test_get_points(auth_client, ingest_neurosynth):
     # Get an analysis
     resp = auth_client.get("/api/analyses/")
-    analysis = decode_json(resp)['results'][0]
+    analysis = decode_json(resp)["results"][0]
 
     point_id = analysis["points"][0]
 
@@ -38,19 +38,20 @@ def test_put_points(auth_client, session):
                         y=0,
                         z=0,
                         user=user,
+                        order=1,
                     )
-                ]
+                ],
             )
-        ]
+        ],
     )
     session.add(s)
     session.commit()
 
     point_id = s.analyses[0].points[0].id
-    new_data = {'x': 10}
+    new_data = {"x": 10}
     resp = auth_client.put(f"/api/points/{point_id}", data=new_data)
 
-    assert resp.json['coordinates'][0] == new_data['x']
+    assert resp.json["coordinates"][0] == new_data["x"]
 
 
 def test_post_points(auth_client, ingest_neurosynth, session):
@@ -61,13 +62,14 @@ def test_post_points(auth_client, ingest_neurosynth, session):
     point_db.analysis.user = user
     session.add(point_db.analysis)
     session.commit()
-    post_point = {'analysis': point['analysis'], 'space': point['space']}
-    post_point['x'], post_point['y'], post_point['z'] = point['coordinates']
+    post_point = {"analysis": point["analysis"], "space": point["space"]}
+    post_point["x"], post_point["y"], post_point["z"] = point["coordinates"]
+    post_point["order"] = 1
     resp = auth_client.post("/api/points/", data=post_point)
 
     assert resp.status_code == 200
 
-    assert resp.json['coordinates'] == point['coordinates']
+    assert resp.json["coordinates"] == point["coordinates"]
 
 
 def test_delete_points(auth_client, session):
@@ -87,9 +89,9 @@ def test_delete_points(auth_client, session):
                         z=0,
                         user=user,
                     )
-                ]
+                ],
             )
-        ]
+        ],
     )
     session.add(s)
     session.commit()

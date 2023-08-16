@@ -12,6 +12,8 @@ def nested_load(view, options=None):
     nested attributes.
     """
     nested_keys = list(view._nested.keys())
+    if "entities" in nested_keys:
+        nested_keys.remove("entities")
     if len(nested_keys) == 1:
         if options:
             options = options.subqueryload(getattr(view._model, nested_keys[0]))
@@ -26,11 +28,7 @@ def nested_load(view, options=None):
             nested_view = getattr(data, view._nested[k])
             if nested_view._nested:
                 nested_loads.append(
-                    nested_load(
-                        nested_view, subqueryload(
-                            getattr(view._model, k)
-                        )
-                    )
+                    nested_load(nested_view, subqueryload(getattr(view._model, k)))
                 )
             else:
                 nested_loads.append(subqueryload(getattr(view._model, k)))
