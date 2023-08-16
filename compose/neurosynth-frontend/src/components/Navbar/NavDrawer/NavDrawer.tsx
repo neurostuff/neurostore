@@ -1,7 +1,6 @@
 import {
     Box,
     Typography,
-    Badge,
     Toolbar,
     IconButton,
     Drawer,
@@ -49,12 +48,7 @@ const NavDrawer: React.FC<INav> = (props) => {
                     alt="neurosynth compose logo"
                     src="/static/synth.png"
                 />
-                <Badge
-                    color="warning"
-                    badgeContent={<Typography variant="caption">alpha</Typography>}
-                >
-                    <Typography sx={NavbarStyles.logoText}>neurosynth compose</Typography>
-                </Badge>
+                <Typography sx={NavbarStyles.logoText}>neurosynth compose</Typography>
             </Box>
             <Box sx={{ flexGrow: 1, justifyContent: 'flex-end', display: 'flex' }}>
                 <IconButton onClick={handleOpenDrawer}>
@@ -65,6 +59,8 @@ const NavDrawer: React.FC<INav> = (props) => {
                 <List>
                     <CreateDetailsDialog
                         titleText="Create new project"
+                        nameLabel="Project Name"
+                        descriptionLabel="Project Description"
                         isOpen={createDetailsDialogIsOpen}
                         onCreate={props.onCreateProject}
                         onCloseDialog={() => setCreateDetailsDialogIsOpen(false)}

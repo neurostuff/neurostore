@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Button, Typography, Badge, Toolbar } from '@mui/material';
+import { Box, Button, Typography, Toolbar } from '@mui/material';
 import NavbarStyles from '../Navbar.styles';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
@@ -26,17 +26,14 @@ const NavToolbar: React.FC<INav> = (props) => {
                         alt="neurosynth compose logo"
                         src="/static/synth.png"
                     />
-                    <Badge
-                        color="warning"
-                        badgeContent={<Typography variant="caption">alpha</Typography>}
-                    >
-                        <Typography sx={NavbarStyles.logoText}>neurosynth compose</Typography>
-                    </Badge>
+                    <Typography sx={NavbarStyles.logoText}>neurosynth compose</Typography>
                 </Box>
 
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <CreateDetailsDialog
                         titleText="Create new project"
+                        nameLabel="Project Name"
+                        descriptionLabel="Project Description"
                         isOpen={createDetailsDialogIsOpen}
                         onCreate={props.onCreateProject}
                         onCloseDialog={() => setCreateDetailsDialogIsOpen(false)}

@@ -202,7 +202,7 @@ def ingest_neurosynth(max_rows=None):
 
     studies = []
     to_commit = []
-    all_studies = {s.doi: s for s in Study.query.filter_by(source="neurosynth").all()}
+    all_studies = {s.pmid: s for s in Study.query.filter_by(source="neurosynth").all()}
     with db.session.no_autoflush:
         for metadata_row, annotation_row in zip(
             metadata.itertuples(), annotations.itertuples(index=False)
@@ -396,7 +396,7 @@ def ingest_neuroquery(max_rows=None):
         points = []
 
         for t_id, df in study_coord_data.groupby("table_id"):
-            a = Analysis(name=str(t_id), study=s)
+            a = Analysis(name=str(t_id), table_id=str(t_id), study=s)
             analyses.append(a)
             point_idx = 0
             for _, p in df.iterrows():
@@ -428,3 +428,201 @@ def ingest_neuroquery(max_rows=None):
     )
     db.session.add(d)
     db.session.commit()
+
+
+def load_ace_files(coordinates_file, metadata_file, text_file):
+    coordinates_df = pd.read_table(coordinates_file, sep=",", dtype={"pmid": str})
+    metadata_df = pd.read_table(metadata_file, sep=",", dtype={"pmid": str})
+    text_df = pd.read_table(text_file, sep=",", dtype={"pmid": str})
+
+    # preprocessing
+    metadata_df.set_index("pmid", inplace=True)
+    text_df.set_index("pmid", inplace=True)
+    coordinates_df.set_index("pmid", inplace=True)
+
+    # ensure same order
+    text_df = text_df.reindex(metadata_df.index)
+
+    return coordinates_df, metadata_df, text_df
+
+
+def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
+    to_commit = []
+    # see if there are duplicates for the newly created base_studies
+    all_base_studies = []
+    with db.session.no_autoflush:
+        all_studies = {
+            s.pmid: s for s in Study.query.filter_by(source="neurosynth").all()
+        }
+        for metadata_row, text_row in zip(
+            metadata_df.itertuples(), text_df.itertuples()
+        ):
+            base_study = None
+            doi = None if isinstance(metadata_row.doi, float) else metadata_row.doi
+            id_ = pmid = metadata_row.Index
+            year = (
+                None
+                if np.isnan(metadata_row.publication_year)
+                else int(metadata_row.publication_year)
+            )
+            # find an base_study based on available information
+            if doi is not None:
+                base_studies = BaseStudy.query.filter(
+                    or_(BaseStudy.doi == doi, BaseStudy.pmid == pmid)
+                ).all()
+
+                if len(base_studies) == 1:
+                    base_study = base_studies[0]
+                elif len(base_studies) > 1:
+                    # find the first abstract study with both pmid and doi
+                    source_base_study = next(
+                        filter(
+                            lambda bs: bs.pmid == pmid and bs.doi == doi, base_studies
+                        ),
+                        base_studies[0],
+                    )
+                    other_base_studies = [
+                        bs for bs in base_studies if bs.id != source_base_study.id
+                    ]
+                    # do not overwrite the verions column
+                    # we want to append to this column
+                    columns = [
+                        c.name
+                        for c in source_base_study.__table__.columns
+                        if c != "versions"
+                    ]
+                    for ab in other_base_studies:
+                        for col in columns:
+                            source_attr = getattr(source_base_study, col)
+                            new_attr = getattr(ab, col)
+                            setattr(source_base_study, col, source_attr or new_attr)
+                        source_base_study.versions.extend(ab.versions)
+                        # delete the extraneous record
+                        db.session.delete(ab)
+
+                    base_study = source_base_study
+                else:
+                    # see if it exists in the already created base_studies
+                    created_bs = [
+                        bs
+                        for bs in all_base_studies
+                        if bs.doi == doi and bs.pmid == pmid
+                    ]
+                    if created_bs:
+                        base_study = created_bs[0]
+
+            if doi is None:
+                base_study = BaseStudy.query.filter_by(pmid=pmid).one_or_none()
+
+            if base_study is None:
+                base_study = BaseStudy(
+                    name=metadata_row.title,
+                    doi=doi,
+                    pmid=pmid,
+                    authors=metadata_row.authors,
+                    publication=metadata_row.journal,
+                    description=text_row.abstract,
+                    year=year,
+                    level="group",
+                )
+            else:
+                # try to update the abstract study if information is missing
+                study_info = {
+                    "name": metadata_row.title,
+                    "doi": doi,
+                    "pmid": pmid,
+                    "description": text_row.abstract,
+                    "authors": metadata_row.authors,
+                    "publication": metadata_row.journal,
+                    "year": year,
+                    "level": "group",
+                }
+                for col, value in study_info.items():
+                    source_attr = getattr(base_study, col)
+                    setattr(base_study, col, source_attr or value)
+
+            # append base study to commit
+            to_commit.append(base_study)
+
+            s = all_studies.get(pmid, Study())
+
+            # try to update the study if information is missing
+            study_info = {
+                "name": metadata_row.title,
+                "doi": doi,
+                "pmid": pmid,
+                "description": text_row.abstract,
+                "authors": metadata_row.authors,
+                "publication": metadata_row.journal,
+                "year": year,
+                "level": "group",
+                "source": "neurosynth",
+            }
+            for col, value in study_info.items():
+                source_attr = getattr(s, col)
+                setattr(s, col, source_attr or value)
+
+            analyses = []
+            points = []
+
+            try:
+                study_coord_data = coordinates_df.loc[[id_]]
+            except KeyError:
+                print(f"pmid: {id_} has no coordinates")
+                continue
+            for t_id, df in study_coord_data.groupby("table_id"):
+                a = (
+                    Analysis.query.filter_by(table_id=str(t_id)).one_or_none()
+                    or Analysis()
+                )
+                a.name = df["table_label"][0] or str(t_id)
+                a.table_id = str(t_id)
+                a.description = (
+                    df["table_caption"][0]
+                    if not df["table_caption"].isna()[0]
+                    else None
+                )
+                if not a.study:
+                    a.study = s
+                analyses.append(a)
+                point_idx = 0
+                for _, p in df.iterrows():
+                    point = Point(
+                        x=p["x"],
+                        y=p["y"],
+                        z=p["z"],
+                        space=metadata_row.coordinate_space,
+                        kind=df["statistic"][0]
+                        if not df["statistic"].isna()[0]
+                        else "unknown",
+                        analysis=a,
+                        entities=[Entity(label=a.name, level="group", analysis=a)],
+                        order=point_idx,
+                    )
+                    points.append(point)
+                    point_idx += 1
+            to_commit.extend(points)
+            to_commit.extend(analyses)
+            # append study as version of study
+            base_study.versions.append(s)
+
+    db.session.add_all(to_commit)
+    db.session.commit()
+
+
+def ingest_ace(max_rows=None):
+    coords_file = (
+        Path(__file__).parent.parent / "data" / "ace" / "sample_coordinates.csv"
+    )
+
+    metadata_file = (
+        Path(__file__).parent.parent / "data" / "ace" / "sample_metadata.csv"
+    )
+
+    text_file = Path(__file__).parent.parent / "data" / "ace" / "sample_text.csv"
+
+    coordinates_df, metadata_df, text_df = load_ace_files(
+        coords_file, metadata_file, text_file
+    )
+
+    ace_ingestion_logic(coordinates_df, metadata_df, text_df)
