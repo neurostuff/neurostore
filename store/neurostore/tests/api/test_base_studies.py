@@ -1,7 +1,7 @@
 """Test Base Study Endpoint"""
 
 
-def test_flat_base_study(auth_client, ingest_neurosynth):
+def test_flat_base_study(auth_client, ingest_neurosynth, session):
     flat_resp = auth_client.get("/api/base-studies/?flat=true")
     reg_resp = auth_client.get("/api/base-studies/?flat=false")
 
@@ -11,7 +11,7 @@ def test_flat_base_study(auth_client, ingest_neurosynth):
     assert "versions" in reg_resp.json["results"][0]
 
 
-def test_info_base_study(auth_client, ingest_neurosynth):
+def test_info_base_study(auth_client, ingest_neurosynth, session):
     info_resp = auth_client.get("/api/base-studies/?info=true")
 
     assert info_resp.status_code == 200

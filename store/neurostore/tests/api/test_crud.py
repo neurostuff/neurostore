@@ -37,7 +37,7 @@ from ...schemas.data import StringOrNested
         ("points", Point, PointSchema),
     ],
 )
-def test_create(auth_client, user_data, endpoint, model, schema):
+def test_create(auth_client, user_data, endpoint, model, schema, session):
     user = User.query.filter_by(name="user1").first()
 
     rows = model.query.filter_by(user=user).all()
@@ -77,7 +77,7 @@ def test_create(auth_client, user_data, endpoint, model, schema):
         ("points", Point, PointSchema),
     ],
 )
-def test_read(auth_client, user_data, endpoint, model, schema):
+def test_read(auth_client, user_data, endpoint, model, schema, session):
     user = User.query.filter_by(name="user1").first()
     query = True
     if hasattr(model, "public"):
@@ -110,7 +110,7 @@ def test_read(auth_client, user_data, endpoint, model, schema):
         ("points", Point, PointSchema, {"space": "MNI"}),
     ],
 )
-def test_update(auth_client, user_data, endpoint, model, schema, update):
+def test_update(auth_client, user_data, endpoint, model, schema, update, session):
     user = User.query.filter_by(name="user1").first()
     record = model.query.filter_by(user=user).first()
 

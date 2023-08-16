@@ -4,7 +4,7 @@ from ...schemas import PointSchema
 from ...models import User, Analysis, Study
 
 
-def test_get_points(auth_client, ingest_neurosynth):
+def test_get_points(auth_client, ingest_neurosynth, session):
     # Get an analysis
     resp = auth_client.get("/api/analyses/")
     analysis = decode_json(resp)["results"][0]

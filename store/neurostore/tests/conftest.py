@@ -20,19 +20,36 @@ from ..models import (
 from auth0.v3.authentication import GetToken
 import shortuuid
 
+
+"""
+Test selection arguments
+"""
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--auth",
+        action="store_true",
+        default=False,
+        help="Run authentication tests",
+    )
+
+
+auth_test = pytest.mark.skipif(
+    "not config.getoption('--auth')",
+    reason="Only run when --auth is given",
+)
+
 """
 Test fixtures for bypassing authentication
 """
 
 
 # https://github.com/pytest-dev/pytest/issues/363#issuecomment-406536200
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=False)
 def monkeysession(request):
-    from _pytest.monkeypatch import MonkeyPatch
-
-    mpatch = MonkeyPatch()
-    yield mpatch
-    mpatch.undo()
+    with pytest.MonkeyPatch.context() as mp:
+        yield mp
 
 
 def mock_decode_token(token):
@@ -65,7 +82,7 @@ Session / db management tools
 
 
 @pytest.fixture(scope="session")
-def app(mock_auth):
+def real_app():
     """Session-wide test `Flask` application."""
     from ..core import app as _app
     from ..core import cache
@@ -91,6 +108,50 @@ def app(mock_auth):
 
 
 @pytest.fixture(scope="session")
+def real_db(real_app):
+    """Session-wide test database."""
+    _db.init_app(real_app)
+    _db.create_all()
+
+    yield _db
+
+    _db.session.remove()
+    sa.orm.close_all_sessions()
+    _db.drop_all()
+
+
+@pytest.fixture(scope="session")
+def app(mock_auth):
+    """Session-wide test `Flask` application."""
+    from ..core import app as _app
+    from ..core import cache
+
+    if "APP_SETTINGS" not in environ:
+        config = "neurostore.config.TestingConfig"
+    else:
+        config = environ["APP_SETTINGS"]
+    if not getattr(_app, "config", None):
+        _app = _app._app
+    _app.config.from_object(config)
+    # _app.config["SQLALCHEMY_ECHO"] = True
+    # https://docs.sqlalchemy.org/en/14/errors.html#error-3o7r
+    _app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "max_overflow": -1,
+        "pool_timeout": 5,
+        "pool_size": 0
+    }
+    cache.clear()
+    # Establish an application context before running the tests.
+    ctx = _app.app_context()
+    ctx.push()
+
+    yield _app
+
+    cache.clear()
+    ctx.pop()
+
+
+@pytest.fixture(scope="session")
 def db(app):
     """Session-wide test database."""
     _db.init_app(app)
@@ -103,7 +164,7 @@ def db(app):
     _db.drop_all()
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="function")
 def session(db):
     """Creates a new db session for a test.
     Changes in session are rolled back"""
@@ -213,11 +274,11 @@ def mock_add_users(app, db, mock_auth):
 
 
 @pytest.fixture(scope="function")
-def add_users(app, db):
+def add_users(real_app, real_db):
     """Adds a test user to db"""
     from neurostore.resources.auth import decode_token
 
-    domain = app.config["AUTH0_BASE_URL"].split("://")[1]
+    domain = real_app.config["AUTH0_BASE_URL"].split("://")[1]
     token = GetToken(domain)
 
     users = [
@@ -236,26 +297,28 @@ def add_users(app, db):
         name = u["name"]
         passw = u["password"]
         payload = token.login(
-            client_id=app.config["AUTH0_CLIENT_ID"],
-            client_secret=app.config["AUTH0_CLIENT_SECRET"],
+            client_id=real_app.config["AUTH0_CLIENT_ID"],
+            client_secret=real_app.config["AUTH0_CLIENT_SECRET"],
             username=name + "@email.com",
             password=passw,
             realm="Username-Password-Authentication",
-            audience=app.config["AUTH0_API_AUDIENCE"],
-            scope="openid",
+            audience=real_app.config["AUTH0_API_AUDIENCE"],
+            scope="openid profile email",
         )
         token_info = decode_token(payload["access_token"])
-        user = User(
-            name=name,
-            external_id=token_info["sub"],
-        )
-        if User.query.filter_by(name=token_info["sub"]).first() is None:
-            db.session.add(user)
-            db.session.commit()
+        # do not add user1 into database
+        if name != "user1":
+            user = User(
+                name=name,
+                external_id=token_info["sub"],
+            )
+            if User.query.filter_by(external_id=token_info["sub"]).first() is None:
+                real_db.session.add(user)
+                real_db.session.commit()
 
         tokens[name] = {
             "token": payload["access_token"],
-            "id": User.query.filter_by(external_id=token_info["sub"]).first().id,
+            "external_id": token_info["sub"],
         }
 
     yield tokens

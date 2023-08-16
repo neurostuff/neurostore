@@ -3,7 +3,7 @@ from ...models import Analysis, User, Point, Image
 from ...schemas import AnalysisSchema
 
 
-def test_get_nested_and_not_nested_analyses(auth_client, ingest_neurosynth):
+def test_get_nested_and_not_nested_analyses(auth_client, ingest_neurosynth, session):
     analysis_id = Analysis.query.first().id
     non_nested = auth_client.get(f"/api/analyses/{analysis_id}?nested=false")
     nested = auth_client.get(f"/api/analyses/{analysis_id}?nested=true")
@@ -12,7 +12,7 @@ def test_get_nested_and_not_nested_analyses(auth_client, ingest_neurosynth):
     assert isinstance(nested.json["points"][0], dict)
 
 
-def test_get_analyses(auth_client, ingest_neurosynth):
+def test_get_analyses(auth_client, ingest_neurosynth, session):
     # List of analyses
     resp = auth_client.get("/api/analyses/")
     assert resp.status_code == 200
