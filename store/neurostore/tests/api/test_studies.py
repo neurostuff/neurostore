@@ -25,7 +25,7 @@ def test_get_studies(auth_client, ingest_neurosynth, ingest_neuroquery):
     assert resp.status_code == 200
     studies_list = decode_json(resp)["results"]
 
-    assert type(studies_list) == list
+    assert isinstance(studies_list, list)
 
     assert len(studies_list) == resp.json["metadata"]["total_count"]
 

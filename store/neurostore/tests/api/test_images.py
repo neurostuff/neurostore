@@ -8,7 +8,7 @@ def test_get_images(auth_client, ingest_neurovault):
     assert resp.status_code == 200
     images_list = decode_json(resp)["results"]
 
-    assert type(images_list) == list
+    assert isinstance(images_list, list)
 
 
 def test_post_images(auth_client, session):

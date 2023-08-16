@@ -18,6 +18,8 @@ export interface ICreateDetailsDialog {
     onCloseDialog: () => void;
     titleText: string;
     initName?: string;
+    nameLabel?: string;
+    descriptionLabel?: string;
 }
 
 const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
@@ -66,7 +68,7 @@ const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
             </DialogTitle>
             <DialogContent>
                 <TextField
-                    label="Name"
+                    label={props.nameLabel || 'name'}
                     value={newDetails.name}
                     name="name"
                     id="dialog-name"
@@ -79,7 +81,7 @@ const CreateDetailsDialog: React.FC<ICreateDetailsDialog> = (props) => {
                     sx={{ width: '100%', margin: '5px 0 1rem 0' }}
                 />
                 <TextField
-                    label="Description"
+                    label={props.descriptionLabel || 'description'}
                     multiline
                     id="dialog-description"
                     onChange={handleOnChange}
