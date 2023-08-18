@@ -138,7 +138,7 @@ def app(mock_auth):
     _app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
         "max_overflow": -1,
         "pool_timeout": 5,
-        "pool_size": 0
+        "pool_size": 0,
     }
     cache.clear()
     # Establish an application context before running the tests.

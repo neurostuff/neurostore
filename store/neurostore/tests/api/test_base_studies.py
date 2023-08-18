@@ -56,7 +56,8 @@ def test_has_coordinates_images(auth_client, session):
 
     # update analysis with points
     analysis_image = auth_client.put(
-        f"/api/analyses/{analysis_id}", data={"images": [{"filename": "my_fake_image.nii.gz"}]}
+        f"/api/analyses/{analysis_id}",
+        data={"images": [{"filename": "my_fake_image.nii.gz"}]},
     )
 
     assert analysis_image.status_code == 200

@@ -37,6 +37,7 @@ from . import data as viewdata
 
 def create_user():
     from auth0.v3.authentication.users import Users
+
     auth = request.headers.get("Authorization", None)
     token = auth.split()[1]
     profile_info = Users(
@@ -46,8 +47,7 @@ def create_user():
     # user signed up with auth0, but has not made any queries yet...
     # should have endpoint to "create user" after sign on with auth0
     current_user = User(
-        external_id=connexion.context["user"],
-        name=profile_info.get("name", "Unknown")
+        external_id=connexion.context["user"], name=profile_info.get("name", "Unknown")
     )
 
     return current_user
@@ -179,6 +179,7 @@ class BaseView(MethodView):
 
                 setattr(record, field, nested)
 
+        # add other custom update after the nested attributes are handled...
         if commit:
             db.session.add_all(to_commit)
             try:
@@ -324,8 +325,8 @@ class ObjectView(BaseView):
             abort(403)
         else:
             db.session.delete(record)
-
-        db.session.commit()
+            self.post_delete(record)
+            db.session.commit()
 
         # clear relevant caches
         clear_cache(self.__class__, record, request.path)
@@ -334,6 +335,9 @@ class ObjectView(BaseView):
 
     def insert_data(self, id, data):
         return data
+
+    def post_delete(record):
+        pass
 
 
 LIST_USER_ARGS = {

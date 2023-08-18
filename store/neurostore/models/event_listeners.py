@@ -1,7 +1,14 @@
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import event
 from .data import (
-    AnnotationAnalysis, Annotation, Studyset, Study, Analysis, Point, Image, _check_type
+    AnnotationAnalysis,
+    Annotation,
+    Studyset,
+    Study,
+    Analysis,
+    Point,
+    Image,
+    _check_type,
 )
 from ..database import db
 
@@ -124,37 +131,37 @@ event.listen(Study.analyses, "bulk_replace", add_annotation_analyses_study)
 
 
 # Define an event listener to update Base-Study flags
-@event.listens_for(Analysis.points, 'append')
-@event.listens_for(Analysis.points, 'remove')
-@event.listens_for(Analysis.images, 'append')
-@event.listens_for(Analysis.images, 'remove')
-def update_base_study_flags(target, value, initiator):
-    base_study = getattr(getattr(target, 'study', None), 'base_study', None)
-    updated = False
-    if base_study is not None:
-        base_study.has_coordinates = isinstance(value, Point) or any(
-            analysis.points for study in base_study.versions for analysis in study.analyses
-        )
-        base_study.has_images = isinstance(value, Image) or any(
-            analysis.images for study in base_study.versions for analysis in study.analyses
-        )
-        db.session.add(base_study)
-        updated = True
+# @event.listens_for(Analysis.points, 'append')
+# @event.listens_for(Analysis.points, 'remove')
+# @event.listens_for(Analysis.images, 'append')
+# @event.listens_for(Analysis.images, 'remove')
+# def update_base_study_flags(target, value, initiator):
+#     base_study = getattr(getattr(target, 'study', None), 'base_study', None)
+#     updated = False
+#     if base_study is not None:
+#         base_study.has_coordinates = isinstance(value, Point) or any(
+#             analysis.points for study in base_study.versions for analysis in study.analyses
+#         )
+#         base_study.has_images = isinstance(value, Image) or any(
+#             analysis.images for study in base_study.versions for analysis in study.analyses
+#         )
+#         db.session.add(base_study)
+#         updated = True
 
-    return updated
+#     return updated
 
 
-@event.listens_for(db.session, 'after_flush')
-def update_base_study_flags_item_delete(session, flush_context):
-    any_updates = False
-    for obj in session.deleted:
-        if isinstance(obj, (Point, Image)):
-            target = obj.analysis_id
-            value = obj
-            initiator = "DELETE"
-            res = update_base_study_flags(target, value, initiator)
-            if not any_updates and res:
-                any_updates = True
+# @event.listens_for(db.session, 'after_flush')
+# def update_base_study_flags_item_delete(session, flush_context):
+#     any_updates = False
+#     for obj in session.deleted:
+#         if isinstance(obj, (Point, Image)):
+#             target = obj.analysis_id
+#             value = obj
+#             initiator = "DELETE"
+#             res = update_base_study_flags(target, value, initiator)
+#             if not any_updates and res:
+#                 any_updates = True
 
-    if any_updates:
-        db.session.commit()
+#     if any_updates:
+#         db.session.commit()
