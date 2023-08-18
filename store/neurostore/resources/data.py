@@ -398,6 +398,8 @@ class ImagesView(ObjectView, ListView):
     }
     _search_fields = ("filename", "space", "value_type", "analysis_name")
 
+    def custom_record_update(record):
+        pass
 
 @view_maker
 class PointsView(ObjectView, ListView):

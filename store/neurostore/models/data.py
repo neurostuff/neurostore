@@ -129,6 +129,8 @@ class BaseStudy(BaseMixin, db.Model):
     public = db.Column(db.Boolean, default=True)
     level = db.Column(db.String)
     metadata_ = db.Column(JSONB)
+    has_coordinates = db.Column(db.Boolean, default=False, nullable=False)
+    has_images = db.Column(db.Boolean, default=False, nullable=False)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     __ts_vector__ = db.Column(
         TSVector(),

@@ -27,6 +27,9 @@ from ..models import (
     BaseStudy,
     User,
     Annotation,
+    Image,
+    Point,
+    Analysis,
 )
 from ..schemas.data import StudysetSnapshot
 from . import data as viewdata
@@ -146,6 +149,11 @@ class BaseView(MethodView):
 
             if k not in cls._nested and k not in ["id", "user"]:
                 try:
+                    # preload images and points for updating in the event
+                    # relationships cannot be loaded during events
+                    if isinstance(record, (Image, Point)) and isinstance(v, Analysis):
+                        v.images
+                        v.points
                     setattr(record, k, v)
                 except AttributeError:
                     print(k)
