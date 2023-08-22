@@ -155,7 +155,7 @@
                     "default": 10000
                 },
                 "xyz": {
-                    "description": "Tab-delimited file of coordinates from database or numpy array with XYZ coordinates. Voxels are rows and x, y, z (meaning coordinates) values are the three columnns.",
+                    "description": "Tab-delimited file of coordinates from database or numpy array with XYZ coordinates. Voxels are rows and x, y, z (meaning coordinates) values are the three columns.",
                     "type": "str",
                     "default": null
                 },

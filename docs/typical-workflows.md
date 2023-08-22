@@ -12,7 +12,7 @@ If the study does indeed use a finger tapping task, she wants to keep track of t
 To the left of the study there is a plus button.
 She clicks on the plus button and sees she can add the study to a "study-set".
 She names the studyset "finger tapping" and adds the selected study.
-When she is done reading and adding all relevent studies, she notices
+When she is done reading and adding all relevant studies, she notices
 that the finger tapping task typically falls under three categories:
 1) right handed index finger,
 2) right handed multiple fingers, and

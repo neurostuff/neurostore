@@ -2,7 +2,7 @@ from ..request_utils import decode_json
 from ...models import Study, Analysis, User, Image
 
 
-def test_get_images(auth_client, ingest_neurovault):
+def test_get_images(auth_client, ingest_neurovault, session):
     # List of studysets
     resp = auth_client.get("/api/images/")
     assert resp.status_code == 200

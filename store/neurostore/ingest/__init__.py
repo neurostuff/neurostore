@@ -221,7 +221,7 @@ def ingest_neurosynth(max_rows=None):
                     base_study = base_studies[0]
                 elif len(base_studies) > 1:
                     source_base_study = base_studies[0]
-                    # do not overwrite the verions column
+                    # do not overwrite the versions column
                     # we want to append to this column
                     columns = [
                         c
@@ -484,7 +484,7 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
                     other_base_studies = [
                         bs for bs in base_studies if bs.id != source_base_study.id
                     ]
-                    # do not overwrite the verions column
+                    # do not overwrite the versions column
                     # we want to append to this column
                     columns = [
                         c.name
