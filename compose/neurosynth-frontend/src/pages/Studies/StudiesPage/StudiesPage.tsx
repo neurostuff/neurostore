@@ -6,8 +6,8 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { useGetBaseStudies } from 'hooks';
-import { NeurosynthStudyList } from 'hooks/studies/useGetBaseStudies';
 import useGetTour from 'hooks/useGetTour';
+import { BaseStudyList } from 'neurostore-typescript-sdk';
 import {
     addKVPToSearch,
     getSearchCriteriaFromURL,
@@ -83,7 +83,7 @@ const StudiesPage = () => {
     const { user, isLoading: authenticationIsLoading } = useAuth0();
 
     // cached data returned from the api
-    const [studyData, setStudyData] = useState<NeurosynthStudyList>();
+    const [studyData, setStudyData] = useState<BaseStudyList>();
 
     // state of the current search
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({

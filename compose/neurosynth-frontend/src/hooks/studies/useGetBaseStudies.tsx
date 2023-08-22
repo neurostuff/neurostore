@@ -1,9 +1,6 @@
-import { BaseStudyList } from 'neurostore-typescript-sdk';
 import { SearchCriteria, SearchDataType, Source } from 'pages/Studies/StudiesPage/StudiesPage';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
-
-export type NeurosynthStudyList = BaseStudyList & { metadata: { total_count: number } };
 
 const useGetBaseStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: boolean) => {
     return useQuery(
@@ -33,7 +30,7 @@ const useGetBaseStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: bo
         {
             enabled,
             select: (res) => {
-                const studyList = res.data as unknown as NeurosynthStudyList;
+                const studyList = res.data;
                 return studyList;
             },
         }
