@@ -1,7 +1,7 @@
 from neurostore.models import Studyset, Study
 
 
-def test_post_and_get_studysets(auth_client, ingest_neurosynth):
+def test_post_and_get_studysets(auth_client, ingest_neurosynth, session):
     # create a studyset
     payload = auth_client.get("/api/studies/").json
     study_ids = [study["id"] for study in payload["results"]]
@@ -21,7 +21,7 @@ def test_post_and_get_studysets(auth_client, ingest_neurosynth):
     )
 
 
-def test_add_study_to_studyset(auth_client, ingest_neurosynth):
+def test_add_study_to_studyset(auth_client, ingest_neurosynth, session):
     payload = auth_client.get("/api/studies/").json
     study_ids = [study["id"] for study in payload["results"]]
     post_data = {
@@ -46,7 +46,7 @@ def test_add_study_to_studyset(auth_client, ingest_neurosynth):
     assert len(nested_resp.json["studies"]) == len(non_nested_resp.json["studies"])
 
 
-def test_get_nested_nonnested_studysets(auth_client, ingest_neurosynth):
+def test_get_nested_nonnested_studysets(auth_client, ingest_neurosynth, session):
     studyset_id = Studyset.query.first().id
     non_nested = auth_client.get(f"/api/studysets/{studyset_id}?nested=false")
     nested = auth_client.get(f"/api/studysets/{studyset_id}?nested=true")
@@ -55,7 +55,7 @@ def test_get_nested_nonnested_studysets(auth_client, ingest_neurosynth):
     assert isinstance(nested.json["studies"][0], dict)
 
 
-def test_hot_swap_study_in_studyset(auth_client, ingest_neurosynth):
+def test_hot_swap_study_in_studyset(auth_client, ingest_neurosynth, session):
     # create studyset
     create_ss = auth_client.post("/api/studysets/", data={"name": "test"})
 

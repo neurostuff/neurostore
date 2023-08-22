@@ -182,7 +182,7 @@ jobs:
             -e "AUTH0_AUTH_URL=${AUTH0_AUTH_URL}" \
             --rm -w /neurostore \
             neurostore \
-            python -m pytest neurostore/tests
+            bash -c "python -m pytest neurostore/tests && python -m pytest --auth neurostore/tests/test_auth.py"
 
   neurosynth_compose_backend_tests:
     runs-on: ubuntu-latest

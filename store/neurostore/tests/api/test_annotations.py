@@ -3,7 +3,7 @@ import pytest
 from ...models import Studyset, User
 
 
-def test_post_blank_annotation(auth_client, ingest_neurosynth):
+def test_post_blank_annotation(auth_client, ingest_neurosynth, session):
     dset = Studyset.query.first()
     payload = {
         "studyset": dset.id,
@@ -17,7 +17,7 @@ def test_post_blank_annotation(auth_client, ingest_neurosynth):
     )
 
 
-def test_post_annotation(auth_client, ingest_neurosynth):
+def test_post_annotation(auth_client, ingest_neurosynth, session):
     dset = Studyset.query.first()
     # y for x in non_flat for y in x
     data = [
@@ -37,7 +37,7 @@ def test_post_annotation(auth_client, ingest_neurosynth):
 
 # for some reason output is no longer valid
 @pytest.mark.xfail
-def test_get_annotations(auth_client, ingest_neurosynth):
+def test_get_annotations(auth_client, ingest_neurosynth, session):
     import pandas as pd
     from io import StringIO
 
@@ -59,7 +59,7 @@ def test_get_annotations(auth_client, ingest_neurosynth):
     assert isinstance(df, pd.DataFrame)
 
 
-def test_clone_annotation(auth_client, simple_neurosynth_annotation):
+def test_clone_annotation(auth_client, simple_neurosynth_annotation, session):
     annotation_entry = simple_neurosynth_annotation
     resp = auth_client.post(
         f"/api/annotations/?source_id={annotation_entry.id}", data={}
@@ -71,7 +71,7 @@ def test_clone_annotation(auth_client, simple_neurosynth_annotation):
     assert data["source"] == "neurostore"
 
 
-def test_single_analysis_delete(auth_client, user_data):
+def test_single_analysis_delete(auth_client, user_data, session):
     user = User.query.filter_by(name="user1").first()
     # get relevant studyset
     studysets = auth_client.get(f"/api/studysets/?user_id={user.external_id}")
@@ -215,7 +215,7 @@ def test_analysis_addition_to_studyset(auth_client, session, user_data):
     )
 
 
-def test_mismatched_notes(auth_client, ingest_neurosynth):
+def test_mismatched_notes(auth_client, ingest_neurosynth, session):
     dset = Studyset.query.first()
     # y for x in non_flat for y in x
     data = [
@@ -249,7 +249,7 @@ def test_mismatched_notes(auth_client, ingest_neurosynth):
 
 # test push analysis id that does not exist
 # Handle error better
-def test_put_nonexistent_analysis(auth_client, ingest_neurosynth):
+def test_put_nonexistent_analysis(auth_client, ingest_neurosynth, session):
     dset = Studyset.query.first()
     # y for x in non_flat for y in x
     data = [
@@ -281,7 +281,7 @@ def test_put_nonexistent_analysis(auth_client, ingest_neurosynth):
     )
 
 
-def test_correct_note_overwrite(auth_client, ingest_neurosynth):
+def test_correct_note_overwrite(auth_client, ingest_neurosynth, session):
     dset = Studyset.query.first()
     # y for x in non_flat for y in x
     data = [
