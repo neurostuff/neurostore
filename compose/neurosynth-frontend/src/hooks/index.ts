@@ -28,7 +28,7 @@ import useCreateStudy from './studies/useCreateStudy';
 import useCreateProject from './projects/useCreateProject';
 import useGetStudysets from './studysets/useGetStudysets';
 import useDeleteStudyset from './studysets/useDeleteStudyset';
-import useGetStudies from './studies/useGetStudies';
+import useGetBaseStudies from './studies/useGetBaseStudies';
 import useGetStudyById from './studies/useGetStudyById';
 import useUpdateAnnotationById from './analyses/useUpdateAnnotationById';
 
@@ -40,7 +40,7 @@ export {
     useGetTour,
     useGetWindowHeight,
     // STUDIES
-    useGetStudies,
+    useGetBaseStudies,
     useGetStudyById,
     useUpdateStudy,
     useCreateStudy,

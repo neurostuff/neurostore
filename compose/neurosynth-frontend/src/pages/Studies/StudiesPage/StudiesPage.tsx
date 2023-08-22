@@ -1,21 +1,20 @@
-import { useEffect, useState } from 'react';
-import { Typography, Box, IconButton, TableRow, TableCell } from '@mui/material';
-import HelpIcon from '@mui/icons-material/Help';
-import useGetTour from 'hooks/useGetTour';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useGetStudies } from 'hooks';
+import HelpIcon from '@mui/icons-material/Help';
+import { Box, IconButton, TableCell, TableRow, Typography } from '@mui/material';
+import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useHistory, useLocation } from 'react-router-dom';
-import { StudyList } from 'neurostore-typescript-sdk';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
+import { useGetBaseStudies } from 'hooks';
+import { NeurosynthStudyList } from 'hooks/studies/useGetBaseStudies';
+import useGetTour from 'hooks/useGetTour';
 import {
     addKVPToSearch,
     getSearchCriteriaFromURL,
     getURLFromSearchCriteria,
 } from 'pages/helpers/utils';
-import { NeurosynthStudyList } from 'hooks/studies/useGetStudies';
+import { useEffect, useState } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
 
 export enum SortBy {
     TITLE = 'name',
@@ -101,7 +100,7 @@ const StudiesPage = () => {
      * exists before loading is complete so we are guaranteed that the first query will run
      * with the studysetOwner set (if logged in) and undefined otherwise
      */
-    const { data, isLoading, isError, isFetching } = useGetStudies(
+    const { data, isLoading, isError, isFetching } = useGetBaseStudies(
         { ...debouncedSearchCriteria, studysetOwner: user?.sub },
         !authenticationIsLoading
     );

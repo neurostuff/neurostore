@@ -4,7 +4,12 @@ import API from 'utils/api';
 const useGetBaseStudyById = (baseStudyId: string) => {
     return useQuery(
         ['studies', baseStudyId],
-        () => API.NeurostoreServices.BaseStudiesService.baseStudiesIdGet(baseStudyId),
+        () =>
+            API.NeurostoreServices.BaseStudiesService.baseStudiesIdGet(
+                baseStudyId,
+                'true',
+                'false'
+            ),
         {
             select: (res) => {
                 return res.data;

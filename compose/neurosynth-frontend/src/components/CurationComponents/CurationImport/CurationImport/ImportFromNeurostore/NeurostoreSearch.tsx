@@ -7,8 +7,8 @@ import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import { useGetStudies } from 'hooks';
-import { NeurosynthStudyList } from 'hooks/studies/useGetStudies';
+import { useGetBaseStudies } from 'hooks';
+import { NeurosynthStudyList } from 'hooks/studies/useGetBaseStudies';
 import { useProjectId } from 'pages/Projects/ProjectPage/ProjectStore';
 import { SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
 import {
@@ -45,7 +45,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
      * exists before loading is complete so we are guaranteed that the first query will run
      * with the studysetOwner set (if logged in) and undefined otherwise
      */
-    const { data, isLoading, isError, isFetching } = useGetStudies(
+    const { data, isLoading, isError, isFetching } = useGetBaseStudies(
         { ...debouncedSearchCriteria, studysetOwner: user?.sub, flat: 'true' },
         !authenticationIsLoading
     );
@@ -55,7 +55,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
         isLoading: allDataForSearchIsLoading,
         isError: allDataForSearchIsError,
         isFetching: allDataForSearchIsFetching,
-    } = useGetStudies(
+    } = useGetBaseStudies(
         { ...debouncedSearchCriteria, studysetOwner: user?.sub, pageSize: 29999, flat: 'true' }, // backend checks for less than 30000
         !authenticationIsLoading
     );

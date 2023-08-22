@@ -4,7 +4,7 @@ import IdentificationSourcePopup from 'components/CurationComponents/SelectorPop
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import FullTextLinkComponent from 'components/FullTextLinkComponent/FullTextLinkComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
-import { ISource } from 'hooks/requests/useGetProjects';
+import { ISource } from 'hooks/projects/useGetProjects';
 import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
 import {
     useDeleteStub,

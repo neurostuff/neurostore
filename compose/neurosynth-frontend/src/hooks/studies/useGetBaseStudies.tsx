@@ -5,7 +5,7 @@ import API from 'utils/api';
 
 export type NeurosynthStudyList = BaseStudyList & { metadata: { total_count: number } };
 
-const useGetStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: boolean) => {
+const useGetBaseStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: boolean) => {
     return useQuery(
         ['studies', { ...searchCriteria }],
         () => {
@@ -40,4 +40,4 @@ const useGetStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: boolea
     );
 };
 
-export default useGetStudies;
+export default useGetBaseStudies;

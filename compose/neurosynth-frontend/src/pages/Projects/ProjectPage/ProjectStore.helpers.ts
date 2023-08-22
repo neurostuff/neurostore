@@ -8,7 +8,7 @@ import {
     ISource,
     IStudyExtractionStatus,
     ITag,
-} from 'hooks/requests/useGetProjects';
+} from 'hooks/projects/useGetProjects';
 import { v4 as uuidv4 } from 'uuid';
 import { ProjectStoreActions, ProjectStoreMetadata } from './ProjectStore';
 
