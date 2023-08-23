@@ -1,11 +1,12 @@
-import { Box, FormControl, Select, InputBase, Paper, MenuItem, Button } from '@mui/material';
+import { Box, FormControl, Select, InputBase, Paper, MenuItem, Button, Chip } from '@mui/material';
 import { getSearchCriteriaFromURL } from 'pages/helpers/utils';
-import { SearchBy, SearchByMapping } from 'pages/Studies/StudiesPage/StudiesPage';
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ISearchBar } from '../SearchBar';
 import SearchIcon from '@mui/icons-material/Search';
 import SimpleSearchStyles from './SimpleSearch.styles';
+import { SearchBy, SearchByMapping } from 'pages/Studies/StudiesPage/models';
+import { Add, ArrowDropDown } from '@mui/icons-material';
 
 const SimpleSearch: React.FC<ISearchBar> = (props) => {
     const location = useLocation();
@@ -54,24 +55,6 @@ const SimpleSearch: React.FC<ISearchBar> = (props) => {
         <Box data-tour="StudiesPage-2" sx={{ display: 'flex' }}>
             <Box component="form" sx={{ width: '100%' }} onSubmit={handleOnSubmit}>
                 <Box sx={SimpleSearchStyles.searchContainer}>
-                    <FormControl variant="outlined">
-                        <Select
-                            sx={SimpleSearchStyles.select}
-                            autoWidth
-                            value={searchBarParams.searchBy}
-                            onChange={(event) =>
-                                setSearchBarParams((prev) => ({
-                                    ...prev,
-                                    searchBy: event.target.value as SearchBy,
-                                }))
-                            }
-                        >
-                            <MenuItem value={SearchBy.ALL}>All</MenuItem>
-                            <MenuItem value={SearchBy.TITLE}>Title</MenuItem>
-                            <MenuItem value={SearchBy.AUTHORS}>Authors</MenuItem>
-                            <MenuItem value={SearchBy.DESCRIPTION}>Description</MenuItem>
-                        </Select>
-                    </FormControl>
                     <Paper sx={SimpleSearchStyles.paper} variant="outlined">
                         <InputBase
                             value={searchBarParams.searchedString}
@@ -81,7 +64,7 @@ const SimpleSearch: React.FC<ISearchBar> = (props) => {
                                     searchedString: event.target.value as string,
                                 }))
                             }
-                            placeholder="Search for a study"
+                            placeholder='Try "Emotion" or "FMRI AND EMOTION" -PAIN'
                             sx={SimpleSearchStyles.textfield}
                         />
                     </Paper>
@@ -95,6 +78,38 @@ const SimpleSearch: React.FC<ISearchBar> = (props) => {
                         variant="contained"
                     >
                         <SearchIcon />
+                    </Button>
+                </Box>
+                <Box sx={{ marginTop: '5px' }}>
+                    <Chip
+                        color="primary"
+                        variant="outlined"
+                        clickable
+                        icon={<ArrowDropDown />}
+                        sx={{ marginLeft: '5px' }}
+                        label="Data Type: ALL"
+                    />
+                    <Chip
+                        color="primary"
+                        variant="outlined"
+                        clickable
+                        icon={<ArrowDropDown />}
+                        sx={{ marginLeft: '5px' }}
+                        label="Studies Source: Neuroquery"
+                    />
+                    <Chip
+                        clickable
+                        icon={<ArrowDropDown />}
+                        color="info"
+                        sx={{ marginLeft: '5px' }}
+                        label="SORT BY: Date Created ASC"
+                    />
+                    <Button
+                        color="secondary"
+                        sx={{ marginTop: '5px', marginLeft: '10px' }}
+                        startIcon={<Add />}
+                    >
+                        Add Filter
                     </Button>
                 </Box>
             </Box>

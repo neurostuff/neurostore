@@ -1,83 +1,22 @@
-import { useEffect, useState } from 'react';
-import { Typography, Box, IconButton, TableRow, TableCell } from '@mui/material';
-import HelpIcon from '@mui/icons-material/Help';
-import useGetTour from 'hooks/useGetTour';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useGetStudies } from 'hooks';
+import { Box, TableCell, TableRow, Typography } from '@mui/material';
+import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useHistory, useLocation } from 'react-router-dom';
-import { StudyList } from 'neurostore-typescript-sdk';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
+import { useGetStudies } from 'hooks';
+import { StudyList } from 'neurostore-typescript-sdk';
 import {
     addKVPToSearch,
     getSearchCriteriaFromURL,
     getURLFromSearchCriteria,
 } from 'pages/helpers/utils';
-
-export enum SortBy {
-    TITLE = 'name',
-    AUTHORS = 'authors',
-    DESCRIPTION = 'description',
-    CREATEDAT = 'created_at',
-    SOURCE = 'source',
-    PUBLICATION = 'publication',
-}
-
-export enum Source {
-    NEUROSTORE = 'neurostore',
-    NEUROVAULT = 'neurovault',
-    PUBMED = 'pubmed',
-    NEUROSYNTH = 'neurosynth',
-    NEUROQUERY = 'neuroquery',
-    ALL = 'all_sources',
-}
-export enum SearchBy {
-    TITLE = 'title',
-    DESCRIPTION = 'description',
-    AUTHORS = 'authors',
-    ALL = 'all fields',
-}
-
-export enum SearchDataType {
-    COORDINATE = 'coordinate',
-    IMAGE = 'image',
-    BOTH = 'both',
-}
-
-export const SearchByMapping = {
-    [SearchBy.ALL]: 'genericSearchStr',
-    [SearchBy.AUTHORS]: 'authorSearch',
-    [SearchBy.DESCRIPTION]: 'descriptionSearch',
-    [SearchBy.TITLE]: 'nameSearch',
-};
-
-export class SearchCriteria {
-    constructor(
-        public genericSearchStr: string | undefined = undefined,
-        public sortBy: SortBy = SortBy.TITLE,
-        public pageOfResults: number = 1,
-        public descOrder: boolean = true,
-        public pageSize: number = 10,
-        public isNested: boolean = false,
-        public nameSearch: string | undefined = undefined,
-        public descriptionSearch: string | undefined = undefined,
-        public authorSearch: string | undefined = undefined,
-        public showUnique: boolean = true,
-        public source: Source | undefined = undefined,
-        public userId: string | undefined = undefined,
-        public dataType: SearchDataType = SearchDataType.BOTH,
-        public studysetOwner: string | undefined = undefined,
-        public level: 'group' | 'meta' | undefined = undefined,
-        public pmid: string | undefined = undefined,
-        public doi: string | undefined = undefined,
-        public flat: 'true' | 'false' | undefined = 'true'
-    ) {}
-}
+import { useEffect, useState } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
+import { SearchCriteria } from './models';
 
 const StudiesPage = () => {
-    const { startTour } = useGetTour('StudiesPage');
+    // const { startTour } = useGetTour('StudiesPage');
     const history = useHistory();
     const location = useLocation();
     const { user, isLoading: authenticationIsLoading } = useAuth0();
@@ -101,7 +40,7 @@ const StudiesPage = () => {
      * with the studysetOwner set (if logged in) and undefined otherwise
      */
     const { data, isLoading, isError, isFetching } = useGetStudies(
-        { ...debouncedSearchCriteria, studysetOwner: user?.sub },
+        { ...debouncedSearchCriteria },
         !authenticationIsLoading
     );
 
@@ -113,15 +52,6 @@ const StudiesPage = () => {
     useEffect(() => {
         if (data) setStudyData(data);
     }, [data]);
-
-    useEffect(() => {
-        if (user?.sub) {
-            setSearchCriteria((prev) => ({
-                ...prev,
-                studysetOwner: user.sub,
-            }));
-        }
-    }, [user?.sub]);
 
     // runs every time the URL changes, to create a URL driven search.
     // this is separated from the debounce because otherwise the URL would
@@ -138,7 +68,7 @@ const StudiesPage = () => {
     useEffect(() => {
         const timeout = setTimeout(async () => {
             setDebouncedSearchCriteria(searchCriteria);
-        }, 200);
+        }, 500);
 
         return () => {
             clearTimeout(timeout);
@@ -170,9 +100,9 @@ const StudiesPage = () => {
         <StateHandlerComponent isLoading={false} isError={isError}>
             <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
                 <Typography variant="h4">Studies</Typography>
-                <IconButton onClick={() => startTour()} color="primary">
+                {/* <IconButton onClick={() => startTour()} color="primary">
                     <HelpIcon />
-                </IconButton>
+                </IconButton> */}
             </Box>
 
             <SearchContainer

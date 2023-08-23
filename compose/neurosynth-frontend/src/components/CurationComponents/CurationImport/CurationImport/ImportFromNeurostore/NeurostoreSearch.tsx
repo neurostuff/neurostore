@@ -5,7 +5,6 @@ import NavigationButtons, {
 import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import { StudyList } from 'neurostore-typescript-sdk';
-import { SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
 import { useEffect, useState } from 'react';
 import { useGetStudies } from 'hooks';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -20,6 +19,7 @@ import { useProjectId } from 'pages/Projects/ProjectPage/ProjectStore';
 import { IImportArgs } from '../CurationImport';
 import { studiesToStubs } from './helpers/utils';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { SearchCriteria } from 'pages/Studies/StudiesPage/models';
 
 const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
     const { user, isLoading: authenticationIsLoading } = useAuth0();

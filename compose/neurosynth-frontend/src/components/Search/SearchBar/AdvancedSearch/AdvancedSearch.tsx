@@ -10,14 +10,6 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import {
-    SearchBy,
-    SearchByMapping,
-    SearchCriteria,
-    SearchDataType,
-    SortBy,
-    Source,
-} from 'pages/Studies/StudiesPage/StudiesPage';
 import React, { useEffect, useState } from 'react';
 import { ISearchBar } from '../SearchBar';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -25,6 +17,14 @@ import NeurosynthPopupMenu from 'components/NeurosynthPopupMenu/NeurosynthPopupM
 import { useAuth0 } from '@auth0/auth0-react';
 import { useLocation } from 'react-router-dom';
 import { getSearchCriteriaFromURL } from 'pages/helpers/utils';
+import {
+    SearchBy,
+    SearchDataType,
+    Source,
+    SortBy,
+    SearchByMapping,
+    SearchCriteria,
+} from 'pages/Studies/StudiesPage/models';
 
 interface ISearchState {
     fields: {
@@ -258,7 +258,7 @@ const AdvancedSearch: React.FC<ISearchBar> = (props) => {
                         sx={{ width: '200px', backgroundColor: 'white' }}
                         size="small"
                     >
-                        <MenuItem value={SearchDataType.BOTH}>All</MenuItem>
+                        <MenuItem value={SearchDataType.ALL}>All</MenuItem>
                         <MenuItem value={SearchDataType.COORDINATE}>Coordinates</MenuItem>
                         <MenuItem value={SearchDataType.IMAGE}>Images</MenuItem>
                     </Select>

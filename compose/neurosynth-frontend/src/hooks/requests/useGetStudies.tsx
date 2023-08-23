@@ -1,4 +1,4 @@
-import { SearchCriteria, SearchDataType, Source } from 'pages/Studies/StudiesPage/StudiesPage';
+import { SearchCriteria, SearchDataType, Source } from 'pages/Studies/StudiesPage/models';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
@@ -20,7 +20,7 @@ const useGetStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: boolea
                 searchCriteria.source === Source.ALL ? undefined : searchCriteria.source,
                 searchCriteria.authorSearch || undefined,
                 searchCriteria.userId,
-                searchCriteria.dataType === SearchDataType.BOTH
+                searchCriteria.dataType === SearchDataType.ALL
                     ? undefined
                     : searchCriteria.dataType,
                 undefined,
