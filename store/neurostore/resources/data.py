@@ -44,7 +44,7 @@ LIST_CLONE_ARGS = {
 }
 
 LIST_NESTED_ARGS = {
-    "nested": fields.Boolean(missing=False),
+    "nested": fields.Boolean(load_default=False, missing=False),
 }
 
 
@@ -149,8 +149,8 @@ class BaseStudiesView(ObjectView, ListView):
 
     _view_fields = {
         "level": fields.String(default="group", missing="group"),
-        "flat": fields.Boolean(default=False),
-        "info": fields.Boolean(default=False),
+        "flat": fields.Boolean(load_default=False, missing=False),
+        "info": fields.Boolean(load_default=False, missing=False),
     }
 
     _multi_search = ("name", "description")
@@ -205,8 +205,8 @@ class StudiesView(ObjectView, ListView):
             "data_type": fields.String(missing=None),
             "studyset_owner": fields.String(missing=None),
             "level": fields.String(default="group", missing="group"),
-            "flat": fields.Boolean(default=False),
-            "info": fields.Boolean(default=False),
+            "flat": fields.Boolean(load_default=False, missing=False),
+            "info": fields.Boolean(load_default=False, missing=False),
         },
         **LIST_NESTED_ARGS,
         **LIST_CLONE_ARGS,

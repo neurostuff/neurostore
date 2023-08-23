@@ -14,10 +14,24 @@ def test_flat_base_study(auth_client, ingest_neurosynth, session):
 
 def test_info_base_study(auth_client, ingest_neurosynth, session):
     info_resp = auth_client.get("/api/base-studies/?info=true")
+    reg_resp = auth_client.get("/api/base-studies/?info=false")
 
     assert info_resp.status_code == 200
+    assert reg_resp.status_code == 200
 
     assert "updated_at" in info_resp.json["results"][0]["versions"][0]
+    assert isinstance(reg_resp.json['results'][0]["versions"][0], str)
+
+    # test specific base-study
+    base_study_id = reg_resp.json['results'][0]['id']
+    single_info_resp = auth_client.get(f"/api/base-studies/{base_study_id}?info=true")
+    single_reg_resp = auth_client.get(f"/api/base-studies/{base_study_id}?info=false")
+
+    assert single_info_resp.status_code == 200
+    assert single_reg_resp.status_code == 200
+
+    assert "updated_at" in single_info_resp.json["versions"][0]
+    assert isinstance(single_reg_resp.json["versions"][0], str)
 
 
 def test_has_coordinates_images(auth_client, session):
