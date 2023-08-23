@@ -146,6 +146,13 @@ class BaseStudy(BaseMixin, db.Model):
         "Study", backref=backref("base_study"), cascade="all, delete-orphan"
     )
 
+    def update_has_images_and_points(self):
+        # Calculate has_images and has_coordinates for the BaseStudy
+        self.has_images = any([version.has_images for version in self.versions])
+        self.has_coordinates = any(
+            [version.has_coordinates for version in self.versions]
+        )
+
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
         db.UniqueConstraint("doi", "pmid", name="doi_pmid"),
@@ -184,6 +191,14 @@ class Study(BaseMixin, db.Model):
         backref=backref("study"),
         cascade="all, delete, delete-orphan",
     )
+
+    @property
+    def has_images(self):
+        return any([analysis.has_images for analysis in self.analyses])
+
+    @property
+    def has_coordinates(self):
+        return any([analysis.has_coordinates for analysis in self.analyses])
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
@@ -245,6 +260,20 @@ class Analysis(BaseMixin, db.Model):
         backref=backref("analysis"),
         cascade="all, delete-orphan",
     )
+
+    @property
+    def has_images(self):
+        deleted_images = {
+            image for image in db.session.deleted if isinstance(image, Image)
+        }
+        return bool(set(self.images) - deleted_images)
+
+    @property
+    def has_coordinates(self):
+        deleted_points = {
+            point for point in db.session.deleted if isinstance(point, Point)
+        }
+        return bool(set(self.points) - deleted_points)
 
 
 class Condition(BaseMixin, db.Model):

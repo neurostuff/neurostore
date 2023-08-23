@@ -60,8 +60,16 @@ class BaseView(MethodView):
     _linked = {}
     _composite_key = {}
 
-    def custom_record_update(record):
-        """Custom processing of a record (defined in specific classes)"""
+    def pre_nested_record_update(record):
+        """
+        Processing of a record before updating nested components (defined in specific classes).
+        """
+        return record
+
+    def post_nested_record_update(record):
+        """
+        Processing of a record after updating nested components (defined in specific classes).
+        """
         return record
 
     @classmethod
@@ -159,7 +167,7 @@ class BaseView(MethodView):
                     print(k)
                     raise AttributeError
 
-        record = cls.custom_record_update(record)
+        record = cls.pre_nested_record_update(record)
 
         to_commit.append(record)
 
@@ -180,6 +188,7 @@ class BaseView(MethodView):
                 setattr(record, field, nested)
 
         # add other custom update after the nested attributes are handled...
+        record = cls.post_nested_record_update(record)
         if commit:
             db.session.add_all(to_commit)
             try:
@@ -336,7 +345,7 @@ class ObjectView(BaseView):
     def insert_data(self, id, data):
         return data
 
-    def post_delete(record):
+    def post_delete(self, record):
         pass
 
 

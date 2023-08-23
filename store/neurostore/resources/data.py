@@ -328,7 +328,7 @@ class StudiesView(ObjectView, ListView):
     def load_from_pubmed(cls, source_id):
         pass
 
-    def custom_record_update(record):
+    def pre_nested_record_update(record):
         """Find/create the associated base study"""
         # if the study was cloned and the base_study is already known.
         if record.base_study is not None:
@@ -367,22 +367,22 @@ class StudiesView(ObjectView, ListView):
 
         return record
 
-    def post_delete(record):
-        base_study = getattr(record, "base_study", None)
-        if base_study:
-            base_study.has_images = any(
-                a.images
-                for study in base_study.versions
-                if study is not record
-                for a in study.analyses
-            )
-            base_study.has_coordinates = any(
-                a.points
-                for study in base_study.versions
-                if study is not record
-                for a in study.analyses
-            )
-            db.session.add(base_study)
+    # def post_delete(record):
+    #     base_study = getattr(record, "base_study", None)
+    #     if base_study:
+    #         base_study.has_images = any(
+    #             a.images
+    #             for study in base_study.versions
+    #             if study is not record
+    #             for a in study.analyses
+    #         )
+    #         base_study.has_coordinates = any(
+    #             a.points
+    #             for study in base_study.versions
+    #             if study is not record
+    #             for a in study.analyses
+    #         )
+    #         db.session.add(base_study)
 
 
 @view_maker
@@ -402,33 +402,34 @@ class AnalysesView(ObjectView, ListView):
     }
     _search_fields = ("name", "description")
 
-    def custom_record_update(record):
-        # need to do this custom update after the nested attributes are set
-        pass
+    # def post_nested_record_update(record):
+    #     # need to do this custom update after the nested attributes are set
+    #     if record.study.base_study
+    #     return record
 
-    def post_delete(record):
-        study = getattr(record, "study", None)
-        if not study:
-            return
+    # def post_delete(record):
+    #     study = getattr(record, "study", None)
+    #     if not study:
+    #         return
 
-        if len(study.analyses) > 1:
-            return
+    #     if len(study.analyses) > 1:
+    #         return
 
-        base_study = getattr(study, "base_study", None)
-        if base_study:
-            base_study.has_images = any(
-                a.images
-                for study in base_study.versions
-                for a in study.analyses
-                if a is not record
-            )
-            base_study.has_coordinates = any(
-                a.points
-                for study in base_study.versions
-                for a in study.analyses
-                if a is not record
-            )
-            db.session.add(base_study)
+    #     base_study = getattr(study, "base_study", None)
+    #     if base_study:
+    #         base_study.has_images = any(
+    #             a.images
+    #             for study in base_study.versions
+    #             for a in study.analyses
+    #             if a is not record
+    #         )
+    #         base_study.has_coordinates = any(
+    #             a.points
+    #             for study in base_study.versions
+    #             for a in study.analyses
+    #             if a is not record
+    #         )
+    #         db.session.add(base_study)
 
 
 @view_maker
@@ -443,35 +444,35 @@ class ImagesView(ObjectView, ListView):
     }
     _search_fields = ("filename", "space", "value_type", "analysis_name")
 
-    def custom_record_update(record):
-        base_study = getattr(getattr(record, "study", None), "base_study", None)
-        if base_study is not None and base_study.has_images is False:
-            base_study.has_images = True
-            db.session.add(base_study)
-        return record
+    # def post_nested_record_update(record):
+    #     base_study = getattr(getattr(record, "study", None), "base_study", None)
+    #     if base_study is not None and base_study.has_images is False:
+    #         base_study.has_images = True
+    #         db.session.add(base_study)
+    #     return record
 
-    def post_delete(record):
-        analysis = getattr(record, "analysis", None)
-        if not analysis:
-            return
+    # def post_delete(record):
+    #     analysis = getattr(record, "analysis", None)
+    #     if not analysis:
+    #         return
 
-        study = getattr(analysis, "study", None)
-        if not study:
-            return
+    #     study = getattr(analysis, "study", None)
+    #     if not study:
+    #         return
 
-        if len(study.analyses) > 1:
-            return
+    #     if len(study.analyses) > 1:
+    #         return
 
-        if set(analysis.images) == set([record]):
-            base_study = getattr(study, "base_study", None)
-            if base_study:
-                base_study.has_images = any(
-                    a.images
-                    for study in base_study.versions
-                    for a in study.analyses
-                    if a is not analysis
-                )
-                db.session.add(base_study)
+    #     if set(analysis.images) == set([record]):
+    #         base_study = getattr(study, "base_study", None)
+    #         if base_study:
+    #             base_study.has_images = any(
+    #                 a.images
+    #                 for study in base_study.versions
+    #                 for a in study.analyses
+    #                 if a is not analysis
+    #             )
+    #             db.session.add(base_study)
 
 
 @view_maker
@@ -485,44 +486,44 @@ class PointsView(ObjectView, ListView):
     }
     _search_fields = ("space", "analysis_name")
 
-    def custom_record_update(record):
-        base_study = getattr(
-            getattr(getattr(record, "analysis", None), "study", None),
-            "base_study",
-            None,
-        )
-        if base_study is not None and base_study.has_coordinates is False:
-            base_study.has_coordinates = True
-            db.session.add(base_study)
-        return record
+    # def post_nested_record_update(record):
+    #     base_study = getattr(
+    #         getattr(getattr(record, "analysis", None), "study", None),
+    #         "base_study",
+    #         None,
+    #     )
+    #     if base_study is not None and base_study.has_coordinates is False:
+    #         base_study.has_coordinates = True
+    #         db.session.add(base_study)
+    #     return record
 
-    def post_delete(record):
-        analysis = getattr(record, "analysis", None)
-        # nothing to update if point not connected to analysis
-        if not analysis:
-            return
+    # def post_delete(record):
+    #     analysis = getattr(record, "analysis", None)
+    #     # nothing to update if point not connected to analysis
+    #     if not analysis:
+    #         return
 
-        study = getattr(analysis, "study", None)
-        # nothing to update if analysis is not connected to study
-        if not study:
-            return
+    #     study = getattr(analysis, "study", None)
+    #     # nothing to update if analysis is not connected to study
+    #     if not study:
+    #         return
 
-        # nothing to update if there is more than 1 analysis
-        if len(study.analyses) > 1:
-            return
+    #     # nothing to update if there is more than 1 analysis
+    #     if len(study.analyses) > 1:
+    #         return
 
-        # only care if the point is the last point in the analysis
-        if set(analysis.points) == set([record]):
-            base_study = getattr(study, "base_study", None)
-            if base_study:
-                base_study.has_coordinates = any(
-                    a.points
-                    for study in base_study.versions
-                    for a in study.analyses
-                    if a is not analysis
-                )
+    #     # only care if the point is the last point in the analysis
+    #     if set(analysis.points) == set([record]):
+    #         base_study = getattr(study, "base_study", None)
+    #         if base_study:
+    #             base_study.has_coordinates = any(
+    #                 a.points
+    #                 for study in base_study.versions
+    #                 for a in study.analyses
+    #                 if a is not analysis
+    #             )
 
-                db.session.add(base_study)
+    #             db.session.add(base_study)
 
 
 @view_maker
