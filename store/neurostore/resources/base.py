@@ -334,7 +334,6 @@ class ObjectView(BaseView):
             abort(403)
         else:
             db.session.delete(record)
-            self.post_delete(record)
             db.session.commit()
 
         # clear relevant caches
