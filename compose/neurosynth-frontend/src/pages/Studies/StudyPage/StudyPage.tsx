@@ -1,87 +1,70 @@
-import { useAuth0 } from '@auth0/auth0-react';
-import EditIcon from '@mui/icons-material/Edit';
-import { Box, Button } from '@mui/material';
+import { ArrowDropDown } from '@mui/icons-material';
+import { Box, FormControl, InputLabel, MenuItem, Select, Typography } from '@mui/material';
 import DisplayStudy from 'components/DisplayStudy/DisplayStudy';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { useGetStudyById } from 'hooks';
+import useGetBaseStudyById from 'hooks/studies/useGetBaseStudyById';
+import { AnalysisReturn } from 'neurostore-typescript-sdk';
 import React, { useEffect, useState } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
-import {
-    useInitStudyStoreIfRequired,
-    useStudyAnalyses,
-    useStudyAuthors,
-    useStudyDOI,
-    useStudyDescription,
-    useStudyIsLoading,
-    useStudyMetadata,
-    useStudyName,
-    useStudyPMID,
-    useStudyPublication,
-    useStudyUser,
-} from '../StudyStore';
+import { useParams } from 'react-router-dom';
+import { studyAnalysesToStoreAnalyses } from '../StudyStore.helpers';
 
 const StudyPage: React.FC = (props) => {
+    const [selectedVersion, setSelectedVersion] = useState<string>();
+
     const { studyId } = useParams<{ studyId: string }>();
-
-    useInitStudyStoreIfRequired();
-    const studyUser = useStudyUser();
-    const studyIsLoading = useStudyIsLoading();
-    const studyName = useStudyName();
-    const studyDescription = useStudyDescription();
-    const studyDOI = useStudyDOI();
-    const studyPMID = useStudyPMID();
-    const studyAuthors = useStudyAuthors();
-    const studyPublication = useStudyPublication();
-    const studyMetadata = useStudyMetadata();
-    const studyAnalyses = useStudyAnalyses();
-
-    const [allowEdits, setAllowEdits] = useState(false);
-    const history = useHistory();
-    const { isAuthenticated, user } = useAuth0();
-
-    const handleEditStudy = (event: React.MouseEvent) => {
-        history.push(`/studies/${studyId}/edit`);
-    };
+    const {
+        data: baseStudy,
+        isLoading: baseStudyIsLoading,
+        isError: baseStudyIsError,
+    } = useGetBaseStudyById(studyId);
+    const {
+        data: study,
+        isLoading: studyIsLoading,
+        isError: studyIsError,
+    } = useGetStudyById(selectedVersion);
 
     useEffect(() => {
-        const userIDAndStudyIDExist = !!user?.sub && !!studyUser;
-        const thisUserOwnsThisStudy = (studyUser || null) === (user?.sub || undefined);
-        const allowEdit = isAuthenticated && userIDAndStudyIDExist && thisUserOwnsThisStudy;
-        setAllowEdits(allowEdit);
-    }, [isAuthenticated, user?.sub, studyUser, history]);
+        if (!selectedVersion && baseStudy?.versions) {
+            setSelectedVersion(baseStudy.versions[0] as string);
+        }
+    }, [selectedVersion, baseStudy?.versions]);
+
+    const analyses = studyAnalysesToStoreAnalyses((study?.analyses || []) as Array<AnalysisReturn>);
 
     return (
-        <StateHandlerComponent isLoading={studyIsLoading} isError={false}>
-            {allowEdits && (
-                <Box
-                    sx={{
-                        width: '100%',
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        marginBottom: '0.5rem',
-                    }}
-                >
-                    <Button
-                        onClick={handleEditStudy}
-                        endIcon={<EditIcon />}
-                        disabled={!allowEdits}
-                        sx={{ width: '190px', marginLeft: 'auto', marginRight: '15px' }}
-                        variant="contained"
-                        disableElevation
-                        color="secondary"
+        <StateHandlerComponent
+            isLoading={baseStudyIsLoading || studyIsLoading}
+            isError={baseStudyIsError || studyIsError}
+        >
+            <Box sx={{ margin: '1rem 1rem 2rem 1rem', display: 'flex', alignItems: 'center' }}>
+                <Typography sx={{ whiteSpace: 'nowrap', marginRight: '1rem' }}>
+                    Viewing version <b>{selectedVersion}</b>:
+                </Typography>
+                <FormControl size="small" sx={{ width: '450px' }}>
+                    <InputLabel>Version</InputLabel>
+                    <Select
+                        onChange={(event) => setSelectedVersion(event.target.value)}
+                        value={selectedVersion || ''}
+                        label="Version"
                     >
-                        Edit Study
-                    </Button>
-                </Box>
-            )}
+                        {((baseStudy?.versions || []) as string[]).map((version) => (
+                            <MenuItem key={version} value={version}>
+                                {version}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            </Box>
             <DisplayStudy
-                name={studyName}
-                description={studyDescription}
-                doi={studyDOI}
-                pmid={studyPMID}
-                authors={studyAuthors}
-                publication={studyPublication}
-                metadata={studyMetadata}
-                analyses={studyAnalyses}
+                id={study?.id}
+                name={baseStudy?.name}
+                description={baseStudy?.description}
+                doi={baseStudy?.doi}
+                pmid={baseStudy?.pmid}
+                authors={baseStudy?.authors}
+                publication={baseStudy?.publication}
+                analyses={analyses}
             />
         </StateHandlerComponent>
     );

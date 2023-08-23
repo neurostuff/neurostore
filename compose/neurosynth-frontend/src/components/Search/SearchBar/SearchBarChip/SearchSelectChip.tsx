@@ -1,5 +1,5 @@
 import { ArrowDropDown } from '@mui/icons-material';
-import { Box, Chip, MenuItem } from '@mui/material';
+import { Box, Chip, MenuItem, MenuList } from '@mui/material';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import { useRef, useState } from 'react';
 
@@ -31,15 +31,17 @@ const SearchSelectChip = <T extends string>(props: ISearchSelectChip<T>) => {
                 open={isOpen}
             >
                 <Box sx={{ width: '220px' }}>
-                    {options.map((option) => (
-                        <MenuItem
-                            onClick={() => onSelect(option.value)}
-                            key={option.label}
-                            value={option.value}
-                        >
-                            {option.label}
-                        </MenuItem>
-                    ))}
+                    <MenuList>
+                        {options.map((option) => (
+                            <MenuItem
+                                onClick={() => onSelect(option.value)}
+                                key={option.label}
+                                value={option.value}
+                            >
+                                {option.label}
+                            </MenuItem>
+                        ))}
+                    </MenuList>
                 </Box>
             </NeurosynthPopper>
             <Chip

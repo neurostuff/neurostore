@@ -14,8 +14,8 @@ import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBr
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
 import { useGetMetaAnalysisById } from 'hooks';
-import useGetSpecificationById from 'hooks/requests/useGetSpecificationById';
-import useUpdateMetaAnalysis from 'hooks/requests/useUpdateMetaAnalysis';
+import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById';
+import useUpdateMetaAnalysis from 'hooks/metaAnalyses/useUpdateMetaAnalysis';
 import useGetTour from 'hooks/useGetTour';
 import {
     Annotation,
@@ -33,8 +33,8 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { NeurostoreAnnotation } from 'utils/api';
 import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
-import { EAnalysisType } from 'hooks/requests/useCreateAlgorithmSpecification';
-import useGetMetaAnalysisResultById from 'hooks/requests/useGetMetaAnalysisResultById';
+import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
+import useGetMetaAnalysisResultById from 'hooks/metaAnalyses/useGetMetaAnalysisResultById';
 import DisplayMetaAnalysisResult from 'components/DisplayMetaAnalysisResult/DisplayMetaAnalysisResult';
 
 const getAnalysisTypeDescription = (name: string | undefined): string => {

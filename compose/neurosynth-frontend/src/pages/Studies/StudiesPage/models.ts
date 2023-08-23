@@ -1,4 +1,5 @@
 export enum SortBy {
+    RELEVANCE = 'relevance',
     TITLE = 'name',
     AUTHORS = 'authors',
     DESCRIPTION = 'description',
@@ -13,7 +14,7 @@ export enum Source {
     PUBMED = 'pubmed',
     NEUROSYNTH = 'neurosynth',
     NEUROQUERY = 'neuroquery',
-    ALL = 'all_sources',
+    ALL = 'all',
 }
 export enum SearchBy {
     TITLE = 'title',

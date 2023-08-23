@@ -4,8 +4,8 @@ import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import { useGetStudies } from 'hooks';
-import { StudyList } from 'neurostore-typescript-sdk';
+import { useGetBaseStudies } from 'hooks';
+import { BaseStudyList } from 'neurostore-typescript-sdk';
 import {
     addKVPToSearch,
     getSearchCriteriaFromURL,
@@ -22,7 +22,7 @@ const StudiesPage = () => {
     const { user, isLoading: authenticationIsLoading } = useAuth0();
 
     // cached data returned from the api
-    const [studyData, setStudyData] = useState<StudyList>();
+    const [studyData, setStudyData] = useState<BaseStudyList>();
 
     // state of the current search
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({
@@ -39,8 +39,8 @@ const StudiesPage = () => {
      * exists before loading is complete so we are guaranteed that the first query will run
      * with the studysetOwner set (if logged in) and undefined otherwise
      */
-    const { data, isLoading, isError, isFetching } = useGetStudies(
-        { ...debouncedSearchCriteria },
+    const { data, isLoading, isError, isFetching } = useGetBaseStudies(
+        { ...debouncedSearchCriteria, studysetOwner: user?.sub },
         !authenticationIsLoading
     );
 

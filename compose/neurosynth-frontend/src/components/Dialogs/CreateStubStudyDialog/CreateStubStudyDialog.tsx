@@ -4,7 +4,7 @@ import IdentificationSourcePopup from 'components/CurationComponents/SelectorPop
 import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';
 import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
 import CreateStubStudyDialogStyles from 'components/Dialogs/CreateStubStudyDialog/CreateStubStudyDialog.styles';
-import { ISource, ITag } from 'hooks/requests/useGetProjects';
+import { ISource, ITag } from 'hooks/projects/useGetProjects';
 import { useAddNewCurationStubs } from 'pages/Projects/ProjectPage/ProjectStore';
 import React, { ChangeEvent, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';

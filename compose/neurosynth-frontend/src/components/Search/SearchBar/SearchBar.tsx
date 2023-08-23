@@ -1,23 +1,13 @@
-import { Button, Box, Chip, InputBase, Paper } from '@mui/material';
-import React, { useEffect, useRef, useState } from 'react';
-import {
-    SearchBy,
-    SearchByMapping,
-    SearchCriteria,
-    SearchDataType,
-    SortBy,
-    Source,
-} from 'pages/Studies/StudiesPage/models';
+import { Add, ArrowDropDown } from '@mui/icons-material';
 import SearchIcon from '@mui/icons-material/Search';
-import SimpleSearch from './SimpleSearch/SimpleSearch';
-import AdvancedSearch from './AdvancedSearch/AdvancedSearch';
-import { useLocation } from 'react-router-dom';
-import { getSearchCriteriaFromURL } from 'pages/helpers/utils';
-import { ArrowDropDown, Add } from '@mui/icons-material';
-import SimpleSearchStyles from './SimpleSearch/SimpleSearch.styles';
+import { Box, Button, Chip, InputBase, Paper } from '@mui/material';
 import SearchBarStyles from 'components/Search/SearchBar/SearchBar.styles';
-import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
-import SearchSelectChip from './SearchSelectChip/SearchSelectChip';
+import { SearchCriteria, SearchDataType, SortBy, Source } from 'pages/Studies/StudiesPage/models';
+import { getSearchCriteriaFromURL } from 'pages/helpers/utils';
+import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import SearchSelectChip from './SearchBarChip/SearchSelectChip';
+import SearchSelectSortChip from './SearchBarChip/SearchSelectSortChip';
 
 export interface ISearchBar {
     onSearch: (searchArgs: Partial<SearchCriteria>) => void;
@@ -50,13 +40,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
 
     const handleOnSubmit = (event: React.FormEvent) => {
         event.preventDefault();
-        // onSearch({
-        //     [SearchByMapping[searchBarParams.searchBy]]: searchBarParams.searchedString,
-        // });
-    };
-
-    const handleChangeSearchParams = (searchArgs: Partial<SearchCriteria>) => {
-        onSearch(searchArgs);
+        onSearch(searchState);
     };
 
     return (
@@ -67,10 +51,13 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                         <Box sx={SearchBarStyles.searchContainer}>
                             <Paper sx={SearchBarStyles.paper} variant="outlined">
                                 <InputBase
-                                    value={searchState.genericSearchStr}
+                                    value={searchState.genericSearchStr || ''}
                                     onChange={(event) =>
-                                        handleChangeSearchParams({
-                                            genericSearchStr: event.target.value as string,
+                                        setSearchState((prev) => {
+                                            return {
+                                                ...prev,
+                                                genericSearchStr: event.target.value as string,
+                                            };
                                         })
                                     }
                                     placeholder='Try "Emotion" or "FMRI AND EMOTION" -PAIN'
@@ -81,20 +68,35 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                                 disableElevation
                                 type="submit"
                                 sx={{
-                                    borderTopLeftRadius: 0,
-                                    borderBottomLeftRadius: 0,
+                                    borderTopLeftRadius: '0px',
+                                    borderBottomLeftRadius: '0px',
                                     backgroundColor: searchButtonColor,
+                                    width: '150px',
                                 }}
                                 variant="contained"
+                                startIcon={<SearchIcon />}
                             >
-                                <SearchIcon />
+                                Search
+                            </Button>
+                            <Button
+                                sx={{
+                                    borderTopLeftRadius: '0px',
+                                    borderBottomLeftRadius: '0px',
+                                    borderLeft: '0px !important',
+                                    width: '100px',
+                                }}
+                                disableElevation
+                                color="primary"
+                                variant="text"
+                            >
+                                Reset
                             </Button>
                         </Box>
-                        <Box sx={{ marginTop: '5px' }}>
+                        <Box sx={{ marginTop: '10px' }}>
                             <SearchSelectChip
                                 chipLabel={`Study Data Type: ${searchState.dataType || ''}`}
                                 onSelectSearch={(selectedDataType) =>
-                                    onSearch({ dataType: selectedDataType })
+                                    onSearch({ ...searchState, dataType: selectedDataType })
                                 }
                                 options={[
                                     { value: SearchDataType.ALL, label: 'All' },
@@ -102,24 +104,17 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                                     { value: SearchDataType.IMAGE, label: 'Images' },
                                 ]}
                             />
-                            <Chip
-                                color="primary"
-                                variant="outlined"
-                                clickable
-                                icon={<ArrowDropDown />}
-                                sx={{ marginLeft: '5px' }}
-                                label="Studies Source: Neuroquery"
-                            />
-                            <Chip
-                                clickable
-                                icon={<ArrowDropDown />}
-                                color="info"
-                                sx={{ marginLeft: '5px' }}
-                                label="SORT BY: Date Created ASC"
+                            <SearchSelectSortChip
+                                chipLabel={`Sort By: ${searchState.sortBy}`}
+                                descOrderChipLabel={searchState.descOrder ? 'DESC' : 'ASC'}
+                                onSelectDescOrder={(descOrder) =>
+                                    onSearch({ ...searchState, descOrder })
+                                }
+                                onSelectSort={(sortBy) => onSearch({ ...searchState, sortBy })}
                             />
                             <Button
                                 color="secondary"
-                                sx={{ marginTop: '5px', marginLeft: '10px' }}
+                                sx={{ marginLeft: '10px' }}
                                 startIcon={<Add />}
                             >
                                 Add Filter

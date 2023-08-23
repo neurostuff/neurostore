@@ -1,4 +1,5 @@
-import { Box, Divider, Link, TableCell, TableRow, Typography } from '@mui/material';
+import { Box, Chip, Divider, Link, TableCell, TableRow, Typography } from '@mui/material';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { getType } from 'components/EditMetadata';
 import { sortMetadataArrayFn } from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
@@ -7,21 +8,27 @@ import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthT
 import TextExpansion from 'components/TextExpansion/TextExpansion';
 import DisplayAnalyses from './DisplayAnalyses/DisplayAnalyses';
 import DisplayStudyStyles from './DisplayStudy.styles';
-import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/requests/useGetPubMedIds';
+import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
 import FullTextLinkComponent from 'components/FullTextLinkComponent/FullTextLinkComponent';
 import { IStoreStudy } from 'pages/Studies/StudyStore.helpers';
+import { Optional } from 'utils/utilitytypes';
+import useGetFullText from 'hooks/external/useGetFullText';
 
-const DisplayStudy: React.FC<IStoreStudy> = (props) => {
+const DisplayStudy: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
     const {
+        id,
         name,
         description,
         doi,
         pmid,
         authors,
         publication,
-        metadata = [],
+        metadata,
         analyses = [],
     } = props;
+    const { data: fullTextURL, isLoading, isError } = useGetFullText(name || '');
+
+    const hasFullText = !!fullTextURL && !isLoading && !isError;
 
     return (
         <Box>
@@ -33,30 +40,45 @@ const DisplayStudy: React.FC<IStoreStudy> = (props) => {
                 </Box>
                 <Typography>{authors}</Typography>
                 <Box>
-                    <Typography>{publication}</Typography>
-                    <FullTextLinkComponent
-                        paperTitle={name || ''}
-                        text="View Full Text For This Study"
-                    />
-                    {doi && (
-                        <Link
-                            sx={{ display: 'block', margin: '5px 0' }}
+                    <Typography gutterBottom>{publication}</Typography>
+                    {hasFullText && (
+                        <Chip
+                            icon={<OpenInNewIcon />}
+                            color="primary"
+                            label="Full Text"
+                            component="a"
+                            href={fullTextURL}
                             target="_blank"
+                            clickable
+                            sx={{ width: '200px', marginRight: '15px' }}
+                            variant="outlined"
+                        />
+                    )}
+                    {doi && (
+                        <Chip
+                            icon={<OpenInNewIcon />}
+                            color="primary"
+                            label={`DOI: ${doi}`}
+                            component="a"
                             href={`https://doi.org/${doi}`}
-                            underline="hover"
-                        >
-                            DOI: {doi}
-                        </Link>
+                            target="_blank"
+                            clickable
+                            sx={{ width: '200px', marginRight: '15px' }}
+                            variant="outlined"
+                        />
                     )}
                     {pmid && (
-                        <Link
-                            sx={{ display: 'block', margin: '5px 0' }}
-                            target="_blank"
+                        <Chip
+                            icon={<OpenInNewIcon />}
+                            color="primary"
+                            label={`PubMed: ${pmid}`}
+                            component="a"
                             href={`${PUBMED_ARTICLE_URL_PREFIX}${pmid}`}
-                            underline="hover"
-                        >
-                            PMID: {pmid}
-                        </Link>
+                            target="_blank"
+                            clickable
+                            sx={{ width: '200px' }}
+                            variant="outlined"
+                        />
                     )}
                 </Box>
                 <TextExpansion
@@ -64,56 +86,62 @@ const DisplayStudy: React.FC<IStoreStudy> = (props) => {
                     sx={{ ...DisplayStudyStyles.spaceBelow, whiteSpace: 'pre-wrap' }}
                 />
             </Box>
-            <Box data-tour="StudyPage-2" sx={{ margin: '15px' }}>
-                <NeurosynthAccordion
-                    elevation={0}
-                    expandIconColor={'primary.main'}
-                    sx={{
-                        border: '1px solid',
-                        borderColor: 'primary.main',
-                    }}
-                    accordionSummarySx={{
-                        ':hover': {
-                            backgroundColor: '#f2f2f2',
-                        },
-                    }}
-                    TitleElement={<Typography sx={{ color: 'primary.main' }}>Metadata</Typography>}
-                >
-                    <Box sx={DisplayStudyStyles.metadataContainer}>
-                        <NeurosynthTable
-                            tableConfig={{
-                                noDataDisplay: (
-                                    <Typography sx={{ color: 'warning.dark', margin: '1rem' }}>
-                                        No metadata
-                                    </Typography>
-                                ),
-                                tableHeaderBackgroundColor: 'white',
-                                tableElevation: 0,
-                            }}
-                            headerCells={[
-                                { text: 'Name', key: 'name', styles: { fontWeight: 'bold' } },
-                                { text: 'Value', key: 'value', styles: { fontWeight: 'bold' } },
-                            ]}
-                            rows={metadata
-                                .sort((a, b) => sortMetadataArrayFn(a.metadataKey, b.metadataKey))
-                                .map(({ metadataKey, metadataValue }) => (
-                                    <TableRow key={metadataKey}>
-                                        <TableCell>{metadataKey}</TableCell>
-                                        <TableCell
-                                            sx={{
-                                                color: NeurosynthTableStyles[
-                                                    getType(metadataValue)
-                                                ],
-                                            }}
-                                        >
-                                            {getValue(metadataValue)}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                        />
-                    </Box>
-                </NeurosynthAccordion>
-            </Box>
+            {metadata && (
+                <Box data-tour="StudyPage-2" sx={{ margin: '15px' }}>
+                    <NeurosynthAccordion
+                        elevation={0}
+                        expandIconColor={'primary.main'}
+                        sx={{
+                            border: '1px solid',
+                            borderColor: 'primary.main',
+                        }}
+                        accordionSummarySx={{
+                            ':hover': {
+                                backgroundColor: '#f2f2f2',
+                            },
+                        }}
+                        TitleElement={
+                            <Typography sx={{ color: 'primary.main' }}>Metadata</Typography>
+                        }
+                    >
+                        <Box sx={DisplayStudyStyles.metadataContainer}>
+                            <NeurosynthTable
+                                tableConfig={{
+                                    noDataDisplay: (
+                                        <Typography sx={{ color: 'warning.dark', margin: '1rem' }}>
+                                            No metadata
+                                        </Typography>
+                                    ),
+                                    tableHeaderBackgroundColor: 'white',
+                                    tableElevation: 0,
+                                }}
+                                headerCells={[
+                                    { text: 'Name', key: 'name', styles: { fontWeight: 'bold' } },
+                                    { text: 'Value', key: 'value', styles: { fontWeight: 'bold' } },
+                                ]}
+                                rows={metadata
+                                    .sort((a, b) =>
+                                        sortMetadataArrayFn(a.metadataKey, b.metadataKey)
+                                    )
+                                    .map(({ metadataKey, metadataValue }) => (
+                                        <TableRow key={metadataKey}>
+                                            <TableCell>{metadataKey}</TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    color: NeurosynthTableStyles[
+                                                        getType(metadataValue)
+                                                    ],
+                                                }}
+                                            >
+                                                {getValue(metadataValue)}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                            />
+                        </Box>
+                    </NeurosynthAccordion>
+                </Box>
+            )}
 
             <Box>
                 <Typography
@@ -137,7 +165,7 @@ const DisplayStudy: React.FC<IStoreStudy> = (props) => {
                     <>
                         <Box sx={{ marginBottom: '1rem', padding: '0 1rem' }}>
                             <Divider />
-                            <DisplayAnalyses analyses={analyses} />
+                            <DisplayAnalyses id={id} analyses={analyses} />
                         </Box>
                     </>
                 )}

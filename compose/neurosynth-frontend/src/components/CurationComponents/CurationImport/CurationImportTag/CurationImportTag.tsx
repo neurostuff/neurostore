@@ -4,7 +4,7 @@ import NavigationButtons, {
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';
-import { ITag } from 'hooks/requests/useGetProjects';
+import { ITag } from 'hooks/projects/useGetProjects';
 import {
     useCreateNewCurationInfoTag,
     useProjectCurationInfoTags,
