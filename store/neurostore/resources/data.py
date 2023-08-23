@@ -170,23 +170,15 @@ class BaseStudiesView(ObjectView, ListView):
         # search studies for data_type
         if args.get("data_type"):
             if args["data_type"] == "coordinate":
-                q = q.filter(
-                    self._model.versions.any(Study.analyses.any(Analysis.points.any()))
-                )
+                q = q.filter_by(has_coordinates=True)
             elif args["data_type"] == "image":
-                q = q.filter(
-                    self._model.versions.any(Study.analyses.any(Analysis.images.any()))
-                )
+                q = q.filter_by(has_images=True)
             elif args["data_type"] == "both":
                 q = q.filter(
                     sae.or_(
-                        self._model.versions.any(
-                            Study.analyses.any(Analysis.points.any())
-                        ),
-                        self._model.versions.any(
-                            Study.analyses.any(Analysis.images.any())
-                        ),
-                    )
+                        self._model.has_coordinates.is_(True),
+                        self._model.has_images.is_(True),
+                    ),
                 )
         # filter by level of analysis (group or meta)
         if args.get("level"):
