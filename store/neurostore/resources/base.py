@@ -27,9 +27,6 @@ from ..models import (
     BaseStudy,
     User,
     Annotation,
-    Image,
-    Point,
-    Analysis,
 )
 from ..schemas.data import StudysetSnapshot
 from . import data as viewdata
@@ -59,6 +56,7 @@ class BaseView(MethodView):
     _parent = {}
     _linked = {}
     _composite_key = {}
+    _view_fields = {}
 
     def pre_nested_record_update(record):
         """
@@ -157,11 +155,6 @@ class BaseView(MethodView):
 
             if k not in cls._nested and k not in ["id", "user"]:
                 try:
-                    # preload images and points for updating in the event
-                    # relationships cannot be loaded during events
-                    if isinstance(record, (Image, Point)) and isinstance(v, Analysis):
-                        v.images
-                        v.points
                     setattr(record, k, v)
                 except AttributeError:
                     print(k)
@@ -296,22 +289,21 @@ class ObjectView(BaseView):
         60 * 60, query_string=True, make_cache_key=cache_key_creator, key_prefix=None
     )
     def get(self, id):
-        nested = request.args.get("nested") == "true"
-        export = request.args.get("export", False)
+        args = parser.parse(self._view_fields, request, location="query")
+        if args.get("nested") is None:
+            args["nested"] = request.args.get("nested", False) == "true"
+
         q = self._model.query
-        if nested or self._model is Annotation:
+        if args["nested"] or self._model is Annotation:
             q = q.options(nested_load(self))
 
         record = q.filter_by(id=id).first_or_404()
-        if self._model is Studyset and nested:
+        if self._model is Studyset and args["nested"]:
             snapshot = StudysetSnapshot()
             return snapshot.dump(record)
         else:
-            return self.__class__._schema(
-                context={
-                    "nested": nested,
-                    "export": export,
-                }
+            return self._schema(
+                context=dict(args),
             ).dump(record)
 
     def put(self, id):
@@ -361,7 +353,7 @@ LIST_USER_ARGS = {
 class ListView(BaseView):
     _search_fields = []
     _multi_search = None
-    _view_fields = {}
+    # _view_fields = {}
 
     def __init__(self):
         # Initialize expected arguments based on class attributes
@@ -477,13 +469,11 @@ class ListView(BaseView):
             data = self._load_from_source(source, source_id)
         else:
             data = parser.parse(self.__class__._schema, request)
-        nested = bool(
-            request.args.get("nested") == "true" or request.args.get("source_id")
-        )
+        args["nested"] = bool(args.get("nested") or request.args.get("source_id"))
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
 
         # clear the cache for this endpoint
-        cache.delete(request.path)
+        clear_cache(self.__class__, record, request.path)
 
-        return self.__class__._schema(context={"nested": nested}).dump(record)
+        return self.__class__._schema(context=args).dump(record)
