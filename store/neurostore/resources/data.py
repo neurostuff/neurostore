@@ -151,6 +151,7 @@ class BaseStudiesView(ObjectView, ListView):
         "level": fields.String(default="group", missing="group"),
         "flat": fields.Boolean(load_default=False, missing=False),
         "info": fields.Boolean(load_default=False, missing=False),
+        "data_type": fields.String(missing=None),
     }
 
     _multi_search = ("name", "description")
