@@ -20,10 +20,10 @@ def test_info_base_study(auth_client, ingest_neurosynth, session):
     assert reg_resp.status_code == 200
 
     assert "updated_at" in info_resp.json["results"][0]["versions"][0]
-    assert isinstance(reg_resp.json['results'][0]["versions"][0], str)
+    assert isinstance(reg_resp.json["results"][0]["versions"][0], str)
 
     # test specific base-study
-    base_study_id = reg_resp.json['results'][0]['id']
+    base_study_id = reg_resp.json["results"][0]["id"]
     single_info_resp = auth_client.get(f"/api/base-studies/{base_study_id}?info=true")
     single_reg_resp = auth_client.get(f"/api/base-studies/{base_study_id}?info=false")
 

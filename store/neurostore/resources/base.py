@@ -27,9 +27,6 @@ from ..models import (
     BaseStudy,
     User,
     Annotation,
-    Image,
-    Point,
-    Analysis,
 )
 from ..schemas.data import StudysetSnapshot
 from . import data as viewdata
@@ -294,15 +291,14 @@ class ObjectView(BaseView):
     def get(self, id):
         args = parser.parse(self._view_fields, request, location="query")
         if args.get("nested") is None:
-            args['nested'] = request.args.get("nested", False) == "true"
-
+            args["nested"] = request.args.get("nested", False) == "true"
 
         q = self._model.query
-        if args['nested'] or self._model is Annotation:
+        if args["nested"] or self._model is Annotation:
             q = q.options(nested_load(self))
 
         record = q.filter_by(id=id).first_or_404()
-        if self._model is Studyset and args['nested']:
+        if self._model is Studyset and args["nested"]:
             snapshot = StudysetSnapshot()
             return snapshot.dump(record)
         else:
@@ -473,9 +469,7 @@ class ListView(BaseView):
             data = self._load_from_source(source, source_id)
         else:
             data = parser.parse(self.__class__._schema, request)
-        args["nested"] = bool(
-            args.get("nested") or request.args.get("source_id")
-        )
+        args["nested"] = bool(args.get("nested") or request.args.get("source_id"))
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
 
