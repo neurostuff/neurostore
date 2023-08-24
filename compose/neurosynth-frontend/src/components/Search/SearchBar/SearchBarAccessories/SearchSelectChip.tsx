@@ -47,7 +47,7 @@ const SearchSelectChip = <T extends string>(props: ISearchSelectChip<T>) => {
             <Chip
                 ref={dataTypeSelectRef}
                 color="primary"
-                variant="outlined"
+                variant="filled"
                 clickable
                 onClick={() => setIsOpen(true)}
                 icon={<ArrowDropDown />}

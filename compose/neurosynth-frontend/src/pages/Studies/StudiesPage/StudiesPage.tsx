@@ -100,9 +100,6 @@ const StudiesPage = () => {
         <StateHandlerComponent isLoading={false} isError={isError}>
             <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
                 <Typography variant="h4">Studies</Typography>
-                {/* <IconButton onClick={() => startTour()} color="primary">
-                    <HelpIcon />
-                </IconButton> */}
             </Box>
 
             <SearchContainer
@@ -144,8 +141,8 @@ const StudiesPage = () => {
                                 styles: { color: 'primary.contrastText', fontWeight: 'bold' },
                             },
                             {
-                                text: 'Journal',
-                                key: 'journal',
+                                text: 'Publication',
+                                key: 'publication',
                                 styles: { color: 'primary.contrastText', fontWeight: 'bold' },
                             },
                             {
@@ -173,7 +170,7 @@ const StudiesPage = () => {
                                 </TableCell>
                                 <TableCell>
                                     {studyrow?.publication || (
-                                        <Box sx={{ color: 'warning.dark' }}>No Journal</Box>
+                                        <Box sx={{ color: 'warning.dark' }}>No Publication</Box>
                                     )}
                                 </TableCell>
                                 <TableCell>

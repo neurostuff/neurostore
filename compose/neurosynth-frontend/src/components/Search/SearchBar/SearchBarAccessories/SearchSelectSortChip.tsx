@@ -37,7 +37,7 @@ const SearchSelectSortChip: React.FC<{
                 open={sortByPopperIsOpen}
             >
                 <Box>
-                    <MenuList sx={{ width: '200px' }}>
+                    <MenuList sx={{ width: '160px' }}>
                         {sortByList.map((sortBy) => (
                             <MenuItem
                                 onClick={() => handleSelectSortBy(sortBy as SortBy)}
@@ -50,6 +50,21 @@ const SearchSelectSortChip: React.FC<{
                     </MenuList>
                 </Box>
             </NeurosynthPopper>
+            <Chip
+                ref={sortByRef}
+                color="primary"
+                variant="filled"
+                clickable
+                onClick={() => setSortByPopperIsOpen(true)}
+                icon={<ArrowDropDown />}
+                sx={{
+                    borderTopRightRadius: 0,
+                    borderBottomRightRadius: 0,
+                    width: '160px',
+                    marginLeft: '5px',
+                }}
+                label={props.chipLabel}
+            />
             <NeurosynthPopper
                 anchorElement={descOrderRef?.current}
                 onClickAway={() => setDescOrderPopperIsOpen(false)}
@@ -67,24 +82,9 @@ const SearchSelectSortChip: React.FC<{
                 </Box>
             </NeurosynthPopper>
             <Chip
-                ref={sortByRef}
-                color="primary"
-                variant="outlined"
-                clickable
-                onClick={() => setSortByPopperIsOpen(true)}
-                icon={<ArrowDropDown />}
-                sx={{
-                    borderTopRightRadius: 0,
-                    borderBottomRightRadius: 0,
-                    width: '200px',
-                    marginLeft: '5px',
-                }}
-                label={props.chipLabel}
-            />
-            <Chip
                 ref={descOrderRef}
                 color="primary"
-                variant="outlined"
+                variant="filled"
                 clickable
                 onClick={() => setDescOrderPopperIsOpen(true)}
                 icon={<ArrowDropDown />}

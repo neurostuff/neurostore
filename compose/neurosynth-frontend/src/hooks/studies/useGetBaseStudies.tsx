@@ -20,7 +20,7 @@ const useGetBaseStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: bo
                     ? undefined
                     : searchCriteria.dataType,
                 searchCriteria.source === Source.ALL ? undefined : searchCriteria.source,
-                undefined,
+                searchCriteria.publicationSearch || undefined,
                 searchCriteria.pmid,
                 searchCriteria.doi,
                 searchCriteria.flat,

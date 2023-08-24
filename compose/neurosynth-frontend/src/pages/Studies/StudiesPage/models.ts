@@ -17,10 +17,11 @@ export enum Source {
     ALL = 'all',
 }
 export enum SearchBy {
+    ALL = 'all fields',
     TITLE = 'title',
     DESCRIPTION = 'description',
     AUTHORS = 'authors',
-    ALL = 'all fields',
+    PUBLICATION = 'publication',
 }
 
 export enum SearchDataType {
@@ -34,6 +35,7 @@ export const SearchByMapping = {
     [SearchBy.AUTHORS]: 'authorSearch',
     [SearchBy.DESCRIPTION]: 'descriptionSearch',
     [SearchBy.TITLE]: 'nameSearch',
+    [SearchBy.PUBLICATION]: 'publicationSearch',
 };
 
 export class SearchCriteria {
@@ -49,6 +51,7 @@ export class SearchCriteria {
         public authorSearch: string | undefined = undefined,
         public showUnique: boolean = true,
         public source: Source | undefined = undefined,
+        public publicationSearch: string | undefined = undefined,
         public userId: string | undefined = undefined,
         public dataType: SearchDataType = SearchDataType.ALL,
         public studysetOwner: string | undefined = undefined,
