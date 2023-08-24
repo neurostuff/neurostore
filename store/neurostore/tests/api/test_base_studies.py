@@ -1,6 +1,9 @@
 """Test Base Study Endpoint"""
 from neurostore.models import BaseStudy, Analysis
 
+def test_post_list_of_studies(auth_client, ingest_neurosynth):
+    base_studies = BaseStudy.query.all()
+
 
 def test_flat_base_study(auth_client, ingest_neurosynth, session):
     flat_resp = auth_client.get("/api/base-studies/?flat=true")
