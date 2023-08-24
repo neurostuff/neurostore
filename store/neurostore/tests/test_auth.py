@@ -22,7 +22,7 @@ def test_creating_new_user_on_db(add_users):
 
     client = Client(
         token=token_info[user_name]["token"],
-        username=token_info[user_name]["external_id"]
+        username=token_info[user_name]["external_id"],
     )
 
     client.post("/api/studies/", data={"name": "my study"})

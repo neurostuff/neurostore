@@ -1,6 +1,17 @@
 from sqlalchemy.exc import SQLAlchemyError
+from flask_sqlalchemy.session import Session
 from sqlalchemy import event
-from .data import AnnotationAnalysis, Annotation, Studyset, Study, _check_type
+from .data import (
+    AnnotationAnalysis,
+    Annotation,
+    Studyset,
+    BaseStudy,
+    Study,
+    Analysis,
+    Point,
+    Image,
+    _check_type,
+)
 from ..database import db
 
 
@@ -119,3 +130,43 @@ event.listen(Studyset.annotations, "append", create_blank_notes)
 event.listen(Studyset.studies, "bulk_replace", add_annotation_analyses_studyset)
 
 event.listen(Study.analyses, "bulk_replace", add_annotation_analyses_study)
+
+
+@event.listens_for(Session, "before_flush")
+def before_flush(session, flush_context, instances):
+    """Update the base study attributes has_coordinates and has_images"""
+
+    changed_objects = set(session.dirty) | set(session.new) | set(session.deleted)
+
+    # Find unique BaseStudies affected by the changes
+    def get_nested_attr(obj, nested_attr):
+        attrs = nested_attr.split(".")
+        result = obj
+        for attr in attrs:
+            result = getattr(result, attr, None)
+            if result is None:
+                return
+        return result
+
+    def get_base_study(obj):
+        base_study = None
+        if isinstance(obj, (Point, Image)):
+            base_study = get_nested_attr(obj, "analysis.study.base_study")
+        if isinstance(obj, Analysis):
+            base_study = get_nested_attr(obj, "study.base_study")
+        if isinstance(obj, Study):
+            base_study = obj.base_study
+        if isinstance(obj, BaseStudy):
+            base_study = obj
+
+        return base_study
+
+    unique_base_studies = {
+        base_study
+        for base_study in [get_base_study(obj) for obj in changed_objects]
+        if base_study is not None
+    }
+
+    # Update the has_images and has_points for each unique BaseStudy
+    for base_study in unique_base_studies:
+        base_study.update_has_images_and_points()

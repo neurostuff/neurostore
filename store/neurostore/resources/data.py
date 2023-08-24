@@ -44,7 +44,7 @@ LIST_CLONE_ARGS = {
 }
 
 LIST_NESTED_ARGS = {
-    "nested": fields.Boolean(missing=False),
+    "nested": fields.Boolean(load_default=False, missing=False),
 }
 
 
@@ -149,8 +149,9 @@ class BaseStudiesView(ObjectView, ListView):
 
     _view_fields = {
         "level": fields.String(default="group", missing="group"),
-        "flat": fields.Boolean(default=False),
-        "info": fields.Boolean(default=False),
+        "flat": fields.Boolean(load_default=False, missing=False),
+        "info": fields.Boolean(load_default=False, missing=False),
+        "data_type": fields.String(missing=None),
     }
 
     _multi_search = ("name", "description")
@@ -170,23 +171,15 @@ class BaseStudiesView(ObjectView, ListView):
         # search studies for data_type
         if args.get("data_type"):
             if args["data_type"] == "coordinate":
-                q = q.filter(
-                    self._model.versions.any(Study.analyses.any(Analysis.points.any()))
-                )
+                q = q.filter_by(has_coordinates=True)
             elif args["data_type"] == "image":
-                q = q.filter(
-                    self._model.versions.any(Study.analyses.any(Analysis.images.any()))
-                )
+                q = q.filter_by(has_images=True)
             elif args["data_type"] == "both":
                 q = q.filter(
                     sae.or_(
-                        self._model.versions.any(
-                            Study.analyses.any(Analysis.points.any())
-                        ),
-                        self._model.versions.any(
-                            Study.analyses.any(Analysis.images.any())
-                        ),
-                    )
+                        self._model.has_coordinates.is_(True),
+                        self._model.has_images.is_(True),
+                    ),
                 )
         # filter by level of analysis (group or meta)
         if args.get("level"):
@@ -213,8 +206,8 @@ class StudiesView(ObjectView, ListView):
             "data_type": fields.String(missing=None),
             "studyset_owner": fields.String(missing=None),
             "level": fields.String(default="group", missing="group"),
-            "flat": fields.Boolean(default=False),
-            "info": fields.Boolean(default=False),
+            "flat": fields.Boolean(load_default=False, missing=False),
+            "info": fields.Boolean(load_default=False, missing=False),
         },
         **LIST_NESTED_ARGS,
         **LIST_CLONE_ARGS,
@@ -328,7 +321,7 @@ class StudiesView(ObjectView, ListView):
     def load_from_pubmed(cls, source_id):
         pass
 
-    def custom_record_update(record):
+    def pre_nested_record_update(record):
         """Find/create the associated base study"""
         # if the study was cloned and the base_study is already known.
         if record.base_study is not None:
