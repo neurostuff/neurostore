@@ -5,11 +5,7 @@ const useGetBaseStudyById = (baseStudyId: string) => {
     return useQuery(
         ['studies', baseStudyId],
         () =>
-            API.NeurostoreServices.BaseStudiesService.baseStudiesIdGet(
-                baseStudyId,
-                'true',
-                'false'
-            ),
+            API.NeurostoreServices.BaseStudiesService.baseStudiesIdGet(baseStudyId, 'true', 'true'),
         {
             select: (res) => {
                 return res.data;

@@ -1,18 +1,17 @@
-import { Box, Chip, Divider, Link, TableCell, TableRow, Typography } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { Badge, Box, Chip, Divider, TableCell, TableRow, Typography } from '@mui/material';
 import { getType } from 'components/EditMetadata';
 import { sortMetadataArrayFn } from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import NeurosynthTable, { getValue } from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
-import DisplayAnalyses from './DisplayAnalyses/DisplayAnalyses';
-import DisplayStudyStyles from './DisplayStudy.styles';
+import useGetFullText from 'hooks/external/useGetFullText';
 import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
-import FullTextLinkComponent from 'components/FullTextLinkComponent/FullTextLinkComponent';
 import { IStoreStudy } from 'pages/Studies/StudyStore.helpers';
 import { Optional } from 'utils/utilitytypes';
-import useGetFullText from 'hooks/external/useGetFullText';
+import DisplayAnalyses from './DisplayAnalyses/DisplayAnalyses';
+import DisplayStudyStyles from './DisplayStudy.styles';
 
 const DisplayStudy: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
     const {
@@ -33,8 +32,16 @@ const DisplayStudy: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
     return (
         <Box>
             <Box data-tour="StudyPage-1" sx={{ padding: '0 1rem' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="h6">
+                <Box sx={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
+                    {id && (
+                        <Chip
+                            variant="filled"
+                            sx={{ marginRight: '5px', borderRadius: '8px' }}
+                            size="medium"
+                            label={id || ''}
+                        />
+                    )}
+                    <Typography sx={{ display: 'inline' }} variant="h6">
                         <b>{name}</b>
                     </Typography>
                 </Box>
@@ -83,7 +90,11 @@ const DisplayStudy: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
                 </Box>
                 <TextExpansion
                     text={description || ''}
-                    sx={{ ...DisplayStudyStyles.spaceBelow, whiteSpace: 'pre-wrap' }}
+                    sx={{
+                        margin: '8px 0',
+                        color: 'gray',
+                        whiteSpace: 'pre-wrap',
+                    }}
                 />
             </Box>
             {metadata && (
