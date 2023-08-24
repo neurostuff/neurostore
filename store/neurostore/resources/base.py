@@ -34,6 +34,7 @@ from . import data as viewdata
 
 def create_user():
     from auth0.v3.authentication.users import Users
+
     auth = request.headers.get("Authorization", None)
     token = auth.split()[1]
     profile_info = Users(
@@ -43,8 +44,7 @@ def create_user():
     # user signed up with auth0, but has not made any queries yet...
     # should have endpoint to "create user" after sign on with auth0
     current_user = User(
-        external_id=connexion.context["user"],
-        name=profile_info.get("name", "Unknown")
+        external_id=connexion.context["user"], name=profile_info.get("name", "Unknown")
     )
 
     return current_user
@@ -56,9 +56,18 @@ class BaseView(MethodView):
     _parent = {}
     _linked = {}
     _composite_key = {}
+    _view_fields = {}
 
-    def custom_record_update(record):
-        """Custom processing of a record (defined in specific classes)"""
+    def pre_nested_record_update(record):
+        """
+        Processing of a record before updating nested components (defined in specific classes).
+        """
+        return record
+
+    def post_nested_record_update(record):
+        """
+        Processing of a record after updating nested components (defined in specific classes).
+        """
         return record
 
     @classmethod
@@ -151,7 +160,7 @@ class BaseView(MethodView):
                     print(k)
                     raise AttributeError
 
-        record = cls.custom_record_update(record)
+        record = cls.pre_nested_record_update(record)
 
         to_commit.append(record)
 
@@ -171,6 +180,8 @@ class BaseView(MethodView):
 
                 setattr(record, field, nested)
 
+        # add other custom update after the nested attributes are handled...
+        record = cls.post_nested_record_update(record)
         if commit:
             db.session.add_all(to_commit)
             try:
@@ -278,22 +289,21 @@ class ObjectView(BaseView):
         60 * 60, query_string=True, make_cache_key=cache_key_creator, key_prefix=None
     )
     def get(self, id):
-        nested = request.args.get("nested") == "true"
-        export = request.args.get("export", False)
+        args = parser.parse(self._view_fields, request, location="query")
+        if args.get("nested") is None:
+            args["nested"] = request.args.get("nested", False) == "true"
+
         q = self._model.query
-        if nested or self._model is Annotation:
+        if args["nested"] or self._model is Annotation:
             q = q.options(nested_load(self))
 
         record = q.filter_by(id=id).first_or_404()
-        if self._model is Studyset and nested:
+        if self._model is Studyset and args["nested"]:
             snapshot = StudysetSnapshot()
             return snapshot.dump(record)
         else:
-            return self.__class__._schema(
-                context={
-                    "nested": nested,
-                    "export": export,
-                }
+            return self._schema(
+                context=dict(args),
             ).dump(record)
 
     def put(self, id):
@@ -316,8 +326,7 @@ class ObjectView(BaseView):
             abort(403)
         else:
             db.session.delete(record)
-
-        db.session.commit()
+            db.session.commit()
 
         # clear relevant caches
         clear_cache(self.__class__, record, request.path)
@@ -326,6 +335,9 @@ class ObjectView(BaseView):
 
     def insert_data(self, id, data):
         return data
+
+    def post_delete(self, record):
+        pass
 
 
 LIST_USER_ARGS = {
@@ -341,7 +353,7 @@ LIST_USER_ARGS = {
 class ListView(BaseView):
     _search_fields = []
     _multi_search = None
-    _view_fields = {}
+    # _view_fields = {}
 
     def __init__(self):
         # Initialize expected arguments based on class attributes
@@ -457,13 +469,11 @@ class ListView(BaseView):
             data = self._load_from_source(source, source_id)
         else:
             data = parser.parse(self.__class__._schema, request)
-        nested = bool(
-            request.args.get("nested") == "true" or request.args.get("source_id")
-        )
+        args["nested"] = bool(args.get("nested") or request.args.get("source_id"))
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
 
         # clear the cache for this endpoint
-        cache.delete(request.path)
+        clear_cache(self.__class__, record, request.path)
 
-        return self.__class__._schema(context={"nested": nested}).dump(record)
+        return self.__class__._schema(context=args).dump(record)

@@ -53,12 +53,15 @@ def test_source_id(auth_client, ingest_neurosynth, session):
     assert post.json == get.json["results"][0]
 
 
-def test_data_type(auth_client, ingest_neurosynth, ingest_neurovault, session):
-    get_coord = auth_client.get("/api/studies/?data_type=coordinate")
+@pytest.mark.parametrize("endpoint", ["studies", "base-studies"])
+def test_data_type(
+    auth_client, ingest_neurosynth, ingest_neurovault, session, endpoint
+):
+    get_coord = auth_client.get(f"/api/{endpoint}/?data_type=coordinate")
     assert get_coord.status_code == 200
-    get_img = auth_client.get("/api/studies/?data_type=image")
+    get_img = auth_client.get(f"/api/{endpoint}/?data_type=image")
     assert get_img.status_code == 200
-    get_both = auth_client.get("/api/studies/?data_type=both")
+    get_both = auth_client.get(f"/api/{endpoint}/?data_type=both")
     assert get_both.status_code == 200
     assert (
         len(get_coord.json["results"]) + len(get_img.json["results"])
