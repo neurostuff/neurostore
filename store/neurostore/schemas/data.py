@@ -49,7 +49,7 @@ class StringOrNested(fields.Nested):
             nested_schema = self.nested(context=self.context)
             return nested_schema.dump(value, many=self.many)
         elif self.context.get("info"):
-            info_fields = ["id", "updated_at", "created_at", "source", "user"]
+            info_fields = ["_id", "updated_at", "created_at", "source", "user"]
             nested_schema = self.nested(context=self.context, only=info_fields)
             return nested_schema.dump(value, many=self.many)
         else:
