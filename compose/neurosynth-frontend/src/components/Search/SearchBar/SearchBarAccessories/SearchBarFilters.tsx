@@ -154,12 +154,7 @@ const SearchBarFilters: React.FC<{
                                 />
                             </FormControl>
                             <Box sx={{ marginTop: '1rem' }}>
-                                <Button
-                                    type="submit"
-                                    onClick={handleAddFilter}
-                                    color="secondary"
-                                    fullWidth
-                                >
+                                <Button type="submit" onClick={handleAddFilter} fullWidth>
                                     Add
                                 </Button>
                             </Box>

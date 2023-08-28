@@ -1,4 +1,3 @@
-import { ArrowDropDown } from '@mui/icons-material';
 import { Box, FormControl, InputLabel, MenuItem, Select, Typography } from '@mui/material';
 import DisplayStudy from 'components/DisplayStudy/DisplayStudy';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';

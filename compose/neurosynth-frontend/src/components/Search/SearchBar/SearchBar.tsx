@@ -1,5 +1,5 @@
 import SearchIcon from '@mui/icons-material/Search';
-import { Box, Button, Chip, InputBase, Paper } from '@mui/material';
+import { Box, Button, InputBase, Paper } from '@mui/material';
 import SearchBarStyles from 'components/Search/SearchBar/SearchBar.styles';
 import {
     SearchBy,
@@ -55,7 +55,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
     const handleReset = () => {
         onSearch({
             genericSearchStr: '',
-            dataType: SearchDataType.COORDINATE,
+            dataType: SearchDataType.ALL,
             source: Source.ALL,
             sortBy: SortBy.TITLE,
             descOrder: true,

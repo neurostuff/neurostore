@@ -1,5 +1,5 @@
 import { ArrowDropDown } from '@mui/icons-material';
-import { MenuItem, Chip, Select, Button, MenuList } from '@mui/material';
+import { Chip, MenuItem, MenuList } from '@mui/material';
 import { Box } from '@mui/system';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import { SortBy } from 'pages/Studies/StudiesPage/models';
