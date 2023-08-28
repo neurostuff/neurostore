@@ -33,15 +33,15 @@ const DisplayStudy: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
         <Box>
             <Box data-tour="StudyPage-1" sx={{ padding: '0 1rem' }}>
                 <Box sx={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
-                    {id && (
-                        <Chip
-                            variant="filled"
-                            sx={{ marginRight: '5px', borderRadius: '8px' }}
-                            size="medium"
-                            label={id || ''}
-                        />
-                    )}
                     <Typography sx={{ display: 'inline' }} variant="h6">
+                        {id && (
+                            <Chip
+                                variant="filled"
+                                sx={{ marginRight: '5px', borderRadius: '8px' }}
+                                size="medium"
+                                label={`Version: ${id}` || ''}
+                            />
+                        )}
                         <b>{name}</b>
                     </Typography>
                 </Box>

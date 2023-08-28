@@ -22,9 +22,6 @@ const ProjectsPage: React.FC = (props) => {
                 <Typography gutterBottom variant="h4">
                     Projects
                 </Typography>
-                <IconButton onClick={() => {}} color="primary">
-                    <HelpIcon />
-                </IconButton>
             </Box>
 
             <NeurosynthTable

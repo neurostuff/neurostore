@@ -1,4 +1,4 @@
-import { Box, FormControl, InputLabel, MenuItem, Select, Typography } from '@mui/material';
+import { Box, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import DisplayStudy from 'components/DisplayStudy/DisplayStudy';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetStudyById } from 'hooks';
@@ -6,10 +6,12 @@ import useGetBaseStudyById from 'hooks/studies/useGetBaseStudyById';
 import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useInitStudyStore } from '../StudyStore';
 import { studyAnalysesToStoreAnalyses } from '../StudyStore.helpers';
 
 const StudyPage: React.FC = (props) => {
     const [selectedVersion, setSelectedVersion] = useState<StudyReturn>(); // TODO: replace this type with one more precise
+    const initStudyStore = useInitStudyStore();
 
     const { studyId } = useParams<{ studyId: string }>();
     const {
@@ -23,8 +25,16 @@ const StudyPage: React.FC = (props) => {
         isError: studyIsError,
     } = useGetStudyById(selectedVersion?.id);
 
+    // init the study store with the new version when the selected version changes
+    useEffect(() => {
+        initStudyStore(selectedVersion?.id);
+    }, [initStudyStore, selectedVersion?.id]);
+
+    // on initial load (i.e. if the selectedVersion is not set) then default to the first item
     useEffect(() => {
         if (!selectedVersion && baseStudy && baseStudy.versions && baseStudy.versions.length > 0) {
+            // note: the versions type is a subset of StudyReturn. There are properties in StudyReturn that
+            // are not part of the versions type
             setSelectedVersion((baseStudy.versions as StudyReturn[])[0]);
         }
     }, [selectedVersion, baseStudy?.versions, baseStudy]);
@@ -37,7 +47,7 @@ const StudyPage: React.FC = (props) => {
             isError={baseStudyIsError || studyIsError}
         >
             <Box sx={{ margin: '1rem', display: 'flex', alignItems: 'center' }}>
-                <FormControl size="small" sx={{ width: '350px' }}>
+                <FormControl size="small" sx={{ width: '500px' }}>
                     <InputLabel>Select version to view</InputLabel>
                     <Select
                         onChange={(event) => {
@@ -62,7 +72,8 @@ const StudyPage: React.FC = (props) => {
 
                             return (
                                 <MenuItem key={version.id || index} value={version.id}>
-                                    {dateStr} | {version?.user ? version.user : 'neurosynth'}
+                                    Last updated: {dateStr} | Owner:{' '}
+                                    {version?.user ? version.user : 'neurosynth'}
                                 </MenuItem>
                             );
                         })}
@@ -72,10 +83,7 @@ const StudyPage: React.FC = (props) => {
             <DisplayStudy
                 id={study?.id}
                 name={baseStudy?.name}
-                description={
-                    baseStudy?.description ||
-                    'lorem ipsum dolor sit amet consectetur adipisicing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
-                }
+                description={baseStudy?.description}
                 doi={baseStudy?.doi}
                 pmid={baseStudy?.pmid}
                 authors={baseStudy?.authors}

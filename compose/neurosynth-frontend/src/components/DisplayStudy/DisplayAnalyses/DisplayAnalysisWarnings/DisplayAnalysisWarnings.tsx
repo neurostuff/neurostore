@@ -1,6 +1,7 @@
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Box, Chip } from '@mui/material';
-import { useStudyAnalysisPoints } from 'pages/Studies/StudyStore';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { useStudyAnalysisPoints, useStudyIsLoading } from 'pages/Studies/StudyStore';
 import { IStorePoint } from 'pages/Studies/StudyStore.helpers';
 
 export const isCoordinateMNI = (x: number, y: number, z: number) => {
@@ -25,6 +26,7 @@ export const isCoordinateMNI = (x: number, y: number, z: number) => {
 
 const DisplayAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
     const points = useStudyAnalysisPoints(props.analysisId) as IStorePoint[] | null;
+    const studyIsLoading = useStudyIsLoading();
 
     const noPoints = (points?.length || 0) === 0;
     const allCoordinatesAreMNI = (points || []).every((x) => {
@@ -32,7 +34,7 @@ const DisplayAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
     });
 
     return (
-        <Box>
+        <StateHandlerComponent isLoading={studyIsLoading} isError={false} loaderSize={20}>
             {noPoints && (
                 <Chip
                     sx={{ margin: '2px', marginBottom: '1rem' }}
@@ -49,7 +51,7 @@ const DisplayAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
                     color="warning"
                 />
             )}
-        </Box>
+        </StateHandlerComponent>
     );
 };
 

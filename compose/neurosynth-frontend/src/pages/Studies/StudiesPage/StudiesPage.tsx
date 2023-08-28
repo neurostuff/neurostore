@@ -1,12 +1,10 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import HelpIcon from '@mui/icons-material/Help';
-import { Box, IconButton, TableCell, TableRow, Typography } from '@mui/material';
+import { Box, TableCell, TableRow, Typography } from '@mui/material';
 import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { useGetBaseStudies } from 'hooks';
-import useGetTour from 'hooks/useGetTour';
 import { BaseStudyList } from 'neurostore-typescript-sdk';
 import {
     addKVPToSearch,
@@ -77,7 +75,6 @@ export class SearchCriteria {
 }
 
 const StudiesPage = () => {
-    const { startTour } = useGetTour('StudiesPage');
     const history = useHistory();
     const location = useLocation();
     const { user, isLoading: authenticationIsLoading } = useAuth0();
@@ -168,11 +165,13 @@ const StudiesPage = () => {
 
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>
-            <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
-                <Typography variant="h4">Studies</Typography>
-                <IconButton onClick={() => startTour()} color="primary">
+            <Box>
+                <Typography gutterBottom variant="h4">
+                    Studies
+                </Typography>
+                {/* <IconButton onClick={() => startTour()} color="primary">
                     <HelpIcon />
-                </IconButton>
+                </IconButton> */}
             </Box>
 
             <SearchContainer
