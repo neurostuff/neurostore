@@ -1,12 +1,11 @@
-import { Box, IconButton, Typography, TableRow, TableCell } from '@mui/material';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import HelpIcon from '@mui/icons-material/Help';
-import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
-import useGetProjects from 'hooks/projects/useGetProjects';
-import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import { useHistory } from 'react-router-dom';
-import { useIsMutating } from 'react-query';
 import { useAuth0 } from '@auth0/auth0-react';
+import { Box, TableCell, TableRow, Typography } from '@mui/material';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
+import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
+import useGetProjects from 'hooks/projects/useGetProjects';
+import { useIsMutating } from 'react-query';
+import { useHistory } from 'react-router-dom';
 
 const ProjectsPage: React.FC = (props) => {
     const { user } = useAuth0();

@@ -1,5 +1,5 @@
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { Badge, Box, Chip, Divider, TableCell, TableRow, Typography } from '@mui/material';
+import { Box, Chip, Divider, TableCell, TableRow, Typography } from '@mui/material';
 import { getType } from 'components/EditMetadata';
 import { sortMetadataArrayFn } from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';

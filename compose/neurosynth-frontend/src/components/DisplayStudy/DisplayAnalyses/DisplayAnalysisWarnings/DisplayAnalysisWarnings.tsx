@@ -1,5 +1,5 @@
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { Box, Chip } from '@mui/material';
+import { Chip } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useStudyAnalysisPoints, useStudyIsLoading } from 'pages/Studies/StudyStore';
 import { IStorePoint } from 'pages/Studies/StudyStore.helpers';
