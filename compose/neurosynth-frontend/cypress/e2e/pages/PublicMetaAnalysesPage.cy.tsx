@@ -4,7 +4,7 @@ import { mockMetaAnalyses } from 'testing/mockData';
 
 export {};
 
-const PATH = '/projects';
+const PATH = '/meta-analyses';
 const PAGE_NAME = 'MetaAnalysesPage';
 
 describe(PAGE_NAME, () => {
@@ -15,10 +15,7 @@ describe(PAGE_NAME, () => {
 
     it('should load successfully', () => {
         cy.intercept('GET', `**/api${PATH}*`).as('realMetaAnalysesRequest');
-        cy.login('real')
-            .wait('@realMetaAnalysesRequest')
-            .visit(PATH)
-            .wait('@realMetaAnalysesRequest');
+        cy.visit(PATH).wait('@realMetaAnalysesRequest');
     });
 
     // describe('Tour ', () => {
