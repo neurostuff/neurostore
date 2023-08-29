@@ -21,8 +21,17 @@ export interface ISearchBar {
     searchButtonColor?: string;
 }
 
+const searchPlaceholderExamples = [
+    'Try: smoking -marijuana',
+    'Try: fmri AND pain',
+    'Try: emotional pain',
+    'Try: adolescents OR children OR infants',
+    'Try: "working memory" OR "spatial memory"',
+];
+
 const SearchBar: React.FC<ISearchBar> = (props) => {
     const { onSearch, searchButtonColor = 'primary' } = props;
+    const [placeholder, setPlaceholder] = useState(searchPlaceholderExamples[0]);
     const location = useLocation();
 
     const [searchState, setSearchState] = useState<Partial<SearchCriteria>>({
@@ -36,6 +45,13 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
         publicationSearch: '', // this defaults to undefined if empty in useGetBaseStudies
         authorSearch: '',
     });
+
+    // set new placeholder on reload
+    useEffect(() => {
+        const placeholder =
+            searchPlaceholderExamples[Math.floor(Math.random() * searchPlaceholderExamples.length)];
+        setPlaceholder(placeholder);
+    }, []);
 
     useEffect(() => {
         const searchCriteria = getSearchCriteriaFromURL(location.search);
@@ -102,7 +118,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                                             };
                                         })
                                     }
-                                    placeholder="EMOTION -PAIN"
+                                    placeholder={placeholder}
                                     sx={SearchBarStyles.textfield}
                                 />
                             </Paper>

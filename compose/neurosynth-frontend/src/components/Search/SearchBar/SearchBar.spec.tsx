@@ -104,6 +104,6 @@ describe('SearchBar Component', () => {
         );
 
         const button = screen.getByTestId('SearchIcon');
-        expect(button.parentElement).toHaveStyle({ backgroundColor: '#FFFFFF' });
+        expect(button.parentElement).toHaveStyle({ backgroundColor: 'rgb(255, 255, 255);' }); // equivalent to '#FFFFFF', dont forget semicolon
     });
 });

@@ -41,7 +41,7 @@ export const SearchByMapping = {
 export class SearchCriteria {
     constructor(
         public genericSearchStr: string | undefined = undefined,
-        public sortBy: SortBy = SortBy.TITLE,
+        public sortBy: SortBy | undefined = undefined,
         public pageOfResults: number = 1,
         public descOrder: boolean = true,
         public pageSize: number = 10,
@@ -55,7 +55,7 @@ export class SearchCriteria {
         public userId: string | undefined = undefined,
         public dataType: SearchDataType = SearchDataType.ALL,
         public studysetOwner: string | undefined = undefined,
-        public level: 'group' | 'meta' | undefined = undefined,
+        public level: 'group' | 'meta' | undefined = 'group',
         public pmid: string | undefined = undefined,
         public doi: string | undefined = undefined,
         public flat: boolean | undefined = true,
