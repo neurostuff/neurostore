@@ -15,7 +15,7 @@ export const studiesToStubs = (studies: BaseStudyReturn[]): ICurationStubStudy[]
             keywords: '',
             pmid: pmid === 'NaN' ? '' : pmid,
             doi: doi === 'NaN' ? '' : doi,
-            articleYear: study.year || '',
+            articleYear: study.year?.toString() || '',
             journal: study.publication || '',
             abstractText: study.description || '',
             articleLink: study.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${study.pmid}` : '',

@@ -1,4 +1,4 @@
-import { SearchCriteria, SearchDataType, Source } from 'pages/Studies/StudiesPage/StudiesPage';
+import { SearchCriteria, SearchDataType } from 'pages/Studies/StudiesPage/StudiesPage';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
@@ -19,12 +19,11 @@ const useGetBaseStudies = (searchCriteria: Partial<SearchCriteria>, enabled?: bo
                 searchCriteria.dataType === SearchDataType.BOTH
                     ? undefined
                     : searchCriteria.dataType,
-                searchCriteria.source === Source.ALL ? undefined : searchCriteria.source,
-                undefined,
+                searchCriteria.publicationSearch || undefined,
                 searchCriteria.pmid,
                 searchCriteria.doi,
                 searchCriteria.flat,
-                undefined
+                searchCriteria.info
             );
         },
         {

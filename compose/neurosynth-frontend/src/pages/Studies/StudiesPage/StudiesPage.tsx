@@ -62,6 +62,7 @@ export class SearchCriteria {
         public nameSearch: string | undefined = undefined,
         public descriptionSearch: string | undefined = undefined,
         public authorSearch: string | undefined = undefined,
+        public publicationSearch: string | undefined = undefined,
         public showUnique: boolean = true,
         public source: Source | undefined = undefined,
         public userId: string | undefined = undefined,
@@ -70,7 +71,8 @@ export class SearchCriteria {
         public level: 'group' | 'meta' | undefined = undefined,
         public pmid: string | undefined = undefined,
         public doi: string | undefined = undefined,
-        public flat: 'true' | 'false' | undefined = 'true'
+        public flat: boolean | undefined = true,
+        public info: boolean | undefined = false
     ) {}
 }
 
