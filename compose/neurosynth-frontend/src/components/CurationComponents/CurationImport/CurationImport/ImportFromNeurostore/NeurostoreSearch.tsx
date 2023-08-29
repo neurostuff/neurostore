@@ -8,6 +8,9 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { useGetBaseStudies } from 'hooks';
+import { BaseStudyList } from 'neurostore-typescript-sdk';
+import { useProjectId } from 'pages/Projects/ProjectPage/ProjectStore';
+import { SearchCriteria } from 'pages/Studies/StudiesPage/models';
 import {
     addKVPToSearch,
     getSearchCriteriaFromURL,
@@ -17,9 +20,6 @@ import { useEffect, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { IImportArgs } from '../CurationImport';
 import { studiesToStubs } from './helpers/utils';
-import { useProjectId } from 'pages/Projects/ProjectPage/ProjectStore';
-import { SearchCriteria } from 'pages/Studies/StudiesPage/models';
-import { BaseStudyList } from 'neurostore-typescript-sdk';
 
 const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
     const { user, isLoading: authenticationIsLoading } = useAuth0();
