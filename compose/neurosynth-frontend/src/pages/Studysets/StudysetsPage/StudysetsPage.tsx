@@ -1,12 +1,10 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import HelpIcon from '@mui/icons-material/Help';
-import { Box, IconButton, TableCell, TableRow, Typography } from '@mui/material';
+import { Box, TableCell, TableRow, Typography } from '@mui/material';
 import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { useGetStudysets } from 'hooks';
-import useGetTour from 'hooks/useGetTour';
 import { StudysetList } from 'neurostore-typescript-sdk';
 import { SearchCriteria } from 'pages/Studies/StudiesPage/models';
 import {
@@ -19,7 +17,6 @@ import React, { useEffect, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 
 const StudysetsPage: React.FC = (props) => {
-    const { startTour } = useGetTour('StudysetsPage');
     const { user, isLoading: authenticationIsLoading } = useAuth0();
     const history = useHistory();
     const location = useLocation();
@@ -89,23 +86,14 @@ const StudysetsPage: React.FC = (props) => {
 
     const handleSearch = (search: Partial<SearchCriteria>) => {
         const searchURL = getURLFromSearchCriteria(search);
-        console.log(searchURL);
         history.push(`/studysets?${searchURL}`);
     };
 
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>
-            <Box
-                sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                }}
-            >
-                <Typography variant="h4">
+            <Box>
+                <Typography gutterBottom variant="h4">
                     Studysets
-                    <IconButton color="primary" onClick={() => startTour()}>
-                        <HelpIcon />
-                    </IconButton>
                 </Typography>
             </Box>
             <SearchContainer

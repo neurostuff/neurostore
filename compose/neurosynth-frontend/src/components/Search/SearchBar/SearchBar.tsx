@@ -102,7 +102,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                                             };
                                         })
                                     }
-                                    placeholder='Try "Emotion" or "FMRI AND EMOTION" -PAIN'
+                                    placeholder="EMOTION -PAIN"
                                     sx={SearchBarStyles.textfield}
                                 />
                             </Paper>

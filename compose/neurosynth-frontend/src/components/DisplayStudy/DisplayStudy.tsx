@@ -32,8 +32,16 @@ const DisplayStudy: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
     return (
         <Box>
             <Box data-tour="StudyPage-1" sx={{ padding: '0 1rem' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="h6">
+                <Box sx={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
+                    <Typography sx={{ display: 'inline' }} variant="h6">
+                        {id && (
+                            <Chip
+                                variant="filled"
+                                sx={{ marginRight: '5px', borderRadius: '8px' }}
+                                size="medium"
+                                label={`Version: ${id}` || ''}
+                            />
+                        )}
                         <b>{name}</b>
                     </Typography>
                 </Box>
@@ -82,7 +90,11 @@ const DisplayStudy: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
                 </Box>
                 <TextExpansion
                     text={description || ''}
-                    sx={{ ...DisplayStudyStyles.spaceBelow, whiteSpace: 'pre-wrap' }}
+                    sx={{
+                        margin: '8px 0',
+                        color: 'gray',
+                        whiteSpace: 'pre-wrap',
+                    }}
                 />
             </Box>
             {metadata && (
