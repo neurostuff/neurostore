@@ -2,10 +2,10 @@ import { AnalysisReturn } from 'neurostore-typescript-sdk';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
-const useGetStudyById = (studyId: string) => {
+const useGetStudyById = (studyId: string | undefined) => {
     return useQuery(
         ['studies', studyId],
-        () => API.NeurostoreServices.StudiesService.studiesIdGet(studyId, true),
+        () => API.NeurostoreServices.StudiesService.studiesIdGet(studyId || '', true),
         {
             select: (res) => {
                 const analyses = res.data.analyses as AnalysisReturn[];
@@ -22,6 +22,7 @@ const useGetStudyById = (studyId: string) => {
                 res.data.analyses = sortedAnalyses;
                 return res.data;
             },
+            enabled: !!studyId,
         }
     );
 };

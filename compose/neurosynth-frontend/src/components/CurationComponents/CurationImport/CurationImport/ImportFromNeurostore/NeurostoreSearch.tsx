@@ -1,25 +1,25 @@
+import { useAuth0 } from '@auth0/auth0-react';
 import { Box, TableCell, TableRow } from '@mui/material';
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
-import { StudyList } from 'neurostore-typescript-sdk';
-import { SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
-import { useEffect, useState } from 'react';
-import { useGetStudies } from 'hooks';
-import { useAuth0 } from '@auth0/auth0-react';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useGetBaseStudies } from 'hooks';
+import { useProjectId } from 'pages/Projects/ProjectPage/ProjectStore';
+import { SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
 import {
     addKVPToSearch,
     getSearchCriteriaFromURL,
     getURLFromSearchCriteria,
 } from 'pages/helpers/utils';
-import { useProjectId } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useEffect, useState } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
 import { IImportArgs } from '../CurationImport';
 import { studiesToStubs } from './helpers/utils';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { BaseStudyList } from 'neurostore-typescript-sdk';
 
 const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
     const { user, isLoading: authenticationIsLoading } = useAuth0();
@@ -28,7 +28,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
     const projectId = useProjectId();
 
     // cached data returned from the api
-    const [studyData, setStudyData] = useState<StudyList>();
+    const [studyData, setStudyData] = useState<BaseStudyList>();
 
     // state of the current search
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({
@@ -45,8 +45,8 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
      * exists before loading is complete so we are guaranteed that the first query will run
      * with the studysetOwner set (if logged in) and undefined otherwise
      */
-    const { data, isLoading, isError, isFetching } = useGetStudies(
-        { ...debouncedSearchCriteria, studysetOwner: user?.sub, flat: 'true' },
+    const { data, isLoading, isError, isFetching } = useGetBaseStudies(
+        { ...debouncedSearchCriteria, studysetOwner: user?.sub, flat: true },
         !authenticationIsLoading
     );
 
@@ -55,8 +55,8 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
         isLoading: allDataForSearchIsLoading,
         isError: allDataForSearchIsError,
         isFetching: allDataForSearchIsFetching,
-    } = useGetStudies(
-        { ...debouncedSearchCriteria, studysetOwner: user?.sub, pageSize: 29999, flat: 'true' }, // backend checks for less than 30000
+    } = useGetBaseStudies(
+        { ...debouncedSearchCriteria, studysetOwner: user?.sub, pageSize: 29999, flat: true }, // backend checks for less than 30000
         !authenticationIsLoading
     );
 

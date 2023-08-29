@@ -1,20 +1,18 @@
-import { useEffect, useState } from 'react';
-import { Typography, Box, IconButton, TableRow, TableCell } from '@mui/material';
-import HelpIcon from '@mui/icons-material/Help';
-import useGetTour from 'hooks/useGetTour';
 import { useAuth0 } from '@auth0/auth0-react';
-import { useGetStudies } from 'hooks';
+import { Box, TableCell, TableRow, Typography } from '@mui/material';
+import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useHistory, useLocation } from 'react-router-dom';
-import { StudyList } from 'neurostore-typescript-sdk';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
+import { useGetBaseStudies } from 'hooks';
+import { BaseStudyList } from 'neurostore-typescript-sdk';
 import {
     addKVPToSearch,
     getSearchCriteriaFromURL,
     getURLFromSearchCriteria,
 } from 'pages/helpers/utils';
+import { useEffect, useState } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
 
 export enum SortBy {
     TITLE = 'name',
@@ -64,6 +62,7 @@ export class SearchCriteria {
         public nameSearch: string | undefined = undefined,
         public descriptionSearch: string | undefined = undefined,
         public authorSearch: string | undefined = undefined,
+        public publicationSearch: string | undefined = undefined,
         public showUnique: boolean = true,
         public source: Source | undefined = undefined,
         public userId: string | undefined = undefined,
@@ -72,18 +71,18 @@ export class SearchCriteria {
         public level: 'group' | 'meta' | undefined = undefined,
         public pmid: string | undefined = undefined,
         public doi: string | undefined = undefined,
-        public flat: 'true' | 'false' | undefined = 'true'
+        public flat: boolean | undefined = true,
+        public info: boolean | undefined = false
     ) {}
 }
 
 const StudiesPage = () => {
-    const { startTour } = useGetTour('StudiesPage');
     const history = useHistory();
     const location = useLocation();
     const { user, isLoading: authenticationIsLoading } = useAuth0();
 
     // cached data returned from the api
-    const [studyData, setStudyData] = useState<StudyList>();
+    const [studyData, setStudyData] = useState<BaseStudyList>();
 
     // state of the current search
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({
@@ -100,7 +99,7 @@ const StudiesPage = () => {
      * exists before loading is complete so we are guaranteed that the first query will run
      * with the studysetOwner set (if logged in) and undefined otherwise
      */
-    const { data, isLoading, isError, isFetching } = useGetStudies(
+    const { data, isLoading, isError, isFetching } = useGetBaseStudies(
         { ...debouncedSearchCriteria, studysetOwner: user?.sub },
         !authenticationIsLoading
     );
@@ -168,11 +167,13 @@ const StudiesPage = () => {
 
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>
-            <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
-                <Typography variant="h4">Studies</Typography>
-                <IconButton onClick={() => startTour()} color="primary">
+            <Box>
+                <Typography gutterBottom variant="h4">
+                    Studies
+                </Typography>
+                {/* <IconButton onClick={() => startTour()} color="primary">
                     <HelpIcon />
-                </IconButton>
+                </IconButton> */}
             </Box>
 
             <SearchContainer

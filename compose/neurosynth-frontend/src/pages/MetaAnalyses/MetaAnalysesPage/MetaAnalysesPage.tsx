@@ -1,17 +1,15 @@
-import { Typography, Box, IconButton, TableRow, TableCell } from '@mui/material';
-import { useHistory } from 'react-router-dom';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useGetMetaAnalyses } from 'hooks';
-import useGetTour from 'hooks/useGetTour';
-import Help from '@mui/icons-material/Help';
-import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import { useAuth0 } from '@auth0/auth0-react';
+import { Box, TableCell, TableRow, Typography } from '@mui/material';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
+import { useGetMetaAnalysesByProjectId } from 'hooks';
+import { useHistory } from 'react-router-dom';
 
 const MetaAnalysesPage: React.FC = (props) => {
-    const { startTour } = useGetTour('MetaAnalysesPage');
+    // const { startTour } = useGetTour('MetaAnalysesPage');
     const history = useHistory();
-    const { data, isLoading, isError } = useGetMetaAnalyses();
+    const { data, isLoading, isError } = useGetMetaAnalysesByProjectId();
     const { user } = useAuth0();
 
     return (
@@ -23,9 +21,6 @@ const MetaAnalysesPage: React.FC = (props) => {
                 }}
             >
                 <Typography variant="h4">Meta-Analyses</Typography>
-                <IconButton onClick={() => startTour()}>
-                    <Help color="primary" />
-                </IconButton>
             </Box>
 
             <StateHandlerComponent
