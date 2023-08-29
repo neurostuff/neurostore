@@ -196,7 +196,7 @@ class BaseStudiesView(ObjectView, ListView):
     def join_tables(self, q):
         "join relevant tables to speed up query"
         q = q.options(joinedload("versions"))
-        return q
+        return super().join_tables(q)
 
 
 @view_maker
@@ -269,7 +269,7 @@ class StudiesView(ObjectView, ListView):
     def join_tables(self, q):
         "join relevant tables to speed up query"
         q = q.options(joinedload("analyses"))
-        return q
+        return super().join_tables(q)
 
     def serialize_records(self, records, args, exclude=tuple()):
         if args.get("studyset_owner"):
@@ -277,9 +277,6 @@ class StudiesView(ObjectView, ListView):
                 study.studysets = study.studysets.filter(
                     Studyset.user_id == args.get("studyset_owner")
                 ).all()
-        if args.get("flat"):
-            exclude = ("analyses",)
-
         if args.get("flat"):
             exclude = ("analyses",)
 
