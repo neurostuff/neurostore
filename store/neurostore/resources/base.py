@@ -11,6 +11,7 @@ from flask.views import MethodView
 # from flask import make_response
 import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
+from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
 from webargs.flaskparser import parser
@@ -372,7 +373,9 @@ class ListView(BaseView):
         return q
 
     def join_tables(self, q):
-        return q
+        if self._model is User:
+            return q
+        return q.options(joinedload("user"))
 
     def serialize_records(self, records, args, exclude=tuple()):
         """serialize records from search"""
