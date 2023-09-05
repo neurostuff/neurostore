@@ -1,4 +1,6 @@
+from flask import request
 from marshmallow import EXCLUDE
+from webargs.flaskparser import parser
 from webargs import fields
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.orm import joinedload
@@ -197,6 +199,58 @@ class BaseStudiesView(ObjectView, ListView):
         "join relevant tables to speed up query"
         q = q.options(joinedload("versions"))
         return q
+
+    def post(self):
+        from .base import clear_cache
+        # the request is either a list or a dict
+        if isinstance(request.json, dict):
+            return super().post()
+        # in the list scenerio, try to find an existing record
+        # then return the best version and return that study id
+        data = parser.parse(self.__class__._schema(many=True), request)
+        search_keys = ["pmid", "doi", "name"]
+        studies = []
+        to_commit = []
+        for study_data in data:
+            filter_params = {
+                k: study_data.get(k) for k in search_keys if study_data.get(k) is not None
+            }
+            if "name" in filter_params and (set(filter_params) - {"name"}) != set():
+                del filter_params["name"]
+
+            record = BaseStudy.query.filter_by(**filter_params).one_or_none()
+
+            if record is None:
+                with db.session.no_autoflush:
+                    record = self.__class__.update_or_create(study_data)
+
+            versions = record.versions
+            if len(versions) == 0:
+                version = StudiesView.update_or_create(study_data)
+                record.versions.append(version)
+                to_commit.append(record)
+            elif len(versions) == 1:
+                version = record.versions[0]
+            else:
+                # TODO
+                # check first based on number of studysets it's included in
+                # if that's equal, then check if someone besides the platform made a copy
+                # if the platform made it, use neurosynth, if not, use neuroquery
+                version = record.versions[0]
+                for alt_version in record.versions[1:]:
+                    if len(version.studysets) < len(alt_version.studysets):
+                        version = alt_version
+
+            studies.append(version)
+
+            # clear the cache for this endpoint
+            clear_cache(self.__class__, record, request.path)
+
+        if to_commit:
+            db.session.add_all(to_commit)
+            db.session.commit()
+
+        return StudiesView._schema(many=True).dump(studies)
 
 
 @view_maker
