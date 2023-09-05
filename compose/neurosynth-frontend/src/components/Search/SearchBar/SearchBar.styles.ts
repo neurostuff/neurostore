@@ -15,23 +15,21 @@ const SearchBarStyles: Style = {
             transition: '0.5s',
         },
     },
+    paper: {
+        flexGrow: 1,
+        borderTopLeftRadius: '4px',
+        borderBottomLeftRadius: '4px',
+        padding: '4px',
+        justifyContent: 'center',
+        display: 'flex',
+        borderTopRightRadius: '0px !important',
+        borderBottomRightRadius: '0px !important',
+        borderRight: '0px',
+    },
     searchContainer: {
         display: 'flex',
         flexDirection: 'row',
         width: '100%',
-        margin: '1% 0',
-    },
-    paper: {
-        flexGrow: 1,
-        borderTopLeftRadius: '0 !important',
-        borderBottomLeftRadius: '0 !important',
-        borderLeft: 'none !important',
-        justifyContent: 'center',
-        display: 'flex',
-    },
-    select: {
-        borderBottomRightRadius: '0 !important',
-        borderTopRightRadius: '0 !important',
     },
 };
 

@@ -13,70 +13,10 @@ import {
 } from 'pages/helpers/utils';
 import { useEffect, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
-
-export enum SortBy {
-    TITLE = 'name',
-    AUTHORS = 'authors',
-    DESCRIPTION = 'description',
-    CREATEDAT = 'created_at',
-    SOURCE = 'source',
-    PUBLICATION = 'publication',
-}
-
-export enum Source {
-    NEUROSTORE = 'neurostore',
-    NEUROVAULT = 'neurovault',
-    PUBMED = 'pubmed',
-    NEUROSYNTH = 'neurosynth',
-    NEUROQUERY = 'neuroquery',
-    ALL = 'all_sources',
-}
-export enum SearchBy {
-    TITLE = 'title',
-    DESCRIPTION = 'description',
-    AUTHORS = 'authors',
-    ALL = 'all fields',
-}
-
-export enum SearchDataType {
-    COORDINATE = 'coordinate',
-    IMAGE = 'image',
-    BOTH = 'both',
-}
-
-export const SearchByMapping = {
-    [SearchBy.ALL]: 'genericSearchStr',
-    [SearchBy.AUTHORS]: 'authorSearch',
-    [SearchBy.DESCRIPTION]: 'descriptionSearch',
-    [SearchBy.TITLE]: 'nameSearch',
-};
-
-export class SearchCriteria {
-    constructor(
-        public genericSearchStr: string | undefined = undefined,
-        public sortBy: SortBy = SortBy.TITLE,
-        public pageOfResults: number = 1,
-        public descOrder: boolean = true,
-        public pageSize: number = 10,
-        public isNested: boolean = false,
-        public nameSearch: string | undefined = undefined,
-        public descriptionSearch: string | undefined = undefined,
-        public authorSearch: string | undefined = undefined,
-        public publicationSearch: string | undefined = undefined,
-        public showUnique: boolean = true,
-        public source: Source | undefined = undefined,
-        public userId: string | undefined = undefined,
-        public dataType: SearchDataType = SearchDataType.BOTH,
-        public studysetOwner: string | undefined = undefined,
-        public level: 'group' | 'meta' | undefined = undefined,
-        public pmid: string | undefined = undefined,
-        public doi: string | undefined = undefined,
-        public flat: boolean | undefined = true,
-        public info: boolean | undefined = false
-    ) {}
-}
+import { SearchCriteria } from './models';
 
 const StudiesPage = () => {
+    // const { startTour } = useGetTour('StudiesPage');
     const history = useHistory();
     const location = useLocation();
     const { user, isLoading: authenticationIsLoading } = useAuth0();
@@ -113,15 +53,6 @@ const StudiesPage = () => {
         if (data) setStudyData(data);
     }, [data]);
 
-    useEffect(() => {
-        if (user?.sub) {
-            setSearchCriteria((prev) => ({
-                ...prev,
-                studysetOwner: user.sub,
-            }));
-        }
-    }, [user?.sub]);
-
     // runs every time the URL changes, to create a URL driven search.
     // this is separated from the debounce because otherwise the URL would
     // not update until the setTimeout is complete
@@ -137,7 +68,7 @@ const StudiesPage = () => {
     useEffect(() => {
         const timeout = setTimeout(async () => {
             setDebouncedSearchCriteria(searchCriteria);
-        }, 200);
+        }, 500);
 
         return () => {
             clearTimeout(timeout);
@@ -167,13 +98,8 @@ const StudiesPage = () => {
 
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>
-            <Box>
-                <Typography gutterBottom variant="h4">
-                    Studies
-                </Typography>
-                {/* <IconButton onClick={() => startTour()} color="primary">
-                    <HelpIcon />
-                </IconButton> */}
+            <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
+                <Typography variant="h4">Studies</Typography>
             </Box>
 
             <SearchContainer
@@ -215,8 +141,8 @@ const StudiesPage = () => {
                                 styles: { color: 'primary.contrastText', fontWeight: 'bold' },
                             },
                             {
-                                text: 'Journal',
-                                key: 'journal',
+                                text: 'Publication',
+                                key: 'publication',
                                 styles: { color: 'primary.contrastText', fontWeight: 'bold' },
                             },
                             {
@@ -244,7 +170,7 @@ const StudiesPage = () => {
                                 </TableCell>
                                 <TableCell>
                                     {studyrow?.publication || (
-                                        <Box sx={{ color: 'warning.dark' }}>No Journal</Box>
+                                        <Box sx={{ color: 'warning.dark' }}>No Publication</Box>
                                     )}
                                 </TableCell>
                                 <TableCell>

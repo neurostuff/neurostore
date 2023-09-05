@@ -6,7 +6,7 @@ import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { useGetStudysets } from 'hooks';
 import { StudysetList } from 'neurostore-typescript-sdk';
-import { SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
+import { SearchCriteria } from 'pages/Studies/StudiesPage/models';
 import {
     addKVPToSearch,
     getNumStudiesString,

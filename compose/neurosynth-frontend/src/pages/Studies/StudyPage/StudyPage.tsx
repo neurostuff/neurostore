@@ -43,7 +43,8 @@ const StudyPage: React.FC = (props) => {
 
     return (
         <StateHandlerComponent
-            isLoading={baseStudyIsLoading || studyIsLoading}
+            disableShrink={false}
+            isLoading={!selectedVersion?.id || baseStudyIsLoading || studyIsLoading}
             isError={baseStudyIsError || studyIsError}
         >
             <Box sx={{ margin: '1rem', display: 'flex', alignItems: 'center' }}>
