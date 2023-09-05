@@ -14,7 +14,7 @@ def test_post_list_of_studies(auth_client, ingest_neuroquery):
         {
             "doi": "new_doi",
             "name": "new name",
-        }
+        },
     ]
 
     result = auth_client.post("/api/base-studies/", data=test_input)

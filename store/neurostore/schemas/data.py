@@ -49,7 +49,16 @@ class StringOrNested(fields.Nested):
             nested_schema = self.nested(context=self.context)
             return nested_schema.dump(value, many=self.many)
         elif self.context.get("info"):
-            info_fields = ["id", "updated_at", "created_at", "source", "user"]
+            info_fields = [
+                "id",
+                "updated_at",
+                "created_at",
+                "source",
+                "user",
+                "studysets",
+                "has_coordinates",
+                "has_images",
+            ]
             nested_schema = self.nested(context=self.context, only=info_fields)
             return nested_schema.dump(value, many=self.many)
         else:
@@ -302,6 +311,9 @@ class StudySchema(BaseDataSchema):
     source_id = fields.String(
         dump_only=True, metadata={"db_only": True}, allow_none=True
     )
+    studysets = fields.Pluck("StudysetSchema", "_id", many=True, dump_only=True)
+    has_coordinates = fields.Bool(dump_only=True)
+    has_images = fields.Bool(dump_only=True)
     # studysets = fields.Nested(
     #    "StudySetStudyInfoSchema", dump_only=True, metadata={"db_only": True}, many=True
     # )
