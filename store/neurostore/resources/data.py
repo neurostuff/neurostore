@@ -1,4 +1,6 @@
+from flask import request
 from marshmallow import EXCLUDE
+from webargs.flaskparser import parser
 from webargs import fields
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.orm import joinedload
@@ -198,6 +200,69 @@ class BaseStudiesView(ObjectView, ListView):
         q = q.options(joinedload("versions"))
         return super().join_tables(q)
 
+    def post(self):
+        from .base import clear_cache
+
+        # the request is either a list or a dict
+        if isinstance(request.json, dict):
+            return super().post()
+        # in the list scenerio, try to find an existing record
+        # then return the best version and return that study id
+        data = parser.parse(self.__class__._schema(many=True), request)
+        search_keys = ["pmid", "doi", "name"]
+        base_studies = []
+        to_commit = []
+        for study_data in data:
+            filter_params = {
+                k: study_data.get(k)
+                for k in search_keys
+                if study_data.get(k) is not None
+            }
+            if "name" in filter_params and (set(filter_params) - {"name"}) != set():
+                del filter_params["name"]
+
+            record = (
+                BaseStudy.query.filter_by(**filter_params)
+                .options(
+                    joinedload(BaseStudy.versions)
+                    .joinedload(Study.studyset_studies)
+                    .joinedload(StudysetStudy.studyset)
+                )
+                .one_or_none()
+            )
+
+            if record is None:
+                with db.session.no_autoflush:
+                    record = self.__class__.update_or_create(study_data, commit=False)
+                # track new base studies
+                to_commit.append(record)
+            base_studies.append(record)
+            versions = record.versions
+            if len(versions) == 0:
+                version = StudiesView.update_or_create(study_data, commit=False)
+                record.versions.append(version)
+                to_commit.append(version)
+            # elif len(versions) == 1:
+            #     version = record.versions[0]
+            # else:
+            #     # TODO
+            #     # check first based on number of studysets it's included in
+            #     # if that's equal, then check if someone besides the platform made a copy
+            #     # if the platform made it, use neurosynth, if not, use neuroquery
+            #     version = record.versions[0]
+            #     for alt_version in record.versions[1:]:
+            #         if len(version.studysets) < len(alt_version.studysets):
+            #             version = alt_version
+
+            # clear the cache for this record
+            clear_cache(self.__class__, record, request.path)
+
+        if to_commit:
+            db.session.add_all(to_commit)
+            db.session.commit()
+
+        return self._schema(context={"info": True}, many=True).dump(base_studies)
+
 
 @view_maker
 class StudiesView(ObjectView, ListView):
@@ -235,6 +300,8 @@ class StudiesView(ObjectView, ListView):
         "doi",
         "pmid",
     )
+
+    # _default_exclude = ("has_coordinates", "has_images", "studysets")
 
     def view_search(self, q, args):
         # search studies for data_type
@@ -278,8 +345,9 @@ class StudiesView(ObjectView, ListView):
                     Studyset.user_id == args.get("studyset_owner")
                 ).all()
         if args.get("flat"):
-            exclude = ("analyses",)
+            exclude += ("analyses",)
 
+        exclude += ("studysets", "has_coordinates", "has_images")
         return super().serialize_records(records, args, exclude)
 
     @classmethod

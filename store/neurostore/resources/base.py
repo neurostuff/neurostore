@@ -58,6 +58,7 @@ class BaseView(MethodView):
     _linked = {}
     _composite_key = {}
     _view_fields = {}
+    # _default_exclude = None
 
     def pre_nested_record_update(record):
         """

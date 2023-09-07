@@ -2,6 +2,26 @@
 from neurostore.models import BaseStudy, Analysis
 
 
+def test_post_list_of_studies(auth_client, ingest_neuroquery):
+    base_studies = BaseStudy.query.all()
+    test_input = [
+        {
+            "pmid": base_studies[0].pmid,
+        },
+        {
+            "name": base_studies[2].name,
+        },
+        {
+            "doi": "new_doi",
+            "name": "new name",
+        },
+    ]
+
+    result = auth_client.post("/api/base-studies/", data=test_input)
+
+    assert result.status_code == 200
+
+
 def test_flat_base_study(auth_client, ingest_neurosynth, session):
     flat_resp = auth_client.get("/api/base-studies/?flat=true")
     reg_resp = auth_client.get("/api/base-studies/?flat=false")
