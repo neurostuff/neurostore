@@ -149,13 +149,7 @@ class BaseStudy(BaseMixin, db.Model):
     def update_has_images_and_points(self):
         # Calculate has_images and has_coordinates for the BaseStudy
         self.has_images = any(version.has_images for version in self.versions)
-<<<<<<< HEAD
         self.has_coordinates = any(version.has_coordinates for version in self.versions)
-=======
-        self.has_coordinates = any(
-            version.has_coordinates for version in self.versions
-        )
->>>>>>> 82c190f6e369f4c7d163e4a669be43f324db5e4b
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
