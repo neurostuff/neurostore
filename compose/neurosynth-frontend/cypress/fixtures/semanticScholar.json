@@ -1,0 +1,18 @@
+{
+    "total": 2,
+    "offset": 0,
+    "next": 1,
+    "data": [
+        {
+            "paperId": "123abc",
+            "externalIds": {
+                "MAG": "2616323245",
+                "DOI": "10.1016/j.drugalcdep.2017.02.019",
+                "CorpusId": 4669249,
+                "PubMed": "28544994"
+            },
+            "isOpenAccess": false,
+            "openAccessPdf": null
+        }
+    ]
+}

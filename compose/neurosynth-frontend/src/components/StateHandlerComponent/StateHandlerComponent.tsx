@@ -8,6 +8,7 @@ export interface IStateHandlerComponent {
     loadingText?: string;
     loadingColor?: string;
     disableShrink?: boolean;
+    loaderSize?: number;
 }
 
 const StateHandlerComponent: React.FC<IStateHandlerComponent> = (props) => {
@@ -30,6 +31,7 @@ const StateHandlerComponent: React.FC<IStateHandlerComponent> = (props) => {
                 }}
             >
                 <ProgressLoader
+                    size={props.loaderSize}
                     disableShrink={props.disableShrink === undefined ? true : props.disableShrink}
                     sx={{ color: props.loadingColor, marginRight: '10px' }}
                 />

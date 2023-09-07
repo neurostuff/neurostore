@@ -15,7 +15,7 @@ interface ISemanticScholarResponse {
     }[];
 }
 
-const useGetFullText = (paperTitle: string) => {
+const useGetFullText = (paperTitle?: string) => {
     return useQuery(
         [paperTitle],
         () =>
@@ -41,6 +41,7 @@ const useGetFullText = (paperTitle: string) => {
                     return paperList[0].openAccessPdf.url;
                 }
             },
+            enabled: !!paperTitle,
         }
     );
 };

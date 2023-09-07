@@ -3,7 +3,7 @@ import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { SystemStyleObject } from '@mui/system';
-import { ITag } from 'hooks/requests/useGetProjects';
+import { ITag } from 'hooks/projects/useGetProjects';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';

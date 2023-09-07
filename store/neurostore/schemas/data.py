@@ -133,6 +133,9 @@ class BaseDataSchema(BaseSchema):
     user = fields.String(
         attribute="user_id", dump_only=True, metadata={"db_only": True}
     )
+    username = fields.String(
+        attribute="user.name", dump_only=True, metadata={"db_only": True}
+    )
 
 
 class ConditionSchema(BaseDataSchema):

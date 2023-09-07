@@ -6,7 +6,7 @@ import NavigationButtons, {
 import { ChangeEvent, useEffect, useState } from 'react';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import { v4 as uuidv4 } from 'uuid';
-import { ISource } from 'hooks/requests/useGetProjects';
+import { ISource } from 'hooks/projects/useGetProjects';
 import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
 import { ENeurosynthSourceIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 const Cite = require('citation-js');
