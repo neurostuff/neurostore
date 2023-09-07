@@ -46,7 +46,8 @@ class StringOrNested(fields.Nested):
         if value is None:
             return None
         if self.use_nested and (self.context.get("nested") or self.context.get("copy")):
-            nested_schema = self.nested(context=self.context)
+            context = self.context
+            nested_schema = self.nested(context=context)
             return nested_schema.dump(value, many=self.many)
         elif self.context.get("info"):
             info_fields = [
@@ -101,7 +102,7 @@ class BaseSchema(Schema):
             kwargs["context"]["copy"] = copy
         else:
             kwargs["context"] = {"copy": copy}
-        if copy:
+        if copy and '_id' not in (kwargs.get('only', []) or []):
             exclude.extend(
                 [
                     field
