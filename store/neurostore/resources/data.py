@@ -301,6 +301,8 @@ class StudiesView(ObjectView, ListView):
         "pmid",
     )
 
+    # _default_exclude = ("has_coordinates", "has_images", "studysets")
+
     def view_search(self, q, args):
         # search studies for data_type
         if args.get("data_type"):

@@ -60,7 +60,9 @@ class StringOrNested(fields.Nested):
                 "has_coordinates",
                 "has_images",
             ]
-            nested_schema = self.nested(context=self.context, only=info_fields)
+            nested_schema = self.nested(
+                context=self.context, only=info_fields, exclude=[]
+            )
             return nested_schema.dump(value, many=self.many)
         else:
             return [v.id for v in value] if self.many else value.id
@@ -94,7 +96,14 @@ class BaseSchemaOpts(SchemaOpts):
 
 class BaseSchema(Schema):
     def __init__(self, copy=None, *args, **kwargs):
+        empty_exclude = "exclude" in kwargs and (
+            kwargs["exclude"] == [] or kwargs["exclude"] == ()
+        )
         exclude = list(kwargs.pop("exclude", []))
+        default_exclude = None
+        if getattr(self.Meta, "exclude", None) and empty_exclude:
+            default_exclude = self.opts.exclude
+            self.opts.exclude = set(exclude)
         if copy is None and kwargs.get("context") and kwargs.get("context").get("copy"):
             copy = kwargs.get("context").get("copy")
 
@@ -102,7 +111,7 @@ class BaseSchema(Schema):
             kwargs["context"]["copy"] = copy
         else:
             kwargs["context"] = {"copy": copy}
-        if copy and '_id' not in (kwargs.get('only', []) or []):
+        if copy and "_id" not in (kwargs.get("only", []) or []):
             exclude.extend(
                 [
                     field
@@ -111,6 +120,10 @@ class BaseSchema(Schema):
                 ]
             )
         super().__init__(*args, exclude=exclude, **kwargs)
+        # TODO: not good practice to change core attribute and change it back
+        # could lead to race conditions
+        if default_exclude:
+            self.opts.exclude = default_exclude
 
     OPTIONS_CLASS = BaseSchemaOpts
     # normal return key
@@ -326,6 +339,8 @@ class StudySchema(BaseDataSchema):
     )
 
     class Meta:
+        # by default exclude this
+        exclude = ("has_coordinates", "has_images", "studysets")
         additional = (
             "name",
             "description",
