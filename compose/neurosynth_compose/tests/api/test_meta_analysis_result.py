@@ -1,7 +1,7 @@
 from neurosynth_compose.models import MetaAnalysis
 
 
-def test_create_meta_analysis_result(app, auth_client, user_data):
+def test_create_meta_analysis_result(session, app, auth_client, user_data):
     meta_analysis = MetaAnalysis.query.first()
     headers = {"Compose-Upload-Key": meta_analysis.run_key}
     data = {
@@ -20,7 +20,9 @@ def test_create_meta_analysis_result(app, auth_client, user_data):
     assert meta_resp.status_code == 200
 
 
-def test_create_meta_analysis_result_no_snapshots(app, db, auth_client, user_data):
+def test_create_meta_analysis_result_no_snapshots(
+    session, app, db, auth_client, user_data
+):
     meta_analysis = MetaAnalysis.query.first()
     meta_analysis.studyset.snapshot = None
     meta_analysis.annotation.snapshot = None

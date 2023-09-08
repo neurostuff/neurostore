@@ -42,6 +42,12 @@ def pytest_addoption(parser):
         default=False,
         help="Run celery tests",
     )
+    parser.addoption(
+        "--auth",
+        action="store_true",
+        default=False,
+        help="Run authentication tests",
+    )
 
 
 celery_test = pytest.mark.skipif(
@@ -52,21 +58,56 @@ schemathesis_test = pytest.mark.skipif(
     "not config.getoption('--schemathesis')",
     reason="Only run when --schemathesis is given",
 )
-
+auth_test = pytest.mark.skipif(
+    "not config.getoption('--auth')",
+    reason="Only run when --auth is given",
+)
 
 """
 Test fixtures for bypassing authentication
 """
 
 
-# https://github.com/pytest-dev/pytest/issues/363#issuecomment-406536200
 @pytest.fixture(scope="session")
-def monkeysession(request):
-    from _pytest.monkeypatch import MonkeyPatch
+def real_app():
+    """Session-wide test `Flask` application."""
+    from ..core import app as _app
 
-    mpatch = MonkeyPatch()
-    yield mpatch
-    mpatch.undo()
+    if "APP_SETTINGS" not in environ:
+        config = "neurostore.config.TestingConfig"
+    else:
+        config = environ["APP_SETTINGS"]
+    if not getattr(_app, "config", None):
+        _app = _app._app
+    _app.config.from_object(config)
+    # _app.config["SQLALCHEMY_ECHO"] = True
+
+    # Establish an application context before running the tests.
+    ctx = _app.app_context()
+    ctx.push()
+
+    yield _app
+
+    ctx.pop()
+
+
+@pytest.fixture(scope="session")
+def real_db(real_app):
+    """Session-wide test database."""
+    _db.create_all()
+
+    yield _db
+
+    _db.session.remove()
+    sa.orm.close_all_sessions()
+    _db.drop_all()
+
+
+# https://github.com/pytest-dev/pytest/issues/363#issuecomment-406536200
+@pytest.fixture(scope="session", autouse=False)
+def monkeysession(request):
+    with pytest.MonkeyPatch.context() as mp:
+        yield mp
 
 
 def mock_decode_token(token):
@@ -201,7 +242,7 @@ def celery_app(app, db):
     return make_celery(app)
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="function", autouse=False)
 def session(db):
     """Creates a new db session for a test.
     Changes in session are rolled back"""
@@ -295,11 +336,11 @@ def mock_add_users(app, db, mock_auth):
 
 
 @pytest.fixture(scope="function")
-def add_users(app, db):
+def add_users(real_app, real_db):
     """Adds a test user to db"""
     from neurosynth_compose.resources.auth import decode_token
 
-    domain = app.config["AUTH0_BASE_URL"].split("://")[1]
+    domain = real_app.config["AUTH0_BASE_URL"].split("://")[1]
     token = GetToken(domain)
 
     users = [
@@ -318,26 +359,28 @@ def add_users(app, db):
         name = u["name"]
         passw = u["password"]
         payload = token.login(
-            client_id=app.config["AUTH0_CLIENT_ID"],
-            client_secret=app.config["AUTH0_CLIENT_SECRET"],
+            client_id=real_app.config["AUTH0_CLIENT_ID"],
+            client_secret=real_app.config["AUTH0_CLIENT_SECRET"],
             username=name + "@email.com",
             password=passw,
             realm="Username-Password-Authentication",
-            audience=app.config["AUTH0_API_AUDIENCE"],
-            scope="openid",
+            audience=real_app.config["AUTH0_API_AUDIENCE"],
+            scope="openid profile email",
         )
         token_info = decode_token(payload["access_token"])
-        user = User(
-            name=name,
-            external_id=token_info["sub"],
-        )
-        if User.query.filter_by(name=token_info["sub"]).first() is None:
-            db.session.add(user)
-            db.session.commit()
+        # do not add user1 into database
+        if name != "user1":
+            user = User(
+                name=name,
+                external_id=token_info["sub"],
+            )
+            if User.query.filter_by(external_id=token_info["sub"]).first() is None:
+                real_db.session.add(user)
+                real_db.session.commit()
 
         tokens[name] = {
             "token": payload["access_token"],
-            "id": User.query.filter_by(external_id=token_info["sub"]).first().id,
+            "external_id": token_info["sub"],
         }
 
     yield tokens
