@@ -7,7 +7,10 @@ from ....models import (
     NeurostoreStudy,
     NeurostoreAnalysis,
 )
-from ....resources.tasks import file_upload_neurovault, create_or_update_neurostore_analysis
+from ....resources.tasks import (
+    file_upload_neurovault,
+    create_or_update_neurostore_analysis,
+)
 from ....resources.analysis import (
     create_or_update_neurostore_study,
 )
@@ -78,7 +81,9 @@ def test_create_or_update_neurostore_analysis(
 
 
 @celery_test
-def test_result_upload(session, auth_client, app, db, meta_analysis_cached_result_files):
+def test_result_upload(
+    session, auth_client, app, db, meta_analysis_cached_result_files
+):
     data = {}
     data["statistical_maps"] = [
         (open(m, "rb"), m.name) for m in meta_analysis_cached_result_files["maps"]

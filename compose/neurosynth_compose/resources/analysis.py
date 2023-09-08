@@ -46,6 +46,7 @@ from .singular import singularize
 
 def create_user():
     from auth0.v3.authentication.users import Users
+
     auth = request.headers.get("Authorization", None)
     if auth is None:
         return None
@@ -57,8 +58,7 @@ def create_user():
     # user signed up with auth0, but has not made any queries yet...
     # should have endpoint to "create user" after sign on with auth0
     current_user = User(
-        external_id=connexion.context["user"],
-        name=profile_info.get("name", "Unknown")
+        external_id=connexion.context["user"], name=profile_info.get("name", "Unknown")
     )
 
     return current_user
@@ -467,7 +467,9 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             access_token = request.headers.get("Authorization")
             neurostore_analysis_upload = create_or_update_neurostore_analysis.si(
                 ns_analysis_id=ns_analysis.id,
-                cluster_table=str(cluster_table_fnames[0]) if cluster_table_fnames else None,
+                cluster_table=str(cluster_table_fnames[0])
+                if cluster_table_fnames
+                else None,
                 nv_collection_id=result.neurovault_collection.id,
                 access_token=access_token,
             )

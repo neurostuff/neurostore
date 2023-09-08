@@ -88,6 +88,7 @@ def create_or_update_neurostore_analysis(
     from auth0.v3.authentication.get_token import GetToken
     import pandas as pd
     from .neurostore import neurostore_session
+
     ns_analysis = NeurostoreAnalysis.query.filter_by(id=ns_analysis_id).one()
     nv_collection = NeurovaultCollection.query.filter_by(id=nv_collection_id).one()
 
@@ -126,7 +127,7 @@ def create_or_update_neurostore_analysis(
                         "value": row["Peak Stat"],
                     }
                 ],
-                "order": point_idx
+                "order": point_idx,
             }
             if not pd.isna(row["Cluster Size (mm3)"]):
                 point["subpeak"] = True
