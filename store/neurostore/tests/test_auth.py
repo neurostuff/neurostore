@@ -2,7 +2,7 @@ from neurostore.tests.conftest import auth_test
 import pytest
 
 
-#@auth_test
+@auth_test
 def test_decode_token(add_users):
     from ..resources.auth import decode_token, AuthError
 
@@ -13,7 +13,7 @@ def test_decode_token(add_users):
         decode_token(user["token"])
 
 
-#@auth_test
+@auth_test
 def test_creating_new_user_on_db(add_users):
     from .request_utils import Client
 
