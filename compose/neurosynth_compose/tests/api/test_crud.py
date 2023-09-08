@@ -21,7 +21,7 @@ from ...schemas.analysis import StringOrNested
         ("projects", Project, ProjectSchema),
     ],
 )
-def test_create(auth_client, user_data, endpoint, model, schema):
+def test_create(session, auth_client, user_data, endpoint, model, schema):
     user = User.query.filter_by(name="user1").first()
     examples = model.query.filter_by(user=user).all()
     for example in examples:
@@ -42,6 +42,8 @@ def test_create(auth_client, user_data, endpoint, model, schema):
             del payload["neurostore_url"]
         if "neurostore_study" in payload:
             del payload["neurostore_study"]
+        if "username" in payload:
+            del payload["username"]
 
         if isinstance(example, MetaAnalysis):
             del payload["neurostore_analysis"]
@@ -75,7 +77,7 @@ def test_create(auth_client, user_data, endpoint, model, schema):
         ("projects", Project, ProjectSchema),
     ],
 )
-def test_read(auth_client, user_data, endpoint, model, schema):
+def test_read(session, auth_client, user_data, endpoint, model, schema):
     user = User.query.filter_by(name="user1").first()
     if hasattr(model, "public"):
         query = (model.user == user) | (model.public == True)  # noqa E712
@@ -107,7 +109,7 @@ def test_read(auth_client, user_data, endpoint, model, schema):
         ("projects", Project, ProjectSchema, {"name": "my project"}),
     ],
 )
-def test_update(auth_client, db, session, user_data, endpoint, model, schema, update):
+def test_update(session, auth_client, db, user_data, endpoint, model, schema, update):
     user = User.query.filter_by(name="user1").first()
     record = model.query.filter_by(user=user).first()
 

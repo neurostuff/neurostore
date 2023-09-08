@@ -14,7 +14,7 @@ from ....resources.analysis import (
 
 
 @celery_test
-def test_file_upload_neurovault(app, db, mock_pynv):
+def test_file_upload_neurovault(session, app, db, mock_pynv):
     import os
     from pathlib import Path
     import shutil
@@ -35,7 +35,7 @@ def test_file_upload_neurovault(app, db, mock_pynv):
 
 @celery_test
 def test_create_or_update_neurostore_analysis(
-    auth_client, app, db, mock_pynv, meta_analysis_cached_result_files
+    session, auth_client, app, db, mock_pynv, meta_analysis_cached_result_files
 ):
     cluster_tables = [
         f for f in meta_analysis_cached_result_files["tables"] if "clust.tsv" in f.name
@@ -78,7 +78,7 @@ def test_create_or_update_neurostore_analysis(
 
 
 @celery_test
-def test_result_upload(auth_client, app, db, meta_analysis_cached_result_files):
+def test_result_upload(session, auth_client, app, db, meta_analysis_cached_result_files):
     data = {}
     data["statistical_maps"] = [
         (open(m, "rb"), m.name) for m in meta_analysis_cached_result_files["maps"]

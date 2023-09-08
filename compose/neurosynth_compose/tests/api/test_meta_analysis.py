@@ -1,4 +1,4 @@
-def test_get_meta_analyses(app, auth_client, user_data):
+def test_get_meta_analyses(session, app, auth_client, user_data):
     get_all = auth_client.get("/api/meta-analyses")
     assert get_all.status_code == 200
 
@@ -15,5 +15,5 @@ def test_get_meta_analyses(app, auth_client, user_data):
         assert data[key] is None or isinstance(data[key], dict)
 
 
-def test_ingest_neurostore(neurostore_data):
+def test_ingest_neurostore(session, neurostore_data):
     pass
