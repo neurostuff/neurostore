@@ -1,20 +1,23 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Button, Typography, Toolbar } from '@mui/material';
-import NavbarStyles from '../Navbar.styles';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { NavLink, useHistory } from 'react-router-dom';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { Box, Button, Toolbar, Typography } from '@mui/material';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
-import NavToolbarStyles from './NavToolbar.styles';
 import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
 import { useState } from 'react';
+import { NavLink, useHistory } from 'react-router-dom';
 import { INav } from '../Navbar';
+import NavbarStyles from '../Navbar.styles';
+import NeurosynthAvatar from 'components/Navbar/NeurosynthAvatar/NeurosynthAvatar';
+import NavToolbarStyles from './NavToolbar.styles';
 
 const NavToolbar: React.FC<INav> = (props) => {
-    const { isAuthenticated } = useAuth0();
+    const { isAuthenticated, user } = useAuth0();
     const [createDetailsDialogIsOpen, setCreateDetailsDialogIsOpen] = useState(false);
     const history = useHistory();
+
+    console.log(user);
 
     return (
         <Toolbar disableGutters>
@@ -100,17 +103,7 @@ const NavToolbar: React.FC<INav> = (props) => {
                         HELP
                         <OpenInNewIcon sx={{ marginLeft: '8px', fontSize: '1.2rem' }} />
                     </Button>
-                    <Button
-                        variant="outlined"
-                        onClick={() => (isAuthenticated ? props.onLogout() : props.onLogin())}
-                        sx={[
-                            NavToolbarStyles.menuItemColor,
-                            NavToolbarStyles.menuItemPadding,
-                            NavToolbarStyles.menuItem,
-                        ]}
-                    >
-                        {isAuthenticated ? 'LOGOUT' : 'SIGN IN/SIGN UP'}
-                    </Button>
+                    <NeurosynthAvatar onLogout={props.onLogout} onLogin={props.onLogin} />
                 </Box>
             </Box>
         </Toolbar>

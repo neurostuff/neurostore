@@ -6,7 +6,7 @@ import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { useGetStudysets } from 'hooks';
 import { StudysetList } from 'neurostore-typescript-sdk';
-import { SearchCriteria } from 'pages/Studies/StudiesPage/models';
+import { SearchCriteria, SortBy } from 'pages/Studies/StudiesPage/models';
 import {
     addKVPToSearch,
     getNumStudiesString,
@@ -17,7 +17,7 @@ import React, { useEffect, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 
 const StudysetsPage: React.FC = (props) => {
-    const { user, isLoading: authenticationIsLoading } = useAuth0();
+    const { isLoading: authenticationIsLoading } = useAuth0();
     const history = useHistory();
     const location = useLocation();
 
@@ -62,6 +62,7 @@ const StudysetsPage: React.FC = (props) => {
     // runs for any change in study query, add set timeout and clear timeout for debounce
     useEffect(() => {
         const timeout = setTimeout(async () => {
+            console.log(searchCriteria);
             setApiSearch(searchCriteria);
         }, 200);
 
@@ -85,7 +86,13 @@ const StudysetsPage: React.FC = (props) => {
     };
 
     const handleSearch = (search: Partial<SearchCriteria>) => {
-        const searchURL = getURLFromSearchCriteria(search);
+        const searchURL = getURLFromSearchCriteria({
+            genericSearchStr: search.genericSearchStr || undefined,
+            sortBy: SortBy.CREATEDAT,
+            pageOfResults: search.pageOfResults || undefined,
+            pageSize: search.pageSize || undefined,
+            descOrder: search.descOrder || undefined,
+        });
         history.push(`/studysets?${searchURL}`);
     };
 
@@ -97,6 +104,7 @@ const StudysetsPage: React.FC = (props) => {
                 </Typography>
             </Box>
             <SearchContainer
+                searchMode="studyset-search"
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
                 onSearch={handleSearch}
@@ -167,10 +175,7 @@ const StudysetsPage: React.FC = (props) => {
                                         <Box sx={{ color: 'warning.dark' }}>No description</Box>
                                     )}
                                 </TableCell>
-                                <TableCell>
-                                    {(studyset?.user === user?.sub ? 'Me' : studyset?.user) ||
-                                        'Neurosynth-Compose'}
-                                </TableCell>
+                                <TableCell>{studyset?.username || 'Neurosynth-Compose'}</TableCell>
                             </TableRow>
                         ))}
                     />

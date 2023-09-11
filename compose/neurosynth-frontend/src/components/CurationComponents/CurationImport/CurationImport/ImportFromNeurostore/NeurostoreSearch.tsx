@@ -207,10 +207,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
                                         <Box sx={{ color: 'warning.dark' }}>No Journal</Box>
                                     )}
                                 </TableCell>
-                                <TableCell>
-                                    {(studyrow?.user === user?.sub ? 'Me' : studyrow?.user) ||
-                                        'Neurosynth-Compose'}
-                                </TableCell>
+                                <TableCell>{studyrow?.username || 'Neurosynth-Compose'}</TableCell>
                             </TableRow>
                         ))}
                     />

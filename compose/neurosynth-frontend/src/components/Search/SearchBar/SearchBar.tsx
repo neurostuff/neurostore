@@ -19,6 +19,7 @@ import SearchSelectSortChip from './SearchBarAccessories/SearchSelectSortChip';
 export interface ISearchBar {
     onSearch: (searchArgs: Partial<SearchCriteria>) => void;
     searchButtonColor?: string;
+    searchMode?: 'study-search' | 'studyset-search';
 }
 
 const searchPlaceholderExamples = [
@@ -30,7 +31,7 @@ const searchPlaceholderExamples = [
 ];
 
 const SearchBar: React.FC<ISearchBar> = (props) => {
-    const { onSearch, searchButtonColor = 'primary' } = props;
+    const { onSearch, searchButtonColor = 'primary', searchMode = 'study-search' } = props;
     const [placeholder, setPlaceholder] = useState(searchPlaceholderExamples[0]);
     const location = useLocation();
 
@@ -48,10 +49,16 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
 
     // set new placeholder on reload
     useEffect(() => {
-        const placeholder =
-            searchPlaceholderExamples[Math.floor(Math.random() * searchPlaceholderExamples.length)];
-        setPlaceholder(placeholder);
-    }, []);
+        if (searchMode === 'study-search') {
+            const placeholder =
+                searchPlaceholderExamples[
+                    Math.floor(Math.random() * searchPlaceholderExamples.length)
+                ];
+            setPlaceholder(placeholder);
+        } else {
+            setPlaceholder('Enter a studyset name...');
+        }
+    }, [searchMode]);
 
     useEffect(() => {
         const searchCriteria = getSearchCriteriaFromURL(location.search);
@@ -143,44 +150,46 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                                     borderBottomLeftRadius: '0px',
                                     borderLeft: '0px !important',
                                     width: '100px',
+                                    color: searchButtonColor,
                                 }}
                                 disableElevation
-                                color="primary"
                                 variant="text"
                             >
                                 Reset
                             </Button>
                         </Box>
                     </Box>
-                    <Box sx={{ marginTop: '10px' }}>
-                        <SearchSelectChip
-                            chipLabel={`Study Data Type: ${searchState.dataType || ''}`}
-                            onSelectSearch={(selectedDataType) =>
-                                onSearch({ ...searchState, dataType: selectedDataType })
-                            }
-                            options={[
-                                { value: SearchDataType.ALL, label: 'All' },
-                                { value: SearchDataType.COORDINATE, label: 'Coordinates' },
-                                { value: SearchDataType.IMAGE, label: 'Images' },
-                            ]}
-                        />
-                        <SearchSelectSortChip
-                            chipLabel={`Sort By: ${searchState.sortBy}`}
-                            descOrderChipLabel={searchState.descOrder ? 'DESC' : 'ASC'}
-                            onSelectDescOrder={(descOrder) =>
-                                onSearch({ ...searchState, descOrder })
-                            }
-                            onSelectSort={(sortBy) => onSearch({ ...searchState, sortBy })}
-                        />
-                        <SearchBarFilters
-                            nameSearch={searchState.nameSearch}
-                            descriptionSearch={searchState.descriptionSearch}
-                            publicationSearch={searchState.publicationSearch}
-                            authorSearch={searchState.authorSearch}
-                            onAddFilter={handleAddFilter}
-                            onRemoveFilter={handleRemoveFilter}
-                        />
-                    </Box>
+                    {searchMode === 'study-search' && (
+                        <Box sx={{ marginTop: '10px' }}>
+                            <SearchSelectChip
+                                chipLabel={`Study Data Type: ${searchState.dataType || ''}`}
+                                onSelectSearch={(selectedDataType) =>
+                                    onSearch({ ...searchState, dataType: selectedDataType })
+                                }
+                                options={[
+                                    { value: SearchDataType.ALL, label: 'All' },
+                                    { value: SearchDataType.COORDINATE, label: 'Coordinates' },
+                                    { value: SearchDataType.IMAGE, label: 'Images' },
+                                ]}
+                            />
+                            <SearchSelectSortChip
+                                chipLabel={`Sort By: ${searchState.sortBy}`}
+                                descOrderChipLabel={searchState.descOrder ? 'DESC' : 'ASC'}
+                                onSelectDescOrder={(descOrder) =>
+                                    onSearch({ ...searchState, descOrder })
+                                }
+                                onSelectSort={(sortBy) => onSearch({ ...searchState, sortBy })}
+                            />
+                            <SearchBarFilters
+                                nameSearch={searchState.nameSearch}
+                                descriptionSearch={searchState.descriptionSearch}
+                                publicationSearch={searchState.publicationSearch}
+                                authorSearch={searchState.authorSearch}
+                                onAddFilter={handleAddFilter}
+                                onRemoveFilter={handleRemoveFilter}
+                            />
+                        </Box>
+                    )}
                 </Box>
             </Box>
         </Box>

@@ -7,7 +7,6 @@ import { useGetMetaAnalysesByProjectId } from 'hooks';
 import { useHistory } from 'react-router-dom';
 
 const MetaAnalysesPage: React.FC = (props) => {
-    // const { startTour } = useGetTour('MetaAnalysesPage');
     const history = useHistory();
     const { data, isLoading, isError } = useGetMetaAnalysesByProjectId();
     const { user } = useAuth0();
@@ -69,9 +68,8 @@ const MetaAnalysesPage: React.FC = (props) => {
                                     )}
                                 </TableCell>
                                 <TableCell>
-                                    {(metaAnalysis?.user === user?.sub
-                                        ? 'Me'
-                                        : metaAnalysis?.user) || 'Neurosynth-Compose'}
+                                    {/* TODO: fix the model to add the username property */}
+                                    {(metaAnalysis as any)?.username || 'Neurosynth-Compose'}
                                 </TableCell>
                             </TableRow>
                         ))}

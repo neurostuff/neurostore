@@ -10,6 +10,7 @@ import ExtractionPage from 'pages/ExtractionPage/ExtractionPage';
 import CurationImportPage from 'pages/CurationPage/CurationImportPage';
 import AnnotationsPage from 'pages/Annotations/AnnotationsPage/AnnotationsPage';
 import ProjectStudyPage from 'pages/Studies/ProjectStudyPage/ProjectStudyPage';
+import UserProfilePage from 'pages/UserProfilePage/UserProfilePage';
 
 const StudysetPage = React.lazy(() => import('../Studysets/StudysetPage/StudysetPage'));
 const StudysetsPage = React.lazy(() => import('../Studysets/StudysetsPage/StudysetsPage'));
@@ -129,6 +130,11 @@ const BaseNavigation: React.FC = (_props) => {
                 <Route path="/meta-analyses" exact>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <MetaAnalysesPage />
+                    </Box>
+                </Route>
+                <Route path="/user-profile">
+                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                        <UserProfilePage />
                     </Box>
                 </Route>
                 <Route path="*">

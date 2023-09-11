@@ -40,7 +40,6 @@ const StudyPage: React.FC = (props) => {
     }, [selectedVersion, baseStudy?.versions, baseStudy]);
 
     const analyses = studyAnalysesToStoreAnalyses((study?.analyses || []) as Array<AnalysisReturn>);
-
     return (
         <StateHandlerComponent
             disableShrink={false}
