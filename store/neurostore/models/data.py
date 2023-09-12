@@ -73,6 +73,13 @@ class Studyset(BaseMixin, db.Model):
         backref=backref("studysets", lazy="dynamic"),
     )
     annotations = relationship("Annotation", cascade="all, delete", backref="studyset")
+    __ts_vector__ = db.Column(
+        TSVector(),
+        db.Computed(
+            "to_tsvector('english', coalesce(name, '') || ' ' || coalesce(description, ''))",
+            persisted=True,
+        ),
+    )
 
 
 class Annotation(BaseMixin, db.Model):
