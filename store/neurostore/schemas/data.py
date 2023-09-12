@@ -56,7 +56,7 @@ class StringOrNested(fields.Nested):
                 "created_at",
                 "source",
                 "user",
-                "username"
+                "username",
                 "studysets",
                 "has_coordinates",
                 "has_images",

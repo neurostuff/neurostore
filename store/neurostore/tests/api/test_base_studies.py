@@ -50,7 +50,7 @@ def test_info_base_study(auth_client, ingest_neurosynth, session):
     assert single_info_resp.status_code == 200
     assert single_reg_resp.status_code == 200
 
-    assert "updated_at" in single_info_resp.json["versions"][0]
+    assert "id" in single_info_resp.json["versions"][0]
     assert isinstance(single_reg_resp.json["versions"][0], str)
 
 
