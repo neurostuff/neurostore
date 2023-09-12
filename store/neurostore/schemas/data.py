@@ -51,11 +51,12 @@ class StringOrNested(fields.Nested):
             return nested_schema.dump(value, many=self.many)
         elif self.context.get("info"):
             info_fields = [
-                "id",
+                "_id",
                 "updated_at",
                 "created_at",
                 "source",
                 "user",
+                "username",
                 "studysets",
                 "has_coordinates",
                 "has_images",
