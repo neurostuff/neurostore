@@ -13,11 +13,9 @@ import NeurosynthAvatar from 'components/Navbar/NeurosynthAvatar/NeurosynthAvata
 import NavToolbarStyles from './NavToolbar.styles';
 
 const NavToolbar: React.FC<INav> = (props) => {
-    const { isAuthenticated, user } = useAuth0();
+    const { isAuthenticated } = useAuth0();
     const [createDetailsDialogIsOpen, setCreateDetailsDialogIsOpen] = useState(false);
     const history = useHistory();
-
-    console.log(user);
 
     return (
         <Toolbar disableGutters>
@@ -77,7 +75,7 @@ const NavToolbar: React.FC<INav> = (props) => {
                         options={[
                             {
                                 label: 'STUDIES',
-                                onClick: () => history.push('/studies'),
+                                onClick: () => history.push('/base-studies'),
                             },
                             {
                                 label: 'STUDYSETS',

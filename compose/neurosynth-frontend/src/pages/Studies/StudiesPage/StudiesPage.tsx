@@ -79,7 +79,7 @@ const StudiesPage = () => {
         // when we search, we want to reset the search criteria as we dont know the
         // page number of number of results in advance
         const searchURL = getURLFromSearchCriteria(searchArgs);
-        history.push(`/studies?${searchURL}`);
+        history.push(`/base-studies?${searchURL}`);
     };
 
     const handleRowsPerPageChange = (newRowsPerPage: number) => {
@@ -88,12 +88,12 @@ const StudiesPage = () => {
             'pageOfResults',
             '1'
         );
-        history.push(`/studies?${searchURL}`);
+        history.push(`/base-studies?${searchURL}`);
     };
 
     const handlePageChange = (page: number) => {
         const searchURL = addKVPToSearch(location.search, 'pageOfResults', `${page}`);
-        history.push(`/studies?${searchURL}`);
+        history.push(`/base-studies?${searchURL}`);
     };
 
     return (
@@ -156,7 +156,7 @@ const StudiesPage = () => {
                                 data-tour={index === 0 ? 'StudiesPage-4' : null}
                                 sx={NeurosynthTableStyles.tableRow}
                                 key={studyrow.id || index}
-                                onClick={() => history.push(`/studies/${studyrow.id}`)}
+                                onClick={() => history.push(`/base-studies/${studyrow.id}`)}
                             >
                                 <TableCell>
                                     {studyrow?.name || (

@@ -1,12 +1,24 @@
-import { useAuth0 } from '@auth0/auth0-react';
-import { Avatar, Typography } from '@mui/material';
+import { InMemoryCache, LocalStorageCache, useAuth0 } from '@auth0/auth0-react';
+import { Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
+import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
+import { useEffect, useState } from 'react';
 
 const UserProfilePage: React.FC = (props) => {
-    const { user } = useAuth0();
+    const { user, getAccessTokenSilently } = useAuth0();
+    const [refreshToken, setRefreshToken] = useState('');
 
-    console.log(user);
+    useEffect(() => {
+        const localStorageCache = new LocalStorageCache();
+        const keys = localStorageCache.allKeys();
+        if (keys.length === 0) {
+            setRefreshToken('');
+        } else {
+            const auth0Res = localStorageCache.get<{ body?: { refresh_token?: string } }>(keys[0]);
+            setRefreshToken(auth0Res?.body?.refresh_token || '');
+        }
+    }, [getAccessTokenSilently]);
 
     return (
         <Box>
@@ -31,18 +43,14 @@ const UserProfilePage: React.FC = (props) => {
                 <br />
                 <br />
 
-                <Typography
-                    gutterBottom
-                    variant="h6"
-                    sx={{ width: '150px', display: 'inline-block' }}
-                >
-                    Refresh Token:
-                </Typography>
-                <CodeSnippet
-                    linesOfCode={[
-                        'q9tbn34387gb8i4478ias34bga8ib3487gbai384gb3ai8gqa3g8ia3gbai48ba38igba3i487gba38i7gba348bgak384gba34834bga387gb4a3478bak487',
-                    ]}
-                />
+                {refreshToken && (
+                    <NeurosynthAccordion
+                        TitleElement={<Typography variant="h6">Refresh Token</Typography>}
+                        expandIconColor="black"
+                    >
+                        <CodeSnippet linesOfCode={[refreshToken]} />
+                    </NeurosynthAccordion>
+                )}
             </Box>
         </Box>
     );

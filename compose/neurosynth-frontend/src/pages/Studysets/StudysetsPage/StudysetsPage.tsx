@@ -62,7 +62,6 @@ const StudysetsPage: React.FC = (props) => {
     // runs for any change in study query, add set timeout and clear timeout for debounce
     useEffect(() => {
         const timeout = setTimeout(async () => {
-            console.log(searchCriteria);
             setApiSearch(searchCriteria);
         }, 200);
 

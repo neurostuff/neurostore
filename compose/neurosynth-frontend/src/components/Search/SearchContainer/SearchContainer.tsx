@@ -1,6 +1,6 @@
 import { Box, Pagination, TablePagination, Typography } from '@mui/material';
 import SearchBar from 'components/Search/SearchBar/SearchBar';
-import { ColorOptions, Style } from 'index';
+import { Style } from 'index';
 import { SearchCriteria } from 'pages/Studies/StudiesPage/models';
 import { ChangeEvent } from 'react';
 import SearchContainerStyles from './SearchContainer.styles';

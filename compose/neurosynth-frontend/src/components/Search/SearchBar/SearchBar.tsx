@@ -37,9 +37,9 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
 
     const [searchState, setSearchState] = useState<Partial<SearchCriteria>>({
         genericSearchStr: '', // this defaults to undefined if empty in useGetBaseStudies
-        dataType: SearchDataType.COORDINATE,
+        dataType: SearchDataType.ALL,
         source: Source.ALL,
-        sortBy: SortBy.TITLE,
+        sortBy: SortBy.RELEVANCE,
         descOrder: true,
         nameSearch: '', // this defaults to undefined if empty in useGetBaseStudies
         descriptionSearch: '', // this defaults to undefined if empty in useGetBaseStudies
@@ -66,7 +66,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
             genericSearchStr: searchCriteria.genericSearchStr || '',
             dataType: searchCriteria.dataType || SearchDataType.COORDINATE,
             source: searchCriteria.source || Source.ALL,
-            sortBy: searchCriteria.sortBy || SortBy.TITLE,
+            sortBy: searchCriteria.sortBy || SortBy.RELEVANCE,
             descOrder: searchCriteria.descOrder,
             nameSearch: searchCriteria.nameSearch || '',
             descriptionSearch: searchCriteria.descriptionSearch || '',
@@ -80,7 +80,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
             genericSearchStr: '',
             dataType: SearchDataType.ALL,
             source: Source.ALL,
-            sortBy: SortBy.TITLE,
+            sortBy: SortBy.RELEVANCE,
             descOrder: true,
             nameSearch: '',
             descriptionSearch: '',

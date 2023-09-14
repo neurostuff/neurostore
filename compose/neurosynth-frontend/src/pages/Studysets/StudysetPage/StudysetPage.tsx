@@ -51,7 +51,7 @@ const StudysetsPage: React.FC = (props) => {
         data: studyset,
         isLoading: getStudysetIsLoading,
         isError: getStudysetIsError,
-    } = useGetStudysetById(params.studysetId);
+    } = useGetStudysetById(params.studysetId, true);
     const isFetching = useIsFetching(['studysets', params.studysetId]);
     const { data: annotations, isLoading: getAnnotationsIsLoading } = useGetAnnotationsByStudysetId(
         params?.studysetId
@@ -297,8 +297,7 @@ const StudysetsPage: React.FC = (props) => {
                                     )}
                                 </TableCell>
                                 <TableCell>
-                                    {(annotation?.user === user?.sub ? 'Me' : annotation?.user) ||
-                                        'Neurosynth-Compose'}
+                                    {annotation?.username || 'Neurosynth-Compose'}
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -319,10 +318,7 @@ const StudysetsPage: React.FC = (props) => {
                         loaderColor: 'secondary',
                         noDataDisplay: (
                             <Typography sx={{ padding: '1rem' }} color="warning.dark">
-                                There are no studies in this studyset yet. Start by{' '}
-                                <Link color="primary" exact component={NavLink} to="/studies">
-                                    adding studies to this studyset
-                                </Link>
+                                There are no studies in this studyset yet.
                             </Typography>
                         ),
                     }}
@@ -341,16 +337,6 @@ const StudysetsPage: React.FC = (props) => {
                             text: 'Journal',
                             key: 'journal',
                             styles: { color: 'primary.contrastText', fontWeight: 'bold' },
-                        },
-                        {
-                            text: '',
-                            key: 'deleteStudyFromStudyset',
-                            styles: {
-                                display:
-                                    isAuthenticated && thisUserOwnsthisStudyset
-                                        ? 'table-cell'
-                                        : 'none',
-                            },
                         },
                     ]}
                     rows={((studyset?.studies || []) as StudyReturn[]).map((study, index) => (
@@ -371,27 +357,6 @@ const StudysetsPage: React.FC = (props) => {
                                 {study?.publication || (
                                     <Box sx={{ color: 'warning.dark' }}>No Journal</Box>
                                 )}
-                            </TableCell>
-                            <TableCell
-                                sx={{
-                                    display:
-                                        isAuthenticated && thisUserOwnsthisStudyset
-                                            ? 'table-cell'
-                                            : 'none',
-                                }}
-                                data-tour={index === 0 ? 'UserStudiesPage-3' : null}
-                            >
-                                <IconButton
-                                    onClick={(event) => {
-                                        event.stopPropagation();
-                                        setDeleteStudyFromStudysetConfirmationIsOpen({
-                                            isOpen: true,
-                                            data: { studyId: study.id },
-                                        });
-                                    }}
-                                >
-                                    <RemoveCircleIcon color="error" />
-                                </IconButton>
                             </TableCell>
                         </TableRow>
                     ))}
