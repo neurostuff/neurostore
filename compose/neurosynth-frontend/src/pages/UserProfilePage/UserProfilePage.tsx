@@ -1,4 +1,4 @@
-import { InMemoryCache, LocalStorageCache, useAuth0 } from '@auth0/auth0-react';
+import { LocalStorageCache, useAuth0 } from '@auth0/auth0-react';
 import { Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import CodeSnippet from 'components/CodeSnippet/CodeSnippet';

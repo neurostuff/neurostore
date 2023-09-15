@@ -30,11 +30,7 @@ const StudyPage: React.FC = (props) => {
     const studyPMID = useStudyPMID();
 
     // just used for loading
-    const {
-        data: _study,
-        isLoading: studyIsLoading,
-        isError: studyIsError,
-    } = useGetStudyById(studyId || '');
+    const { isLoading: studyIsLoading, isError: studyIsError } = useGetStudyById(studyId || '');
 
     // init the study store with the url is given
     useEffect(() => {

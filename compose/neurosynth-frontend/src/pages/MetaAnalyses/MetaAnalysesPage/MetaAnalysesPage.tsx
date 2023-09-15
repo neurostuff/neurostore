@@ -1,4 +1,3 @@
-import { useAuth0 } from '@auth0/auth0-react';
 import { Box, TableCell, TableRow, Typography } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
@@ -9,7 +8,6 @@ import { useHistory } from 'react-router-dom';
 const MetaAnalysesPage: React.FC = (props) => {
     const history = useHistory();
     const { data, isLoading, isError } = useGetMetaAnalysesByProjectId();
-    const { user } = useAuth0();
 
     return (
         <>

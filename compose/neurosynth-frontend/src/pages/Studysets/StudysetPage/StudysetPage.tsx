@@ -1,8 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import AddIcon from '@mui/icons-material/Add';
 import HelpIcon from '@mui/icons-material/Help';
-import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
-import { Box, Button, IconButton, Link, TableCell, TableRow, Typography } from '@mui/material';
+import { Box, Button, IconButton, TableCell, TableRow, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
@@ -21,7 +20,6 @@ import { StudyReturn } from 'neurostore-typescript-sdk';
 import { useState } from 'react';
 import { useIsFetching } from 'react-query';
 import { useHistory, useParams } from 'react-router';
-import { NavLink } from 'react-router-dom';
 import StudysetPageStyles from './StudysetPage.styles';
 
 const StudysetsPage: React.FC = (props) => {
