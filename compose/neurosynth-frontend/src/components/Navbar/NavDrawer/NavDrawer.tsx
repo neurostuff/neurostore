@@ -89,7 +89,7 @@ const NavDrawer: React.FC<INav> = (props) => {
                     <DrawerToggleMenu labelText="EXPLORE">
                         <List>
                             <ListItem>
-                                <ListItemButton onClick={() => history.push('/studies')}>
+                                <ListItemButton onClick={() => history.push('/base-studies')}>
                                     <ListItemIcon />
                                     <ListItemText primary="studies" />
                                 </ListItemButton>

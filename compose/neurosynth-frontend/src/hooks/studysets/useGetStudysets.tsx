@@ -10,14 +10,14 @@ const useGetStudysets = (
         ['studysets', { ...searchCriteria }],
         () => {
             return API.NeurostoreServices.StudySetsService.studysetsGet(
-                searchCriteria.genericSearchStr,
+                undefined,
                 searchCriteria.sortBy,
                 searchCriteria.pageOfResults,
                 searchCriteria.descOrder,
                 searchCriteria.pageSize,
                 searchCriteria.isNested,
-                searchCriteria.nameSearch,
-                searchCriteria.descriptionSearch,
+                searchCriteria.genericSearchStr,
+                undefined,
                 undefined,
                 searchCriteria.showUnique,
                 searchCriteria.source === Source.ALL ? undefined : searchCriteria.source,

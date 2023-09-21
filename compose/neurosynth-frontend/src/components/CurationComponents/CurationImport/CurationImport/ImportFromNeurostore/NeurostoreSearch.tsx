@@ -190,7 +190,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
                                 data-tour={index === 0 ? 'StudiesPage-4' : null}
                                 sx={NeurosynthTableStyles.tableRow}
                                 key={studyrow.id || index}
-                                onClick={() => history.push(`/studies/${studyrow.id}`)}
+                                onClick={() => history.push(`/base-studies/${studyrow.id}`)}
                             >
                                 <TableCell>
                                     {studyrow?.name || (
@@ -207,10 +207,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
                                         <Box sx={{ color: 'warning.dark' }}>No Journal</Box>
                                     )}
                                 </TableCell>
-                                <TableCell>
-                                    {(studyrow?.user === user?.sub ? 'Me' : studyrow?.user) ||
-                                        'Neurosynth-Compose'}
-                                </TableCell>
+                                <TableCell>{studyrow?.username || 'Neurosynth-Compose'}</TableCell>
                             </TableRow>
                         ))}
                     />

@@ -133,7 +133,7 @@ const LandingPage = () => {
                                 Get started by browsing various&nbsp;
                                 <Link
                                     component={ReactRouterLink}
-                                    to="/studies"
+                                    to="/base-studies"
                                     color="secondary.main"
                                 >
                                     studies

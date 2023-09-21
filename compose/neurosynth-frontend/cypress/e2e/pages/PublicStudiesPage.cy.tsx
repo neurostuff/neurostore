@@ -4,7 +4,7 @@ import { mockStudies } from 'testing/mockData';
 
 export {};
 
-const PATH = '/studies';
+const PATH = '/base-studies';
 const PAGE_NAME = 'StudiesPage';
 
 describe(PAGE_NAME, () => {

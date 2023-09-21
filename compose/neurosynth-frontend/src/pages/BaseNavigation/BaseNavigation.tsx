@@ -8,8 +8,10 @@ import NotFoundPage from 'pages/NotFound/NotFoundPage';
 import ProjectPage from 'pages/Projects/ProjectPage/ProjectPage';
 import ExtractionPage from 'pages/ExtractionPage/ExtractionPage';
 import CurationImportPage from 'pages/CurationPage/CurationImportPage';
-import AnnotationsPage from 'pages/Annotations/AnnotationsPage/AnnotationsPage';
 import ProjectStudyPage from 'pages/Studies/ProjectStudyPage/ProjectStudyPage';
+import UserProfilePage from 'pages/UserProfilePage/UserProfilePage';
+import AnnotationsPage from 'pages/Annotations/AnnotationsPage/AnnotationsPage';
+import BaseStudyPage from 'pages/Studies/BaseStudyPage/BaseStudyPage';
 
 const StudysetPage = React.lazy(() => import('../Studysets/StudysetPage/StudysetPage'));
 const StudysetsPage = React.lazy(() => import('../Studysets/StudysetsPage/StudysetsPage'));
@@ -46,12 +48,24 @@ const BaseNavigation: React.FC = (_props) => {
             }
         >
             <Switch>
-                <Route path="/" exact={true}>
+                <Route path="/" exact>
                     <LandingPage />
                 </Route>
                 <Route path="/projects" exact>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <ProjectsPage />
+                    </Box>
+                </Route>
+                <Route
+                    path={[
+                        '/projects/:projectId',
+                        '/projects/:projectId/meta-analyses',
+                        '/projects/:projectId/edit',
+                    ]}
+                    exact
+                >
+                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                        <ProjectPage />
                     </Box>
                 </Route>
                 <Route path="/projects/:projectId/curation" exact>
@@ -69,18 +83,7 @@ const BaseNavigation: React.FC = (_props) => {
                         <ExtractionPage />
                     </Box>
                 </Route>
-                <Route path="/projects/:projectId/extraction/annotations" exact>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <AnnotationsPage />
-                    </Box>
-                </Route>
-                <Route
-                    path={[
-                        '/projects/:projectId/extraction/studies/:studyId/edit',
-                        '/studies/:studyId/edit',
-                    ]}
-                    exact
-                >
+                <Route path="/projects/:projectId/extraction/studies/:studyId/edit" exact>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <EditStudyPage />
                     </Box>
@@ -92,18 +95,24 @@ const BaseNavigation: React.FC = (_props) => {
                 </Route>
                 <Route
                     path={[
-                        '/meta-analyses/:metaAnalysisId',
+                        '/annotations/:annotationId',
+                        '/projects/:projectId/extraction/annotations',
+                    ]}
+                    exact
+                >
+                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                        <AnnotationsPage />
+                    </Box>
+                </Route>
+                <Route
+                    path={[
                         `/projects/:projectId/meta-analyses/:metaAnalysisId`,
+                        '/meta-analyses/:metaAnalysisId',
                     ]}
                     exact
                 >
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <MetaAnalysisPage />
-                    </Box>
-                </Route>
-                <Route path="/projects/:projectId">
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <ProjectPage />
                     </Box>
                 </Route>
                 <Route path="/studysets" exact>
@@ -116,9 +125,20 @@ const BaseNavigation: React.FC = (_props) => {
                         <StudysetPage />
                     </Box>
                 </Route>
-                <Route path="/studies" exact>
+                <Route path="/base-studies" exact>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <StudiesPage />
+                    </Box>
+                </Route>
+                <Route
+                    path={[
+                        '/base-studies/:baseStudyId',
+                        '/base-studies/:baseStudyId/:studyVersionId',
+                    ]}
+                    exact={true}
+                >
+                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                        <BaseStudyPage />
                     </Box>
                 </Route>
                 <Route path={'/studies/:studyId'} exact={true}>
@@ -129,6 +149,11 @@ const BaseNavigation: React.FC = (_props) => {
                 <Route path="/meta-analyses" exact>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <MetaAnalysesPage />
+                    </Box>
+                </Route>
+                <Route path="/user-profile">
+                    <Box sx={BaseNavigationStyles.pagesContainer}>
+                        <UserProfilePage />
                     </Box>
                 </Route>
                 <Route path="*">

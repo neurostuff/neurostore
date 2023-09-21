@@ -1,4 +1,3 @@
-import { useAuth0 } from '@auth0/auth0-react';
 import { Box, TableCell, TableRow, Typography } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
@@ -7,10 +6,8 @@ import { useGetMetaAnalysesByProjectId } from 'hooks';
 import { useHistory } from 'react-router-dom';
 
 const MetaAnalysesPage: React.FC = (props) => {
-    // const { startTour } = useGetTour('MetaAnalysesPage');
     const history = useHistory();
     const { data, isLoading, isError } = useGetMetaAnalysesByProjectId();
-    const { user } = useAuth0();
 
     return (
         <>
@@ -69,9 +66,8 @@ const MetaAnalysesPage: React.FC = (props) => {
                                     )}
                                 </TableCell>
                                 <TableCell>
-                                    {(metaAnalysis?.user === user?.sub
-                                        ? 'Me'
-                                        : metaAnalysis?.user) || 'Neurosynth-Compose'}
+                                    {/* TODO: fix the model to add the username property */}
+                                    {(metaAnalysis as any)?.username || 'Neurosynth-Compose'}
                                 </TableCell>
                             </TableRow>
                         ))}

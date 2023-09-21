@@ -1,0 +1,47 @@
+{
+    "created_at": "2023-09-14T18:04:28.079423+00:00",
+    "description": "",
+    "id": "4HxF4g4WC5zj",
+    "meta_analyses": [],
+    "name": "My project name",
+    "neurostore_study": {
+      "created_at": "2023-09-14T18:04:28.090521+00:00",
+      "exception": null,
+      "neurostore_id": "4PG9x8gYaoWd",
+      "status": "PENDING",
+      "traceback": null,
+      "updated_at": "2023-09-14T18:04:28.111166+00:00"
+    },
+    "neurostore_url": "https://neurostore.org/api/studies/4PG9x8gYaoWd",
+    "provenance": {
+      "curationMetadata": {
+        "columns": [],
+        "exclusionTags": [],
+        "identificationSources": [],
+        "infoTags": [],
+        "prismaConfig": {
+          "eligibility": {
+            "exclusionTags": []
+          },
+          "identification": {
+            "exclusionTags": []
+          },
+          "isPrisma": false,
+          "screening": {
+            "exclusionTags": []
+          }
+        }
+      },
+      "extractionMetadata": {
+        "studyStatusList": []
+      },
+      "metaAnalysisMetadata": {
+        "canEditMetaAnalyses": false
+      }
+    },
+    "public": false,
+    "updated_at": "2023-09-14T18:04:34.184976+00:00",
+    "user": "github|12387943",
+    "username": "Nicholas Lee"
+  }
+  
