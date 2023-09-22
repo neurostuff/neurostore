@@ -22,14 +22,8 @@ describe(PAGE_NAME, () => {
         cy.intercept('GET', `**/api/studies/**`, {
             fixture: 'study',
         }).as('studyFixture');
-        cy.intercept('GET', `**/api/base-studies/**`, {
-            fixture: 'baseStudy',
-        }).as('baseStudyFixture');
 
-        cy.visit(PATH)
-            .wait('@semanticScholarFixture')
-            .wait('@studyFixture')
-            .wait('@baseStudyFixture');
+        cy.visit(PATH).wait('@semanticScholarFixture').wait('@studyFixture');
         // .get('tr')
         // .eq(2)
         // .click()

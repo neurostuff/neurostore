@@ -42,7 +42,7 @@ describe('NavToolbar Component', () => {
 
         expect(screen.queryByText('new project')).not.toBeInTheDocument();
         expect(screen.queryByText('my projects')).not.toBeInTheDocument();
-        expect(screen.queryByText('LOGOUT')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('PersonIcon')).not.toBeInTheDocument();
 
         expect(screen.queryByText('explore')).toBeInTheDocument();
         expect(screen.queryByText('HELP')).toBeInTheDocument();
@@ -66,7 +66,7 @@ describe('NavToolbar Component', () => {
         expect(screen.queryByText('my projects')).toBeInTheDocument();
         expect(screen.queryByText('explore')).toBeInTheDocument();
         expect(screen.queryByText('HELP')).toBeInTheDocument();
-        expect(screen.queryByText('LOGOUT')).toBeInTheDocument();
+        expect(screen.getByTestId('PersonIcon')).toBeInTheDocument();
     });
 
     it('should login', () => {
@@ -97,6 +97,8 @@ describe('NavToolbar Component', () => {
             </BrowserRouter>
         );
 
+        // open popup
+        userEvent.click(screen.getByTestId('PersonIcon'));
         userEvent.click(screen.getByText('LOGOUT'));
         expect(mockLogout).toHaveBeenCalled();
     });
