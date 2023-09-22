@@ -1,6 +1,7 @@
-import { Box, Divider, Link, Typography } from '@mui/material';
+import { Box, Chip, Divider, Link, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 /**
  * Study summary for studies that are being imported and tagged. We cannot reuse the ReadOnlyStubSummary easily here because
@@ -12,61 +13,73 @@ const ReadOnlyStubSummaryVirtualizedItem: React.FC<
     const { articleLink, articleYear, title, authors, pmid, doi, journal, neurostoreId, style } =
         props;
 
+    const articleYearText = articleYear ? `(${articleYear}) ` : '';
+    const titleText = title ? `${articleYearText}${title}` : 'No title';
+
     return (
         <Box
             style={{
                 ...style,
                 ...{
-                    // borderRadius: '4px',
-                    // border: '1px solid #ebebeb',
-                    height: '120px',
+                    height: '115px',
                     padding: '10px 10px',
-                    marginBottom: '10px',
                     marginLeft: '10px',
                     width: 'calc(100% - 30px)',
                 },
             }}
         >
-            <Box>
+            <Box sx={{ height: '24px' }}>
                 {neurostoreId && (
-                    <Link
-                        underline="hover"
+                    <Chip
+                        component="a"
+                        icon={<OpenInNewIcon />}
                         target="_blank"
-                        href={`/studies/${neurostoreId}`}
+                        clickable
+                        color="primary"
+                        variant="outlined"
+                        href={`/base-studies/${neurostoreId}`}
                         sx={{ marginRight: '10px' }}
-                    >
-                        view study in neurostore
-                    </Link>
+                        label="view study in neurostore"
+                        size="small"
+                    />
                 )}
                 {pmid && (
-                    <Link
-                        underline="hover"
+                    <Chip
+                        component="a"
+                        icon={<OpenInNewIcon />}
                         target="_blank"
+                        clickable
+                        color="primary"
+                        variant="outlined"
                         href={`${PUBMED_ARTICLE_URL_PREFIX}${pmid}`}
                         sx={{ marginRight: '10px' }}
-                    >
-                        view study in pubmed
-                    </Link>
+                        label="view study in pubmed"
+                        size="small"
+                    />
                 )}
                 {articleLink && (
-                    <Link
-                        underline="hover"
+                    <Chip
+                        component="a"
+                        icon={<OpenInNewIcon />}
                         target="_blank"
+                        clickable
+                        color="primary"
+                        variant="outlined"
                         href={articleLink}
                         sx={{ marginRight: '10px' }}
-                    >
-                        view article link
-                    </Link>
+                        label="view article link"
+                        size="small"
+                    />
                 )}
             </Box>
-            <Typography noWrap variant="h6">
-                {articleYear ? `(${articleYear})` : ''} {title}
-            </Typography>
             <Typography noWrap variant="body1">
-                {authors}
+                {titleText}
             </Typography>
-            <Typography noWrap variant="body1">
-                {journal}
+            <Typography sx={{ color: doi ? 'initial' : 'warning.dark' }} noWrap variant="body2">
+                {authors || 'No authors'}
+            </Typography>
+            <Typography sx={{ color: doi ? 'initial' : 'warning.dark' }} noWrap variant="body2">
+                {journal || 'No journal'}
             </Typography>
             <Box sx={{ display: 'flex' }}>
                 <Box sx={{ marginRight: '2rem' }}>
@@ -82,7 +95,7 @@ const ReadOnlyStubSummaryVirtualizedItem: React.FC<
                     </Typography>
                 </Box>
             </Box>
-            <Divider sx={{ marginTop: '12px' }} />
+            <Divider sx={{ marginTop: '5px' }} />
         </Box>
     );
 };

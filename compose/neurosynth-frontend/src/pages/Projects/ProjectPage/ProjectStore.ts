@@ -201,28 +201,42 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
             const updateProject = get().metadata.updateProject;
             if (!updateProject) return;
 
-            const storeData = get() as unknown as TProjectStore;
-            if (!storeData.id) return;
+            const oldDebouncedStoreData = get() as unknown as TProjectStore;
+            if (!oldDebouncedStoreData.id) return;
 
             const existingTimeout = get().metadata.debounceTimeout;
             const prevId = get().metadata.prevUpdatedProjectId;
 
-            if (existingTimeout && storeData.id === prevId) clearTimeout(existingTimeout);
+            if (existingTimeout && oldDebouncedStoreData.id === prevId)
+                clearTimeout(existingTimeout);
             window.addEventListener('beforeunload', onUnloadHandler);
 
             const newTimeout = setTimeout(async () => {
                 const { data } = await API.NeurosynthServices.ProjectsService.projectsIdGet(
-                    storeData.id as string
+                    oldDebouncedStoreData.id as string
                 );
 
+                // we use the latest data instead of oldDebouncedStoreData because we don't care whether
+                // the debounced last_updated is up to date, we just care that the overall store is up to date.
+
+                // This fixes a bug where we would get "out of sync" errors when a user updated the curation UI just as
+                // the anonymous setTimeout function executed from a previous update (probably during the GET above): the serverLastUpdated value was compared
+                // to the just recently out of date oldDebouncedStoreData last updated value which then caused the "out of sync" snackbar to appear
+                const latestStoreDataLastUpdated = get().updated_at;
                 const serverLastUpdated = data.updated_at;
-                const localLastUpdated = storeData.updated_at;
+
                 if (
                     serverLastUpdated &&
-                    localLastUpdated &&
-                    new Date(localLastUpdated).getTime() < new Date(serverLastUpdated).getTime()
+                    latestStoreDataLastUpdated &&
+                    new Date(latestStoreDataLastUpdated).getTime() !==
+                        new Date(serverLastUpdated).getTime()
                 ) {
-                    const enqueueSnackbar = storeData.metadata.enqueueSnackbar;
+                    console.log({
+                        serverLastUpdated,
+                        SLU: new Date(serverLastUpdated).getTime(),
+                        NSDLU: new Date(latestStoreDataLastUpdated).getTime(),
+                    });
+                    const enqueueSnackbar = oldDebouncedStoreData.metadata.enqueueSnackbar;
                     if (enqueueSnackbar) {
                         enqueueSnackbar(
                             'You are out of sync with the server and your changes will not be saved. Please refresh the page to get the latest data.',
@@ -234,15 +248,15 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                 }
 
                 const update: INeurosynthProject = {
-                    name: storeData.name,
-                    description: storeData.description,
+                    name: oldDebouncedStoreData.name,
+                    description: oldDebouncedStoreData.description,
                     provenance: {
-                        ...storeData.provenance,
+                        ...oldDebouncedStoreData.provenance,
                     },
                 };
 
                 updateProject(
-                    { projectId: storeData.id as string, project: update },
+                    { projectId: oldDebouncedStoreData.id as string, project: update },
                     {
                         onSuccess: (res) => {
                             set((state) => ({
@@ -257,42 +271,41 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                                       options?: OptionsObject | undefined
                                   ) => SnackbarKey)
                                 | undefined;
-                            if (storeData.metadata.enqueueSnackbar) {
-                                enqueueSnackbarFunc = storeData.metadata.enqueueSnackbar;
+                            if (oldDebouncedStoreData.metadata.enqueueSnackbar) {
+                                enqueueSnackbarFunc =
+                                    oldDebouncedStoreData.metadata.enqueueSnackbar;
+                            } else {
+                                // set some noop if func does not exist
+                                // note: this should never happen - something has gone wrong!
+                                enqueueSnackbarFunc = (m: any, o: any) => 0;
+                                console.error('no snackbar function defined!');
                             }
 
                             if (
                                 err?.response?.data?.code &&
                                 err?.response?.data?.code === 'token_expired'
                             ) {
-                                if (enqueueSnackbarFunc) {
-                                    enqueueSnackbarFunc(
-                                        'Your login session has expired. We will now log you out.',
-                                        { variant: 'error' }
-                                    );
-                                }
+                                enqueueSnackbarFunc(
+                                    'Your login session has expired. We will now log you out.',
+                                    { variant: 'error' }
+                                );
 
                                 setTimeout(() => {
-                                    const logout = storeData.metadata.logout;
+                                    const logout = oldDebouncedStoreData.metadata.logout;
                                     if (logout) logout();
                                 }, 2000);
                             } else if (
                                 err?.response?.data?.status &&
                                 err?.response?.data?.status === 401
                             ) {
-                                if (enqueueSnackbarFunc) {
-                                    enqueueSnackbarFunc(
-                                        'You must log in to make changes. Please log in and try again',
-                                        { variant: 'error' }
-                                    );
-                                }
+                                enqueueSnackbarFunc(
+                                    'You must log in to make changes. Please log in and try again',
+                                    { variant: 'error' }
+                                );
                             } else {
-                                if (enqueueSnackbarFunc) {
-                                    enqueueSnackbarFunc(
-                                        'There was an error updating the project.',
-                                        { variant: 'error' }
-                                    );
-                                }
+                                enqueueSnackbarFunc('There was an error updating the project.', {
+                                    variant: 'error',
+                                });
                             }
                         },
                         onSettled: () => {
@@ -306,7 +319,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                 ...state,
                 metadata: {
                     ...state.metadata,
-                    prevUpdatedProjectId: storeData.id,
+                    prevUpdatedProjectId: oldDebouncedStoreData.id,
                     debounceTimeout: newTimeout,
                 },
             }));

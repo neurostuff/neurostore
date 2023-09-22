@@ -19,7 +19,6 @@ const FetchPMIDs: React.FC<{
 
     useEffect(() => {
         if (data.length === 0 || isLoading || !isSuccess) return;
-
         const flattenedData = data.flat();
 
         let unimportedStubs;

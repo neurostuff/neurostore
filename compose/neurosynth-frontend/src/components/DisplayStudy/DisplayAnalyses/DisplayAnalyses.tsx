@@ -31,7 +31,7 @@ const DisplayAnalyses: React.FC<{
                 onSelectAnalysisIndex={handleSelectAnalysis}
                 analyses={props.analyses}
             />
-            <Box sx={{ padding: '1rem', width: '100%', height: '100%' }}>
+            <Box sx={{ padding: '1rem', width: 'calc(100% - 250px - 2rem)', height: '100%' }}>
                 <DisplayAnalysis {...selectedAnalysis} />
             </Box>
         </Box>

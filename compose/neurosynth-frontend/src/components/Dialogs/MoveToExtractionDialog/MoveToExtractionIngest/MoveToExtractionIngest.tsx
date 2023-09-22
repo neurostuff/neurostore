@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Link } from '@mui/material';
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
@@ -27,7 +27,15 @@ const MoveToExtractionIngest: React.FC<{
     return (
         <Box>
             <Typography gutterBottom>
-                Your annotation has been created - let's get started ingesting your studies.
+                Your annotation has been created - let's get started{' '}
+                <Link
+                    underline="hover"
+                    target="_blank"
+                    href="https://neurostuff.github.io/compose-docs/guide/walkthrough/Project/Extraction#ingestion"
+                >
+                    ingesting
+                </Link>{' '}
+                your studies.
             </Typography>
             <Typography gutterBottom>
                 Neurosynth Compose will add the studies you included in the previous curation step

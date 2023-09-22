@@ -22,7 +22,7 @@ import { IImportArgs } from '../CurationImport';
 import { studiesToStubs } from './helpers/utils';
 
 const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
-    const { user, isLoading: authenticationIsLoading } = useAuth0();
+    const { isLoading: authenticationIsLoading } = useAuth0();
     const history = useHistory();
     const location = useLocation();
     const projectId = useProjectId();
@@ -46,7 +46,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
      * with the studysetOwner set (if logged in) and undefined otherwise
      */
     const { data, isLoading, isError, isFetching } = useGetBaseStudies(
-        { ...debouncedSearchCriteria, studysetOwner: user?.sub, flat: true },
+        { ...debouncedSearchCriteria, flat: true },
         !authenticationIsLoading
     );
 
@@ -56,7 +56,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
         isError: allDataForSearchIsError,
         isFetching: allDataForSearchIsFetching,
     } = useGetBaseStudies(
-        { ...debouncedSearchCriteria, studysetOwner: user?.sub, pageSize: 29999, flat: true }, // backend checks for less than 30000
+        { ...debouncedSearchCriteria, pageSize: 29999, flat: true }, // backend checks for less than 30000
         !authenticationIsLoading
     );
 
@@ -68,15 +68,6 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
     useEffect(() => {
         if (data) setStudyData(data);
     }, [data]);
-
-    useEffect(() => {
-        if (user?.sub) {
-            setSearchCriteria((prev) => ({
-                ...prev,
-                studysetOwner: user.sub,
-            }));
-        }
-    }, [user?.sub]);
 
     // runs every time the URL changes, to create a URL driven search.
     // this is separated from the debounce because otherwise the URL would

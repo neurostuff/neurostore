@@ -50,7 +50,15 @@ const MoveToExtractionCreateStudyset: React.FC<{
     return (
         <Box>
             <Typography gutterBottom>
-                This is the start of the next phase: <b>extraction</b>.
+                This is the start of the next phase:{' '}
+                <Link
+                    underline="hover"
+                    sx={{ fontWeight: 'bold' }}
+                    target="_blank"
+                    href="https://neurostuff.github.io/compose-docs/guide/walkthrough/Project/Extraction"
+                >
+                    extraction
+                </Link>
             </Typography>
             <Typography gutterBottom>
                 At this point, you have completed your study curation, and the right most column of
@@ -63,7 +71,7 @@ const MoveToExtractionCreateStudyset: React.FC<{
                 <Link
                     underline="hover"
                     target="_blank"
-                    href="https://neurostuff.github.io/neurostore/"
+                    href="https://neurostuff.github.io/compose-docs/guide/glossary#analysis"
                 >
                     analyses
                 </Link>{' '}
@@ -71,7 +79,7 @@ const MoveToExtractionCreateStudyset: React.FC<{
                 <Link
                     underline="hover"
                     target="_blank"
-                    href="https://neurostuff.github.io/neurostore/"
+                    href="https://neurostuff.github.io/compose-docs/"
                 >
                     meta-analysis
                 </Link>
@@ -88,7 +96,7 @@ const MoveToExtractionCreateStudyset: React.FC<{
                         sx={{ fontWeight: 'normal' }}
                         underline="hover"
                         target="_blank"
-                        href="https://neurostuff.github.io/neurostore/"
+                        href="https://neurostuff.github.io/compose-docs/guide/glossary#studyset"
                     >
                         studyset
                     </Link>{' '}
@@ -97,7 +105,7 @@ const MoveToExtractionCreateStudyset: React.FC<{
                         sx={{ fontWeight: 'normal' }}
                         underline="hover"
                         target="_blank"
-                        href="https://neurostuff.github.io/neurostore/"
+                        href="https://neurostuff.github.io/compose-docs/guide/walkthrough/Project/Extraction#ingestion"
                     >
                         ingest
                     </Link>{' '}

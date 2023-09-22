@@ -99,7 +99,7 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                     <Link
                         underline="hover"
                         target="_blank"
-                        href={`/studies/${props.stub.neurostoreId}`}
+                        href={`/base-studies/${props.stub.neurostoreId}`}
                         sx={{ marginRight: '10px' }}
                     >
                         view study in neurostore

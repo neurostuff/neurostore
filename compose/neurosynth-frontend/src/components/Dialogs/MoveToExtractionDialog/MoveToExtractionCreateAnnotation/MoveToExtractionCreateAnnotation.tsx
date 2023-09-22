@@ -82,7 +82,8 @@ const MoveToExtractionCreateAnnotation: React.FC<{
                 <Link
                     underline="hover"
                     target="_blank"
-                    href="https://neurostuff.github.io/neurostore/"
+                    sx={{ fontWeight: 'bold' }}
+                    href="https://neurostuff.github.io/compose-docs/guide/walkthrough/Project/Extraction#annotations"
                 >
                     annotations.
                 </Link>
@@ -92,7 +93,7 @@ const MoveToExtractionCreateAnnotation: React.FC<{
                 <Link
                     underline="hover"
                     target="_blank"
-                    href="https://neurostuff.github.io/neurostore/"
+                    href="https://neurostuff.github.io/compose-docs/guide/glossary#analysis"
                 >
                     analyses
                 </Link>{' '}
@@ -108,8 +109,9 @@ const MoveToExtractionCreateAnnotation: React.FC<{
                 add to annotate.
             </Typography>
             <Typography>
-                All keys and values can be modified, added, and removed later. By default, an
-                "included" key will be added.
+                If you are unsure, you can skip this for now. All keys and values can be modified,
+                added, and removed later via the Annotations button. By default, an "included" key
+                will be added.
             </Typography>
 
             <Box
