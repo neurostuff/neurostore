@@ -129,6 +129,15 @@ class EstimatorSchema(Schema):
 
 class StudysetReferenceSchema(Schema):
     id = PGSQLString()
+    created_at = fields.DateTime()
+    updated_at = fields.DateTime(allow_none=True)
+    studysets = StringOrNested(
+        "StudysetSchema",
+        exclude=("snapshot",),
+        metadata={"pluck": "id"},
+        many=True,
+        dump_only=True
+    )
 
 
 class AnnotationReferenceSchema(Schema):
@@ -154,6 +163,7 @@ class StudysetSchema(BaseSchema):
     neurostore_id = fields.Pluck(
         StudysetReferenceSchema, "id", attribute="studyset_reference"
     )
+    version = fields.String(allow_none=True)
     url = fields.String(dump_only=True)
 
     @post_dump

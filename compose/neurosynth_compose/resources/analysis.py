@@ -369,7 +369,7 @@ class AnnotationsView(ObjectView, ListView):
 
 @view_maker
 class StudysetsView(ObjectView, ListView):
-    _nested = {"studyset_reference": "StudysetReferencesResource"}
+    _nested = {"studyset_reference": "StudysetReferencesView"}
 
 
 @view_maker
@@ -378,7 +378,7 @@ class SpecificationsView(ObjectView, ListView):
 
 
 @view_maker
-class StudysetReferencesResource(ObjectView):
+class StudysetReferencesView(ObjectView, ListView):
     pass
 
 
