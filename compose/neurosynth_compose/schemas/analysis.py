@@ -163,7 +163,7 @@ class StudysetSchema(BaseSchema):
     neurostore_id = fields.Pluck(
         StudysetReferenceSchema, "id", attribute="studyset_reference"
     )
-    version = fields.String()
+    version = fields.String(allow_none=True)
     url = fields.String(dump_only=True)
 
     @post_dump
