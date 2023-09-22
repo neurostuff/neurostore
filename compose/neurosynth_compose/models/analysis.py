@@ -47,6 +47,8 @@ class Specification(BaseMixin, db.Model):
 class StudysetReference(db.Model):
     __tablename__ = "studyset_references"
     id = db.Column(db.Text, primary_key=True)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
 
 
 class Studyset(BaseMixin, db.Model):
@@ -55,7 +57,7 @@ class Studyset(BaseMixin, db.Model):
     snapshot = db.Column(db.JSON)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     neurostore_id = db.Column(db.Text, db.ForeignKey("studyset_references.id"))
-
+    version = db.Column(db.Text)
     studyset_reference = relationship("StudysetReference", backref=backref("studysets"))
     user = relationship("User", backref=backref("studysets"))
 
