@@ -1,4 +1,6 @@
 from .analysis import (
+    ConditionsResource,
+    SpecificationConditionsResource,
     MetaAnalysesView,
     MetaAnalysisResultsView,
     NeurovaultCollectionsView,
@@ -15,6 +17,8 @@ from .analysis import (
 from .users import UsersView
 
 __all__ = [
+    "ConditionsResource",
+    "SpecificationConditionsResource",
     "MetaAnalysesView",
     "MetaAnalysisResultsView",
     "NeurovaultCollectionsView",

@@ -122,6 +122,22 @@ class BaseSchema(Schema):
     username = fields.String(attribute="user.name", dump_only=True)
 
 
+class ConditionSchema(Schema):
+    id = PGSQLString()
+    created_at = fields.DateTime()
+    updated_at = fields.DateTime(allow_none=True)
+    name = PGSQLString()
+    description = PGSQLString()
+
+
+class SpecificationConditionSchema(Schema):
+    id = PGSQLString()
+    created_at = fields.DateTime()
+    updated_at = fields.DateTime(allow_none=True)
+    condition = fields.Pluck(ConditionSchema, "name")
+    weight = fields.Number()
+
+
 class EstimatorSchema(Schema):
     type = fields.String()
     args = fields.Dict()
@@ -152,6 +168,36 @@ class SpecificationSchema(BaseSchema):
     contrast = PGSQLString(allow_none=True)
     filter = PGSQLString(allow_none=True)
     corrector = fields.Dict(allow_none=True)
+    _conditions = fields.Pluck(
+        SpecificationConditionSchema,
+        "condition",
+        many=True,
+        allow_none=True,
+        load_only=True,
+        attribute="conditions",
+        data_key="conditions",
+    )
+    conditions = fields.Pluck(
+        ConditionSchema,
+        "name",
+        many=True,
+        allow_none=True,
+        dump_only=True
+    )
+    weights = fields.List(
+        fields.Float(),
+        allow_none=True,
+        dump_only=True,
+    )
+    _weights = fields.Pluck(
+        SpecificationConditionSchema,
+        "weight",
+        many=True,
+        allow_none=True,
+        load_only=True,
+        data_key="weights",
+        attribute="weights",
+    )
 
     class Meta:
         additional = ("name", "description")

@@ -1,6 +1,7 @@
 """TODO: PLACE INTO THE NEUROSYNTH APP"""
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
+from sqlalchemy.ext.associationproxy import association_proxy
 import shortuuid
 import secrets
 
@@ -31,16 +32,35 @@ class BaseMixin(object):
     #     relationship("User", backref=cls.__tablename__, uselist=False)
 
 
+class Condition(BaseMixin, db.Model):
+    __tablename__ = "conditions"
+    name = db.Column(db.Text)
+    description = db.Column(db.Text)
+
+
+class SpecificationCondition(BaseMixin, db.Model):
+    __tablename__ = "specification_conditions"
+    weight = db.Column(db.Float)
+    specification_id = db.Column(
+        db.Text, db.ForeignKey("specifications.id"), index=True, primary_key=True
+    )
+    condition_id = db.Column(
+        db.Text, db.ForeignKey("conditions.id"), index=True, primary_key=True
+    )
+    condition = relationship("Condition", backref=backref("specification_conditions"))
+    specification = relationship("Specification", backref=backref("specification_conditions"))
+
+
 class Specification(BaseMixin, db.Model):
     __tablename__ = "specifications"
 
     type = db.Column(db.Text)
     estimator = db.Column(db.JSON)
     filter = db.Column(db.Text)
-    contrast = db.Column(db.JSON)
+    weights = association_proxy("specification_conditions", "weight")
+    conditions = association_proxy("specification_conditions", "condition")
     corrector = db.Column(db.JSON)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
-
     user = relationship("User", backref=backref("specifications"))
 
 
