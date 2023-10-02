@@ -12,6 +12,7 @@ import {
 } from 'pages/Studies/StudyStore';
 import { StudyDetails } from 'pages/Studies/StudyStore.helpers';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
+import EditStudyComponentsStyles from 'components/EditStudyComponents/EditStudyComponents.styles';
 
 const EditStudyDetails: React.FC = React.memo((props) => {
     const name = useStudyName();
@@ -39,30 +40,18 @@ const EditStudyDetails: React.FC = React.memo((props) => {
         <NeurosynthAccordion
             elevation={0}
             expandIconColor="secondary.main"
-            sx={{
-                border: '1px solid',
-                borderColor: 'secondary.main',
-                borderRadius: '0 !important',
-            }}
-            accordionSummarySx={{
-                ':hover': {
-                    backgroundColor: '#f2f2f2',
-                },
-            }}
+            sx={EditStudyComponentsStyles.accordion}
+            accordionSummarySx={EditStudyComponentsStyles.accordionSummary}
             TitleElement={
                 <>
-                    <Typography
-                        sx={{ fontWeight: 'bold', marginRight: '10px', color: 'secondary.main' }}
-                    >
-                        Details
-                    </Typography>
+                    <Typography sx={EditStudyComponentsStyles.accordionTitle}>Details</Typography>
                     <Typography sx={{ color: 'secondary.main' }}>
                         (name, authors, description, doi, pmid, etc)
                     </Typography>
                 </>
             }
         >
-            <Box sx={{ margin: '1rem 0 0.5rem 0' }}>
+            <Box sx={EditStudyComponentsStyles.accordionContentContainer}>
                 <TextField
                     label="name"
                     sx={{ width: '100%', marginBottom: '1rem' }}

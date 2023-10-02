@@ -10,13 +10,10 @@ import Navbar from './components/Navbar/Navbar';
 import useGetToken from './hooks/useGetToken';
 import BaseNavigation from './pages/BaseNavigation/BaseNavigation';
 
-const env = process.env.REACT_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
-
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            retry: env === 'DEV' ? 0 : 3, // need to do this because of issues testing with cypress
-            refetchOnWindowFocus: env !== 'DEV', // need to do this because of issues testing with cypress
+            staleTime: 5000, // set default staleTime to 10 seconds https://tkdodo.eu/blog/practical-react-query#the-defaults-explained
         },
     },
     queryCache: new QueryCache({
@@ -41,7 +38,7 @@ function App() {
         <QueryClientProvider client={queryClient}>
             <SnackbarProvider
                 ref={notistackRef}
-                autoHideDuration={5000}
+                autoHideDuration={8000}
                 action={(key) => (
                     <IconButton onClick={handleCloseSnackbar(key)}>
                         <Close sx={{ color: 'white' }} />

@@ -20,12 +20,14 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
         props.onCloseDialog();
     };
 
+    // just want this to run once. It is safe to make the deps array empty because we know that the project store has loaded at this point
     useEffect(() => {
         const hasStudysetId = !!studysetId;
         const hasAnnotationId = !!annotationId;
 
         setActiveStep(+hasStudysetId + +hasAnnotationId);
-    }, [studysetId, annotationId]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleNavigate = (button: ENavigationButton) => {
         setActiveStep((prev) => {
@@ -56,7 +58,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                         <StepLabel>Create Annotations</StepLabel>
                     </Step>
                     <Step>
-                        <StepLabel>Ingest</StepLabel>
+                        <StepLabel>Ingest {activeStep}</StepLabel>
                     </Step>
                 </Stepper>
                 <Box sx={{ marginTop: '1rem' }}>

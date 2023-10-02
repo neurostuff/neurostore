@@ -1,12 +1,9 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import EditIcon from '@mui/icons-material/Edit';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import DisplayStudy from 'components/DisplayStudy/DisplayStudy';
-import EditStudyAnnotations from 'components/EditAnnotations/EditStudyAnnotations';
 import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatusButtons/FloatingStatusButtons';
-import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useCreateStudy, useGetStudysetById, useUpdateStudyset } from 'hooks';
@@ -19,6 +16,7 @@ import {
     useProjectExtractionReplaceStudyListStatusId,
     useUpdateStubField,
 } from 'pages/Projects/ProjectPage/ProjectStore';
+import { setAnalysesInAnnotationAsIncluded } from 'pages/helpers/utils';
 import React, { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import {
@@ -35,7 +33,6 @@ import {
     useStudyPublication,
     useStudyUser,
 } from '../StudyStore';
-import { setAnalysesInAnnotationAsIncluded } from 'components/ExtractionComponents/Ingestion/helpers/utils';
 
 const ProjectStudyPage: React.FC = (props) => {
     const { projectId, studyId } = useParams<{ projectId: string; studyId: string }>();
@@ -131,11 +128,34 @@ const ProjectStudyPage: React.FC = (props) => {
 
     const thisUserOwnsThisStudy = (studyUser || null) === (user?.sub || undefined);
 
-    const isViewingStudyFromProject = projectId !== undefined;
-    const showCloneMessage = isViewingStudyFromProject && !thisUserOwnsThisStudy;
+    const showCloneMessage = !thisUserOwnsThisStudy;
 
     return (
         <StateHandlerComponent isLoading={studyIsLoading} isError={false}>
+            <NeurosynthBreadcrumbs
+                breadcrumbItems={[
+                    {
+                        text: 'Projects',
+                        link: '/projects',
+                        isCurrentPage: false,
+                    },
+                    {
+                        text: project?.name || '',
+                        link: `/projects/${projectId}`,
+                        isCurrentPage: false,
+                    },
+                    {
+                        text: 'Extraction',
+                        link: `/projects/${projectId}/extraction`,
+                        isCurrentPage: false,
+                    },
+                    {
+                        text: studyName || '',
+                        link: '',
+                        isCurrentPage: true,
+                    },
+                ]}
+            />
             {showCloneMessage && (
                 <Box
                     sx={{
@@ -147,7 +167,7 @@ const ProjectStudyPage: React.FC = (props) => {
                         padding: '1rem',
                         borderRadius: '4px',
                         marginBottom: '1rem',
-                        margin: '1rem',
+                        margin: '1rem 0',
                     }}
                 >
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -190,77 +210,6 @@ const ProjectStudyPage: React.FC = (props) => {
             )}
 
             <FloatingStatusButtons studyId={studyId} />
-            {isViewingStudyFromProject && (
-                <Box sx={{ padding: '0 1rem' }} data-tour="StudyPage-8">
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            width: '100%',
-                            marginBottom: '0.5rem',
-                        }}
-                    >
-                        <NeurosynthBreadcrumbs
-                            breadcrumbItems={[
-                                {
-                                    text: 'Projects',
-                                    link: '/projects',
-                                    isCurrentPage: false,
-                                },
-                                {
-                                    text: project?.name || '',
-                                    link: `/projects/${projectId}`,
-                                    isCurrentPage: false,
-                                },
-                                {
-                                    text: 'Extraction',
-                                    link: `/projects/${projectId}/extraction`,
-                                    isCurrentPage: false,
-                                },
-                                {
-                                    text: studyName || '',
-                                    link: '',
-                                    isCurrentPage: true,
-                                },
-                            ]}
-                        />
-                        <Button
-                            onClick={handleEditStudy}
-                            endIcon={<EditIcon />}
-                            disabled={!allowEdits}
-                            size="small"
-                            sx={{ width: '190px', marginLeft: '10px' }}
-                            variant="contained"
-                            disableElevation
-                            color="secondary"
-                        >
-                            Edit Study
-                        </Button>
-                    </Box>
-                    <Box sx={{ margin: '1rem 0' }}>
-                        <NeurosynthAccordion
-                            elevation={0}
-                            expandIconColor={'secondary.main'}
-                            sx={{
-                                border: '1px solid',
-                                borderColor: 'secondary.main',
-                            }}
-                            accordionSummarySx={{
-                                ':hover': {
-                                    backgroundColor: '#f2f2f2',
-                                },
-                            }}
-                            TitleElement={
-                                <Typography sx={{ color: 'secondary.main' }}>
-                                    Study Annotations
-                                </Typography>
-                            }
-                        >
-                            <EditStudyAnnotations />
-                        </NeurosynthAccordion>
-                    </Box>
-                </Box>
-            )}
 
             <DisplayStudy
                 name={studyName}

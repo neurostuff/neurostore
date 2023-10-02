@@ -1,5 +1,6 @@
 import { Box, Button } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import DisplayStudyChipLinks from 'components/DisplayStudy/DisplayStudyChipLinks/DisplayStudyChipLinks';
 import EditAnalyses from 'components/EditStudyComponents/EditAnalyses/EditAnalyses';
 import EditStudyDetails from 'components/EditStudyComponents/EditStudyDetails/EditStudyDetails';
 import EditStudyMetadata from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
@@ -26,6 +27,7 @@ import {
     useStudyName,
     useUpdateStudyInDB,
 } from '../StudyStore';
+import EditStudyAnnotations from 'components/EditStudyComponents/EditStudyAnnotations/EditStudyAnnotations';
 
 const EditStudyPage: React.FC = (props) => {
     const queryClient = useQueryClient();
@@ -70,7 +72,7 @@ const EditStudyPage: React.FC = (props) => {
                 await updateStudyInDB(isEditingFromProject ? (annotationId as string) : undefined);
             snackbar.enqueueSnackbar('study saved successfully', { variant: 'success' });
             queryClient.invalidateQueries('studies');
-            queryClient.invalidateQueries('annotation'); // if analyses are updated, we need to do a request to get new annotations
+            queryClient.invalidateQueries('annotations'); // if analyses are updated, we need to do a request to get new annotations
         } catch (e) {
             console.error(e);
             snackbar.enqueueSnackbar('there was an error saving the study', {
@@ -81,57 +83,13 @@ const EditStudyPage: React.FC = (props) => {
 
     return (
         <StateHandlerComponent isError={false} isLoading={!storeStudyId && !isError}>
-            {isEditingFromProject ? (
-                <>
-                    <FloatingStatusButtons studyId={studyId} />
-                    <Box sx={{ marginBottom: '0.5rem' }}>
-                        <NeurosynthBreadcrumbs
-                            breadcrumbItems={[
-                                {
-                                    text: 'Projects',
-                                    link: '/projects',
-                                    isCurrentPage: false,
-                                },
-                                {
-                                    text: project?.name || '',
-                                    link: `/projects/${projectId}`,
-                                    isCurrentPage: false,
-                                },
-                                {
-                                    text: 'Extraction',
-                                    link: `/projects/${projectId}/extraction`,
-                                    isCurrentPage: false,
-                                },
-                                {
-                                    text: studyName || '',
-                                    link: `/projects/${projectId}/extraction/studies/${studyId}`,
-                                    isCurrentPage: false,
-                                },
-                                {
-                                    text: 'Edit',
-                                    link: '',
-                                    isCurrentPage: true,
-                                },
-                            ]}
-                        />
-                    </Box>
-                </>
-            ) : (
-                <Button
-                    color="secondary"
-                    variant="outlined"
-                    sx={{ marginBottom: '1rem' }}
-                    onClick={() => history.push(`/studies/${studyId}`)}
-                >
-                    Return To Study Page
-                </Button>
-            )}
-            <Box>
-                <EditStudyDetails />
-            </Box>
-            <Box>
-                <EditStudyMetadata />
-            </Box>
+            <EditStudyPage />
+
+            <EditStudyAnnotations />
+            <EditStudyDetails />
+
+            <EditStudyMetadata />
+
             <Box sx={{ marginBottom: '5rem' }}>
                 <EditAnalyses />
             </Box>

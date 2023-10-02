@@ -1,34 +1,34 @@
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-import CheckIcon from '@mui/icons-material/Check';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
+import CheckIcon from '@mui/icons-material/Check';
+import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import {
     Box,
+    Button,
+    Card,
+    CardActions,
+    CardContent,
+    CircularProgress,
     Step,
     StepContent,
     StepLabel,
     StepProps,
     Typography,
-    Card,
-    CardContent,
-    CircularProgress,
-    CardActions,
-    Button,
 } from '@mui/material';
-import { useHistory, useLocation, useParams } from 'react-router-dom';
-import ProjectComponentsStyles from '../../ProjectComponents.styles';
-import { useState } from 'react';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionDialogBase';
-import useGetExtractionSummary, { IExtractionSummary } from 'hooks/useGetExtractionSummary';
-import ExtractionStepStyles from './ExtractionStep.style';
-import { useGetStudysetById } from 'hooks';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { useGetStudysetById } from 'hooks';
+import useGetExtractionSummary, { IExtractionSummary } from 'hooks/useGetExtractionSummary';
+import { StudyReturn } from 'neurostore-typescript-sdk';
 import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
 import {
     useProjectExtractionSetGivenStudyStatusesAsComplete,
     useProjectExtractionStudysetId,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
-import { StudyReturn } from 'neurostore-typescript-sdk';
+import { useState } from 'react';
+import { useHistory, useLocation, useParams } from 'react-router-dom';
+import ProjectComponentsStyles from '../../ProjectComponents.styles';
+import ExtractionStepStyles from './ExtractionStep.style';
 
 interface IExtractionStep {
     extractionStepHasBeenInitialized: boolean;

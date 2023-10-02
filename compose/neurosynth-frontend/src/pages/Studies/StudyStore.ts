@@ -19,7 +19,7 @@ import {
 } from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import { v4 as uuid } from 'uuid';
-import { setAnalysesInAnnotationAsIncluded } from 'components/ExtractionComponents/Ingestion/helpers/utils';
+import { setAnalysesInAnnotationAsIncluded } from 'pages/helpers/utils';
 
 export type StudyStoreActions = {
     initStudyStore: (studyId?: string) => void;

@@ -1,4 +1,4 @@
-import { Box, Chip, Divider, Link, Typography } from '@mui/material';
+import { Box, Chip, Divider, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
@@ -21,14 +21,14 @@ const ReadOnlyStubSummaryVirtualizedItem: React.FC<
             style={{
                 ...style,
                 ...{
-                    height: '115px',
+                    height: '120px',
                     padding: '10px 10px',
                     marginLeft: '10px',
                     width: 'calc(100% - 30px)',
                 },
             }}
         >
-            <Box sx={{ height: '24px' }}>
+            <Box>
                 {neurostoreId && (
                     <Chip
                         component="a"
@@ -38,7 +38,7 @@ const ReadOnlyStubSummaryVirtualizedItem: React.FC<
                         color="primary"
                         variant="outlined"
                         href={`/base-studies/${neurostoreId}`}
-                        sx={{ marginRight: '10px' }}
+                        sx={{ marginRight: '10px', height: '24px' }}
                         label="view study in neurostore"
                         size="small"
                     />
@@ -52,7 +52,7 @@ const ReadOnlyStubSummaryVirtualizedItem: React.FC<
                         color="primary"
                         variant="outlined"
                         href={`${PUBMED_ARTICLE_URL_PREFIX}${pmid}`}
-                        sx={{ marginRight: '10px' }}
+                        sx={{ marginRight: '10px', height: '24px' }}
                         label="view study in pubmed"
                         size="small"
                     />
@@ -66,13 +66,13 @@ const ReadOnlyStubSummaryVirtualizedItem: React.FC<
                         color="primary"
                         variant="outlined"
                         href={articleLink}
-                        sx={{ marginRight: '10px' }}
+                        sx={{ marginRight: '10px', height: '24px' }}
                         label="view article link"
                         size="small"
                     />
                 )}
             </Box>
-            <Typography noWrap variant="body1">
+            <Typography sx={{ marginTop: '4px' }} noWrap variant="body1">
                 {titleText}
             </Typography>
             <Typography sx={{ color: doi ? 'initial' : 'warning.dark' }} noWrap variant="body2">

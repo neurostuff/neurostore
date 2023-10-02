@@ -9,12 +9,14 @@ import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPag
 import {
     useInitProjectStoreIfRequired,
     useProjectCurationIsPrisma,
+    useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectName,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import ProjectIsLoadingText from './ProjectIsLoadingText';
+import { useGetStudysetById } from 'hooks';
 
 const CurationPage: React.FC = (props) => {
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
@@ -26,11 +28,13 @@ const CurationPage: React.FC = (props) => {
 
     const isPrisma = useProjectCurationIsPrisma();
     const studysetId = useProjectExtractionStudysetId();
+    const annotationId = useProjectExtractionAnnotationId();
     const projectName = useProjectName();
     const { included, uncategorized } = useGetCurationSummary();
+    const { data: studyset } = useGetStudysetById(studysetId || '', false);
 
     const handleMoveToExtractionPhase = () => {
-        if (studysetId) {
+        if (studysetId && annotationId && (studyset?.studies?.length || 0) > 0) {
             history.push(`/projects/${projectId}/extraction`);
         } else {
             history.push(`/projects/${projectId}`, {

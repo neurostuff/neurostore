@@ -1,4 +1,3 @@
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, Chip, Divider, TableCell, TableRow, Typography } from '@mui/material';
 import { getType } from 'components/EditMetadata';
 import { sortMetadataArrayFn } from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
@@ -6,12 +5,11 @@ import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccord
 import NeurosynthTable, { getValue } from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import TextExpansion from 'components/TextExpansion/TextExpansion';
-import useGetFullText from 'hooks/external/useGetFullText';
-import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
 import { IStoreStudy } from 'pages/Studies/StudyStore.helpers';
 import { Optional } from 'utils/utilitytypes';
 import DisplayAnalyses from './DisplayAnalyses/DisplayAnalyses';
 import DisplayStudyStyles from './DisplayStudy.styles';
+import DisplayStudyChipLinks from './DisplayStudyChipLinks/DisplayStudyChipLinks';
 
 const DisplayStudy: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
     const {
@@ -25,13 +23,9 @@ const DisplayStudy: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
         metadata,
         analyses = [],
     } = props;
-    const { data: fullTextURL, isLoading, isError } = useGetFullText(name || '');
-
-    const hasFullText = !!fullTextURL && !isLoading && !isError;
-
     return (
         <Box>
-            <Box data-tour="StudyPage-1" sx={{ padding: '0 1rem' }}>
+            <Box data-tour="StudyPage-1">
                 <Box sx={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
                     <Typography sx={{ display: 'inline' }} variant="h6">
                         {id && (
@@ -48,45 +42,7 @@ const DisplayStudy: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
                 <Typography>{authors}</Typography>
                 <Box>
                     <Typography gutterBottom>{publication}</Typography>
-                    {hasFullText && (
-                        <Chip
-                            icon={<OpenInNewIcon />}
-                            color="primary"
-                            label="Full Text"
-                            component="a"
-                            href={fullTextURL}
-                            target="_blank"
-                            clickable
-                            sx={{ width: '200px', marginRight: '15px' }}
-                            variant="outlined"
-                        />
-                    )}
-                    {doi && (
-                        <Chip
-                            icon={<OpenInNewIcon />}
-                            color="primary"
-                            label={`DOI: ${doi}`}
-                            component="a"
-                            href={`https://doi.org/${doi}`}
-                            target="_blank"
-                            clickable
-                            sx={{ width: '200px', marginRight: '15px' }}
-                            variant="outlined"
-                        />
-                    )}
-                    {pmid && (
-                        <Chip
-                            icon={<OpenInNewIcon />}
-                            color="primary"
-                            label={`PubMed: ${pmid}`}
-                            component="a"
-                            href={`${PUBMED_ARTICLE_URL_PREFIX}${pmid}`}
-                            target="_blank"
-                            clickable
-                            sx={{ width: '200px' }}
-                            variant="outlined"
-                        />
-                    )}
+                    <DisplayStudyChipLinks studyName={name} pmid={pmid} doi={doi} />
                 </Box>
                 <TextExpansion
                     text={description || ''}
@@ -98,7 +54,7 @@ const DisplayStudy: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
                 />
             </Box>
             {metadata && (
-                <Box data-tour="StudyPage-2" sx={{ margin: '15px' }}>
+                <Box data-tour="StudyPage-2" sx={{ margin: '1rem 0' }}>
                     <NeurosynthAccordion
                         elevation={0}
                         expandIconColor={'primary.main'}
@@ -161,7 +117,6 @@ const DisplayStudy: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
                     sx={[
                         {
                             fontWeight: 'bold',
-                            padding: '0 16px',
                         },
                         DisplayStudyStyles.spaceBelow,
                     ]}
@@ -174,7 +129,7 @@ const DisplayStudy: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
                     </Box>
                 ) : (
                     <>
-                        <Box sx={{ marginBottom: '1rem', padding: '0 1rem' }}>
+                        <Box sx={{ marginBottom: '1rem' }}>
                             <Divider />
                             <DisplayAnalyses id={id} analyses={analyses} />
                         </Box>

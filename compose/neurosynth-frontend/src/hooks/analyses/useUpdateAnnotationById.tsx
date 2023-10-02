@@ -23,7 +23,7 @@ const useUpdateAnnotationById = (annotationId: string | undefined | null) => {
             ),
         {
             onSuccess: (res) => {
-                queryClient.invalidateQueries(['annotation', annotationId]);
+                queryClient.invalidateQueries(['annotations', annotationId]);
                 enqueueSnackbar('annotation updated successfully', { variant: 'success' });
             },
             onError: () => {

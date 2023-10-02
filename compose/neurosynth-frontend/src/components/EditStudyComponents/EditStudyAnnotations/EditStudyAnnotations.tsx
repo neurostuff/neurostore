@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
@@ -9,7 +9,7 @@ import { useProjectExtractionAnnotationId } from 'pages/Projects/ProjectPage/Pro
 import { useStudyAnalyses } from 'pages/Studies/StudyStore';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import AnnotationsHotTable from './AnnotationsHotTable/AnnotationsHotTable';
+import AnnotationsHotTable from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable';
 import {
     AnnotationNoteValue,
     NoteKeyType,
@@ -18,7 +18,9 @@ import {
     hotDataToAnnotationNotes,
     noteKeyArrToObj,
     noteKeyObjToArr,
-} from './helpers/utils';
+} from 'components/EditAnnotations/helpers/utils';
+import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
+import EditStudyComponentsStyles from 'components/EditStudyComponents/EditStudyComponents.styles';
 
 const hardCodedColumns = ['Analysis', 'Description'];
 
@@ -83,14 +85,12 @@ const EditStudyAnnotations: React.FC = (props) => {
         if (!annotationId) return;
 
         const { hotData, noteKeys } = hotTableDataUpdatesRef.current;
-
         const convertedAnnotationNotes = hotDataToAnnotationNotes(
             hotData,
             initialAnnotationHotState.hotDataToStudyMapping,
             noteKeys
         );
         const updatedNoteKeyObj = noteKeyArrToObj(noteKeys);
-
         const updatedAnnotationNotes = ((data?.notes || []) as NoteCollectionReturn[]).map(
             (annotationNote) => {
                 const foundAnnotationNote = convertedAnnotationNotes.find(
@@ -99,13 +99,9 @@ const EditStudyAnnotations: React.FC = (props) => {
                 // if we have not found it (i.e. the annotation is not part of the study annotations we are editing) then we just return a copy of the original.
                 // if we have found it, (i.e. the annotation is part of the study annotations we are editing) then we return the version we have edited
                 if (!foundAnnotationNote) {
-                    return {
-                        ...annotationNote,
-                    };
+                    return { ...annotationNote };
                 } else {
-                    return {
-                        ...foundAnnotationNote,
-                    };
+                    return { ...foundAnnotationNote };
                 }
             }
         );
@@ -143,29 +139,44 @@ const EditStudyAnnotations: React.FC = (props) => {
     );
 
     return (
-        <StateHandlerComponent isLoading={getAnnotationIsLoading} isError={isError}>
-            <Box>
-                <AnnotationsHotTable
-                    {...initialAnnotationHotState}
-                    hardCodedReadOnlyCols={hardCodedColumns}
-                    allowAddColumn={false}
-                    allowRemoveColumns={false}
-                    onChange={handleChange}
-                    size="9.5rem"
+        <NeurosynthAccordion
+            elevation={0}
+            expandIconColor="secondary.main"
+            sx={[
+                EditStudyComponentsStyles.accordion,
+                { borderTop: '1px solid', borderColor: 'secondary.main' },
+            ]}
+            accordionSummarySx={EditStudyComponentsStyles.accordionSummary}
+            TitleElement={
+                <Typography sx={EditStudyComponentsStyles.accordionTitle}>
+                    Study Annotations
+                </Typography>
+            }
+        >
+            <StateHandlerComponent isLoading={getAnnotationIsLoading} isError={isError}>
+                <Box>
+                    <AnnotationsHotTable
+                        {...initialAnnotationHotState}
+                        hardCodedReadOnlyCols={hardCodedColumns}
+                        allowAddColumn={false}
+                        allowRemoveColumns={false}
+                        onChange={handleChange}
+                        size="9.5rem"
+                    />
+                </Box>
+                <LoadingButton
+                    size="large"
+                    text="save"
+                    disabled={!annotationIsEdited}
+                    isLoading={updateAnnotationIsLoading}
+                    loaderColor="secondary"
+                    color="primary"
+                    variant="contained"
+                    sx={{ width: '300px', marginTop: '1rem' }}
+                    onClick={handleClickSave}
                 />
-            </Box>
-            <LoadingButton
-                size="large"
-                text="save"
-                disabled={!annotationIsEdited}
-                isLoading={updateAnnotationIsLoading}
-                loaderColor="secondary"
-                color="primary"
-                variant="contained"
-                sx={{ width: '300px', marginTop: '1rem' }}
-                onClick={handleClickSave}
-            />
-        </StateHandlerComponent>
+            </StateHandlerComponent>
+        </NeurosynthAccordion>
     );
 };
 

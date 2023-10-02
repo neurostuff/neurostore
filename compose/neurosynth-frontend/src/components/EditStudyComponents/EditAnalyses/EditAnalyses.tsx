@@ -6,6 +6,7 @@ import { useState } from 'react';
 import EditAnalysesList from './EditAnalysesList/EditAnalysesList';
 import EditAnalysis from './EditAnalysis/EditAnalysis';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
+import EditStudyComponentsStyles from 'components/EditStudyComponents/EditStudyComponents.styles';
 
 const EditAnalyses: React.FC = (props) => {
     const numAnalyses = useNumStudyAnalyses();
@@ -32,24 +33,12 @@ const EditAnalyses: React.FC = (props) => {
 
     return (
         <NeurosynthAccordion
-            defaultExpanded
             elevation={0}
             expandIconColor="secondary.main"
-            sx={{
-                border: '1px solid',
-                borderTop: 'none',
-                borderColor: 'secondary.main',
-                borderRadius: '0 !important',
-            }}
-            accordionSummarySx={{
-                ':hover': {
-                    backgroundColor: '#f2f2f2',
-                },
-            }}
+            sx={EditStudyComponentsStyles.accordion}
+            accordionSummarySx={EditStudyComponentsStyles.accordionSummary}
             TitleElement={
-                <Typography sx={{ fontWeight: 'bold', color: 'secondary.main' }}>
-                    Analyses
-                </Typography>
+                <Typography sx={EditStudyComponentsStyles.accordionTitle}>Details</Typography>
             }
         >
             <Box sx={{ width: '100%', margin: '0.5rem 0' }}>

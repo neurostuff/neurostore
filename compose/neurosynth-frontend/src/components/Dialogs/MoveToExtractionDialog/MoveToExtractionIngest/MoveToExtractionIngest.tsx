@@ -1,28 +1,71 @@
-import { Box, Typography, Link } from '@mui/material';
-import NavigationButtons, {
-    ENavigationButton,
-} from 'components/Buttons/NavigationButtons/NavigationButtons';
-import Ingestion from 'components/ExtractionComponents/Ingestion/Ingestion';
-import { useProjectId } from 'pages/Projects/ProjectPage/ProjectStore';
+import { Box, Button, Link, Typography } from '@mui/material';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
+import useIngest from 'hooks/studies/useIngest';
+import { BaseStudy, BaseStudyReturn } from 'neurostore-typescript-sdk';
+import {
+    useProjectCurationColumn,
+    useProjectExtractionAnnotationId,
+    useProjectExtractionStudysetId,
+    useProjectId,
+    useProjectNumCurationColumns,
+} from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
+import { selectBestVersionsForStudyset } from './helpers/utils';
+import { useUpdateStudyset } from 'hooks';
+import { setAnalysesInAnnotationAsIncluded } from 'pages/helpers/utils';
 
 const MoveToExtractionIngest: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
     onCloseDialog: () => void;
 }> = (props) => {
-    const [doIngestion, setDoIngestion] = useState(false);
     const projectId = useProjectId();
+    const annotationId = useProjectExtractionAnnotationId();
+    const studysetId = useProjectExtractionStudysetId();
+    const numColumns = useProjectNumCurationColumns();
+    const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
     const history = useHistory();
+    const { mutateAsync: asyncIngest } = useIngest();
+    const { mutateAsync: asyncUpdateStudyset } = useUpdateStudyset();
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleOnComplete = () => {
-        props.onCloseDialog();
-        history.push(`/projects/${projectId}/extraction`);
+    const handleIngestion = async () => {
+        if (!studysetId || !annotationId) return;
+
+        setIsLoading(true);
+        const includedStubs = curationIncludedStudies.stubStudies;
+
+        // the BE ingestion only checks for these three properties
+        const stubsToBaseStudies: Array<Pick<BaseStudy, 'name' | 'doi' | 'pmid'>> =
+            includedStubs.map((stub) => ({
+                name: stub.title,
+                doi: stub.doi,
+                pmid: stub.pmid,
+            }));
+
+        try {
+            const res = await asyncIngest(stubsToBaseStudies);
+            const returnedBaseStudies = res.data as Array<BaseStudyReturn>;
+
+            const selectedStudyIds = selectBestVersionsForStudyset(returnedBaseStudies);
+            await asyncUpdateStudyset({
+                studysetId: studysetId,
+                studyset: {
+                    studies: selectedStudyIds,
+                },
+            });
+
+            await setAnalysesInAnnotationAsIncluded(annotationId);
+
+            setIsLoading(false);
+            props.onCloseDialog();
+            history.push(`/projects/${projectId}/extraction`);
+        } catch (e) {
+            setIsLoading(false);
+            console.error(e);
+        }
     };
-
-    if (doIngestion) {
-        return <Ingestion onComplete={handleOnComplete} />;
-    }
 
     return (
         <Box>
@@ -53,12 +96,20 @@ const MoveToExtractionIngest: React.FC<{
             <Typography sx={{ marginBottom: '1rem' }} gutterBottom>
                 To get started, click "START INGESTION" below
             </Typography>
-            <NavigationButtons
-                nextButtonText="start ingestion"
-                prevButtonDisabled={true}
-                nextButtonStyle="contained"
-                onButtonClick={() => setDoIngestion(true)}
-            />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Button disabled size="large">
+                    BACK
+                </Button>
+                <LoadingButton
+                    size="large"
+                    loaderColor="secondary"
+                    sx={{ width: '175px' }}
+                    onClick={handleIngestion}
+                    isLoading={isLoading}
+                    variant="contained"
+                    text="START INGESTION"
+                />
+            </Box>
         </Box>
     );
 };
