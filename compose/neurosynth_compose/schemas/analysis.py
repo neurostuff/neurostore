@@ -1,4 +1,4 @@
-from marshmallow import fields, Schema, utils, post_load, post_dump
+from marshmallow import fields, Schema, utils, post_load, post_dump, pre_load
 
 
 # neurovault api base URL
@@ -202,6 +202,34 @@ class SpecificationSchema(BaseSchema):
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
+
+    @post_dump
+    def to_bool(self, data, **kwargs):
+        conditions = data.get("conditions", None)
+        if conditions:
+            output_conditions = conditions[:]
+            for i, cond in enumerate(conditions):
+                if cond.lower() == "true":
+                    output_conditions[i] = True
+                elif cond.lower() == "false":
+                    output_conditions[i] = False
+            data['conditions'] = conditions
+
+        return data
+
+    @pre_load
+    def to_string(self, data, **kwargs):
+        conditions = data.get("conditions", None)
+        if conditions:
+            output_conditions = conditions[:]
+            for i, cond in enumerate(conditions):
+                if cond is True:
+                    output_conditions[i] = 'true'
+                elif cond is False:
+                    output_conditions[i] = 'false'
+            data['conditions'] = output_conditions
+
+        return data
 
 
 class StudysetSchema(BaseSchema):
