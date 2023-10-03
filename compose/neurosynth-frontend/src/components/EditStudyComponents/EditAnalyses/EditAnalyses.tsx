@@ -34,6 +34,7 @@ const EditAnalyses: React.FC = (props) => {
     return (
         <NeurosynthAccordion
             elevation={0}
+            defaultExpanded
             expandIconColor="secondary.main"
             sx={EditStudyComponentsStyles.accordion}
             accordionSummarySx={EditStudyComponentsStyles.accordionSummary}

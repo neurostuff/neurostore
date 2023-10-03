@@ -28,7 +28,11 @@ const EditAnalysesListItem: React.FC<{
 
     return (
         <ListItem disablePadding divider>
-            <ListItemButton onClick={handleSelectAnalysis} selected={selected}>
+            <ListItemButton
+                sx={{ minHeight: '49px' }}
+                onClick={handleSelectAnalysis}
+                selected={selected}
+            >
                 <ListItemText
                     sx={{ wordBreak: 'break-word' }}
                     primary={analysis?.name || ''}

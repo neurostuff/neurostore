@@ -191,16 +191,11 @@ export const createColumns = (noteKeys: NoteKeyType[]) =>
         }),
     ] as ColumnSettings[];
 
-export const createColumnHeader = (
-    colKey: string,
-    colType: EPropertyType,
-    updateFunc?: (key: string) => void
-) => {
-    const allowRemove = updateFunc
+export const createColumnHeader = (colKey: string, colType: EPropertyType, canUpdate: boolean) => {
+    const allowRemove = canUpdate
         ? `<div style="width: 50px; display: flex; align-items: center; justify-content: center">
         ${renderToString(
             <Cancel
-                onClick={() => updateFunc(colKey)}
                 sx={{
                     width: '18px',
                     height: '18px',

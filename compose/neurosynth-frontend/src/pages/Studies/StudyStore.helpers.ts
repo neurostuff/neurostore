@@ -3,6 +3,7 @@ import {
     AnalysisReturn,
     ConditionRequest,
     ConditionReturn,
+    PointRequest,
     PointReturn,
     PointValue,
 } from 'neurostore-typescript-sdk';
@@ -223,6 +224,7 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
             points,
             pointSpace,
             pointStatistic,
+            username,
             ...analysisArgs
         }) => {
             const scrubbedConditions: ConditionRequest[] = conditions.map(
@@ -232,12 +234,13 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
                 })
             );
 
-            const scrubbedPoints: any[] = points.map(
+            const scrubbedPoints: PointRequest[] = points.map(
                 (
                     { isNew, created_at, updated_at, user, coordinates, value, ...pointArgs },
                     index
                 ) => ({
-                    ...pointArgs,
+                    analysis: pointArgs.analysis,
+                    image: pointArgs.image,
                     values: [
                         {
                             value: value,
@@ -250,7 +253,11 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
                 })
             );
             return {
-                ...analysisArgs,
+                name: analysisArgs.name,
+                images: analysisArgs.images,
+                description: analysisArgs.description,
+                study: analysisArgs.study,
+                weights: analysisArgs.weights,
                 conditions: scrubbedConditions,
                 points: scrubbedPoints,
                 id: isNew ? undefined : analysisArgs.id,

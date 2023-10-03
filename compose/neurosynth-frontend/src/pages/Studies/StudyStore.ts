@@ -40,7 +40,6 @@ export type StudyStoreActions = {
     createAnalysisPoints: (analysisId: string, points: IStorePoint[], index: number) => void;
     deleteAnalysisPoints: (analysisId: string, pointIds: string[]) => void;
     updateAnalysisPoints: (analysisId: string, points: IStorePoint[]) => void;
-    setIsValid: (isValid: boolean) => void;
 };
 
 type StudyStoreMetadata = {
@@ -143,15 +142,6 @@ const useStudyStore = create<
                         }));
                     }
                 },
-                setIsValid: (isValid) => {
-                    set((state) => ({
-                        ...state,
-                        storeMetadata: {
-                            ...state.storeMetadata,
-                            isValid: isValid,
-                        },
-                    }));
-                },
                 clearStudyStore: () => {
                     set((state) => ({
                         study: {
@@ -223,6 +213,7 @@ const useStudyStore = create<
                             analyses: storeAnalysesToStudyAnalyses(state.study.analyses),
                         });
 
+                        // this is in case we create new analyses - they are not included by default
                         if (annotationId) {
                             await setAnalysesInAnnotationAsIncluded(annotationId);
                         }
@@ -687,8 +678,8 @@ export const useStudyAnalysisPointStatistic = (analysisId?: string) =>
     });
 export const useNumStudyAnalyses = () => useStudyStore((state) => state.study.analyses.length);
 export const useStudyAnalyses = () => useStudyStore((state) => state.study.analyses);
-export const useIsValid = () => useStudyStore((state) => state.storeMetadata.isValid);
-export const useIsError = () => useStudyStore((state) => state.storeMetadata.isError);
+export const useStudyStoreIsValid = () => useStudyStore((state) => state.storeMetadata.isValid);
+export const useStudyStoreIsError = () => useStudyStore((state) => state.storeMetadata.isError);
 export const useStudyUser = () => useStudyStore((state) => state.study.user);
 
 // study action hooks
@@ -708,7 +699,6 @@ export const useDeleteConditionFromAnalysis = () =>
 export const useUpdateAnalysisPoints = () => useStudyStore((state) => state.updateAnalysisPoints);
 export const useCreateAnalysisPoints = () => useStudyStore((state) => state.createAnalysisPoints);
 export const useDeleteAnalysisPoints = () => useStudyStore((state) => state.deleteAnalysisPoints);
-export const useSetIsValid = () => useStudyStore((state) => state.setIsValid);
 export const useDeleteAnalysis = () => useStudyStore((state) => state.deleteAnalysis);
 export const useInitStudyStoreIfRequired = () => {
     const clearStudyStore = useClearStudyStore();

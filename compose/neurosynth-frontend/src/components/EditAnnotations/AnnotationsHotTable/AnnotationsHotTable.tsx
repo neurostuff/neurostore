@@ -11,13 +11,14 @@ import { AnnotationNoteValue, NoteKeyType } from '../helpers/utils';
 import { CellCoords } from 'handsontable';
 import React from 'react';
 import { createColumnHeader, createColumns } from '../helpers/utils';
+import AnnotationsHotTableStyles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable.styles';
 
 const hotSettings: HotTableProps = {
     fillHandle: false,
     licenseKey: 'non-commercial-and-evaluation',
     contextMenu: false,
     viewportRowRenderingOffset: 2,
-    viewportColumnRenderingOffset: 2,
+    viewportColumnRenderingOffset: 100, // we do not want column virtualization as it screws up the spreadsheet
     width: '100%',
     fixedColumnsStart: 2,
 };
@@ -41,6 +42,7 @@ const AnnotationsHotTable: React.FC<{
     noteKeys: NoteKeyType[];
     mergeCells: DetailedSettings[];
     hotColumns: ColumnSettings[];
+    stretchH?: 'all' | 'last' | '';
     size: string;
 }> = React.memo((props) => {
     const hotTableRef = useRef<HotTable>(null);
@@ -169,22 +171,24 @@ const AnnotationsHotTable: React.FC<{
     const handleAddHotColumn = (row: IMetadataRowModel) => {
         if (!hotTableRef.current?.hotInstance) return false;
 
-        if (hotStateRef.current.noteKeys.find((x) => x.key === row.metadataKey)) return false;
+        const trimmedKey = row.metadataKey.trim();
+
+        if (hotStateRef.current.noteKeys.find((x) => x.key === trimmedKey)) return false;
 
         const noteKeys = hotStateRef.current.noteKeys;
         const colHeaders = hotTableRef.current.hotInstance.getColHeader() as string[];
         const data = hotTableRef.current.hotInstance.getData() as AnnotationNoteValue[][];
 
-        noteKeys.unshift({ key: row.metadataKey, type: getType(row.metadataValue) });
+        noteKeys.unshift({ key: trimmedKey, type: getType(row.metadataValue) });
         const columns = createColumns(noteKeys);
 
         colHeaders.splice(
             2,
             0,
             createColumnHeader(
-                row.metadataKey,
+                trimmedKey,
                 getType(row.metadataValue),
-                props.allowRemoveColumns ? handleRemoveHotColumn : undefined
+                props.allowRemoveColumns || false
             )
         );
 
@@ -218,9 +222,7 @@ const AnnotationsHotTable: React.FC<{
             createColumnHeader(
                 col.key,
                 col.type,
-                props.allowRemoveColumns && col.key !== 'included'
-                    ? handleRemoveHotColumn
-                    : undefined
+                !!props.allowRemoveColumns && col.key !== 'included'
             )
         ),
     ];
@@ -230,13 +232,7 @@ const AnnotationsHotTable: React.FC<{
             {props.allowAddColumn && (
                 <Box
                     className="neurosynth-annotation-component"
-                    sx={{
-                        display: 'table',
-                        height: '100%',
-                        borderCollapse: 'separate',
-                        borderSpacing: '12px 0px',
-                        margin: '1rem 0 25px 0',
-                    }}
+                    sx={AnnotationsHotTableStyles.addMetadataRow}
                 >
                     <AddMetadataRow
                         keyPlaceholderText="New Annotation Key"
@@ -255,6 +251,7 @@ const AnnotationsHotTable: React.FC<{
                         afterChange={handleChangeOccurred}
                         ref={hotTableRef}
                         preventOverflow="horizontal"
+                        stretchH="all"
                         mergeCells={mergeCells}
                         colHeaders={initialHotColumnHeaders}
                         columns={hotColumns}

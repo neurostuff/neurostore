@@ -8,7 +8,6 @@ import { ColumnSettings } from 'handsontable/settings';
 import {
     useCreateAnalysisPoints,
     useDeleteAnalysisPoints,
-    useSetIsValid,
     useStudyAnalysisPoints,
     useUpdateAnalysisPoints,
 } from 'pages/Studies/StudyStore';
@@ -107,7 +106,6 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
     const updatePoints = useUpdateAnalysisPoints();
     const createPoint = useCreateAnalysisPoints();
     const deletePoints = useDeleteAnalysisPoints();
-    const setIsValid = useSetIsValid();
     const hotTableRef = useRef<HotTable>(null);
     const hotTableMetadata = useRef<{ insertRowsAbove: boolean; insertedRowsViaPaste: any[][] }>({
         insertRowsAbove: true,
@@ -117,12 +115,8 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
 
     // run every time points are updated to validate (in charge of highlighting the cells that are invalid)
     useEffect(() => {
-        const hasEmptyCoordinates = (points || []).some(({ x, y, z }) => {
-            return x === undefined || y === undefined || z === undefined;
-        });
-        setIsValid(!hasEmptyCoordinates);
         hotTableRef.current?.hotInstance?.validateCells();
-    }, [points, setIsValid]);
+    }, [points]);
 
     // run once initially to set the custom context menu
     useEffect(() => {
