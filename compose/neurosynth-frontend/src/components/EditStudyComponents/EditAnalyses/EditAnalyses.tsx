@@ -7,10 +7,12 @@ import EditAnalysesList from './EditAnalysesList/EditAnalysesList';
 import EditAnalysis from './EditAnalysis/EditAnalysis';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import EditStudyComponentsStyles from 'components/EditStudyComponents/EditStudyComponents.styles';
+import { useUpdateAnnotationNotes } from 'stores/AnnotationStore.actions';
 
 const EditAnalyses: React.FC = (props) => {
     const numAnalyses = useNumStudyAnalyses();
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
+    const updateAnnotationNotes = useCreateAnnotationNote();
     const [selectedAnalysisId, setSelectedAnalysisId] = useState<string>();
     const [createNewAnalysisDialogIsOpen, setCreateNewAnalysisDialogIsOpen] = useState(false);
 
@@ -21,6 +23,9 @@ const EditAnalyses: React.FC = (props) => {
             isNew: true,
             conditions: [],
         });
+
+        // CURRTODO: implement adding an annotation note when i create an analysis
+        updateAnnotationNotes();
     };
 
     const handleSelectAnalysis = (analysisId: string) => {

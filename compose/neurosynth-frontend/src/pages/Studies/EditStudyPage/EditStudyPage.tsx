@@ -72,9 +72,8 @@ const EditStudyPage: React.FC = (props) => {
     ]);
 
     const handleSave = async () => {
-        // CURRTODO: VALIDATE
-
-        // CURRTODO: I fucked up a studyset... i entered data that does not conform to the spec - i probably need to start testing again. Check prod to see what a successfull points request looks like because mine keep failing
+        // CURRTODO: VALIDATE that the studyset looks good
+        // validate that all analysis names are unique!
 
         if (!studyIsValid) {
             // currently isValid is only used for coordinates.
