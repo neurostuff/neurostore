@@ -38,7 +38,7 @@ const EditAnalyses: React.FC = (props) => {
             sx={EditStudyComponentsStyles.accordion}
             accordionSummarySx={EditStudyComponentsStyles.accordionSummary}
             TitleElement={
-                <Typography sx={EditStudyComponentsStyles.accordionTitle}>Details</Typography>
+                <Typography sx={EditStudyComponentsStyles.accordionTitle}>Analyses</Typography>
             }
         >
             <Box sx={{ width: '100%', margin: '0.5rem 0' }}>

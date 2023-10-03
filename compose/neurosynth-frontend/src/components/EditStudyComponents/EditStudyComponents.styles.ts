@@ -6,6 +6,7 @@ const EditStudyComponentsStyles: Style = {
         borderTop: 'none',
         borderColor: 'secondary.main',
         borderRadius: '0 !important',
+        margin: '0 !important',
     },
     accordionSummary: {
         ':hover': {

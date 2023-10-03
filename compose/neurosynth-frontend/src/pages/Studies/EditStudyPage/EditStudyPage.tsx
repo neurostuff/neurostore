@@ -1,13 +1,11 @@
-import { Box, Button } from '@mui/material';
+import { Box } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import DisplayStudyChipLinks from 'components/DisplayStudy/DisplayStudyChipLinks/DisplayStudyChipLinks';
 import EditAnalyses from 'components/EditStudyComponents/EditAnalyses/EditAnalyses';
+import StudyAnnotations from 'components/EditStudyComponents/EditStudyAnnotations/StudyAnnotations';
 import EditStudyDetails from 'components/EditStudyComponents/EditStudyDetails/EditStudyDetails';
+import EditStudyPageHeader from 'components/EditStudyComponents/EditStudyHeader/EditStudyHeader';
 import EditStudyMetadata from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
-import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatusButtons/FloatingStatusButtons';
-import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import useGetProjectById from 'hooks/projects/useGetProjectById';
 import { useSnackbar } from 'notistack';
 import {
     useInitProjectStoreIfRequired,
@@ -15,7 +13,7 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useEffect } from 'react';
 import { useQueryClient } from 'react-query';
-import { useHistory, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import {
     useClearStudyStore,
     useInitStudyStore,
@@ -24,15 +22,12 @@ import {
     useStudyHasBeenEdited,
     useStudyId,
     useStudyIsLoading,
-    useStudyName,
     useUpdateStudyInDB,
 } from '../StudyStore';
-import EditStudyAnnotations from 'components/EditStudyComponents/EditStudyAnnotations/EditStudyAnnotations';
 
 const EditStudyPage: React.FC = (props) => {
     const queryClient = useQueryClient();
     const { studyId, projectId } = useParams<{ projectId: string; studyId: string }>();
-    const { data: project } = useGetProjectById(projectId);
     const isValid = useIsValid();
     const isError = useIsError();
     const studyHasBeenEdited = useStudyHasBeenEdited();
@@ -41,8 +36,6 @@ const EditStudyPage: React.FC = (props) => {
     const updateStudyInDB = useUpdateStudyInDB();
     const annotationId = useProjectExtractionAnnotationId();
     const snackbar = useSnackbar();
-    const studyName = useStudyName();
-    const history = useHistory();
     const clearStudyStore = useClearStudyStore();
     const initStudyStore = useInitStudyStore();
 
@@ -82,12 +75,15 @@ const EditStudyPage: React.FC = (props) => {
     };
 
     return (
-        <StateHandlerComponent isError={false} isLoading={!storeStudyId && !isError}>
-            <EditStudyPage />
+        <StateHandlerComponent
+            disableShrink={false}
+            isError={false}
+            isLoading={!storeStudyId && !isError}
+        >
+            <EditStudyPageHeader />
 
-            <EditStudyAnnotations />
+            <StudyAnnotations />
             <EditStudyDetails />
-
             <EditStudyMetadata />
 
             <Box sx={{ marginBottom: '5rem' }}>
