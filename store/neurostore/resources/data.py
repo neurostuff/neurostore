@@ -1,9 +1,13 @@
+import string
+
 from flask import request
 from marshmallow import EXCLUDE
 from webargs.flaskparser import parser
 from webargs import fields
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import func
+
 
 from .utils import view_maker
 from .base import BaseView, ObjectView, ListView
@@ -216,7 +220,7 @@ class BaseStudiesView(ObjectView, ListView):
             filter_params = {
                 k: study_data.get(k)
                 for k in search_keys
-                if study_data.get(k) is not None
+                if study_data.get(k)
             }
             if "name" in filter_params and (set(filter_params) - {"name"}) != set():
                 del filter_params["name"]
@@ -393,7 +397,7 @@ class StudiesView(ObjectView, ListView):
             return record
 
         query = BaseStudy.query
-        has_doi = has_pmid = False
+        has_doi = has_pmid = has_name = False
         base_study = None
         if record.doi:
             query = query.filter_by(doi=record.doi)
@@ -401,20 +405,26 @@ class StudiesView(ObjectView, ListView):
         if record.pmid:
             query = query.filter_by(pmid=record.pmid)
             has_pmid = True
+        if record.name and not record.doi and not record.pmid:
+            name_search = func.regexp_replace(
+                record.name, r'[' + string.punctuation + ']', '', 'g'
+            )
+            query = query.filter(BaseStudy.name.ilike(f"%{name_search}%"))
+            has_name = True
 
-        if query.count() >= 1 and (has_doi or has_pmid):
+        if query.count() >= 1 and (has_doi or has_pmid or has_name):
             base_study = query.first()
         elif has_doi or has_pmid:
             base_study = BaseStudy(
                 name=record.name,
-                doi=record.doi,
+                doi=record.doi if record.doi else None,
                 pmid=record.pmid,
                 description=record.description,
                 publication=record.publication,
                 year=record.year,
-                level=record.level,
                 authors=record.authors,
                 metadata_=record.metadata_,
+                level=record.level if record.level else "group",
             )
         else:
             # there is no published study to associate
