@@ -1,4 +1,7 @@
+
+from collections import ChainMap
 import pathlib
+from operator import itemgetter
 
 import connexion
 from flask import abort, request, jsonify, current_app
@@ -13,6 +16,8 @@ from webargs import fields
 
 from ..database import db
 from ..models.analysis import (  # noqa E401
+    Condition,
+    SpecificationCondition,
     Studyset,
     Annotation,
     MetaAnalysis,
@@ -29,6 +34,8 @@ from ..models.analysis import (  # noqa E401
 from ..models.auth import User
 
 from ..schemas import (  # noqa E401
+    ConditionSchema,
+    SpecificationConditionSchema,
     MetaAnalysisSchema,
     AnnotationSchema,
     StudysetSchema,
@@ -87,6 +94,7 @@ def view_maker(cls):
 class BaseView(MethodView):
     _model = None
     _nested = {}
+    _attribute_name = None
 
     @classmethod
     def _external_request(cls, data, record, id):
@@ -110,6 +118,8 @@ class BaseView(MethodView):
 
         only_ids = set(data.keys()) - set(["id"]) == set()
 
+        if cls._model is Condition:
+            record = cls._model.query.filter_by(name=data.get('name')).first() or cls._model()
         if id is None:
             record = cls._model()
             record.user = current_user
@@ -137,29 +147,44 @@ class BaseView(MethodView):
         # check if external request updated the data already
         committed = cls._external_request(data, record, id)
 
+        # get nested attributes
+        nested_keys = [
+            item for key in cls._nested.keys()
+            for item in (key if isinstance(key, tuple) else (key,))
+        ]
+
         # Update all non-nested attributes
         if not committed:
             for k, v in data.items():
-                if k not in cls._nested and k not in ["id", "user"]:
+                if k not in nested_keys and k not in ["id", "user"]:
                     setattr(record, k, v)
 
             to_commit.append(record)
 
         # Update nested attributes recursively
         for field, res_name in cls._nested.items():
+            field = (field,) if not isinstance(field, tuple) else field
+            try:
+                rec_data = itemgetter(*field)(data)
+            except KeyError:
+                rec_data = None
+
             ResCls = globals()[res_name]
-            if data.get(field) is not None:
-                if isinstance(data.get(field), list):
+            if rec_data is not None:
+                if isinstance(rec_data, tuple):
+                    rec_data = [dict(ChainMap(*rc)) for rc in zip(*rec_data)]
+                if isinstance(rec_data, list):
                     nested = [
                         ResCls.update_or_create(rec, commit=False)
-                        for rec in data.get(field)
+                        for rec in rec_data
                     ]
                     to_commit.extend(nested)
                 else:
-                    nested = ResCls.update_or_create(data.get(field), commit=False)
+                    nested = ResCls.update_or_create(rec_data, commit=False)
                     to_commit.append(nested)
-
-                setattr(record, field, nested)
+                update_field = field if len(field) == 1 else (cls._attribute_name,)
+                for f in update_field:
+                    setattr(record, f, nested)
 
         if commit:
             db.session.add_all(to_commit)
@@ -374,7 +399,10 @@ class StudysetsView(ObjectView, ListView):
 
 @view_maker
 class SpecificationsView(ObjectView, ListView):
-    pass
+    _nested = {
+        ("conditions", "weights"): "SpecificationConditionsResource",
+    }
+    _attribute_name = "specification_conditions"
 
 
 @view_maker
@@ -385,6 +413,16 @@ class StudysetReferencesView(ObjectView, ListView):
 @view_maker
 class AnnotationReferencesResource(ObjectView):
     pass
+
+
+@view_maker
+class ConditionsResource(ObjectView):
+    pass
+
+
+@view_maker
+class SpecificationConditionsResource(ObjectView):
+    _nested = {"condition": "ConditionsResource"}
 
 
 @view_maker
