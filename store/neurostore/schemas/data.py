@@ -330,6 +330,7 @@ class StudySchema(BaseDataSchema):
         dump_only=True, metadata={"db_only": True}, allow_none=True
     )
     studysets = fields.Pluck("StudysetSchema", "_id", many=True, dump_only=True)
+    base_study = fields.Pluck("BaseStudySchema", "_id", dump_only=True, metadata={"db_only": True})
     has_coordinates = fields.Bool(dump_only=True)
     has_images = fields.Bool(dump_only=True)
     # studysets = fields.Nested(
