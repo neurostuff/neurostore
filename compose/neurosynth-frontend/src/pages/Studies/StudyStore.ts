@@ -28,7 +28,7 @@ export type StudyStoreActions = {
     updateStudyInDB: (annotationId: string | undefined) => Promise<void>;
     addOrUpdateStudyMetadataRow: (row: IMetadataRowModel) => void;
     deleteStudyMetadataRow: (key: string) => void;
-    addOrUpdateAnalysis: (analysis: Partial<IStoreAnalysis>) => void;
+    addOrUpdateAnalysis: (analysis: Partial<IStoreAnalysis>) => IStoreAnalysis;
     deleteAnalysis: (analysisId: string) => void;
     createCondition: (condition: IStoreCondition) => IStoreCondition;
     addOrUpdateConditionWeightPairForAnalysis: (
@@ -305,29 +305,37 @@ const useStudyStore = create<
                     });
                 },
                 addOrUpdateAnalysis: (analysis) => {
-                    set((state) => {
-                        const updatedAnalyses = [...state.study.analyses];
-                        const foundAnalysisIndex = updatedAnalyses.findIndex(
-                            (x) => (x.id || null) === (analysis.id || undefined)
-                        );
-                        if (foundAnalysisIndex < 0) {
-                            updatedAnalyses.unshift({
-                                ...analysis,
-                                isNew: true,
-                                conditions: [],
-                                weights: [],
-                                points: [],
-                                pointSpace: undefined,
-                                pointStatistic: undefined,
-                                id: uuid(), // this is a temporary ID until one is assigned via neurostore
-                            });
-                        } else {
-                            updatedAnalyses[foundAnalysisIndex] = {
-                                ...updatedAnalyses[foundAnalysisIndex],
-                                ...analysis,
-                            };
-                        }
+                    let createdOrUpdatedAnalysis: IStoreAnalysis;
 
+                    // we do this outside the set func here so that we can return the updated or created analysis
+                    const state = useStudyStore.getState();
+                    const updatedAnalyses = [...state.study.analyses];
+                    const foundAnalysisIndex = updatedAnalyses.findIndex(
+                        (x) => (x.id || null) === (analysis.id || undefined)
+                    );
+                    if (foundAnalysisIndex < 0) {
+                        const createdAnalysis: IStoreAnalysis = {
+                            ...analysis,
+                            isNew: true,
+                            conditions: [],
+                            weights: [],
+                            points: [],
+                            pointSpace: undefined,
+                            pointStatistic: undefined,
+                            id: uuid(), // this is a temporary ID until one is assigned via neurostore
+                        };
+                        createdOrUpdatedAnalysis = createdAnalysis;
+                        updatedAnalyses.unshift(createdAnalysis);
+                    } else {
+                        const editedAnalysis: IStoreAnalysis = {
+                            ...updatedAnalyses[foundAnalysisIndex],
+                            ...analysis,
+                        };
+                        createdOrUpdatedAnalysis = editedAnalysis;
+                        updatedAnalyses[foundAnalysisIndex] = editedAnalysis;
+                    }
+
+                    set((state) => {
                         return {
                             ...state,
                             study: {
@@ -340,6 +348,7 @@ const useStudyStore = create<
                             },
                         };
                     });
+                    return createdOrUpdatedAnalysis;
                 },
                 deleteAnalysis: (analysisId) => {
                     set((state) => {

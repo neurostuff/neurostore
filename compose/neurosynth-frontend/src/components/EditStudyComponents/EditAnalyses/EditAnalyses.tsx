@@ -1,31 +1,35 @@
 import { Add } from '@mui/icons-material';
 import { Box, Button, Divider, Typography } from '@mui/material';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
-import { useAddOrUpdateAnalysis, useNumStudyAnalyses } from 'pages/Studies/StudyStore';
+import { useAddOrUpdateAnalysis, useNumStudyAnalyses, useStudyId } from 'pages/Studies/StudyStore';
 import { useState } from 'react';
 import EditAnalysesList from './EditAnalysesList/EditAnalysesList';
 import EditAnalysis from './EditAnalysis/EditAnalysis';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import EditStudyComponentsStyles from 'components/EditStudyComponents/EditStudyComponents.styles';
-import { useUpdateAnnotationNotes } from 'stores/AnnotationStore.actions';
+import { useCreateAnnotationNote } from 'stores/AnnotationStore.actions';
 
 const EditAnalyses: React.FC = (props) => {
     const numAnalyses = useNumStudyAnalyses();
+    const studyId = useStudyId();
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
-    const updateAnnotationNotes = useCreateAnnotationNote();
+    const createAnnotationNote = useCreateAnnotationNote();
     const [selectedAnalysisId, setSelectedAnalysisId] = useState<string>();
     const [createNewAnalysisDialogIsOpen, setCreateNewAnalysisDialogIsOpen] = useState(false);
 
     const handleCreateNewAnalysis = (name: string, description: string) => {
-        addOrUpdateAnalysis({
+        if (!studyId) return;
+
+        const createdAnalysis = addOrUpdateAnalysis({
             name,
             description,
             isNew: true,
             conditions: [],
         });
 
-        // CURRTODO: implement adding an annotation note when i create an analysis
-        updateAnnotationNotes();
+        if (!createdAnalysis.id) return;
+
+        createAnnotationNote(createdAnalysis.id, studyId, name);
     };
 
     const handleSelectAnalysis = (analysisId: string) => {

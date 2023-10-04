@@ -1,6 +1,7 @@
 import { Box } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import EditAnalyses from 'components/EditStudyComponents/EditAnalyses/EditAnalyses';
+import EditStudyAnnotations from 'components/EditStudyComponents/EditStudyAnnotations/EditStudyAnnotations';
 import EditStudyDetails from 'components/EditStudyComponents/EditStudyDetails/EditStudyDetails';
 import EditStudyPageHeader from 'components/EditStudyComponents/EditStudyHeader/EditStudyHeader';
 import EditStudyMetadata from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
@@ -14,32 +15,33 @@ import { useEffect } from 'react';
 import { useQueryClient } from 'react-query';
 import { useParams } from 'react-router-dom';
 import {
-    useClearStudyStore,
-    useInitStudyStore,
-    useStudyStoreIsError,
-    useStudyStoreIsValid,
-    useStudyHasBeenEdited,
-    useStudyId,
-    useStudyIsLoading,
-    useUpdateStudyInDB,
-} from '../StudyStore';
-import EditStudyAnnotations from 'components/EditStudyComponents/EditStudyAnnotations/EditStudyAnnotations';
-import { useAnnotationIsEdited, useAnnotationIsLoading } from 'stores/AnnotationStore.getters';
-import {
     useClearAnnotationStore,
     useInitAnnotationStore,
     useUpdateAnnotationInDB,
 } from 'stores/AnnotationStore.actions';
+import { useAnnotationIsEdited, useAnnotationIsLoading } from 'stores/AnnotationStore.getters';
+import {
+    useClearStudyStore,
+    useInitStudyStore,
+    useStudyHasBeenEdited,
+    useStudyId,
+    useStudyIsLoading,
+    useStudyStoreIsError,
+    useUpdateStudyInDB,
+} from '../StudyStore';
 import EditStudyPageStyles from './EditStudyPage.styles';
 
+// const analysisNamesAreUnqiue = (): boolean => {
+
+// }
+
 const EditStudyPage: React.FC = (props) => {
-    const { studyId, projectId } = useParams<{ projectId: string; studyId: string }>();
+    const { studyId } = useParams<{ studyId: string }>();
     const queryClient = useQueryClient();
     const snackbar = useSnackbar();
 
     const annotationId = useProjectExtractionAnnotationId();
     // study stuff
-    const studyIsValid = useStudyStoreIsValid();
     const studyIsError = useStudyStoreIsError();
     const studyHasBeenEdited = useStudyHasBeenEdited();
     const storeStudyId = useStudyId();
@@ -74,6 +76,9 @@ const EditStudyPage: React.FC = (props) => {
     const handleSave = async () => {
         // CURRTODO: VALIDATE that the studyset looks good
         // validate that all analysis names are unique!
+        let studyIsValid = true;
+
+        // const hasUniqueAnalysisNames = analysisNamesAreUnqiue();
 
         if (!studyIsValid) {
             // currently isValid is only used for coordinates.

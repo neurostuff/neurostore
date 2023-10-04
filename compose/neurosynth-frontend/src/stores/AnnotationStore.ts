@@ -1,5 +1,5 @@
 import { AnnotationReturnOneOf1, NoteCollectionReturn } from 'neurostore-typescript-sdk';
-import { noteKeyObjToArr } from 'stores/AnnotationStore.helpers';
+import { noteKeyArrToDefaultNoteKeyObj, noteKeyObjToArr } from 'stores/AnnotationStore.helpers';
 import API from 'utils/api';
 import { create } from 'zustand';
 import {
@@ -7,7 +7,6 @@ import {
     AnnotationStoreMetadata,
     IStoreAnnotation,
 } from 'stores/AnnotationStore.types';
-import { noteKeyArrToObj } from 'components/EditAnnotations/helpers/utils';
 
 export const useAnnotationStore = create<
     {
@@ -32,6 +31,7 @@ export const useAnnotationStore = create<
             studyset: undefined,
             user: undefined,
             username: undefined,
+            isNew: false,
         },
         storeMetadata: {
             annotationIsEdited: false,
@@ -64,6 +64,7 @@ export const useAnnotationStore = create<
                         ...annotationRes,
                         notes: notes,
                         note_keys: [...noteKeysArr],
+                        isNew: false,
                     },
                     storeMetadata: {
                         ...state.storeMetadata,
@@ -112,6 +113,7 @@ export const useAnnotationStore = create<
                     studyset: undefined,
                     user: undefined,
                     username: undefined,
+                    isNew: false,
                 },
                 storeMetadata: {
                     annotationIsEdited: false,
@@ -129,16 +131,30 @@ export const useAnnotationStore = create<
                 },
             }));
         },
-        createAnnotationNote: (analysisName, analysisDescription) => {
-            // set((state) => ({
-            //     ...state,
-            //     annotation: {
-            //         ...state.annotation,
-            //         notes: [...state.annotation.notes, {
-            //             analysis: uuidV4()
-            //         }]
-            //     }
-            // }))
+        createAnnotationNote: (analysisId, studyId, analysisName) => {
+            set((state) => ({
+                ...state,
+                annotation: {
+                    ...state.annotation,
+                    notes: [
+                        ...state.annotation.notes,
+                        {
+                            study: studyId,
+                            study_name: '',
+                            study_year: null,
+                            publication: '',
+                            authors: '',
+                            analysis: analysisId,
+                            analysis_name: analysisName,
+                            annotation: state.annotation.id,
+                            note: {
+                                ...noteKeyArrToDefaultNoteKeyObj(state.annotation.note_keys),
+                                included: true,
+                            },
+                        },
+                    ],
+                },
+            }));
         },
         updateAnnotationInDB: async () => {
             try {

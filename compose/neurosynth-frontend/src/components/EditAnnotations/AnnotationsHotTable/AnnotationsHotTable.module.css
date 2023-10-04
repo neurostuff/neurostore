@@ -3,6 +3,12 @@
     color: black;
 }
 
+.no-wrap {
+    /* max-width: 100px !important; */
+    overflow-wrap: break-word !important;
+    white-space: pre-line !important;
+}
+
 .study-col {
     text-align: center !important;
     vertical-align: middle !important;

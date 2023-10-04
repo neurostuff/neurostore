@@ -1,14 +1,4 @@
 import { Box, Typography } from '@mui/material';
-import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
-import { ColumnSettings } from 'handsontable/settings';
-import { useGetAnnotationById, useUpdateAnnotationById } from 'hooks';
-import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
-import { useProjectExtractionAnnotationId } from 'pages/Projects/ProjectPage/ProjectStore';
-import { useStudyAnalyses } from 'pages/Studies/StudyStore';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
 import AnnotationsHotTable from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable';
 import {
     AnnotationNoteValue,
@@ -16,11 +6,18 @@ import {
     annotationNotesToHotData,
     createColumns,
     hotDataToAnnotationNotes,
-    noteKeyArrToObj,
-    noteKeyObjToArr,
 } from 'components/EditAnnotations/helpers/utils';
-import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import EditStudyComponentsStyles from 'components/EditStudyComponents/EditStudyComponents.styles';
+import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
+import { ColumnSettings } from 'handsontable/settings';
+import { useGetAnnotationById } from 'hooks';
+import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import { useProjectExtractionAnnotationId } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useStudyAnalyses } from 'pages/Studies/StudyStore';
+import { useCallback, useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import {
     useAnnotationNoteKeys,
     useSetAnnotationIsEdited,
@@ -56,20 +53,17 @@ const EditStudyAnnotations: React.FC = (props) => {
         mergeCells: [],
         size: '300px',
     });
+    // CURRTODO: i need to refactor this - give edit study annotations its own HotTable and make it robust to many rerenders
+    // this means using a setState and storing tabularData in the store
 
     useEffect(() => {
         if (annotation) {
-            // const { notes, note_keys } = annotation;
-
-            // const noteKeys = noteKeyObjToArr(note_keys);
-
-            const studyNotes = ((notes as NoteCollectionReturn[]) || []).filter(
+            const annotationNotesForStudy = ((notes as NoteCollectionReturn[]) || []).filter(
                 (x) => x.study === studyId
             );
-
             const { hotData, hotDataToStudyMapping } = annotationNotesToHotData(
                 noteKeys,
-                studyNotes,
+                annotationNotesForStudy,
                 (annotationNote) => {
                     const analysis = analyses.find((x) => x.id === annotationNote.analysis);
                     return [analysis?.name || '', analysis?.description || ''];
@@ -82,7 +76,7 @@ const EditStudyAnnotations: React.FC = (props) => {
                 hotColumns: createColumns(noteKeys),
                 hotData: hotData,
                 mergeCells: [],
-                size: `${(hotData.length + 1) * 25 > 400 ? 400 : (hotData.length + 1) * 25}px`,
+                size: `${(hotData.length + 1) * 35 > 400 ? 400 : (hotData.length + 1) * 35}px`,
             });
         }
     }, [studyId, analyses, annotation, notes, noteKeys]);
@@ -98,15 +92,15 @@ const EditStudyAnnotations: React.FC = (props) => {
             const updatedAnnotationNotes = (
                 (annotation?.notes || []) as NoteCollectionReturn[]
             ).map((annotationNote) => {
-                const annotationNoteWeEdited = convertedAnnotationNotes.find(
+                const annotationNoteEdited = convertedAnnotationNotes.find(
                     (x) => x.analysis === annotationNote.analysis
                 );
                 // if we have not found it (i.e. the annotation is not part of the study annotations we are editing) then we just return a copy of the original.
                 // if we have found it, (i.e. the annotation is part of the study annotations we are editing) then we return the version we have edited
-                if (!annotationNoteWeEdited) {
+                if (!annotationNoteEdited) {
                     return { ...annotationNote };
                 } else {
-                    return { ...annotationNoteWeEdited };
+                    return { ...annotationNoteEdited };
                 }
             });
 
@@ -142,6 +136,7 @@ const EditStudyAnnotations: React.FC = (props) => {
                         {...initialAnnotationHotState}
                         hardCodedReadOnlyCols={hardCodedColumns}
                         allowAddColumn={false}
+                        wordWrap={false}
                         allowRemoveColumns={false}
                         onChange={handleChange}
                     />

@@ -43,6 +43,7 @@ const AnnotationsHotTable: React.FC<{
     mergeCells: DetailedSettings[];
     hotColumns: ColumnSettings[];
     stretchH?: 'all' | 'last' | '';
+    wordWrap?: boolean;
     size: string;
 }> = React.memo((props) => {
     const hotTableRef = useRef<HotTable>(null);
@@ -250,6 +251,7 @@ const AnnotationsHotTable: React.FC<{
                         id="hot-annotations"
                         afterChange={handleChangeOccurred}
                         ref={hotTableRef}
+                        wordWrap={props.wordWrap || false}
                         preventOverflow="horizontal"
                         stretchH="all"
                         mergeCells={mergeCells}

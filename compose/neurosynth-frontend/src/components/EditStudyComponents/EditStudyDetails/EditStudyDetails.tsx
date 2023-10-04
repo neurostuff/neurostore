@@ -54,26 +54,30 @@ const EditStudyDetails: React.FC = React.memo((props) => {
             <Box sx={EditStudyComponentsStyles.accordionContentContainer}>
                 <TextField
                     label="name"
-                    sx={{ width: '100%', marginBottom: '1rem' }}
+                    size="small"
+                    sx={{ width: '100%', marginBottom: '0.75rem' }}
                     value={name || ''}
                     onChange={(event) => handleUpdate(event.target.value, 'name')}
                 />
                 <TextField
                     label="authors"
-                    sx={{ width: '100%', marginBottom: '1rem' }}
+                    size="small"
+                    sx={{ width: '100%', marginBottom: '0.75rem' }}
                     value={authors || ''}
                     onChange={(event) => handleUpdate(event.target.value, 'authors')}
                 />
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <TextField
                         label="pmid"
-                        sx={{ width: '49%', marginBottom: '1rem' }}
+                        size="small"
+                        sx={{ width: '49%', marginBottom: '0.75rem' }}
                         value={pmid || ''}
                         onChange={(event) => handleUpdate(event.target.value, 'pmid')}
                     />
                     <TextField
                         label="doi"
-                        sx={{ width: '49%' }}
+                        size="small"
+                        sx={{ width: '49%', marginBottom: '0.75rem' }}
                         value={doi || ''}
                         onChange={(event) => handleUpdate(event.target.value, 'doi')}
                     />
@@ -84,20 +88,23 @@ const EditStudyDetails: React.FC = React.memo((props) => {
                             event.preventDefault();
                         }}
                         label="year"
-                        sx={{ width: '49%', marginBottom: '1rem' }}
+                        size="small"
+                        sx={{ width: '49%', marginBottom: '0.75rem' }}
                         type="number"
                         value={year || ''}
                         onChange={(event) => handleUpdate(event.target.value, 'year')}
                     />
                     <TextField
                         label="journal"
-                        sx={{ width: '49%' }}
+                        size="small"
+                        sx={{ width: '49%', marginBottom: '0.75rem' }}
                         value={publication || ''}
                         onChange={(event) => handleUpdate(event.target.value, 'publication')}
                     />
                 </Box>
                 <TextField
                     label="description or abstract"
+                    size="small"
                     sx={{ width: '100%' }}
                     value={description || ''}
                     multiline

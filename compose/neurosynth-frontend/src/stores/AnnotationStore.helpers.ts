@@ -1,5 +1,6 @@
 import { NoteKeyType } from 'components/EditAnnotations/helpers/utils';
 import { EPropertyType } from 'components/EditMetadata';
+import { AnnotationNoteType } from 'stores/AnnotationStore.types';
 
 export const noteKeyObjToArr = (noteKeys?: object | null): NoteKeyType[] => {
     if (!noteKeys) return [];
@@ -9,4 +10,13 @@ export const noteKeyObjToArr = (noteKeys?: object | null): NoteKeyType[] => {
         type,
     }));
     return arr;
+};
+
+export const noteKeyArrToDefaultNoteKeyObj = (noteKeys: NoteKeyType[]): AnnotationNoteType => {
+    const x = noteKeys.reduce((acc, curr) => {
+        acc[curr.key] = null;
+        return acc;
+    }, {} as AnnotationNoteType);
+    console.log(x);
+    return x;
 };

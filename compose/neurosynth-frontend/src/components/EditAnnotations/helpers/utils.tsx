@@ -3,7 +3,7 @@ import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mergeCells';
 import { ColumnSettings } from 'handsontable/settings';
 import { numericValidator } from 'handsontable/validators';
-import styles from '../AnnotationsHotTable/AnnotationsHotTable.module.css';
+import styles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable.module.css';
 import { CellValue } from 'handsontable/common';
 import { renderToString } from 'react-dom/server';
 import Cancel from '@mui/icons-material/Cancel';
@@ -168,12 +168,12 @@ export const createColumns = (noteKeys: NoteKeyType[]) =>
         {
             className: `${styles['study-col']} ${styles['read-only-col']}`,
             readOnly: true,
-            width: '200',
+            width: '100',
         },
         {
             className: styles['read-only-col'],
             readOnly: true,
-            width: '150',
+            width: '100',
         },
         ...noteKeys.map((x) => {
             return {
