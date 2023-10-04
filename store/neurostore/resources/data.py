@@ -339,6 +339,7 @@ class StudiesView(ObjectView, ListView):
 
     def join_tables(self, q):
         "join relevant tables to speed up query"
+        q = q.options(joinedload("base_study"))
         q = q.options(joinedload("analyses"))
         return super().join_tables(q)
 
