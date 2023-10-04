@@ -1,4 +1,6 @@
 from .analysis import (
+    ConditionSchema,
+    SpecificationConditionSchema,
     MetaAnalysisSchema,
     MetaAnalysisResultSchema,
     NeurovaultCollectionSchema,
@@ -17,6 +19,8 @@ from .users import UserSchema
 
 
 __all__ = [
+    "ConditionSchema",
+    "SpecificationConditionSchema",
     "MetaAnalysisSchema",
     "MetaAnalysisResultSchema",
     "ResultInitSchema",

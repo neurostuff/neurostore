@@ -16,6 +16,8 @@ from .analysis import (
 from .auth import User
 
 __all__ = [
+    "Condition",
+    "SpecificationCondition",
     "Specification",
     "Studyset",
     "StudysetReference",
