@@ -1,5 +1,10 @@
 {
   "creators": [
+    {
+      "affiliation": "University of Texas at Austin",
+      "orcid": "0000-0002-4892-2659",
+      "name": "James Kent"
+    },
      {
       "affiliation": "University of Texas at Austin",
       "name": "Yarkoni, Tal",
@@ -10,6 +15,10 @@
       "name": "De La Vega, Alejandro",
       "orcid": "0000-0001-9062-3778"
     },
+    {
+      "affiliation": "McGill University",
+      "name": "Lee, Nicholas"
+    } 
   ],
   "keywords": [
     "neuroimaging",
