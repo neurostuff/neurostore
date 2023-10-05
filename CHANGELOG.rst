@@ -4,7 +4,7 @@ Changelog
 Version 0.2.1 (October, 5, 2023)
 --------------------------------
 
-Minor release, incorporate major bug fixes and recomendations from OHBM meeting.
+Minor release, incorporate major bug fixes and recommendations from OHBM meeting.
 
 * [FIX] unique already creates an index, unique made a repetitive index (#600) @jdkent
 * [ENH] add base_study attribute (#599) @jdkent
