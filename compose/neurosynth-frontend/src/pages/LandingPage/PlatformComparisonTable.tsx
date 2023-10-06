@@ -10,103 +10,166 @@ import {
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-
-const IsSupported: React.FC<{ isSupported: boolean; isStarred?: boolean }> = (props) => {
-    return (
-        <TableCell
-            sx={{ backgroundColor: props.isSupported ? 'green' : 'red', borderBottom: 'none' }}
-        >
-            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                {props.isSupported ? (
-                    <CheckCircleIcon fontSize="large" sx={{ color: 'primary.contrastText' }} />
-                ) : (
-                    <CancelIcon
-                        fontSize="large"
-                        sx={{
-                            color: 'primary.contrastText',
-                        }}
-                    />
-                )}
-                {props.isStarred && (
-                    <Box component="span" sx={{ color: 'white' }}>
-                        *
-                    </Box>
-                )}
-            </Box>
-        </TableCell>
-    );
-};
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
+import PlatformComparisonTableStyles from './PlatformComparisonTable.styles';
 
 const PlatformComparisonTable: React.FC = (props) => {
-    const platforms = {
-        compose: [
-            { isChecked: true, starred: false },
-            { isChecked: true, starred: false },
-            { isChecked: true, starred: false },
-            { isChecked: true, starred: true },
-            { isChecked: true, starred: false },
-            { isChecked: true, starred: true },
-        ],
-        neurosynth: [false, false, true, false, false, false],
-        neuroquery: [false, false, true, false, false, false],
-        brainmap: [true, true, false, true, false, false],
-        brainspell: [true, true, true, false, false, false],
-    };
-
     return (
         <>
-            <TableContainer elevation={5} component={Paper}>
+            <TableContainer>
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell>Platform/Database</TableCell>
-                            <TableCell>Editable Studies</TableCell>
-                            <TableCell>Filter/Select Studies</TableCell>
-                            <TableCell>Browser Based Workflow</TableCell>
-                            <TableCell>Volume Based Morphometry (VBM)</TableCell>
-                            <TableCell>Multiple fMRI Meta-Analysis Algorithms</TableCell>
-                            <TableCell>Image Based Meta-Analysis (IBMA)</TableCell>
+                            <TableCell sx={[PlatformComparisonTableStyles.cellRowHeader]}>
+                                Features
+                            </TableCell>
+                            <TableCell
+                                sx={[
+                                    PlatformComparisonTableStyles.cellColHeader,
+                                    { fontWeight: 'bold' },
+                                ]}
+                            >
+                                neurosynth compose
+                            </TableCell>
+                            <TableCell sx={PlatformComparisonTableStyles.cellColHeader}>
+                                neurosynth
+                            </TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        <TableRow>
-                            <TableCell sx={{ fontWeight: 'bold' }}>Neurosynth-Compose</TableCell>
-                            {platforms.compose.map((status, index) => (
-                                <IsSupported
-                                    key={index}
-                                    isSupported={status.isChecked}
-                                    isStarred={status.starred}
+                        <TableRow sx={{ backgroundColor: 'secondary.dark' }}>
+                            <TableCell sx={PlatformComparisonTableStyles.cellRowHeader}>
+                                Large study database
+                            </TableCell>
+                            <TableCell sx={PlatformComparisonTableStyles.cell}>
+                                <CheckIcon
+                                    sx={[
+                                        PlatformComparisonTableStyles.cellIcon,
+                                        { color: 'success.main' },
+                                    ]}
                                 />
-                            ))}
+                            </TableCell>
+                            <TableCell sx={PlatformComparisonTableStyles.cell}>
+                                <CheckIcon
+                                    sx={[
+                                        PlatformComparisonTableStyles.cellIcon,
+                                        { color: 'success.main' },
+                                    ]}
+                                />
+                            </TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell sx={{ fontWeight: 'bold' }}>Neurosynth</TableCell>
-                            {platforms.neurosynth.map((isChecked, index) => (
-                                <IsSupported key={index} isSupported={isChecked} />
-                            ))}
+                            <TableCell sx={PlatformComparisonTableStyles.cellRowHeader}>
+                                Browser based workflow
+                            </TableCell>
+                            <TableCell sx={PlatformComparisonTableStyles.cell}>
+                                <CheckIcon
+                                    sx={[
+                                        PlatformComparisonTableStyles.cellIcon,
+                                        { color: 'success.main' },
+                                    ]}
+                                />
+                            </TableCell>
+                            <TableCell sx={PlatformComparisonTableStyles.cell}>
+                                <CheckIcon
+                                    sx={[
+                                        PlatformComparisonTableStyles.cellIcon,
+                                        { color: 'success.main' },
+                                    ]}
+                                />
+                            </TableCell>
+                        </TableRow>
+                        <TableRow sx={{ backgroundColor: 'secondary.dark' }}>
+                            <TableCell sx={PlatformComparisonTableStyles.cellRowHeader}>
+                                Editable studies
+                            </TableCell>
+                            <TableCell sx={PlatformComparisonTableStyles.cell}>
+                                <CheckIcon
+                                    sx={[
+                                        PlatformComparisonTableStyles.cellIcon,
+                                        { color: 'success.main' },
+                                    ]}
+                                />
+                            </TableCell>
+                            <TableCell sx={PlatformComparisonTableStyles.cell}>
+                                <CloseIcon
+                                    sx={[
+                                        PlatformComparisonTableStyles.cellIcon,
+                                        { color: 'error.dark' },
+                                    ]}
+                                />
+                            </TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell sx={{ fontWeight: 'bold' }}>Neuroquery</TableCell>
-                            {platforms.neuroquery.map((isChecked, index) => (
-                                <IsSupported key={index} isSupported={isChecked} />
-                            ))}
+                            <TableCell sx={PlatformComparisonTableStyles.cellRowHeader}>
+                                Filterable/Selectable studies
+                            </TableCell>
+                            <TableCell sx={PlatformComparisonTableStyles.cell}>
+                                <CheckIcon
+                                    sx={[
+                                        PlatformComparisonTableStyles.cellIcon,
+                                        { color: 'success.main' },
+                                    ]}
+                                />
+                            </TableCell>
+                            <TableCell sx={PlatformComparisonTableStyles.cell}>
+                                <CloseIcon
+                                    sx={[
+                                        PlatformComparisonTableStyles.cellIcon,
+                                        { color: 'error.dark' },
+                                    ]}
+                                />
+                            </TableCell>
+                        </TableRow>
+                        <TableRow sx={{ backgroundColor: 'secondary.dark' }}>
+                            <TableCell sx={PlatformComparisonTableStyles.cellRowHeader}>
+                                Multiple fMRI Meta-Analysis Algorithms
+                            </TableCell>
+                            <TableCell sx={PlatformComparisonTableStyles.cell}>
+                                <CheckIcon
+                                    sx={[
+                                        PlatformComparisonTableStyles.cellIcon,
+                                        { color: 'success.main' },
+                                    ]}
+                                />
+                            </TableCell>
+                            <TableCell sx={PlatformComparisonTableStyles.cell}>
+                                <CloseIcon
+                                    sx={[
+                                        PlatformComparisonTableStyles.cellIcon,
+                                        { color: 'error.dark' },
+                                    ]}
+                                />
+                            </TableCell>
                         </TableRow>
                         <TableRow>
-                            <TableCell sx={{ fontWeight: 'bold' }}>Brainmap.org</TableCell>
-                            {platforms.brainmap.map((isChecked, index) => (
-                                <IsSupported key={index} isSupported={isChecked} />
-                            ))}
-                        </TableRow>
-                        <TableRow>
-                            <TableCell sx={{ fontWeight: 'bold' }}>Brainspell</TableCell>
-                            {platforms.brainspell.map((isChecked, index) => (
-                                <IsSupported key={index} isSupported={isChecked} />
-                            ))}
+                            <TableCell sx={PlatformComparisonTableStyles.cellRowHeader}>
+                                Image Based Meta-Analysis (IBMA)
+                            </TableCell>
+                            <TableCell sx={PlatformComparisonTableStyles.cell}>
+                                <CheckIcon
+                                    sx={[
+                                        PlatformComparisonTableStyles.cellIcon,
+                                        { color: 'success.main' },
+                                    ]}
+                                />
+                                *
+                            </TableCell>
+                            <TableCell sx={PlatformComparisonTableStyles.cell}>
+                                <CloseIcon
+                                    sx={[
+                                        PlatformComparisonTableStyles.cellIcon,
+                                        { color: 'error.dark' },
+                                    ]}
+                                />
+                            </TableCell>
                         </TableRow>
                     </TableBody>
                 </Table>
             </TableContainer>
-            <Box sx={{ marginTop: '10px', color: 'white', textAlign: 'end' }}>
+
+            <Box sx={{ marginTop: '2rem', color: 'white', textAlign: 'start' }}>
                 *On the roadmap to be implemented
             </Box>
         </>
