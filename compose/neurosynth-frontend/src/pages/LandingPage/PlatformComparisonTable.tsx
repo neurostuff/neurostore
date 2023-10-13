@@ -1,17 +1,14 @@
-import {
-    Paper,
-    TableContainer,
-    TableRow,
-    TableHead,
-    Table,
-    TableCell,
-    TableBody,
-    Box,
-} from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import {
+    Box,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+} from '@mui/material';
 import PlatformComparisonTableStyles from './PlatformComparisonTable.styles';
 
 const PlatformComparisonTable: React.FC = (props) => {

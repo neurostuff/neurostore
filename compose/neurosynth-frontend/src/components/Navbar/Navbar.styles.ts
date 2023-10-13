@@ -15,6 +15,10 @@ const NavbarStyles: Style = {
             xs: 'block',
             md: 'none',
         },
+        marginLeft: {
+            xs: '40px',
+            md: '0px',
+        },
     },
     mdUp: {
         display: {
@@ -41,11 +45,7 @@ const NavbarStyles: Style = {
         cursor: 'pointer',
     },
     logoText: {
-        fontSize: {
-            md: '0.75rem',
-            lg: '1rem',
-            xl: '1.25rem',
-        },
+        fontSize: '1.5rem',
     },
 };
 
