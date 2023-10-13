@@ -1,4 +1,6 @@
 from .analysis import (
+    ConditionsResource,
+    SpecificationConditionsResource,
     MetaAnalysesView,
     MetaAnalysisResultsView,
     NeurovaultCollectionsView,
@@ -6,7 +8,7 @@ from .analysis import (
     AnnotationsView,
     StudysetsView,
     SpecificationsView,
-    StudysetReferencesResource,
+    StudysetReferencesView,
     AnnotationReferencesResource,
     NeurostoreStudiesView,
     ProjectsView,
@@ -15,13 +17,15 @@ from .analysis import (
 from .users import UsersView
 
 __all__ = [
+    "ConditionsResource",
+    "SpecificationConditionsResource",
     "MetaAnalysesView",
     "MetaAnalysisResultsView",
     "NeurovaultCollectionsView",
     "NeurovaultFilesView",
     "AnnotationsView",
     "StudysetsView",
-    "StudysetReferencesResource",
+    "StudysetReferencesView",
     "AnnotationReferencesResource",
     "SpecificationsView",
     "UsersView",

@@ -1,4 +1,4 @@
-from marshmallow import fields, Schema, utils, post_load, post_dump
+from marshmallow import fields, Schema, utils, post_load, post_dump, pre_load
 
 
 # neurovault api base URL
@@ -122,6 +122,22 @@ class BaseSchema(Schema):
     username = fields.String(attribute="user.name", dump_only=True)
 
 
+class ConditionSchema(Schema):
+    id = PGSQLString()
+    created_at = fields.DateTime()
+    updated_at = fields.DateTime(allow_none=True)
+    name = PGSQLString()
+    description = PGSQLString()
+
+
+class SpecificationConditionSchema(Schema):
+    id = PGSQLString()
+    created_at = fields.DateTime()
+    updated_at = fields.DateTime(allow_none=True)
+    condition = fields.Pluck(ConditionSchema, "name")
+    weight = fields.Number()
+
+
 class EstimatorSchema(Schema):
     type = fields.String()
     args = fields.Dict()
@@ -129,6 +145,15 @@ class EstimatorSchema(Schema):
 
 class StudysetReferenceSchema(Schema):
     id = PGSQLString()
+    created_at = fields.DateTime()
+    updated_at = fields.DateTime(allow_none=True)
+    studysets = StringOrNested(
+        "StudysetSchema",
+        exclude=("snapshot",),
+        metadata={"pluck": "id"},
+        many=True,
+        dump_only=True
+    )
 
 
 class AnnotationReferenceSchema(Schema):
@@ -143,10 +168,68 @@ class SpecificationSchema(BaseSchema):
     contrast = PGSQLString(allow_none=True)
     filter = PGSQLString(allow_none=True)
     corrector = fields.Dict(allow_none=True)
+    _conditions = fields.Pluck(
+        SpecificationConditionSchema,
+        "condition",
+        many=True,
+        allow_none=True,
+        load_only=True,
+        attribute="conditions",
+        data_key="conditions",
+    )
+    conditions = fields.Pluck(
+        ConditionSchema,
+        "name",
+        many=True,
+        allow_none=True,
+        dump_only=True
+    )
+    weights = fields.List(
+        fields.Float(),
+        allow_none=True,
+        dump_only=True,
+    )
+    _weights = fields.Pluck(
+        SpecificationConditionSchema,
+        "weight",
+        many=True,
+        allow_none=True,
+        load_only=True,
+        data_key="weights",
+        attribute="weights",
+    )
 
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
+
+    @post_dump
+    def to_bool(self, data, **kwargs):
+        conditions = data.get("conditions", None)
+        if conditions:
+            output_conditions = conditions[:]
+            for i, cond in enumerate(conditions):
+                if cond.lower() == "true":
+                    output_conditions[i] = True
+                elif cond.lower() == "false":
+                    output_conditions[i] = False
+            data['conditions'] = conditions
+
+        return data
+
+    @pre_load
+    def to_string(self, data, **kwargs):
+        conditions = data.get("conditions", None)
+        if conditions:
+            output_conditions = conditions[:]
+            for i, cond in enumerate(conditions):
+                if cond is True:
+                    output_conditions[i] = 'true'
+                elif cond is False:
+                    output_conditions[i] = 'false'
+            data['conditions'] = output_conditions
+
+        return data
 
 
 class StudysetSchema(BaseSchema):
@@ -154,6 +237,7 @@ class StudysetSchema(BaseSchema):
     neurostore_id = fields.Pluck(
         StudysetReferenceSchema, "id", attribute="studyset_reference"
     )
+    version = fields.String(allow_none=True)
     url = fields.String(dump_only=True)
 
     @post_dump
