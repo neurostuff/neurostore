@@ -98,7 +98,7 @@ const NavToolbar: React.FC<INav> = (props) => {
                         target="_blank"
                         href="https://neurostuff.github.io/compose-docs/"
                     >
-                        HELP
+                        DOCS
                         <OpenInNewIcon sx={{ marginLeft: '8px', fontSize: '1.2rem' }} />
                     </Button>
                     <NeurosynthAvatar onLogout={props.onLogout} onLogin={props.onLogin} />

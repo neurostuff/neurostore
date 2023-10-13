@@ -117,7 +117,7 @@ const NavDrawer: React.FC<INav> = (props) => {
                             <ListItemIcon>
                                 <OpenInNewIcon />
                             </ListItemIcon>
-                            <ListItemText primary="HELP" sx={{ color: 'black' }} />
+                            <ListItemText primary="DOCS" sx={{ color: 'black' }} />
                         </Button>
                     </ListItem>
                     <ListItem>

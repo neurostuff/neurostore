@@ -45,7 +45,7 @@ describe('NavToolbar Component', () => {
         expect(screen.queryByTestId('PersonIcon')).not.toBeInTheDocument();
 
         expect(screen.queryByText('explore')).toBeInTheDocument();
-        expect(screen.queryByText('HELP')).toBeInTheDocument();
+        expect(screen.queryByText('DOCS')).toBeInTheDocument();
         expect(screen.queryByText('SIGN IN/SIGN UP')).toBeInTheDocument();
     });
 
@@ -65,7 +65,7 @@ describe('NavToolbar Component', () => {
         expect(screen.queryByText('new project')).toBeInTheDocument();
         expect(screen.queryByText('my projects')).toBeInTheDocument();
         expect(screen.queryByText('explore')).toBeInTheDocument();
-        expect(screen.queryByText('HELP')).toBeInTheDocument();
+        expect(screen.queryByText('DOCS')).toBeInTheDocument();
         expect(screen.getByTestId('PersonIcon')).toBeInTheDocument();
     });
 
