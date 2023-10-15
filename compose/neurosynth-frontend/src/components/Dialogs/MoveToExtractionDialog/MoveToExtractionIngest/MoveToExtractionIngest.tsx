@@ -89,10 +89,6 @@ const MoveToExtractionIngest: React.FC<{
                 the database, you will have the option of either <b>creating a brand new study</b>{' '}
                 or <b>adding the existing neurostore study to your studyset</b>.
             </Typography>
-            <Typography gutterBottom color="secondary">
-                We recommend using the existing neurostore study as that will often have
-                automatically extracted data available which may save you some time.
-            </Typography>
             <Typography sx={{ marginBottom: '1rem' }} gutterBottom>
                 To get started, click "START INGESTION" below
             </Typography>

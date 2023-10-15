@@ -8,7 +8,7 @@ import { registerAllModules } from 'handsontable/registry';
 import { ColumnSettings } from 'handsontable/settings';
 import { numericValidator } from 'handsontable/validators';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AnnotationNoteValue, NoteKeyType } from '../helpers/utils';
+import { AnnotationNoteValue, NoteKeyType } from 'components/HotTables/helpers/utils';
 
 const booleanValidator = (value: CellValue, callback: (isValid: boolean) => void) => {
     const isValid =

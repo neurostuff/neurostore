@@ -80,13 +80,6 @@ const CurationPage: React.FC = (props) => {
                         <ProjectIsLoadingText />
                     </Box>
                     <Box sx={{ marginRight: '1rem' }}>
-                        <Button
-                            variant="outlined"
-                            sx={{ marginRight: '1rem' }}
-                            onClick={() => history.push(`/projects/${projectId}/curation/import`)}
-                        >
-                            import studies
-                        </Button>
                         {isPrisma && (
                             <>
                                 <PrismaDialog
@@ -96,18 +89,27 @@ const CurationPage: React.FC = (props) => {
                                 <Button
                                     onClick={() => setPrismaIsOpen(true)}
                                     variant="outlined"
-                                    sx={{ marginRight: '1rem' }}
+                                    sx={{ marginRight: '1rem', width: '234px' }}
                                     endIcon={<SchemaIcon />}
                                 >
                                     PRISMA diagram
                                 </Button>
                             </>
                         )}
+                        <Button
+                            variant="contained"
+                            disableElevation
+                            sx={{ marginRight: '1rem', width: '234px' }}
+                            onClick={() => history.push(`/projects/${projectId}/curation/import`)}
+                        >
+                            import studies
+                        </Button>
                         {canMoveToExtractionPhase && (
                             <Button
                                 onClick={handleMoveToExtractionPhase}
                                 variant="contained"
                                 color="success"
+                                sx={{ width: '234px' }}
                                 disableElevation
                             >
                                 Move To Extraction Phase

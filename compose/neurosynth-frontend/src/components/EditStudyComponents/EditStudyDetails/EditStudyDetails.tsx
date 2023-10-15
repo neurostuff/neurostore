@@ -40,7 +40,10 @@ const EditStudyDetails: React.FC = React.memo((props) => {
         <NeurosynthAccordion
             elevation={0}
             expandIconColor="secondary.main"
-            sx={EditStudyComponentsStyles.accordion}
+            sx={[
+                EditStudyComponentsStyles.accordion,
+                { borderTop: '1px solid', borderColor: 'secondary.main' },
+            ]}
             accordionSummarySx={EditStudyComponentsStyles.accordionSummary}
             TitleElement={
                 <>

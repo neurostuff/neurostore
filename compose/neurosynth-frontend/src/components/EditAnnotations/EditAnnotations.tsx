@@ -5,7 +5,7 @@ import { ColumnSettings } from 'handsontable/settings';
 import { useGetAnnotationById, useUpdateAnnotationById } from 'hooks';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import AnnotationsHotTable from './AnnotationsHotTable/AnnotationsHotTable';
+import AnnotationsHotTable from 'components/HotTables/AnnotationsHotTable/AnnotationsHotTable';
 import {
     AnnotationNoteValue,
     NoteKeyType,
@@ -15,7 +15,7 @@ import {
     hotDataToAnnotationNotes,
     noteKeyArrToObj,
     noteKeyObjToArr,
-} from './helpers/utils';
+} from '../HotTables/helpers/utils';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useSnackbar } from 'notistack';
 
@@ -149,6 +149,7 @@ const EditAnnotations: React.FC<{ annotationId: string }> = (props) => {
                 hardCodedReadOnlyCols={hardCodedColumns}
                 allowRemoveColumns
                 onChange={handleChange}
+                wordWrap={true}
                 size="fitToPage"
             />
             <LoadingButton

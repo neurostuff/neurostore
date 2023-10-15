@@ -122,9 +122,9 @@ const EditStudyPage: React.FC = (props) => {
             isLoading={!storeStudyId && !studyIsError}
         >
             <EditStudyPageHeader />
-            <EditStudyAnnotations />
             <EditStudyDetails />
             <EditStudyMetadata />
+            <EditStudyAnnotations />
             <Box sx={{ marginBottom: '5rem' }}>
                 <EditAnalyses />
             </Box>

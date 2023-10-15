@@ -53,7 +53,8 @@ const EditAnalysisPointSpaceAndStatistic: React.FC<{ analysisId?: string }> = (p
                 margin: '1rem 0',
                 display: 'flex',
                 justifyContent: 'space-between',
-                width: '550px',
+                width: '100%',
+                maxWidth: '550px',
             }}
         >
             <FormControl sx={{ width: '250px' }} size="small" fullWidth>

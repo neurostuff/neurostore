@@ -4,8 +4,9 @@ import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/Confirmati
 import DisplayAnalysisWarnings from 'components/DisplayStudy/DisplayAnalyses/DisplayAnalysisWarnings/DisplayAnalysisWarnings';
 import { useDeleteAnalysis } from 'pages/Studies/StudyStore';
 import { useState } from 'react';
-import EditAnalysisDetails from '../EditAnalysisDetails/EditAnalysisDetails';
-import EditAnalysisPoints from '../EditAnalysisPoints/EditAnalysisPoints';
+import EditAnalysisDetails from 'components/EditStudyComponents/EditAnalyses/EditAnalysisDetails/EditAnalysisDetails';
+import EditAnalysisPoints from 'components/HotTables/EditAnalysisPointsHotTable/EditAnalysisPoints';
+import EditAnalysisPointSpaceAndStatistic from 'components/EditStudyComponents/EditAnalyses/EditAnalysisPoints/EditAnalysisPointSpaceAndStatistic/EditAnalysisPointSpaceAndStatistic';
 
 const EditAnalysis: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void }> = (props) => {
     const deleteAnalysis = useDeleteAnalysis();
@@ -46,6 +47,7 @@ const EditAnalysis: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void
                         <HelpIcon color="primary" />
                     </Tooltip>
                 </Box>
+                <EditAnalysisPointSpaceAndStatistic analysisId={props.analysisId} />
                 <EditAnalysisPoints analysisId={props.analysisId} />
             </Box>
             {/* TODO: This can be added back later when we have a better understanding of where it fits in as currently, all meta-analysis algorithms do not use this */}

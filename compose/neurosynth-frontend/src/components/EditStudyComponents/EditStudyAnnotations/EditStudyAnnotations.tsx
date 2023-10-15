@@ -1,12 +1,12 @@
 import { Box, Typography } from '@mui/material';
-import AnnotationsHotTable from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable';
+import AnnotationsHotTable from 'components/HotTables/AnnotationsHotTable/AnnotationsHotTable';
 import {
     AnnotationNoteValue,
     NoteKeyType,
     annotationNotesToHotData,
     createColumns,
     hotDataToAnnotationNotes,
-} from 'components/EditAnnotations/helpers/utils';
+} from 'components/HotTables/helpers/utils';
 import EditStudyComponentsStyles from 'components/EditStudyComponents/EditStudyComponents.styles';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
@@ -24,6 +24,7 @@ import {
     useUpdateAnnotationNotes,
 } from 'stores/AnnotationStore.actions';
 import { useAnnotationNotes } from 'stores/AnnotationStore.getters';
+import EditStudyAnnotationsHotTable from 'components/HotTables/EditStudyAnnotationsHotTable/EditStudyAnnotationsHotTable';
 
 const hardCodedColumns = ['Analysis', 'Description'];
 
@@ -118,11 +119,9 @@ const EditStudyAnnotations: React.FC = (props) => {
     return (
         <NeurosynthAccordion
             elevation={0}
+            defaultExpanded
             expandIconColor="secondary.main"
-            sx={[
-                EditStudyComponentsStyles.accordion,
-                { borderTop: '1px solid', borderColor: 'secondary.main' },
-            ]}
+            sx={EditStudyComponentsStyles.accordion}
             accordionSummarySx={EditStudyComponentsStyles.accordionSummary}
             TitleElement={
                 <Typography sx={EditStudyComponentsStyles.accordionTitle}>
@@ -132,6 +131,7 @@ const EditStudyAnnotations: React.FC = (props) => {
         >
             <Box sx={{ height: initialAnnotationHotState.size, padding: '1rem 0' }}>
                 <StateHandlerComponent isLoading={isLoading} isError={isError}>
+                    <EditStudyAnnotationsHotTable />
                     <AnnotationsHotTable
                         {...initialAnnotationHotState}
                         hardCodedReadOnlyCols={hardCodedColumns}

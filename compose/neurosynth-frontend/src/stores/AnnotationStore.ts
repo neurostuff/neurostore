@@ -16,9 +16,8 @@ export const useAnnotationStore = create<
 >()((set) => {
     return {
         annotation: {
-            tabularData: [],
-            notes: [],
-            note_keys: [],
+            notes: [], // for each analysis across all studies, along with the specific values for a given column (i.e. note)
+            note_keys: [], // all columns
             created_at: undefined,
             updated_at: undefined,
             description: undefined,

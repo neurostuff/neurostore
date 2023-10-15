@@ -1,4 +1,4 @@
-import { NoteKeyType } from 'components/EditAnnotations/helpers/utils';
+import { NoteKeyType } from 'components/HotTables/helpers/utils';
 import { AnnotationReturnOneOf1, NoteCollectionReturn } from 'neurostore-typescript-sdk';
 
 export type AnnotationStoreMetadata = {

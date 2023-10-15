@@ -148,11 +148,12 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                                 <Box
                                                     sx={ProjectComponentsStyles.statusIconContainer}
                                                 >
-                                                    <CheckIcon
-                                                        sx={ExtractionStepStyles.checkIcon}
+                                                    <QuestionMarkIcon
+                                                        sx={ExtractionStepStyles.uncategorizedIcon}
                                                     />
-                                                    <Typography sx={{ color: 'success.main' }}>
-                                                        {extractionSummary.completed} completed
+                                                    <Typography sx={{ color: 'warning.dark' }}>
+                                                        {extractionSummary.uncategorized}{' '}
+                                                        uncategorized
                                                     </Typography>
                                                 </Box>
                                                 <Box
@@ -169,12 +170,11 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                                 <Box
                                                     sx={ProjectComponentsStyles.statusIconContainer}
                                                 >
-                                                    <QuestionMarkIcon
-                                                        sx={ExtractionStepStyles.uncategorizedIcon}
+                                                    <CheckIcon
+                                                        sx={ExtractionStepStyles.checkIcon}
                                                     />
-                                                    <Typography sx={{ color: 'warning.dark' }}>
-                                                        {extractionSummary.uncategorized}{' '}
-                                                        uncategorized
+                                                    <Typography sx={{ color: 'success.main' }}>
+                                                        {extractionSummary.completed} completed
                                                     </Typography>
                                                 </Box>
                                             </Box>

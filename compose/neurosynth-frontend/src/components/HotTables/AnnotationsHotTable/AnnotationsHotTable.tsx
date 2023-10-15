@@ -11,7 +11,7 @@ import { AnnotationNoteValue, NoteKeyType } from '../helpers/utils';
 import { CellCoords } from 'handsontable';
 import React from 'react';
 import { createColumnHeader, createColumns } from '../helpers/utils';
-import AnnotationsHotTableStyles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable.styles';
+import AnnotationsHotTableStyles from 'components/HotTables/AnnotationsHotTable/AnnotationsHotTable.styles';
 
 const hotSettings: HotTableProps = {
     fillHandle: false,

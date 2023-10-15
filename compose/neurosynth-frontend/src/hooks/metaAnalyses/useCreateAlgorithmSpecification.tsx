@@ -73,7 +73,6 @@ const useCreateAlgorithmSpecification = () => {
                     args: estimatorArgs,
                 },
                 mask: '', // TODO: handle these cases
-                contrast: '', // TODO: handle these cases
                 transformer: '', // TODO: handle these cases
                 corrector: corrector
                     ? {

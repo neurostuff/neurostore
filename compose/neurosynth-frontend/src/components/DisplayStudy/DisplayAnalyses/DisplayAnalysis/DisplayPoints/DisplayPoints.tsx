@@ -1,7 +1,7 @@
 import { HotTable } from '@handsontable/react';
 import { Box, Typography } from '@mui/material';
 import { registerAllModules } from 'handsontable/registry';
-import styles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable.module.css';
+import styles from 'components/HotTables/AnnotationsHotTable/AnnotationsHotTable.module.css';
 import { IStorePoint, MapOrSpaceType } from 'pages/Studies/StudyStore.helpers';
 import { useEffect, useRef } from 'react';
 
@@ -44,6 +44,8 @@ const DisplayPoints: React.FC<{
         };
     }, []);
 
+    console.log(hotData.length);
+
     return (
         <Box sx={{ width: '100%' }}>
             <Typography sx={{ fontWeight: 'bold', marginBottom: '0.5rem' }} gutterBottom>
@@ -79,7 +81,7 @@ const DisplayPoints: React.FC<{
                         No coordinates have been added yet
                     </Typography>
                 ) : (
-                    <div style={{ width: '100%' }}>
+                    <div style={{ width: '100%', height: '100%' }}>
                         <HotTable
                             ref={hotTableRef}
                             data={hotData}
@@ -105,7 +107,6 @@ const DisplayPoints: React.FC<{
                                 },
                             ]}
                             colHeaders={['X', 'Y', 'Z', 'Value', 'Cluster Size (mm^3)', 'Subpeak?']}
-                            preventOverflow={true}
                             stretchH="all"
                             width="100%"
                             licenseKey="non-commercial-and-evaluation"
