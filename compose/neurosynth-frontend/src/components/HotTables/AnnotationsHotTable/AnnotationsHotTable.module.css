@@ -16,16 +16,20 @@
 
 .boolean {
     color: green !important;
+    text-align: center !important;
 }
 
 .string {
     color: orange !important;
+    text-align: center !important;
 }
 
 .number {
     color: blue !important;
+    text-align: center !important;
 }
 
 .null {
     color: gray !important;
+    text-align: center !important;
 }

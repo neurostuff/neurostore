@@ -19,3 +19,6 @@ export const useUpdateAnnotationInDB = () =>
 
 export const useCreateAnnotationNote = () =>
     useAnnotationStore((state) => state.createAnnotationNote);
+
+export const useDeleteAnnotationNote = () =>
+    useAnnotationStore((state) => state.deleteAnnotationNote);

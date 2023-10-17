@@ -18,11 +18,17 @@ import {
     useClearAnnotationStore,
     useInitAnnotationStore,
     useUpdateAnnotationInDB,
+    useUpdateAnnotationNotes,
 } from 'stores/AnnotationStore.actions';
-import { useAnnotationIsEdited, useAnnotationIsLoading } from 'stores/AnnotationStore.getters';
+import {
+    useAnnotationIsEdited,
+    useAnnotationIsLoading,
+    useAnnotationNotes,
+} from 'stores/AnnotationStore.getters';
 import {
     useClearStudyStore,
     useInitStudyStore,
+    useStudyAnalyses,
     useStudyHasBeenEdited,
     useStudyId,
     useStudyIsLoading,
@@ -30,15 +36,14 @@ import {
     useUpdateStudyInDB,
 } from '../StudyStore';
 import EditStudyPageStyles from './EditStudyPage.styles';
-
-// const analysisNamesAreUnqiue = (): boolean => {
-
-// }
+import { hasDuplicateStudyAnalysisNames, hasEmptyStudyPoints } from './EditStudyPage.helpers';
+import { AnalysisReturn } from 'neurostore-typescript-sdk';
 
 const EditStudyPage: React.FC = (props) => {
     const { studyId } = useParams<{ studyId: string }>();
     const queryClient = useQueryClient();
     const snackbar = useSnackbar();
+    const analyses = useStudyAnalyses();
 
     const annotationId = useProjectExtractionAnnotationId();
     // study stuff
@@ -51,7 +56,9 @@ const EditStudyPage: React.FC = (props) => {
     const initStudyStore = useInitStudyStore();
     // annotation stuff
     const clearAnnotationStore = useClearAnnotationStore();
+    const notes = useAnnotationNotes();
     const initAnnotationStore = useInitAnnotationStore();
+    const updateAnnotationNotes = useUpdateAnnotationNotes();
     const updateAnnotationInDB = useUpdateAnnotationInDB();
     const annotationIsEdited = useAnnotationIsEdited();
     const annotationIsLoading = useAnnotationIsLoading();
@@ -73,46 +80,73 @@ const EditStudyPage: React.FC = (props) => {
         studyId,
     ]);
 
-    const handleSave = async () => {
-        // CURRTODO: VALIDATE that the studyset looks good
-        // validate that all analysis names are unique!
-        let studyIsValid = true;
+    const handleUpdateStudyInDB = async () => {
+        await updateStudyInDB(annotationId as string);
+        queryClient.invalidateQueries('studies');
+        queryClient.invalidateQueries('annotations');
+    };
 
-        // const hasUniqueAnalysisNames = analysisNamesAreUnqiue();
+    const handleUpdateBothInDB = async () => {
+        const updatedStudy = await updateStudyInDB(annotationId as string);
+        const updatedNotes = [...(notes || [])];
+        updatedNotes.forEach((note, index) => {
+            if (note.isNew) {
+                const foundAnalysis = ((updatedStudy.analyses || []) as AnalysisReturn[]).find(
+                    (analysis) => analysis.name === note.analysis_name
+                );
+                if (!foundAnalysis) return;
 
-        if (!studyIsValid) {
-            // currently isValid is only used for coordinates.
-            // If we want to check validity for multiple things in the future, we may have to create multiple isValid flags
-            snackbar.enqueueSnackbar(
-                'A valid analysis needs to have values for statistic, space, and coordinates',
-                { variant: 'warning' }
-            );
-            return;
-        }
+                updatedNotes[index] = {
+                    ...updatedNotes[index],
+                    analysis: foundAnalysis.id,
+                };
+            }
+        });
+        updateAnnotationNotes(updatedNotes);
+        await updateAnnotationInDB();
 
+        queryClient.invalidateQueries('studies');
+        queryClient.invalidateQueries('annotations');
+    };
+
+    const handleUpdateAnnotationInDB = async () => {
+        await updateAnnotationInDB();
+        queryClient.invalidateQueries('annotations');
+    };
+
+    const handleUpdateDB = () => {
         try {
-            let updatedOccurred = false;
-
-            if (annotationIsEdited) {
-                updatedOccurred = true;
-                await updateAnnotationInDB();
-            }
-            if (studyHasBeenEdited) {
-                updatedOccurred = true;
-                await updateStudyInDB(annotationId as string);
-                queryClient.invalidateQueries('studies');
-            }
-
-            if (updatedOccurred) {
-                snackbar.enqueueSnackbar('study saved successfully', { variant: 'success' });
-                queryClient.invalidateQueries('annotations'); // if analyses are updated, we need to do a request to get new annotations
+            if (studyHasBeenEdited && annotationIsEdited) {
+                handleUpdateBothInDB();
+            } else if (studyHasBeenEdited) {
+                handleUpdateStudyInDB();
+            } else if (annotationIsEdited) {
+                handleUpdateAnnotationInDB();
             }
         } catch (e) {
             console.error(e);
-            snackbar.enqueueSnackbar('there was an error saving the study', {
+            snackbar.enqueueSnackbar('There was an error saving to the database', {
                 variant: 'error',
             });
         }
+    };
+
+    const handleSave = async () => {
+        const { isError: hasDuplicateError, errorMessage: hasDuplicateErrorMessage } =
+            hasDuplicateStudyAnalysisNames(analyses);
+        if (hasDuplicateError) {
+            snackbar.enqueueSnackbar(hasDuplicateErrorMessage, { variant: 'warning' });
+            return;
+        }
+
+        const { isError: emptyPointError, errorMessage: emptyPointErrorMessage } =
+            hasEmptyStudyPoints(analyses);
+        if (emptyPointError) {
+            snackbar.enqueueSnackbar(emptyPointErrorMessage, { variant: 'warning' });
+            return;
+        }
+
+        handleUpdateDB();
     };
 
     return (

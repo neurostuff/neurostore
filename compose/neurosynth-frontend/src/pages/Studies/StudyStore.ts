@@ -25,7 +25,7 @@ export type StudyStoreActions = {
     initStudyStore: (studyId?: string) => void;
     clearStudyStore: () => void;
     updateStudy: (fieldName: keyof StudyDetails, value: string | number) => void;
-    updateStudyInDB: (annotationId: string | undefined) => Promise<void>;
+    updateStudyInDB: (annotationId: string | undefined) => Promise<StudyReturn>;
     addOrUpdateStudyMetadataRow: (row: IMetadataRowModel) => void;
     deleteStudyMetadataRow: (key: string) => void;
     addOrUpdateAnalysis: (analysis: Partial<IStoreAnalysis>) => IStoreAnalysis;
@@ -48,7 +48,6 @@ type StudyStoreMetadata = {
     conditionsIsEdited: boolean;
     conditionsIsLoading: boolean;
     isError: boolean; // for http errors that occur
-    isValid: boolean; // flag denoting if the form is valid
 };
 
 const useStudyStore = create<
@@ -88,7 +87,6 @@ const useStudyStore = create<
                     isError: false,
                     conditionsIsEdited: false,
                     conditionsIsLoading: false,
-                    isValid: true,
                 },
                 initStudyStore: async (studyId) => {
                     if (!studyId) return;
@@ -171,7 +169,6 @@ const useStudyStore = create<
                             conditionsIsEdited: false,
                             conditionsIsLoading: false,
                             isError: false,
-                            isValid: true,
                         },
                         conditions: [],
                     }));
@@ -219,7 +216,9 @@ const useStudyStore = create<
                         }
 
                         // we want to reset the store with our new data because if we created any new
-                        // analyses, they will now have their own IDs assigned to them by neurostore
+                        // analyses, they will now have their own IDs assigned to them by neurostore.
+                        // we cannot use the object returned by studiesIdPut as it is not nested.
+                        // TODO: change return value of studiesIdPut to nested
                         const studyRes = await API.NeurostoreServices.StudiesService.studiesIdGet(
                             state.study.id,
                             true
@@ -240,6 +239,8 @@ const useStudyStore = create<
                                 studyIsLoading: false,
                             },
                         }));
+
+                        return studyRes;
                     } catch (e) {
                         set((state) => ({
                             ...state,
@@ -687,7 +688,6 @@ export const useStudyAnalysisPointStatistic = (analysisId?: string) =>
     });
 export const useNumStudyAnalyses = () => useStudyStore((state) => state.study.analyses.length);
 export const useStudyAnalyses = () => useStudyStore((state) => state.study.analyses);
-export const useStudyStoreIsValid = () => useStudyStore((state) => state.storeMetadata.isValid);
 export const useStudyStoreIsError = () => useStudyStore((state) => state.storeMetadata.isError);
 export const useStudyUser = () => useStudyStore((state) => state.study.user);
 

@@ -10,7 +10,6 @@ const nonEmptyNumericValidator = (value: CellValue, callback: (isValid: boolean)
         value !== 'e' &&
         value !== true &&
         value !== false &&
-        value !== null &&
         value !== '' // all these things are considered numbers
     ) {
         callback(true);
@@ -73,19 +72,6 @@ export const EditAnalysisPointsDefaultConfig: HotTableProps = {
     manualColumnResize: false,
     allowInsertColumn: false,
     colWidths: [50, 50, 50, 150, 150, 100],
-};
-
-export const replaceString = (val: string) => {
-    // replace = ['֊', '‐', '‑', '⁃', '﹣', '－', '‒', '–', '—', '﹘', '−', '-']
-
-    return val.replaceAll(new RegExp('֊|‐|‑|⁃|﹣|－|‒|–|—|﹘|−|-', 'g'), '-');
-};
-
-export const stripTags = (stringWhichMayHaveHTML: any) => {
-    if (typeof stringWhichMayHaveHTML !== 'string') return '';
-
-    let doc = new DOMParser().parseFromString(stringWhichMayHaveHTML, 'text/html');
-    return doc.body.textContent || '';
 };
 
 export const getHotTableInsertionIndices = (selectedCoords: [number, number, number, number][]) => {

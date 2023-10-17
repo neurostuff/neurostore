@@ -1,11 +1,20 @@
-import { AnnotationReturnOneOf1, NoteCollectionReturn } from 'neurostore-typescript-sdk';
-import { noteKeyArrToDefaultNoteKeyObj, noteKeyObjToArr } from 'stores/AnnotationStore.helpers';
+import {
+    AnalysesApi,
+    AnnotationReturnOneOf1,
+    NoteCollectionReturn,
+} from 'neurostore-typescript-sdk';
+import {
+    noteKeyArrToDefaultNoteKeyObj,
+    noteKeyObjToArr,
+    updateNotesHelper,
+} from 'stores/AnnotationStore.helpers';
 import API from 'utils/api';
 import { create } from 'zustand';
 import {
     AnnotationStoreActions,
     AnnotationStoreMetadata,
     IStoreAnnotation,
+    IStoreNoteCollectionReturn,
 } from 'stores/AnnotationStore.types';
 
 export const useAnnotationStore = create<
@@ -16,8 +25,8 @@ export const useAnnotationStore = create<
 >()((set) => {
     return {
         annotation: {
-            notes: [], // for each analysis across all studies, along with the specific values for a given column (i.e. note)
-            note_keys: [], // all columns
+            notes: undefined, // for each analysis across all studies, along with the specific values for a given column (i.e. note)
+            note_keys: undefined, // all columns
             created_at: undefined,
             updated_at: undefined,
             description: undefined,
@@ -30,7 +39,6 @@ export const useAnnotationStore = create<
             studyset: undefined,
             user: undefined,
             username: undefined,
-            isNew: false,
         },
         storeMetadata: {
             annotationIsEdited: false,
@@ -54,7 +62,13 @@ export const useAnnotationStore = create<
                 ).data as AnnotationReturnOneOf1;
 
                 const noteKeysArr = noteKeyObjToArr(annotationRes.note_keys);
-                const notes = annotationRes.notes as Array<NoteCollectionReturn>;
+                const notes: IStoreNoteCollectionReturn[] = (
+                    annotationRes.notes as Array<NoteCollectionReturn>
+                )
+                    ?.map((x) => ({ ...x, isNew: false }))
+                    ?.sort((a, b) =>
+                        (a?.analysis_name || '').localeCompare(b?.analysis_name || '')
+                    );
 
                 set((state) => ({
                     ...state,
@@ -63,7 +77,6 @@ export const useAnnotationStore = create<
                         ...annotationRes,
                         notes: notes,
                         note_keys: [...noteKeysArr],
-                        isNew: false,
                     },
                     storeMetadata: {
                         ...state.storeMetadata,
@@ -112,7 +125,6 @@ export const useAnnotationStore = create<
                     studyset: undefined,
                     user: undefined,
                     username: undefined,
-                    isNew: false,
                 },
                 storeMetadata: {
                     annotationIsEdited: false,
@@ -126,32 +138,52 @@ export const useAnnotationStore = create<
                 ...state,
                 annotation: {
                     ...state.annotation,
-                    notes: updatedNotes,
+                    notes: updateNotesHelper(state.annotation.notes, updatedNotes),
+                },
+                storeMetadata: {
+                    ...state.storeMetadata,
+                    annotationIsEdited: true,
                 },
             }));
         },
         createAnnotationNote: (analysisId, studyId, analysisName) => {
+            set((state) => {
+                if (!state.annotation.notes || !state.annotation.note_keys) return state;
+
+                return {
+                    ...state,
+                    annotation: {
+                        ...state.annotation,
+                        notes: [
+                            {
+                                study: studyId,
+                                study_name: '',
+                                study_year: null,
+                                publication: '',
+                                authors: '',
+                                analysis: analysisId,
+                                analysis_name: analysisName,
+                                annotation: state.annotation.id,
+                                note: {
+                                    ...noteKeyArrToDefaultNoteKeyObj(state.annotation.note_keys),
+                                    included: true,
+                                },
+                                isNew: true,
+                            },
+                            ...state.annotation.notes,
+                        ],
+                    },
+                };
+            });
+        },
+        deleteAnnotationNote: (analysisId) => {
             set((state) => ({
                 ...state,
                 annotation: {
                     ...state.annotation,
-                    notes: [
-                        ...state.annotation.notes,
-                        {
-                            study: studyId,
-                            study_name: '',
-                            study_year: null,
-                            publication: '',
-                            authors: '',
-                            analysis: analysisId,
-                            analysis_name: analysisName,
-                            annotation: state.annotation.id,
-                            note: {
-                                ...noteKeyArrToDefaultNoteKeyObj(state.annotation.note_keys),
-                                included: true,
-                            },
-                        },
-                    ],
+                    notes: state.annotation.notes
+                        ? state.annotation.notes.filter((x) => x.analysis !== analysisId)
+                        : undefined,
                 },
             }));
         },
@@ -159,6 +191,7 @@ export const useAnnotationStore = create<
             try {
                 const state = useAnnotationStore.getState();
                 if (!state.annotation.id) throw new Error('no annotation id');
+                if (!state.annotation.notes) return;
                 set((state) => ({
                     ...state,
                     storeMetadata: {

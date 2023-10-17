@@ -76,7 +76,8 @@ const EditAnalyses: React.FC = (props) => {
                             width: '150px',
                             marginLeft: 'auto',
                         }}
-                        variant="outlined"
+                        variant="contained"
+                        disableElevation
                         startIcon={<Add />}
                     >
                         analysis

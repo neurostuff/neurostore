@@ -2,7 +2,7 @@ import { Style } from 'index';
 
 const EditStudyComponentsStyles: Style = {
     accordion: {
-        border: '1px solid',
+        border: '2px solid',
         borderTop: 'none',
         borderColor: 'secondary.main',
         borderRadius: '0 !important',

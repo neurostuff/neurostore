@@ -42,7 +42,7 @@ const EditStudyDetails: React.FC = React.memo((props) => {
             expandIconColor="secondary.main"
             sx={[
                 EditStudyComponentsStyles.accordion,
-                { borderTop: '1px solid', borderColor: 'secondary.main' },
+                { borderTop: '2px solid', borderColor: 'secondary.main' },
             ]}
             accordionSummarySx={EditStudyComponentsStyles.accordionSummary}
             TitleElement={

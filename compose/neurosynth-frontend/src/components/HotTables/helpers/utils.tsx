@@ -214,3 +214,33 @@ export const createColumnHeader = (colKey: string, colType: EPropertyType, canUp
         `</div>`
     );
 };
+
+export const replaceString = (val: string) => {
+    // replace = ['֊', '‐', '‑', '⁃', '﹣', '－', '‒', '–', '—', '﹘', '−', '-']
+
+    return val.replaceAll(new RegExp('֊|‐|‑|⁃|﹣|－|‒|–|—|﹘|−|-', 'g'), '-');
+};
+
+export const stripTags = (stringWhichMayHaveHTML: any) => {
+    if (typeof stringWhichMayHaveHTML !== 'string') return '';
+
+    let doc = new DOMParser().parseFromString(stringWhichMayHaveHTML, 'text/html');
+    return doc.body.textContent || '';
+};
+
+export const sanitizePaste = (data: any[][]) => {
+    data.forEach((dataRow, rowIndex) => {
+        dataRow.forEach((value, valueIndex) => {
+            if (typeof value === 'number') return;
+            if (typeof value === 'boolean') return;
+
+            let newVal = value;
+            newVal = stripTags(newVal); // strip all HTML tags that were copied over if they exist
+            newVal = replaceString(newVal); // replace minus operator with javascript character code
+
+            if (newVal === 'true') newVal = true;
+            else if (newVal === 'false') newVal = false;
+            data[rowIndex][valueIndex] = newVal;
+        });
+    });
+};

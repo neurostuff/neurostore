@@ -13,7 +13,7 @@ import BaseNavigation from './pages/BaseNavigation/BaseNavigation';
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            staleTime: 5000, // set default staleTime to 10 seconds https://tkdodo.eu/blog/practical-react-query#the-defaults-explained
+            // staleTime: 5000, // https://tkdodo.eu/blog/practical-react-query#the-defaults-explained
         },
     },
     queryCache: new QueryCache({

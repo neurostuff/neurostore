@@ -57,30 +57,30 @@ const EditStudyAnnotations: React.FC = (props) => {
     // CURRTODO: i need to refactor this - give edit study annotations its own HotTable and make it robust to many rerenders
     // this means using a setState and storing tabularData in the store
 
-    useEffect(() => {
-        if (annotation) {
-            const annotationNotesForStudy = ((notes as NoteCollectionReturn[]) || []).filter(
-                (x) => x.study === studyId
-            );
-            const { hotData, hotDataToStudyMapping } = annotationNotesToHotData(
-                noteKeys,
-                annotationNotesForStudy,
-                (annotationNote) => {
-                    const analysis = analyses.find((x) => x.id === annotationNote.analysis);
-                    return [analysis?.name || '', analysis?.description || ''];
-                }
-            );
+    // useEffect(() => {
+    //     if (annotation) {
+    //         const annotationNotesForStudy = ((notes as NoteCollectionReturn[]) || []).filter(
+    //             (x) => x.study === studyId
+    //         );
+    //         const { hotData, hotDataToStudyMapping } = annotationNotesToHotData(
+    //             noteKeys,
+    //             annotationNotesForStudy,
+    //             (annotationNote) => {
+    //                 const analysis = analyses.find((x) => x.id === annotationNote.analysis);
+    //                 return [analysis?.name || '', analysis?.description || ''];
+    //             }
+    //         );
 
-            setInitialAnnotationHotState({
-                hotDataToStudyMapping,
-                noteKeys,
-                hotColumns: createColumns(noteKeys),
-                hotData: hotData,
-                mergeCells: [],
-                size: `${(hotData.length + 1) * 35 > 400 ? 400 : (hotData.length + 1) * 35}px`,
-            });
-        }
-    }, [studyId, analyses, annotation, notes, noteKeys]);
+    //         setInitialAnnotationHotState({
+    //             hotDataToStudyMapping,
+    //             noteKeys,
+    //             hotColumns: createColumns(noteKeys),
+    //             hotData: hotData,
+    //             mergeCells: [],
+    //             size: `${(hotData.length + 1) * 35 > 400 ? 400 : (hotData.length + 1) * 35}px`,
+    //         });
+    //     }
+    // }, [studyId, analyses, annotation, notes, noteKeys]);
 
     const handleChange = useCallback(
         (hotData: AnnotationNoteValue[][], noteKeys: NoteKeyType[]) => {
@@ -129,17 +129,17 @@ const EditStudyAnnotations: React.FC = (props) => {
                 </Typography>
             }
         >
-            <Box sx={{ height: initialAnnotationHotState.size, padding: '1rem 0' }}>
+            <Box sx={{ padding: '1rem 0' }}>
                 <StateHandlerComponent isLoading={isLoading} isError={isError}>
                     <EditStudyAnnotationsHotTable />
-                    <AnnotationsHotTable
+                    {/* <AnnotationsHotTable
                         {...initialAnnotationHotState}
                         hardCodedReadOnlyCols={hardCodedColumns}
                         allowAddColumn={false}
                         wordWrap={false}
                         allowRemoveColumns={false}
                         onChange={handleChange}
-                    />
+                    /> */}
                 </StateHandlerComponent>
             </Box>
         </NeurosynthAccordion>

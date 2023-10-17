@@ -9,10 +9,13 @@ export type AnnotationStoreMetadata = {
 
 export type AnnotationNoteValue = string | number | boolean | null;
 
+export interface IStoreNoteCollectionReturn extends NoteCollectionReturn {
+    isNew?: boolean;
+}
+
 export interface IStoreAnnotation extends Omit<AnnotationReturnOneOf1, 'notes' | 'note_keys'> {
-    notes: NoteCollectionReturn[];
-    note_keys: NoteKeyType[];
-    isNew: boolean;
+    notes: IStoreNoteCollectionReturn[] | undefined;
+    note_keys: NoteKeyType[] | undefined;
 }
 
 export type AnnotationStoreActions = {
@@ -22,6 +25,7 @@ export type AnnotationStoreActions = {
     updateNotes: (updatedNotes: Array<NoteCollectionReturn>) => void;
     updateAnnotationInDB: () => Promise<void>;
     createAnnotationNote: (analysisId: string, studyId: string, analysisName: string) => void;
+    deleteAnnotationNote: (analysisId: string) => void;
 };
 
 export type AnnotationNoteType = {

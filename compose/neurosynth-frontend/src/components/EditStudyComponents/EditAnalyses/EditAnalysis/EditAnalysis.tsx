@@ -7,9 +7,11 @@ import { useState } from 'react';
 import EditAnalysisDetails from 'components/EditStudyComponents/EditAnalyses/EditAnalysisDetails/EditAnalysisDetails';
 import EditAnalysisPoints from 'components/HotTables/EditAnalysisPointsHotTable/EditAnalysisPoints';
 import EditAnalysisPointSpaceAndStatistic from 'components/EditStudyComponents/EditAnalyses/EditAnalysisPoints/EditAnalysisPointSpaceAndStatistic/EditAnalysisPointSpaceAndStatistic';
+import { useDeleteAnnotationNote } from 'stores/AnnotationStore.actions';
 
 const EditAnalysis: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void }> = (props) => {
     const deleteAnalysis = useDeleteAnalysis();
+    const deleteAnnotationNote = useDeleteAnnotationNote();
 
     const [dialogIsOpen, setDialogIsOpen] = useState(false);
 
@@ -20,6 +22,7 @@ const EditAnalysis: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void
     const handleCloseDialog = (confirm?: boolean) => {
         if (confirm && props.analysisId) {
             deleteAnalysis(props.analysisId);
+            deleteAnnotationNote(props.analysisId);
             props.onDeleteAnalysis();
         }
         setDialogIsOpen(false);

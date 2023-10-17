@@ -18,9 +18,8 @@ import {
     getHotTableInsertionIndices,
     hotTableColHeaders,
     hotTableColumnSettings,
-    replaceString,
-    stripTags,
 } from './EditAnalysisPoints.helpers';
+import { sanitizePaste } from '../helpers/utils';
 
 export const ROW_HEIGHT = 56;
 
@@ -111,20 +110,7 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
     const handleBeforePaste = (data: any[][], coords: RangeType[]) => {
         if (!points) return false;
 
-        data.forEach((dataRow, rowIndex) => {
-            dataRow.forEach((value, valueIndex) => {
-                if (typeof value === 'number') return;
-
-                let newVal = value;
-
-                newVal = stripTags(newVal); // strip all HTML tags that were copied over if they exist
-                newVal = replaceString(newVal); // replace minus operator with javascript character code
-
-                if (newVal === 'true') newVal = true;
-                else if (newVal === 'false') newVal = false;
-                data[rowIndex][valueIndex] = newVal;
-            });
-        });
+        sanitizePaste(data);
 
         // if a paste leads to rows being created, we store those rows in a ref for the handleBeforeCreateRow hook to
         // know how many rows to create
