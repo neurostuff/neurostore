@@ -20,6 +20,7 @@ import {
 import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import { v4 as uuid } from 'uuid';
 import { setAnalysesInAnnotationAsIncluded } from 'pages/helpers/utils';
+import { AxiosResponse } from 'axios';
 
 export type StudyStoreActions = {
     initStudyStore: (studyId?: string) => void;
@@ -219,10 +220,10 @@ const useStudyStore = create<
                         // analyses, they will now have their own IDs assigned to them by neurostore.
                         // we cannot use the object returned by studiesIdPut as it is not nested.
                         // TODO: change return value of studiesIdPut to nested
-                        const studyRes = await API.NeurostoreServices.StudiesService.studiesIdGet(
+                        const studyRes = (await API.NeurostoreServices.StudiesService.studiesIdGet(
                             state.study.id,
                             true
-                        );
+                        )) as AxiosResponse<StudyReturn>;
 
                         set((state) => ({
                             ...state,
@@ -239,8 +240,7 @@ const useStudyStore = create<
                                 studyIsLoading: false,
                             },
                         }));
-
-                        return studyRes;
+                        return studyRes.data;
                     } catch (e) {
                         set((state) => ({
                             ...state,

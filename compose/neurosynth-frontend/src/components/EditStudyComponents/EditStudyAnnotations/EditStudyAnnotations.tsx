@@ -131,7 +131,14 @@ const EditStudyAnnotations: React.FC = (props) => {
         >
             <Box sx={{ padding: '1rem 0' }}>
                 <StateHandlerComponent isLoading={isLoading} isError={isError}>
-                    <EditStudyAnnotationsHotTable />
+                    {analyses.length === 0 ? (
+                        <Typography sx={{ color: 'warning.dark' }}>
+                            There are no annotations for this study. To get started, add an analysis
+                            below
+                        </Typography>
+                    ) : (
+                        <EditStudyAnnotationsHotTable />
+                    )}
                     {/* <AnnotationsHotTable
                         {...initialAnnotationHotState}
                         hardCodedReadOnlyCols={hardCodedColumns}

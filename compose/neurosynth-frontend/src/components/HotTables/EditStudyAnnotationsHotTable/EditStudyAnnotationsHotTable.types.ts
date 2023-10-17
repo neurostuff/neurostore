@@ -1,7 +1,7 @@
 import { ColumnSettings } from 'handsontable/settings';
-import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import { IStoreNoteCollectionReturn } from 'stores/AnnotationStore.types';
 
-export interface EditStudyAnnotationsNoteCollectionReturn extends NoteCollectionReturn {
+export interface EditStudyAnnotationsNoteCollectionReturn extends IStoreNoteCollectionReturn {
     analysisDescription?: string;
 }
 

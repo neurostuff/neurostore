@@ -1,6 +1,6 @@
 import { AxiosResponse } from 'axios';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import { NoteCollectionReturn, StudyList, StudyReturn } from 'neurostore-typescript-sdk';
+import { NoteCollectionReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import { SearchCriteria } from 'pages/Studies/StudiesPage/models';
 import API, { NeurostoreAnnotation } from 'utils/api';
 

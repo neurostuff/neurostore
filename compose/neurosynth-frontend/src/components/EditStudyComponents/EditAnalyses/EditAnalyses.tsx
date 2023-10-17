@@ -8,8 +8,9 @@ import EditAnalysis from './EditAnalysis/EditAnalysis';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import EditStudyComponentsStyles from 'components/EditStudyComponents/EditStudyComponents.styles';
 import { useCreateAnnotationNote } from 'stores/AnnotationStore.actions';
+import React from 'react';
 
-const EditAnalyses: React.FC = (props) => {
+const EditAnalyses: React.FC = React.memo((props) => {
     const numAnalyses = useNumStudyAnalyses();
     const studyId = useStudyId();
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
@@ -108,6 +109,6 @@ const EditAnalyses: React.FC = (props) => {
             </Box>
         </NeurosynthAccordion>
     );
-};
+});
 
 export default EditAnalyses;

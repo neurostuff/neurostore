@@ -1,13 +1,5 @@
-import {
-    AnalysesApi,
-    AnnotationReturnOneOf1,
-    NoteCollectionReturn,
-} from 'neurostore-typescript-sdk';
-import {
-    noteKeyArrToDefaultNoteKeyObj,
-    noteKeyObjToArr,
-    updateNotesHelper,
-} from 'stores/AnnotationStore.helpers';
+import { AnnotationReturnOneOf1, NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import { noteKeyArrToDefaultNoteKeyObj, noteKeyObjToArr } from 'stores/AnnotationStore.helpers';
 import API from 'utils/api';
 import { create } from 'zustand';
 import {
@@ -138,7 +130,7 @@ export const useAnnotationStore = create<
                 ...state,
                 annotation: {
                     ...state.annotation,
-                    notes: updateNotesHelper(state.annotation.notes, updatedNotes),
+                    notes: [...updatedNotes],
                 },
                 storeMetadata: {
                     ...state.storeMetadata,
@@ -200,24 +192,41 @@ export const useAnnotationStore = create<
                     },
                 }));
 
-                await API.NeurostoreServices.AnnotationsService.annotationsIdPut(
-                    state.annotation.id,
-                    {
-                        notes: state.annotation.notes.map((annotationNote) => ({
-                            analysis: annotationNote.analysis,
-                            study: annotationNote.study,
-                            note: annotationNote.note,
-                        })),
-                    }
-                );
+                const annotationRes = (
+                    await API.NeurostoreServices.AnnotationsService.annotationsIdPut(
+                        state.annotation.id,
+                        {
+                            notes: state.annotation.notes.map((annotationNote) => ({
+                                analysis: annotationNote.analysis,
+                                study: annotationNote.study,
+                                note: annotationNote.note,
+                            })),
+                        }
+                    )
+                ).data as AnnotationReturnOneOf1;
+
+                const noteKeysArr = noteKeyObjToArr(annotationRes.note_keys);
+                const notes: IStoreNoteCollectionReturn[] = (
+                    annotationRes.notes as Array<NoteCollectionReturn>
+                )
+                    ?.map((x) => ({ ...x, isNew: false }))
+                    ?.sort((a, b) =>
+                        (a?.analysis_name || '').localeCompare(b?.analysis_name || '')
+                    );
 
                 set((state) => ({
                     ...state,
+                    annotation: {
+                        ...state.annotation,
+                        ...annotationRes,
+                        notes: notes,
+                        note_keys: [...noteKeysArr],
+                    },
                     storeMetadata: {
                         ...state.storeMetadata,
+                        annotationIsEdited: false,
                         annotationIsLoading: false,
                         isError: false,
-                        annotationIsEdited: false,
                     },
                 }));
             } catch (e) {
