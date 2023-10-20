@@ -83,14 +83,9 @@ const BaseNavigation: React.FC = (_props) => {
                         <ExtractionPage />
                     </Box>
                 </Route>
-                <Route path="/projects/:projectId/extraction/studies/:studyId/edit" exact>
+                <Route path="/projects/:projectId/extraction/studies/:studyId" exact>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <EditStudyPage />
-                    </Box>
-                </Route>
-                <Route path={'/projects/:projectId/extraction/studies/:studyId'}>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <ProjectStudyPage />
                     </Box>
                 </Route>
                 <Route

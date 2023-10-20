@@ -1,7 +1,7 @@
 import { HotTable } from '@handsontable/react';
 import { Box, Typography } from '@mui/material';
 import { registerAllModules } from 'handsontable/registry';
-import styles from 'components/HotTables/AnnotationsHotTable/AnnotationsHotTable.module.css';
+import styles from 'components/HotTables/HotTables.module.css';
 import { IStorePoint, MapOrSpaceType } from 'pages/Studies/StudyStore.helpers';
 import { useEffect, useRef } from 'react';
 

@@ -1,4 +1,4 @@
-import { Box, TextField } from '@mui/material';
+import { Box, TextField, Typography } from '@mui/material';
 import {
     useAddOrUpdateAnalysis,
     useStudyAnalysisDescription,
@@ -25,6 +25,9 @@ const EditAnalysisDetails: React.FC<{ analysisId?: string }> = (props) => {
 
     return (
         <Box sx={{ width: '100%' }}>
+            <Typography sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
+                Analysis Details
+            </Typography>
             <TextField
                 label="name"
                 size="small"

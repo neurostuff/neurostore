@@ -1,6 +1,6 @@
 import { HotTableProps } from '@handsontable/react';
 import { CellValue } from 'handsontable/common';
-import styles from 'components/HotTables/AnnotationsHotTable/AnnotationsHotTable.module.css';
+import styles from 'components/HotTables/HotTables.module.css';
 import { ColumnSettings } from 'handsontable/settings';
 
 const nonEmptyNumericValidator = (value: CellValue, callback: (isValid: boolean) => void) => {

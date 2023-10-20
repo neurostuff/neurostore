@@ -4,7 +4,7 @@ import { HotSettings } from 'components/HotTables/EditStudyAnnotationsHotTable/E
 import { CellChange, ChangeSource, RangeType } from 'handsontable/common';
 import { useRef } from 'react';
 import { useAnnotationNoteKeys, useUpdateAnnotationNotes } from 'stores/AnnotationStore.actions';
-import { sanitizePaste } from '../helpers/utils';
+import { sanitizePaste } from '../HotTables.utils';
 import useEditStudyAnnotationsHotTable from './useEditStudyAnnotationsHotTable';
 
 const EditStudyAnnotationsHotTable: React.FC = (props) => {
@@ -13,8 +13,6 @@ const EditStudyAnnotationsHotTable: React.FC = (props) => {
     const updateNotes = useUpdateAnnotationNotes();
     const { colWidths, colHeaders, columns, hiddenRows, data, height } =
         useEditStudyAnnotationsHotTable();
-
-    console.log('hello');
 
     const handleAfterChange = (changes: CellChange[] | null, source: ChangeSource) => {
         if (!data || !noteKeys || !changes) return;

@@ -10,3 +10,4 @@ export const useAnnotationIsEdited = () =>
 
 export const useAnnotationIsError = () =>
     useAnnotationStore((state) => state.storeMetadata.isError);
+export const useAnnotationId = () => useAnnotationStore((state) => state.annotation.id);

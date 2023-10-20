@@ -4,13 +4,13 @@ import { useAnnotationNoteKeys } from 'stores/AnnotationStore.actions';
 import { useAnnotationNotes } from 'stores/AnnotationStore.getters';
 import {
     createStudyAnnotationColHeaders,
-    createStudyAnnotationColWidths,
     createStudyAnnotationColumns,
 } from './EditStudyAnnotationsHotTable.helpers';
 import {
     EditStudyAnnotationsNoteCollectionReturn,
     IEditStudyAnnotationsDataRef,
 } from './EditStudyAnnotationsHotTable.types';
+import { createColWidths } from 'components/HotTables/HotTables.utils';
 
 const useEditStudyAnnotationsHotTable = () => {
     const studyId = useStudyId();
@@ -34,25 +34,39 @@ const useEditStudyAnnotationsHotTable = () => {
         });
     }, [notes]);
 
+    /**
+     * this hook runs everytime (AND ONLY WHEN) the analyses change (i.e. when someone is updating the analysis name or description).
+     * From an annotation perspective, the analysis name and description is purely decorative so we debounce the updates here
+     */
     useEffect(() => {
-        console.log(analyses);
         const timeout = setTimeout(() => {
-            const update: EditStudyAnnotationsNoteCollectionReturn[] = [];
-            analyses.forEach((analysis) => {
-                const foundNote = notes?.find((note) => note.analysis === analysis.id);
-                if (foundNote)
-                    update.push({
-                        ...foundNote,
+            setData((prev) => {
+                if (!prev) return prev;
+                console.log({
+                    prev,
+                    notes,
+                });
+                const update: EditStudyAnnotationsNoteCollectionReturn[] = [...(notes || [])];
+                analyses.forEach((analysis) => {
+                    const foundNoteIndex = update.findIndex(
+                        (updateNote) => updateNote.analysis === analysis.id
+                    );
+                    if (foundNoteIndex < 0) return;
+
+                    update[foundNoteIndex] = {
+                        ...update[foundNoteIndex],
                         analysis_name: analysis.name || '',
                         analysisDescription: analysis.description || '',
-                    });
+                    };
+                });
+                return update;
             });
-            setData(update);
-        }, 400);
+        }, 500);
 
         return () => {
             clearTimeout(timeout);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [analyses]);
 
     const hiddenRows = useMemo(() => {
@@ -65,21 +79,9 @@ const useEditStudyAnnotationsHotTable = () => {
         return {
             columns: createStudyAnnotationColumns(noteKeys || []),
             colHeaders: createStudyAnnotationColHeaders(noteKeys || []),
-            colWidths: createStudyAnnotationColWidths(noteKeys || []),
+            colWidths: createColWidths(noteKeys || [], 200, 250, 150),
         };
     }, [noteKeys]);
-
-    // const data = useMemo<EditStudyAnnotationsNoteCollectionReturn[]>(() => {
-    //     return (notes || []).map((note) => {
-    //         const foundAnalysis = analyses.find((analysis) => analysis.id === note.analysis);
-
-    //         return {
-    //             ...note,
-    //             analysis_name: foundAnalysis ? foundAnalysis.name || '' : '',
-    //             analysisDescription: foundAnalysis ? foundAnalysis.description || '' : '',
-    //         };
-    //     });
-    // }, [notes, analyses]);
 
     const height = useMemo(() => {
         const MIN_HEIGHT_PX = 150;

@@ -1,4 +1,4 @@
-import { NoteKeyType } from 'components/HotTables/helpers/utils';
+import { NoteKeyType } from 'components/HotTables/HotTables.types';
 import { EPropertyType } from 'components/EditMetadata';
 import { AnnotationNoteType } from 'stores/AnnotationStore.types';
 

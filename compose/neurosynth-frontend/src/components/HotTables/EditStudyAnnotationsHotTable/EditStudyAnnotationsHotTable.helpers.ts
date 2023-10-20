@@ -1,12 +1,12 @@
 import { HotTableProps } from '@handsontable/react';
 import { EPropertyType } from 'components/EditMetadata';
-import styles from 'components/HotTables/AnnotationsHotTable/AnnotationsHotTable.module.css';
 import { EditStudyAnnotationsNoteCollectionReturn } from 'components/HotTables/EditStudyAnnotationsHotTable/EditStudyAnnotationsHotTable.types';
-import { NoteKeyType } from 'components/HotTables/helpers/utils';
-import { CellValue } from 'handsontable/common';
+import styles from 'components/HotTables/HotTables.module.css';
+import { NoteKeyType } from 'components/HotTables/HotTables.types';
 import { ColumnSettings } from 'handsontable/settings';
 import { numericValidator } from 'handsontable/validators';
 import { IStoreAnalysis } from 'pages/Studies/StudyStore.helpers';
+import { booleanValidator } from 'components/HotTables/HotTables.utils';
 
 export const HotSettings: HotTableProps = {
     licenseKey: 'non-commercial-and-evaluation',
@@ -27,27 +27,12 @@ export const HotSettings: HotTableProps = {
     },
 };
 
-export const booleanValidator = (value: CellValue, callback: (isValid: boolean) => void) => {
-    const isValid =
-        value === true ||
-        value === false ||
-        value === 'true' ||
-        value === 'false' ||
-        value === null ||
-        value === '';
-    callback(isValid);
-};
-
 export const createStudyAnnotationColHeaders = (noteKeys: NoteKeyType[]): string[] => {
     return [
         'Analysis Name',
         'Analysis Description',
         ...noteKeys.map((x) => `<div class="${styles[x.type]}">${x.key}</div>`),
     ];
-};
-
-export const createStudyAnnotationColWidths = (noteKeys: NoteKeyType[]): number[] => {
-    return [200, 250, ...noteKeys.map((x) => 150)];
 };
 
 export const createStudyAnnotationColumns = (noteKeys: NoteKeyType[]) =>

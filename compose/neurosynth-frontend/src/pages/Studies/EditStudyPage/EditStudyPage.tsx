@@ -21,6 +21,7 @@ import {
     useUpdateAnnotationNotes,
 } from 'stores/AnnotationStore.actions';
 import {
+    useAnnotationId,
     useAnnotationIsEdited,
     useAnnotationIsLoading,
     useAnnotationNotes,
@@ -42,7 +43,7 @@ import { AnalysisReturn } from 'neurostore-typescript-sdk';
 const EditStudyPage: React.FC = (props) => {
     const { studyId } = useParams<{ studyId: string }>();
     const queryClient = useQueryClient();
-    const snackbar = useSnackbar();
+    const { enqueueSnackbar } = useSnackbar();
     const analyses = useStudyAnalyses();
 
     const annotationId = useProjectExtractionAnnotationId();
@@ -55,6 +56,7 @@ const EditStudyPage: React.FC = (props) => {
     const clearStudyStore = useClearStudyStore();
     const initStudyStore = useInitStudyStore();
     // annotation stuff
+    const storeAnnotationId = useAnnotationId();
     const clearAnnotationStore = useClearAnnotationStore();
     const notes = useAnnotationNotes();
     const initAnnotationStore = useInitAnnotationStore();
@@ -84,6 +86,8 @@ const EditStudyPage: React.FC = (props) => {
         await updateStudyInDB(annotationId as string);
         queryClient.invalidateQueries('studies');
         queryClient.invalidateQueries('annotations');
+
+        enqueueSnackbar('Study saved', { variant: 'success' });
     };
 
     const handleUpdateBothInDB = async () => {
@@ -107,11 +111,14 @@ const EditStudyPage: React.FC = (props) => {
 
         queryClient.invalidateQueries('studies');
         queryClient.invalidateQueries('annotations');
+
+        enqueueSnackbar('Study and annotation saved', { variant: 'success' });
     };
 
     const handleUpdateAnnotationInDB = async () => {
         await updateAnnotationInDB();
         queryClient.invalidateQueries('annotations');
+        enqueueSnackbar('Annotation saved', { variant: 'success' });
     };
 
     const handleUpdateDB = () => {
@@ -125,7 +132,7 @@ const EditStudyPage: React.FC = (props) => {
             }
         } catch (e) {
             console.error(e);
-            snackbar.enqueueSnackbar('There was an error saving to the database', {
+            enqueueSnackbar('There was an error saving to the database', {
                 variant: 'error',
             });
         }
@@ -135,14 +142,14 @@ const EditStudyPage: React.FC = (props) => {
         const { isError: hasDuplicateError, errorMessage: hasDuplicateErrorMessage } =
             hasDuplicateStudyAnalysisNames(analyses);
         if (hasDuplicateError) {
-            snackbar.enqueueSnackbar(hasDuplicateErrorMessage, { variant: 'warning' });
+            enqueueSnackbar(hasDuplicateErrorMessage, { variant: 'warning' });
             return;
         }
 
         const { isError: emptyPointError, errorMessage: emptyPointErrorMessage } =
             hasEmptyStudyPoints(analyses);
         if (emptyPointError) {
-            snackbar.enqueueSnackbar(emptyPointErrorMessage, { variant: 'warning' });
+            enqueueSnackbar(emptyPointErrorMessage, { variant: 'warning' });
             return;
         }
 
@@ -153,7 +160,7 @@ const EditStudyPage: React.FC = (props) => {
         <StateHandlerComponent
             disableShrink={false}
             isError={false}
-            isLoading={!storeStudyId && !studyIsError}
+            isLoading={!storeStudyId && !studyIsError && !storeAnnotationId}
         >
             <EditStudyPageHeader />
             <EditStudyDetails />

@@ -1,4 +1,4 @@
-import { NoteKeyType } from 'components/HotTables/helpers/utils';
+import { NoteKeyType } from 'components/HotTables/HotTables.types';
 import { AnnotationReturnOneOf1, NoteCollectionReturn } from 'neurostore-typescript-sdk';
 
 export type AnnotationStoreMetadata = {
@@ -6,8 +6,6 @@ export type AnnotationStoreMetadata = {
     annotationIsLoading: boolean;
     isError: boolean; // for http errors that occur
 };
-
-export type AnnotationNoteValue = string | number | boolean | null;
 
 export interface IStoreNoteCollectionReturn extends NoteCollectionReturn {
     isNew?: boolean;

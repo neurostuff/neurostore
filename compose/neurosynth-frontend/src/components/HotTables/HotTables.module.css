@@ -3,6 +3,17 @@
     color: black;
 }
 
+.truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.no-top-bottom-borders {
+    border-bottom-color: transparent !important;
+    border-top-color: transparent !important;
+}
+
 .no-wrap {
     /* max-width: 100px !important; */
     overflow-wrap: break-word !important;

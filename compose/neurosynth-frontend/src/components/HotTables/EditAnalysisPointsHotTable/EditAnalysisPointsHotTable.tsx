@@ -12,20 +12,19 @@ import {
     useUpdateAnalysisPoints,
 } from 'pages/Studies/StudyStore';
 import { IStorePoint } from 'pages/Studies/StudyStore.helpers';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef } from 'react';
+import { sanitizePaste } from '../HotTables.utils';
 import {
     EditAnalysisPointsDefaultConfig,
     getHotTableInsertionIndices,
     hotTableColHeaders,
     hotTableColumnSettings,
-} from './EditAnalysisPoints.helpers';
-import { sanitizePaste } from '../helpers/utils';
-
-export const ROW_HEIGHT = 56;
+} from './EditAnalysisPointsHotTable.helpers';
+import useEditAnalysisPointsHotTable from './useEditAnalysisPointsHotTable';
 
 registerAllModules();
 
-const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props) => {
+const EditAnalysisPointsHotTable: React.FC<{ analysisId?: string }> = React.memo((props) => {
     const points = useStudyAnalysisPoints(props.analysisId) as IStorePoint[] | null;
     const updatePoints = useUpdateAnalysisPoints();
     const createPoint = useCreateAnalysisPoints();
@@ -35,47 +34,11 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
         insertRowsAbove: true,
         insertedRowsViaPaste: [],
     });
-    const [insertRowsDialogIsOpen, setInsertRowsDialogIsOpen] = useState(false);
-
-    // run every time points are updated to validate (in charge of highlighting the cells that are invalid)
-    useEffect(() => {
-        hotTableRef.current?.hotInstance?.validateCells();
-    }, [points]);
-
-    // run once initially to set the custom context menu
-    useEffect(() => {
-        if (hotTableRef.current?.hotInstance) {
-            hotTableRef.current.hotInstance.updateSettings({
-                contextMenu: {
-                    items: {
-                        row_above: {
-                            name: 'Add rows above',
-                            callback: (key, options) => {
-                                hotTableMetadata.current.insertRowsAbove = true;
-                                setInsertRowsDialogIsOpen(true);
-                            },
-                        },
-                        row_below: {
-                            name: 'Add rows below',
-                            callback: (key, options) => {
-                                hotTableMetadata.current.insertRowsAbove = false;
-                                setInsertRowsDialogIsOpen(true);
-                            },
-                        },
-                        remove_row: {
-                            name: 'Remove row(s)',
-                        },
-                        copy: {
-                            name: 'Copy',
-                        },
-                        cut: {
-                            name: 'Cut',
-                        },
-                    },
-                },
-            });
-        }
-    }, [hotTableRef]);
+    const { height, insertRowsDialogIsOpen, closeInsertRowsDialog } = useEditAnalysisPointsHotTable(
+        props.analysisId,
+        hotTableRef,
+        hotTableMetadata
+    );
 
     // handsontable binds and updates to the data references themselves which means the original data is being mutated.
     // as we use zustand, this may not be a good idea, so we implement handleAfterChange to
@@ -201,12 +164,9 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
                 })),
                 hotTableMetadata.current.insertRowsAbove ? insertAboveIndex : insertBelowIndex + 1
             );
-            setInsertRowsDialogIsOpen(false);
+            closeInsertRowsDialog();
         }
     };
-
-    const totalHeight = 28 + (points?.length || 0) * 23;
-    const height = totalHeight > 500 ? 500 : totalHeight;
 
     /**
      * Hook Order:
@@ -221,7 +181,7 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
             <InputNumberDialog
                 isOpen={insertRowsDialogIsOpen}
                 dialogTitle="Enter number of rows to insert"
-                onCloseDialog={() => setInsertRowsDialogIsOpen(false)}
+                onCloseDialog={() => closeInsertRowsDialog()}
                 onInputNumber={(val) => handleInsertRows(val)}
                 dialogDescription=""
             />
@@ -238,7 +198,7 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
                 colHeaders={hotTableColHeaders}
                 data={[...(points || [])]}
             />
-            {!points || points.length === 0 ? (
+            {(points?.length || 0) === 0 ? (
                 <Typography sx={{ color: 'warning.dark', marginTop: '0.5rem' }}>
                     No coordinate data.{' '}
                     <Link
@@ -285,4 +245,4 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
     );
 });
 
-export default EditAnalysisPoints;
+export default EditAnalysisPointsHotTable;

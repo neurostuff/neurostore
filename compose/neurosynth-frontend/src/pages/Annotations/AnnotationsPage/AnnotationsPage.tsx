@@ -1,5 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import EditAnnotations from 'components/EditAnnotations/EditAnnotations';
+import EditAnnotationsHotTable from 'components/HotTables/EditAnnotationsHotTable/EditAnnotationsHotTable';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetAnnotationById } from 'hooks';
@@ -55,7 +56,9 @@ const AnnotationsPage: React.FC = () => {
                     <Typography variant="h5">{data?.name}</Typography>
                     <Typography sx={{ color: 'muted.main' }}>{data?.description || ''}</Typography>
                 </Box>
-                <EditAnnotations annotationId={annotationId || ''} />
+                <StateHandlerComponent isLoading={getAnnotationIsLoading} isError={isError}>
+                    <EditAnnotationsHotTable annotationId={annotationId} />
+                </StateHandlerComponent>
             </StateHandlerComponent>
         </Box>
     );
