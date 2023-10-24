@@ -12,7 +12,7 @@ def test_post_blank_annotation(auth_client, ingest_neurosynth, session):
     resp = auth_client.post("/api/annotations/", data=payload)
     assert resp.status_code == 200
     # assert there exists an annotation analysis for every analysis
-    assert len(resp.json["notes"]) == len(
+    assert len(resp.json()["notes"]) == len(
         [a for study in dset.studies for a in study.analyses]
     )
 
@@ -45,7 +45,7 @@ def test_get_annotations(auth_client, ingest_neurosynth, session):
     resp = auth_client.get(f"/api/annotations/?studyset_id={dset.id}")
     assert resp.status_code == 200
 
-    annot_id = resp.json["results"][0]["id"]
+    annot_id = resp.json()["results"][0]["id"]
 
     annot = auth_client.get(f"/api/annotations/{annot_id}")
     assert annot.status_code == 200
@@ -54,7 +54,7 @@ def test_get_annotations(auth_client, ingest_neurosynth, session):
 
     assert annot_export.status_code == 200
 
-    df = pd.read_csv(StringIO(annot_export.json["annotation_csv"]))
+    df = pd.read_csv(StringIO(annot_export.json()["annotation_csv"]))
 
     assert isinstance(df, pd.DataFrame)
 
@@ -65,7 +65,7 @@ def test_clone_annotation(auth_client, simple_neurosynth_annotation, session):
         f"/api/annotations/?source_id={annotation_entry.id}", data={}
     )
     assert resp.status_code == 200
-    data = resp.json
+    data = resp.json()
     assert data["name"] == annotation_entry.name
     assert data["source_id"] == annotation_entry.id
     assert data["source"] == "neurostore"
@@ -75,26 +75,26 @@ def test_single_analysis_delete(auth_client, user_data, session):
     user = User.query.filter_by(name="user1").first()
     # get relevant studyset
     studysets = auth_client.get(f"/api/studysets/?user_id={user.external_id}")
-    studyset_id = studysets.json["results"][0]["id"]
+    studyset_id = studysets.json()["results"][0]["id"]
     studyset = auth_client.get(f"/api/studysets/{studyset_id}")
     # get relevant annotation
     annotations = auth_client.get(f"/api/annotations/?studyset_id={studyset_id}")
-    annotation_id = annotations.json["results"][0]["id"]
+    annotation_id = annotations.json()["results"][0]["id"]
     annotation = auth_client.get(f"/api/annotations/{annotation_id}")
     # pick study to edit
-    study_id = studyset.json["studies"][0]
+    study_id = studyset.json()["studies"][0]
     study = auth_client.get(f"/api/studies/{study_id}")
 
     # select analysis to delete
-    analysis_id = study.json["analyses"][0]
+    analysis_id = study.json()["analyses"][0]
     auth_client.delete(f"/api/analyses/{analysis_id}")
 
     # test if annotations were updated
     updated_annotation = auth_client.get(f"/api/annotations/{annotation_id}")
 
     assert updated_annotation.status_code == 200
-    assert (len(annotation.json["notes"]) - 1) == (
-        len(updated_annotation.json["notes"])
+    assert (len(annotation.json()["notes"]) - 1) == (
+        len(updated_annotation.json()["notes"])
     )
 
 
@@ -102,14 +102,14 @@ def test_study_removal_from_studyset(auth_client, session, user_data):
     user = User.query.filter_by(name="user1").first()
     # get relevant studyset
     studysets = auth_client.get(f"/api/studysets/?user_id={user.external_id}")
-    studyset_id = studysets.json["results"][0]["id"]
+    studyset_id = studysets.json()["results"][0]["id"]
     studyset = auth_client.get(f"/api/studysets/{studyset_id}")
     # get relevant annotation
     annotations = auth_client.get(f"/api/annotations/?studyset_id={studyset_id}")
-    annotation_id = annotations.json["results"][0]["id"]
+    annotation_id = annotations.json()["results"][0]["id"]
     annotation = auth_client.get(f"/api/annotations/{annotation_id}")
     # remove study from studyset
-    studies = studyset.json["studies"]
+    studies = studyset.json()["studies"]
     studies.pop()
 
     # update studyset
@@ -119,8 +119,8 @@ def test_study_removal_from_studyset(auth_client, session, user_data):
     updated_annotation = auth_client.get(f"/api/annotations/{annotation_id}")
 
     assert updated_annotation.status_code == 200
-    assert (len(annotation.json["notes"]) - 1) == (
-        len(updated_annotation.json["notes"])
+    assert (len(annotation.json()["notes"]) - 1) == (
+        len(updated_annotation.json()["notes"])
     )
 
 
@@ -128,17 +128,17 @@ def test_study_addition_to_studyset(auth_client, session, user_data):
     user = User.query.filter_by(name="user1").first()
     # get relevant studyset
     studysets = auth_client.get(f"/api/studysets/?user_id={user.external_id}")
-    studyset_id = studysets.json["results"][0]["id"]
+    studyset_id = studysets.json()["results"][0]["id"]
     studyset = auth_client.get(f"/api/studysets/{studyset_id}")
     # get relevant annotation
     annotations = auth_client.get(f"/api/annotations/?studyset_id={studyset_id}")
-    annotation_id = annotations.json["results"][0]["id"]
+    annotation_id = annotations.json()["results"][0]["id"]
     annotation = auth_client.get(f"/api/annotations/{annotation_id}")
     # add a new study
-    studies = studyset.json["studies"]
+    studies = studyset.json()["studies"]
     user2 = User.query.filter_by(name="user2").first()
     studies_u2 = auth_client.get(f"/api/studies/?user_id={user2.external_id}")
-    studies_u2_ids = [s["id"] for s in studies_u2.json["results"]]
+    studies_u2_ids = [s["id"] for s in studies_u2.json()["results"]]
     studies.extend(studies_u2_ids)
 
     # update studyset
@@ -148,8 +148,8 @@ def test_study_addition_to_studyset(auth_client, session, user_data):
     updated_annotation = auth_client.get(f"/api/annotations/{annotation_id}")
 
     assert updated_annotation.status_code == 200
-    assert (len(annotation.json["notes"]) + 1) == (
-        len(updated_annotation.json["notes"])
+    assert (len(annotation.json()["notes"]) + 1) == (
+        len(updated_annotation.json()["notes"])
     )
 
 
@@ -157,7 +157,7 @@ def test_blank_slate_creation(auth_client, session):
     # create empty studyset
     studyset_data = {"name": "test studyset"}
     studyset_post = auth_client.post("/api/studysets/", data=studyset_data)
-    ss_id = studyset_post.json["id"]
+    ss_id = studyset_post.json()["id"]
     # create annotation
     annotation_data = {
         "studyset": ss_id,
@@ -169,7 +169,7 @@ def test_blank_slate_creation(auth_client, session):
     # create study
     study_data = {"name": "fake study"}
     study_post = auth_client.post("/api/studies/", data=study_data)
-    s_id = study_post.json["id"]
+    s_id = study_post.json()["id"]
 
     # add study to studyset
     studyset_put_data = {"studies": [s_id]}
@@ -179,10 +179,10 @@ def test_blank_slate_creation(auth_client, session):
     study_put_data = {"analyses": [{"name": "analysis1"}, {"name": "analysis2"}]}
     _ = auth_client.put(f"/api/studies/{s_id}", data=study_put_data)
 
-    annotation_get = auth_client.get(f"/api/annotations/{annotation_post.json['id']}")
+    annotation_get = auth_client.get(f"/api/annotations/{annotation_post.json()['id']}")
 
-    assert len(annotation_get.json["notes"]) == (
-        (len(annotation_post.json["notes"]) + 2)
+    assert len(annotation_get.json()["notes"]) == (
+        (len(annotation_post.json()["notes"]) + 2)
     )
 
 
@@ -190,28 +190,28 @@ def test_analysis_addition_to_studyset(auth_client, session, user_data):
     user = User.query.filter_by(name="user1").first()
     # get relevant studyset
     studysets = auth_client.get(f"/api/studysets/?user_id={user.external_id}")
-    studyset_id = studysets.json["results"][0]["id"]
+    studyset_id = studysets.json()["results"][0]["id"]
     studyset = auth_client.get(f"/api/studysets/{studyset_id}")
     # get relevant annotation
     annotations = auth_client.get(f"/api/annotations/?studyset_id={studyset_id}")
-    annotation_id = annotations.json["results"][0]["id"]
+    annotation_id = annotations.json()["results"][0]["id"]
     annotation = auth_client.get(f"/api/annotations/{annotation_id}")
     # add a new analysis
-    study_id = studyset.json["studies"][0]
-    analysis = {"id": auth_client.get(f"/api/studies/{study_id}").json["analyses"][0]}
+    study_id = studyset.json()["studies"][0]
+    analysis = {"id": auth_client.get(f"/api/studies/{study_id}").json()["analyses"][0]}
     analysis_new = {"name": "new_analysis"}
     analyses = [analysis, analysis_new]
     updated_study = auth_client.put(
         f"/api/studies/{study_id}", data={"analyses": [analysis, analysis_new]}
     )
-    assert len(updated_study.json["analyses"]) == len(analyses)
+    assert len(updated_study.json()["analyses"]) == len(analyses)
 
     # test if annotations were updated
     updated_annotation = auth_client.get(f"/api/annotations/{annotation_id}")
 
     assert updated_annotation.status_code == 200
-    assert (len(annotation.json["notes"]) + 1) == (
-        len(updated_annotation.json["notes"])
+    assert (len(annotation.json()["notes"]) + 1) == (
+        len(updated_annotation.json()["notes"])
     )
 
 
@@ -275,7 +275,7 @@ def test_put_nonexistent_analysis(auth_client, ingest_neurosynth, session):
 
     assert (
         auth_client.put(
-            f"/api/annotations/{annot.json['id']}", data=bad_payload
+            f"/api/annotations/{annot.json()['id']}", data=bad_payload
         ).status_code
         == 400
     )
@@ -303,14 +303,14 @@ def test_correct_note_overwrite(auth_client, ingest_neurosynth, session):
     new_value = "something new"
     data[0]["note"]["doo"] = new_value
     doo_payload = {"notes": data}
-    put_resp = auth_client.put(f"/api/annotations/{annot.json['id']}", data=doo_payload)
+    put_resp = auth_client.put(f"/api/annotations/{annot.json()['id']}", data=doo_payload)
 
-    get_resp = auth_client.get(f"/api/annotations/{annot.json['id']}")
+    get_resp = auth_client.get(f"/api/annotations/{annot.json()['id']}")
 
-    assert len(put_resp.json["notes"]) == len(data)
-    assert get_resp.json == put_resp.json
+    assert len(put_resp.json()["notes"]) == len(data)
+    assert get_resp.json() == put_resp.json()
     assert (
-        get_resp.json["notes"][0]["note"]["doo"]
-        == put_resp.json["notes"][0]["note"]["doo"]
+        get_resp.json()["notes"][0]["note"]["doo"]
+        == put_resp.json()["notes"][0]["note"]["doo"]
         == new_value
     )

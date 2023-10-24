@@ -140,6 +140,7 @@ def app(mock_auth):
         "pool_timeout": 5,
         "pool_size": 0,
     }
+
     cache.clear()
     # Establish an application context before running the tests.
     ctx = _app.app_context()

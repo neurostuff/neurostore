@@ -3,7 +3,7 @@ Utilities for View construction and function
 """
 import re
 
-import connexion
+from connexion.context import context
 
 from .. import models
 from .. import schemas
@@ -16,10 +16,10 @@ def camel_case_split(str):
 
 
 def get_current_user():
-    user = connexion.context.get("user")
+    user = context.get("user")
     if user:
         return models.User.query.filter_by(
-            external_id=connexion.context["user"]
+            external_id=user
         ).first()
     return None
 

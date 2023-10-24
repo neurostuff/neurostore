@@ -1,7 +1,7 @@
 aniso8601~=8.1
 auth0-python~=3.16
 authlib~=0.15
-connexion[swagger-ui]~=2.7
+connexion[swagger-ui,uvicorn]==3.0.0a7
 email-validator~=1.1
 flake8~=3.8
 flask~=2.0
@@ -31,4 +31,3 @@ openapi-spec-validator~=0.3
 scipy~=1.9
 pytest~=7.1
 orjson~=3.8
-prance

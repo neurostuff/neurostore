@@ -3,7 +3,7 @@ Base Classes/functions for constructing views
 """
 import re
 
-import connexion
+from connexion.context import context
 from flask import abort, request, current_app  # jsonify
 from flask.views import MethodView
 
@@ -45,7 +45,7 @@ def create_user():
     # user signed up with auth0, but has not made any queries yet...
     # should have endpoint to "create user" after sign on with auth0
     current_user = User(
-        external_id=connexion.context["user"], name=profile_info.get("name", "Unknown")
+        external_id=context["user"], name=profile_info.get("name", "Unknown")
     )
 
     return current_user

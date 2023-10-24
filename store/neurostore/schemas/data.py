@@ -524,14 +524,120 @@ class JSONLSAnalysisSchema(AnalysisSchema):
     study = fields.Function(lambda analysis: analysis.study.IRI, dump_only=True)
 
 
-class StudysetSnapshot(object):
+class BaseSnapshot(object):
     def __init__(self):
         pass
 
     def _serialize_dt(self, dt):
         return dt.isoformat() if dt else dt
 
+    def serialize(self, resource_dict):
+        return orjson.dumps(resource_dict)
+
+    def dump_and_serialize(self, resource):
+        return self.serialize(self.dump(resource))
+
+
+class ImageSnapshot(BaseSnapshot):
+    def dump(self, i):
+        return {
+            "id": i.id,
+            "user": i.user_id,
+            "url": i.url,
+            "space": i.space,
+            "value_type": i.value_type,
+            "filename": i.filename,
+            "add_date": i.add_date,
+        }
+
+
+class PointValueSnapshot(BaseSnapshot):
+    def dump(self, v):
+        return {
+            "kind": v.kind,
+            "value": v.value,
+        }
+
+
+class PointSnapshot(BaseSnapshot):
+    def dump(self, p):
+        v_schema = PointValueSnapshot()
+        return {
+            "id": p.id,
+            "coordinates": p.coordinates,
+            "kind": p.kind,
+            "space": p.space,
+            "image": p.image,
+            "label_id": p.label_id,
+            "values": [
+                v_schema.dump(v)
+                for v in p.values
+            ],
+        }
+
+
+class ConditionSnapshot(BaseSnapshot):
+    def dump(self, ac):
+        return {
+            "id": ac.condition_id,
+            "user": ac.condition.user_id,
+            "name": ac.condition.name,
+            "description": ac.condition.description,
+        }
+
+
+class AnalysisSnapshot(BaseSnapshot):
+    def dump(self, a):
+        ac_schema = ConditionSnapshot()
+        p_schema = PointSnapshot()
+        i_schema = ImageSnapshot()
+        return {
+            "id": a.id,
+            "user": a.user_id,
+            "name": a.name,
+            "description": a.description,
+            "conditions": [
+                ac_schema.dump(ac)
+                for ac in a.analysis_conditions
+            ],
+            "weights": list(a.weights),
+            "points": [
+                p_schema.dump(p)
+                for p in a.points
+            ],
+            "images": [
+                i_schema.dump(i)
+                for i in a.images
+            ],
+        }
+
+
+class StudySnapshot(BaseSnapshot):
+    def dump(self, s):
+        a_schema = AnalysisSnapshot()
+        return {
+            "id": s.id,
+            "created_at": self._serialize_dt(s.created_at),
+            "updated_at": self._serialize_dt(s.updated_at),
+            "user": s.user_id,
+            "name": s.name,
+            "description": s.description,
+            "publication": s.publication,
+            "doi": s.doi,
+            "pmid": s.pmid,
+            "authors": s.authors,
+            "year": s.year,
+            "metadata": s.metadata_,
+            "source": s.source,
+            "source_id": s.source_id,
+            "source_updated_at": self._serialize_dt(s.source_updated_at),
+            "analyses": [a_schema.dump(a) for a in s.analyses],
+        }
+
+
+class StudysetSnapshot(BaseSnapshot):
     def dump(self, studyset):
+        s_schema = StudySnapshot()
         return {
             "id": studyset.id,
             "name": studyset.name,
@@ -543,82 +649,7 @@ class StudysetSnapshot(object):
             "created_at": self._serialize_dt(studyset.created_at),
             "updated_at": self._serialize_dt(studyset.updated_at),
             "studies": [
-                {
-                    "id": s.id,
-                    "created_at": self._serialize_dt(s.created_at),
-                    "updated_at": self._serialize_dt(s.updated_at),
-                    "user": s.user_id,
-                    "name": s.name,
-                    "description": s.description,
-                    "publication": s.publication,
-                    "doi": s.doi,
-                    "pmid": s.pmid,
-                    "authors": s.authors,
-                    "year": s.year,
-                    "metadata": s.metadata_,
-                    "source": s.source,
-                    "source_id": s.source_id,
-                    "source_updated_at": self._serialize_dt(s.source_updated_at),
-                    "analyses": [
-                        {
-                            "id": a.id,
-                            "user": a.user_id,
-                            "study": s.id,
-                            "name": a.name,
-                            "description": a.description,
-                            "conditions": [
-                                {
-                                    "id": ac.condition_id,
-                                    "user": ac.condition.user_id,
-                                    "name": ac.condition.name,
-                                    "description": ac.condition.description,
-                                }
-                                for ac in a.analysis_conditions
-                            ],
-                            "weights": list(a.weights),
-                            "points": [
-                                {
-                                    "id": p.id,
-                                    "coordinates": p.coordinates,
-                                    "analysis": a.id,
-                                    "kind": p.kind,
-                                    "space": p.space,
-                                    "image": p.image,
-                                    "label_id": p.label_id,
-                                    "values": [
-                                        {
-                                            "kind": v.kind,
-                                            "value": v.value,
-                                        }
-                                        for v in p.values
-                                    ],
-                                }
-                                for p in a.points
-                            ],
-                            "images": [
-                                {
-                                    "id": i.id,
-                                    "user": i.user_id,
-                                    "analysis": a.id,
-                                    "analysis_name": a.name,
-                                    "url": i.url,
-                                    "space": i.space,
-                                    "value_type": i.value_type,
-                                    "filename": i.filename,
-                                    "add_date": i.add_date,
-                                }
-                                for i in a.images
-                            ],
-                        }
-                        for a in s.analyses
-                    ],
-                }
+                s_schema.dump(s)
                 for s in studyset.studies
             ],
         }
-
-    def serialize(self, studyset_dict):
-        return orjson.dumps(studyset_dict)
-
-    def dump_and_serialize(self, studyset):
-        return self.serialize(self.dump(studyset))

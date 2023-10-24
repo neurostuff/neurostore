@@ -44,13 +44,13 @@ __all__ = [
 ]
 
 LIST_CLONE_ARGS = {
-    "source_id": fields.String(missing=None),
-    "source": fields.String(missing=None),
-    "unique": BooleanOrString(missing=False),
+    "source_id": fields.String(load_default=None),
+    "source": fields.String(load_default=None),
+    "unique": BooleanOrString(load_default=False),
 }
 
 LIST_NESTED_ARGS = {
-    "nested": fields.Boolean(load_default=False, missing=False),
+    "nested": fields.Boolean(load_default=False),
 }
 
 
@@ -91,7 +91,7 @@ class StudysetsView(ObjectView, ListView):
 
 @view_maker
 class AnnotationsView(ObjectView, ListView):
-    _view_fields = {**LIST_CLONE_ARGS, "studyset_id": fields.String(missing=None)}
+    _view_fields = {**LIST_CLONE_ARGS, "studyset_id": fields.String(load_default=None)}
     _nested = {"annotation_analyses": "AnnotationAnalysesResource"}
     _linked = {
         "studyset": "StudysetsView",
@@ -154,10 +154,10 @@ class BaseStudiesView(ObjectView, ListView):
     _nested = {"versions": "StudiesView"}
 
     _view_fields = {
-        "level": fields.String(default="group", missing="group"),
-        "flat": fields.Boolean(load_default=False, missing=False),
-        "info": fields.Boolean(load_default=False, missing=False),
-        "data_type": fields.String(missing=None),
+        "level": fields.String(default="group", load_default="group"),
+        "flat": fields.Boolean(load_default=False),
+        "info": fields.Boolean(load_default=False),
+        "data_type": fields.String(load_default=None),
     }
 
     _multi_search = ("name", "description")
@@ -272,11 +272,11 @@ class BaseStudiesView(ObjectView, ListView):
 class StudiesView(ObjectView, ListView):
     _view_fields = {
         **{
-            "data_type": fields.String(missing=None),
-            "studyset_owner": fields.String(missing=None),
-            "level": fields.String(default="group", missing="group"),
-            "flat": fields.Boolean(load_default=False, missing=False),
-            "info": fields.Boolean(load_default=False, missing=False),
+            "data_type": fields.String(load_default=None),
+            "studyset_owner": fields.String(load_default=None),
+            "level": fields.String(default="group", load_default="group"),
+            "flat": fields.Boolean(load_default=False),
+            "info": fields.Boolean(load_default=False),
         },
         **LIST_NESTED_ARGS,
         **LIST_CLONE_ARGS,
