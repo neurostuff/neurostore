@@ -33,15 +33,18 @@ def test_add_study_to_studyset(auth_client, ingest_neurosynth, session):
     assert post_resp.status_code == 200
 
     dset_id = post_resp.json()["id"]
-    auth_client.get(f"/api/studysets/{dset_id}?nested=true")
-    auth_client.get(f"/api/studysets/{dset_id}?nested=false")
+    pre_nested = auth_client.get(f"/api/studysets/{dset_id}?nested=true")
+    pre_non_nested = auth_client.get(f"/api/studysets/{dset_id}?nested=false")
 
+    assert pre_nested.status_code == pre_non_nested.status_code == 200
     put_resp = auth_client.put(f"/api/studysets/{dset_id}", data={"studies": study_ids})
 
     assert put_resp.status_code == 200
     # test that the study shows up for both nested and not nested
     nested_resp = auth_client.get(f"/api/studysets/{dset_id}?nested=true")
     non_nested_resp = auth_client.get(f"/api/studysets/{dset_id}?nested=false")
+
+    assert nested_resp.status_code == non_nested_resp.status_code == 200
 
     assert len(nested_resp.json()["studies"]) == len(non_nested_resp.json()["studies"])
 

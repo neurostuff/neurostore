@@ -154,7 +154,7 @@ class BaseStudiesView(ObjectView, ListView):
     _nested = {"versions": "StudiesView"}
 
     _view_fields = {
-        "level": fields.String(default="group", load_default="group"),
+        "level": fields.String(dump_default="group", load_default="group"),
         "flat": fields.Boolean(load_default=False),
         "info": fields.Boolean(load_default=False),
         "data_type": fields.String(load_default=None),
@@ -274,7 +274,7 @@ class StudiesView(ObjectView, ListView):
         **{
             "data_type": fields.String(load_default=None),
             "studyset_owner": fields.String(load_default=None),
-            "level": fields.String(default="group", load_default="group"),
+            "level": fields.String(dump_default="group", load_default="group"),
             "flat": fields.Boolean(load_default=False),
             "info": fields.Boolean(load_default=False),
         },
