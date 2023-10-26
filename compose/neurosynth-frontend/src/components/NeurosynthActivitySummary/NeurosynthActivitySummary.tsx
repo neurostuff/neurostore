@@ -1,9 +1,9 @@
 import { Box, Skeleton, Typography } from '@mui/material';
-import { useGetBaseStudies } from 'hooks';
+import { useGetStudies } from 'hooks';
 import useGetPoints from 'hooks/analyses/useGetPoints';
 
 const NeurosynthActivitySummary: React.FC = () => {
-    const { data: studies, isLoading: getStudiesIsLoading } = useGetBaseStudies({});
+    const { data: studies, isLoading: getStudiesIsLoading } = useGetStudies({});
     const { data: points, isLoading: getPointsIsLoading } = useGetPoints();
 
     const isLoading = getStudiesIsLoading || getPointsIsLoading;
