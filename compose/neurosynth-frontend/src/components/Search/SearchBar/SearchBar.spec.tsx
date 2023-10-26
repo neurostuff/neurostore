@@ -29,11 +29,35 @@ describe('SearchBar Component', () => {
             </BrowserRouter>
         );
 
-        const searchBar = screen.getByRole('textbox');
+        const searchBar = screen.getByPlaceholderText('Search for a study');
+        // ACT
         userEvent.type(searchBar, 'ABCDEF');
 
         // ASSERT
         expect(screen.getByDisplayValue('ABCDEF')).toBeInTheDocument();
+    });
+
+    it('should select an option', () => {
+        // ARRANGE
+        render(
+            <BrowserRouter>
+                <SearchBar onSearch={onSearchMock} />
+            </BrowserRouter>
+        );
+
+        // ACT
+
+        // click on the select
+        const selectBox = screen.getByRole('button', { name: 'All' });
+        userEvent.click(selectBox);
+
+        // select the authors option
+        const authors = screen.getByRole('option', { name: 'Authors' });
+        userEvent.click(authors);
+
+        // ASSERT
+        expect(screen.queryByRole('button', { name: 'Authors' })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Authors' })).toBeVisible();
     });
 
     it('should invoke a search when clicked', () => {
@@ -43,22 +67,12 @@ describe('SearchBar Component', () => {
             </BrowserRouter>
         );
 
-        const searchBar = screen.getByRole('textbox');
+        const searchBar = screen.getByPlaceholderText('Search for a study');
         userEvent.type(searchBar, 'ABCDEF');
 
         const searchButton = screen.getByTestId('SearchIcon');
         userEvent.click(searchButton);
-        expect(onSearchMock).toBeCalledWith({
-            authorSearch: expect.any(String),
-            dataType: expect.any(String),
-            descOrder: expect.any(Boolean),
-            descriptionSearch: expect.any(String),
-            nameSearch: expect.any(String),
-            publicationSearch: expect.any(String),
-            sortBy: expect.any(String),
-            source: expect.any(String),
-            genericSearchStr: 'ABCDEF', // this is the thing we care about and want to test
-        });
+        expect(onSearchMock).toBeCalledWith({ genericSearchStr: 'ABCDEF' });
     });
 
     it('should invoke a search when enter is pressed', () => {
@@ -68,7 +82,15 @@ describe('SearchBar Component', () => {
             </BrowserRouter>
         );
 
-        const searchBar = screen.getByRole('textbox');
+        // click on the select
+        const selectBox = screen.getByRole('button', { name: 'All' });
+        userEvent.click(selectBox);
+
+        // select the authors option
+        const authors = screen.getByRole('option', { name: 'Authors' });
+        userEvent.click(authors);
+
+        const searchBar = screen.getByPlaceholderText('Search for a study');
         userEvent.type(searchBar, 'ABCDEF{enter}');
 
         expect(onSearchMock).toBeCalled();
@@ -82,6 +104,6 @@ describe('SearchBar Component', () => {
         );
 
         const button = screen.getByTestId('SearchIcon');
-        expect(button.parentElement).toHaveStyle({ backgroundColor: 'rgb(255, 255, 255);' }); // equivalent to '#FFFFFF', dont forget semicolon
+        expect(button.parentElement).toHaveStyle({ backgroundColor: '#FFFFFF' });
     });
 });

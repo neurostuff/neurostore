@@ -1,7 +1,7 @@
 import { Box, Pagination, TablePagination, Typography } from '@mui/material';
 import SearchBar from 'components/Search/SearchBar/SearchBar';
 import { Style } from 'index';
-import { SearchCriteria } from 'pages/Studies/StudiesPage/models';
+import { SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
 import { ChangeEvent } from 'react';
 import SearchContainerStyles from './SearchContainer.styles';
 
@@ -14,7 +14,6 @@ export interface ISearchContainer {
     pageOfResults: number;
     searchButtonColor?: string;
     paginationSelectorStyles?: Style;
-    searchMode?: 'study-search' | 'studyset-search';
 }
 
 const getNumTotalPages = (totalCount: number | undefined, pageSize: number | undefined) => {
@@ -37,7 +36,6 @@ const SearchContainer: React.FC<ISearchContainer> = (props) => {
         children,
         searchButtonColor = 'primary',
         paginationSelectorStyles = {},
-        searchMode = 'study-search',
     } = props;
 
     const handleRowsPerPageChange = (
@@ -54,11 +52,7 @@ const SearchContainer: React.FC<ISearchContainer> = (props) => {
 
     return (
         <>
-            <SearchBar
-                searchMode={searchMode}
-                searchButtonColor={searchButtonColor}
-                onSearch={onSearch}
-            />
+            <SearchBar searchButtonColor={searchButtonColor} onSearch={onSearch} />
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                 <Pagination

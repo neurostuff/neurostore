@@ -13,7 +13,6 @@ import {
     Clone,
     AnnotationReturnRelationships,
     AnnotationCommon,
-    DefaultApi as BaseStudiesApi,
 } from '../neurostore-typescript-sdk';
 import {
     SpecificationsApi,
@@ -45,7 +44,6 @@ const neurosynthConfig: Configuration = new Configuration({
 });
 
 const NeurostoreServices = {
-    BaseStudiesService: new BaseStudiesApi(neurostoreConfig),
     StudiesService: new StudiesApi(neurostoreConfig),
     AnalysesService: new AnalysesApi(neurostoreConfig),
     ConditionsService: new ConditionsApi(neurostoreConfig),

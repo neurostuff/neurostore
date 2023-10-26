@@ -1,6 +1,6 @@
 import { Box, Button, Card, CardActions, CardContent, Typography } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import useGetMetaAnalysisResultById from 'hooks/metaAnalyses/useGetMetaAnalysisResultById';
+import useGetMetaAnalysisResultById from 'hooks/requests/useGetMetaAnalysisResultById';
 import { ColorOptions } from 'index';
 import {
     MetaAnalysisReturn,

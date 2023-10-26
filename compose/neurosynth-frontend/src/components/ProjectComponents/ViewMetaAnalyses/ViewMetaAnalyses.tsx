@@ -2,14 +2,14 @@ import { Add } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
 import CreateMetaAnalysisSpecificationDialogBase from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useGetMetaAnalysesByProjectId } from 'hooks';
+import { useGetMetaAnalyses } from 'hooks';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ViewMetaAnalysis from './ViewMetaAnalysis';
 
 const ViewMetaAnalyses: React.FC = () => {
     const { projectId }: { projectId: string } = useParams();
-    const { data, isLoading, isError } = useGetMetaAnalysesByProjectId(projectId);
+    const { data, isLoading, isError } = useGetMetaAnalyses(projectId);
     const [createMetaAnalysisDialogIsOpen, setCreateMetaAnalysisDialogIsOpen] = useState(false);
 
     return (

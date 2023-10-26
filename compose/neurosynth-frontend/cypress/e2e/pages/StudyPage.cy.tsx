@@ -1,5 +1,7 @@
 /// <reference types="cypress" />
 
+import { mockStudy } from 'testing/mockData';
+
 export {};
 
 const PATH = '/studies/mock-study-id';
@@ -8,9 +10,6 @@ const PAGE_NAME = 'StudyPage';
 describe(PAGE_NAME, () => {
     beforeEach(() => {
         cy.clearLocalStorage().clearSessionStorage();
-        cy.intercept('GET', `https://api.semanticscholar.org/**`, {
-            fixture: 'semanticScholar',
-        }).as('semanticScholarFixture');
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
     });
 
@@ -19,11 +18,8 @@ describe(PAGE_NAME, () => {
      */
     it('should load successfully', () => {
         cy.intercept('GET', `**/api/projects*`).as('realProjectsRequest');
-        cy.intercept('GET', `**/api/studies/**`, {
-            fixture: 'study',
-        }).as('studyFixture');
-
-        cy.visit(PATH).wait('@semanticScholarFixture').wait('@studyFixture');
+        cy.intercept('GET', `**/api/studies/**`).as('realStudyFixture');
+        cy.login('real').wait('@realProjectsRequest').visit('/studies').wait('@realStudyFixture');
         // .get('tr')
         // .eq(2)
         // .click()

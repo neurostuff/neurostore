@@ -6,7 +6,7 @@ import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import ExclusionSelectorPopup from 'components/CurationComponents/SelectorPopups/ExclusionSelectorPopup/ExclusionSelectorPopup';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import { ITag } from 'hooks/projects/useGetProjects';
+import { ITag } from 'hooks/requests/useGetProjects';
 import { useRef, useState } from 'react';
 import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';

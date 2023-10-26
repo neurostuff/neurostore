@@ -1,5 +1,5 @@
 import { Box, Paper } from '@mui/material';
-import { ISource, ITag } from 'hooks/projects/useGetProjects';
+import { ISource, ITag } from 'hooks/requests/useGetProjects';
 import React from 'react';
 import CurationStubStudy from './CurationStubStudy';
 import CurationStubStudyStyles from './CurationStubStudy.styles';

@@ -4,6 +4,11 @@ import { DetailedSettings as MergeCellsSettings } from 'handsontable/plugins/mer
 import { ColumnSettings } from 'handsontable/settings';
 import { useGetAnnotationById, useUpdateAnnotationById } from 'hooks';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
+import {
+    useInitProjectStoreIfRequired,
+    useProjectExtractionAnnotationId,
+} from 'pages/Projects/ProjectPage/ProjectStore';
+import { useInitStudyStoreIfRequired } from 'pages/Studies/StudyStore';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import AnnotationsHotTable from './AnnotationsHotTable/AnnotationsHotTable';
 import {
@@ -16,24 +21,17 @@ import {
     noteKeyArrToObj,
     noteKeyObjToArr,
 } from './helpers/utils';
-import { useAuth0 } from '@auth0/auth0-react';
-import { useSnackbar } from 'notistack';
 
 const hardCodedColumns = ['Study', 'Analysis'];
 
-const EditAnnotations: React.FC<{ annotationId: string }> = (props) => {
-    const { user } = useAuth0();
-    const { enqueueSnackbar } = useSnackbar();
-    const { mutate, isLoading: updateAnnotationIsLoading } = useUpdateAnnotationById(
-        props.annotationId
-    );
-    const {
-        data,
-        isLoading: getAnnotationIsLoading,
-        isError,
-    } = useGetAnnotationById(props.annotationId);
+const EditAnnotations: React.FC = (props) => {
+    const annotationId = useProjectExtractionAnnotationId();
 
-    const theLoggedInUserOwnsThisAnnotation = (user?.sub || null) === (data?.user || undefined);
+    useInitProjectStoreIfRequired();
+    useInitStudyStoreIfRequired();
+
+    const { mutate, isLoading: updateAnnotationIsLoading } = useUpdateAnnotationById(annotationId);
+    const { data, isLoading: getAnnotationIsLoading, isError } = useGetAnnotationById(annotationId);
 
     // tracks the changes made to hot table
     const hotTableDataUpdatesRef = useRef<{
@@ -92,13 +90,7 @@ const EditAnnotations: React.FC<{ annotationId: string }> = (props) => {
     }, [data]);
 
     const handleClickSave = () => {
-        if (!props.annotationId) return;
-        if (!theLoggedInUserOwnsThisAnnotation) {
-            enqueueSnackbar('You do not have permission to edit this annotation', {
-                variant: 'error',
-            });
-            return;
-        }
+        if (!annotationId) return;
 
         const { hotData, noteKeys } = hotTableDataUpdatesRef.current;
 
@@ -111,7 +103,7 @@ const EditAnnotations: React.FC<{ annotationId: string }> = (props) => {
 
         mutate(
             {
-                argAnnotationId: props.annotationId,
+                argAnnotationId: annotationId,
                 annotation: {
                     notes: updatedAnnotationNotes.map((annotationNote) => ({
                         note: annotationNote.note,

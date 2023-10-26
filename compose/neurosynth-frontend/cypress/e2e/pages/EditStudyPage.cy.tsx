@@ -2,7 +2,7 @@
 
 export {};
 
-const PATH = '/projects/abc123/extraction/studies/mock-study-id/edit';
+const PATH = '/studies/mock-study-id/edit';
 const PAGE_NAME = 'EditStudyPage';
 
 describe(PAGE_NAME, () => {
@@ -12,11 +12,11 @@ describe(PAGE_NAME, () => {
     });
 
     it('should load', () => {
-        cy.intercept('GET', `**/api/projects/*`, { fixture: 'project' }).as('projectFixture');
+        cy.intercept('GET', `**/api/projects*`).as('realProjectsRequest');
         cy.intercept('GET', `**/api/studies/mock-study-id*`, { fixture: 'study' }).as(
             'studyFixture'
         );
-        cy.visit(PATH).wait('@projectFixture').wait('@studyFixture');
+        cy.visit(PATH).wait('@studyFixture');
         // cy.login('mocked').wait('@realProjectsRequest').visit(PATH).wait('@studyFixture');
     });
 

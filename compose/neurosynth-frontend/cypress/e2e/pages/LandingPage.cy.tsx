@@ -5,10 +5,6 @@ export {};
 const PAGE_NAME = 'LandingPage';
 
 describe(PAGE_NAME, () => {
-    beforeEach(() => {
-        cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
-    });
-
     it('should load successfully', () => {
         cy.visit('/');
     });

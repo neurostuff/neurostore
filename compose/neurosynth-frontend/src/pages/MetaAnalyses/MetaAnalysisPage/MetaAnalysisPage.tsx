@@ -1,10 +1,10 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { Box, Button, Link, Paper, Typography } from '@mui/material';
+import Help from '@mui/icons-material/Help';
+import { Box, Button, IconButton, Link, Paper, Typography } from '@mui/material';
 import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
 import SelectAnalysesSummaryComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesSummaryComponent/SelectAnalysesSummaryComponent';
 import EditSpecificationDialog from 'components/Dialogs/EditSpecificationDialog/EditSpecificationDialog';
-import DisplayMetaAnalysisResult from 'components/DisplayMetaAnalysisResult/DisplayMetaAnalysisResult';
 import { getType } from 'components/EditMetadata';
 import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
 import DynamicInputDisplay from 'components/MetaAnalysisConfigComponents/DynamicInputDisplay/DynamicInputDisplay';
@@ -14,10 +14,9 @@ import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBr
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
 import { useGetMetaAnalysisById } from 'hooks';
-import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
-import useGetMetaAnalysisResultById from 'hooks/metaAnalyses/useGetMetaAnalysisResultById';
-import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById';
-import useUpdateMetaAnalysis from 'hooks/metaAnalyses/useUpdateMetaAnalysis';
+import useGetSpecificationById from 'hooks/requests/useGetSpecificationById';
+import useUpdateMetaAnalysis from 'hooks/requests/useUpdateMetaAnalysis';
+import useGetTour from 'hooks/useGetTour';
 import {
     Annotation,
     ResultReturn,
@@ -34,6 +33,9 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { NeurostoreAnnotation } from 'utils/api';
 import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
+import { EAnalysisType } from 'hooks/requests/useCreateAlgorithmSpecification';
+import useGetMetaAnalysisResultById from 'hooks/requests/useGetMetaAnalysisResultById';
+import DisplayMetaAnalysisResult from 'components/DisplayMetaAnalysisResult/DisplayMetaAnalysisResult';
 
 const getAnalysisTypeDescription = (name: string | undefined): string => {
     switch (name) {
@@ -47,7 +49,7 @@ const getAnalysisTypeDescription = (name: string | undefined): string => {
 };
 
 const MetaAnalysisPage: React.FC = (props) => {
-    // const { startTour } = useGetTour('MetaAnalysisPage');
+    const { startTour } = useGetTour('MetaAnalysisPage');
     const { projectId, metaAnalysisId } = useParams<{
         projectId: string;
         metaAnalysisId: string;
@@ -212,6 +214,11 @@ const MetaAnalysisPage: React.FC = (props) => {
                                 </Typography>
                             </Box>
                         </TextEdit>
+                    </Box>
+                    <Box>
+                        <IconButton onClick={() => startTour()}>
+                            <Help color="primary" />
+                        </IconButton>
                     </Box>
                 </Box>
 

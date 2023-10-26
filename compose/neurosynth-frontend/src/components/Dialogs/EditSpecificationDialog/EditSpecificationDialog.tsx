@@ -10,9 +10,9 @@ import {
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetMetaAnalysisById } from 'hooks';
-import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
-import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById';
-import useUpdateSpecification from 'hooks/metaAnalyses/useUpdateSpecification';
+import { EAnalysisType } from 'hooks/requests/useCreateAlgorithmSpecification';
+import useGetSpecificationById from 'hooks/requests/useGetSpecificationById';
+import useUpdateSpecification from 'hooks/requests/useUpdateSpecification';
 import {
     AnnotationReturn,
     SpecificationReturn,

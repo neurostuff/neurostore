@@ -8,7 +8,7 @@ import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccord
 import NeurosynthAutocomplete, {
     IAutocompleteObject,
 } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
-import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
+import { EAnalysisType } from 'hooks/requests/useCreateAlgorithmSpecification';
 import DynamicForm from 'components/MetaAnalysisConfigComponents/DynamicForm/DynamicForm';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;

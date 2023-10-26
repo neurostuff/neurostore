@@ -2,7 +2,7 @@ import { Box, Link, Paper, Typography } from '@mui/material';
 import { getResultStatus } from 'components/ProjectComponents/ViewMetaAnalyses/ViewMetaAnalysis';
 import { MetaAnalysisReturn, ResultReturn } from 'neurosynth-compose-typescript-sdk';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import useGetAnalysisById from 'hooks/analyses/useGetAnalysisById';
+import useGetAnalysisById from 'hooks/requests/useGetAnalysisById';
 import DisplayPoints from 'components/DisplayStudy/DisplayAnalyses/DisplayAnalysis/DisplayPoints/DisplayPoints';
 import { PointReturn } from 'neurostore-typescript-sdk';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';

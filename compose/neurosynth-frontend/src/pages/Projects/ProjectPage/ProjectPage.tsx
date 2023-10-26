@@ -4,7 +4,7 @@ import EditMetaAnalyses from 'components/ProjectComponents/EditMetaAnalyses/Edit
 import ViewMetaAnalyses from 'components/ProjectComponents/ViewMetaAnalyses/ViewMetaAnalyses';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
-import useGetMetaAnalysesByProjectId from 'hooks/metaAnalyses/useGetMetaAnalysesByProjectId';
+import useGetMetaAnalysesByProjectId from 'hooks/requests/useGetMetaAnalyses';
 import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
 import {
     useGetProjectIsLoading,

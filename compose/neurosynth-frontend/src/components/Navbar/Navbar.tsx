@@ -14,7 +14,6 @@ export interface INav {
 }
 
 export const NAVBAR_HEIGHT = 64;
-const AUTH0_AUDIENCE = process.env.REACT_APP_AUTH0_AUDIENCE;
 
 const Navbar: React.FC = (_props) => {
     const { loginWithPopup, logout } = useAuth0();
@@ -22,10 +21,7 @@ const Navbar: React.FC = (_props) => {
     const history = useHistory();
 
     const handleLogin = async () => {
-        await loginWithPopup({
-            audience: AUTH0_AUDIENCE,
-            scope: 'openid profile email offline_access',
-        });
+        await loginWithPopup();
         history.push('/');
     };
 

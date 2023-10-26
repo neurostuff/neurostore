@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import useGetPubmedIDs from 'hooks/external/useGetPubMedIds';
+import useGetPubmedIDs from 'hooks/requests/useGetPubMedIds';
 import { defaultIdentificationSources } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 import React from 'react';
 import { useEffect } from 'react';

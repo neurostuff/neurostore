@@ -3,7 +3,7 @@ import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
-import { ISource } from 'hooks/projects/useGetProjects';
+import { ISource } from 'hooks/requests/useGetProjects';
 import { ChangeEvent, useState } from 'react';
 import CreateStubStudyStyles from './CreateStubStudy.styles';
 import { v4 as uuidv4 } from 'uuid';

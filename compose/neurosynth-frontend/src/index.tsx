@@ -1,13 +1,13 @@
-import { Auth0Provider } from '@auth0/auth0-react';
-import { grey } from '@mui/material/colors';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { SystemStyleObject } from '@mui/system';
-import * as Sentry from '@sentry/react';
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { BrowserRouter } from 'react-router-dom';
-import App from './App';
 import './index.css';
+import App from './App';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { Auth0Provider } from '@auth0/auth0-react';
+import { grey } from '@mui/material/colors';
+import { SystemStyleObject } from '@mui/system';
+import { BrowserRouter } from 'react-router-dom';
+import * as Sentry from '@sentry/react';
 
 export type Style = Record<string, SystemStyleObject>;
 export type ColorOptions =
@@ -107,12 +107,10 @@ ReactDOM.render(
     <React.StrictMode>
         <Auth0Provider
             domain={domain}
-            useRefreshTokens={true}
             clientId={clientId}
             redirectUri={window.location.origin}
-            scope="openid profile email offline_access"
             audience={audience}
-            cacheLocation="localstorage"
+            cacheLocation={env === 'DEV' ? 'localstorage' : 'memory'} // we need to switch to localstorage for cypress testing or else state will not work properly
         >
             <BrowserRouter>
                 <ThemeProvider theme={theme}>

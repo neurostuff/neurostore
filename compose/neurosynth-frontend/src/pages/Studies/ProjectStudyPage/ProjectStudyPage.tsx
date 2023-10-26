@@ -10,7 +10,7 @@ import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccord
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useCreateStudy, useGetStudysetById, useUpdateStudyset } from 'hooks';
-import useGetProjectById from 'hooks/projects/useGetProjectById';
+import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import {
     useInitProjectStoreIfRequired,

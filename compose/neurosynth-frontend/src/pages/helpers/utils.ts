@@ -1,4 +1,4 @@
-import { SearchCriteria } from 'pages/Studies/StudiesPage/models';
+import { SearchCriteria } from 'pages/Studies/StudiesPage/StudiesPage';
 
 const getSearchCriteriaFromURL = (locationURL?: string): SearchCriteria => {
     const newSearchCriteria = new SearchCriteria();

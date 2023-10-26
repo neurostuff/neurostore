@@ -6,7 +6,7 @@ import EditStudyMetadata from 'components/EditStudyComponents/EditStudyMetadata/
 import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatusButtons/FloatingStatusButtons';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import useGetProjectById from 'hooks/projects/useGetProjectById';
+import useGetProjectById from 'hooks/requests/useGetProjectById';
 import { useSnackbar } from 'notistack';
 import {
     useInitProjectStoreIfRequired,

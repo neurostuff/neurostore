@@ -1,28 +1,89 @@
+import { useEffect, useState } from 'react';
+import { Typography, Box, IconButton, TableRow, TableCell } from '@mui/material';
+import HelpIcon from '@mui/icons-material/Help';
+import useGetTour from 'hooks/useGetTour';
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, TableCell, TableRow, Typography } from '@mui/material';
-import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
+import { useGetStudies } from 'hooks';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { useHistory, useLocation } from 'react-router-dom';
+import { StudyList } from 'neurostore-typescript-sdk';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import { useGetBaseStudies } from 'hooks';
-import { BaseStudyList } from 'neurostore-typescript-sdk';
+import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
 import {
     addKVPToSearch,
     getSearchCriteriaFromURL,
     getURLFromSearchCriteria,
 } from 'pages/helpers/utils';
-import { useEffect, useState } from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
-import { SearchCriteria } from './models';
+
+export enum SortBy {
+    TITLE = 'name',
+    AUTHORS = 'authors',
+    DESCRIPTION = 'description',
+    CREATEDAT = 'created_at',
+    SOURCE = 'source',
+    PUBLICATION = 'publication',
+}
+
+export enum Source {
+    NEUROSTORE = 'neurostore',
+    NEUROVAULT = 'neurovault',
+    PUBMED = 'pubmed',
+    NEUROSYNTH = 'neurosynth',
+    NEUROQUERY = 'neuroquery',
+    ALL = 'all_sources',
+}
+export enum SearchBy {
+    TITLE = 'title',
+    DESCRIPTION = 'description',
+    AUTHORS = 'authors',
+    ALL = 'all fields',
+}
+
+export enum SearchDataType {
+    COORDINATE = 'coordinate',
+    IMAGE = 'image',
+    BOTH = 'both',
+}
+
+export const SearchByMapping = {
+    [SearchBy.ALL]: 'genericSearchStr',
+    [SearchBy.AUTHORS]: 'authorSearch',
+    [SearchBy.DESCRIPTION]: 'descriptionSearch',
+    [SearchBy.TITLE]: 'nameSearch',
+};
+
+export class SearchCriteria {
+    constructor(
+        public genericSearchStr: string | undefined = undefined,
+        public sortBy: SortBy = SortBy.TITLE,
+        public pageOfResults: number = 1,
+        public descOrder: boolean = true,
+        public pageSize: number = 10,
+        public isNested: boolean = false,
+        public nameSearch: string | undefined = undefined,
+        public descriptionSearch: string | undefined = undefined,
+        public authorSearch: string | undefined = undefined,
+        public showUnique: boolean = true,
+        public source: Source | undefined = undefined,
+        public userId: string | undefined = undefined,
+        public dataType: SearchDataType = SearchDataType.BOTH,
+        public studysetOwner: string | undefined = undefined,
+        public level: 'group' | 'meta' | undefined = undefined,
+        public pmid: string | undefined = undefined,
+        public doi: string | undefined = undefined,
+        public flat: 'true' | 'false' | undefined = 'true'
+    ) {}
+}
 
 const StudiesPage = () => {
-    // const { startTour } = useGetTour('StudiesPage');
+    const { startTour } = useGetTour('StudiesPage');
     const history = useHistory();
     const location = useLocation();
     const { user, isLoading: authenticationIsLoading } = useAuth0();
 
     // cached data returned from the api
-    const [studyData, setStudyData] = useState<BaseStudyList>();
+    const [studyData, setStudyData] = useState<StudyList>();
 
     // state of the current search
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({
@@ -39,7 +100,7 @@ const StudiesPage = () => {
      * exists before loading is complete so we are guaranteed that the first query will run
      * with the studysetOwner set (if logged in) and undefined otherwise
      */
-    const { data, isLoading, isError, isFetching } = useGetBaseStudies(
+    const { data, isLoading, isError, isFetching } = useGetStudies(
         { ...debouncedSearchCriteria, studysetOwner: user?.sub },
         !authenticationIsLoading
     );
@@ -52,6 +113,15 @@ const StudiesPage = () => {
     useEffect(() => {
         if (data) setStudyData(data);
     }, [data]);
+
+    useEffect(() => {
+        if (user?.sub) {
+            setSearchCriteria((prev) => ({
+                ...prev,
+                studysetOwner: user.sub,
+            }));
+        }
+    }, [user?.sub]);
 
     // runs every time the URL changes, to create a URL driven search.
     // this is separated from the debounce because otherwise the URL would
@@ -68,7 +138,7 @@ const StudiesPage = () => {
     useEffect(() => {
         const timeout = setTimeout(async () => {
             setDebouncedSearchCriteria(searchCriteria);
-        }, 500);
+        }, 200);
 
         return () => {
             clearTimeout(timeout);
@@ -79,7 +149,7 @@ const StudiesPage = () => {
         // when we search, we want to reset the search criteria as we dont know the
         // page number of number of results in advance
         const searchURL = getURLFromSearchCriteria(searchArgs);
-        history.push(`/base-studies?${searchURL}`);
+        history.push(`/studies?${searchURL}`);
     };
 
     const handleRowsPerPageChange = (newRowsPerPage: number) => {
@@ -88,18 +158,21 @@ const StudiesPage = () => {
             'pageOfResults',
             '1'
         );
-        history.push(`/base-studies?${searchURL}`);
+        history.push(`/studies?${searchURL}`);
     };
 
     const handlePageChange = (page: number) => {
         const searchURL = addKVPToSearch(location.search, 'pageOfResults', `${page}`);
-        history.push(`/base-studies?${searchURL}`);
+        history.push(`/studies?${searchURL}`);
     };
 
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>
             <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
                 <Typography variant="h4">Studies</Typography>
+                <IconButton onClick={() => startTour()} color="primary">
+                    <HelpIcon />
+                </IconButton>
             </Box>
 
             <SearchContainer
@@ -141,8 +214,8 @@ const StudiesPage = () => {
                                 styles: { color: 'primary.contrastText', fontWeight: 'bold' },
                             },
                             {
-                                text: 'Publication',
-                                key: 'publication',
+                                text: 'Journal',
+                                key: 'journal',
                                 styles: { color: 'primary.contrastText', fontWeight: 'bold' },
                             },
                             {
@@ -156,7 +229,7 @@ const StudiesPage = () => {
                                 data-tour={index === 0 ? 'StudiesPage-4' : null}
                                 sx={NeurosynthTableStyles.tableRow}
                                 key={studyrow.id || index}
-                                onClick={() => history.push(`/base-studies/${studyrow.id}`)}
+                                onClick={() => history.push(`/studies/${studyrow.id}`)}
                             >
                                 <TableCell>
                                     {studyrow?.name || (
@@ -170,10 +243,13 @@ const StudiesPage = () => {
                                 </TableCell>
                                 <TableCell>
                                     {studyrow?.publication || (
-                                        <Box sx={{ color: 'warning.dark' }}>No Publication</Box>
+                                        <Box sx={{ color: 'warning.dark' }}>No Journal</Box>
                                     )}
                                 </TableCell>
-                                <TableCell>{studyrow?.username || 'Neurosynth-Compose'}</TableCell>
+                                <TableCell>
+                                    {(studyrow?.user === user?.sub ? 'Me' : studyrow?.user) ||
+                                        'Neurosynth-Compose'}
+                                </TableCell>
                             </TableRow>
                         ))}
                     />

@@ -4,7 +4,7 @@ import { INeurosynthNodeData } from 'components/PrismaComponent/NeurosynthNode';
 import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 import { CSSProperties } from 'react';
 import { Edge, MarkerType, Node } from 'reactflow';
-import { IProvenance, ISource, ITag } from 'hooks/projects/useGetProjects';
+import { IProvenance, ISource, ITag } from 'hooks/requests/useGetProjects';
 
 type IPRISMAExclusion = ITag & { numRecords: number };
 

@@ -1,7 +1,8 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import AddIcon from '@mui/icons-material/Add';
 import HelpIcon from '@mui/icons-material/Help';
-import { Box, Button, IconButton, TableCell, TableRow, Typography } from '@mui/material';
+import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
+import { Box, Button, IconButton, Link, TableCell, TableRow, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
@@ -20,6 +21,7 @@ import { StudyReturn } from 'neurostore-typescript-sdk';
 import { useState } from 'react';
 import { useIsFetching } from 'react-query';
 import { useHistory, useParams } from 'react-router';
+import { NavLink } from 'react-router-dom';
 import StudysetPageStyles from './StudysetPage.styles';
 
 const StudysetsPage: React.FC = (props) => {
@@ -49,7 +51,7 @@ const StudysetsPage: React.FC = (props) => {
         data: studyset,
         isLoading: getStudysetIsLoading,
         isError: getStudysetIsError,
-    } = useGetStudysetById(params.studysetId, true);
+    } = useGetStudysetById(params.studysetId);
     const isFetching = useIsFetching(['studysets', params.studysetId]);
     const { data: annotations, isLoading: getAnnotationsIsLoading } = useGetAnnotationsByStudysetId(
         params?.studysetId
@@ -295,7 +297,8 @@ const StudysetsPage: React.FC = (props) => {
                                     )}
                                 </TableCell>
                                 <TableCell>
-                                    {annotation?.username || 'Neurosynth-Compose'}
+                                    {(annotation?.user === user?.sub ? 'Me' : annotation?.user) ||
+                                        'Neurosynth-Compose'}
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -316,7 +319,10 @@ const StudysetsPage: React.FC = (props) => {
                         loaderColor: 'secondary',
                         noDataDisplay: (
                             <Typography sx={{ padding: '1rem' }} color="warning.dark">
-                                There are no studies in this studyset yet.
+                                There are no studies in this studyset yet. Start by{' '}
+                                <Link color="primary" exact component={NavLink} to="/studies">
+                                    adding studies to this studyset
+                                </Link>
                             </Typography>
                         ),
                     }}
@@ -335,6 +341,16 @@ const StudysetsPage: React.FC = (props) => {
                             text: 'Journal',
                             key: 'journal',
                             styles: { color: 'primary.contrastText', fontWeight: 'bold' },
+                        },
+                        {
+                            text: '',
+                            key: 'deleteStudyFromStudyset',
+                            styles: {
+                                display:
+                                    isAuthenticated && thisUserOwnsthisStudyset
+                                        ? 'table-cell'
+                                        : 'none',
+                            },
                         },
                     ]}
                     rows={((studyset?.studies || []) as StudyReturn[]).map((study, index) => (
@@ -355,6 +371,27 @@ const StudysetsPage: React.FC = (props) => {
                                 {study?.publication || (
                                     <Box sx={{ color: 'warning.dark' }}>No Journal</Box>
                                 )}
+                            </TableCell>
+                            <TableCell
+                                sx={{
+                                    display:
+                                        isAuthenticated && thisUserOwnsthisStudyset
+                                            ? 'table-cell'
+                                            : 'none',
+                                }}
+                                data-tour={index === 0 ? 'UserStudiesPage-3' : null}
+                            >
+                                <IconButton
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        setDeleteStudyFromStudysetConfirmationIsOpen({
+                                            isOpen: true,
+                                            data: { studyId: study.id },
+                                        });
+                                    }}
+                                >
+                                    <RemoveCircleIcon color="error" />
+                                </IconButton>
                             </TableCell>
                         </TableRow>
                     ))}

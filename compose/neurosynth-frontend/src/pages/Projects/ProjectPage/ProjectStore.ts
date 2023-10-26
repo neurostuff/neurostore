@@ -3,7 +3,7 @@ import { DropResult, ResponderProvided } from '@hello-pangea/dnd';
 import { AxiosError, AxiosResponse } from 'axios';
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import useGetProjectById from 'hooks/projects/useGetProjectById';
+import useGetProjectById from 'hooks/requests/useGetProjectById';
 import {
     IExtractionMetadata,
     INeurosynthProject,
@@ -11,8 +11,8 @@ import {
     IPRISMAConfig,
     ISource,
     ITag,
-} from 'hooks/projects/useGetProjects';
-import useUpdateProject from 'hooks/projects/useUpdateProject';
+} from 'hooks/requests/useGetProjects';
+import useUpdateProject from 'hooks/requests/useUpdateProject';
 import { ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { OptionsObject, SnackbarKey, SnackbarMessage, useSnackbar } from 'notistack';
 import { useEffect } from 'react';

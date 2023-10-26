@@ -2,7 +2,7 @@ import { Box, Button, ButtonGroup, TextField } from '@mui/material';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
-import { indexToPRISMAMapping, ITag } from 'hooks/projects/useGetProjects';
+import { indexToPRISMAMapping, ITag } from 'hooks/requests/useGetProjects';
 import { useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
