@@ -46,7 +46,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
      * with the studysetOwner set (if logged in) and undefined otherwise
      */
     const { data, isLoading, isError, isFetching } = useGetStudies(
-        { ...debouncedSearchCriteria, studysetOwner: user?.sub, flat: 'true' },
+        { ...debouncedSearchCriteria, studysetOwner: user?.sub, flat: true },
         !authenticationIsLoading
     );
 
@@ -56,7 +56,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
         isError: allDataForSearchIsError,
         isFetching: allDataForSearchIsFetching,
     } = useGetStudies(
-        { ...debouncedSearchCriteria, studysetOwner: user?.sub, pageSize: 29999, flat: 'true' }, // backend checks for less than 30000
+        { ...debouncedSearchCriteria, studysetOwner: user?.sub, pageSize: 29999, flat: true }, // backend checks for less than 30000
         !authenticationIsLoading
     );
 
