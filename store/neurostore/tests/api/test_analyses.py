@@ -1,4 +1,3 @@
-from ..request_utils import decode_json
 from ...models import Analysis, User, Point, Image
 from ...schemas import AnalysisSchema
 
@@ -8,15 +7,15 @@ def test_get_nested_and_not_nested_analyses(auth_client, ingest_neurosynth, sess
     non_nested = auth_client.get(f"/api/analyses/{analysis_id}?nested=false")
     nested = auth_client.get(f"/api/analyses/{analysis_id}?nested=true")
 
-    assert isinstance(non_nested.json["points"][0], str)
-    assert isinstance(nested.json["points"][0], dict)
+    assert isinstance(non_nested.json()["points"][0], str)
+    assert isinstance(nested.json()["points"][0], dict)
 
 
 def test_get_analyses(auth_client, ingest_neurosynth, session):
     # List of analyses
     resp = auth_client.get("/api/analyses/")
     assert resp.status_code == 200
-    analysis_list = decode_json(resp)["results"]
+    analysis_list = resp.json()["results"]
     assert isinstance(analysis_list, list)
 
     assert len(analysis_list) == Analysis.query.count()
@@ -41,9 +40,9 @@ def test_get_analyses(auth_client, ingest_neurosynth, session):
     # Query specify analysis ID
     resp = auth_client.get(f"/api/analyses/{a_id}")
     assert resp.status_code == 200
-    assert decode_json(resp) == analysis
+    assert resp.json() == analysis
 
-    assert decode_json(resp)["id"] == a_id
+    assert resp.json()["id"] == a_id
 
 
 def test_post_analyses(auth_client, ingest_neurosynth, session):
@@ -111,7 +110,7 @@ def test_update_points_analyses(auth_client, ingest_neurovault, session):
     update_points = auth_client.put(f"/api/analyses/{analysis_db.id}", data=payload)
 
     assert update_points.status_code == 200
-    assert payload["points"] == update_points.json["points"]
+    assert payload["points"] == update_points.json()["points"]
 
     # see if cache updated
     nested_get = auth_client.get(f"/api/analyses/{analysis_db.id}?nested=false")
@@ -119,8 +118,8 @@ def test_update_points_analyses(auth_client, ingest_neurovault, session):
     get = auth_client.get(f"/api/analyses/{analysis_db.id}")
 
     assert (
-        set(p["id"] for p in nested_get.json["points"])
-        == set(p for p in nonnested_get.json["points"])
-        == set(p for p in get.json["points"])
+        set(p["id"] for p in nested_get.json()["points"])
+        == set(p for p in nonnested_get.json()["points"])
+        == set(p for p in get.json()["points"])
         == set(p for p in payload["points"])
     )

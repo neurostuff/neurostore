@@ -1,6 +1,5 @@
 import pytest
 
-from ..request_utils import decode_json
 from ...models import Studyset, Study, User, Analysis
 
 
@@ -9,7 +8,7 @@ def test_create_study_as_user_and_analysis_as_bot(auth_clients, session):
     user_auth_client = next(ac for ac in auth_clients if ac.username == "user1-id")
 
     study_resp = user_auth_client.post("/api/studies/", data={"name": "test"})
-    study_id = study_resp.json["id"]
+    study_id = study_resp.json()["id"]
 
     bot_auth_client = next(ac for ac in auth_clients if "clients" in ac.username)
     analysis_resp = bot_auth_client.post(
@@ -23,11 +22,11 @@ def test_get_studies(auth_client, ingest_neurosynth, ingest_neuroquery, session)
     # List of studies
     resp = auth_client.get("/api/studies/?nested=true&level=group")
     assert resp.status_code == 200
-    studies_list = decode_json(resp)["results"]
+    studies_list = resp.json()["results"]
 
     assert isinstance(studies_list, list)
 
-    assert len(studies_list) == resp.json["metadata"]["total_count"]
+    assert len(studies_list) == resp.json()["metadata"]["total_count"]
 
     # Check study keys
     study = studies_list[0]
@@ -37,7 +36,7 @@ def test_get_studies(auth_client, ingest_neurosynth, ingest_neuroquery, session)
     # Query specify analysis ID
     resp = auth_client.get(f"/api/studies/{s_id}")
     assert resp.status_code == 200
-    full_study = decode_json(resp)
+    full_study = resp.json()
 
     # Check extra keys
     for k in ["analyses", "created_at", "doi", "name"]:
@@ -66,14 +65,14 @@ def test_put_studies(auth_client, ingest_neurosynth, data, session):
     study_entry = Study.query.first()
     study_clone = auth_client.post(
         f"/api/studies/?source_id={study_entry.id}", data={}
-    ).json
+    ).json()
     study_clone_id = study_clone["id"]
     payload = data
     if payload.get("analyses"):
         if payload["analyses"][0].get("conditions"):
             conditions = []
             for cond in payload["analyses"][0]["conditions"]:
-                conditions.append(auth_client.post("/api/conditions/", data=cond).json)
+                conditions.append(auth_client.post("/api/conditions/", data=cond).json())
             payload["analyses"][0]["conditions"] = [
                 {"id": cond["id"]} for cond in conditions
             ]
@@ -84,13 +83,13 @@ def test_put_studies(auth_client, ingest_neurosynth, data, session):
 
     updated_study_entry = Study.query.filter_by(id=study_clone_id).first()
 
-    assert put_resp.json["metadata"] == updated_study_entry.metadata_
+    assert put_resp.json()["metadata"] == updated_study_entry.metadata_
 
 
 def test_clone_studies(auth_client, ingest_neurosynth, ingest_neurovault, session):
     study_entry = Study.query.filter(Study.metadata_.isnot(None)).first()
     resp = auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={})
-    data = resp.json
+    data = resp.json()
     assert data["name"] == study_entry.name
     assert data["source_id"] == study_entry.id
     assert data["source"] == "neurostore"
@@ -100,7 +99,7 @@ def test_clone_studies(auth_client, ingest_neurosynth, ingest_neurovault, sessio
 
     # a clone of a clone should reference the original parent
     resp2 = auth_client.post(f"/api/studies/?source_id={data['id']}", data={})
-    data2 = resp2.json
+    data2 = resp2.json()
 
     assert data2["name"] == study_entry.name
     assert data2["source_id"] == study_entry.id
@@ -120,15 +119,15 @@ def test_private_studies(user_data, auth_clients, session):
     user2 = User.query.filter_by(external_id=id2).first()
     resp1 = client1.get("/api/studies/")
     resp2 = client2.get("/api/studies/")
-    name_set1 = set(s["name"] for s in resp1.json["results"])
-    name_set2 = set(s["name"] for s in resp2.json["results"])
-    assert len(resp1.json["results"]) == len(resp2.json["results"]) == 4
+    name_set1 = set(s["name"] for s in resp1.json()["results"])
+    name_set2 = set(s["name"] for s in resp2.json()["results"])
+    assert len(resp1.json()["results"]) == len(resp2.json()["results"]) == 4
     assert f"{user1.id}'s private study" in (name_set1 - name_set2)
     assert f"{user2.id}'s private study" in (name_set2 - name_set1)
 
     # but users can still access private studies with given link
     user2_private_study = next(
-        (s["id"] for s in resp2.json["results"] if "private" in s["name"])
+        (s["id"] for s in resp2.json()["results"] if "private" in s["name"])
     )
 
     user1_get = client1.get(f"/api/studies/{user2_private_study}")
@@ -137,7 +136,7 @@ def test_private_studies(user_data, auth_clients, session):
 
 
 def test_post_studies(auth_client, ingest_neurosynth, session):
-    payload = auth_client.get("/api/analyses/").json["results"]
+    payload = auth_client.get("/api/analyses/").json()["results"]
     analyses = [analysis["id"] for analysis in payload]
     my_study = {
         "name": "bomb",
@@ -160,7 +159,7 @@ def test_delete_studies(auth_client, ingest_neurosynth, session):
 
     auth_client.delete(f"/api/studies/{study_db.id}")
 
-    for analysis in get.json["analyses"]:
+    for analysis in get.json()["analyses"]:
         assert Analysis.query.filter_by(id=analysis).first() is None
 
 
@@ -179,12 +178,12 @@ def test_getting_studysets_by_owner(auth_clients, user_data, session):
     non_user_studysets_db = list(set(all_studysets_db) - set(user_studysets_db))
     all_studysets = client1.get("/api/studies/")
 
-    for study in all_studysets.json["results"]:
+    for study in all_studysets.json()["results"]:
         for studyset in study["studysets"]:
             assert studyset["id"] in [as_db.id for as_db in all_studysets_db]
 
     filtered_studysets = client1.get(f"/api/studies/?studyset_owner={id1}")
-    for study in filtered_studysets.json["results"]:
+    for study in filtered_studysets.json()["results"]:
         for studyset in study["studysets"]:
             assert studyset["id"] in [us_db.id for us_db in user_studysets_db]
             assert studyset["id"] not in [nus_db.id for nus_db in non_user_studysets_db]
@@ -250,5 +249,5 @@ def test_studies_flat(auth_client, ingest_neurosynth, session):
 
     assert flat_resp.status_code == reg_resp.status_code == 200
 
-    assert "analyses" not in flat_resp.json["results"][0]
-    assert "analyses" in reg_resp.json["results"][0]
+    assert "analyses" not in flat_resp.json()["results"][0]
+    assert "analyses" in reg_resp.json()["results"][0]

@@ -7,7 +7,7 @@ services:
   neurostore:
     expose:
       - "8000"
-    command: /usr/local/bin/gunicorn -w 1 -b :8000 neurostore.core:app --log-level debug --timeout 300 --reload
+    command: /usr/local/bin/gunicorn -w 1 -b :8000 neurostore.core:connexion_app --worker-class uvicorn.workers.UvicornWorker --log-level debug --timeout 300 --reload
     restart: "no"
     stdin_open: true # docker run -i
     tty: true        # docker run -t

@@ -35,8 +35,8 @@ def test_flat_base_study(auth_client, ingest_neurosynth, session):
 
     assert flat_resp.status_code == reg_resp.status_code == 200
 
-    assert "versions" not in flat_resp.json["results"][0]
-    assert "versions" in reg_resp.json["results"][0]
+    assert "versions" not in flat_resp.json()["results"][0]
+    assert "versions" in reg_resp.json()["results"][0]
 
 
 def test_info_base_study(auth_client, ingest_neurosynth, session):
@@ -46,19 +46,19 @@ def test_info_base_study(auth_client, ingest_neurosynth, session):
     assert info_resp.status_code == 200
     assert reg_resp.status_code == 200
 
-    assert "updated_at" in info_resp.json["results"][0]["versions"][0]
-    assert isinstance(reg_resp.json["results"][0]["versions"][0], str)
+    assert "updated_at" in info_resp.json()["results"][0]["versions"][0]
+    assert isinstance(reg_resp.json()["results"][0]["versions"][0], str)
 
     # test specific base-study
-    base_study_id = reg_resp.json["results"][0]["id"]
+    base_study_id = reg_resp.json()["results"][0]["id"]
     single_info_resp = auth_client.get(f"/api/base-studies/{base_study_id}?info=true")
     single_reg_resp = auth_client.get(f"/api/base-studies/{base_study_id}?info=false")
 
     assert single_info_resp.status_code == 200
     assert single_reg_resp.status_code == 200
 
-    assert "id" in single_info_resp.json["versions"][0]
-    assert isinstance(single_reg_resp.json["versions"][0], str)
+    assert "id" in single_info_resp.json()["versions"][0]
+    assert isinstance(single_reg_resp.json()["versions"][0], str)
 
 
 def test_has_coordinates_images(auth_client, session):
@@ -104,7 +104,7 @@ def test_has_coordinates_images(auth_client, session):
     assert base_study.has_images is False
 
     # get the analysis
-    analysis_id = create_study.json["analyses"][0]
+    analysis_id = create_study.json()["analyses"][0]
 
     # update analysis with points
     analysis_point = auth_client.put(
@@ -124,7 +124,7 @@ def test_has_coordinates_images(auth_client, session):
     assert base_study.has_images is True
 
     # delete point
-    point_id = analysis_point.json["points"][0]
+    point_id = analysis_point.json()["points"][0]
 
     del_point = auth_client.delete(f"/api/points/{point_id}")
 
@@ -132,7 +132,7 @@ def test_has_coordinates_images(auth_client, session):
     assert base_study.has_coordinates is False
 
     # delete image
-    image_id = analysis_image.json["images"][0]
+    image_id = analysis_image.json()["images"][0]
 
     del_image = auth_client.delete(f"/api/images/{image_id}")
 
@@ -166,7 +166,7 @@ def test_has_coordinates_images(auth_client, session):
     assert base_study_2.has_images is True
 
     # delete analysis a
-    analysis_ids = create_full_study.json["analyses"]
+    analysis_ids = create_full_study.json()["analyses"]
     analyses = [Analysis.query.filter_by(id=id_).one() for id_ in analysis_ids]
 
     point_analysis = image_analysis = None
@@ -219,7 +219,7 @@ def test_has_coordinates_images(auth_client, session):
 
     # delete the full study
     delete_study = auth_client.delete(
-        f"/api/studies/{create_full_study_again.json['id']}"
+        f"/api/studies/{create_full_study_again.json()['id']}"
     )
 
     assert delete_study.status_code == 200

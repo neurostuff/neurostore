@@ -3,7 +3,7 @@ Base Classes/functions for constructing views
 """
 import re
 
-import connexion
+from connexion.context import context
 from flask import abort, request, current_app  # jsonify
 from flask.views import MethodView
 
@@ -45,7 +45,7 @@ def create_user():
     # user signed up with auth0, but has not made any queries yet...
     # should have endpoint to "create user" after sign on with auth0
     current_user = User(
-        external_id=connexion.context["user"], name=profile_info.get("name", "Unknown")
+        external_id=context["user"], name=profile_info.get("name", "Unknown")
     )
 
     return current_user
@@ -302,11 +302,11 @@ class ObjectView(BaseView):
         record = q.filter_by(id=id).first_or_404()
         if self._model is Studyset and args["nested"]:
             snapshot = StudysetSnapshot()
-            return snapshot.dump(record)
+            return snapshot.dump(record), 200, {"Content-Type": "application/json"}
         else:
             return self._schema(
                 context=dict(args),
-            ).dump(record)
+            ).dump(record), 200, {"Content-Type": "application/json"}
 
     def put(self, id):
         request_data = self.insert_data(id, request.json)
@@ -343,12 +343,12 @@ class ObjectView(BaseView):
 
 
 LIST_USER_ARGS = {
-    "search": fields.String(missing=None),
-    "sort": fields.String(missing="created_at"),
-    "page": fields.Int(missing=1),
-    "desc": fields.Boolean(missing=True),
-    "page_size": fields.Int(missing=20, validate=lambda val: val < 30000),
-    "user_id": fields.String(missing=None),
+    "search": fields.String(load_default=None),
+    "sort": fields.String(load_default="created_at"),
+    "page": fields.Int(load_default=1),
+    "desc": fields.Boolean(load_default=True),
+    "page_size": fields.Int(load_default=20, validate=lambda val: val < 30000),
+    "user_id": fields.String(load_default=None),
 }
 
 

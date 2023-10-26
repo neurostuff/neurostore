@@ -61,7 +61,7 @@ def test_create(auth_client, user_data, endpoint, model, schema, session):
             d_key_sf.get(k),
             (StringOrNested, fields.Nested),
         ):
-            assert v == resp.json[k]
+            assert v == resp.json()[k]
 
 
 @pytest.mark.parametrize(
@@ -90,10 +90,10 @@ def test_read(auth_client, user_data, endpoint, model, schema, session):
     resp = auth_client.get(f"/api/{endpoint}/")
 
     assert resp.status_code == 200
-    assert len(expected_results) == len(resp.json["results"])
+    assert len(expected_results) == len(resp.json()["results"])
 
     query_ids = set([res.id for res in expected_results])
-    resp_ids = set([res["id"] for res in resp.json["results"]])
+    resp_ids = set([res["id"] for res in resp.json()["results"]])
     assert query_ids == resp_ids
 
 
@@ -119,7 +119,7 @@ def test_update(auth_client, user_data, endpoint, model, schema, update, session
     assert resp.status_code == 200
 
     k, v = list(update.items())[0]
-    assert resp.json[k] == getattr(record, k) == v
+    assert resp.json()[k] == getattr(record, k) == v
 
 
 @pytest.mark.parametrize(
