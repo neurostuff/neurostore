@@ -72,7 +72,7 @@ export class SearchCriteria {
         public level: 'group' | 'meta' | undefined = undefined,
         public pmid: string | undefined = undefined,
         public doi: string | undefined = undefined,
-        public flat: boolean | undefined = true
+        public flat: 'true' | 'false' | undefined = 'true'
     ) {}
 }
 
