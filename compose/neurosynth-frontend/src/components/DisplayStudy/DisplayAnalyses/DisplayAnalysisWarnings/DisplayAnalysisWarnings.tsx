@@ -2,17 +2,17 @@ import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Chip } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import useDisplayWarnings from './useDisplayWarnings';
-import { useStudyIsLoading } from 'pages/Studies/StudyStore';
+import { useGetStudyIsLoading } from 'pages/Studies/StudyStore';
 
 const DisplayAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
-    const studyIsLoading = useStudyIsLoading();
+    const getStudyIsLoading = useGetStudyIsLoading();
 
     const { hasNoPoints, hasNoName, hasDuplicateName, hasNonMNICoordinates } = useDisplayWarnings(
         props.analysisId
     );
 
     return (
-        <StateHandlerComponent isLoading={studyIsLoading} isError={false} loaderSize={20}>
+        <StateHandlerComponent isLoading={getStudyIsLoading} isError={false} loaderSize={20}>
             {hasNoPoints && (
                 <Chip
                     sx={{ margin: '2px', marginBottom: '1rem' }}

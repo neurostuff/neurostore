@@ -1,6 +1,7 @@
 import { NoteKeyType } from 'components/HotTables/HotTables.types';
 import { EPropertyType } from 'components/EditMetadata';
-import { AnnotationNoteType } from 'stores/AnnotationStore.types';
+import { AnnotationNoteType, IStoreNoteCollectionReturn } from 'stores/AnnotationStore.types';
+import { NoteCollectionRequest } from 'neurostore-typescript-sdk';
 
 export const noteKeyObjToArr = (noteKeys?: object | null): NoteKeyType[] => {
     if (!noteKeys) return [];
@@ -19,4 +20,14 @@ export const noteKeyArrToDefaultNoteKeyObj = (noteKeys: NoteKeyType[]): Annotati
     }, {} as AnnotationNoteType);
     console.log(x);
     return x;
+};
+
+export const storeNotesToDBNotes = (
+    notes: IStoreNoteCollectionReturn[]
+): NoteCollectionRequest[] => {
+    return notes.map((annotationNote) => ({
+        analysis: annotationNote.analysis,
+        study: annotationNote.study,
+        note: annotationNote.note,
+    }));
 };

@@ -26,16 +26,17 @@ const DisplayStudy: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
     return (
         <Box>
             <Box data-tour="StudyPage-1">
-                <Box sx={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
-                    <Typography sx={{ display: 'inline' }} variant="h6">
-                        {id && (
-                            <Chip
-                                variant="filled"
-                                sx={{ marginRight: '5px', borderRadius: '8px' }}
-                                size="medium"
-                                label={`Version: ${id}` || ''}
-                            />
-                        )}
+                <Box sx={{ marginBottom: '0.5rem' }}>
+                    {id && (
+                        <Chip
+                            variant="filled"
+                            color="primary"
+                            sx={{ marginRight: '5px', borderRadius: '8px', marginBottom: '0.5rem' }}
+                            size="medium"
+                            label={`Version: ${id}` || ''}
+                        />
+                    )}
+                    <Typography variant="h6">
                         <b>{name}</b>
                     </Typography>
                 </Box>

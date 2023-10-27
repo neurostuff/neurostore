@@ -1,7 +1,17 @@
-import { useEffect } from 'react';
-import { persist } from 'zustand/middleware';
+import { AxiosResponse } from 'axios';
+import { IMetadataRowModel } from 'components/EditMetadata';
+import {
+    arrayToMetadata,
+    metadataToArray,
+} from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
+import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
+import { setAnalysesInAnnotationAsIncluded } from 'pages/helpers/utils';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import API from 'utils/api';
+import { v4 as uuid } from 'uuid';
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import {
     IStoreAnalysis,
     IStoreCondition,
@@ -11,16 +21,6 @@ import {
     storeAnalysesToStudyAnalyses,
     studyAnalysesToStoreAnalyses,
 } from './StudyStore.helpers';
-import { IMetadataRowModel } from 'components/EditMetadata';
-import API from 'utils/api';
-import {
-    arrayToMetadata,
-    metadataToArray,
-} from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
-import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
-import { v4 as uuid } from 'uuid';
-import { setAnalysesInAnnotationAsIncluded } from 'pages/helpers/utils';
-import { AxiosResponse } from 'axios';
 
 export type StudyStoreActions = {
     initStudyStore: (studyId?: string) => void;
@@ -45,9 +45,8 @@ export type StudyStoreActions = {
 
 type StudyStoreMetadata = {
     studyIsEdited: boolean;
-    studyIsLoading: boolean;
-    conditionsIsEdited: boolean;
-    conditionsIsLoading: boolean;
+    getStudyIsLoading: boolean;
+    updateStudyIsLoading: boolean;
     isError: boolean; // for http errors that occur
 };
 
@@ -75,6 +74,7 @@ const useStudyStore = create<
                     analyses: [],
                     studysets: [],
                     user: undefined,
+                    username: undefined,
                     source: undefined,
                     source_id: undefined,
                     source_updated_at: undefined,
@@ -84,10 +84,9 @@ const useStudyStore = create<
                 conditions: [],
                 storeMetadata: {
                     studyIsEdited: false,
-                    studyIsLoading: false,
+                    getStudyIsLoading: false,
+                    updateStudyIsLoading: false,
                     isError: false,
-                    conditionsIsEdited: false,
-                    conditionsIsLoading: false,
                 },
                 initStudyStore: async (studyId) => {
                     if (!studyId) return;
@@ -95,7 +94,8 @@ const useStudyStore = create<
                         ...state,
                         storeMetadata: {
                             ...state.storeMetadata,
-                            studyIsLoading: true,
+                            getStudyIsLoading: true,
+                            updateStudyIsLoading: true,
                         },
                     }));
                     try {
@@ -123,9 +123,8 @@ const useStudyStore = create<
                             storeMetadata: {
                                 ...state.storeMetadata,
                                 studyIsEdited: false,
-                                studyIsLoading: false,
-                                conditionsIsLoading: false,
-                                conditionsIsEdited: false,
+                                getStudyIsLoading: false,
+                                updateStudyIsLoading: false,
                             },
                         }));
                     } catch (e) {
@@ -134,8 +133,8 @@ const useStudyStore = create<
                             ...state,
                             storeMetadata: {
                                 ...state.storeMetadata,
-                                studyIsLoading: false,
-                                conditionsIsLoading: false,
+                                getStudyIsLoading: false,
+                                updateStudyIsLoading: false,
                                 isError: true,
                             },
                         }));
@@ -166,9 +165,8 @@ const useStudyStore = create<
                         },
                         storeMetadata: {
                             studyIsEdited: false,
-                            studyIsLoading: false,
-                            conditionsIsEdited: false,
-                            conditionsIsLoading: false,
+                            getStudyIsLoading: false,
+                            updateStudyIsLoading: false,
                             isError: false,
                         },
                         conditions: [],
@@ -195,7 +193,7 @@ const useStudyStore = create<
                             ...state,
                             storeMetadata: {
                                 ...state.storeMetadata,
-                                studyIsLoading: true,
+                                updateStudyIsLoading: true,
                             },
                         }));
 
@@ -211,8 +209,11 @@ const useStudyStore = create<
                             analyses: storeAnalysesToStudyAnalyses(state.study.analyses),
                         });
 
-                        // this is in case we create new analyses - they are not included by default
-                        if (annotationId) {
+                        const newAnalysesWereCreated = state.study.analyses.some(
+                            (analysis) => analysis.isNew
+                        );
+                        if (newAnalysesWereCreated && annotationId) {
+                            // new analyses created are not included by default and need to be manually set
                             await setAnalysesInAnnotationAsIncluded(annotationId);
                         }
 
@@ -237,7 +238,7 @@ const useStudyStore = create<
                             storeMetadata: {
                                 ...state.storeMetadata,
                                 studyIsEdited: false,
-                                studyIsLoading: false,
+                                updateStudyIsLoading: false,
                             },
                         }));
                         return studyRes.data;
@@ -246,7 +247,7 @@ const useStudyStore = create<
                             ...state,
                             storeMetadata: {
                                 ...state.storeMetadata,
-                                studyIsLoading: false,
+                                updateStudyIsLoading: false,
                                 isError: true,
                             },
                         }));
@@ -602,14 +603,14 @@ const useStudyStore = create<
 );
 
 // study retrieval hooks
+export const useStudy = () => useStudyStore((state) => state.study);
 export const useStudyId = () => useStudyStore((state) => state.study.id);
-export const useStudyIsLoading = () => useStudyStore((state) => state.storeMetadata.studyIsLoading);
-export const useConditionsIsLoading = () =>
-    useStudyStore((state) => state.storeMetadata.conditionsIsLoading);
+export const useGetStudyIsLoading = () =>
+    useStudyStore((state) => state.storeMetadata.getStudyIsLoading);
+export const useUpdateStudyIsLoading = () =>
+    useStudyStore((state) => state.storeMetadata.updateStudyIsLoading);
 export const useStudyHasBeenEdited = () =>
     useStudyStore((state) => state.storeMetadata.studyIsEdited);
-export const useConditionsIsEdited = () =>
-    useStudyStore((state) => state.storeMetadata.conditionsIsEdited);
 
 export const useStudyName = () => useStudyStore((state) => state.study.name);
 export const useStudyDescription = () => useStudyStore((state) => state.study.description);
@@ -688,8 +689,34 @@ export const useStudyAnalysisPointStatistic = (analysisId?: string) =>
     });
 export const useNumStudyAnalyses = () => useStudyStore((state) => state.study.analyses.length);
 export const useStudyAnalyses = () => useStudyStore((state) => state.study.analyses);
+export const useDebouncedStudyAnalyses = () => {
+    const [debouncedAnalyses, setDebouncedAnalyses] = useState(
+        useStudyStore.getState().study.analyses
+    );
+    useEffect(() => {
+        let debounce: NodeJS.Timeout;
+        const unsub = useStudyStore.subscribe((state) => {
+            if (debounce) clearTimeout(debounce);
+            debounce = setTimeout(() => {
+                setDebouncedAnalyses(state.study.analyses);
+            }, 400);
+        });
+
+        return () => {
+            unsub();
+            clearTimeout(debounce);
+        };
+    }, []);
+    return debouncedAnalyses;
+};
+
 export const useStudyStoreIsError = () => useStudyStore((state) => state.storeMetadata.isError);
 export const useStudyUser = () => useStudyStore((state) => state.study.user);
+export const useStudyUsername = () => useStudyStore((state) => state.study.username);
+export const useStudyLastUpdated = () =>
+    useStudyStore((state) =>
+        state.study.updated_at ? state.study.updated_at : state.study.created_at
+    );
 
 // study action hooks
 export const useInitStudyStore = () => useStudyStore((state) => state.initStudyStore);

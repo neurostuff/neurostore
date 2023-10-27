@@ -26,7 +26,7 @@ import {
     useStudyAuthors,
     useStudyDOI,
     useStudyDescription,
-    useStudyIsLoading,
+    useGetStudyIsLoading,
     useStudyMetadata,
     useStudyName,
     useStudyPMID,
@@ -41,7 +41,7 @@ const ProjectStudyPage: React.FC = (props) => {
 
     const clearStudyStore = useClearStudyStore();
     const studyUser = useStudyUser();
-    const studyIsLoading = useStudyIsLoading();
+    const getStudyIsLoading = useGetStudyIsLoading();
     const studyName = useStudyName();
     const studyDescription = useStudyDescription();
     const studyDOI = useStudyDOI();
@@ -131,7 +131,7 @@ const ProjectStudyPage: React.FC = (props) => {
     const showCloneMessage = !thisUserOwnsThisStudy;
 
     return (
-        <StateHandlerComponent isLoading={studyIsLoading} isError={false}>
+        <StateHandlerComponent isLoading={getStudyIsLoading} isError={false}>
             <NeurosynthBreadcrumbs
                 breadcrumbItems={[
                     {

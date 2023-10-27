@@ -1,4 +1,5 @@
-import { useStudyAnalyses, useStudyId } from 'pages/Studies/StudyStore';
+import { createColWidths } from 'components/HotTables/HotTables.utils';
+import { useDebouncedStudyAnalyses, useStudyId } from 'pages/Studies/StudyStore';
 import { useEffect, useMemo, useState } from 'react';
 import { useAnnotationNoteKeys } from 'stores/AnnotationStore.actions';
 import { useAnnotationNotes } from 'stores/AnnotationStore.getters';
@@ -10,11 +11,10 @@ import {
     EditStudyAnnotationsNoteCollectionReturn,
     IEditStudyAnnotationsDataRef,
 } from './EditStudyAnnotationsHotTable.types';
-import { createColWidths } from 'components/HotTables/HotTables.utils';
 
 const useEditStudyAnnotationsHotTable = () => {
     const studyId = useStudyId();
-    const analyses = useStudyAnalyses();
+    const debouncedAnalyses = useDebouncedStudyAnalyses();
     const noteKeys = useAnnotationNoteKeys();
     const notes = useAnnotationNotes();
 
@@ -39,35 +39,25 @@ const useEditStudyAnnotationsHotTable = () => {
      * From an annotation perspective, the analysis name and description is purely decorative so we debounce the updates here
      */
     useEffect(() => {
-        const timeout = setTimeout(() => {
-            setData((prev) => {
-                if (!prev) return prev;
-                console.log({
-                    prev,
-                    notes,
-                });
-                const update: EditStudyAnnotationsNoteCollectionReturn[] = [...(notes || [])];
-                analyses.forEach((analysis) => {
-                    const foundNoteIndex = update.findIndex(
-                        (updateNote) => updateNote.analysis === analysis.id
-                    );
-                    if (foundNoteIndex < 0) return;
+        setData((prev) => {
+            if (!prev) return prev;
+            const update: EditStudyAnnotationsNoteCollectionReturn[] = [...(notes || [])];
+            debouncedAnalyses.forEach((analysis) => {
+                const foundNoteIndex = update.findIndex(
+                    (updateNote) => updateNote.analysis === analysis.id
+                );
+                if (foundNoteIndex < 0) return;
 
-                    update[foundNoteIndex] = {
-                        ...update[foundNoteIndex],
-                        analysis_name: analysis.name || '',
-                        analysisDescription: analysis.description || '',
-                    };
-                });
-                return update;
+                update[foundNoteIndex] = {
+                    ...update[foundNoteIndex],
+                    analysis_name: analysis.name || '',
+                    analysisDescription: analysis.description || '',
+                };
             });
-        }, 500);
-
-        return () => {
-            clearTimeout(timeout);
-        };
+            return update;
+        });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [analyses]);
+    }, [debouncedAnalyses]);
 
     const hiddenRows = useMemo(() => {
         return (notes || [])

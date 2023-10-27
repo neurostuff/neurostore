@@ -2,7 +2,7 @@ import { Add } from '@mui/icons-material';
 import { Box, Button, Divider, Typography } from '@mui/material';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import { useAddOrUpdateAnalysis, useNumStudyAnalyses, useStudyId } from 'pages/Studies/StudyStore';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import EditAnalysesList from './EditAnalysesList/EditAnalysesList';
 import EditAnalysis from './EditAnalysis/EditAnalysis';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
@@ -33,9 +33,9 @@ const EditAnalyses: React.FC = React.memo((props) => {
         createAnnotationNote(createdAnalysis.id, studyId, name);
     };
 
-    const handleSelectAnalysis = (analysisId: string) => {
+    const handleSelectAnalysis = useCallback((analysisId: string) => {
         setSelectedAnalysisId(analysisId);
-    };
+    }, []);
 
     const handleOnDeleteAnalysis = () => {
         setSelectedAnalysisId(undefined);

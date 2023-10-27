@@ -1,5 +1,9 @@
 import { AnnotationReturnOneOf1, NoteCollectionReturn } from 'neurostore-typescript-sdk';
-import { noteKeyArrToDefaultNoteKeyObj, noteKeyObjToArr } from 'stores/AnnotationStore.helpers';
+import {
+    noteKeyArrToDefaultNoteKeyObj,
+    noteKeyObjToArr,
+    storeNotesToDBNotes,
+} from 'stores/AnnotationStore.helpers';
 import API from 'utils/api';
 import { create } from 'zustand';
 import {
@@ -35,6 +39,8 @@ export const useAnnotationStore = create<
         storeMetadata: {
             annotationIsEdited: false,
             annotationIsLoading: false,
+            getAnnotationIsLoading: false,
+            updateAnnotationIsLoading: false,
             isError: false,
         },
 
@@ -44,7 +50,8 @@ export const useAnnotationStore = create<
                 ...state,
                 storeMetadata: {
                     ...state.storeMetadata,
-                    annotationIsLoading: true,
+                    getAnnotationIsLoading: true,
+                    updateAnnotationIsLoading: true,
                 },
             }));
 
@@ -73,7 +80,8 @@ export const useAnnotationStore = create<
                     storeMetadata: {
                         ...state.storeMetadata,
                         annotationIsEdited: false,
-                        annotationIsLoading: false,
+                        getAnnotationIsLoading: false,
+                        updateAnnotationIsLoading: false,
                         isError: false,
                     },
                 }));
@@ -83,7 +91,8 @@ export const useAnnotationStore = create<
                     ...state,
                     storeMetadata: {
                         ...state.storeMetadata,
-                        annotationIsLoading: false,
+                        getAnnotationIsLoading: false,
+                        updateAnnotationIsLoading: false,
                         isError: true,
                     },
                 }));
@@ -120,7 +129,8 @@ export const useAnnotationStore = create<
                 },
                 storeMetadata: {
                     annotationIsEdited: false,
-                    annotationIsLoading: false,
+                    getAnnotationIsLoading: false,
+                    updateAnnotationIsLoading: false,
                     isError: false,
                 },
             }));
@@ -188,7 +198,7 @@ export const useAnnotationStore = create<
                     ...state,
                     storeMetadata: {
                         ...state.storeMetadata,
-                        annotationIsLoading: true,
+                        updateAnnotationIsLoading: true,
                     },
                 }));
 
@@ -196,11 +206,7 @@ export const useAnnotationStore = create<
                     await API.NeurostoreServices.AnnotationsService.annotationsIdPut(
                         state.annotation.id,
                         {
-                            notes: state.annotation.notes.map((annotationNote) => ({
-                                analysis: annotationNote.analysis,
-                                study: annotationNote.study,
-                                note: annotationNote.note,
-                            })),
+                            notes: storeNotesToDBNotes(state.annotation.notes),
                         }
                     )
                 ).data as AnnotationReturnOneOf1;
@@ -225,7 +231,7 @@ export const useAnnotationStore = create<
                     storeMetadata: {
                         ...state.storeMetadata,
                         annotationIsEdited: false,
-                        annotationIsLoading: false,
+                        updateAnnotationIsLoading: false,
                         isError: false,
                     },
                 }));
@@ -234,7 +240,7 @@ export const useAnnotationStore = create<
                     ...state,
                     storeMetadata: {
                         ...state.storeMetadata,
-                        annotationIsLoading: false,
+                        updateAnnotationIsLoading: false,
                         isError: true,
                     },
                 }));

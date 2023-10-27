@@ -2,9 +2,10 @@ import { useAnnotationStore } from 'stores/AnnotationStore';
 
 export const useAnnotationName = () => useAnnotationStore((state) => state.annotation.name);
 export const useAnnotationNotes = () => useAnnotationStore((state) => state.annotation.notes);
-export const useAnnotationIsLoading = () =>
-    useAnnotationStore((state) => state.storeMetadata.annotationIsLoading);
-
+export const useGetAnnotationIsLoading = () =>
+    useAnnotationStore((state) => state.storeMetadata.getAnnotationIsLoading);
+export const useUpdateAnnotationIsLoading = () =>
+    useAnnotationStore((state) => state.storeMetadata.updateAnnotationIsLoading);
 export const useAnnotationIsEdited = () =>
     useAnnotationStore((state) => state.storeMetadata.annotationIsEdited);
 

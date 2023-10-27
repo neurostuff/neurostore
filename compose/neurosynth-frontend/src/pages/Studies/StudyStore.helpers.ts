@@ -228,9 +228,10 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
                     image: pointArgs.image,
                     order: index,
                     space: pointSpace?.value || null,
-                    x: pointArgs.x || undefined,
-                    y: pointArgs.y || undefined,
-                    z: pointArgs.z || undefined,
+                    subpeak: pointArgs.subpeak,
+                    x: pointArgs.x === null ? undefined : pointArgs.x,
+                    y: pointArgs.y === null ? undefined : pointArgs.y,
+                    z: pointArgs.z === null ? undefined : pointArgs.z,
                     values: [
                         {
                             value: value || null,

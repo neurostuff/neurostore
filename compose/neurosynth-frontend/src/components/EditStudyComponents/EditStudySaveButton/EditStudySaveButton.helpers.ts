@@ -1,4 +1,4 @@
-import { IStoreAnalysis } from '../StudyStore.helpers';
+import { IStoreAnalysis } from 'pages/Studies/StudyStore.helpers';
 
 export const hasDuplicateStudyAnalysisNames = (
     analyses: IStoreAnalysis[]

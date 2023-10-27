@@ -3,7 +3,8 @@ import { AnnotationReturnOneOf1, NoteCollectionReturn } from 'neurostore-typescr
 
 export type AnnotationStoreMetadata = {
     annotationIsEdited: boolean;
-    annotationIsLoading: boolean;
+    getAnnotationIsLoading: boolean;
+    updateAnnotationIsLoading: boolean;
     isError: boolean; // for http errors that occur
 };
 
