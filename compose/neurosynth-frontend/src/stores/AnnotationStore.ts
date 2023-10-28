@@ -3,6 +3,7 @@ import {
     noteKeyArrToDefaultNoteKeyObj,
     noteKeyObjToArr,
     storeNotesToDBNotes,
+    updateNoteNameHelper,
 } from 'stores/AnnotationStore.helpers';
 import API from 'utils/api';
 import { create } from 'zustand';
@@ -145,6 +146,15 @@ export const useAnnotationStore = create<
                 storeMetadata: {
                     ...state.storeMetadata,
                     annotationIsEdited: true,
+                },
+            }));
+        },
+        updateAnnotationNoteName: (note) => {
+            set((state) => ({
+                ...state,
+                annotation: {
+                    ...state.annotation,
+                    notes: updateNoteNameHelper(state.annotation.notes || [], note),
                 },
             }));
         },

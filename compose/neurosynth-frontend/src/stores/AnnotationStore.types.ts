@@ -25,6 +25,7 @@ export type AnnotationStoreActions = {
     updateAnnotationInDB: () => Promise<void>;
     createAnnotationNote: (analysisId: string, studyId: string, analysisName: string) => void;
     deleteAnnotationNote: (analysisId: string) => void;
+    updateAnnotationNoteName: (analysis: Partial<IStoreNoteCollectionReturn>) => void;
 };
 
 export type AnnotationNoteType = {

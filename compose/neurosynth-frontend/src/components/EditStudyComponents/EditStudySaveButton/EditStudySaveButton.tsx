@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import {
     AnalysisReturn,
@@ -15,6 +15,7 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 
 import { useAuth0 } from '@auth0/auth0-react';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import {
     useCreateStudy,
     useGetStudysetById,
@@ -27,14 +28,13 @@ import {
     useStudy,
     useStudyAnalyses,
     useStudyHasBeenEdited,
-    useStudyLastUpdated,
     useStudyUser,
     useStudyUsername,
     useUpdateStudyInDB,
     useUpdateStudyIsLoading,
 } from 'pages/Studies/StudyStore';
 import { storeAnalysesToStudyAnalyses } from 'pages/Studies/StudyStore.helpers';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useQueryClient } from 'react-query';
 import { useHistory } from 'react-router-dom';
 import { useUpdateAnnotationInDB, useUpdateAnnotationNotes } from 'stores/AnnotationStore.actions';
@@ -47,6 +47,7 @@ import { storeNotesToDBNotes } from 'stores/AnnotationStore.helpers';
 import API from 'utils/api';
 import { arrayToMetadata } from '../EditStudyMetadata/EditStudyMetadata';
 import { hasDuplicateStudyAnalysisNames, hasEmptyStudyPoints } from './EditStudySaveButton.helpers';
+import EditStudySwapVersionButton from '../EditStudySwapVersionButton/EditStudySwapVersionButton';
 
 const EditStudySaveButton: React.FC = React.memo((props) => {
     const { user } = useAuth0();
@@ -61,13 +62,11 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
     const projectId = useProjectId();
     // study stuff
     const storeStudy = useStudy();
+    const studyOwnerUser = useStudyUser();
     const updateStudyIsLoading = useUpdateStudyIsLoading();
     const studyHasBeenEdited = useStudyHasBeenEdited();
     const analyses = useStudyAnalyses();
-    const studyOwnerUsername = useStudyUsername();
     const updateStudyInDB = useUpdateStudyInDB();
-    const studyOwnerUser = useStudyUser();
-    const lastUpdatedAt = useStudyLastUpdated();
     // annotation stuff
     const updateAnnotationIsLoading = useUpdateAnnotationIsLoading();
     const annotationHasBeenEdited = useAnnotationIsEdited();
@@ -126,13 +125,10 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
     const handleUpdateDB = () => {
         try {
             if (studyHasBeenEdited && annotationIsEdited) {
-                console.log('UPDATING STUDY AND ANNOTATION');
                 handleUpdateBothInDB();
             } else if (studyHasBeenEdited) {
-                console.log('UPDATING STUDY');
                 handleUpdateStudyInDB();
             } else if (annotationIsEdited) {
-                console.log('UPDATING ANNOTATION');
                 handleUpdateAnnotationInDB();
             }
         } catch (e) {
@@ -197,7 +193,7 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
             if (!clonedStudyId) throw new Error('study not cloned correctly');
 
             // 2. update the clone with our latest updates
-            await updateStudy({
+            const x = await updateStudy({
                 studyId: clonedStudyId,
                 study: {
                     ...getNewScrubbedStudyFromStore(),
@@ -208,7 +204,6 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
             const updatedClone = (
                 await API.NeurostoreServices.StudiesService.studiesIdGet(clonedStudyId, true)
             ).data;
-            console.log(updatedClone);
 
             // 3. update the studyset containing the study with our new clone
             const updatedStudies = [...(studyset.studies as string[])];
@@ -223,8 +218,9 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
             // 4. update the project as this keeps track of completion status of studies
             replaceStudyWithNewClonedStudy(storeStudy.id, clonedStudyId);
 
-            // 5. as this is a completely new study, the annotations are cleared. We need to update the annotations with our latest changes, and associate
-            // newly created analyses with their corresponding analysis changes
+            // 5. as this is a completely new study, that we've just created, the annotations are cleared.
+            // We need to update the annotations with our latest changes, and associate newly created analyses with their corresponding analysis changes.
+            //      - we do this based on the analysis names since the IDs are assigned by neurostore
             const updatedNotes = [...(notes || [])];
             ((updatedClone.analyses || []) as AnalysisReturn[]).forEach((analysis) => {
                 const foundNoteIndex = updatedNotes.findIndex(
@@ -289,21 +285,13 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
         }
     };
 
-    const nicelyFormattedDate = useMemo(() => {
-        const date = new Date(lastUpdatedAt || '');
-        return date.toDateString() + ' ' + date.toLocaleTimeString();
-    }, [lastUpdatedAt]);
+    const handleSwapStudy = () => {
+        console.log('handle swap study');
+    };
 
     return (
         <Box sx={EditStudyPageStyles.loadingButtonContainer}>
-            <Box>
-                <Typography variant="body2" sx={{ color: 'muted.main' }}>
-                    Owner: {studyOwnerUsername ? studyOwnerUsername : 'neurosynth'}
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'muted.main' }}>
-                    Last Updated: {nicelyFormattedDate}
-                </Typography>
-            </Box>
+            <EditStudySwapVersionButton />
             <LoadingButton
                 text="save"
                 isLoading={updateStudyIsLoading || updateAnnotationIsLoading || isCloning}
@@ -311,7 +299,7 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
                 loaderColor="secondary"
                 disabled={!studyHasBeenEdited && !annotationHasBeenEdited}
                 disableElevation
-                sx={{ width: '300px', height: '36px' }}
+                sx={{ width: '280px', height: '36px' }}
                 onClick={handleSave}
             />
         </Box>

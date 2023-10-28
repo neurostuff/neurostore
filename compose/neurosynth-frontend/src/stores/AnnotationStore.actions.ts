@@ -22,3 +22,5 @@ export const useCreateAnnotationNote = () =>
 
 export const useDeleteAnnotationNote = () =>
     useAnnotationStore((state) => state.deleteAnnotationNote);
+export const useUpdateAnnotationNoteName = () =>
+    useAnnotationStore((state) => state.updateAnnotationNoteName);

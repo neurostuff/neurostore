@@ -31,3 +31,18 @@ export const storeNotesToDBNotes = (
         note: annotationNote.note,
     }));
 };
+
+export const updateNoteNameHelper = (
+    notes: IStoreNoteCollectionReturn[],
+    update: Partial<IStoreNoteCollectionReturn>
+): IStoreNoteCollectionReturn[] => {
+    const updatedNotes = [...notes];
+    const foundNoteIndex = updatedNotes.findIndex((note) => note.analysis === update.analysis);
+    if (foundNoteIndex < 0) return updatedNotes;
+
+    updatedNotes[foundNoteIndex] = {
+        ...updatedNotes[foundNoteIndex],
+        analysis_name: update.analysis_name,
+    };
+    return updatedNotes;
+};

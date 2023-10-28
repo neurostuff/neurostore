@@ -5,11 +5,29 @@ import {
     useStudyAnalysisName,
 } from 'pages/Studies/StudyStore';
 import { IStoreAnalysis } from 'pages/Studies/StudyStore.helpers';
+import { useEffect } from 'react';
+import { useUpdateAnnotationNoteName } from 'stores/AnnotationStore.actions';
 
 const EditAnalysisDetails: React.FC<{ analysisId?: string }> = (props) => {
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
     const name = useStudyAnalysisName(props.analysisId);
     const description = useStudyAnalysisDescription(props.analysisId);
+    const updateAnnotationNoteName = useUpdateAnnotationNoteName();
+
+    useEffect(() => {
+        if (!props.analysisId) return;
+        let debounce: NodeJS.Timeout;
+        debounce = setTimeout(() => {
+            updateAnnotationNoteName({
+                analysis: props.analysisId,
+                analysis_name: name,
+            });
+        }, 500);
+
+        return () => {
+            clearTimeout(debounce);
+        };
+    }, [name, props.analysisId, updateAnnotationNoteName]);
 
     const handleUpdateAnalysisDetails = (
         field: keyof IStoreAnalysis,

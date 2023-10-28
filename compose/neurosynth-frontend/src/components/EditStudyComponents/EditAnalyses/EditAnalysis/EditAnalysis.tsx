@@ -47,7 +47,12 @@ const EditAnalysis: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void
                     confirmText="delete analysis"
                     rejectText="cancel"
                 />
-                <Button onClick={() => setDialogIsOpen(true)} variant="outlined" color="error">
+                <Button
+                    variant="contained"
+                    onClick={() => setDialogIsOpen(true)}
+                    disableElevation
+                    color="error"
+                >
                     Delete Analysis
                 </Button>
             </Box>
