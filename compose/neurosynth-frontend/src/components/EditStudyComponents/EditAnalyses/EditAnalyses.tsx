@@ -46,8 +46,13 @@ const EditAnalyses: React.FC = React.memo((props) => {
             elevation={0}
             defaultExpanded
             expandIconColor="secondary.main"
-            sx={EditStudyComponentsStyles.accordion}
-            accordionSummarySx={EditStudyComponentsStyles.accordionSummary}
+            sx={[
+                EditStudyComponentsStyles.accordion,
+                {
+                    borderBottomLeftRadius: '4px !important',
+                    borderBottomRightRadius: '4px !important',
+                },
+            ]}
             TitleElement={
                 <Typography sx={EditStudyComponentsStyles.accordionTitle}>Analyses</Typography>
             }
