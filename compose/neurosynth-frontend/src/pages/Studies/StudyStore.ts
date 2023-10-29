@@ -62,6 +62,7 @@ const useStudyStore = create<
             return {
                 study: {
                     id: undefined,
+                    base_study: undefined,
                     name: undefined,
                     description: undefined,
                     doi: undefined,
@@ -144,6 +145,7 @@ const useStudyStore = create<
                     set((state) => ({
                         study: {
                             id: undefined,
+                            base_study: undefined,
                             name: undefined,
                             description: undefined,
                             doi: undefined,
@@ -612,6 +614,7 @@ export const useUpdateStudyIsLoading = () =>
 export const useStudyHasBeenEdited = () =>
     useStudyStore((state) => state.storeMetadata.studyIsEdited);
 
+export const useStudyBaseStudyId = () => useStudyStore((state) => state.study.base_study);
 export const useStudyName = () => useStudyStore((state) => state.study.name);
 export const useStudyDescription = () => useStudyStore((state) => state.study.description);
 export const useStudyAuthors = () => useStudyStore((state) => state.study.authors);

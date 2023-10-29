@@ -63,6 +63,7 @@ const ExtractionPage: React.FC = (props) => {
     const {
         data: studyset,
         isLoading: getStudysetIsLoading,
+        isRefetching: getStudysetIsRefetching,
         isError: getStudysetIsError,
     } = useGetStudysetById(studysetId, true);
     const { mutate } = useUpdateStudyset();
@@ -200,7 +201,7 @@ const ExtractionPage: React.FC = (props) => {
                                 },
                             ]}
                         />
-                        <ProjectIsLoadingText />
+                        <ProjectIsLoadingText isLoading={getStudysetIsRefetching} />
                     </Box>
                     <Box>
                         <Button

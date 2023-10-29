@@ -1,4 +1,4 @@
-import { Box, Button } from '@mui/material';
+import { Box } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import {
     AnalysisReturn,
@@ -15,7 +15,6 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 
 import { useAuth0 } from '@auth0/auth0-react';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import {
     useCreateStudy,
     useGetStudysetById,
@@ -29,7 +28,6 @@ import {
     useStudyAnalyses,
     useStudyHasBeenEdited,
     useStudyUser,
-    useStudyUsername,
     useUpdateStudyInDB,
     useUpdateStudyIsLoading,
 } from 'pages/Studies/StudyStore';
@@ -46,8 +44,9 @@ import {
 import { storeNotesToDBNotes } from 'stores/AnnotationStore.helpers';
 import API from 'utils/api';
 import { arrayToMetadata } from '../EditStudyMetadata/EditStudyMetadata';
-import { hasDuplicateStudyAnalysisNames, hasEmptyStudyPoints } from './EditStudySaveButton.helpers';
 import EditStudySwapVersionButton from '../EditStudySwapVersionButton/EditStudySwapVersionButton';
+import { hasDuplicateStudyAnalysisNames, hasEmptyStudyPoints } from './EditStudySaveButton.helpers';
+import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysets';
 
 const EditStudySaveButton: React.FC = React.memo((props) => {
     const { user } = useAuth0();
@@ -193,7 +192,7 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
             if (!clonedStudyId) throw new Error('study not cloned correctly');
 
             // 2. update the clone with our latest updates
-            const x = await updateStudy({
+            await updateStudy({
                 studyId: clonedStudyId,
                 study: {
                     ...getNewScrubbedStudyFromStore(),
@@ -214,6 +213,7 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
                     studies: updatedStudies,
                 },
             });
+            queryClient.invalidateQueries(STUDYSET_QUERY_STRING);
 
             // 4. update the project as this keeps track of completion status of studies
             replaceStudyWithNewClonedStudy(storeStudy.id, clonedStudyId);

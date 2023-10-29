@@ -1,11 +1,48 @@
-import { Button, ButtonGroup, ListItem, ListItemButton, Menu } from '@mui/material';
-import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import { useState } from 'react';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import { Button, ButtonGroup, ListItem, Menu, Typography } from '@mui/material';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
+import { lastUpdatedAtSortFn } from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionIngest/helpers/utils';
+import { useGetStudysetById, useUpdateStudyset } from 'hooks';
+import useGetBaseStudyById from 'hooks/studies/useGetBaseStudyById';
+import { StudyReturn } from 'neurostore-typescript-sdk';
+import { useSnackbar } from 'notistack';
+import {
+    useProjectExtractionReplaceStudyListStatusId,
+    useProjectExtractionStudysetId,
+    useProjectId,
+} from 'pages/Projects/ProjectPage/ProjectStore';
+import { useStudyBaseStudyId, useStudyId } from 'pages/Studies/StudyStore';
+import { setAnalysesInAnnotationAsIncluded } from 'pages/helpers/utils';
+import { useMemo, useState } from 'react';
+import { useHistory } from 'react-router-dom';
+import { useAnnotationId } from 'stores/AnnotationStore.getters';
 
 const EditStudySwapVersionButton: React.FC = (props) => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLButtonElement>(null);
     const open = Boolean(anchorEl);
+    const baseStudyId = useStudyBaseStudyId();
+    const projectId = useProjectId();
+    const studyId = useStudyId();
+    const { data: baseStudy } = useGetBaseStudyById(baseStudyId || '');
+    const { mutateAsync: updateStudyset } = useUpdateStudyset();
+    const updateStudysetWithNewStudyId = useProjectExtractionReplaceStudyListStatusId();
+    const studysetId = useProjectExtractionStudysetId();
+    const { data: studyset } = useGetStudysetById(studysetId, false);
+    const history = useHistory();
+    const { enqueueSnackbar } = useSnackbar();
+
+    const annotationId = useAnnotationId();
+
+    const [isSwapping, setIsSwapping] = useState(false);
+    const [confirmationDialogState, setConfirmationDialogState] = useState<{
+        isOpen: boolean;
+        selectedVersion?: string;
+    }>({
+        isOpen: false,
+        selectedVersion: undefined,
+    });
 
     const handleButtonPress = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
@@ -15,20 +52,105 @@ const EditStudySwapVersionButton: React.FC = (props) => {
         setAnchorEl(null);
     };
 
-    const handleSwapStudy = () => {};
+    const handleCloseConfirmationDialog = (confirm?: boolean) => {
+        if (confirm) {
+            handleSwapStudy(confirmationDialogState.selectedVersion);
+        }
+        setConfirmationDialogState((prev) => ({
+            ...prev,
+            isOpen: false,
+            selectedVersion: undefined,
+        }));
+    };
+
+    const handleSwapStudy = async (versionToSwapTo?: string) => {
+        if (!annotationId || !studyId || !studysetId || !versionToSwapTo || !studyset?.studies)
+            return;
+        if (versionToSwapTo === studyId) {
+            handleCloseNavMenu();
+            return;
+        }
+        setIsSwapping(true);
+        try {
+            handleCloseNavMenu();
+            const updatedStudyset = [...(studyset.studies as string[])];
+
+            const currentStudyBeingEditedIndex = updatedStudyset.findIndex(
+                (study) => study === studyId
+            );
+            if (currentStudyBeingEditedIndex < 0) throw new Error('study not found in studyset');
+
+            updatedStudyset[currentStudyBeingEditedIndex] = versionToSwapTo;
+            await updateStudyset({
+                studysetId: studysetId,
+                studyset: {
+                    studies: updatedStudyset,
+                },
+            });
+
+            updateStudysetWithNewStudyId(studyId, versionToSwapTo);
+            await setAnalysesInAnnotationAsIncluded(annotationId, versionToSwapTo);
+
+            history.push(`/projects/${projectId}/extraction/studies/${versionToSwapTo}`);
+
+            enqueueSnackbar('Updated version', { variant: 'success' });
+        } catch (e) {
+            console.error(e);
+            enqueueSnackbar('There was an error selecting another study version', {
+                variant: 'error',
+            });
+        } finally {
+            setIsSwapping(false);
+        }
+    };
+
+    const handleSelectVersion = (versionId: string | undefined) => {
+        if (!versionId) return;
+        if (versionId === studyId) {
+            handleCloseNavMenu();
+            return;
+        }
+        setConfirmationDialogState({
+            isOpen: true,
+            selectedVersion: versionId,
+        });
+    };
+
+    const baseStudyVersions = useMemo(() => {
+        const baseVersions = (baseStudy?.versions || []) as StudyReturn[];
+        return baseVersions.sort(lastUpdatedAtSortFn).reverse();
+    }, [baseStudy?.versions]);
 
     return (
         <>
-            <Button
+            <LoadingButton
+                isLoading={isSwapping}
                 sx={{ width: '280px', height: '36px' }}
                 variant="contained"
                 disableElevation
                 color="secondary"
                 onClick={handleButtonPress}
                 startIcon={<SwapHorizIcon />}
-            >
-                Switch study version
-            </Button>
+                text="Switch study version"
+            ></LoadingButton>
+            <ConfirmationDialog
+                dialogTitle="Are you sure you want to switch the study version?"
+                dialogMessage={
+                    <>
+                        <Typography>
+                            You are switching from version {studyId} to version
+                            {confirmationDialogState.selectedVersion || ''}
+                        </Typography>
+                        <Typography gutterBottom sx={{ color: 'error.main', marginBottom: '1rem' }}>
+                            Warning: switching versions will remove any annotations you have created
+                            for this study.
+                        </Typography>
+                    </>
+                }
+                onCloseDialog={handleCloseConfirmationDialog}
+                isOpen={confirmationDialogState.isOpen}
+                rejectText="Cancel"
+            />
             <Menu
                 open={open}
                 onClose={handleCloseNavMenu}
@@ -36,30 +158,30 @@ const EditStudySwapVersionButton: React.FC = (props) => {
                 anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
                 transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
             >
-                <ListItem sx={{ padding: '0 1rem' }}>
-                    <ButtonGroup variant="text">
-                        <Button>
-                            Version 238iERGtug | Owner: Neurosynth | Last Updated: Oct 28 2023
-                        </Button>
-                        <Button endIcon={<OpenInNewIcon />}>View </Button>
-                    </ButtonGroup>
-                </ListItem>
-                <ListItem sx={{ padding: '0 1rem' }}>
-                    <ButtonGroup variant="text">
-                        <Button>
-                            Version 238iERGtug | Owner: Neurosynth | Last Updated: Oct 28 2023
-                        </Button>
-                        <Button endIcon={<OpenInNewIcon />}>View </Button>
-                    </ButtonGroup>
-                </ListItem>
-                <ListItem sx={{ padding: '0 1rem' }}>
-                    <ButtonGroup variant="text">
-                        <Button>
-                            Version 238iERGtug | Owner: Neurosynth | Last Updated: Oct 28 2023
-                        </Button>
-                        <Button endIcon={<OpenInNewIcon />}>View </Button>
-                    </ButtonGroup>
-                </ListItem>
+                {baseStudyVersions.map((baseStudyVersion) => (
+                    <ListItem key={baseStudyVersion.id} sx={{ padding: '0.2rem 1rem' }}>
+                        <ButtonGroup variant="text">
+                            <Button
+                                onClick={() => handleSelectVersion(baseStudyVersion.id)}
+                                color={baseStudyVersion.id === studyId ? 'secondary' : 'primary'}
+                                sx={{ width: '440px' }}
+                            >
+                                Switch to version {baseStudyVersion.id} | Owner:{' '}
+                                {!baseStudyVersion.username
+                                    ? 'neurosynth'
+                                    : baseStudyVersion.username}
+                            </Button>
+                            <Button
+                                color={baseStudyVersion.id === studyId ? 'secondary' : 'primary'}
+                                href={`/base-studies/${baseStudyId}/${studyId}`}
+                                target="_blank"
+                                endIcon={<OpenInNewIcon />}
+                            >
+                                View version
+                            </Button>
+                        </ButtonGroup>
+                    </ListItem>
+                ))}
             </Menu>
         </>
     );

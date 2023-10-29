@@ -105,13 +105,18 @@ const resolveStudysetAndCurationDifferences = (
     return false;
 };
 
-const setAnalysesInAnnotationAsIncluded = async (annotationId: string) => {
+const setAnalysesInAnnotationAsIncluded = async (annotationId: string, studyId?: string) => {
     try {
         const annotation = (await API.NeurostoreServices.AnnotationsService.annotationsIdGet(
             annotationId
         )) as AxiosResponse<NeurostoreAnnotation>;
 
-        const notes = (annotation.data.notes || []) as NoteCollectionReturn[];
+        let notes = (annotation.data.notes || []) as NoteCollectionReturn[];
+
+        if (studyId) {
+            notes = notes.filter((note) => note.study === studyId);
+        }
+
         await API.NeurostoreServices.AnnotationsService.annotationsIdPut(annotationId, {
             notes: notes.map((x) => ({
                 analysis: x.analysis,

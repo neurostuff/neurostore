@@ -2,12 +2,14 @@ import { Source, SearchCriteria } from 'pages/Studies/StudiesPage/models';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
+export const STUDYSET_QUERY_STRING = 'studysets';
+
 const useGetStudysets = (
     searchCriteria: Partial<Omit<SearchCriteria, 'dataType'>>,
     enabled?: boolean
 ) => {
     return useQuery(
-        ['studysets', { ...searchCriteria }],
+        [STUDYSET_QUERY_STRING, { ...searchCriteria }],
         () => {
             return API.NeurostoreServices.StudySetsService.studysetsGet(
                 undefined,
