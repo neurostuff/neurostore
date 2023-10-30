@@ -14,7 +14,7 @@ services:
       - ./:/neurostore
       - ${FILE_DIR}:/file-data
       - ${ACE_DIR}:/ace
-    command: /usr/local/bin/gunicorn -w 8 -b :8000 neurostore.core:app --log-level debug --timeout 120
+    command: /usr/local/bin/gunicorn -w 8 -b :8000 neurostore.core:connexion_app --worker-class uvicorn.workers.UvicornWorker --log-level debug --timeout 120
     env_file:
       - .env
     container_name: neurostore

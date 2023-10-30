@@ -5,10 +5,10 @@ from functools import partialmethod
 class Client(object):
     def __init__(self, token, test_client=None, prepend="", username=None):
         if test_client is None:
-            from ..core import app
+            from ..core import connexion_app as app
 
             if not getattr(app, "test_client", None):
-                app = app._app
+                app = app.app._app
             test_client = app.test_client()
             self.client_flask = True
         else:
@@ -42,18 +42,23 @@ class Client(object):
         if content_type is None:
             content_type = "application/json"
 
+        headers["Content-Type"] = content_type
+
         route = self.prepend + route
 
         if self.client_flask:
+            kwargs = {
+                "headers": headers,
+                "params": params,
+            }
+
             if data is not None and json_dump is True:
                 data = json.dumps(data)
+                kwargs['data'] = data
 
             return request_function(
                 route,
-                data=data,
-                headers=headers,
-                content_type=content_type,
-                query_string=params,
+                **kwargs,
             )
         else:
             return request_function(route, json=data, headers=headers, params=params)

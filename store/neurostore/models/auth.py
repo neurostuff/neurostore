@@ -1,4 +1,4 @@
-from flask_security import UserMixin, RoleMixin, SQLAlchemyUserDatastore
+# from flask_security import UserMixin, RoleMixin, SQLAlchemyUserDatastore
 
 
 from ..database import db
@@ -13,14 +13,14 @@ roles_users = db.Table(
 )
 
 
-class Role(BaseMixin, db.Model, RoleMixin):
+class Role(BaseMixin, db.Model):
     __tablename__ = "roles"
 
     name = db.Column(db.Text, unique=True)
     description = db.Column(db.Text)
 
 
-class User(BaseMixin, db.Model, UserMixin):
+class User(BaseMixin, db.Model):
     __tablename__ = "users"
     active = db.Column(db.Boolean())
     name = db.Column(db.Text, index=True)
@@ -30,4 +30,4 @@ class User(BaseMixin, db.Model, UserMixin):
     )
 
 
-user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+# user_datastore = SQLAlchemyUserDatastore(db, User, Role)

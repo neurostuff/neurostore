@@ -1,4 +1,3 @@
-from ..request_utils import decode_json
 from ...models import Point
 from ...schemas import PointSchema
 from ...models import User, Analysis, Study
@@ -7,13 +6,13 @@ from ...models import User, Analysis, Study
 def test_get_points(auth_client, ingest_neurosynth, session):
     # Get an analysis
     resp = auth_client.get("/api/analyses/")
-    analysis = decode_json(resp)["results"][0]
+    analysis = resp.json()["results"][0]
 
     point_id = analysis["points"][0]
 
     # Get a point
     resp = auth_client.get(f"/api/points/{point_id}")
-    point = decode_json(resp)
+    point = resp.json()
 
     # Test a few fields
     db_point = Point.query.filter_by(id=point_id).first()
@@ -51,7 +50,7 @@ def test_put_points(auth_client, session):
     new_data = {"x": 10}
     resp = auth_client.put(f"/api/points/{point_id}", data=new_data)
 
-    assert resp.json["coordinates"][0] == new_data["x"]
+    assert resp.json()["coordinates"][0] == new_data["x"]
 
 
 def test_post_points(auth_client, ingest_neurosynth, session):
@@ -69,7 +68,7 @@ def test_post_points(auth_client, ingest_neurosynth, session):
 
     assert resp.status_code == 200
 
-    assert resp.json["coordinates"] == point["coordinates"]
+    assert resp.json()["coordinates"] == point["coordinates"]
 
 
 def test_delete_points(auth_client, session):

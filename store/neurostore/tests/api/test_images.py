@@ -1,4 +1,3 @@
-from ..request_utils import decode_json
 from ...models import Study, Analysis, User, Image
 
 
@@ -6,7 +5,7 @@ def test_get_images(auth_client, ingest_neurovault, session):
     # List of studysets
     resp = auth_client.get("/api/images/")
     assert resp.status_code == 200
-    images_list = decode_json(resp)["results"]
+    images_list = resp.json()["results"]
 
     assert isinstance(images_list, list)
 
@@ -28,8 +27,8 @@ def test_post_images(auth_client, session):
     resp = auth_client.post("/api/images/", data=payload)
 
     assert resp.status_code == 200
-    assert resp.json["url"] == payload["url"]
-    assert resp.json["filename"] == payload["filename"]
+    assert resp.json()["url"] == payload["url"]
+    assert resp.json()["filename"] == payload["filename"]
 
 
 def test_put_images(auth_client, session):
@@ -59,7 +58,7 @@ def test_put_images(auth_client, session):
     new_data = {"url": "new fake"}
     resp = auth_client.put(f"/api/images/{image_id}", data=new_data)
 
-    assert resp.json["url"] == new_data["url"]
+    assert resp.json()["url"] == new_data["url"]
 
 
 def test_delete_images(auth_client, session):

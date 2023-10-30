@@ -23,12 +23,12 @@ def test_nested(auth_client, ingest_neurosynth, nested, resource_schema, session
     for field in fields:
         if nested == "true":
             try:
-                assert isinstance(resp.json["results"][0][field][0], dict)
+                assert isinstance(resp.json()["results"][0][field][0], dict)
             except IndexError:
                 continue
         else:
             try:
-                assert isinstance(resp.json["results"][0][field][0], str)
+                assert isinstance(resp.json()["results"][0][field][0], str)
             except IndexError:
                 continue
 
@@ -39,7 +39,7 @@ def test_user_id(auth_client, user_data, session):
     id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()
     resp = auth_client.get(f"/api/studies/?user_id={user.external_id}")
-    for study in resp.json["results"]:
+    for study in resp.json()["results"]:
         assert study["user"] == user.external_id
 
 
@@ -50,7 +50,7 @@ def test_source_id(auth_client, ingest_neurosynth, session):
     post = auth_client.post(f"/api/studies/?source_id={study.id}", data={})
     get = auth_client.get(f"/api/studies/?source_id={study.id}&nested=true")
 
-    assert post.json == get.json["results"][0]
+    assert post.json() == get.json()["results"][0]
 
 
 @pytest.mark.parametrize("endpoint", ["studies", "base-studies"])
@@ -64,8 +64,8 @@ def test_data_type(
     get_both = auth_client.get(f"/api/{endpoint}/?data_type=both")
     assert get_both.status_code == 200
     assert (
-        len(get_coord.json["results"]) + len(get_img.json["results"])
-        == len(get_both.json["results"])
+        len(get_coord.json()["results"]) + len(get_img.json()["results"])
+        == len(get_both.json()["results"])
         != 0
     )
 
@@ -83,7 +83,7 @@ def test_common_queries(auth_client, ingest_neurosynth, session):
     total_search = auth_client.get(f"/api/studies/?search={study.pmid}")
 
     assert pmid_search.status_code == total_search.status_code == 200
-    assert len(pmid_search.json["results"]) == len(total_search.json["results"])
+    assert len(pmid_search.json()["results"]) == len(total_search.json()["results"])
 
 
 def test_multiword_queries(auth_client, ingest_neurosynth, session):
