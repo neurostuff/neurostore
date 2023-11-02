@@ -40,7 +40,10 @@ const UploadPMIDs: React.FC<{
         }
 
         // testing for PMIDs - we expect any number of numbers followed by a newline
-        const regex = /^(?:[0-9]+(?:\\[rn]|[\r\n]|$))+$/;
+        // [0-9]+ = matches 1 - any number of digits
+        // (?: ...) = noncapturing group, groups more efficiently as it does not parse
+        // \\[rn]|[\r\n] = matches either the literal "\r", literal "\n", newline, or carriage return
+        const regex = /^(?:[0-9]+(?:[\r\n])?)+$/;
         const isValid = regex.test(uploadState.rawIdText);
 
         if (!isValid) {
@@ -51,8 +54,7 @@ const UploadPMIDs: React.FC<{
             }));
             return;
         }
-
-        const textIdsToStringArr = uploadState.rawIdText.split(/\r?\n/);
+        const textIdsToStringArr = uploadState.rawIdText.split(/\r?\n/).filter((x) => !!x);
         if (textIdsToStringArr.length > 1500) {
             setUploadState((prev) => ({
                 ...prev,

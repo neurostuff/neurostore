@@ -1,14 +1,15 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, TableCell, TableRow } from '@mui/material';
-import NavigationButtons, {
-    ENavigationButton,
-} from 'components/Buttons/NavigationButtons/NavigationButtons';
+import { Box, Button, TableCell, TableRow } from '@mui/material';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import { useGetBaseStudies } from 'hooks';
+import { baseStudiesSearchHelper } from 'hooks/studies/useGetBaseStudies';
+import useGetDebouncedBaseStudies from 'hooks/studies/useGetDebouncedBaseStudies';
 import { BaseStudyList } from 'neurostore-typescript-sdk';
+import { useSnackbar } from 'notistack';
 import { useProjectId } from 'pages/Projects/ProjectPage/ProjectStore';
 import { SearchCriteria } from 'pages/Studies/StudiesPage/models';
 import {
@@ -22,7 +23,11 @@ import { IImportArgs } from '../CurationImport';
 import { studiesToStubs } from './helpers/utils';
 
 const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
-    const { user, isLoading: authenticationIsLoading } = useAuth0();
+    const { isLoading: authenticationIsLoading } = useAuth0();
+
+    const [importIsLoading, setImportIsLoading] = useState(false);
+    const { enqueueSnackbar } = useSnackbar();
+
     const history = useHistory();
     const location = useLocation();
     const projectId = useProjectId();
@@ -30,33 +35,13 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
     // cached data returned from the api
     const [studyData, setStudyData] = useState<BaseStudyList>();
 
-    // state of the current search
     const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({
         ...new SearchCriteria(),
         ...getSearchCriteriaFromURL(location?.search),
     });
 
-    // state of the search to the API (separated from searchCriteria to allow for debouncing)
-    const [debouncedSearchCriteria, setDebouncedSearchCriteria] =
-        useState<SearchCriteria>(searchCriteria);
-
-    /**
-     * This query will not be made until authentication has finished loading. The user?.sub property
-     * exists before loading is complete so we are guaranteed that the first query will run
-     * with the studysetOwner set (if logged in) and undefined otherwise
-     */
-    const { data, isLoading, isError, isFetching } = useGetBaseStudies(
-        { ...debouncedSearchCriteria, studysetOwner: user?.sub, flat: true },
-        !authenticationIsLoading
-    );
-
-    const {
-        data: allDataForSearch,
-        isLoading: allDataForSearchIsLoading,
-        isError: allDataForSearchIsError,
-        isFetching: allDataForSearchIsFetching,
-    } = useGetBaseStudies(
-        { ...debouncedSearchCriteria, studysetOwner: user?.sub, pageSize: 29999, flat: true }, // backend checks for less than 30000
+    const { data, isLoading, isError, isFetching } = useGetDebouncedBaseStudies(
+        { ...searchCriteria, flat: true },
         !authenticationIsLoading
     );
 
@@ -69,15 +54,6 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
         if (data) setStudyData(data);
     }, [data]);
 
-    useEffect(() => {
-        if (user?.sub) {
-            setSearchCriteria((prev) => ({
-                ...prev,
-                studysetOwner: user.sub,
-            }));
-        }
-    }, [user?.sub]);
-
     // runs every time the URL changes, to create a URL driven search.
     // this is separated from the debounce because otherwise the URL would
     // not update until the setTimeout is complete
@@ -87,18 +63,6 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
             return { ...prev, ...urlSearchCriteria };
         });
     }, [location.search]);
-
-    // runs for any change in study query
-    // debounces above useEffect
-    useEffect(() => {
-        const timeout = setTimeout(async () => {
-            setDebouncedSearchCriteria(searchCriteria);
-        }, 200);
-
-        return () => {
-            clearTimeout(timeout);
-        };
-    }, [searchCriteria]);
 
     const handleSearch = (searchArgs: Partial<SearchCriteria>) => {
         // when we search, we want to reset the search criteria as we dont know the
@@ -121,21 +85,37 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
         history.push(`/projects/${projectId}/curation/import?${searchURL}`);
     };
 
-    const handleButtonClick = (button: ENavigationButton) => {
+    const handleButtonClick = async (button: ENavigationButton) => {
         if (button === ENavigationButton.PREV) {
             history.push(`/projects/${projectId}/curation/import`);
             props.onNavigate(button);
-        } else {
-            const newStubs = studiesToStubs(allDataForSearch?.results || []);
+            return;
+        }
+        setImportIsLoading(true);
+        try {
+            const allDataForSearch = await baseStudiesSearchHelper({
+                ...searchCriteria,
+                pageOfResults: 1,
+                pageSize: 29999,
+            });
+            const dataResults = allDataForSearch?.data?.results || [];
+            if (dataResults.length !== studyData?.metadata?.total_count)
+                throw new Error('search result and query result do not match');
+
+            const newStubs = studiesToStubs(allDataForSearch?.data?.results || []);
             props.onImportStubs(newStubs);
+        } catch (e) {
+            console.error(e);
+            enqueueSnackbar('There was an error importing studies', { variant: 'error' });
+        } finally {
+            setImportIsLoading(false);
         }
     };
 
-    const tableIsLoading =
-        isLoading || isFetching || allDataForSearchIsLoading || allDataForSearchIsFetching;
+    const tableIsLoading = isLoading || isFetching;
 
     return (
-        <StateHandlerComponent isLoading={false} isError={isError || allDataForSearchIsError}>
+        <StateHandlerComponent isLoading={false} isError={isError}>
             <SearchContainer
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
@@ -214,19 +194,24 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
                 </Box>
             </SearchContainer>
 
-            <Box>
-                <NavigationButtons
-                    nextButtonText={`Import ${
-                        studyData?.metadata?.total_count || 0
-                    } studies from neurostore`}
-                    nextButtonStyle="contained"
-                    nextButtonDisabled={
-                        tableIsLoading ||
-                        (studyData?.results || []).length === 0 ||
-                        allDataForSearchIsLoading
-                    }
-                    onButtonClick={handleButtonClick}
-                />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Button
+                    variant="outlined"
+                    size="large"
+                    onClick={() => handleButtonClick(ENavigationButton.PREV)}
+                >
+                    back
+                </Button>
+                <LoadingButton
+                    variant="contained"
+                    size="large"
+                    text={`Import ${studyData?.metadata?.total_count || 0} studies from neurostore`}
+                    onClick={() => handleButtonClick(ENavigationButton.NEXT)}
+                    disableElevation
+                    sx={{ width: '400px' }}
+                    loaderColor="secondary"
+                    isLoading={importIsLoading}
+                ></LoadingButton>
             </Box>
         </StateHandlerComponent>
     );

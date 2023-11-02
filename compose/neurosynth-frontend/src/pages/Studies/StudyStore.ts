@@ -1,7 +1,17 @@
-import { useEffect } from 'react';
-import { persist } from 'zustand/middleware';
+import { AxiosResponse } from 'axios';
+import { IMetadataRowModel } from 'components/EditMetadata';
+import {
+    arrayToMetadata,
+    metadataToArray,
+} from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
+import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
+import { setAnalysesInAnnotationAsIncluded } from 'pages/helpers/utils';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import API from 'utils/api';
+import { v4 as uuid } from 'uuid';
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import {
     IStoreAnalysis,
     IStoreCondition,
@@ -11,24 +21,15 @@ import {
     storeAnalysesToStudyAnalyses,
     studyAnalysesToStoreAnalyses,
 } from './StudyStore.helpers';
-import { IMetadataRowModel } from 'components/EditMetadata';
-import API from 'utils/api';
-import {
-    arrayToMetadata,
-    metadataToArray,
-} from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
-import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
-import { v4 as uuid } from 'uuid';
-import { setAnalysesInAnnotationAsIncluded } from 'components/ExtractionComponents/Ingestion/helpers/utils';
 
 export type StudyStoreActions = {
     initStudyStore: (studyId?: string) => void;
     clearStudyStore: () => void;
     updateStudy: (fieldName: keyof StudyDetails, value: string | number) => void;
-    updateStudyInDB: (annotationId: string | undefined) => Promise<void>;
+    updateStudyInDB: (annotationId: string | undefined) => Promise<StudyReturn>;
     addOrUpdateStudyMetadataRow: (row: IMetadataRowModel) => void;
     deleteStudyMetadataRow: (key: string) => void;
-    addOrUpdateAnalysis: (analysis: Partial<IStoreAnalysis>) => void;
+    addOrUpdateAnalysis: (analysis: Partial<IStoreAnalysis>) => IStoreAnalysis;
     deleteAnalysis: (analysisId: string) => void;
     createCondition: (condition: IStoreCondition) => IStoreCondition;
     addOrUpdateConditionWeightPairForAnalysis: (
@@ -40,16 +41,13 @@ export type StudyStoreActions = {
     createAnalysisPoints: (analysisId: string, points: IStorePoint[], index: number) => void;
     deleteAnalysisPoints: (analysisId: string, pointIds: string[]) => void;
     updateAnalysisPoints: (analysisId: string, points: IStorePoint[]) => void;
-    setIsValid: (isValid: boolean) => void;
 };
 
 type StudyStoreMetadata = {
     studyIsEdited: boolean;
-    studyIsLoading: boolean;
-    conditionsIsEdited: boolean;
-    conditionsIsLoading: boolean;
+    getStudyIsLoading: boolean;
+    updateStudyIsLoading: boolean;
     isError: boolean; // for http errors that occur
-    isValid: boolean; // flag denoting if the form is valid
 };
 
 const useStudyStore = create<
@@ -64,6 +62,7 @@ const useStudyStore = create<
             return {
                 study: {
                     id: undefined,
+                    base_study: undefined,
                     name: undefined,
                     description: undefined,
                     doi: undefined,
@@ -76,6 +75,7 @@ const useStudyStore = create<
                     analyses: [],
                     studysets: [],
                     user: undefined,
+                    username: undefined,
                     source: undefined,
                     source_id: undefined,
                     source_updated_at: undefined,
@@ -85,11 +85,9 @@ const useStudyStore = create<
                 conditions: [],
                 storeMetadata: {
                     studyIsEdited: false,
-                    studyIsLoading: false,
+                    getStudyIsLoading: false,
+                    updateStudyIsLoading: false,
                     isError: false,
-                    conditionsIsEdited: false,
-                    conditionsIsLoading: false,
-                    isValid: true,
                 },
                 initStudyStore: async (studyId) => {
                     if (!studyId) return;
@@ -97,7 +95,8 @@ const useStudyStore = create<
                         ...state,
                         storeMetadata: {
                             ...state.storeMetadata,
-                            studyIsLoading: true,
+                            getStudyIsLoading: true,
+                            updateStudyIsLoading: true,
                         },
                     }));
                     try {
@@ -105,8 +104,8 @@ const useStudyStore = create<
                             studyId,
                             true
                         );
-                        const conditionsRes =
-                            await API.NeurostoreServices.ConditionsService.conditionsGet();
+                        // const conditionsRes =
+                        //     await API.NeurostoreServices.ConditionsService.conditionsGet();
 
                         set((state) => ({
                             ...state,
@@ -118,16 +117,15 @@ const useStudyStore = create<
                                 ),
                                 metadata: metadataToArray(studyRes?.data?.metadata || {}),
                             },
-                            conditions: conditionsRes.data.results?.map((x) => ({
-                                ...x,
-                                isNew: false,
-                            })),
+                            // conditions: conditionsRes.data.results?.map((x) => ({
+                            //     ...x,
+                            //     isNew: false,
+                            // })),
                             storeMetadata: {
                                 ...state.storeMetadata,
                                 studyIsEdited: false,
-                                studyIsLoading: false,
-                                conditionsIsLoading: false,
-                                conditionsIsEdited: false,
+                                getStudyIsLoading: false,
+                                updateStudyIsLoading: false,
                             },
                         }));
                     } catch (e) {
@@ -136,26 +134,18 @@ const useStudyStore = create<
                             ...state,
                             storeMetadata: {
                                 ...state.storeMetadata,
-                                studyIsLoading: false,
-                                conditionsIsLoading: false,
+                                getStudyIsLoading: false,
+                                updateStudyIsLoading: false,
                                 isError: true,
                             },
                         }));
                     }
                 },
-                setIsValid: (isValid) => {
-                    set((state) => ({
-                        ...state,
-                        storeMetadata: {
-                            ...state.storeMetadata,
-                            isValid: isValid,
-                        },
-                    }));
-                },
                 clearStudyStore: () => {
                     set((state) => ({
                         study: {
                             id: undefined,
+                            base_study: undefined,
                             name: undefined,
                             description: undefined,
                             doi: undefined,
@@ -177,11 +167,9 @@ const useStudyStore = create<
                         },
                         storeMetadata: {
                             studyIsEdited: false,
-                            studyIsLoading: false,
-                            conditionsIsEdited: false,
-                            conditionsIsLoading: false,
+                            getStudyIsLoading: false,
+                            updateStudyIsLoading: false,
                             isError: false,
-                            isValid: true,
                         },
                         conditions: [],
                     }));
@@ -207,7 +195,7 @@ const useStudyStore = create<
                             ...state,
                             storeMetadata: {
                                 ...state.storeMetadata,
-                                studyIsLoading: true,
+                                updateStudyIsLoading: true,
                             },
                         }));
 
@@ -223,16 +211,22 @@ const useStudyStore = create<
                             analyses: storeAnalysesToStudyAnalyses(state.study.analyses),
                         });
 
-                        if (annotationId) {
+                        const newAnalysesWereCreated = state.study.analyses.some(
+                            (analysis) => analysis.isNew
+                        );
+                        if (newAnalysesWereCreated && annotationId) {
+                            // new analyses created are not included by default and need to be manually set
                             await setAnalysesInAnnotationAsIncluded(annotationId);
                         }
 
                         // we want to reset the store with our new data because if we created any new
-                        // analyses, they will now have their own IDs assigned to them by neurostore
-                        const studyRes = await API.NeurostoreServices.StudiesService.studiesIdGet(
+                        // analyses, they will now have their own IDs assigned to them by neurostore.
+                        // we cannot use the object returned by studiesIdPut as it is not nested.
+                        // TODO: change return value of studiesIdPut to nested
+                        const studyRes = (await API.NeurostoreServices.StudiesService.studiesIdGet(
                             state.study.id,
                             true
-                        );
+                        )) as AxiosResponse<StudyReturn>;
 
                         set((state) => ({
                             ...state,
@@ -246,15 +240,16 @@ const useStudyStore = create<
                             storeMetadata: {
                                 ...state.storeMetadata,
                                 studyIsEdited: false,
-                                studyIsLoading: false,
+                                updateStudyIsLoading: false,
                             },
                         }));
+                        return studyRes.data;
                     } catch (e) {
                         set((state) => ({
                             ...state,
                             storeMetadata: {
                                 ...state.storeMetadata,
-                                studyIsLoading: false,
+                                updateStudyIsLoading: false,
                                 isError: true,
                             },
                         }));
@@ -314,29 +309,37 @@ const useStudyStore = create<
                     });
                 },
                 addOrUpdateAnalysis: (analysis) => {
-                    set((state) => {
-                        const updatedAnalyses = [...state.study.analyses];
-                        const foundAnalysisIndex = updatedAnalyses.findIndex(
-                            (x) => (x.id || null) === (analysis.id || undefined)
-                        );
-                        if (foundAnalysisIndex < 0) {
-                            updatedAnalyses.unshift({
-                                ...analysis,
-                                isNew: true,
-                                conditions: [],
-                                weights: [],
-                                points: [],
-                                pointSpace: undefined,
-                                pointStatistic: undefined,
-                                id: uuid(), // this is a temporary ID until one is assigned via neurostore
-                            });
-                        } else {
-                            updatedAnalyses[foundAnalysisIndex] = {
-                                ...updatedAnalyses[foundAnalysisIndex],
-                                ...analysis,
-                            };
-                        }
+                    let createdOrUpdatedAnalysis: IStoreAnalysis;
 
+                    // we do this outside the set func here so that we can return the updated or created analysis
+                    const state = useStudyStore.getState();
+                    const updatedAnalyses = [...state.study.analyses];
+                    const foundAnalysisIndex = updatedAnalyses.findIndex(
+                        (x) => (x.id || null) === (analysis.id || undefined)
+                    );
+                    if (foundAnalysisIndex < 0) {
+                        const createdAnalysis: IStoreAnalysis = {
+                            ...analysis,
+                            isNew: true,
+                            conditions: [],
+                            weights: [],
+                            points: [],
+                            pointSpace: undefined,
+                            pointStatistic: undefined,
+                            id: uuid(), // this is a temporary ID until one is assigned via neurostore
+                        };
+                        createdOrUpdatedAnalysis = createdAnalysis;
+                        updatedAnalyses.unshift(createdAnalysis);
+                    } else {
+                        const editedAnalysis: IStoreAnalysis = {
+                            ...updatedAnalyses[foundAnalysisIndex],
+                            ...analysis,
+                        };
+                        createdOrUpdatedAnalysis = editedAnalysis;
+                        updatedAnalyses[foundAnalysisIndex] = editedAnalysis;
+                    }
+
+                    set((state) => {
                         return {
                             ...state,
                             study: {
@@ -349,6 +352,7 @@ const useStudyStore = create<
                             },
                         };
                     });
+                    return createdOrUpdatedAnalysis;
                 },
                 deleteAnalysis: (analysisId) => {
                     set((state) => {
@@ -601,15 +605,16 @@ const useStudyStore = create<
 );
 
 // study retrieval hooks
+export const useStudy = () => useStudyStore((state) => state.study);
 export const useStudyId = () => useStudyStore((state) => state.study.id);
-export const useStudyIsLoading = () => useStudyStore((state) => state.storeMetadata.studyIsLoading);
-export const useConditionsIsLoading = () =>
-    useStudyStore((state) => state.storeMetadata.conditionsIsLoading);
+export const useGetStudyIsLoading = () =>
+    useStudyStore((state) => state.storeMetadata.getStudyIsLoading);
+export const useUpdateStudyIsLoading = () =>
+    useStudyStore((state) => state.storeMetadata.updateStudyIsLoading);
 export const useStudyHasBeenEdited = () =>
     useStudyStore((state) => state.storeMetadata.studyIsEdited);
-export const useConditionsIsEdited = () =>
-    useStudyStore((state) => state.storeMetadata.conditionsIsEdited);
 
+export const useStudyBaseStudyId = () => useStudyStore((state) => state.study.base_study);
 export const useStudyName = () => useStudyStore((state) => state.study.name);
 export const useStudyDescription = () => useStudyStore((state) => state.study.description);
 export const useStudyAuthors = () => useStudyStore((state) => state.study.authors);
@@ -687,9 +692,34 @@ export const useStudyAnalysisPointStatistic = (analysisId?: string) =>
     });
 export const useNumStudyAnalyses = () => useStudyStore((state) => state.study.analyses.length);
 export const useStudyAnalyses = () => useStudyStore((state) => state.study.analyses);
-export const useIsValid = () => useStudyStore((state) => state.storeMetadata.isValid);
-export const useIsError = () => useStudyStore((state) => state.storeMetadata.isError);
+export const useDebouncedStudyAnalyses = () => {
+    const [debouncedAnalyses, setDebouncedAnalyses] = useState(
+        useStudyStore.getState().study.analyses
+    );
+    useEffect(() => {
+        let debounce: NodeJS.Timeout;
+        const unsub = useStudyStore.subscribe((state) => {
+            if (debounce) clearTimeout(debounce);
+            debounce = setTimeout(() => {
+                setDebouncedAnalyses(state.study.analyses);
+            }, 400);
+        });
+
+        return () => {
+            unsub();
+            clearTimeout(debounce);
+        };
+    }, []);
+    return debouncedAnalyses;
+};
+
+export const useStudyStoreIsError = () => useStudyStore((state) => state.storeMetadata.isError);
 export const useStudyUser = () => useStudyStore((state) => state.study.user);
+export const useStudyUsername = () => useStudyStore((state) => state.study.username);
+export const useStudyLastUpdated = () =>
+    useStudyStore((state) =>
+        state.study.updated_at ? state.study.updated_at : state.study.created_at
+    );
 
 // study action hooks
 export const useInitStudyStore = () => useStudyStore((state) => state.initStudyStore);
@@ -708,7 +738,6 @@ export const useDeleteConditionFromAnalysis = () =>
 export const useUpdateAnalysisPoints = () => useStudyStore((state) => state.updateAnalysisPoints);
 export const useCreateAnalysisPoints = () => useStudyStore((state) => state.createAnalysisPoints);
 export const useDeleteAnalysisPoints = () => useStudyStore((state) => state.deleteAnalysisPoints);
-export const useSetIsValid = () => useStudyStore((state) => state.setIsValid);
 export const useDeleteAnalysis = () => useStudyStore((state) => state.deleteAnalysis);
 export const useInitStudyStoreIfRequired = () => {
     const clearStudyStore = useClearStudyStore();

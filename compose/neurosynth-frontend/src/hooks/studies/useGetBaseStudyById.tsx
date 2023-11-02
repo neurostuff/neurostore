@@ -9,6 +9,7 @@ const useGetBaseStudyById = (baseStudyId: string) => {
             select: (res) => {
                 return res.data;
             },
+            enabled: !!baseStudyId,
         }
     );
 };

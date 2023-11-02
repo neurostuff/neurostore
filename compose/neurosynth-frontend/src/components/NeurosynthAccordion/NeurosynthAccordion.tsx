@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 interface INeurosynthAccordion {
     defaultExpanded?: boolean;
     elevation?: number;
-    sx?: SystemStyleObject;
+    sx?: SystemStyleObject | Array<SystemStyleObject>;
     accordionSummarySx?: SystemStyleObject;
     accordionDetailsSx?: SystemStyleObject;
     TitleElement?: JSX.Element;

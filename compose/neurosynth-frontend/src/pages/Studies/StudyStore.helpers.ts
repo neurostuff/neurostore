@@ -3,6 +3,7 @@ import {
     AnalysisReturn,
     ConditionRequest,
     ConditionReturn,
+    PointRequest,
     PointReturn,
     PointValue,
 } from 'neurostore-typescript-sdk';
@@ -126,7 +127,7 @@ export const studyPointsToStorePoints = (
     let analysisSpace: MapOrSpaceType | undefined;
     let analysisMap: MapOrSpaceType | undefined;
     const parsedPoints: IStorePoint[] = ((points || []) as Array<PointReturn>)
-        .map(({ entities, space, subpeak, cluster_size, values, ...args }) => {
+        .map(({ entities, space, subpeak, cluster_size, values, kind, label_id, ...args }) => {
             const typedValues = values as Array<PointValue> | undefined;
             if (!analysisSpace && !!space) {
                 analysisSpace = {
@@ -135,7 +136,6 @@ export const studyPointsToStorePoints = (
                         : DefaultSpaceTypes.OTHER),
                 };
             }
-
             if (!analysisMap && typedValues && typedValues.length > 0 && typedValues[0].kind) {
                 const kind = typedValues[0].kind || '';
                 analysisMap = {
@@ -214,43 +214,39 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
     // we therefore need to scrub the id from the analysis if it was newly created by us.
     // we also need to remove the readonly attributes and any attributes we added
     const updatedAnalyses: AnalysisRequest[] = (analyses || []).map(
-        ({
-            isNew,
-            updated_at,
-            created_at,
-            user,
-            conditions,
-            points,
-            pointSpace,
-            pointStatistic,
-            ...analysisArgs
-        }) => {
-            const scrubbedConditions: ConditionRequest[] = conditions.map(
-                ({ isNew, updated_at, created_at, user, ...args }) => ({
-                    ...args,
-                    id: isNew ? undefined : args.id, // if the condition was created by us in the FE, make undefined so the BE gives it an ID
-                })
-            );
+        ({ isNew, conditions, points, pointSpace, pointStatistic, ...analysisArgs }) => {
+            const scrubbedConditions: ConditionRequest[] = conditions.map(({ isNew, ...args }) => ({
+                name: args.name,
+                description: args.description,
+                id: isNew ? undefined : args.id, // if the condition was created by us in the FE, make undefined so the BE gives it an ID
+            }));
 
-            const scrubbedPoints: any[] = points.map(
-                (
-                    { isNew, created_at, updated_at, user, coordinates, value, ...pointArgs },
-                    index
-                ) => ({
-                    ...pointArgs,
+            const scrubbedPoints: PointRequest[] = points.map(
+                ({ isNew, value, ...pointArgs }, index) => ({
+                    analysis: pointArgs.analysis,
+                    id: isNew ? undefined : pointArgs.id, // if the point was created by us in the FE, make undefined so the BE gives it an ID
+                    image: pointArgs.image,
+                    order: index,
+                    space: pointSpace?.value || null,
+                    subpeak: pointArgs.subpeak,
+                    x: pointArgs.x === null ? undefined : pointArgs.x,
+                    y: pointArgs.y === null ? undefined : pointArgs.y,
+                    z: pointArgs.z === null ? undefined : pointArgs.z,
                     values: [
                         {
-                            value: value,
-                            kind: pointStatistic?.value,
+                            value: value || null,
+                            kind: pointStatistic?.value || null,
                         },
                     ],
-                    space: pointSpace?.value,
-                    id: isNew ? undefined : pointArgs.id, // if the point was created by us in the FE, make undefined so the BE gives it an ID
-                    order: index,
+                    cluster_size: pointArgs.cluster_size || null,
                 })
             );
             return {
-                ...analysisArgs,
+                name: analysisArgs.name,
+                images: analysisArgs.images,
+                description: analysisArgs.description,
+                study: analysisArgs.study,
+                weights: analysisArgs.weights,
                 conditions: scrubbedConditions,
                 points: scrubbedPoints,
                 id: isNew ? undefined : analysisArgs.id,

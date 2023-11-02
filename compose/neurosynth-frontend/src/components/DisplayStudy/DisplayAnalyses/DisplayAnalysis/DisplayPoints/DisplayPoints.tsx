@@ -1,8 +1,9 @@
 import { HotTable } from '@handsontable/react';
 import { Box, Typography } from '@mui/material';
 import { registerAllModules } from 'handsontable/registry';
-import styles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable.module.css';
+import styles from 'components/HotTables/HotTables.module.css';
 import { IStorePoint, MapOrSpaceType } from 'pages/Studies/StudyStore.helpers';
+import { useEffect, useRef } from 'react';
 
 registerAllModules();
 
@@ -13,6 +14,7 @@ const DisplayPoints: React.FC<{
     points: IStorePoint[];
     height?: string;
 }> = (props) => {
+    const hotTableRef = useRef<HotTable>(null);
     const hotData = props.points.map((point) => [
         (point.coordinates || [])[0],
         (point.coordinates || [])[1],
@@ -21,6 +23,28 @@ const DisplayPoints: React.FC<{
         point.cluster_size,
         point.subpeak,
     ]);
+
+    // this allows handsontable to be responsive to the window...
+    // Using this library has been soul crushing. We have to force it to update on window resize. render() and refreshDimensions()
+    // don't do anything
+    useEffect(() => {
+        let debounce: NodeJS.Timeout;
+        const resizeHandler = (event: UIEvent) => {
+            if (debounce) clearTimeout(debounce);
+            debounce = setTimeout(() => {
+                if (hotTableRef?.current) {
+                    hotTableRef?.current?.forceUpdate();
+                }
+            }, 100);
+        };
+        window.addEventListener('resize', resizeHandler);
+
+        return () => {
+            window.removeEventListener('resize', resizeHandler);
+        };
+    }, []);
+
+    console.log(hotData.length);
 
     return (
         <Box sx={{ width: '100%' }}>
@@ -32,7 +56,6 @@ const DisplayPoints: React.FC<{
                     display: 'flex',
                     margin: '1rem 0',
                     justifyContent: 'space-between',
-                    width: '550px',
                 }}
             >
                 <Box>
@@ -58,35 +81,38 @@ const DisplayPoints: React.FC<{
                         No coordinates have been added yet
                     </Typography>
                 ) : (
-                    <HotTable
-                        manualColumnResize
-                        data={hotData}
-                        height={props.height}
-                        columns={[
-                            {
-                                className: styles.number,
-                            },
-                            {
-                                className: styles.number,
-                            },
-                            {
-                                className: styles.number,
-                            },
-                            {
-                                className: styles.number,
-                            },
-                            {
-                                className: styles.number,
-                            },
-                            {
-                                className: styles.boolean,
-                            },
-                        ]}
-                        colHeaders={['X', 'Y', 'Z', 'Value', 'Cluster Size (mm^3)', 'Subpeak?']}
-                        colWidths={[50, 50, 50, 150, 150, 100]}
-                        licenseKey="non-commercial-and-evaluation"
-                        readOnly
-                    />
+                    <div style={{ width: '100%', height: '100%' }}>
+                        <HotTable
+                            ref={hotTableRef}
+                            data={hotData}
+                            height={props.height}
+                            columns={[
+                                {
+                                    className: styles.number,
+                                },
+                                {
+                                    className: styles.number,
+                                },
+                                {
+                                    className: styles.number,
+                                },
+                                {
+                                    className: styles.number,
+                                },
+                                {
+                                    className: styles.number,
+                                },
+                                {
+                                    className: styles.boolean,
+                                },
+                            ]}
+                            colHeaders={['X', 'Y', 'Z', 'Value', 'Cluster Size (mm^3)', 'Subpeak?']}
+                            stretchH="all"
+                            width="100%"
+                            licenseKey="non-commercial-and-evaluation"
+                            readOnly
+                        />
+                    </div>
                 )}
             </Box>
         </Box>

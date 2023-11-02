@@ -1,41 +1,19 @@
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Chip } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useStudyAnalysisPoints, useStudyIsLoading } from 'pages/Studies/StudyStore';
-import { IStorePoint } from 'pages/Studies/StudyStore.helpers';
-
-export const isCoordinateMNI = (x: number, y: number, z: number) => {
-    const dims = {
-        xMax: 90,
-        xMin: -90,
-        yMax: 90,
-        yMin: -126,
-        zMax: 108,
-        zMin: -72,
-    };
-
-    return (
-        x <= dims.xMax &&
-        x >= dims.xMin &&
-        y <= dims.yMax &&
-        y >= dims.yMin &&
-        z <= dims.zMax &&
-        z >= dims.zMin
-    );
-};
+import useDisplayWarnings from './useDisplayWarnings';
+import { useGetStudyIsLoading } from 'pages/Studies/StudyStore';
 
 const DisplayAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
-    const points = useStudyAnalysisPoints(props.analysisId) as IStorePoint[] | null;
-    const studyIsLoading = useStudyIsLoading();
+    const getStudyIsLoading = useGetStudyIsLoading();
 
-    const noPoints = (points?.length || 0) === 0;
-    const allCoordinatesAreMNI = (points || []).every((x) => {
-        return isCoordinateMNI(x.x || 0, x.y || 0, x.z || 0);
-    });
+    const { hasNoPoints, hasNoName, hasDuplicateName, hasNonMNICoordinates } = useDisplayWarnings(
+        props.analysisId
+    );
 
     return (
-        <StateHandlerComponent isLoading={studyIsLoading} isError={false} loaderSize={20}>
-            {noPoints && (
+        <StateHandlerComponent isLoading={getStudyIsLoading} isError={false} loaderSize={20}>
+            {hasNoPoints && (
                 <Chip
                     sx={{ margin: '2px', marginBottom: '1rem' }}
                     icon={<ErrorOutlineIcon />}
@@ -43,7 +21,23 @@ const DisplayAnalysisWarnings: React.FC<{ analysisId: string }> = (props) => {
                     color="warning"
                 />
             )}
-            {!allCoordinatesAreMNI && (
+            {hasNoName && (
+                <Chip
+                    sx={{ margin: '2px', marginBottom: '1rem' }}
+                    icon={<ErrorOutlineIcon />}
+                    label="No analysis name"
+                    color="warning"
+                />
+            )}
+            {hasDuplicateName && (
+                <Chip
+                    sx={{ margin: '2px', marginBottom: '1rem' }}
+                    icon={<ErrorOutlineIcon />}
+                    label="Duplicate analysis name"
+                    color="warning"
+                />
+            )}
+            {hasNonMNICoordinates && (
                 <Chip
                     sx={{ margin: '2px', marginBottom: '1rem' }}
                     icon={<ErrorOutlineIcon />}

@@ -9,12 +9,14 @@ import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPag
 import {
     useInitProjectStoreIfRequired,
     useProjectCurationIsPrisma,
+    useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectName,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import ProjectIsLoadingText from './ProjectIsLoadingText';
+import { useGetStudysetById } from 'hooks';
 
 const CurationPage: React.FC = (props) => {
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
@@ -26,11 +28,13 @@ const CurationPage: React.FC = (props) => {
 
     const isPrisma = useProjectCurationIsPrisma();
     const studysetId = useProjectExtractionStudysetId();
+    const annotationId = useProjectExtractionAnnotationId();
     const projectName = useProjectName();
     const { included, uncategorized } = useGetCurationSummary();
+    const { data: studyset } = useGetStudysetById(studysetId || '', false);
 
     const handleMoveToExtractionPhase = () => {
-        if (studysetId) {
+        if (studysetId && annotationId && (studyset?.studies?.length || 0) > 0) {
             history.push(`/projects/${projectId}/extraction`);
         } else {
             history.push(`/projects/${projectId}`, {
@@ -76,13 +80,6 @@ const CurationPage: React.FC = (props) => {
                         <ProjectIsLoadingText />
                     </Box>
                     <Box sx={{ marginRight: '1rem' }}>
-                        <Button
-                            variant="outlined"
-                            sx={{ marginRight: '1rem' }}
-                            onClick={() => history.push(`/projects/${projectId}/curation/import`)}
-                        >
-                            import studies
-                        </Button>
                         {isPrisma && (
                             <>
                                 <PrismaDialog
@@ -92,18 +89,27 @@ const CurationPage: React.FC = (props) => {
                                 <Button
                                     onClick={() => setPrismaIsOpen(true)}
                                     variant="outlined"
-                                    sx={{ marginRight: '1rem' }}
+                                    sx={{ marginRight: '1rem', width: '234px' }}
                                     endIcon={<SchemaIcon />}
                                 >
                                     PRISMA diagram
                                 </Button>
                             </>
                         )}
+                        <Button
+                            variant="contained"
+                            disableElevation
+                            sx={{ marginRight: '1rem', width: '234px' }}
+                            onClick={() => history.push(`/projects/${projectId}/curation/import`)}
+                        >
+                            import studies
+                        </Button>
                         {canMoveToExtractionPhase && (
                             <Button
                                 onClick={handleMoveToExtractionPhase}
                                 variant="contained"
                                 color="success"
+                                sx={{ width: '234px' }}
                                 disableElevation
                             >
                                 Move To Extraction Phase

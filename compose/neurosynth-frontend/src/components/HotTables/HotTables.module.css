@@ -1,0 +1,46 @@
+.read-only-col {
+    background-color: #f0f0f0 !important;
+    color: black;
+}
+
+.truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.no-top-bottom-borders {
+    border-bottom-color: transparent !important;
+    border-top-color: transparent !important;
+}
+
+.no-wrap {
+    /* max-width: 100px !important; */
+    overflow-wrap: break-word !important;
+    white-space: pre-line !important;
+}
+
+.study-col {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+.boolean {
+    color: green !important;
+    text-align: center !important;
+}
+
+.string {
+    color: orange !important;
+    text-align: center !important;
+}
+
+.number {
+    color: blue !important;
+    text-align: center !important;
+}
+
+.null {
+    color: gray !important;
+    text-align: center !important;
+}

@@ -9,18 +9,29 @@ import {
     IconButton,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import React, { useMemo } from 'react';
 
 export interface IConfirmationDialog {
     isOpen: boolean;
     onCloseDialog: (confirm: boolean | undefined, data?: any) => void;
     dialogTitle: string;
-    dialogMessage?: string;
+    dialogMessage?: JSX.Element | string;
     confirmText?: string;
     rejectText?: string;
     data?: any;
 }
 
 const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
+    const dialogContent = useMemo(() => {
+        if (!props.dialogMessage) return undefined;
+
+        if (typeof props.dialogMessage === 'string') {
+            return <DialogContentText>{props.dialogMessage}</DialogContentText>;
+        } else {
+            return props.dialogMessage;
+        }
+    }, [props.dialogMessage]);
+
     return (
         <Dialog open={props.isOpen} onClose={() => props.onCloseDialog(undefined, props.data)}>
             <DialogTitle sx={{ display: 'flex' }}>
@@ -34,11 +45,7 @@ const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
                 </Box>
             </DialogTitle>
             <DialogContent>
-                {props.dialogMessage && (
-                    <DialogContentText sx={{ marginBottom: '1rem' }}>
-                        {props.dialogMessage}
-                    </DialogContentText>
-                )}
+                {props.dialogMessage && dialogContent}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Button
                         sx={{ width: '250px', marginRight: '15px' }}

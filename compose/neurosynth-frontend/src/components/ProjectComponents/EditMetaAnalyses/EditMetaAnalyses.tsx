@@ -11,20 +11,24 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useParams } from 'react-router-dom';
 import { useClearProvenance } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useGetStudysetById } from 'hooks';
 
 const env = process.env.REACT_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
 
 const EditMetaAnalyses: React.FC = (props) => {
     const { projectId }: { projectId: string } = useParams();
+    const extractionMetadata = useProjectExtractionMetadata();
+    const { total, included, uncategorized } = useGetCurationSummary();
+    const { data: studyset } = useGetStudysetById(extractionMetadata?.studysetId || '');
     const clearProvenance = useClearProvenance();
 
     const curationStepHasBeenInitialized = useProjectCurationColumns().length > 0;
 
-    const extractionMetadata = useProjectExtractionMetadata();
     const extractionStepHasBeenInitialized =
-        !!extractionMetadata.annotationId && !!extractionMetadata.studysetId;
+        !!extractionMetadata.annotationId &&
+        !!extractionMetadata.studysetId &&
+        (studyset?.studies?.length || 0) > 0;
 
-    const { total, included, uncategorized } = useGetCurationSummary();
     const disableExtractionStep =
         (total === 0 || included === 0 || uncategorized > 0) && !extractionStepHasBeenInitialized;
 

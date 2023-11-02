@@ -125,11 +125,11 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                         </Typography>
                                         <Box sx={ProjectComponentsStyles.statusContainer}>
                                             <Box sx={ProjectComponentsStyles.statusIconContainer}>
-                                                <PlaylistAddCheckIcon
-                                                    sx={CurationStepStyles.checkIcon}
+                                                <QuestionMarkIcon
+                                                    sx={CurationStepStyles.questionMarkIcon}
                                                 />
-                                                <Typography sx={{ color: 'success.main' }}>
-                                                    {curationSummary.included} included
+                                                <Typography sx={{ color: 'warning.dark' }}>
+                                                    {curationSummary.uncategorized} uncategorized
                                                 </Typography>
                                             </Box>
                                             <Box sx={ProjectComponentsStyles.statusIconContainer}>
@@ -139,11 +139,11 @@ const CurationStep: React.FC<ICurationStep & StepProps> = (props) => {
                                                 </Typography>
                                             </Box>
                                             <Box sx={ProjectComponentsStyles.statusIconContainer}>
-                                                <QuestionMarkIcon
-                                                    sx={CurationStepStyles.questionMarkIcon}
+                                                <PlaylistAddCheckIcon
+                                                    sx={CurationStepStyles.checkIcon}
                                                 />
-                                                <Typography sx={{ color: 'warning.dark' }}>
-                                                    {curationSummary.uncategorized} uncategorized
+                                                <Typography sx={{ color: 'success.main' }}>
+                                                    {curationSummary.included} included
                                                 </Typography>
                                             </Box>
                                         </Box>

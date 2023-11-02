@@ -36,15 +36,15 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
     const location = useLocation();
 
     const [searchState, setSearchState] = useState<Partial<SearchCriteria>>({
-        genericSearchStr: '', // this defaults to undefined if empty in useGetBaseStudies
+        genericSearchStr: undefined, // this defaults to undefined if empty in useGetBaseStudies
         dataType: SearchDataType.ALL,
         source: Source.ALL,
         sortBy: SortBy.RELEVANCE,
         descOrder: true,
-        nameSearch: '', // this defaults to undefined if empty in useGetBaseStudies
-        descriptionSearch: '', // this defaults to undefined if empty in useGetBaseStudies
-        publicationSearch: '', // this defaults to undefined if empty in useGetBaseStudies
-        authorSearch: '',
+        nameSearch: undefined, // this defaults to undefined if empty in useGetBaseStudies
+        descriptionSearch: undefined, // this defaults to undefined if empty in useGetBaseStudies
+        publicationSearch: undefined, // this defaults to undefined if empty in useGetBaseStudies
+        authorSearch: undefined,
     });
 
     // set new placeholder on reload
@@ -63,29 +63,29 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
     useEffect(() => {
         const searchCriteria = getSearchCriteriaFromURL(location.search);
         setSearchState({
-            genericSearchStr: searchCriteria.genericSearchStr || '',
+            genericSearchStr: searchCriteria.genericSearchStr,
             dataType: searchCriteria.dataType || SearchDataType.COORDINATE,
             source: searchCriteria.source || Source.ALL,
             sortBy: searchCriteria.sortBy || SortBy.RELEVANCE,
             descOrder: searchCriteria.descOrder,
-            nameSearch: searchCriteria.nameSearch || '',
-            descriptionSearch: searchCriteria.descriptionSearch || '',
-            publicationSearch: searchCriteria.publicationSearch || '',
-            authorSearch: searchCriteria.authorSearch || '',
+            nameSearch: searchCriteria.nameSearch,
+            descriptionSearch: searchCriteria.descriptionSearch,
+            publicationSearch: searchCriteria.publicationSearch,
+            authorSearch: searchCriteria.authorSearch,
         });
     }, [location.search]);
 
     const handleReset = () => {
         onSearch({
-            genericSearchStr: '',
+            genericSearchStr: undefined,
             dataType: SearchDataType.ALL,
             source: Source.ALL,
             sortBy: SortBy.RELEVANCE,
             descOrder: true,
-            nameSearch: '',
-            descriptionSearch: '',
-            publicationSearch: '',
-            authorSearch: '',
+            nameSearch: undefined,
+            descriptionSearch: undefined,
+            publicationSearch: undefined,
+            authorSearch: undefined,
         });
     };
 
@@ -104,7 +104,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
     const handleRemoveFilter = (filterToRemove: { filter: SearchBy; value: string }) => {
         onSearch({
             ...searchState,
-            [SearchByMapping[filterToRemove.filter]]: '',
+            [SearchByMapping[filterToRemove.filter]]: undefined,
         });
     };
 

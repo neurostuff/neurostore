@@ -1,17 +1,20 @@
 import { Style } from '../../..';
 
 const EditStudyPageStyles: Style = {
-    saveButton: {
-        marginRight: '30px !important',
-        color: 'success.contrastText',
-    },
-    button: {
-        width: '250px',
-    },
-    stickyButtonContainer: {
-        width: '100%',
-        padding: '10px 10px',
-        marginBottom: '15px',
+    loadingButtonContainer: {
+        bottom: 0,
+        height: '40px',
+        padding: '0.75rem 0',
+        backgroundColor: 'white',
+        position: 'fixed',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: {
+            xs: '90%',
+            md: '80%',
+        },
+        zIndex: 1000,
     },
 };
 

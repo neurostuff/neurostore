@@ -1,17 +1,33 @@
 import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import BaseDialog, { IDialog } from '../BaseDialog';
 import MoveToExtractionCreateAnnotation from './MoveToExtractionCreateAnnotation/MoveToExtractionCreateAnnotation';
 import MoveToExtractionCreateStudyset from './MoveToExtractionCreateStudyset/MoveToExtractionCreateStudyset';
 import MoveToExtractionIngest from './MoveToExtractionIngest/MoveToExtractionIngest';
+import {
+    useProjectExtractionAnnotationId,
+    useProjectExtractionStudysetId,
+} from 'pages/Projects/ProjectPage/ProjectStore';
 
 const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
     const [activeStep, setActiveStep] = useState(0);
 
+    const studysetId = useProjectExtractionStudysetId();
+    const annotationId = useProjectExtractionAnnotationId();
+
     const handleCloseDialog = () => {
         props.onCloseDialog();
     };
+
+    // just want this to run once. It is safe to make the deps array empty because we know that the project store has loaded at this point
+    useEffect(() => {
+        const hasStudysetId = !!studysetId;
+        const hasAnnotationId = !!annotationId;
+
+        setActiveStep(+hasStudysetId + +hasAnnotationId);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleNavigate = (button: ENavigationButton) => {
         setActiveStep((prev) => {
@@ -42,7 +58,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
                         <StepLabel>Create Annotations</StepLabel>
                     </Step>
                     <Step>
-                        <StepLabel>Ingest</StepLabel>
+                        <StepLabel>Ingest {activeStep}</StepLabel>
                     </Step>
                 </Stepper>
                 <Box sx={{ marginTop: '1rem' }}>

@@ -7,6 +7,7 @@ import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccord
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import ReadOnlyStubSummaryVirtualizedItem from './ReadOnlyStubSummaryVirtualizedItem';
+import { useMemo } from 'react';
 
 const CurationImportReviewFixedSizeListRow: React.FC<
     ListChildComponentProps<{
@@ -18,6 +19,8 @@ const CurationImportReviewFixedSizeListRow: React.FC<
     return <ReadOnlyStubSummaryVirtualizedItem {...stub} style={props.style} />;
 };
 
+const LIST_HEIGHT = 140;
+
 const CurationImportReview: React.FC<{
     stubs: ICurationStubStudy[];
     unimportedStubs: string[];
@@ -25,12 +28,32 @@ const CurationImportReview: React.FC<{
 }> = (props) => {
     const { stubs, onNavigate } = props;
 
-    const nonExcludedStubs = stubs.filter((x) => !x.exclusionTag);
-    const excludedStubs = stubs.filter((x) => !!x.exclusionTag);
+    const nonExcludedStubs = useMemo(() => {
+        return stubs.filter((x) => !x.exclusionTag);
+    }, [stubs]);
+    const excludedStubs = useMemo(() => {
+        return stubs.filter((x) => !!x.exclusionTag);
+    }, [stubs]);
 
     const windowHeight = useGetWindowHeight();
 
-    const fixedListHeight = windowHeight - 400 < 300 ? 300 : windowHeight - 400;
+    const includedStudiesListHeight = useMemo(() => {
+        const estimatedListHeight = LIST_HEIGHT * nonExcludedStubs.length;
+        const defaultListHeight = windowHeight - 200;
+        const fixedListHeight =
+            defaultListHeight > estimatedListHeight ? estimatedListHeight : defaultListHeight;
+
+        return fixedListHeight;
+    }, [nonExcludedStubs.length, windowHeight]);
+
+    const excludedStudiesListHeight = useMemo(() => {
+        const estimatedListHeight = LIST_HEIGHT * excludedStubs.length;
+        const defaultListHeight = windowHeight - 200;
+        const fixedListHeight =
+            defaultListHeight > estimatedListHeight ? estimatedListHeight : defaultListHeight;
+
+        return fixedListHeight;
+    }, [excludedStubs.length, windowHeight]);
 
     return (
         <>
@@ -54,39 +77,14 @@ const CurationImportReview: React.FC<{
                             </Typography>
                         </>
                     )}
-                    {/* <Typography sx={{ marginBottom: '0.5rem' }} variant="body1">
-                        Tag all your imported studies
-                    </Typography>
-                    <Box>
-                        <TagSelectorPopup
-                            size="small"
-                            sx={{ width: '500px' }}
-                            onAddTag={handleAddTag}
-                            onCreateTag={handleAddTag}
-                        />
-                        <Box sx={{ marginTop: '0.5rem' }}>
-                            {tags.map((tag) => (
-                                <Chip
-                                    sx={{ margin: '3px' }}
-                                    onDelete={() => handleDeleteTag(tag)}
-                                    label={tag.label}
-                                    key={tag.id}
-                                />
-                            ))}
-                        </Box>
-                    </Box> */}
                 </Box>
-                {/* <Divider sx={{ marginTop: '0.5rem' }} /> */}
             </Paper>
             <Box sx={{ margin: '1rem 0', backgroundColor: '#f6f6f6' }}>
-                {/* <Typography sx={{ color: 'gray', fontStyle: 'italic' }}>
-                    Studies marked as "Duplicate" have a red border
-                </Typography> */}
                 <FixedSizeList
-                    height={fixedListHeight}
+                    height={includedStudiesListHeight}
                     itemCount={nonExcludedStubs.length}
                     width="100%"
-                    itemSize={150}
+                    itemSize={LIST_HEIGHT}
                     itemKey={(index, data) => data.stubs[index]?.id}
                     layout="vertical"
                     itemData={{
@@ -118,7 +116,7 @@ const CurationImportReview: React.FC<{
                         elevation={0}
                     >
                         <FixedSizeList
-                            height={fixedListHeight}
+                            height={excludedStudiesListHeight}
                             itemCount={excludedStubs.length}
                             width="100%"
                             itemSize={150}

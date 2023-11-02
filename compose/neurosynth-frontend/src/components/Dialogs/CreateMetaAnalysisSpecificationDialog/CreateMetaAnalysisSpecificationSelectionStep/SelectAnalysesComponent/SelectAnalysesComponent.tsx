@@ -17,7 +17,7 @@ import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthT
 import { EPropertyType } from 'components/EditMetadata';
 import { useGetAnnotationById } from 'hooks';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
-import { AnnotationNoteValue } from 'components/EditAnnotations/helpers/utils';
+import { AnnotationNoteValue } from 'components/HotTables/HotTables.types';
 
 export const getFilteredAnnotationNotes = (
     annotationNotes: NoteCollectionReturn[],

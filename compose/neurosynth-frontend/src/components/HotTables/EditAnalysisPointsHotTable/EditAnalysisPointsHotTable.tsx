@@ -1,163 +1,44 @@
 import { HotTable } from '@handsontable/react';
-import { Box, Link, Typography } from '@mui/material';
+import Add from '@mui/icons-material/Add';
+import { Box, Button, Link, Typography } from '@mui/material';
 import InputNumberDialog from 'components/Dialogs/InputNumberDialog/InputNumberDialog';
-import styles from 'components/EditAnnotations/AnnotationsHotTable/AnnotationsHotTable.module.css';
-import { CellChange, CellValue, ChangeSource, RangeType } from 'handsontable/common';
+import { CellRange } from 'handsontable';
+import { CellChange, ChangeSource, RangeType } from 'handsontable/common';
 import { registerAllModules } from 'handsontable/registry';
-import { ColumnSettings } from 'handsontable/settings';
 import {
     useCreateAnalysisPoints,
     useDeleteAnalysisPoints,
-    useSetIsValid,
     useStudyAnalysisPoints,
     useUpdateAnalysisPoints,
 } from 'pages/Studies/StudyStore';
 import { IStorePoint } from 'pages/Studies/StudyStore.helpers';
-import React, { useEffect, useRef, useState } from 'react';
-import EditAnalysisPointSpaceAndStatistic from './EditAnalysisPointSpaceAndStatistic/EditAnalysisPointSpaceAndStatistic';
-
-export const ROW_HEIGHT = 56;
+import React, { useRef } from 'react';
+import { sanitizePaste } from '../HotTables.utils';
+import {
+    EditAnalysisPointsDefaultConfig,
+    getHotTableInsertionIndices,
+    hotTableColHeaders,
+    hotTableColumnSettings,
+} from './EditAnalysisPointsHotTable.helpers';
+import useEditAnalysisPointsHotTable from './useEditAnalysisPointsHotTable';
 
 registerAllModules();
 
-const nonEmptyNumericValidator = (value: CellValue, callback: (isValid: boolean) => void) => {
-    const isNumber = !isNaN(value);
-    if (isNumber && value !== 'e') {
-        callback(true);
-    } else {
-        callback(false);
-    }
-};
-
-const hotTableColHeaders = ['X', 'Y', 'Z', 'Value', 'Cluster Size (mm^3)', 'Subpeak?'];
-const hotTableColumnSettings: ColumnSettings[] = [
-    {
-        validator: nonEmptyNumericValidator,
-        className: styles.number,
-        data: 'x',
-        type: 'numeric',
-    },
-    {
-        validator: nonEmptyNumericValidator,
-        className: styles.number,
-        data: 'y',
-        type: 'numeric',
-    },
-    {
-        validator: nonEmptyNumericValidator,
-        className: styles.number,
-        data: 'z',
-        type: 'numeric',
-    },
-    {
-        className: styles.number,
-        data: 'value',
-        type: 'numeric',
-    },
-    {
-        className: styles.number,
-        data: 'cluster_size',
-        type: 'numeric',
-    },
-    {
-        validator: (value: CellValue, callback: (isValid: boolean) => void) => {
-            callback(value === true || value === false || value === undefined);
-        },
-        className: styles.boolean,
-        data: 'subpeak',
-        type: 'checkbox',
-    },
-];
-
-const stripTags = (stringWhichMayHaveHTML: any) => {
-    if (typeof stringWhichMayHaveHTML !== 'string') return '';
-
-    let doc = new DOMParser().parseFromString(stringWhichMayHaveHTML, 'text/html');
-    return doc.body.textContent || '';
-};
-
-const replaceString = (val: string) => {
-    // replace = ['֊', '‐', '‑', '⁃', '﹣', '－', '‒', '–', '—', '﹘', '−', '-']
-
-    return val.replaceAll(new RegExp('֊|‐|‑|⁃|﹣|－|‒|–|—|﹘|−|-', 'g'), '-');
-};
-
-const getHotTableInsertionIndices = (selectedCoords: [number, number, number, number][]) => {
-    if (selectedCoords.length === 0)
-        return {
-            insertAboveIndex: 0,
-            insertBelowIndex: 0,
-        };
-
-    let topMostIndex = selectedCoords[0][0]; // target startRow of first selected coord
-    let bottomMostIndex = selectedCoords[selectedCoords.length - 1][2]; // target endRow of last selected coord
-
-    selectedCoords.forEach(([startRow, startCol, endRow, endCol]) => {
-        if (startRow < topMostIndex) topMostIndex = startRow;
-        if (endRow > bottomMostIndex) bottomMostIndex = endRow;
-    });
-    return {
-        insertAboveIndex: topMostIndex,
-        insertBelowIndex: bottomMostIndex,
-    };
-};
-
-const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props) => {
+const EditAnalysisPointsHotTable: React.FC<{ analysisId?: string }> = React.memo((props) => {
     const points = useStudyAnalysisPoints(props.analysisId) as IStorePoint[] | null;
     const updatePoints = useUpdateAnalysisPoints();
     const createPoint = useCreateAnalysisPoints();
     const deletePoints = useDeleteAnalysisPoints();
-    const setIsValid = useSetIsValid();
     const hotTableRef = useRef<HotTable>(null);
     const hotTableMetadata = useRef<{ insertRowsAbove: boolean; insertedRowsViaPaste: any[][] }>({
         insertRowsAbove: true,
         insertedRowsViaPaste: [],
     });
-    const [insertRowsDialogIsOpen, setInsertRowsDialogIsOpen] = useState(false);
-
-    // run every time points are updated to validate (in charge of highlighting the cells that are invalid)
-    useEffect(() => {
-        const hasEmptyCoordinates = (points || []).some(({ x, y, z }) => {
-            return x === undefined || y === undefined || z === undefined;
-        });
-        setIsValid(!hasEmptyCoordinates);
-        hotTableRef.current?.hotInstance?.validateCells();
-    }, [points, setIsValid]);
-
-    // run once initially to set the custom context menu
-    useEffect(() => {
-        if (hotTableRef.current?.hotInstance) {
-            hotTableRef.current.hotInstance.updateSettings({
-                contextMenu: {
-                    items: {
-                        row_above: {
-                            name: 'Add rows above',
-                            callback: (key, options) => {
-                                hotTableMetadata.current.insertRowsAbove = true;
-                                setInsertRowsDialogIsOpen(true);
-                            },
-                        },
-                        row_below: {
-                            name: 'Add rows below',
-                            callback: (key, options) => {
-                                hotTableMetadata.current.insertRowsAbove = false;
-                                setInsertRowsDialogIsOpen(true);
-                            },
-                        },
-                        remove_row: {
-                            name: 'Remove row(s)',
-                        },
-                        copy: {
-                            name: 'Copy',
-                        },
-                        cut: {
-                            name: 'Cut',
-                        },
-                    },
-                },
-            });
-        }
-    }, [hotTableRef]);
+    const { height, insertRowsDialogIsOpen, closeInsertRowsDialog } = useEditAnalysisPointsHotTable(
+        props.analysisId,
+        hotTableRef,
+        hotTableMetadata
+    );
 
     // handsontable binds and updates to the data references themselves which means the original data is being mutated.
     // as we use zustand, this may not be a good idea, so we implement handleAfterChange to
@@ -192,20 +73,7 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
     const handleBeforePaste = (data: any[][], coords: RangeType[]) => {
         if (!points) return false;
 
-        data.forEach((dataRow, rowIndex) => {
-            dataRow.forEach((value, valueIndex) => {
-                if (typeof value === 'number') return;
-
-                let newVal = value;
-
-                newVal = stripTags(newVal); // strip all HTML tags that were copied over if they exist
-                newVal = replaceString(newVal); // replace minus operator with javascript character code
-
-                if (newVal === 'true') newVal = true;
-                else if (newVal === 'false') newVal = false;
-                data[rowIndex][valueIndex] = newVal;
-            });
-        });
+        sanitizePaste(data);
 
         // if a paste leads to rows being created, we store those rows in a ref for the handleBeforeCreateRow hook to
         // know how many rows to create
@@ -269,6 +137,18 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
         return false;
     };
 
+    // vertical autofill of an empty cell into other empty cells allows it to work and breaks validation...so whenever
+    // we autofill we need to validate again
+    const handleAfterAutofill = (
+        fillData: any[][],
+        sourceRange: CellRange,
+        targetRange: CellRange,
+        direction: 'right' | 'left' | 'up' | 'down'
+    ): void => {
+        if (!hotTableRef?.current?.hotInstance) return;
+        hotTableRef.current?.hotInstance?.validateCells();
+    };
+
     const handleInsertRows = (numRows: number) => {
         if (hotTableRef.current?.hotInstance && props.analysisId) {
             const selectedCoords = hotTableRef.current.hotInstance.getSelected();
@@ -284,12 +164,9 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
                 })),
                 hotTableMetadata.current.insertRowsAbove ? insertAboveIndex : insertBelowIndex + 1
             );
-            setInsertRowsDialogIsOpen(false);
+            closeInsertRowsDialog();
         }
     };
-
-    const totalHeight = 28 + (points?.length || 0) * 23;
-    const height = totalHeight > 500 ? 500 : totalHeight;
 
     /**
      * Hook Order:
@@ -301,34 +178,27 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
      */
     return (
         <Box sx={{ width: '100%' }}>
-            <EditAnalysisPointSpaceAndStatistic analysisId={props.analysisId} />
             <InputNumberDialog
                 isOpen={insertRowsDialogIsOpen}
                 dialogTitle="Enter number of rows to insert"
-                onCloseDialog={() => setInsertRowsDialogIsOpen(false)}
+                onCloseDialog={() => closeInsertRowsDialog()}
                 onInputNumber={(val) => handleInsertRows(val)}
                 dialogDescription=""
             />
             <HotTable
+                {...EditAnalysisPointsDefaultConfig}
                 ref={hotTableRef}
-                outsideClickDeselects={false}
-                licenseKey="non-commercial-and-evaluation"
                 afterChange={handleAfterChange} // beforeChange results in weird update issues so we use afterChange
                 beforePaste={handleBeforePaste}
                 beforeCreateRow={handleBeforeCreateRow}
                 beforeRemoveRow={handleBeforeRemoveRow}
-                allowRemoveColumn={false}
-                allowInvalid={false}
-                undo={false}
-                colWidths={[50, 50, 50, 150, 150, 100]}
-                manualColumnResize
+                afterAutofill={handleAfterAutofill}
                 height={height}
-                allowInsertColumn={false}
                 columns={hotTableColumnSettings}
                 colHeaders={hotTableColHeaders}
                 data={[...(points || [])]}
             />
-            {(!points || points.length === 0) && (
+            {(points?.length || 0) === 0 ? (
                 <Typography sx={{ color: 'warning.dark', marginTop: '0.5rem' }}>
                     No coordinate data.{' '}
                     <Link
@@ -351,9 +221,28 @@ const EditAnalysisPoints: React.FC<{ analysisId?: string }> = React.memo((props)
                         Click here to get started
                     </Link>
                 </Typography>
+            ) : (
+                <Button
+                    endIcon={<Add />}
+                    onClick={() => {
+                        if (!props.analysisId) return;
+                        createPoint(
+                            props.analysisId,
+                            [
+                                {
+                                    value: undefined,
+                                    isNew: true,
+                                },
+                            ],
+                            points?.length || 0
+                        );
+                    }}
+                >
+                    Add Row
+                </Button>
             )}
         </Box>
     );
 });
 
-export default EditAnalysisPoints;
+export default EditAnalysisPointsHotTable;

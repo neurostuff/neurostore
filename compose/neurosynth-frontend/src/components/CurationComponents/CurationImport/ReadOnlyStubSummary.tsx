@@ -24,7 +24,7 @@ const ReadOnlyStubSummary: React.FC<ICurationStubStudy> = (props) => {
                 <Link
                     underline="hover"
                     target="_blank"
-                    href={`/studies/${neurostoreId}`}
+                    href={`/base-studies/${neurostoreId}`}
                     sx={{ marginRight: '10px' }}
                 >
                     view study in neurostore

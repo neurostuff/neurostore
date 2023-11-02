@@ -1,30 +1,41 @@
 import { Add } from '@mui/icons-material';
 import { Box, Button, Divider, Typography } from '@mui/material';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
-import { useAddOrUpdateAnalysis, useNumStudyAnalyses } from 'pages/Studies/StudyStore';
-import { useState } from 'react';
+import { useAddOrUpdateAnalysis, useNumStudyAnalyses, useStudyId } from 'pages/Studies/StudyStore';
+import { useCallback, useState } from 'react';
 import EditAnalysesList from './EditAnalysesList/EditAnalysesList';
 import EditAnalysis from './EditAnalysis/EditAnalysis';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
+import EditStudyComponentsStyles from 'components/EditStudyComponents/EditStudyComponents.styles';
+import { useCreateAnnotationNote } from 'stores/AnnotationStore.actions';
+import React from 'react';
 
-const EditAnalyses: React.FC = (props) => {
+const EditAnalyses: React.FC = React.memo((props) => {
     const numAnalyses = useNumStudyAnalyses();
+    const studyId = useStudyId();
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
+    const createAnnotationNote = useCreateAnnotationNote();
     const [selectedAnalysisId, setSelectedAnalysisId] = useState<string>();
     const [createNewAnalysisDialogIsOpen, setCreateNewAnalysisDialogIsOpen] = useState(false);
 
     const handleCreateNewAnalysis = (name: string, description: string) => {
-        addOrUpdateAnalysis({
+        if (!studyId) return;
+
+        const createdAnalysis = addOrUpdateAnalysis({
             name,
             description,
             isNew: true,
             conditions: [],
         });
+
+        if (!createdAnalysis.id) return;
+
+        createAnnotationNote(createdAnalysis.id, studyId, name);
     };
 
-    const handleSelectAnalysis = (analysisId: string) => {
+    const handleSelectAnalysis = useCallback((analysisId: string) => {
         setSelectedAnalysisId(analysisId);
-    };
+    }, []);
 
     const handleOnDeleteAnalysis = () => {
         setSelectedAnalysisId(undefined);
@@ -32,24 +43,18 @@ const EditAnalyses: React.FC = (props) => {
 
     return (
         <NeurosynthAccordion
-            defaultExpanded
             elevation={0}
+            defaultExpanded
             expandIconColor="secondary.main"
-            sx={{
-                border: '1px solid',
-                borderTop: 'none',
-                borderColor: 'secondary.main',
-                borderRadius: '0 !important',
-            }}
-            accordionSummarySx={{
-                ':hover': {
-                    backgroundColor: '#f2f2f2',
+            sx={[
+                EditStudyComponentsStyles.accordion,
+                {
+                    borderBottomLeftRadius: '4px !important',
+                    borderBottomRightRadius: '4px !important',
                 },
-            }}
+            ]}
             TitleElement={
-                <Typography sx={{ fontWeight: 'bold', color: 'secondary.main' }}>
-                    Analyses
-                </Typography>
+                <Typography sx={EditStudyComponentsStyles.accordionTitle}>Analyses</Typography>
             }
         >
             <Box sx={{ width: '100%', margin: '0.5rem 0' }}>
@@ -77,7 +82,8 @@ const EditAnalyses: React.FC = (props) => {
                             width: '150px',
                             marginLeft: 'auto',
                         }}
-                        variant="outlined"
+                        variant="contained"
+                        disableElevation
                         startIcon={<Add />}
                     >
                         analysis
@@ -108,6 +114,6 @@ const EditAnalyses: React.FC = (props) => {
             </Box>
         </NeurosynthAccordion>
     );
-};
+});
 
 export default EditAnalyses;

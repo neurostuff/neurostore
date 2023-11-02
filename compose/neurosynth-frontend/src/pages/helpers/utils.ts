@@ -1,4 +1,8 @@
+import { AxiosResponse } from 'axios';
+import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { NoteCollectionReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import { SearchCriteria } from 'pages/Studies/StudiesPage/models';
+import API, { NeurostoreAnnotation } from 'utils/api';
 
 const getSearchCriteriaFromURL = (locationURL?: string): SearchCriteria => {
     const newSearchCriteria = new SearchCriteria();
@@ -74,10 +78,69 @@ const getNumStudiesString = (studies: any[] | undefined): string => {
     }
 };
 
+// returns bool representing whether or not there is a difference between the curation included studies and what is currently in the studyset
+const resolveStudysetAndCurationDifferences = (
+    curationStubs: ICurationStubStudy[],
+    studysetStudies: StudyReturn[]
+): boolean => {
+    if (curationStubs.length !== studysetStudies.length) return true;
+
+    const studysetSet = new Set();
+    studysetStudies.forEach((studysetStudy) => {
+        if (studysetStudy.name) studysetSet.add((studysetStudy.name || '').toLocaleLowerCase());
+        if (studysetStudy.pmid) studysetSet.add(studysetStudy.pmid);
+        if (studysetStudy.doi) studysetSet.add(studysetStudy.doi);
+    });
+
+    curationStubs.forEach((stub) => {
+        if (
+            !studysetSet.has(stub.title) &&
+            !studysetSet.has(stub.pmid) &&
+            !studysetSet.has(stub.doi)
+        ) {
+            return true;
+        }
+    });
+
+    return false;
+};
+
+const setAnalysesInAnnotationAsIncluded = async (annotationId: string, studyId?: string) => {
+    try {
+        const annotation = (await API.NeurostoreServices.AnnotationsService.annotationsIdGet(
+            annotationId
+        )) as AxiosResponse<NeurostoreAnnotation>;
+
+        let notes = (annotation.data.notes || []) as NoteCollectionReturn[];
+
+        if (studyId) {
+            notes = notes.filter((note) => note.study === studyId);
+        }
+
+        await API.NeurostoreServices.AnnotationsService.annotationsIdPut(annotationId, {
+            notes: notes.map((x) => ({
+                analysis: x.analysis,
+                study: x.study,
+                note: {
+                    ...x.note,
+                    // included can be null meaning it has not been instantiated. We only want to set it to true
+                    // if it has not been instantiated as that will overwrite the value is the user previously set it to false
+                    included: (x.note as any)?.included === false ? false : true,
+                },
+            })),
+        });
+    } catch (e) {
+        console.error(e);
+        throw new Error('error setting annotations as included');
+    }
+};
+
 export {
     getSearchCriteriaFromURL,
     getURLFromSearchCriteria,
     addKVPToSearch,
     stringToColor,
     getNumStudiesString,
+    resolveStudysetAndCurationDifferences,
+    setAnalysesInAnnotationAsIncluded,
 };

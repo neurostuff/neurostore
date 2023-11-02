@@ -483,10 +483,12 @@ export const replaceStudyListStatusIdHelper = (
 export const setGivenStudyStatusesAsCompleteHelper = (
     studyIds: string[]
 ): IStudyExtractionStatus[] => {
-    return studyIds.map((studyId) => ({
-        id: studyId,
-        status: 'COMPLETE',
-    }));
+    return studyIds
+        .filter((studyId) => !!studyId)
+        .map((studyId) => ({
+            id: studyId,
+            status: 'COMPLETE',
+        }));
 };
 
 export type TProjectStore = INeurosynthProjectReturn &

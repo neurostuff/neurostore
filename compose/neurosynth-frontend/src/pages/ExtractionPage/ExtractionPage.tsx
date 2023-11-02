@@ -2,8 +2,7 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import CheckIcon from '@mui/icons-material/Check';
 import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import { Box, Button, Chip, Typography } from '@mui/material';
-import ExtractionReconcileDialog from 'components/Dialogs/ExtractionReconcileDialog/ExtractionReconcileDialog';
-import { resolveStudysetAndCurationDifferences } from 'components/ExtractionComponents/Ingestion/helpers/utils';
+import ExtractionOutOfSync from 'components/ExtractionComponents/ExtractionOutOfSync';
 import ReadOnlyStudySummaryVirtualizedItem from 'components/ExtractionComponents/ReadOnlyStudySummary';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
@@ -20,6 +19,7 @@ import {
     useProjectName,
     useProjectNumCurationColumns,
 } from 'pages/Projects/ProjectPage/ProjectStore';
+import { resolveStudysetAndCurationDifferences } from 'pages/helpers/utils';
 import { useEffect, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
@@ -63,6 +63,7 @@ const ExtractionPage: React.FC = (props) => {
     const {
         data: studyset,
         isLoading: getStudysetIsLoading,
+        isRefetching: getStudysetIsRefetching,
         isError: getStudysetIsError,
     } = useGetStudysetById(studysetId, true);
     const { mutate } = useUpdateStudyset();
@@ -82,7 +83,6 @@ const ExtractionPage: React.FC = (props) => {
         completed: [],
     });
     const [showReconcilePrompt, setShowReconcilePrompt] = useState(false);
-    const [reconcileDialogIsOpen, setReconcileDialogIsOpen] = useState(false);
 
     useEffect(() => {
         if (
@@ -90,12 +90,11 @@ const ExtractionPage: React.FC = (props) => {
             (curationIncludedStudies?.stubStudies?.length || 0) > 0 &&
             studyset?.studies
         ) {
-            const { removedFromStudyset, stubsToIngest } = resolveStudysetAndCurationDifferences(
+            const isDifferent = resolveStudysetAndCurationDifferences(
                 curationIncludedStudies.stubStudies,
-                (studyset.studies as StudyReturn[]).map((x) => x.id as string)
+                studyset.studies as StudyReturn[]
             );
-
-            setShowReconcilePrompt(removedFromStudyset.length > 0 || stubsToIngest.length > 0);
+            setShowReconcilePrompt(isDifferent);
         }
     }, [curationIncludedStudies, getStudysetIsLoading, studyset?.studies]);
 
@@ -202,7 +201,7 @@ const ExtractionPage: React.FC = (props) => {
                                 },
                             ]}
                         />
-                        <ProjectIsLoadingText />
+                        <ProjectIsLoadingText isLoading={getStudysetIsRefetching} />
                     </Box>
                     <Box>
                         <Button
@@ -217,40 +216,7 @@ const ExtractionPage: React.FC = (props) => {
                         </Button>
                     </Box>
                 </Box>
-                {showReconcilePrompt && (
-                    <>
-                        <ExtractionReconcileDialog
-                            isOpen={reconcileDialogIsOpen}
-                            onCloseDialog={() => setReconcileDialogIsOpen(false)}
-                        />
-                        <Box
-                            sx={{
-                                backgroundColor: 'secondary.main',
-                                color: 'white',
-                                padding: '1rem',
-                                borderRadius: '4px',
-                                marginBottom: '1rem',
-                                position: 'sticky',
-                                top: '1.5rem',
-                                zIndex: 10,
-                            }}
-                        >
-                            <Typography variant="body1">
-                                <b>This studyset is out of sync with the curation phase.</b> Either
-                                some studies specified as "included" within the curation phase are
-                                not in the studyset, or some studies within the studyset are not
-                                specified as "included" within the curation phase.
-                            </Typography>
-                            <Button
-                                onClick={() => setReconcileDialogIsOpen(true)}
-                                sx={{ marginTop: '1rem' }}
-                                variant="contained"
-                            >
-                                Fix this issue
-                            </Button>
-                        </Box>
-                    </>
-                )}
+                {showReconcilePrompt && <ExtractionOutOfSync />}
                 <Box>
                     <Box>
                         <TextEdit
@@ -303,7 +269,7 @@ const ExtractionPage: React.FC = (props) => {
                                 currentChip === ESelectedChip.UNCATEGORIZED ? 'filled' : 'outlined'
                             }
                             icon={<QuestionMarkIcon />}
-                            label="Uncategorized"
+                            label={`Uncategorized (${studiesDisplayedState.uncategorized.length})`}
                         />
                         <Chip
                             size="medium"
@@ -314,7 +280,7 @@ const ExtractionPage: React.FC = (props) => {
                             color="info"
                             sx={{ marginRight: '8px' }}
                             icon={<BookmarkIcon />}
-                            label="Save for later"
+                            label={`Save for later (${studiesDisplayedState.saveForLater.length})`}
                         />
                         <Chip
                             size="medium"
@@ -325,7 +291,7 @@ const ExtractionPage: React.FC = (props) => {
                             color="success"
                             sx={{ marginRight: '8px' }}
                             icon={<CheckIcon />}
-                            label="Completed"
+                            label={`Completed (${studiesDisplayedState.completed.length})`}
                         />
                     </Box>
                     <Box>

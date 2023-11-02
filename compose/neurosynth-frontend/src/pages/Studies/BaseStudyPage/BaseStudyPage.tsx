@@ -53,7 +53,7 @@ const BaseStudyPage: React.FC = (props) => {
             isLoading={baseStudyIsLoading || studyIsLoading}
             isError={baseStudyIsError || studyIsError}
         >
-            <Box sx={{ margin: '1rem', display: 'flex', alignItems: 'center' }}>
+            <Box sx={{ margin: '1rem 0', display: 'flex', alignItems: 'center' }}>
                 <FormControl size="small" sx={{ width: '500px' }}>
                     <InputLabel>Select version to view</InputLabel>
                     <Select

@@ -1,18 +1,18 @@
 import DisplayStudy from 'components/DisplayStudy/DisplayStudy';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useGetStudyById } from 'hooks';
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import {
+    useGetStudyIsLoading,
     useInitStudyStore,
     useStudyAnalyses,
     useStudyAuthors,
     useStudyDOI,
     useStudyDescription,
-    useStudyIsLoading,
     useStudyName,
     useStudyPMID,
     useStudyPublication,
+    useStudyStoreIsError,
 } from '../StudyStore';
 
 const StudyPage: React.FC = (props) => {
@@ -20,7 +20,8 @@ const StudyPage: React.FC = (props) => {
         studyId: string;
     }>();
     const initStudyStore = useInitStudyStore();
-    const studyStoreIsLoading = useStudyIsLoading();
+    const getStudyIsLoading = useGetStudyIsLoading();
+    const isError = useStudyStoreIsError();
     const studyAnalyses = useStudyAnalyses();
     const studyName = useStudyName();
     const studyDescription = useStudyDescription();
@@ -28,9 +29,6 @@ const StudyPage: React.FC = (props) => {
     const studyAuthors = useStudyAuthors();
     const studyPublication = useStudyPublication();
     const studyPMID = useStudyPMID();
-
-    // just used for loading
-    const { isLoading: studyIsLoading, isError: studyIsError } = useGetStudyById(studyId || '');
 
     // init the study store with the url is given
     useEffect(() => {
@@ -40,8 +38,8 @@ const StudyPage: React.FC = (props) => {
     return (
         <StateHandlerComponent
             disableShrink={false}
-            isLoading={studyStoreIsLoading || studyIsLoading}
-            isError={studyIsError}
+            isLoading={getStudyIsLoading}
+            isError={isError}
         >
             <DisplayStudy
                 id={studyId}

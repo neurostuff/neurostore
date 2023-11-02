@@ -1,34 +1,33 @@
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-import CheckIcon from '@mui/icons-material/Check';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
+import CheckIcon from '@mui/icons-material/Check';
+import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
 import {
     Box,
+    Button,
+    Card,
+    CardActions,
+    CardContent,
+    CircularProgress,
     Step,
     StepContent,
     StepLabel,
     StepProps,
     Typography,
-    Card,
-    CardContent,
-    CircularProgress,
-    CardActions,
-    Button,
 } from '@mui/material';
-import { useHistory, useLocation, useParams } from 'react-router-dom';
-import ProjectComponentsStyles from '../../ProjectComponents.styles';
-import { useState } from 'react';
+import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionDialogBase';
-import useGetExtractionSummary, { IExtractionSummary } from 'hooks/useGetExtractionSummary';
-import ExtractionStepStyles from './ExtractionStep.style';
-import { useGetStudysetById } from 'hooks';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import { useGetStudysetById } from 'hooks';
+import useGetExtractionSummary, { IExtractionSummary } from 'hooks/useGetExtractionSummary';
 import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
 import {
     useProjectExtractionSetGivenStudyStatusesAsComplete,
     useProjectExtractionStudysetId,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
-import { StudyReturn } from 'neurostore-typescript-sdk';
+import { useState } from 'react';
+import { useHistory, useLocation, useParams } from 'react-router-dom';
+import ProjectComponentsStyles from '../../ProjectComponents.styles';
+import ExtractionStepStyles from './ExtractionStep.style';
 
 interface IExtractionStep {
     extractionStepHasBeenInitialized: boolean;
@@ -59,20 +58,13 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
         setMarkAllAsCompleteConfirmationDialogIsOpen,
     ] = useState(false);
 
-    // this is set in the curation phase when we click to move on to the extraction phase.
-    // a flag is sent along with the location data when the page is redirected
-    // const [moveToExtractionDialogIsOpen, setMoveToExtractionDialogIsOpen] = useState(
-    //     !extractionStepHasBeenInitialized && !!location?.state?.projectPage?.openCurationDialog
-    // );
     const [moveToExtractionDialogIsOpen, setMoveToExtractionDialogIsOpen] = useState(
         !extractionStepHasBeenInitialized && !!location?.state?.projectPage?.openCurationDialog
     );
 
     const handleMarkAllAsComplete = (confirm: boolean | undefined) => {
         if (studyset?.studies && confirm) {
-            setGivenStudyStatusesAsComplete(
-                (studyset.studies as StudyReturn[]).map((x) => x.id || '')
-            );
+            setGivenStudyStatusesAsComplete((studyset.studies || []) as string[]);
         }
         setMarkAllAsCompleteConfirmationDialogIsOpen(false);
     };
@@ -148,11 +140,12 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                                 <Box
                                                     sx={ProjectComponentsStyles.statusIconContainer}
                                                 >
-                                                    <CheckIcon
-                                                        sx={ExtractionStepStyles.checkIcon}
+                                                    <QuestionMarkIcon
+                                                        sx={ExtractionStepStyles.uncategorizedIcon}
                                                     />
-                                                    <Typography sx={{ color: 'success.main' }}>
-                                                        {extractionSummary.completed} completed
+                                                    <Typography sx={{ color: 'warning.dark' }}>
+                                                        {extractionSummary.uncategorized}{' '}
+                                                        uncategorized
                                                     </Typography>
                                                 </Box>
                                                 <Box
@@ -169,12 +162,11 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                                 <Box
                                                     sx={ProjectComponentsStyles.statusIconContainer}
                                                 >
-                                                    <QuestionMarkIcon
-                                                        sx={ExtractionStepStyles.uncategorizedIcon}
+                                                    <CheckIcon
+                                                        sx={ExtractionStepStyles.checkIcon}
                                                     />
-                                                    <Typography sx={{ color: 'warning.dark' }}>
-                                                        {extractionSummary.uncategorized}{' '}
-                                                        uncategorized
+                                                    <Typography sx={{ color: 'success.main' }}>
+                                                        {extractionSummary.completed} completed
                                                     </Typography>
                                                 </Box>
                                             </Box>
