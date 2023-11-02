@@ -19,7 +19,6 @@ import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/Mo
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetStudysetById } from 'hooks';
 import useGetExtractionSummary, { IExtractionSummary } from 'hooks/useGetExtractionSummary';
-import { StudyReturn } from 'neurostore-typescript-sdk';
 import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
 import {
     useProjectExtractionSetGivenStudyStatusesAsComplete,
