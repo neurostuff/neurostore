@@ -104,8 +104,8 @@ const useStudyStore = create<
                             studyId,
                             true
                         );
-                        const conditionsRes =
-                            await API.NeurostoreServices.ConditionsService.conditionsGet();
+                        // const conditionsRes =
+                        //     await API.NeurostoreServices.ConditionsService.conditionsGet();
 
                         set((state) => ({
                             ...state,
@@ -117,10 +117,10 @@ const useStudyStore = create<
                                 ),
                                 metadata: metadataToArray(studyRes?.data?.metadata || {}),
                             },
-                            conditions: conditionsRes.data.results?.map((x) => ({
-                                ...x,
-                                isNew: false,
-                            })),
+                            // conditions: conditionsRes.data.results?.map((x) => ({
+                            //     ...x,
+                            //     isNew: false,
+                            // })),
                             storeMetadata: {
                                 ...state.storeMetadata,
                                 studyIsEdited: false,

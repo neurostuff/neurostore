@@ -1,21 +1,21 @@
-import { Box, Button, Typography } from '@mui/material';
-import ExtractionOutOfSyncStyles from './ExtractionOutOfSync.styles';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { Box, Typography } from '@mui/material';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import { selectBestVersionsForStudyset } from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionIngest/helpers/utils';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
+import useIngest from 'hooks/studies/useIngest';
+import { BaseStudy, BaseStudyReturn, StudyReturn } from 'neurostore-typescript-sdk';
+import { useSnackbar } from 'notistack';
 import {
     useProjectCurationColumn,
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectNumCurationColumns,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import { BaseStudy, BaseStudyReturn, StudyReturn } from 'neurostore-typescript-sdk';
-import useIngest from 'hooks/studies/useIngest';
-import { selectBestVersionsForStudyset } from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionIngest/helpers/utils';
+import { setAnalysesInAnnotationAsIncluded } from 'pages/helpers/utils';
 import { useState } from 'react';
 import { useIsFetching, useQueryClient } from 'react-query';
-import { useSnackbar } from 'notistack';
-import { setAnalysesInAnnotationAsIncluded } from 'pages/helpers/utils';
+import ExtractionOutOfSyncStyles from './ExtractionOutOfSync.styles';
 
 const ExtractionOutOfSync: React.FC = (props) => {
     const studysetId = useProjectExtractionStudysetId();

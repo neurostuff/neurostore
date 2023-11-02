@@ -49,12 +49,12 @@ describe('SearchBar Component', () => {
         const searchButton = screen.getByTestId('SearchIcon');
         userEvent.click(searchButton);
         expect(onSearchMock).toBeCalledWith({
-            authorSearch: expect.any(String),
+            authorSearch: undefined,
             dataType: expect.any(String),
             descOrder: expect.any(Boolean),
-            descriptionSearch: expect.any(String),
-            nameSearch: expect.any(String),
-            publicationSearch: expect.any(String),
+            descriptionSearch: undefined,
+            nameSearch: undefined,
+            publicationSearch: undefined,
             sortBy: expect.any(String),
             source: expect.any(String),
             genericSearchStr: 'ABCDEF', // this is the thing we care about and want to test

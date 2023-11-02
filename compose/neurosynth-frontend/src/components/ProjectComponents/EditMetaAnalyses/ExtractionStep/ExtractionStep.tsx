@@ -59,20 +59,13 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
         setMarkAllAsCompleteConfirmationDialogIsOpen,
     ] = useState(false);
 
-    // this is set in the curation phase when we click to move on to the extraction phase.
-    // a flag is sent along with the location data when the page is redirected
-    // const [moveToExtractionDialogIsOpen, setMoveToExtractionDialogIsOpen] = useState(
-    //     !extractionStepHasBeenInitialized && !!location?.state?.projectPage?.openCurationDialog
-    // );
     const [moveToExtractionDialogIsOpen, setMoveToExtractionDialogIsOpen] = useState(
         !extractionStepHasBeenInitialized && !!location?.state?.projectPage?.openCurationDialog
     );
 
     const handleMarkAllAsComplete = (confirm: boolean | undefined) => {
         if (studyset?.studies && confirm) {
-            setGivenStudyStatusesAsComplete(
-                (studyset.studies as StudyReturn[]).map((x) => x.id || '')
-            );
+            setGivenStudyStatusesAsComplete((studyset.studies || []) as string[]);
         }
         setMarkAllAsCompleteConfirmationDialogIsOpen(false);
     };

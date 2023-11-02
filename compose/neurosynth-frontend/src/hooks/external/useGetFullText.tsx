@@ -15,7 +15,7 @@ interface ISemanticScholarResponse {
     }[];
 }
 
-const useGetFullText = (paperTitle?: string) => {
+const useGetFullText = (paperTitle?: string | null) => {
     return useQuery(
         [paperTitle],
         () =>

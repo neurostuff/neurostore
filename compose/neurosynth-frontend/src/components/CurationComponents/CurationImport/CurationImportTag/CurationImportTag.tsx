@@ -80,7 +80,11 @@ const CurationImportTag: React.FC<{
                     />
                 </Box>
             </Box>
-            <NavigationButtons nextButtonDisabled={!importName} onButtonClick={handleNavigate} />
+            <NavigationButtons
+                nextButtonStyle="contained"
+                nextButtonDisabled={!importName}
+                onButtonClick={handleNavigate}
+            />
         </Box>
     );
 };

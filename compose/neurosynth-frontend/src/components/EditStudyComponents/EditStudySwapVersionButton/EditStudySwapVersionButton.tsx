@@ -164,7 +164,7 @@ const EditStudySwapVersionButton: React.FC = (props) => {
                             <Button
                                 onClick={() => handleSelectVersion(baseStudyVersion.id)}
                                 color={baseStudyVersion.id === studyId ? 'secondary' : 'primary'}
-                                sx={{ width: '440px' }}
+                                sx={{ width: '450px' }}
                             >
                                 Switch to version {baseStudyVersion.id} | Owner:{' '}
                                 {!baseStudyVersion.username

@@ -34,25 +34,34 @@ const useGetExtractionSummary = (projectId: string) => {
                 };
             }
 
-            const total = (studyset?.studies || []).length;
+            const studysetStudies = studyset?.studies || [];
 
-            // all included studies are in the last column
-            const numCompletedStudies = studyStatusList.filter(
-                (study) => study.status === 'COMPLETE'
-            ).length;
-
-            const numSavedForLaterStudies = studyStatusList.filter(
-                (study) => study.status === 'SAVEFORLATER'
-            ).length;
-
-            const numUncategorizedStudies = total - numCompletedStudies - numSavedForLaterStudies;
-
-            return {
-                total: total,
-                completed: numCompletedStudies,
-                savedForLater: numSavedForLaterStudies,
-                uncategorized: numUncategorizedStudies,
+            const summary = {
+                total: studysetStudies.length,
+                completed: 0,
+                savedForLater: 0,
+                uncategorized: 0,
             };
+
+            studysetStudies.forEach((studyId) => {
+                // this studyStatusList is initially empty. Studies get added to it when they are moved to complete or saveforlater, i.e.
+                // when they are categporized. We treat any study not yet in this list as uncategorized.
+                const foundStatus = studyStatusList.find((status) => status.id === studyId);
+
+                switch (foundStatus?.status) {
+                    case 'COMPLETE':
+                        summary.completed++;
+                        break;
+                    case 'SAVEFORLATER':
+                        summary.savedForLater++;
+                        break;
+                    default:
+                        summary.uncategorized++;
+                        break;
+                }
+            });
+
+            return summary;
         });
     }, [projectId, studyStatusList, studyset, studysetId]);
 

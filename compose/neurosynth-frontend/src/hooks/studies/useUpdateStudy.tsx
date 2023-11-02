@@ -18,7 +18,6 @@ const useUpdateStudy = () => {
     >((args) => API.NeurostoreServices.StudiesService.studiesIdPut(args.studyId, args.study), {
         onSuccess: () => {
             queryClient.invalidateQueries('studies');
-            enqueueSnackbar('study updated successfully', { variant: 'success' });
         },
         onError: () => {
             enqueueSnackbar('there was an error updating the study', { variant: 'error' });

@@ -2,21 +2,31 @@
 
 export {};
 
-const PATH = '/projects/abc123/extraction/studies/mock-study-id/edit';
+const PATH = '/projects/abc123/extraction/studies/mock-study-id';
 const PAGE_NAME = 'EditStudyPage';
 
 describe(PAGE_NAME, () => {
     beforeEach(() => {
         cy.clearLocalStorage().clearSessionStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
+        cy.intercept('GET', `https://api.semanticscholar.org/**`, {
+            fixture: 'semanticScholar',
+        }).as('semanticScholarFixture');
     });
 
     it('should load', () => {
-        cy.intercept('GET', `**/api/projects/*`, { fixture: 'project' }).as('projectFixture');
         cy.intercept('GET', `**/api/studies/mock-study-id*`, { fixture: 'study' }).as(
             'studyFixture'
         );
-        cy.visit(PATH).wait('@projectFixture').wait('@studyFixture');
+        cy.intercept('GET', `**/api/projects/*`, { fixture: 'project' }).as('projectFixture');
+        cy.intercept('GET', `**/api/annotations/*`, { fixture: 'annotation' }).as(
+            'annotationFixture'
+        );
+        cy.visit(PATH)
+            .wait('@studyFixture')
+            .wait('@projectFixture')
+            .wait('@annotationFixture')
+            .wait('@semanticScholarFixture');
         // cy.login('mocked').wait('@realProjectsRequest').visit(PATH).wait('@studyFixture');
     });
 

@@ -285,10 +285,6 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
         }
     };
 
-    const handleSwapStudy = () => {
-        console.log('handle swap study');
-    };
-
     return (
         <Box sx={EditStudyPageStyles.loadingButtonContainer}>
             <EditStudySwapVersionButton />

@@ -7,6 +7,7 @@ import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccord
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import ReadOnlyStubSummaryVirtualizedItem from './ReadOnlyStubSummaryVirtualizedItem';
+import { useMemo } from 'react';
 
 const CurationImportReviewFixedSizeListRow: React.FC<
     ListChildComponentProps<{
@@ -18,7 +19,7 @@ const CurationImportReviewFixedSizeListRow: React.FC<
     return <ReadOnlyStubSummaryVirtualizedItem {...stub} style={props.style} />;
 };
 
-const LIST_HEIGHT = 130;
+const LIST_HEIGHT = 140;
 
 const CurationImportReview: React.FC<{
     stubs: ICurationStubStudy[];
@@ -27,15 +28,32 @@ const CurationImportReview: React.FC<{
 }> = (props) => {
     const { stubs, onNavigate } = props;
 
-    const nonExcludedStubs = stubs.filter((x) => !x.exclusionTag);
-    const excludedStubs = stubs.filter((x) => !!x.exclusionTag);
+    const nonExcludedStubs = useMemo(() => {
+        return stubs.filter((x) => !x.exclusionTag);
+    }, [stubs]);
+    const excludedStubs = useMemo(() => {
+        return stubs.filter((x) => !!x.exclusionTag);
+    }, [stubs]);
+
     const windowHeight = useGetWindowHeight();
 
-    // add 5 for margin/padding
-    const estimatedListHeight = LIST_HEIGHT * nonExcludedStubs.length + 5;
-    const defaultListHeight = windowHeight - 400;
-    const fixedListHeight =
-        defaultListHeight > estimatedListHeight ? estimatedListHeight : defaultListHeight;
+    const includedStudiesListHeight = useMemo(() => {
+        const estimatedListHeight = LIST_HEIGHT * nonExcludedStubs.length;
+        const defaultListHeight = windowHeight - 200;
+        const fixedListHeight =
+            defaultListHeight > estimatedListHeight ? estimatedListHeight : defaultListHeight;
+
+        return fixedListHeight;
+    }, [nonExcludedStubs.length, windowHeight]);
+
+    const excludedStudiesListHeight = useMemo(() => {
+        const estimatedListHeight = LIST_HEIGHT * excludedStubs.length;
+        const defaultListHeight = windowHeight - 200;
+        const fixedListHeight =
+            defaultListHeight > estimatedListHeight ? estimatedListHeight : defaultListHeight;
+
+        return fixedListHeight;
+    }, [excludedStubs.length, windowHeight]);
 
     return (
         <>
@@ -63,7 +81,7 @@ const CurationImportReview: React.FC<{
             </Paper>
             <Box sx={{ margin: '1rem 0', backgroundColor: '#f6f6f6' }}>
                 <FixedSizeList
-                    height={fixedListHeight}
+                    height={includedStudiesListHeight}
                     itemCount={nonExcludedStubs.length}
                     width="100%"
                     itemSize={LIST_HEIGHT}
@@ -98,7 +116,7 @@ const CurationImportReview: React.FC<{
                         elevation={0}
                     >
                         <FixedSizeList
-                            height={fixedListHeight}
+                            height={excludedStudiesListHeight}
                             itemCount={excludedStubs.length}
                             width="100%"
                             itemSize={150}

@@ -74,7 +74,7 @@ const useEditStudyAnnotationsHotTable = () => {
     }, [noteKeys]);
 
     const height = useMemo(() => {
-        const MIN_HEIGHT_PX = 150;
+        const MIN_HEIGHT_PX = 50;
         const MAX_HEIGHT_PX = 500;
         const HEADER_HEIGHT_PX = 26;
         const ROW_HEIGHT_PX = 24;

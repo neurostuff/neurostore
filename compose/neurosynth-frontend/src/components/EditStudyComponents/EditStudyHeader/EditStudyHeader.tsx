@@ -1,4 +1,5 @@
 import { Box, Typography } from '@mui/material';
+import DisplayStudyChipLinks from 'components/DisplayStudy/DisplayStudyChipLinks/DisplayStudyChipLinks';
 import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatusButtons/FloatingStatusButtons';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import { useProjectId, useProjectName } from 'pages/Projects/ProjectPage/ProjectStore';
@@ -60,6 +61,9 @@ const EditStudyPageHeader: React.FC = (props) => {
                             Last updated: {nicelyFormattedDate}
                         </Typography>
                     </Box>
+                </Box>
+                <Box>
+                    <DisplayStudyChipLinks />
                 </Box>
             </Box>
         </>

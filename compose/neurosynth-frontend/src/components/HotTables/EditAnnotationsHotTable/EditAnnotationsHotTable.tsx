@@ -3,22 +3,21 @@ import { Box, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { IMetadataRowModel, getType } from 'components/EditMetadata';
 import AddMetadataRow from 'components/EditMetadata/EditMetadataRow/AddMetadataRow';
-import AnnotationsHotTableStyles from 'components/HotTables/EditAnnotationsHotTable/EditAnnotationsHotTable.styles';
-import useEditAnnotationsHotTable from 'components/HotTables/EditAnnotationsHotTable/useEditAnnotationsHotTable';
-import { NoteKeyType } from 'components/HotTables/HotTables.types';
-import { noteKeyArrToObj } from 'components/HotTables/HotTables.utils';
-import { CellCoords } from 'handsontable';
-import { CellChange } from 'handsontable/common';
-import { registerAllModules } from 'handsontable/registry';
-import { useGetWindowHeight, useUpdateAnnotationById } from 'hooks';
-import { useSnackbar } from 'notistack';
-import React, { useEffect, useRef } from 'react';
 import {
     createColumns,
     hotDataToAnnotationNotes,
     hotSettings,
 } from 'components/HotTables/EditAnnotationsHotTable/EditAnnotationsHotTable.helpers';
+import AnnotationsHotTableStyles from 'components/HotTables/EditAnnotationsHotTable/EditAnnotationsHotTable.styles';
+import useEditAnnotationsHotTable from 'components/HotTables/EditAnnotationsHotTable/useEditAnnotationsHotTable';
+import { noteKeyArrToObj } from 'components/HotTables/HotTables.utils';
+import { CellCoords } from 'handsontable';
+import { CellChange } from 'handsontable/common';
+import { registerAllModules } from 'handsontable/registry';
 import { SelectionController } from 'handsontable/selection';
+import { useGetWindowHeight, useUpdateAnnotationById } from 'hooks';
+import { useSnackbar } from 'notistack';
+import React, { useEffect, useRef } from 'react';
 
 registerAllModules();
 
@@ -28,11 +27,6 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
         props.annotationId
     );
     const hotTableRef = useRef<HotTable>(null);
-    const hotStateRef = useRef<{
-        noteKeys: NoteKeyType[];
-    }>({
-        noteKeys: [],
-    });
     const windowSize = useGetWindowHeight();
     const {
         hotColumnHeaders,
@@ -111,6 +105,7 @@ const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((pro
             {
                 onSuccess: () => {
                     setAnnotationsHotState((prev) => ({ ...prev, isEdited: false }));
+                    enqueueSnackbar('annotation updated successfully', { variant: 'success' });
                 },
             }
         );

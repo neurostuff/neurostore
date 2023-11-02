@@ -24,7 +24,6 @@ const useUpdateAnnotationById = (annotationId: string | undefined | null) => {
         {
             onSuccess: (res) => {
                 queryClient.invalidateQueries(['annotations', annotationId]);
-                enqueueSnackbar('annotation updated successfully', { variant: 'success' });
             },
             onError: () => {
                 enqueueSnackbar('there was an error updating the annotation', { variant: 'error' });

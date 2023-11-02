@@ -1,5 +1,4 @@
-import HelpIcon from '@mui/icons-material/Help';
-import { Box, Button, Tooltip, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import DisplayAnalysisWarnings from 'components/DisplayStudy/DisplayAnalyses/DisplayAnalysisWarnings/DisplayAnalysisWarnings';
 import EditAnalysisDetails from 'components/EditStudyComponents/EditAnalyses/EditAnalysisDetails/EditAnalysisDetails';

@@ -1,17 +1,16 @@
-import React, { Suspense } from 'react';
 import { Box } from '@mui/material';
-import { Switch, Route } from 'react-router-dom';
-import LandingPage from '../LandingPage/LandingPage';
-import BaseNavigationStyles from './BaseNavigation.styles';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
+import AnnotationsPage from 'pages/Annotations/AnnotationsPage/AnnotationsPage';
+import CurationImportPage from 'pages/CurationPage/CurationImportPage';
+import ExtractionPage from 'pages/ExtractionPage/ExtractionPage';
 import NotFoundPage from 'pages/NotFound/NotFoundPage';
 import ProjectPage from 'pages/Projects/ProjectPage/ProjectPage';
-import ExtractionPage from 'pages/ExtractionPage/ExtractionPage';
-import CurationImportPage from 'pages/CurationPage/CurationImportPage';
-import ProjectStudyPage from 'pages/Studies/ProjectStudyPage/ProjectStudyPage';
-import UserProfilePage from 'pages/UserProfilePage/UserProfilePage';
-import AnnotationsPage from 'pages/Annotations/AnnotationsPage/AnnotationsPage';
 import BaseStudyPage from 'pages/Studies/BaseStudyPage/BaseStudyPage';
+import UserProfilePage from 'pages/UserProfilePage/UserProfilePage';
+import React, { Suspense } from 'react';
+import { Route, Switch } from 'react-router-dom';
+import LandingPage from '../LandingPage/LandingPage';
+import BaseNavigationStyles from './BaseNavigation.styles';
 
 const StudysetPage = React.lazy(() => import('../Studysets/StudysetPage/StudysetPage'));
 const StudysetsPage = React.lazy(() => import('../Studysets/StudysetsPage/StudysetsPage'));
