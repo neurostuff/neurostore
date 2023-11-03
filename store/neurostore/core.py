@@ -6,6 +6,7 @@ from connexion.middleware import MiddlewarePosition
 from starlette.middleware.cors import CORSMiddleware
 from authlib.integrations.flask_client import OAuth
 import connexion
+
 # from connexion.json_schema import default_handlers as json_schema_handlers
 from connexion.resolver import MethodResolver
 from flask_caching import Cache
@@ -15,9 +16,7 @@ from .or_json import ORJSONDecoder, ORJSONEncoder
 from .database import init_db
 
 
-connexion_app = connexion.FlaskApp(
-    __name__, specification_dir="openapi/"
-)
+connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/")
 
 app = connexion_app.app
 
@@ -55,7 +54,6 @@ connexion_app.add_api(
     strict_validation=os.getenv("DEBUG", False) == "True",
     validate_responses=os.getenv("DEBUG", False) == "True",
 )
-
 
 
 auth0 = oauth.register(

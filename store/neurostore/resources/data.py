@@ -218,9 +218,7 @@ class BaseStudiesView(ObjectView, ListView):
         to_commit = []
         for study_data in data:
             filter_params = {
-                k: study_data.get(k)
-                for k in search_keys
-                if study_data.get(k)
+                k: study_data.get(k) for k in search_keys if study_data.get(k)
             }
             if "name" in filter_params and (set(filter_params) - {"name"}) != set():
                 del filter_params["name"]
@@ -408,7 +406,7 @@ class StudiesView(ObjectView, ListView):
             has_pmid = True
         if record.name and not record.doi and not record.pmid:
             name_search = func.regexp_replace(
-                record.name, r'[' + string.punctuation + ']', '', 'g'
+                record.name, r"[" + string.punctuation + "]", "", "g"
             )
             query = query.filter(BaseStudy.name.ilike(f"%{name_search}%"))
             has_name = True

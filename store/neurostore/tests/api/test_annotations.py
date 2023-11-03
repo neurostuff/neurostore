@@ -303,7 +303,9 @@ def test_correct_note_overwrite(auth_client, ingest_neurosynth, session):
     new_value = "something new"
     data[0]["note"]["doo"] = new_value
     doo_payload = {"notes": data}
-    put_resp = auth_client.put(f"/api/annotations/{annot.json()['id']}", data=doo_payload)
+    put_resp = auth_client.put(
+        f"/api/annotations/{annot.json()['id']}", data=doo_payload
+    )
 
     get_resp = auth_client.get(f"/api/annotations/{annot.json()['id']}")
 

@@ -89,7 +89,10 @@ def test_read(auth_client, user_data, endpoint, model, schema, session):
 
     pre = auth_client.client.options(
         f"/api/{endpoint}",
-        headers={'Origin': 'http://example.com', 'Access-Control-Request-Method': 'GET'}
+        headers={
+            "Origin": "http://example.com",
+            "Access-Control-Request-Method": "GET",
+        },
     )
     assert pre.status_code == 200
     resp = auth_client.get(f"/api/{endpoint}/")

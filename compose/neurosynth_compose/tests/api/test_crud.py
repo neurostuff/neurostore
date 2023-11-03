@@ -85,6 +85,7 @@ def test_read(session, auth_client, user_data, endpoint, model, schema):
         query = True
     expected_results = model.query.filter(query).all()
 
+    pre = auth_client.client.options(f"/api/{endpoint}")
     resp = auth_client.get(f"/api/{endpoint}")
 
     assert resp.status_code == 200
