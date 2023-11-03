@@ -40,7 +40,7 @@ describe('NavToolbar Component', () => {
             </BrowserRouter>
         );
 
-        expect(screen.queryByText('new project')).not.toBeInTheDocument();
+        expect(screen.queryByText('NEW PROJECT')).not.toBeInTheDocument();
         expect(screen.queryByText('my projects')).not.toBeInTheDocument();
         expect(screen.queryByTestId('PersonIcon')).not.toBeInTheDocument();
 
@@ -62,7 +62,7 @@ describe('NavToolbar Component', () => {
             </BrowserRouter>
         );
 
-        expect(screen.queryByText('new project')).toBeInTheDocument();
+        expect(screen.queryByText('NEW PROJECT')).toBeInTheDocument();
         expect(screen.queryByText('my projects')).toBeInTheDocument();
         expect(screen.queryByText('explore')).toBeInTheDocument();
         expect(screen.queryByText('DOCS')).toBeInTheDocument();
@@ -103,7 +103,7 @@ describe('NavToolbar Component', () => {
         expect(mockLogout).toHaveBeenCalled();
     });
 
-    it('should open the dialog when creating a new project', () => {
+    it('should create a new project on click', () => {
         useAuth0().isAuthenticated = true;
 
         render(
@@ -116,12 +116,28 @@ describe('NavToolbar Component', () => {
             </BrowserRouter>
         );
 
-        userEvent.click(screen.getByText('new project'));
-
-        expect(screen.getByTestId('mock-create-details-dialog')).toBeInTheDocument();
+        userEvent.click(screen.getByText('NEW PROJECT'));
+        expect(mockOnCreateProject).toHaveBeenCalledWith('Untitled', '');
     });
 
-    it('should create a new project', () => {
+    it('should show the loading icon', () => {
+        useAuth0().isAuthenticated = true;
+
+        render(
+            <BrowserRouter>
+                <NavToolbar
+                    createProjectIsLoading={true}
+                    onCreateProject={mockOnCreateProject}
+                    onLogin={mockLogin}
+                    onLogout={mockLogout}
+                />
+            </BrowserRouter>
+        );
+
+        expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    });
+
+    it('should not show the loading icon', () => {
         useAuth0().isAuthenticated = true;
 
         render(
@@ -134,11 +150,7 @@ describe('NavToolbar Component', () => {
             </BrowserRouter>
         );
 
-        userEvent.click(screen.getByText('new project'));
-        expect(screen.getByTestId('mock-create-details-dialog')).toBeInTheDocument();
-        userEvent.click(screen.getByTestId('mock-create-button'));
-
-        expect(mockOnCreateProject).toHaveBeenCalledWith('test name', 'test description');
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
 
     it('should open the navpopup menu with the given menu items', () => {

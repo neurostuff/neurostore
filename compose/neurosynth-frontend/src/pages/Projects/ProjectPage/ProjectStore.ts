@@ -231,11 +231,6 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     new Date(latestStoreDataLastUpdated).getTime() !==
                         new Date(serverLastUpdated).getTime()
                 ) {
-                    console.log({
-                        serverLastUpdated,
-                        SLU: new Date(serverLastUpdated).getTime(),
-                        NSDLU: new Date(latestStoreDataLastUpdated).getTime(),
-                    });
                     const enqueueSnackbar = oldDebouncedStoreData.metadata.enqueueSnackbar;
                     if (enqueueSnackbar) {
                         enqueueSnackbar(

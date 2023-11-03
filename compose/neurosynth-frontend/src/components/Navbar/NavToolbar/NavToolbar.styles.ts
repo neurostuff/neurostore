@@ -16,7 +16,10 @@ const NavToolbarStyles: Style = {
         },
     },
     menuItem: {
-        fontSize: '1rem',
+        fontSize: {
+            xs: '0.7rem',
+            lg: '1rem',
+        },
     },
 };
 

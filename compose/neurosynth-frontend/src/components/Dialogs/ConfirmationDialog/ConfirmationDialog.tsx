@@ -46,7 +46,7 @@ const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
             </DialogTitle>
             <DialogContent>
                 {props.dialogMessage && dialogContent}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
                     <Button
                         sx={{ width: '250px', marginRight: '15px' }}
                         onClick={() => props.onCloseDialog(false, props.data)}

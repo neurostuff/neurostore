@@ -100,6 +100,12 @@ const useCreateProject = jest.fn().mockReturnValue({
     mutate: jest.fn(),
 });
 
+const useDeleteProject = jest.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    mutate: jest.fn(),
+});
+
 const useIsMounted = () => {
     return {
         __esModule: true,
@@ -129,4 +135,5 @@ export {
     useUpdateStudy,
     useGetAnnotationsByStudysetId,
     useCreateProject,
+    useDeleteProject,
 };

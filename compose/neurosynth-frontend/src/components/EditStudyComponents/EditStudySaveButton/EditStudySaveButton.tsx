@@ -83,42 +83,57 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
     const [isCloning, setIsCloning] = useState(false);
 
     const handleUpdateBothInDB = async () => {
-        const updatedStudy = await updateStudyInDB(annotationId as string);
-        const updatedNotes = [...(notes || [])];
-        updatedNotes.forEach((note, index) => {
-            if (note.isNew) {
-                const foundAnalysis = ((updatedStudy.analyses || []) as AnalysisReturn[]).find(
-                    (analysis) => analysis.name === note.analysis_name
-                );
-                if (!foundAnalysis) return;
+        try {
+            const updatedStudy = await updateStudyInDB(annotationId as string);
+            const updatedNotes = [...(notes || [])];
+            updatedNotes.forEach((note, index) => {
+                if (note.isNew) {
+                    const foundAnalysis = ((updatedStudy.analyses || []) as AnalysisReturn[]).find(
+                        (analysis) => analysis.name === note.analysis_name
+                    );
+                    if (!foundAnalysis) return;
 
-                updatedNotes[index] = {
-                    ...updatedNotes[index],
-                    analysis: foundAnalysis.id,
-                };
-            }
-        });
-        updateAnnotationNotes(updatedNotes);
-        await updateAnnotationInDB();
+                    updatedNotes[index] = {
+                        ...updatedNotes[index],
+                        analysis: foundAnalysis.id,
+                    };
+                }
+            });
+            updateAnnotationNotes(updatedNotes);
+            await updateAnnotationInDB();
 
-        queryClient.invalidateQueries('studies');
-        queryClient.invalidateQueries('annotations');
+            queryClient.invalidateQueries('studies');
+            queryClient.invalidateQueries('annotations');
 
-        enqueueSnackbar('Study and annotation saved', { variant: 'success' });
+            enqueueSnackbar('Study and annotation saved', { variant: 'success' });
+        } catch (e) {
+            console.error(e);
+            enqueueSnackbar('There was an error', { variant: 'error' });
+        }
     };
 
     const handleUpdateStudyInDB = async () => {
-        await updateStudyInDB(annotationId as string);
-        queryClient.invalidateQueries('studies');
-        queryClient.invalidateQueries('annotations');
+        try {
+            await updateStudyInDB(annotationId as string);
+            queryClient.invalidateQueries('studies');
+            queryClient.invalidateQueries('annotations');
 
-        enqueueSnackbar('Study saved', { variant: 'success' });
+            enqueueSnackbar('Study saved', { variant: 'success' });
+        } catch (e) {
+            console.error(e);
+            enqueueSnackbar('There was an error saving the study', { variant: 'error' });
+        }
     };
 
     const handleUpdateAnnotationInDB = async () => {
-        await updateAnnotationInDB();
-        queryClient.invalidateQueries('annotations');
-        enqueueSnackbar('Annotation saved', { variant: 'success' });
+        try {
+            await updateAnnotationInDB();
+            queryClient.invalidateQueries('annotations');
+            enqueueSnackbar('Annotation saved', { variant: 'success' });
+        } catch (e) {
+            console.error(e);
+            enqueueSnackbar('There was an issue saving the annotation', { variant: 'error' });
+        }
     };
 
     const handleUpdateDB = () => {

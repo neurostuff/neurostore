@@ -79,7 +79,7 @@ const ProjectPage: React.FC = (props) => {
                     >
                         <Typography
                             sx={{ color: projectName ? 'initial' : 'warning.dark' }}
-                            variant="h4"
+                            variant="h5"
                         >
                             {projectName || 'No name'}
                         </Typography>
@@ -92,7 +92,7 @@ const ProjectPage: React.FC = (props) => {
                         textToEdit={projectDescription || ''}
                     >
                         <Typography
-                            sx={{ color: projectDescription ? 'initial' : 'warning.dark' }}
+                            sx={{ color: projectDescription ? 'muted.main' : 'warning.dark' }}
                             variant="h6"
                         >
                             {projectDescription || 'No description'}
@@ -100,7 +100,7 @@ const ProjectPage: React.FC = (props) => {
                     </TextEdit>
                 </Box>
 
-                <Box sx={{ borderBottom: 1, margin: '1rem 0 2rem 0', borderColor: 'divider' }}>
+                <Box sx={{ borderBottom: 1, margin: '0.5rem 0 1rem 0', borderColor: 'divider' }}>
                     <Tabs
                         TabIndicatorProps={{
                             style: {
