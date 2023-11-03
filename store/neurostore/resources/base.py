@@ -304,9 +304,13 @@ class ObjectView(BaseView):
             snapshot = StudysetSnapshot()
             return snapshot.dump(record), 200, {"Content-Type": "application/json"}
         else:
-            return self._schema(
-                context=dict(args),
-            ).dump(record), 200, {"Content-Type": "application/json"}
+            return (
+                self._schema(
+                    context=dict(args),
+                ).dump(record),
+                200,
+                {"Content-Type": "application/json"},
+            )
 
     def put(self, id):
         request_data = self.insert_data(id, request.json)

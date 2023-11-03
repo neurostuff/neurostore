@@ -18,9 +18,7 @@ def camel_case_split(str):
 def get_current_user():
     user = context.get("user")
     if user:
-        return models.User.query.filter_by(
-            external_id=user
-        ).first()
+        return models.User.query.filter_by(external_id=user).first()
     return None
 
 

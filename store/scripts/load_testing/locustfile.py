@@ -6,7 +6,7 @@ from locust import HttpUser, task, between, run_single_user
 with open("concepts.json", "r") as c_j:
     concepts = json.load(c_j)
 
-CONCEPT_NAMES = [c['name'] for c in concepts]
+CONCEPT_NAMES = [c["name"] for c in concepts]
 
 
 class QuickstartUser(HttpUser):
@@ -24,12 +24,12 @@ class QuickstartUser(HttpUser):
         result = self.client.get("/studysets/?page_size=100")
         if result.status_code != 200:
             return
-        studyset_ids = [ss['id'] for ss in result.json()['results']]
+        studyset_ids = [ss["id"] for ss in result.json()["results"]]
         studyset_id = random.choice(studyset_ids)
         studyset = self.client.get(f"/studysets/{studyset_id}")
         if studyset.status_code != 200:
             return
-        study_ids = [s for s in studyset.json()['studies']]
+        study_ids = [s for s in studyset.json()["studies"]]
         for study_id in study_ids:
             self.client.get(f"/studies/{study_id}?nested=true")
 
