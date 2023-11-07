@@ -7,6 +7,7 @@ from webargs import fields
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
+from sqlalchemy import union
 
 
 from .utils import view_maker
@@ -227,8 +228,11 @@ class BaseStudiesView(ObjectView, ListView):
                 BaseStudy.query.filter_by(**filter_params)
                 .options(
                     joinedload(BaseStudy.versions)
-                    .joinedload(Study.studyset_studies)
-                    .joinedload(StudysetStudy.studyset)
+                    .options(joinedload(Study.studyset_studies)
+                             .joinedload(StudysetStudy.studyset),
+                             joinedload(Study.user),
+                    ),
+                    joinedload(BaseStudy.user)
                 )
                 .one_or_none()
             )
