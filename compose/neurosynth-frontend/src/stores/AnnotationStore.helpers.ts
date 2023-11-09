@@ -18,7 +18,6 @@ export const noteKeyArrToDefaultNoteKeyObj = (noteKeys: NoteKeyType[]): Annotati
         acc[curr.key] = null;
         return acc;
     }, {} as AnnotationNoteType);
-    console.log(x);
     return x;
 };
 

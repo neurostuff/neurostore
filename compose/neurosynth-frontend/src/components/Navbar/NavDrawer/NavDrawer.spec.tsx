@@ -149,13 +149,13 @@ describe('NavDrawer component', () => {
             </BrowserRouter>
         );
 
-        expect(screen.queryByText('studies')).not.toBeInTheDocument();
-        expect(screen.queryByText('studysets')).not.toBeInTheDocument();
-        expect(screen.queryByText('meta-analyses')).not.toBeInTheDocument();
+        expect(screen.queryByText('STUDIES')).not.toBeInTheDocument();
+        expect(screen.queryByText('STUDYSETS')).not.toBeInTheDocument();
+        expect(screen.queryByText('META-ANALYSES')).not.toBeInTheDocument();
         userEvent.click(screen.getByText('EXPLORE'));
-        expect(screen.getByText('studies')).toBeInTheDocument();
-        expect(screen.getByText('studysets')).toBeInTheDocument();
-        expect(screen.getByText('meta-analyses')).toBeInTheDocument();
+        expect(screen.getByText('STUDIES')).toBeInTheDocument();
+        expect(screen.getByText('STUDYSETS')).toBeInTheDocument();
+        expect(screen.getByText('META-ANALYSES')).toBeInTheDocument();
     });
 
     it('should hide the menu with the given menu items', () => {
@@ -169,16 +169,16 @@ describe('NavDrawer component', () => {
             </BrowserRouter>
         );
 
-        expect(screen.queryByText('studies')).not.toBeInTheDocument();
-        expect(screen.queryByText('studysets')).not.toBeInTheDocument();
-        expect(screen.queryByText('meta-analyses')).not.toBeInTheDocument();
+        expect(screen.queryByText('STUDIES')).not.toBeInTheDocument();
+        expect(screen.queryByText('STUDYSETS')).not.toBeInTheDocument();
+        expect(screen.queryByText('META-ANALYSES')).not.toBeInTheDocument();
         userEvent.click(screen.getByText('EXPLORE'));
-        expect(screen.getByText('studies')).toBeInTheDocument();
-        expect(screen.getByText('studysets')).toBeInTheDocument();
-        expect(screen.getByText('meta-analyses')).toBeInTheDocument();
+        expect(screen.getByText('STUDIES')).toBeInTheDocument();
+        expect(screen.getByText('STUDYSETS')).toBeInTheDocument();
+        expect(screen.getByText('META-ANALYSES')).toBeInTheDocument();
         userEvent.click(screen.getByText('EXPLORE'));
-        expect(screen.queryByText('studies')).not.toBeInTheDocument();
-        expect(screen.queryByText('studysets')).not.toBeInTheDocument();
-        expect(screen.queryByText('meta-analyses')).not.toBeInTheDocument();
+        expect(screen.queryByText('STUDIES')).not.toBeInTheDocument();
+        expect(screen.queryByText('STUDYSETS')).not.toBeInTheDocument();
+        expect(screen.queryByText('META-ANALYSES')).not.toBeInTheDocument();
     });
 });

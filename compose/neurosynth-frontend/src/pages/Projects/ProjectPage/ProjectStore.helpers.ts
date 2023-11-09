@@ -493,3 +493,41 @@ export const setGivenStudyStatusesAsCompleteHelper = (
 
 export type TProjectStore = INeurosynthProjectReturn &
     ProjectStoreActions & { metadata: ProjectStoreMetadata };
+
+export const generateNewProjectData = (
+    name?: string,
+    description?: string
+): INeurosynthProjectReturn => {
+    return {
+        name: name || '',
+        description: description || '',
+        provenance: {
+            curationMetadata: {
+                columns: [],
+                prismaConfig: {
+                    isPrisma: false,
+                    identification: {
+                        exclusionTags: [],
+                    },
+                    screening: {
+                        exclusionTags: [],
+                    },
+                    eligibility: {
+                        exclusionTags: [],
+                    },
+                },
+                infoTags: [],
+                exclusionTags: [],
+                identificationSources: [],
+            },
+            extractionMetadata: {
+                studysetId: undefined,
+                annotationId: undefined,
+                studyStatusList: [],
+            },
+            metaAnalysisMetadata: {
+                canEditMetaAnalyses: false,
+            },
+        },
+    };
+};
