@@ -1,3 +1,6 @@
+import random
+import string
+from neurostore.tests.conftest import add_event_listeners
 from neurostore.models import Studyset, Study
 
 
@@ -20,6 +23,40 @@ def test_post_and_get_studysets(auth_client, ingest_neurosynth, session):
         == post_resp.json()
     )
 
+@add_event_listeners
+def test_add_many_studies_to_studyset(auth_client, ingest_neurosynth, session):
+    existing_studies = Study.query.all()
+    existing_study_ids = [s.id for s in existing_studies]
+
+    # Function to generate a random DOI
+    def generate_doi():
+        doi = "10." + "".join(random.choices(string.digits, k=4)) + "/"
+        doi += "".join(random.choices(string.ascii_lowercase, k=4)) + "."
+        doi += "".join(random.choices(string.ascii_lowercase, k=4))
+        return doi
+
+    # List comprehension to generate the desired structure
+    made_up_studies = [
+        {
+            "pmid": random.randint(100000, 999999),
+            "doi": generate_doi(),
+            "name": ''.join(random.choices(string.ascii_letters, k=10)),
+        } for _ in range(1)
+    ]
+    # create empty studyset
+    ss = auth_client.post("/api/studysets/", data={"name": "mixed_studyset"})
+
+    assert ss.status_code == 200
+    
+    ss_id = ss.json()['id']
+
+    # combine made_up and created studies
+    all_studies = existing_study_ids# + made_up_studies
+
+
+    ss_update = auth_client.put(f"/api/studysets/{ss_id}", data={"studies": all_studies})
+
+    assert ss_update.status_code == 200
 
 def test_add_study_to_studyset(auth_client, ingest_neurosynth, session):
     payload = auth_client.get("/api/studies/").json()

@@ -1,5 +1,7 @@
 import pytest
 from os import environ
+import functools
+from datetime import datetime
 from neurostore.models.data import Analysis, Condition
 from ..database import db as _db
 import sqlalchemy as sa
@@ -20,6 +22,30 @@ from ..models import (
 from auth0.v3.authentication import GetToken
 import shortuuid
 
+import logging
+
+LOGGER = logging.getLogger(__name__)
+
+
+"""
+Record sql queries
+"""
+def add_event_listeners(f):
+
+    @functools.wraps(f)
+    def event_listeners(*args, **kwargs):
+        @sa.event.listens_for(_db.engine, "before_cursor_execute")
+        def _record_query_start(conn, cursor, statement, parameters, context, executemany):
+            conn.info["query_start"] = datetime.now()
+
+        @sa.event.listens_for(_db.engine, "after_cursor_execute")
+        def _calculate_query_run_time(conn, cursor, statement, parameters, context, executemany):
+            LOGGER.warning(f"\n\n{statement}")
+            LOGGER.warning("this query took {}".format(datetime.now() - conn.info["query_start"]))
+            print("here!")
+        return f(*args, **kwargs)
+
+    return event_listeners
 
 """
 Test selection arguments
