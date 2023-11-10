@@ -10,7 +10,7 @@ from neurostore.core import app, db
 from neurostore import ingest
 from neurostore import models
 
-if not getattr(app, 'config', None):
+if not getattr(app, "config", None):
     app = app._app
 
 app.config.from_object(os.environ["APP_SETTINGS"])

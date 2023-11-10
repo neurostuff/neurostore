@@ -330,7 +330,9 @@ class StudySchema(BaseDataSchema):
         dump_only=True, metadata={"db_only": True}, allow_none=True
     )
     studysets = fields.Pluck("StudysetSchema", "_id", many=True, dump_only=True)
-    base_study = fields.Pluck("BaseStudySchema", "_id", dump_only=True, metadata={"db_only": True})
+    base_study = fields.Pluck(
+        "BaseStudySchema", "_id", dump_only=True, metadata={"db_only": True}
+    )
     has_coordinates = fields.Bool(dump_only=True)
     has_images = fields.Bool(dump_only=True)
     # studysets = fields.Nested(
@@ -569,10 +571,7 @@ class PointSnapshot(BaseSnapshot):
             "space": p.space,
             "image": p.image,
             "label_id": p.label_id,
-            "values": [
-                v_schema.dump(v)
-                for v in p.values
-            ],
+            "values": [v_schema.dump(v) for v in p.values],
         }
 
 
@@ -596,19 +595,10 @@ class AnalysisSnapshot(BaseSnapshot):
             "user": a.user_id,
             "name": a.name,
             "description": a.description,
-            "conditions": [
-                ac_schema.dump(ac)
-                for ac in a.analysis_conditions
-            ],
+            "conditions": [ac_schema.dump(ac) for ac in a.analysis_conditions],
             "weights": list(a.weights),
-            "points": [
-                p_schema.dump(p)
-                for p in a.points
-            ],
-            "images": [
-                i_schema.dump(i)
-                for i in a.images
-            ],
+            "points": [p_schema.dump(p) for p in a.points],
+            "images": [i_schema.dump(i) for i in a.images],
         }
 
 
@@ -648,8 +638,5 @@ class StudysetSnapshot(BaseSnapshot):
             "pmid": studyset.pmid,
             "created_at": self._serialize_dt(studyset.created_at),
             "updated_at": self._serialize_dt(studyset.updated_at),
-            "studies": [
-                s_schema.dump(s)
-                for s in studyset.studies
-            ],
+            "studies": [s_schema.dump(s) for s in studyset.studies],
         }

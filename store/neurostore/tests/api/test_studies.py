@@ -72,7 +72,9 @@ def test_put_studies(auth_client, ingest_neurosynth, data, session):
         if payload["analyses"][0].get("conditions"):
             conditions = []
             for cond in payload["analyses"][0]["conditions"]:
-                conditions.append(auth_client.post("/api/conditions/", data=cond).json())
+                conditions.append(
+                    auth_client.post("/api/conditions/", data=cond).json()
+                )
             payload["analyses"][0]["conditions"] = [
                 {"id": cond["id"]} for cond in conditions
             ]

@@ -54,7 +54,7 @@ class Client(object):
 
             if data is not None and json_dump is True:
                 data = json.dumps(data)
-                kwargs['data'] = data
+                kwargs["data"] = data
 
             return request_function(
                 route,
