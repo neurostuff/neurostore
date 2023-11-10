@@ -7,26 +7,36 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
 import SelectAnalysesComponent from './SelectAnalysesComponent/SelectAnalysesComponent';
-import SelectAnalysesSummaryComponent from './SelectAnalysesSummaryComponent/SelectAnalysesSummaryComponent';
+import SelectAnalysesSummaryComponent from './SelectAnalysesComponent/SelectAnalysesSummaryComponent';
+import {
+    IAlgorithmSelection,
+    IAnalysesSelection,
+} from '../CreateMetaAnalysisSpecificationDialogBase.types';
+import { AnnotationNoteValue } from 'components/HotTables/HotTables.types';
 
 const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
-    onChooseSelection: (selectionKey: string, type: EPropertyType) => void;
+    onChooseSelection: (
+        selectionKey: string,
+        type: EPropertyType,
+        selectionValue?: AnnotationNoteValue
+    ) => void;
     onNavigate: (button: ENavigationButton) => void;
-    selection: { selectionKey: string | undefined; type: EPropertyType } | undefined;
+    selection: IAnalysesSelection | undefined;
+    algorithm: IAlgorithmSelection;
 }> = (props) => {
     const annotationId = useProjectExtractionAnnotationId();
     const studysetId = useProjectExtractionStudysetId();
-    const [selectedValue, setSelectedValue] = useState<
-        | {
-              selectionKey: string | undefined;
-              type: EPropertyType;
-          }
-        | undefined
-    >(props.selection);
+    const [selectedValue, setSelectedValue] = useState<IAnalysesSelection | undefined>(
+        props.selection
+    );
 
     const handleNavigate = (button: ENavigationButton) => {
         if (selectedValue?.selectionKey && selectedValue?.type !== EPropertyType.NONE)
-            props.onChooseSelection(selectedValue.selectionKey, selectedValue.type);
+            props.onChooseSelection(
+                selectedValue.selectionKey,
+                selectedValue.type,
+                selectedValue.selectionValue
+            );
         props.onNavigate(button);
     };
 
@@ -39,19 +49,16 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                 </Typography>
             </Box>
             <Box>
-                <Typography gutterBottom>
+                <Typography gutterBottom sx={{ marginBottom: '1rem' }}>
                     Select the <b>annotation inclusion column</b> that you would like to use to
                     select the analyses for your meta-analysis.
-                </Typography>
-                <Typography sx={{ color: 'warning.dark', marginBottom: '1rem' }}>
-                    At the moment, only boolean columns will be supported. We will be adding support
-                    for the other types in the near future.
                 </Typography>
 
                 <SelectAnalysesComponent
                     selectedValue={selectedValue}
                     onSelectValue={(val) => setSelectedValue(val)}
                     annotationdId={annotationId || ''}
+                    algorithm={props.algorithm}
                 />
 
                 <Box
@@ -69,7 +76,11 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                     />
                     <Button
                         variant="contained"
-                        disabled={!selectedValue?.selectionKey}
+                        sx={{ width: '200px' }}
+                        disabled={
+                            !selectedValue?.selectionKey ||
+                            selectedValue?.selectionValue === undefined
+                        }
                         onClick={() => handleNavigate(ENavigationButton.NEXT)}
                     >
                         next

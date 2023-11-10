@@ -1,8 +1,8 @@
 import { Box, Typography } from '@mui/material';
 import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import SelectAnalysesSummaryComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesSummaryComponent/SelectAnalysesSummaryComponent';
-import { EPropertyType, getType } from 'components/EditMetadata';
+import SelectAnalysesSummaryComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesSummaryComponent';
+import { getType } from 'components/EditMetadata';
 import {
     IDynamicValueType,
     IMetaAnalysisParamsSpecification,
@@ -22,6 +22,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import BaseDialog, { IDialog } from '../BaseDialog';
 import SelectSpecificationComponent from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationAlgorithmStep/SelectSpecificationComponent/SelectSpecificationComponent';
+import { IAnalysesSelection } from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase.types';
 import SelectAnalysesComponent from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
@@ -35,16 +36,15 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
         isError: getMetaAnalysisIsError,
     } = useGetSpecificationById((metaAnalysis?.specification as SpecificationReturn)?.id);
     const { mutate, isLoading: updateSpecificationIsLoading } = useUpdateSpecification();
-    const [selectedValue, setSelectedValue] = useState<
-        | {
-              selectionKey: string | undefined;
-              type: EPropertyType;
-          }
-        | undefined
-    >({
-        selectionKey: specification?.filter || undefined,
-        type: getType(specification?.filter),
-    });
+    const [selectedValue, setSelectedValue] = useState<IAnalysesSelection | undefined>(
+        !!specification?.filter
+            ? {
+                  selectionKey: specification.filter,
+                  type: getType(specification.filter),
+                  selectionValue: specification.conditions?.[0],
+              }
+            : undefined
+    );
 
     const [algorithmSpec, setAlgorithmSpec] = useState<{
         estimator: IAutocompleteObject | null;
@@ -59,9 +59,12 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
     });
 
     useEffect(() => {
+        if (!specification?.filter) return;
+
         setSelectedValue({
-            selectionKey: specification?.filter || undefined,
-            type: getType(specification?.filter),
+            selectionKey: specification.filter,
+            type: getType(specification.filter),
+            selectionValue: (specification.conditions || [])[0],
         });
 
         const estimator = specification?.estimator?.type
@@ -89,9 +92,16 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
     }, [specification, props.isOpen]); // add isOpen so that on close/open, the selected val, estimator & corrector are reset
 
     const handleUpdateSpecification = () => {
-        if (!specification?.id || !algorithmSpec.estimator?.label || !selectedValue?.selectionKey)
+        if (
+            !specification?.id ||
+            !algorithmSpec.estimator?.label ||
+            !selectedValue?.selectionKey ||
+            !selectedValue?.selectionValue
+        )
             return;
 
+        const condition = [selectedValue.selectionValue] as string[] | boolean[];
+        console.log({ condition });
         mutate(
             {
                 specificationId: specification.id,
@@ -108,6 +118,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                           }
                         : null,
                     filter: selectedValue.selectionKey,
+                    conditions: condition,
                 },
             },
             {
@@ -147,7 +158,11 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                             (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''
                         }
                         selectedValue={selectedValue}
-                        onSelectValue={(update) => setSelectedValue(update)}
+                        onSelectValue={(update) => {
+                            console.log(update);
+                            setSelectedValue(update);
+                        }}
+                        algorithm={algorithmSpec}
                     />
 
                     <Typography sx={{ fontWeight: 'bold', marginTop: '3rem' }} gutterBottom>

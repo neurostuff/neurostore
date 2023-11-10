@@ -1,17 +1,6 @@
-import {
-    Box,
-    Button,
-    Divider,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
-    Typography,
-} from '@mui/material';
+import { Box, Button } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { getFilteredAnnotationNotes } from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent';
-import { EPropertyType } from 'components/EditMetadata';
 import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
 import DynamicInputDisplay from 'components/MetaAnalysisConfigComponents/DynamicInputDisplay/DynamicInputDisplay';
 import MetaAnalysisSummaryRow from 'components/MetaAnalysisConfigComponents/MetaAnalysisSummaryRow/MetaAnalysisSummaryRow';
@@ -26,18 +15,15 @@ import {
     useProjectExtractionStudysetId,
     useProjectId,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { useHistory } from 'react-router-dom';
+import { IAnalysesSelection } from '../CreateMetaAnalysisSpecificationDialogBase.types';
+import { getFilteredAnnotationNotes } from '../CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
 
 const CreateMetaAnalysisSpecificationReview: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
     onClose: () => void;
-    selection:
-        | {
-              selectionKey: string | undefined;
-              type: EPropertyType;
-          }
-        | undefined;
+    selection: IAnalysesSelection | undefined;
     algorithm: {
         estimator: IAutocompleteObject | null;
         estimatorArgs: IDynamicValueType;
@@ -56,37 +42,57 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
     const { data: annotations } = useGetAnnotationById(annotationId);
     const { createMetaAnalysis, isLoading, isError } = useCreateAlgorithmSpecification();
     const { enqueueSnackbar } = useSnackbar();
-    const [showAdvanced, setShowAdvanced] = useState(false);
+    // TODO: implement studyset snapshot
+    // const [showAdvanced, setShowAdvanced] = useState(false);
 
     const handleCreateSpecification = async () => {
-        if (props.algorithm?.estimator?.label && props.selection?.selectionKey) {
-            const metaAnalysis = await createMetaAnalysis(
-                projectId,
-                EAnalysisType.CBMA,
-                props.algorithm.estimator,
-                props.algorithm.corrector,
-                studysetId,
-                annotationId,
-                props.selection?.selectionKey,
-                props.details.name,
-                props.details.description,
-                props.algorithm.estimatorArgs,
-                props.algorithm.correctorArgs
-            );
-            if (!metaAnalysis.data.specification || !metaAnalysis.data.id)
-                throw new Error('no specification ID found when creating a meta-analysis');
+        if (!props.algorithm?.estimator?.label || !props.selection?.selectionKey) return;
+        if (!props.selection || !props.selection.selectionValue) return;
 
-            enqueueSnackbar('created meta analysis specification successfully', {
-                variant: 'success',
-            });
-            history.push(`/projects/${projectId}/meta-analyses/${metaAnalysis.data.id}`);
-        }
+        const conditions = [props.selection.selectionValue] as string[] | boolean[];
+        const weights = [1];
+
+        const metaAnalysis = await createMetaAnalysis(
+            projectId,
+            EAnalysisType.CBMA,
+            props.algorithm.estimator,
+            props.algorithm.corrector,
+            studysetId,
+            annotationId,
+            props.selection?.selectionKey,
+            props.details.name,
+            props.details.description,
+            props.algorithm.estimatorArgs,
+            props.algorithm.correctorArgs,
+            conditions,
+            weights
+        );
+        if (!metaAnalysis.data.specification || !metaAnalysis.data.id)
+            throw new Error('no specification ID found when creating a meta-analysis');
+
+        enqueueSnackbar('created meta analysis specification successfully', {
+            variant: 'success',
+        });
+        history.push(`/projects/${projectId}/meta-analyses/${metaAnalysis.data.id}`);
     };
 
-    const selectedAnnotations = getFilteredAnnotationNotes(
-        (annotations?.notes || []) as NoteCollectionReturn[],
-        props.selection?.selectionKey
-    );
+    const numSelectedAnnotationsText = useMemo(() => {
+        const selectedAnnotations = getFilteredAnnotationNotes(
+            (annotations?.notes || []) as NoteCollectionReturn[],
+            props.selection
+        );
+        const totalNumAnnotations = (annotations?.notes || []).length;
+        return `${selectedAnnotations.length} / ${totalNumAnnotations} analyses selected`;
+    }, [annotations?.notes, props.selection]);
+
+    const selectionText = useMemo(() => {
+        if (!props.selection) return '';
+        const selectionKey = props.selection.selectionKey;
+        const selectionValue = props.selection.selectionValue
+            ? `: ${props.selection.selectionValue}`
+            : '';
+        return `${selectionKey} ${selectionValue}`;
+    }, [props.selection]);
 
     return (
         <StateHandlerComponent
@@ -102,10 +108,8 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
                 />
                 <MetaAnalysisSummaryRow
                     title="Selection"
-                    value={props.selection?.selectionKey || ''}
-                    caption={`${selectedAnnotations.length} / ${
-                        (annotations?.notes || []).length
-                    } analyses selected`}
+                    value={selectionText}
+                    caption={numSelectedAnnotationsText}
                 ></MetaAnalysisSummaryRow>
                 <MetaAnalysisSummaryRow
                     title="Estimator"
@@ -131,7 +135,7 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
                         )}
                     </MetaAnalysisSummaryRow>
                 )}
-                <Box>
+                {/* <Box>
                     <Button color="info" onClick={() => setShowAdvanced((prev) => !prev)}>
                         {showAdvanced ? 'hide' : 'show'} advanced
                     </Button>
@@ -163,7 +167,7 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
                             </FormControl>
                         </Box>
                     )}
-                </Box>
+                </Box> */}
             </Box>
             <Box sx={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between' }}>
                 <Button

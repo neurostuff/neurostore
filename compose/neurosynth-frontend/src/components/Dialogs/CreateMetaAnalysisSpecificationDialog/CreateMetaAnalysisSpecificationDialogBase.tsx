@@ -10,6 +10,11 @@ import CreateMetaAnalysisSpecificationReview from './CreateMetaAnalysisSpecifica
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import CreateMetaAnalysisSpecificationDetailsStep from './CreateMetaAnalysisSpecificationDetailsStep/CreateMetaAnalysisSpecificationDetailsStep';
 import { useProjectName } from 'pages/Projects/ProjectPage/ProjectStore';
+import {
+    IAlgorithmSelection,
+    IAnalysesSelection,
+} from './CreateMetaAnalysisSpecificationDialogBase.types';
+import { AnnotationNoteValue } from 'components/HotTables/HotTables.types';
 
 const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => {
     const projectName = useProjectName();
@@ -19,16 +24,8 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
         name: `${projectName} Meta Analysis`,
         description: `this is a meta-analysis for ${projectName}`,
     });
-    const [selection, setSelection] = useState<{
-        selectionKey: string | undefined;
-        type: EPropertyType;
-    }>();
-    const [algorithm, setAlgorithm] = useState<{
-        estimator: IAutocompleteObject | null;
-        estimatorArgs: IDynamicValueType;
-        corrector: IAutocompleteObject | null;
-        correctorArgs: IDynamicValueType;
-    }>({
+    const [selection, setSelection] = useState<IAnalysesSelection>();
+    const [algorithm, setAlgorithm] = useState<IAlgorithmSelection>({
         estimator: null,
         estimatorArgs: {},
         corrector: null,
@@ -72,10 +69,15 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
         });
     };
 
-    const handleChooseSelection = (selectionKey: string, type: EPropertyType) => {
+    const handleChooseSelection = (
+        selectionKey: string,
+        type: EPropertyType,
+        selectionValue?: AnnotationNoteValue
+    ) => {
         setSelection({
             selectionKey,
             type,
+            selectionValue: selectionValue ? selectionValue : undefined,
         });
     };
 
@@ -98,16 +100,17 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
             dialogTitle="Create Meta-Analysis Specification"
             isOpen={props.isOpen}
             fullWidth
-            maxWidth="md"
+            dialogTitleSx={{ padding: '1rem 0rem 0rem 4rem' }}
+            maxWidth="lg"
             onCloseDialog={handleCloseDialog}
         >
-            <Box>
+            <Box sx={{ padding: '2rem' }}>
                 <Stepper activeStep={activeStep}>
                     <Step>
-                        <StepLabel>Select Analyses</StepLabel>
+                        <StepLabel>Enter Specification</StepLabel>
                     </Step>
                     <Step>
-                        <StepLabel>Enter Specification</StepLabel>
+                        <StepLabel>Select Analyses</StepLabel>
                     </Step>
                     <Step>
                         <StepLabel>Enter Details</StepLabel>
@@ -118,16 +121,17 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
                 </Stepper>
                 <Box sx={{ marginTop: '1rem' }}>
                     {activeStep === 0 && (
-                        <CreateMetaAnalysisSpecificationSelectionStep
-                            onChooseSelection={handleChooseSelection}
-                            selection={selection}
+                        <CreateMetaAnalysisSpecificationAlgorithmStep
+                            onChooseAlgorithm={handleChooseAlgorithm}
+                            algorithm={algorithm}
                             onNavigate={handleNavigate}
                         />
                     )}
                     {activeStep === 1 && (
-                        <CreateMetaAnalysisSpecificationAlgorithmStep
-                            onChooseAlgorithm={handleChooseAlgorithm}
+                        <CreateMetaAnalysisSpecificationSelectionStep
+                            onChooseSelection={handleChooseSelection}
                             algorithm={algorithm}
+                            selection={selection}
                             onNavigate={handleNavigate}
                         />
                     )}

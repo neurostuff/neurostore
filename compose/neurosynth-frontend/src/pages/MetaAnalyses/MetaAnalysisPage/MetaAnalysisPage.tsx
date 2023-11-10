@@ -2,7 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Box, Button, Link, Paper, Typography } from '@mui/material';
 import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
-import SelectAnalysesSummaryComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesSummaryComponent/SelectAnalysesSummaryComponent';
+import SelectAnalysesSummaryComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesSummaryComponent';
 import EditSpecificationDialog from 'components/Dialogs/EditSpecificationDialog/EditSpecificationDialog';
 import DisplayMetaAnalysisResult from 'components/DisplayMetaAnalysisResult/DisplayMetaAnalysisResult';
 import { getType } from 'components/EditMetadata';
@@ -30,7 +30,7 @@ import {
     useInitProjectStoreIfRequired,
     useProjectName,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { NeurostoreAnnotation } from 'utils/api';
 import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
@@ -117,22 +117,22 @@ const MetaAnalysisPage: React.FC = (props) => {
         }
     };
 
-    const metaAnalysisDisplayObj = {
-        name: metaAnalysis?.name || '',
-        description: metaAnalysis?.description || '',
-        analysisType: (metaAnalysis?.specification as Specification)?.type || '',
-        analysisTypeDescription: getAnalysisTypeDescription(
-            (metaAnalysis?.specification as Specification)?.type
-        ),
-        studyset: (metaAnalysis?.studyset as Studyset)?.neurostore_id || '',
-        annotation: (metaAnalysis?.annotation as Annotation)?.neurostore_id || '',
-        inclusionColumn: specification?.filter || '',
-        inclusionColumnType: getType(specification?.filter || ''),
-        estimator: specification?.estimator?.type || '',
-        estimatorArgs: (specification?.estimator?.args || {}) as IDynamicValueType,
-        corrector: specification?.corrector?.type || '',
-        correctorArgs: (specification?.corrector?.args || {}) as IDynamicValueType,
-    };
+    const selectionText = useMemo(() => {
+        if (!specification || !specification.filter || !specification.conditions) return '';
+        const selectionKey = specification.filter;
+        const selectionValue = specification.conditions[0]
+            ? `: ${specification.conditions[0]}`
+            : '';
+        return `${selectionKey} ${selectionValue}`;
+    }, [specification]);
+
+    const metaAnalysisTypeDescription = useMemo(() => {
+        return getAnalysisTypeDescription((metaAnalysis?.specification as Specification)?.type);
+    }, [metaAnalysis?.specification]);
+
+    const metaAnalysisSpecification = metaAnalysis?.specification as Specification | undefined;
+    const metaAnalysisAnnotation = metaAnalysis?.annotation as Annotation | undefined;
+    const metaAnalysisStudyset = metaAnalysis?.studyset as Studyset | undefined;
 
     const canEditSpecification = (metaAnalysis?.results || []).length === 0;
 
@@ -269,8 +269,8 @@ const MetaAnalysisPage: React.FC = (props) => {
 
                             <MetaAnalysisSummaryRow
                                 title="meta-analysis name"
-                                value={metaAnalysisDisplayObj.name || ''}
-                                caption={metaAnalysisDisplayObj.description || ''}
+                                value={metaAnalysis?.name || ''}
+                                caption={metaAnalysis?.description || ''}
                             />
                         </Box>
 
@@ -279,35 +279,33 @@ const MetaAnalysisPage: React.FC = (props) => {
 
                             <MetaAnalysisSummaryRow
                                 title="analysis type"
-                                value={metaAnalysisDisplayObj.analysisType}
-                                caption={metaAnalysisDisplayObj.analysisTypeDescription}
+                                value={metaAnalysisSpecification?.type || ''}
+                                caption={metaAnalysisTypeDescription}
                             />
 
                             <MetaAnalysisSummaryRow
                                 title="studyset id"
-                                value={metaAnalysisDisplayObj.studyset}
+                                value={metaAnalysisStudyset?.neurostore_id || ''}
                             />
 
-                            {metaAnalysisDisplayObj.annotation && (
+                            {metaAnalysisAnnotation?.neurostore_id && (
                                 <MetaAnalysisSummaryRow
                                     title="annotation id"
-                                    value={metaAnalysisDisplayObj?.annotation}
+                                    value={metaAnalysisAnnotation.neurostore_id}
                                 >
                                     <SelectAnalysesSummaryComponent
-                                        annotationdId={metaAnalysisDisplayObj?.annotation || ''}
-                                        studysetId={metaAnalysisDisplayObj.studyset}
+                                        annotationdId={metaAnalysisAnnotation.neurostore_id || ''}
+                                        studysetId={metaAnalysisStudyset?.neurostore_id || ''}
                                         selectedValue={{
-                                            selectionKey: metaAnalysisDisplayObj.inclusionColumn,
-                                            type: metaAnalysisDisplayObj.inclusionColumnType,
+                                            selectionKey: specification?.filter || '',
+                                            type: getType(specification?.filter || ''),
+                                            selectionValue: specification?.conditions?.[0],
                                         }}
                                     />
                                 </MetaAnalysisSummaryRow>
                             )}
 
-                            <MetaAnalysisSummaryRow
-                                title="annotation"
-                                value={metaAnalysisDisplayObj.inclusionColumn}
-                            />
+                            <MetaAnalysisSummaryRow title="annotation" value={selectionText} />
                         </Box>
 
                         <Box>
@@ -315,20 +313,25 @@ const MetaAnalysisPage: React.FC = (props) => {
 
                             <MetaAnalysisSummaryRow
                                 title="algorithm and optional arguments"
-                                value={metaAnalysisDisplayObj?.estimator}
+                                value={specification?.estimator?.type || ''}
                             >
                                 <DynamicInputDisplay
-                                    dynamicArg={metaAnalysisDisplayObj?.estimatorArgs}
+                                    dynamicArg={
+                                        (specification?.estimator?.args || {}) as IDynamicValueType
+                                    }
                                 />
                             </MetaAnalysisSummaryRow>
 
-                            {metaAnalysisDisplayObj.corrector && (
+                            {specification?.corrector?.type && (
                                 <MetaAnalysisSummaryRow
                                     title="corrector and optional arguments"
-                                    value={metaAnalysisDisplayObj?.corrector}
+                                    value={specification?.corrector?.type || ''}
                                 >
                                     <DynamicInputDisplay
-                                        dynamicArg={metaAnalysisDisplayObj?.correctorArgs}
+                                        dynamicArg={
+                                            (specification?.corrector?.args ||
+                                                {}) as IDynamicValueType
+                                        }
                                     />
                                 </MetaAnalysisSummaryRow>
                             )}

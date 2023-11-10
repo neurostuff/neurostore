@@ -35,6 +35,7 @@ interface INeurosynthAutocomplete<T> {
     isError?: boolean;
     noOptionsText?: string;
     size?: 'small' | 'medium';
+    inputPropsSx?: SystemStyleObject;
     filterOptions?: (options: T[], state: FilterOptionsState<T>) => T[];
 }
 
@@ -59,6 +60,7 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
         filterOptions = undefined,
         noOptionsText = undefined,
         size = 'small',
+        inputPropsSx = {},
     } = props;
 
     const handleOnChange = (_event: any, newVal: T | null, _reason: any) => {
@@ -86,6 +88,7 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
                     error={!isValid && required}
                     InputProps={{
                         ...params.InputProps,
+                        sx: inputPropsSx,
                         endAdornment: (
                             <>
                                 {isError && (
