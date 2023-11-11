@@ -25,7 +25,7 @@ def test_get_specification(session, app, auth_client, user_data):
             "corrector": {"type": "FDRCorrector"},
             "filter": "eyes",
         },
-    ]
+    ],
 )
 def test_create_and_get_spec(session, app, auth_client, user_data, specification_data):
     create_spec = auth_client.post("/api/specifications", data=specification_data)
@@ -35,3 +35,41 @@ def test_create_and_get_spec(session, app, auth_client, user_data, specification
     view_spec = auth_client.get(f"/api/specifications/{create_spec.json['id']}")
 
     assert create_spec.json == view_spec.json
+
+
+@pytest.mark.parametrize(
+    "attribute,value",
+    [
+        ("estimator", {"type": "MKDA"}),
+        ("type", "ibma"),
+        ("conditions", ["yes", "no"]),
+        ("weights", [1, 1]),
+        ("corrector", {"type": "FWECorrector"}),
+        ("filter", "bunny"),
+        ("database_studyset", "neurostore"),
+    ],
+)
+def test_update_spec(session, app, auth_client, user_data, attribute, value):
+    specification_data = {
+        "estimator": {"type": "ALE"},
+        "type": "cbma",
+        "conditions": ["open", "closed"],
+        "weights": [1, -1],
+        "corrector": {"type": "FDRCorrector"},
+        "filter": "eyes",
+    }
+    create_spec = auth_client.post("/api/specifications", data=specification_data)
+
+    assert create_spec.status_code == 200
+
+    spec_id = create_spec.json["id"]
+
+    update_spec = auth_client.put(
+        f"/api/specifications/{spec_id}", data={attribute: value}
+    )
+    assert update_spec.status_code == 200
+
+    get_spec = auth_client.get(f"/api/specifications/{spec_id}")
+    assert get_spec.status_code == 200
+
+    assert get_spec.json[attribute] == value

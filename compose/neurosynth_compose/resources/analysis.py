@@ -1,4 +1,3 @@
-
 from collections import ChainMap
 import pathlib
 from operator import itemgetter
@@ -119,7 +118,10 @@ class BaseView(MethodView):
         only_ids = set(data.keys()) - set(["id"]) == set()
 
         if cls._model is Condition:
-            record = cls._model.query.filter_by(name=data.get('name')).first() or cls._model()
+            record = (
+                cls._model.query.filter_by(name=data.get("name")).first()
+                or cls._model()
+            )
         if id is None:
             record = cls._model()
             record.user = current_user
@@ -149,7 +151,8 @@ class BaseView(MethodView):
 
         # get nested attributes
         nested_keys = [
-            item for key in cls._nested.keys()
+            item
+            for key in cls._nested.keys()
             for item in (key if isinstance(key, tuple) else (key,))
         ]
 
@@ -164,25 +167,42 @@ class BaseView(MethodView):
         # Update nested attributes recursively
         for field, res_name in cls._nested.items():
             field = (field,) if not isinstance(field, tuple) else field
+            if set(data.keys()).issubset(field):
+                field = (list(data.keys())[0],)
+
             try:
                 rec_data = itemgetter(*field)(data)
             except KeyError:
                 rec_data = None
 
             ResCls = globals()[res_name]
+
             if rec_data is not None:
                 if isinstance(rec_data, tuple):
                     rec_data = [dict(ChainMap(*rc)) for rc in zip(*rec_data)]
+                # get ids of existing nested attributes
+                existing_nested = None
+                if cls._attribute_name:
+                    existing_nested = getattr(record, cls._attribute_name, None)
+
+                if existing_nested and len(existing_nested) == len(rec_data):
+                    _ = [
+                        rd.update({"id": ns.id})
+                        for rd, ns in zip(
+                            rec_data, getattr(record, cls._attribute_name)
+                        )
+                    ]
                 if isinstance(rec_data, list):
                     nested = [
-                        ResCls.update_or_create(rec, commit=False)
-                        for rec in rec_data
+                        ResCls.update_or_create(rec, commit=False) for rec in rec_data
                     ]
                     to_commit.extend(nested)
                 else:
                     nested = ResCls.update_or_create(rec_data, commit=False)
                     to_commit.append(nested)
-                update_field = field if len(field) == 1 else (cls._attribute_name,)
+                update_field = (
+                    field if not cls._attribute_name else (cls._attribute_name,)
+                )
                 for f in update_field:
                     setattr(record, f, nested)
 
