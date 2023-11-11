@@ -48,7 +48,11 @@ class SpecificationCondition(BaseMixin, db.Model):
         db.Text, db.ForeignKey("conditions.id"), index=True, primary_key=True
     )
     condition = relationship("Condition", backref=backref("specification_conditions"))
-    specification = relationship("Specification", backref=backref("specification_conditions"))
+    specification = relationship(
+        "Specification", backref=backref("specification_conditions")
+    )
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
+    user = relationship("User", backref=backref("specification_conditions"))
 
 
 class Specification(BaseMixin, db.Model):
@@ -59,6 +63,7 @@ class Specification(BaseMixin, db.Model):
     filter = db.Column(db.Text)
     weights = association_proxy("specification_conditions", "weight")
     conditions = association_proxy("specification_conditions", "condition")
+    database_studyset = db.Column(db.Text)
     corrector = db.Column(db.JSON)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("specifications"))
