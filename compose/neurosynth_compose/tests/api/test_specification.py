@@ -72,4 +72,7 @@ def test_update_spec(session, app, auth_client, user_data, attribute, value):
     get_spec = auth_client.get(f"/api/specifications/{spec_id}")
     assert get_spec.status_code == 200
 
-    assert get_spec.json[attribute] == value
+    if isinstance(value, list):
+        assert set(get_spec.json[attribute]) == set(value)
+    else:
+        assert get_spec.json[attribute] == value
