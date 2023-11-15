@@ -11,9 +11,21 @@ import connexion
 from connexion.resolver import MethodResolver
 from flask_caching import Cache
 import sqltap.wsgi
+import sqltap
 
 from .or_json import ORJSONDecoder, ORJSONEncoder
 from .database import init_db
+
+
+class SQLTapMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        profiler = sqltap.start()
+        await self.app(scope, receive, send)
+        statistics = profiler.collect()
+        sqltap.report(statistics, "report.txt", report_format="text")
 
 
 connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/")
@@ -43,6 +55,11 @@ connexion_app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+# add sqltap
+connexion_app.add_middleware(
+    SQLTapMiddleware,
 )
 
 connexion_app.add_api(

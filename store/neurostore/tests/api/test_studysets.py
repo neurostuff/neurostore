@@ -23,7 +23,7 @@ def test_post_and_get_studysets(auth_client, ingest_neurosynth, session):
         == post_resp.json()
     )
 
-@add_event_listeners
+# @add_event_listeners
 def test_add_many_studies_to_studyset(auth_client, ingest_neurosynth, session):
     existing_studies = Study.query.all()
     existing_study_ids = [s.id for s in existing_studies]

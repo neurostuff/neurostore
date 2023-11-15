@@ -150,7 +150,8 @@ class BaseStudy(BaseMixin, db.Model):
     user = relationship("User", backref=backref("base_studies"))
     # retrieve versions of same study
     versions = relationship(
-        "Study", backref=backref("base_study"))
+        "Study", backref=backref("base_study")
+    )
 
     def update_has_images_and_points(self):
         # Calculate has_images and has_coordinates for the BaseStudy
