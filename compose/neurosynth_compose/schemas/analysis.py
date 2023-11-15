@@ -130,10 +130,7 @@ class ConditionSchema(Schema):
     description = PGSQLString()
 
 
-class SpecificationConditionSchema(Schema):
-    id = PGSQLString()
-    created_at = fields.DateTime()
-    updated_at = fields.DateTime(allow_none=True)
+class SpecificationConditionSchema(BaseSchema):
     condition = fields.Pluck(ConditionSchema, "name")
     weight = fields.Number()
 
@@ -152,7 +149,7 @@ class StudysetReferenceSchema(Schema):
         exclude=("snapshot",),
         metadata={"pluck": "id"},
         many=True,
-        dump_only=True
+        dump_only=True,
     )
 
 
@@ -165,6 +162,7 @@ class SpecificationSchema(BaseSchema):
     mask = PGSQLString(allow_none=True)
     transformer = PGSQLString(allow_none=True)
     estimator = fields.Nested("EstimatorSchema")
+    database_studyset = PGSQLString(allow_none=True)
     contrast = PGSQLString(allow_none=True)
     filter = PGSQLString(allow_none=True)
     corrector = fields.Dict(allow_none=True)
@@ -178,11 +176,7 @@ class SpecificationSchema(BaseSchema):
         data_key="conditions",
     )
     conditions = fields.Pluck(
-        ConditionSchema,
-        "name",
-        many=True,
-        allow_none=True,
-        dump_only=True
+        ConditionSchema, "name", many=True, allow_none=True, dump_only=True
     )
     weights = fields.List(
         fields.Float(),
@@ -213,7 +207,7 @@ class SpecificationSchema(BaseSchema):
                     output_conditions[i] = True
                 elif cond.lower() == "false":
                     output_conditions[i] = False
-            data['conditions'] = conditions
+            data["conditions"] = conditions
 
         return data
 
@@ -224,10 +218,10 @@ class SpecificationSchema(BaseSchema):
             output_conditions = conditions[:]
             for i, cond in enumerate(conditions):
                 if cond is True:
-                    output_conditions[i] = 'true'
+                    output_conditions[i] = "true"
                 elif cond is False:
-                    output_conditions[i] = 'false'
-            data['conditions'] = output_conditions
+                    output_conditions[i] = "false"
+            data["conditions"] = output_conditions
 
         return data
 

@@ -28,13 +28,6 @@ const FullTextChip: React.FC<{ name?: string | null }> = (props) => {
         isError: getFullTextIsError,
     } = useGetFullText(debouncedName);
 
-    console.log({
-        debouncedName,
-        getFullTextIsError,
-        getFullTextIsLoading,
-        fullTextURL,
-    });
-
     if (getFullTextIsLoading || !debouncedName) {
         return (
             <Box sx={{ display: 'inline-block', textAlign: 'center', width: '200px' }}>

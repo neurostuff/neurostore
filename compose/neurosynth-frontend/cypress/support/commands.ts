@@ -10,34 +10,6 @@ import * as jose from 'jose';
 // commands please read more here:
 // https://on.cypress.io/custom-commands
 // ***********************************************
-//
-//
-// -- This is a parent command --
-// Cypress.Commands.add('login', (email, password) => { ... })
-//
-//
-// -- This is a child command --
-// Cypress.Commands.add('drag', { prevSubject: 'element'}, (subject, options) => { ... })
-//
-//
-// -- This is a dual command --
-// Cypress.Commands.add('dismiss', { prevSubject: 'optional'}, (subject, options) => { ... })
-//
-//
-// -- This will overwrite an existing command --
-// Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
-//
-// declare global {
-//   namespace Cypress {
-//     interface Chainable {
-//       login(email: string, password: string): Chainable<void>
-//       drag(subject: string, options?: Partial<TypeOptions>): Chainable<Element>
-//       dismiss(subject: string, options?: Partial<TypeOptions>): Chainable<Element>
-//       visit(originalFn: CommandOriginalFn, url: string, options: Partial<VisitOptions>): Chainable<Element>
-//     }
-//   }
-// }
-
 const constructMockAuthJWT = async (jwtPayload = {}): Promise<string> => {
     const jwt = await new jose.SignJWT({ ...jwtPayload })
         .setProtectedHeader({ alg: 'HS256' })
@@ -51,6 +23,7 @@ const createMockRequest = async (
     audience: string,
     client_id: string,
     domain: string,
+    scope: string,
     extraClaims = {}
 ) => {
     const access_token = await constructMockAuthJWT({
@@ -60,7 +33,7 @@ const createMockRequest = async (
         iat: 1659719697,
         exp: 1659806097,
         azp: 'EmcOFhu0XAINM4EyslaKpZ3u09QlBvef',
-        scope: 'openid profile email',
+        scope: scope,
     });
 
     const id_token = await constructMockAuthJWT({
@@ -85,7 +58,7 @@ const createMockRequest = async (
             access_token: access_token,
             expires_in: 86400,
             id_token: id_token,
-            scope: 'openid profile email read:current_user update:current_user_metadata delete:current_user_metadata create:current_user_metadata create:current_user_device_credentials delete:current_user_device_credentials update:current_user_identities',
+            scope: scope,
             token_type: 'Bearer',
         },
     };
@@ -99,12 +72,14 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
     const password = Cypress.env('auth0Password');
     const domain = Cypress.env('auth0Domain');
 
+    const scope = 'openid profile email offline_access';
+
     /**
      * To prevent rate limiting errors form auth0, we stub our own request func and return a mocked response
      */
     if (loginMode === 'mocked') {
         cy.stub(cy, 'request').callsFake(() =>
-            cy.wrap(createMockRequest(audience, client_id, domain, extraClaims))
+            cy.wrap(createMockRequest(audience, client_id, domain, scope, extraClaims))
         );
     }
 
@@ -121,7 +96,7 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
             username,
             password,
             audience,
-            scope: 'openid profile email',
+            scope,
             client_id,
             client_secret,
         },
@@ -153,7 +128,7 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
                 },
                 expires_in,
                 id_token,
-                scope: 'openid profile email read:current_user update:current_user_metadata delete:current_user_metadata create:current_user_metadata create:current_user_device_credentials delete:current_user_device_credentials update:current_user_identities',
+                scope,
                 token_type: 'Bearer',
             },
             expiresAt: Math.floor(Date.now() / 1000) + expires_in,
@@ -165,13 +140,10 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
          * the isAuthenticated state. This code is in tandem with setting the auth0 provider cacheLocation=localstorage.
          */
         cy.addToLocalStorage(
-            `@@auth0spajs@@::${client_id}::${audience}::openid profile email`,
+            `@@auth0spajs@@::${client_id}::${audience}::${scope}`,
             JSON.stringify(session)
         );
     });
-
-    // this will always run after the previous commands are complete
-    cy.visit('/');
 });
 
 Cypress.Commands.add('clearSessionStorage', () => {
@@ -192,7 +164,6 @@ declare global {
     namespace Cypress {
         interface Chainable {
             login(loginMode: 'real' | 'mocked', extraClaims?: any): Chainable<void>;
-            mockLogin(extraClaims?: any): Chainable<void>;
             clearSessionStorage(): Chainable<void>;
             addToLocalStorage(key: string, value: string): Chainable<void>;
         }

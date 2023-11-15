@@ -45,7 +45,10 @@ const NavbarStyles: Style = {
         cursor: 'pointer',
     },
     logoText: {
-        fontSize: '1.5rem',
+        fontSize: {
+            xs: '1rem',
+            lg: '1.5rem',
+        },
     },
 };
 

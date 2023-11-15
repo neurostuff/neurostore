@@ -1,7 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { AppBar, Box } from '@mui/material';
-import { EPropertyType } from 'components/EditMetadata';
 import { useCreateProject } from 'hooks';
+import { generateNewProjectData } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 import { useHistory } from 'react-router-dom';
 import NavDrawer from './NavDrawer/NavDrawer';
 import NavToolbar from './NavToolbar/NavToolbar';
@@ -11,6 +11,7 @@ export interface INav {
     onLogin: () => Promise<void>;
     onLogout: () => void;
     onCreateProject: (name: string, description: string) => void;
+    createProjectIsLoading?: boolean;
 }
 
 export const NAVBAR_HEIGHT = 64;
@@ -18,7 +19,7 @@ const AUTH0_AUDIENCE = process.env.REACT_APP_AUTH0_AUDIENCE;
 
 const Navbar: React.FC = (_props) => {
     const { loginWithPopup, logout } = useAuth0();
-    const { mutate } = useCreateProject();
+    const { mutate, isLoading: createProjectIsLoading } = useCreateProject();
     const history = useHistory();
 
     const handleLogin = async () => {
@@ -31,52 +32,12 @@ const Navbar: React.FC = (_props) => {
 
     const handleLogout = () => logout({ returnTo: window.location.origin });
 
-    const handleCreateProject = (name: string, description: string) => {
-        mutate(
-            {
-                name,
-                description,
-                provenance: {
-                    curationMetadata: {
-                        columns: [],
-                        prismaConfig: {
-                            isPrisma: false,
-                            identification: {
-                                exclusionTags: [],
-                            },
-                            screening: {
-                                exclusionTags: [],
-                            },
-                            eligibility: {
-                                exclusionTags: [],
-                            },
-                        },
-                        infoTags: [],
-                        exclusionTags: [],
-                        identificationSources: [],
-                    },
-                    extractionMetadata: {
-                        studysetId: null,
-                        annotationId: null,
-                        studyStatusList: [],
-                    },
-                    selectionMetadata: {
-                        filter: {
-                            selectionKey: null,
-                            type: EPropertyType.NONE,
-                        },
-                    },
-                    algorithmMetadata: {
-                        specificationId: null,
-                    },
-                },
+    const handleCreateProject = () => {
+        mutate(generateNewProjectData('Untitled', ''), {
+            onSuccess: (arg) => {
+                history.push(`/projects/${arg.data.id || ''}`);
             },
-            {
-                onSuccess: (arg) => {
-                    history.push(`/projects/${arg.data.id || ''}`);
-                },
-            }
-        );
+        });
     };
 
     return (
@@ -84,6 +45,7 @@ const Navbar: React.FC = (_props) => {
         <AppBar sx={{ height: `${NAVBAR_HEIGHT}px` }} position="static" elevation={0}>
             <Box sx={NavbarStyles.mdUp}>
                 <NavToolbar
+                    createProjectIsLoading={createProjectIsLoading}
                     onCreateProject={handleCreateProject}
                     onLogin={handleLogin}
                     onLogout={handleLogout}

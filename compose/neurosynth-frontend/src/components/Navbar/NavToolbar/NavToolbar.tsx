@@ -3,18 +3,16 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, Button, Toolbar, Typography } from '@mui/material';
-import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
-import { useState } from 'react';
+import NeurosynthAvatar from 'components/Navbar/NeurosynthAvatar/NeurosynthAvatar';
 import { NavLink, useHistory } from 'react-router-dom';
 import { INav } from '../Navbar';
 import NavbarStyles from '../Navbar.styles';
-import NeurosynthAvatar from 'components/Navbar/NeurosynthAvatar/NeurosynthAvatar';
 import NavToolbarStyles from './NavToolbar.styles';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 
 const NavToolbar: React.FC<INav> = (props) => {
     const { isAuthenticated } = useAuth0();
-    const [createDetailsDialogIsOpen, setCreateDetailsDialogIsOpen] = useState(false);
     const history = useHistory();
 
     return (
@@ -31,25 +29,21 @@ const NavToolbar: React.FC<INav> = (props) => {
                 </Box>
 
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <CreateDetailsDialog
-                        titleText="Create new project"
-                        nameLabel="Project Name"
-                        descriptionLabel="Project Description"
-                        isOpen={createDetailsDialogIsOpen}
-                        onCreate={props.onCreateProject}
-                        onCloseDialog={() => setCreateDetailsDialogIsOpen(false)}
-                    />
                     {isAuthenticated && (
                         <>
-                            <Button
+                            <LoadingButton
                                 variant="contained"
-                                onClick={() => setCreateDetailsDialogIsOpen(true)}
-                                sx={[NavToolbarStyles.menuItem, { margin: '0 15px' }]}
+                                loaderColor="primary"
+                                isLoading={props.createProjectIsLoading || false}
+                                onClick={() => props.onCreateProject('Untitled', '')}
+                                sx={[
+                                    NavToolbarStyles.menuItem,
+                                    { margin: '0 15px', width: '170px' },
+                                ]}
                                 color="secondary"
                                 startIcon={<AddCircleOutlineIcon />}
-                            >
-                                new project
-                            </Button>
+                                text="NEW PROJECT"
+                            />
                             <Button
                                 onClick={() => history.push('/projects')}
                                 sx={[

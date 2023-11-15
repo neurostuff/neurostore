@@ -91,19 +91,19 @@ const NavDrawer: React.FC<INav> = (props) => {
                             <ListItem>
                                 <ListItemButton onClick={() => history.push('/base-studies')}>
                                     <ListItemIcon />
-                                    <ListItemText primary="studies" />
+                                    <ListItemText primary="STUDIES" />
                                 </ListItemButton>
                             </ListItem>
                             <ListItem>
                                 <ListItemButton onClick={() => history.push('/studysets')}>
                                     <ListItemIcon />
-                                    <ListItemText primary="studysets" />
+                                    <ListItemText primary="STUDYSETS" />
                                 </ListItemButton>
                             </ListItem>
                             <ListItem>
                                 <ListItemButton onClick={() => history.push('/meta-analyses')}>
                                     <ListItemIcon />
-                                    <ListItemText primary="meta-analyses" />
+                                    <ListItemText primary="META-ANALYSES" />
                                 </ListItemButton>
                             </ListItem>
                         </List>
