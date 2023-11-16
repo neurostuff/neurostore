@@ -1,4 +1,5 @@
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import inspect
 from flask_sqlalchemy.session import Session
 from sqlalchemy import event
 from .data import (
@@ -155,7 +156,9 @@ def before_flush(session, flush_context, instances):
         if isinstance(obj, Analysis):
             base_study = get_nested_attr(obj, "study.base_study")
         if isinstance(obj, Study):
-            base_study = obj.base_study
+            studysets_changed = inspect(obj).attrs.studysets.history
+            if not (studysets_changed.added or studysets_changed.deleted):
+                base_study = obj.base_study
         if isinstance(obj, BaseStudy):
             base_study = obj
 
@@ -169,4 +172,19 @@ def before_flush(session, flush_context, instances):
 
     # Update the has_images and has_points for each unique BaseStudy
     for base_study in unique_base_studies:
+        if (
+            inspect(base_study).attrs.versions.history.added
+            and base_study.has_coordinates is True
+            and base_study.has_images is True
+        ):
+            continue
+
+        if (
+            inspect(base_study).attrs.versions.history.deleted
+            and base_study.has_coordinates is False
+            and base_study.has_images is False
+        ):
+            continue
+
+
         base_study.update_has_images_and_points()

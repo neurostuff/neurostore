@@ -62,7 +62,7 @@ class StringOrNested(fields.Nested):
                 "has_images",
             ]
             nested_schema = self.nested(
-                context=self.context, only=info_fields, exclude=[]
+                context=self.context, only=info_fields,
             )
             return nested_schema.dump(value, many=self.many)
         else:
