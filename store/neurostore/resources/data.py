@@ -7,7 +7,6 @@ from webargs import fields
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func
-from sqlalchemy import union
 
 
 from .utils import view_maker
