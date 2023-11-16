@@ -186,5 +186,4 @@ def before_flush(session, flush_context, instances):
         ):
             continue
 
-
         base_study.update_has_images_and_points()

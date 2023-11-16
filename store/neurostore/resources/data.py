@@ -227,12 +227,13 @@ class BaseStudiesView(ObjectView, ListView):
             record = (
                 BaseStudy.query.filter_by(**filter_params)
                 .options(
-                    joinedload(BaseStudy.versions)
-                    .options(joinedload(Study.studyset_studies)
-                             .joinedload(StudysetStudy.studyset),
-                             joinedload(Study.user),
+                    joinedload(BaseStudy.versions).options(
+                        joinedload(Study.studyset_studies).joinedload(
+                            StudysetStudy.studyset
+                        ),
+                        joinedload(Study.user),
                     ),
-                    joinedload(BaseStudy.user)
+                    joinedload(BaseStudy.user),
                 )
                 .one_or_none()
             )
