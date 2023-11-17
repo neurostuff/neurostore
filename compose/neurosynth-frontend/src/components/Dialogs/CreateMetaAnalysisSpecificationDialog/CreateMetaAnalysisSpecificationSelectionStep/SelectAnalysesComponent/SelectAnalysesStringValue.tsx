@@ -1,42 +1,33 @@
 import { ListItem, ListItemText } from '@mui/material';
 import { EPropertyType } from 'components/EditMetadata';
+import { AnnotationNoteValue } from 'components/HotTables/HotTables.types';
 import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
-import { useMemo } from 'react';
 import { IAnalysesSelection } from '../../CreateMetaAnalysisSpecificationDialogBase.types';
-import { AnnotationNoteValue } from 'components/HotTables/HotTables.types';
+import useInclusionColumnOptions from './useInclusionColumnOptions';
 
 const SelectAnalysesStringValue: React.FC<{
     selectedValue: IAnalysesSelection | undefined;
     onSelectValue: (newVal: IAnalysesSelection) => void;
-    allNotes: NoteCollectionReturn[] | undefined;
+    annotationId: string | undefined;
 }> = (props) => {
-    const { selectedValue, onSelectValue, allNotes } = props;
-
-    const options = useMemo(() => {
-        if (!selectedValue || !selectedValue.selectionKey) return [];
-        const { selectionKey } = selectedValue;
-
-        const annotationValuesSet = new Set<string>();
-        (allNotes || []).forEach((note) => {
-            if (!note.note) return;
-            const value = (note.note as { [key: string]: string })[selectionKey];
-            if (annotationValuesSet.has(value)) {
-            } else {
-                annotationValuesSet.add(value);
-            }
-        });
-
-        return Array.from(annotationValuesSet);
-    }, [allNotes, selectedValue]);
+    const { selectedValue, onSelectValue, annotationId } = props;
+    const options = useInclusionColumnOptions(annotationId, selectedValue?.selectionKey);
 
     const handleSelect = (val: AnnotationNoteValue | undefined | null) => {
         if (!selectedValue) return;
-        onSelectValue({
+
+        const update: IAnalysesSelection = {
             ...selectedValue,
             selectionValue: val === null ? undefined : val,
-        });
+        };
+
+        if (selectedValue?.referenceDataset && val === selectedValue.referenceDataset) {
+            // clear the reference dataset field if its the same as the value being selected
+            update.referenceDataset = undefined;
+        }
+
+        onSelectValue(update);
     };
 
     return (

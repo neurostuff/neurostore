@@ -3,6 +3,7 @@ import { AnnotationNoteValue } from 'components/HotTables/HotTables.types';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { IAnalysesSelection } from '../../CreateMetaAnalysisSpecificationDialogBase.types';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
+import { DEFAULT_REFERENCE_DATASETS } from './SelectAnalysesComponent.types';
 
 // TODO: instead of hardcoding this, we should add a property to the meta-analysis spec with something like: "multi-group" or something similar
 export const MULTIGROUP_ALGORITHMS = ['MKDAChi2', 'ALESubtraction'];
@@ -86,4 +87,10 @@ export const annotationNotesToTableFormatHelper = (
         });
 
     return tableFormat;
+};
+
+export const selectedReferenceDatasetIsDefault = (selectedReferenceDataset: string | undefined) => {
+    if (!selectedReferenceDataset) return false;
+
+    return DEFAULT_REFERENCE_DATASETS.some((x) => x.label === selectedReferenceDataset);
 };

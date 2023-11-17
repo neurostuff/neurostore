@@ -36,15 +36,12 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
         isError: getMetaAnalysisIsError,
     } = useGetSpecificationById((metaAnalysis?.specification as SpecificationReturn)?.id);
     const { mutate, isLoading: updateSpecificationIsLoading } = useUpdateSpecification();
-    const [selectedValue, setSelectedValue] = useState<IAnalysesSelection | undefined>(
-        !!specification?.filter
-            ? {
-                  selectionKey: specification.filter,
-                  type: getType(specification.filter),
-                  selectionValue: specification.conditions?.[0],
-              }
-            : undefined
-    );
+    const [selectedValue, setSelectedValue] = useState<IAnalysesSelection>({
+        selectionKey: specification?.filter || undefined,
+        type: getType(specification?.filter),
+        selectionValue: specification?.conditions?.[0],
+        referenceDataset: specification?.database_studyset || undefined,
+    });
 
     const [algorithmSpec, setAlgorithmSpec] = useState<{
         estimator: IAutocompleteObject | null;
@@ -101,7 +98,6 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
             return;
 
         const condition = [selectedValue.selectionValue] as string[] | boolean[];
-        console.log({ condition });
         mutate(
             {
                 specificationId: specification.id,
@@ -154,12 +150,11 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                         Edit Analyses Selection:
                     </Typography>
                     <SelectAnalysesComponent
-                        annotationdId={
+                        annotationId={
                             (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''
                         }
                         selectedValue={selectedValue}
                         onSelectValue={(update) => {
-                            console.log(update);
                             setSelectedValue(update);
                         }}
                         algorithm={algorithmSpec}

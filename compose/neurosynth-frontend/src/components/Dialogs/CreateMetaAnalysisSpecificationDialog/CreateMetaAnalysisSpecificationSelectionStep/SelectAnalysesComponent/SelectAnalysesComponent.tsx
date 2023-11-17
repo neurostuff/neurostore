@@ -11,63 +11,96 @@ import {
 } from '../../CreateMetaAnalysisSpecificationDialogBase.types';
 import SelectAnalysesComponentTable from './SelectAnalysesComponentTable';
 import SelectAnalysesStringValue from './SelectAnalysesStringValue';
-import { isMultiGroupAlgorithm } from './SelectAnalysesComponent.helpers';
+import {
+    isMultiGroupAlgorithm,
+    selectedReferenceDatasetIsDefault,
+} from './SelectAnalysesComponent.helpers';
 import SelectAnalysesMultiGroupComponent from './SelectAnalysesMultiGroupComponent';
+import { DEFAULT_REFERENCE_DATASETS } from './SelectAnalysesComponent.types';
 
 const SelectAnalysesComponent: React.FC<{
-    annotationdId: string;
-    selectedValue: IAnalysesSelection | undefined;
-    onSelectValue: (value: IAnalysesSelection | undefined) => void;
+    annotationId: string;
+    selectedValue: IAnalysesSelection;
+    onSelectValue: (value: IAnalysesSelection) => void;
     algorithm: IAlgorithmSelection;
 }> = (props) => {
-    const { annotationdId, selectedValue, onSelectValue, algorithm } = props;
-    const { data: annotation } = useGetAnnotationById(annotationdId);
+    const { annotationId, selectedValue, onSelectValue, algorithm } = props;
+    const { data: annotation } = useGetAnnotationById(annotationId);
 
     // we need some notion of "touched" in order to know if the input is being seen for the first time (so we can set some default value)
     // versus the input being cleared (in which case we dont do anything)
     const selectionOccurred = useRef<boolean>(false);
 
     useEffect(() => {
-        if (selectedValue?.selectionKey) {
+        if (selectedValue.selectionKey) {
             selectionOccurred.current = true;
             return;
-        }
-
-        if (!selectionOccurred.current && 'included' in (annotation?.note_keys || {})) {
-            onSelectValue({
+        } else if (!selectionOccurred.current && 'included' in (annotation?.note_keys || {})) {
+            const initialVal: IAnalysesSelection = {
                 selectionKey: 'included',
                 type: EPropertyType.BOOLEAN,
                 selectionValue: true,
-            });
+            };
+
+            if (isMultiGroupAlgorithm(algorithm?.estimator)) {
+                initialVal.referenceDataset = DEFAULT_REFERENCE_DATASETS[0].label;
+            }
+
+            onSelectValue(initialVal);
             selectionOccurred.current = true;
         }
-    }, [selectedValue?.selectionKey, annotation, onSelectValue, selectionOccurred]);
+    }, [
+        selectedValue.selectionKey,
+        annotation,
+        onSelectValue,
+        selectionOccurred,
+        algorithm?.estimator,
+    ]);
 
     const options = useMemo(() => {
         return Object.entries(annotation?.note_keys || {})
             .map(([key, value]) => ({
                 selectionKey: key,
                 type: value as EPropertyType,
+                selectionValue: undefined,
+                referenceDataset: undefined,
             }))
             .filter((x) => x.type === EPropertyType.BOOLEAN || x.type === EPropertyType.STRING);
     }, [annotation?.note_keys]);
 
     const stringInclusionColSelected = selectedValue?.type === EPropertyType.STRING;
-    const showTable = stringInclusionColSelected
+    const showInclusionSummary = stringInclusionColSelected
         ? !!selectedValue?.selectionValue
         : !!selectedValue?.selectionKey;
-    const isMultiGroup = isMultiGroupAlgorithm(algorithm?.estimator);
+    const showMultiGroup = isMultiGroupAlgorithm(algorithm?.estimator);
 
-    const handleSelectColumn = (selectedVal: IAnalysesSelection | null | undefined) => {
-        const update = selectedVal;
-        if (update) {
-            if (update.type === EPropertyType.BOOLEAN) {
-                update.selectionValue = true;
-            } else {
-                update.selectionValue = undefined;
-            }
+    const handleSelectColumn = (newVal: IAnalysesSelection | undefined) => {
+        if (newVal?.selectionKey === selectedValue.selectionKey) return; // we selected the same option that is already selected
+
+        const referenceDatasetIsNowInvalid = !selectedReferenceDatasetIsDefault(
+            selectedValue.referenceDataset
+        );
+        if (!newVal) {
+            onSelectValue({
+                selectionKey: undefined,
+                type: undefined,
+                selectionValue: undefined,
+                referenceDataset: referenceDatasetIsNowInvalid
+                    ? undefined
+                    : selectedValue.referenceDataset,
+            });
+            return;
         }
-        onSelectValue(update || undefined);
+
+        const update: IAnalysesSelection = {
+            selectionKey: newVal.selectionKey,
+            type: newVal.type,
+            selectionValue: newVal.type === EPropertyType.BOOLEAN ? true : undefined,
+            referenceDataset: referenceDatasetIsNowInvalid
+                ? undefined
+                : selectedValue.referenceDataset,
+        };
+        onSelectValue(update);
     };
 
     return (
@@ -83,7 +116,7 @@ const SelectAnalysesComponent: React.FC<{
                 isOptionEqualToValue={(option, value) =>
                     option?.selectionKey === value?.selectionKey
                 }
-                value={selectedValue}
+                value={selectedValue?.selectionKey ? selectedValue : undefined}
                 size="medium"
                 inputPropsSx={{
                     color: NeurosynthTableStyles[selectedValue?.type || EPropertyType.NONE],
@@ -100,7 +133,7 @@ const SelectAnalysesComponent: React.FC<{
                     </ListItem>
                 )}
                 getOptionLabel={(option) => option?.selectionKey || ''}
-                onChange={(_event, newVal, _reason) => handleSelectColumn(newVal)}
+                onChange={(_event, newVal, _reason) => handleSelectColumn(newVal || undefined)}
                 options={options}
             />
             {stringInclusionColSelected && (
@@ -112,13 +145,13 @@ const SelectAnalysesComponent: React.FC<{
                     }}
                 >
                     <SelectAnalysesStringValue
+                        annotationId={annotationId}
                         selectedValue={selectedValue}
                         onSelectValue={(newVal) => onSelectValue(newVal)}
-                        allNotes={annotation?.notes as NoteCollectionReturn[] | undefined}
                     />
                 </Box>
             )}
-            {showTable && (
+            {showInclusionSummary && (
                 <Box
                     sx={{
                         marginTop: '1rem',
@@ -130,7 +163,14 @@ const SelectAnalysesComponent: React.FC<{
                     />
                 </Box>
             )}
-            {isMultiGroup && <SelectAnalysesMultiGroupComponent algorithm={algorithm} />}
+            {showMultiGroup && (
+                <SelectAnalysesMultiGroupComponent
+                    onSelectValue={(newVal) => onSelectValue(newVal)}
+                    annotationId={annotationId}
+                    selectedValue={selectedValue}
+                    algorithm={algorithm}
+                />
+            )}
         </Box>
     );
 };

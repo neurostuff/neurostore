@@ -1,20 +1,18 @@
 import { Box, Step, StepLabel, Stepper } from '@mui/material';
-import BaseDialog, { IDialog } from '../BaseDialog';
-import { useEffect, useState } from 'react';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import CreateMetaAnalysisSpecificationSelectionStep from './CreateMetaAnalysisSpecificationSelectionStep/CreateMetaAnalysisSpecificationSelectionStep';
-import { EPropertyType } from 'components/EditMetadata';
-import CreateMetaAnalysisSpecificationAlgorithmStep from './CreateMetaAnalysisSpecificationAlgorithmStep/CreateMetaAnalysisSpecificationAlgorithmStep';
 import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
-import CreateMetaAnalysisSpecificationReview from './CreateMetaAnalysisSpecificationReview/CreateMetaAnalysisSpecificationReview';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
-import CreateMetaAnalysisSpecificationDetailsStep from './CreateMetaAnalysisSpecificationDetailsStep/CreateMetaAnalysisSpecificationDetailsStep';
 import { useProjectName } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useEffect, useState } from 'react';
+import BaseDialog, { IDialog } from '../BaseDialog';
+import CreateMetaAnalysisSpecificationAlgorithmStep from './CreateMetaAnalysisSpecificationAlgorithmStep/CreateMetaAnalysisSpecificationAlgorithmStep';
+import CreateMetaAnalysisSpecificationDetailsStep from './CreateMetaAnalysisSpecificationDetailsStep/CreateMetaAnalysisSpecificationDetailsStep';
 import {
     IAlgorithmSelection,
     IAnalysesSelection,
 } from './CreateMetaAnalysisSpecificationDialogBase.types';
-import { AnnotationNoteValue } from 'components/HotTables/HotTables.types';
+import CreateMetaAnalysisSpecificationReview from './CreateMetaAnalysisSpecificationReview/CreateMetaAnalysisSpecificationReview';
+import CreateMetaAnalysisSpecificationSelectionStep from './CreateMetaAnalysisSpecificationSelectionStep/CreateMetaAnalysisSpecificationSelectionStep';
 
 const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => {
     const projectName = useProjectName();
@@ -24,7 +22,12 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
         name: `${projectName} Meta Analysis`,
         description: `this is a meta-analysis for ${projectName}`,
     });
-    const [selection, setSelection] = useState<IAnalysesSelection>();
+    const [selection, setSelection] = useState<IAnalysesSelection>({
+        selectionKey: undefined,
+        selectionValue: undefined,
+        type: undefined,
+        referenceDataset: undefined,
+    });
     const [algorithm, setAlgorithm] = useState<IAlgorithmSelection>({
         estimator: null,
         estimatorArgs: {},
@@ -48,7 +51,12 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
             corrector: null,
             correctorArgs: {},
         });
-        setSelection(undefined);
+        setSelection({
+            selectionKey: undefined,
+            selectionValue: undefined,
+            type: undefined,
+            referenceDataset: undefined,
+        });
     };
 
     const handleNavigate = (button: ENavigationButton) => {
@@ -69,15 +77,9 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
         });
     };
 
-    const handleChooseSelection = (
-        selectionKey: string,
-        type: EPropertyType,
-        selectionValue?: AnnotationNoteValue
-    ) => {
+    const handleChooseSelection = (selection: IAnalysesSelection) => {
         setSelection({
-            selectionKey,
-            type,
-            selectionValue: selectionValue ? selectionValue : undefined,
+            ...selection,
         });
     };
 

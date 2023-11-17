@@ -6,37 +6,31 @@ import {
     useProjectExtractionStudysetId,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
-import SelectAnalysesComponent from './SelectAnalysesComponent/SelectAnalysesComponent';
-import SelectAnalysesSummaryComponent from './SelectAnalysesComponent/SelectAnalysesSummaryComponent';
 import {
     IAlgorithmSelection,
     IAnalysesSelection,
 } from '../CreateMetaAnalysisSpecificationDialogBase.types';
-import { AnnotationNoteValue } from 'components/HotTables/HotTables.types';
+import SelectAnalysesComponent from './SelectAnalysesComponent/SelectAnalysesComponent';
+import { isMultiGroupAlgorithm } from './SelectAnalysesComponent/SelectAnalysesComponent.helpers';
+import SelectAnalysesSummaryComponent from './SelectAnalysesComponent/SelectAnalysesSummaryComponent';
 
 const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
-    onChooseSelection: (
-        selectionKey: string,
-        type: EPropertyType,
-        selectionValue?: AnnotationNoteValue
-    ) => void;
+    onChooseSelection: (selection: IAnalysesSelection) => void;
     onNavigate: (button: ENavigationButton) => void;
-    selection: IAnalysesSelection | undefined;
+    selection: IAnalysesSelection;
     algorithm: IAlgorithmSelection;
 }> = (props) => {
     const annotationId = useProjectExtractionAnnotationId();
     const studysetId = useProjectExtractionStudysetId();
-    const [selectedValue, setSelectedValue] = useState<IAnalysesSelection | undefined>(
-        props.selection
-    );
+    const [selectedValue, setSelectedValue] = useState<IAnalysesSelection>(props.selection);
+
+    const isMultiGroup = isMultiGroupAlgorithm(props.algorithm?.estimator);
 
     const handleNavigate = (button: ENavigationButton) => {
         if (selectedValue?.selectionKey && selectedValue?.type !== EPropertyType.NONE)
-            props.onChooseSelection(
-                selectedValue.selectionKey,
-                selectedValue.type,
-                selectedValue.selectionValue
-            );
+            props.onChooseSelection({
+                ...selectedValue,
+            });
         props.onNavigate(button);
     };
 
@@ -57,7 +51,7 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                 <SelectAnalysesComponent
                     selectedValue={selectedValue}
                     onSelectValue={(val) => setSelectedValue(val)}
-                    annotationdId={annotationId || ''}
+                    annotationId={annotationId || ''}
                     algorithm={props.algorithm}
                 />
 
@@ -79,7 +73,8 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                         sx={{ width: '200px' }}
                         disabled={
                             !selectedValue?.selectionKey ||
-                            selectedValue?.selectionValue === undefined
+                            selectedValue?.selectionValue === undefined ||
+                            (isMultiGroup && !selectedValue?.referenceDataset) // needs ref dataset for multigroup algos
                         }
                         onClick={() => handleNavigate(ENavigationButton.NEXT)}
                     >

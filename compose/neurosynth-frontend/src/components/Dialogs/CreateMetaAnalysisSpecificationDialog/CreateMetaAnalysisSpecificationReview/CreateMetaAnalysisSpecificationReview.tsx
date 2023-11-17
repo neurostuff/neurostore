@@ -1,4 +1,4 @@
-import { Box, Button } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
@@ -23,7 +23,7 @@ import { getFilteredAnnotationNotes } from '../CreateMetaAnalysisSpecificationSe
 const CreateMetaAnalysisSpecificationReview: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
     onClose: () => void;
-    selection: IAnalysesSelection | undefined;
+    selection: IAnalysesSelection;
     algorithm: {
         estimator: IAutocompleteObject | null;
         estimatorArgs: IDynamicValueType;
@@ -110,7 +110,15 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
                     title="Selection"
                     value={selectionText}
                     caption={numSelectedAnnotationsText}
-                ></MetaAnalysisSummaryRow>
+                >
+                    {props.selection.referenceDataset && (
+                        <>
+                            <Typography sx={{ marginTop: '1rem', color: 'gray' }}>
+                                Reference Dataset: {props.selection.referenceDataset}
+                            </Typography>
+                        </>
+                    )}
+                </MetaAnalysisSummaryRow>
                 <MetaAnalysisSummaryRow
                     title="Estimator"
                     value={props.algorithm.estimator?.label || ''}

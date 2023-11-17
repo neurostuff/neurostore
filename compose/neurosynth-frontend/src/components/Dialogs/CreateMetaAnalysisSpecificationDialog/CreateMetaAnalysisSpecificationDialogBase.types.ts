@@ -4,9 +4,10 @@ import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 
 export interface IAnalysesSelection {
-    selectionKey: string;
-    type: EPropertyType;
-    selectionValue?: AnnotationNoteValue;
+    selectionKey: string | undefined;
+    type: EPropertyType | undefined;
+    selectionValue: AnnotationNoteValue | undefined; // defined if type is not a boolean
+    referenceDataset?: string; // defined if multi group analysis is used (i.e. ALESubtraction or MKDAChi2)
 }
 
 export interface IAlgorithmSelection {

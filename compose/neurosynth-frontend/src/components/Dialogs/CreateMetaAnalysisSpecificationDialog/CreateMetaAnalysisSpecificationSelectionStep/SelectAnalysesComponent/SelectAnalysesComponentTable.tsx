@@ -8,25 +8,20 @@ import {
     Typography,
 } from '@mui/material';
 import { Box } from '@mui/system';
+import EditStudyComponentsStyles from 'components/EditStudyComponents/EditStudyComponents.styles';
+import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { Fragment, useMemo } from 'react';
+import { IAnalysesSelection } from '../../CreateMetaAnalysisSpecificationDialogBase.types';
 import {
     annotationNotesToTableFormatHelper,
     getFilteredAnnotationNotes,
 } from './SelectAnalysesComponent.helpers';
 import SelectAnalysesComponentStyles from './SelectAnalysesComponent.styles';
-import { EPropertyType } from 'components/EditMetadata';
-import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
-import EditStudyComponentsStyles from 'components/EditStudyComponents/EditStudyComponents.styles';
 
 const SelectAnalysesComponentTable: React.FC<{
     allNotes: NoteCollectionReturn[] | undefined;
-    selectedValue:
-        | {
-              selectionKey: string;
-              type: EPropertyType;
-          }
-        | undefined;
+    selectedValue: IAnalysesSelection;
 }> = (props) => {
     const { selectedValue, allNotes } = props;
 

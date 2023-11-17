@@ -12,7 +12,10 @@ export interface IEditMetadataModel {
 }
 
 export interface IAddMetadataRowModel {
-    allowNoneOption?: boolean;
+    allowNone?: boolean;
+    allowBoolean?: boolean;
+    allowString?: boolean;
+    allowNumber?: boolean;
     errorMessage?: string;
     keyPlaceholderText?: string;
     showToggleType?: boolean;
@@ -37,8 +40,11 @@ export interface IEditMetadataValue {
 
 export interface IToggleTypeModel {
     onToggle: (type: EPropertyType) => void;
-    allowNoneType?: boolean;
+    allowNone?: boolean;
     type: EPropertyType;
+    allowString?: boolean;
+    allowNumber?: boolean;
+    allowBoolean?: boolean;
 }
 
 export interface IMetadataRowModel {
