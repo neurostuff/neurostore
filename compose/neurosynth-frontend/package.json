@@ -24,7 +24,7 @@
         "@types/react-router-dom": "^5.1.8",
         "@types/react-window": "^1.8.5",
         "@types/uuid": "^9.0.0",
-        "axios": "^0.21.1",
+        "axios": "^1.6.0",
         "body-scroll-lock": "^4.0.0-beta.0",
         "citation-js": "^0.6.7",
         "fast-xml-parser": "^4.2.5",
