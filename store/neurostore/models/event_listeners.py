@@ -151,16 +151,31 @@ def before_flush(session, flush_context, instances):
 
     def get_base_study(obj):
         base_study = None
+
         if isinstance(obj, (Point, Image)):
-            base_study = get_nested_attr(obj, "analysis.study.base_study")
-        if isinstance(obj, Analysis):
-            base_study = get_nested_attr(obj, "study.base_study")
-        if isinstance(obj, Study):
-            studysets_changed = inspect(obj).attrs.studysets.history
-            if not (studysets_changed.added or studysets_changed.deleted):
-                base_study = obj.base_study
-        if isinstance(obj, BaseStudy):
-            base_study = obj
+            if obj in session.new or session.deleted:
+                base_study = get_nested_attr(obj, "analysis.study.base_study")
+        elif isinstance(obj, Analysis):
+            relevant_attrs = ("study", "points", "images")
+            for attr in relevant_attrs:
+                attr_history = get_nested_attr(inspect(obj), f"attrs.{attr}.history")
+                if attr_history.added or attr_history.deleted:
+                    base_study = get_nested_attr(obj, "study.base_study")
+                    break
+        elif isinstance(obj, Study):
+            relevant_attrs = ("base_study", "analyses")
+            for attr in relevant_attrs:
+                attr_history = get_nested_attr(inspect(obj), f"attrs.{attr}.history")
+                if attr_history.added or attr_history.deleted:
+                    base_study = obj.base_study
+                    break
+        elif isinstance(obj, BaseStudy):
+            relevant_attrs = ("versions",)
+            for attr in relevant_attrs:
+                attr_history = get_nested_attr(inspect(obj), f"attrs.{attr}.history")
+                if attr_history.added or attr_history.deleted:
+                    base_study = obj
+                    break
 
         return base_study
 
