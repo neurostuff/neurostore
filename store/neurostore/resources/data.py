@@ -213,20 +213,18 @@ class BaseStudiesView(ObjectView, ListView):
         # in the list scenerio, try to find an existing record
         # then return the best version and return that study id
         data = parser.parse(self.__class__._schema(many=True), request)
-        search_keys = ["pmid", "doi", "name"]
         base_studies = []
         to_commit = []
-        for study_data in data:
-            filter_params = {
-                k: study_data.get(k) for k in search_keys if study_data.get(k)
-            }
-            if "name" in filter_params and (set(filter_params) - {"name"}) != set():
-                del filter_params["name"]
-
-            record = (
-                BaseStudy.query.filter_by(**filter_params)
-                .options(
-                    joinedload(BaseStudy.versions).options(
+        pmids = [sd["pmid"] for sd in data if sd.get("pmid")]
+        dois = [sd["doi"] for sd in data if sd.get("doi")]
+        names = [sd["name"] for sd in data if sd.get("name")]
+        results = (
+            BaseStudy.query.filter(
+                (BaseStudy.doi.in_(dois)) |
+                (BaseStudy.pmid.in_(pmids)) |
+                (BaseStudy.name.in_(names))
+            ).options(
+                joinedload(BaseStudy.versions).options(
                         joinedload(Study.studyset_studies).joinedload(
                             StudysetStudy.studyset
                         ),
@@ -234,9 +232,12 @@ class BaseStudiesView(ObjectView, ListView):
                     ),
                     joinedload(BaseStudy.user),
                 )
-                .one_or_none()
-            )
-
+            .all()
+        )
+        hashed_results = {(bs.doi or '') + (bs.pmid or ''): bs for bs in results}
+        for study_data in data:
+            lookup_hash = study_data.get("doi", "") + study_data.get("pmid", "")
+            record = hashed_results.get(lookup_hash)
             if record is None:
                 with db.session.no_autoflush:
                     record = self.__class__.update_or_create(study_data, commit=False)
