@@ -73,6 +73,32 @@ class StudysetsView(ObjectView, ListView):
     _multi_search = ("name", "description")
     _search_fields = ("name", "description", "publication", "doi", "pmid")
 
+    @classmethod
+    def load_nested_records(cls, data, record=None):
+        if not data or not data.get("studies"):
+            return data
+        studies = data.get("studies")
+        existing_studies = []
+        for s in studies:
+            if isinstance(s, dict) and s.get("id"):
+                existing_studies.append(s.get("id"))
+            elif isinstance(s, str):
+                existing_studies.append(s)
+        study_results = Study.query.filter(
+            Study.id.in_(existing_studies)
+            ).options(
+                joinedload(Study.analyses),
+                joinedload(Study.user),
+            ).all()
+        study_dict = {s.id: s for s in study_results}
+        # Modification of data in place
+        if study_dict:
+            data['preloaded_studies'] = study_dict
+        return data
+        
+
+
+
     def view_search(self, q, args):
         # check if results should be nested
         nested = True if args.get("nested") else False
