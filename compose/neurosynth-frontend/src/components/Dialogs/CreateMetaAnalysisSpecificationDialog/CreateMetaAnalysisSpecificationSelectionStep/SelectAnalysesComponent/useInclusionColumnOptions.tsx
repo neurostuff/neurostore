@@ -17,7 +17,7 @@ const useInclusionColumnOptions = (
         (allNotes || []).forEach((note) => {
             if (!note.note) return;
             const value = (note.note as { [key: string]: string | boolean })[selectedKey];
-            if (!value) return;
+            if (value === null || value === undefined) return;
             if (annotationValuesSet.has(`${value}`)) {
             } else {
                 annotationValuesSet.add(`${value}`);

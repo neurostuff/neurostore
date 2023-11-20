@@ -63,6 +63,12 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                         alignItems: 'center',
                     }}
                 >
+                    <Button
+                        onClick={() => handleNavigate(ENavigationButton.PREV)}
+                        variant="outlined"
+                    >
+                        back
+                    </Button>
                     <SelectAnalysesSummaryComponent
                         annotationdId={annotationId || ''}
                         studysetId={studysetId || ''}
@@ -70,7 +76,6 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                     />
                     <Button
                         variant="contained"
-                        sx={{ width: '200px' }}
                         disabled={
                             !selectedValue?.selectionKey ||
                             selectedValue?.selectionValue === undefined ||

@@ -17,6 +17,7 @@ import {
 } from './SelectAnalysesComponent.helpers';
 import SelectAnalysesMultiGroupComponent from './SelectAnalysesMultiGroupComponent';
 import { DEFAULT_REFERENCE_DATASETS } from './SelectAnalysesComponent.types';
+import CreateMetaAnalysisSpecificationDialogBaseStyles from '../../CreateMetaAnalysisSpecificationDialogBase.styles';
 
 const SelectAnalysesComponent: React.FC<{
     annotationId: string;
@@ -106,11 +107,7 @@ const SelectAnalysesComponent: React.FC<{
     return (
         <Box>
             <NeurosynthAutocomplete
-                sx={{
-                    padding: '2rem 0 2rem 3rem',
-                    borderLeft: '6px solid',
-                    borderColor: 'secondary.main',
-                }}
+                sx={CreateMetaAnalysisSpecificationDialogBaseStyles.highlightInput}
                 label="Inclusion Column"
                 shouldDisable={false}
                 isOptionEqualToValue={(option, value) =>

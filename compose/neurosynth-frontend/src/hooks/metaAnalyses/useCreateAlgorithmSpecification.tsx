@@ -62,7 +62,8 @@ const useCreateAlgorithmSpecification = () => {
         estimatorArgs: IDynamicValueType | undefined,
         correctorArgs: IDynamicValueType | undefined,
         conditions: SpecificationConditions,
-        weights: number[]
+        weights: number[],
+        databaseStudyset: string | undefined
     ) => {
         try {
             if (!projectId) throw new Error('no id from project');
@@ -86,6 +87,7 @@ const useCreateAlgorithmSpecification = () => {
                 filter: inclusionColumn,
                 conditions,
                 weights,
+                database_studyset: databaseStudyset,
             });
             if (!createdSpec.data.id) throw new Error('no id from created spec');
 

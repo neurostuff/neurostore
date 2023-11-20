@@ -10,6 +10,7 @@ import NeurosynthAutocomplete, {
 } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
 import DynamicForm from 'components/MetaAnalysisConfigComponents/DynamicForm/DynamicForm';
+import CreateMetaAnalysisSpecificationDialogBaseStyles from '../../CreateMetaAnalysisSpecificationDialogBase.styles';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 
@@ -65,144 +66,148 @@ const SelectSpecificationComponent: React.FC<{
 
     return (
         <Box>
-            <Typography sx={{ marginBottom: '0.5rem' }} gutterBottom>
+            <Typography sx={{ margin: '1rem 0' }} gutterBottom>
                 Select the <b>algorithm</b> that you would like to use for your meta-analysis
             </Typography>
 
-            <NeurosynthAutocomplete
-                size="medium"
-                label="algorithm"
-                isOptionEqualToValue={(option, value) => option?.label === value?.label}
-                renderOption={(params, option) => (
-                    <ListItem {...params}>
-                        <ListItemText
-                            primary={option?.label || ''}
-                            secondary={option?.description || ''}
-                        />
-                    </ListItem>
-                )}
-                value={props.algorithm?.estimator}
-                getOptionLabel={(option) => option?.label || ''}
-                onChange={(_event, newVal, _reason) => {
-                    props.onSelectSpecification({
-                        ...props.algorithm,
-                        estimator: newVal,
-                        estimatorArgs: getDefaultValuesForTypeAndParameter(
-                            EAnalysisType.CBMA,
-                            newVal?.label
-                        ),
-                    });
-                }}
-                options={metaAnalyticAlgorithms}
-            />
+            <Box sx={CreateMetaAnalysisSpecificationDialogBaseStyles.highlightInput}>
+                <NeurosynthAutocomplete
+                    size="medium"
+                    label="algorithm"
+                    isOptionEqualToValue={(option, value) => option?.label === value?.label}
+                    renderOption={(params, option) => (
+                        <ListItem {...params}>
+                            <ListItemText
+                                primary={option?.label || ''}
+                                secondary={option?.description || ''}
+                            />
+                        </ListItem>
+                    )}
+                    value={props.algorithm?.estimator}
+                    getOptionLabel={(option) => option?.label || ''}
+                    onChange={(_event, newVal, _reason) => {
+                        props.onSelectSpecification({
+                            ...props.algorithm,
+                            estimator: newVal,
+                            estimatorArgs: getDefaultValuesForTypeAndParameter(
+                                EAnalysisType.CBMA,
+                                newVal?.label
+                            ),
+                        });
+                    }}
+                    options={metaAnalyticAlgorithms}
+                />
 
-            {props.algorithm?.estimator && (
-                <Box sx={{ margin: '1rem 0' }}>
-                    <NeurosynthAccordion
-                        elevation={0}
-                        expandIconColor={'secondary.main'}
-                        sx={{
-                            border: '1px solid',
-                            borderColor: 'secondary.main',
-                        }}
-                        accordionSummarySx={{
-                            ':hover': {
-                                backgroundColor: '#f2f2f2',
-                            },
-                        }}
-                        TitleElement={
-                            <Typography sx={{ color: 'secondary.main' }}>
-                                Algorithm arguments
-                            </Typography>
-                        }
-                    >
-                        <DynamicForm
-                            onUpdate={(arg) => {
-                                props.onSelectSpecification({
-                                    ...props.algorithm,
-                                    estimatorArgs: {
-                                        ...props.algorithm.estimatorArgs,
-                                        ...arg,
-                                    },
-                                });
+                {props.algorithm?.estimator && (
+                    <Box sx={{ margin: '1rem 0' }}>
+                        <NeurosynthAccordion
+                            elevation={0}
+                            expandIconColor={'secondary.main'}
+                            sx={{
+                                border: '1px solid',
+                                borderColor: 'secondary.main',
                             }}
-                            type={EAnalysisType.CBMA}
-                            correctorOrEstimatorLabel={props.algorithm.estimator.label}
-                            values={props.algorithm.estimatorArgs}
-                        />
-                    </NeurosynthAccordion>
-                </Box>
-            )}
+                            accordionSummarySx={{
+                                ':hover': {
+                                    backgroundColor: '#f2f2f2',
+                                },
+                            }}
+                            TitleElement={
+                                <Typography sx={{ color: 'secondary.main' }}>
+                                    Algorithm arguments
+                                </Typography>
+                            }
+                        >
+                            <DynamicForm
+                                onUpdate={(arg) => {
+                                    props.onSelectSpecification({
+                                        ...props.algorithm,
+                                        estimatorArgs: {
+                                            ...props.algorithm.estimatorArgs,
+                                            ...arg,
+                                        },
+                                    });
+                                }}
+                                type={EAnalysisType.CBMA}
+                                correctorOrEstimatorLabel={props.algorithm.estimator.label}
+                                values={props.algorithm.estimatorArgs}
+                            />
+                        </NeurosynthAccordion>
+                    </Box>
+                )}
+            </Box>
 
-            <Typography sx={{ marginBottom: '0.5rem', marginTop: '1rem' }} gutterBottom>
+            <Typography sx={{ margin: '1rem 0' }} gutterBottom>
                 Select the <b>corrector</b> that you would like to use for your meta-analysis
             </Typography>
 
-            <NeurosynthAutocomplete
-                size="medium"
-                label="corrector (optional)"
-                required={false}
-                isOptionEqualToValue={(option, value) => option?.label === value?.label}
-                renderOption={(params, option) => (
-                    <ListItem {...params}>
-                        <ListItemText
-                            primary={option?.label || ''}
-                            secondary={option?.description || ''}
-                        />
-                    </ListItem>
-                )}
-                value={props.algorithm?.corrector}
-                getOptionLabel={(option) => option?.label || ''}
-                onChange={(_event, newVal, _reason) => {
-                    props.onSelectSpecification({
-                        ...props.algorithm,
-                        corrector: newVal,
-                        correctorArgs: getDefaultValuesForTypeAndParameter(
-                            'CORRECTOR',
-                            newVal?.label
-                        ),
-                    });
-                }}
-                options={correctorOptions}
-            />
+            <Box sx={CreateMetaAnalysisSpecificationDialogBaseStyles.highlightInput}>
+                <NeurosynthAutocomplete
+                    size="medium"
+                    label="corrector (optional)"
+                    required={false}
+                    isOptionEqualToValue={(option, value) => option?.label === value?.label}
+                    renderOption={(params, option) => (
+                        <ListItem {...params}>
+                            <ListItemText
+                                primary={option?.label || ''}
+                                secondary={option?.description || ''}
+                            />
+                        </ListItem>
+                    )}
+                    value={props.algorithm?.corrector}
+                    getOptionLabel={(option) => option?.label || ''}
+                    onChange={(_event, newVal, _reason) => {
+                        props.onSelectSpecification({
+                            ...props.algorithm,
+                            corrector: newVal,
+                            correctorArgs: getDefaultValuesForTypeAndParameter(
+                                'CORRECTOR',
+                                newVal?.label
+                            ),
+                        });
+                    }}
+                    options={correctorOptions}
+                />
 
-            {props.algorithm?.corrector && (
-                <Box sx={{ margin: '1rem 0' }}>
-                    <NeurosynthAccordion
-                        elevation={0}
-                        expandIconColor={'secondary.main'}
-                        sx={{
-                            border: '1px solid',
-                            borderColor: 'secondary.main',
-                        }}
-                        accordionSummarySx={{
-                            ':hover': {
-                                backgroundColor: '#f2f2f2',
-                            },
-                        }}
-                        TitleElement={
-                            <Typography sx={{ color: 'secondary.main' }}>
-                                Corrector arguments
-                            </Typography>
-                        }
-                    >
-                        <DynamicForm
-                            onUpdate={(arg) => {
-                                props.onSelectSpecification({
-                                    ...props.algorithm,
-                                    correctorArgs: {
-                                        ...props.algorithm.correctorArgs,
-                                        ...arg,
-                                    },
-                                });
+                {props.algorithm?.corrector && (
+                    <Box sx={{ margin: '1rem 0' }}>
+                        <NeurosynthAccordion
+                            elevation={0}
+                            expandIconColor={'secondary.main'}
+                            sx={{
+                                border: '1px solid',
+                                borderColor: 'secondary.main',
                             }}
-                            type="CORRECTOR"
-                            correctorOrEstimatorLabel={props.algorithm.corrector.label}
-                            values={props.algorithm.correctorArgs}
-                        />
-                    </NeurosynthAccordion>
-                </Box>
-            )}
+                            accordionSummarySx={{
+                                ':hover': {
+                                    backgroundColor: '#f2f2f2',
+                                },
+                            }}
+                            TitleElement={
+                                <Typography sx={{ color: 'secondary.main' }}>
+                                    Corrector arguments
+                                </Typography>
+                            }
+                        >
+                            <DynamicForm
+                                onUpdate={(arg) => {
+                                    props.onSelectSpecification({
+                                        ...props.algorithm,
+                                        correctorArgs: {
+                                            ...props.algorithm.correctorArgs,
+                                            ...arg,
+                                        },
+                                    });
+                                }}
+                                type="CORRECTOR"
+                                correctorOrEstimatorLabel={props.algorithm.corrector.label}
+                                values={props.algorithm.correctorArgs}
+                            />
+                        </NeurosynthAccordion>
+                    </Box>
+                )}
+            </Box>
         </Box>
     );
 };

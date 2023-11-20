@@ -18,7 +18,11 @@ import {
 import { useMemo } from 'react';
 import { useHistory } from 'react-router-dom';
 import { IAnalysesSelection } from '../CreateMetaAnalysisSpecificationDialogBase.types';
-import { getFilteredAnnotationNotes } from '../CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
+import {
+    getFilteredAnnotationNotes,
+    isMultiGroupAlgorithm,
+    isPredefinedReferenceDataset,
+} from '../CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
 
 const CreateMetaAnalysisSpecificationReview: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
@@ -49,8 +53,37 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
         if (!props.algorithm?.estimator?.label || !props.selection?.selectionKey) return;
         if (!props.selection || !props.selection.selectionValue) return;
 
-        const conditions = [props.selection.selectionValue] as string[] | boolean[];
-        const weights = [1];
+        const isMultiGroup = isMultiGroupAlgorithm(props.algorithm.estimator);
+        const usingPredefinedDataset = isPredefinedReferenceDataset(
+            props.selection.referenceDataset
+        );
+        let conditions: string[] | boolean[] = [];
+        let weights = [];
+        let databaseStudyset: string | undefined;
+
+        if (isMultiGroup && usingPredefinedDataset) {
+            // 1 for our dataset, -1 for the dataset we are comparing with
+            // for predefined reference datasets (i.e. neuroquery, neurostore, neurosynth) we do not include that here
+            weights = [1];
+            conditions = [props.selection.selectionValue] as string[] | boolean[];
+            databaseStudyset = props.selection.referenceDataset;
+        } else if (isMultiGroup) {
+            if (!props.selection.referenceDataset) {
+                enqueueSnackbar(
+                    'There was an error creating the specification. Please refresh the page and try again',
+                    { variant: 'error' }
+                );
+                throw new Error('no reference dataset');
+            }
+
+            weights = [1, -1];
+            conditions = [props.selection.selectionValue, props.selection.referenceDataset] as
+                | string[]
+                | boolean[];
+        } else {
+            weights = [1];
+            conditions = [props.selection.selectionValue] as string[] | boolean[];
+        }
 
         const metaAnalysis = await createMetaAnalysis(
             projectId,
@@ -65,7 +98,8 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
             props.algorithm.estimatorArgs,
             props.algorithm.correctorArgs,
             conditions,
-            weights
+            weights,
+            databaseStudyset
         );
         if (!metaAnalysis.data.specification || !metaAnalysis.data.id)
             throw new Error('no specification ID found when creating a meta-analysis');
