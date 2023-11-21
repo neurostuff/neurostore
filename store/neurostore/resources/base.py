@@ -175,6 +175,13 @@ class BaseView(MethodView):
                             )
                         )
                     )
+                if LnCls._model is AnnotationAnalysis:
+                    q = q.options(
+                        joinedload(AnnotationAnalysis.analysis),
+                        joinedload(AnnotationAnalysis.studyset_study).options(
+                            joinedload(StudysetStudy.study)
+                        ),
+                    )
                 v = q.first()
                 if v is None:
                     abort(400)
