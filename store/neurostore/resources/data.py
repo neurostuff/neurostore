@@ -129,12 +129,15 @@ class AnnotationsView(ObjectView, ListView):
 
     def after_update_or_create(self, record):
         q = Annotation.query.filter_by(id=record.id)
-        q = q.options(nested_load(self, include_linked=True))
+        q = q.options(nested_load(self))
         q = q.options(
-            joinedload(
-                Annotation.annotation_analyses).options(
-                    joinedload(AnnotationAnalysis.analysis),
-                    joinedload(AnnotationAnalysis.studyset_study)))
+            joinedload(Annotation.annotation_analyses).options(
+                joinedload(AnnotationAnalysis.analysis),
+                joinedload(AnnotationAnalysis.studyset_study).options(
+                    joinedload(StudysetStudy.study)
+                )
+            )
+        )
         return q.first()
 
     def view_search(self, q, args):

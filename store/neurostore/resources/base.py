@@ -168,10 +168,13 @@ class BaseView(MethodView):
                 q = LnCls._model.query.filter_by(**query_args)
                 if LnCls._model is Annotation:
                     q = q.options(
-                        joinedload(
-                            Annotation.annotation_analyses).options(
-                                joinedload(AnnotationAnalysis.analysis),
-                                joinedload(AnnotationAnalysis.studyset_study)))
+                        joinedload(Annotation.annotation_analyses).options(
+                            joinedload(AnnotationAnalysis.analysis),
+                            joinedload(AnnotationAnalysis.studyset_study).options(
+                                joinedload(StudysetStudy.study)
+                            )
+                        )
+                    )
                 v = q.first()
                 if v is None:
                     abort(400)
@@ -345,10 +348,13 @@ class ObjectView(BaseView):
             q = q.options(nested_load(self))
         if self._model is Annotation:
             q = q.options(
-            joinedload(
-                Annotation.annotation_analyses).options(
+                joinedload(Annotation.annotation_analyses).options(
                     joinedload(AnnotationAnalysis.analysis),
-                    joinedload(AnnotationAnalysis.studyset_study)))
+                    joinedload(AnnotationAnalysis.studyset_study).options(
+                        joinedload(StudysetStudy.study)
+                    )
+                )
+            )
         record = q.filter_by(id=id).first_or_404()
         if self._model is Studyset and args["nested"]:
             snapshot = StudysetSnapshot()
