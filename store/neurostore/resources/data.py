@@ -136,7 +136,7 @@ class AnnotationsView(ObjectView, ListView):
         if not studyset_id:
             return data
         q = Studyset.query.filter_by(id=studyset_id)
-        q.options(
+        q = q.options(
             joinedload(
                 Studyset.studyset_studies).joinedload(
                     StudysetStudy.study
