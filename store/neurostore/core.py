@@ -1,4 +1,3 @@
-from datetime import datetime
 import os
 from pathlib import Path
 
@@ -10,42 +9,44 @@ import connexion
 # from connexion.json_schema import default_handlers as json_schema_handlers
 from connexion.resolver import MethodResolver
 from flask_caching import Cache
-import sqltap.wsgi
-import sqltap
-import yappi
 
 from .or_json import ORJSONDecoder, ORJSONEncoder
 from .database import init_db
 
+# from datetime import datetime
 
-class SQLTapMiddleware:
-    def __init__(self, app):
-        self.app = app
+# import sqltap.wsgi
+# import sqltap
+# import yappi
 
-    async def __call__(self, scope, receive, send):
-        profiler = sqltap.start()
-        await self.app(scope, receive, send)
-        statistics = profiler.collect()
-        sqltap.report(statistics, "report.txt", report_format="text")
+# class SQLTapMiddleware:
+#     def __init__(self, app):
+#         self.app = app
+
+#     async def __call__(self, scope, receive, send):
+#         profiler = sqltap.start()
+#         await self.app(scope, receive, send)
+#         statistics = profiler.collect()
+#         sqltap.report(statistics, "report.txt", report_format="text")
 
 
-class LineProfilerMiddleware:
-    def __init__(self, app):
-        self.app = app
+# class LineProfilerMiddleware:
+#     def __init__(self, app):
+#         self.app = app
 
-    async def __call__(self, scope, receive, send):
-        yappi.start()
-        await self.app(scope, receive, send)
-        yappi.stop()
-        filename = (
-            scope["path"].lstrip("/").rstrip("/").replace("/", "-")
-            + "-"
-            + scope["method"].lower()
-            + str(datetime.now())
-            + ".prof"
-        )
-        stats = yappi.get_func_stats()
-        stats.save(filename, type="pstat")
+#     async def __call__(self, scope, receive, send):
+#         yappi.start()
+#         await self.app(scope, receive, send)
+#         yappi.stop()
+#         filename = (
+#             scope["path"].lstrip("/").rstrip("/").replace("/", "-")
+#             + "-"
+#             + scope["method"].lower()
+#             + str(datetime.now())
+#             + ".prof"
+#         )
+#         stats = yappi.get_func_stats()
+#         stats.save(filename, type="pstat")
 
 
 connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/")
