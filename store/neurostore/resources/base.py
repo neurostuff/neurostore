@@ -72,8 +72,18 @@ class BaseView(MethodView):
         """
         return record
 
+    def after_update_or_create(self, record):
+        """
+        Processing of a record after updating or creating (defined in specific classes).
+        """
+        return record
+
     @classmethod
-    def update_or_create(cls, data, id=None, commit=True):
+    def load_nested_records(cls, data, record=None):
+        return data
+
+    @classmethod
+    def update_or_create(cls, data, id=None, user=None, record=None, commit=True):
         """
         scenerios:
         1. cloning a study
@@ -91,7 +101,7 @@ class BaseView(MethodView):
         # Store all models so we can atomically update in one commit
         to_commit = []
 
-        current_user = get_current_user()
+        current_user = user or get_current_user()
         if not current_user:
             current_user = create_user()
 
@@ -104,31 +114,35 @@ class BaseView(MethodView):
 
         # allow compose bot to make changes
         compose_bot = current_app.config["COMPOSE_AUTH0_CLIENT_ID"] + "@clients"
-        if id is None:
+        if id is None and record is None:
             record = cls._model()
             record.user = current_user
-        else:
+        elif record is None:
             record = cls._model.query.filter_by(id=id).first()
             if record is None:
                 abort(422)
-            elif (
-                record.user_id != current_user.external_id
-                and not only_ids
-                and current_user.external_id != compose_bot
-            ):
-                abort(403)
-            elif only_ids:
-                to_commit.append(record)
 
-                if commit:
-                    db.session.add_all(to_commit)
-                    try:
-                        db.session.commit()
-                    except SQLAlchemyError:
-                        db.session.rollback()
-                        abort(400)
+        data = cls.load_nested_records(data, record)
 
-                return record
+        if (
+            not sa.inspect(record).pending
+            and record.user != current_user
+            and not only_ids
+            and current_user.external_id != compose_bot
+        ):
+            abort(403)
+        elif only_ids:
+            to_commit.append(record)
+
+            if commit:
+                db.session.add_all(to_commit)
+                try:
+                    db.session.commit()
+                except SQLAlchemyError:
+                    db.session.rollback()
+                    abort(400)
+
+            return record
 
         # Update all non-nested attributes
         for k, v in data.items():
@@ -151,7 +165,13 @@ class BaseView(MethodView):
                     }
                 else:
                     query_args = {"id": v["id"]}
-                v = LnCls._model.query.filter_by(**query_args).first()
+
+                if v.get("preloaded_data"):
+                    v = v["preloaded_data"]
+                else:
+                    q = LnCls._model.query.filter_by(**query_args)
+                    v = q.first()
+
                 if v is None:
                     abort(400)
 
@@ -171,13 +191,40 @@ class BaseView(MethodView):
             ResCls = getattr(viewdata, res_name)
             if data.get(field) is not None:
                 if isinstance(data.get(field), list):
-                    nested = [
-                        ResCls.update_or_create(rec, commit=False)
-                        for rec in data.get(field)
-                    ]
+                    nested = []
+                    for rec in data.get(field):
+                        id = None
+                        if isinstance(rec, dict) and rec.get("id"):
+                            id = rec.get("id")
+                        elif isinstance(rec, str):
+                            id = rec
+                        if data.get("preloaded_studies") and id:
+                            nested_record = data["preloaded_studies"].get(id)
+                        else:
+                            nested_record = None
+                        nested.append(
+                            ResCls.update_or_create(
+                                rec,
+                                user=current_user,
+                                record=nested_record,
+                                commit=False,
+                            )
+                        )
                     to_commit.extend(nested)
                 else:
-                    nested = ResCls.update_or_create(data.get(field), commit=False)
+                    id = None
+                    rec = data.get(field)
+                    if isinstance(rec, dict) and rec.get("id"):
+                        id = rec.get("id")
+                    elif isinstance(rec, str):
+                        id = rec
+                    if data.get("preloaded_studies") and id:
+                        nested_record = data["preloaded_studies"].get(id)
+                    else:
+                        nested_record = None
+                    nested = ResCls.update_or_create(
+                        rec, user=current_user, record=nested_record, commit=False
+                    )
                     to_commit.append(nested)
 
                 setattr(record, field, nested)
@@ -298,7 +345,15 @@ class ObjectView(BaseView):
         q = self._model.query
         if args["nested"] or self._model is Annotation:
             q = q.options(nested_load(self))
-
+        if self._model is Annotation:
+            q = q.options(
+                joinedload(Annotation.annotation_analyses).options(
+                    joinedload(AnnotationAnalysis.analysis),
+                    joinedload(AnnotationAnalysis.studyset_study).options(
+                        joinedload(StudysetStudy.study)
+                    ),
+                )
+            )
         record = q.filter_by(id=id).first_or_404()
         if self._model is Studyset and args["nested"]:
             snapshot = StudysetSnapshot()
@@ -319,6 +374,7 @@ class ObjectView(BaseView):
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data, id)
 
+        record = self.after_update_or_create(record)
         # clear relevant caches
         clear_cache(self.__class__, record, request.path)
 
@@ -480,6 +536,8 @@ class ListView(BaseView):
         args["nested"] = bool(args.get("nested") or request.args.get("source_id"))
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
+
+        record = self.after_update_or_create(record)
 
         # clear the cache for this endpoint
         clear_cache(self.__class__, record, request.path)

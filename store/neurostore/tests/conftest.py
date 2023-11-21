@@ -20,6 +20,10 @@ from ..models import (
 from auth0.v3.authentication import GetToken
 import shortuuid
 
+import logging
+
+LOGGER = logging.getLogger(__name__)
+
 
 """
 Test selection arguments

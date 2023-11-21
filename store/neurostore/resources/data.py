@@ -16,6 +16,7 @@ from ..database import db
 from ..models import (
     Studyset,
     Study,
+    Annotation,
     Analysis,
     AnalysisConditions,
     AnnotationAnalysis,
@@ -73,6 +74,31 @@ class StudysetsView(ObjectView, ListView):
     _multi_search = ("name", "description")
     _search_fields = ("name", "description", "publication", "doi", "pmid")
 
+    @classmethod
+    def load_nested_records(cls, data, record=None):
+        if not data or not data.get("studies"):
+            return data
+        studies = data.get("studies")
+        existing_studies = []
+        for s in studies:
+            if isinstance(s, dict) and s.get("id"):
+                existing_studies.append(s.get("id"))
+            elif isinstance(s, str):
+                existing_studies.append(s)
+        study_results = (
+            Study.query.filter(Study.id.in_(existing_studies))
+            .options(
+                joinedload(Study.analyses),
+                joinedload(Study.user),
+            )
+            .all()
+        )
+        study_dict = {s.id: s for s in study_results}
+        # Modification of data in place
+        if study_dict:
+            data["preloaded_studies"] = study_dict
+        return data
+
     def view_search(self, q, args):
         # check if results should be nested
         nested = True if args.get("nested") else False
@@ -99,6 +125,53 @@ class AnnotationsView(ObjectView, ListView):
 
     _multi_search = ("name", "description")
     _search_fields = ("name", "description")
+
+    @classmethod
+    def load_nested_records(cls, data, record=None):
+        if not data:
+            return data
+
+        studyset_id = data.get("studyset", {}).get("id")
+        if not studyset_id:
+            return data
+        q = Studyset.query.filter_by(id=studyset_id)
+        q = q.options(
+            joinedload(Studyset.studyset_studies)
+            .joinedload(StudysetStudy.study)
+            .joinedload(Study.analyses)
+        )
+        studyset = q.first()
+        data["studyset"]["preloaded_data"] = studyset
+        studyset_studies = {
+            (s.studyset_id, s.study_id): s for s in studyset.studyset_studies
+        }
+        analyses = {
+            a.id: a for s in studyset_studies.values() for a in s.study.analyses
+        }
+        for aa in data.get("annotation_analyses", []):
+            analysis = analyses.get(aa.get("analysis").get("id"))
+            if analysis:
+                aa["analysis"]["preloaded_data"] = analysis
+            studyset_study = studyset_studies.get(
+                (studyset.id, aa.get("studyset_study").get("study").get("id"))
+            )
+            if studyset_study:
+                aa["studyset_study"]["preloaded_data"] = studyset_study
+        return data
+
+    def after_update_or_create(self, record):
+        q = Annotation.query.filter_by(id=record.id)
+        q = q.options(nested_load(self))
+        q = q.options(
+            joinedload(Annotation.studyset),
+            joinedload(Annotation.annotation_analyses).options(
+                joinedload(AnnotationAnalysis.analysis),
+                joinedload(AnnotationAnalysis.studyset_study).options(
+                    joinedload(StudysetStudy.study)
+                ),
+            ),
+        )
+        return q.first()
 
     def view_search(self, q, args):
         q = q.options(nested_load(self))
@@ -213,26 +286,32 @@ class BaseStudiesView(ObjectView, ListView):
         # in the list scenerio, try to find an existing record
         # then return the best version and return that study id
         data = parser.parse(self.__class__._schema(many=True), request)
-        search_keys = ["pmid", "doi", "name"]
         base_studies = []
         to_commit = []
-        for study_data in data:
-            filter_params = {
-                k: study_data.get(k) for k in search_keys if study_data.get(k)
-            }
-            if "name" in filter_params and (set(filter_params) - {"name"}) != set():
-                del filter_params["name"]
-
-            record = (
-                BaseStudy.query.filter_by(**filter_params)
-                .options(
-                    joinedload(BaseStudy.versions)
-                    .joinedload(Study.studyset_studies)
-                    .joinedload(StudysetStudy.studyset)
-                )
-                .one_or_none()
+        pmids = [sd["pmid"] for sd in data if sd.get("pmid")]
+        dois = [sd["doi"] for sd in data if sd.get("doi")]
+        names = [sd["name"] for sd in data if sd.get("name")]
+        results = (
+            BaseStudy.query.filter(
+                (BaseStudy.doi.in_(dois))
+                | (BaseStudy.pmid.in_(pmids))
+                | (BaseStudy.name.in_(names))
             )
-
+            .options(
+                joinedload(BaseStudy.versions).options(
+                    joinedload(Study.studyset_studies).joinedload(
+                        StudysetStudy.studyset
+                    ),
+                    joinedload(Study.user),
+                ),
+                joinedload(BaseStudy.user),
+            )
+            .all()
+        )
+        hashed_results = {(bs.doi or "") + (bs.pmid or ""): bs for bs in results}
+        for study_data in data:
+            lookup_hash = study_data.get("doi", "") + study_data.get("pmid", "")
+            record = hashed_results.get(lookup_hash)
             if record is None:
                 with db.session.no_autoflush:
                     record = self.__class__.update_or_create(study_data, commit=False)
