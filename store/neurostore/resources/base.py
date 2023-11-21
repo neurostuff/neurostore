@@ -540,5 +540,4 @@ class ListView(BaseView):
         # clear the cache for this endpoint
         clear_cache(self.__class__, record, request.path)
 
-        self.after_update_or_create(record)
         return self.__class__._schema(context=args).dump(record)
