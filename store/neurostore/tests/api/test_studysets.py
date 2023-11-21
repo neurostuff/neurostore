@@ -1,6 +1,5 @@
 import random
 import string
-from neurostore.tests.conftest import add_event_listeners
 from neurostore.models import Studyset, Study
 
 
@@ -43,7 +42,7 @@ def test_add_many_studies_to_studyset(auth_client, ingest_neurosynth, session):
             "doi": generate_doi(),
             "name": "".join(random.choices(string.ascii_letters, k=10)),
         }
-        for _ in range(1)
+        for _ in range(100)
     ]
     # create empty studyset
     ss = auth_client.post("/api/studysets/", data={"name": "mixed_studyset"})
@@ -103,6 +102,7 @@ def test_hot_swap_study_in_studyset(auth_client, ingest_neurosynth, session):
     # create studyset
     create_ss = auth_client.post("/api/studysets/", data={"name": "test"})
 
+    assert create_ss.status_code == 200
     ss_test = create_ss.json()["id"]
     # cache studyset endpoint
     auth_client.get(f"/api/studysets/{ss_test}")

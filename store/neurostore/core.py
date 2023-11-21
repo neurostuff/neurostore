@@ -1,6 +1,6 @@
+from datetime import datetime
 import os
 from pathlib import Path
-from werkzeug.middleware.profiler import ProfilerMiddleware
 
 from connexion.middleware import MiddlewarePosition
 from starlette.middleware.cors import CORSMiddleware
@@ -12,6 +12,7 @@ from connexion.resolver import MethodResolver
 from flask_caching import Cache
 import sqltap.wsgi
 import sqltap
+import yappi
 
 from .or_json import ORJSONDecoder, ORJSONEncoder
 from .database import init_db
@@ -26,6 +27,25 @@ class SQLTapMiddleware:
         await self.app(scope, receive, send)
         statistics = profiler.collect()
         sqltap.report(statistics, "report.txt", report_format="text")
+
+
+class LineProfilerMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        yappi.start()
+        await self.app(scope, receive, send)
+        yappi.stop()
+        filename = (
+            scope["path"].lstrip("/").rstrip("/").replace("/", "-")
+            + "-"
+            + scope["method"].lower()
+            + str(datetime.now())
+            + ".prof"
+        )
+        stats = yappi.get_func_stats()
+        stats.save(filename, type="pstat")
 
 
 connexion_app = connexion.FlaskApp(__name__, specification_dir="openapi/")
@@ -58,9 +78,14 @@ connexion_app.add_middleware(
 )
 
 # add sqltap
-connexion_app.add_middleware(
-    SQLTapMiddleware,
-)
+# connexion_app.add_middleware(
+#    SQLTapMiddleware,
+# )
+
+# add profiling
+# connexion_app.add_middleware(
+#    LineProfilerMiddleware
+# )
 
 connexion_app.add_api(
     openapi_file,
@@ -84,10 +109,6 @@ auth0 = oauth.register(
         "scope": "openid profile email",
     },
 )
-
-if app.debug:
-    app.wsgi_app = sqltap.wsgi.SQLTapMiddleware(app.wsgi_app, path="/api/__sqltap__")
-    app = ProfilerMiddleware(app)
 
 app.json_encoder = ORJSONEncoder
 app.json_decoder = ORJSONDecoder

@@ -27,7 +27,9 @@ def nested_load(view, options=None, include_linked=False):
     elif len(nested_keys) > 1:
         nested_loads = []
         for k in nested_keys:
-            nested_view = getattr(data, view._nested.get(k, ""), None) or getattr(data, view._linked.get(k, ""))
+            nested_view = getattr(data, view._nested.get(k, ""), None) or getattr(
+                data, view._linked.get(k, "")
+            )
             if nested_view._nested:
                 nested_loads.append(
                     nested_load(nested_view, subqueryload(getattr(view._model, k)))

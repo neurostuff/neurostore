@@ -165,10 +165,9 @@ class BaseView(MethodView):
                     }
                 else:
                     query_args = {"id": v["id"]}
-                
 
-                if v.get('preloaded_data'):
-                    v = v['preloaded_data']
+                if v.get("preloaded_data"):
+                    v = v["preloaded_data"]
                 else:
                     q = LnCls._model.query.filter_by(**query_args)
                     v = q.first()
@@ -205,7 +204,10 @@ class BaseView(MethodView):
                             nested_record = None
                         nested.append(
                             ResCls.update_or_create(
-                                rec, user=current_user, record=nested_record, commit=False
+                                rec,
+                                user=current_user,
+                                record=nested_record,
+                                commit=False,
                             )
                         )
                     to_commit.extend(nested)
@@ -349,7 +351,7 @@ class ObjectView(BaseView):
                     joinedload(AnnotationAnalysis.analysis),
                     joinedload(AnnotationAnalysis.studyset_study).options(
                         joinedload(StudysetStudy.study)
-                    )
+                    ),
                 )
             )
         record = q.filter_by(id=id).first_or_404()
