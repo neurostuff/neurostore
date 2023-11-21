@@ -72,6 +72,12 @@ class BaseView(MethodView):
         """
         return record
 
+    def after_update_or_create(self, record):
+        """
+        Processing of a record after updating or creating (defined in specific classes).
+        """
+        return record
+
     @classmethod
     def load_nested_records(cls, data, record=None):
         return data
@@ -351,6 +357,7 @@ class ObjectView(BaseView):
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data, id)
 
+        record = self.after_update_or_create(record)
         # clear relevant caches
         clear_cache(self.__class__, record, request.path)
 
@@ -513,7 +520,10 @@ class ListView(BaseView):
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
 
+        record = self.after_update_or_create(record)
+
         # clear the cache for this endpoint
         clear_cache(self.__class__, record, request.path)
 
+        self.after_update_or_create(record)
         return self.__class__._schema(context=args).dump(record)

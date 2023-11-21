@@ -1,11 +1,13 @@
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import inspect
+from sqlalchemy.orm import joinedload
 from flask_sqlalchemy.session import Session
 from sqlalchemy import event
 from .data import (
     AnnotationAnalysis,
     Annotation,
     Studyset,
+    StudysetStudy,
     BaseStudy,
     Study,
     Analysis,
@@ -13,6 +15,7 @@ from .data import (
     Image,
     _check_type,
 )
+
 from ..database import db
 
 
@@ -65,6 +68,17 @@ def create_blank_notes(studyset, annotation, initiator):
 
 
 def add_annotation_analyses_studyset(studyset, studies, collection_adapter):
+    if not (inspect(studyset).pending or inspect(studyset).transient):
+        studyset = Studyset.query.filter_by(id=studyset.id).options(
+            joinedload(Studyset.studies).options(
+                joinedload(Study.analyses)),
+            joinedload(Studyset.annotations)).one()
+    all_studies = set(studyset.studies + studies)
+    existing_studies = [s for s in all_studies if not (inspect(s).pending or inspect(s).transient)]
+    study_query = Study.query.filter(Study.id.in_([s.id for s in existing_studies])).options(
+        joinedload(Study.analyses)
+    ).all()
+
     all_analyses = [analysis for study in studies for analysis in study.analyses]
     existing_analyses = [
         analysis for study in studyset.studies for analysis in study.analyses
@@ -92,6 +106,14 @@ def add_annotation_analyses_studyset(studyset, studies, collection_adapter):
 
 
 def add_annotation_analyses_study(study, analyses, collection_adapter):
+    if not (inspect(study).pending or inspect(study).transient):
+        study = Study.query.filter_by(id=study.id).options(
+            joinedload(Study.analyses),
+            joinedload(
+                Study.studyset_studies).joinedload(
+                    StudysetStudy.studyset).joinedload(
+                        Studyset.annotations)
+        ).one()
     new_analyses = set(analyses) - set([a for a in study.analyses])
 
     all_annotations = set(

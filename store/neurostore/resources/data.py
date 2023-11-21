@@ -16,6 +16,7 @@ from ..database import db
 from ..models import (
     Studyset,
     Study,
+    Annotation,
     Analysis,
     AnalysisConditions,
     AnnotationAnalysis,
@@ -125,6 +126,11 @@ class AnnotationsView(ObjectView, ListView):
 
     _multi_search = ("name", "description")
     _search_fields = ("name", "description")
+
+    def after_update_or_create(self, record):
+        q = Annotation.query.filter_by(id=record.id)
+        q = q.options(nested_load(self))
+        return q.first()
 
     def view_search(self, q, args):
         q = q.options(nested_load(self))
