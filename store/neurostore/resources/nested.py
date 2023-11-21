@@ -6,12 +6,14 @@ from sqlalchemy.orm.strategy_options import _UnboundLoad
 from . import data
 
 
-def nested_load(view, options=None):
+def nested_load(view, options=None, include_linked=False):
     """
     SQL: Change lazy loading to eager loading when accessing all
     nested attributes.
     """
     nested_keys = list(view._nested.keys())
+    if include_linked:
+        nested_keys.extend(view._linked.keys())
     if "entities" in nested_keys:
         nested_keys.remove("entities")
     if len(nested_keys) == 1:
@@ -25,7 +27,7 @@ def nested_load(view, options=None):
     elif len(nested_keys) > 1:
         nested_loads = []
         for k in nested_keys:
-            nested_view = getattr(data, view._nested[k])
+            nested_view = getattr(data, view._nested.get(k, ""), None) or getattr(data, view._linked.get(k, ""))
             if nested_view._nested:
                 nested_loads.append(
                     nested_load(nested_view, subqueryload(getattr(view._model, k)))
