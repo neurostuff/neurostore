@@ -165,24 +165,14 @@ class BaseView(MethodView):
                     }
                 else:
                     query_args = {"id": v["id"]}
-                q = LnCls._model.query.filter_by(**query_args)
-                if LnCls._model is Annotation:
-                    q = q.options(
-                        joinedload(Annotation.annotation_analyses).options(
-                            joinedload(AnnotationAnalysis.analysis),
-                            joinedload(AnnotationAnalysis.studyset_study).options(
-                                joinedload(StudysetStudy.study)
-                            )
-                        )
-                    )
-                if LnCls._model is AnnotationAnalysis:
-                    q = q.options(
-                        joinedload(AnnotationAnalysis.analysis),
-                        joinedload(AnnotationAnalysis.studyset_study).options(
-                            joinedload(StudysetStudy.study)
-                        ),
-                    )
-                v = q.first()
+                
+
+                if v.get('preloaded_data'):
+                    v = v['preloaded_data']
+                else:
+                    q = LnCls._model.query.filter_by(**query_args)
+                    v = q.first()
+
                 if v is None:
                     abort(400)
 

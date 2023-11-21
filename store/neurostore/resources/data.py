@@ -127,6 +127,36 @@ class AnnotationsView(ObjectView, ListView):
     _multi_search = ("name", "description")
     _search_fields = ("name", "description")
 
+    @classmethod
+    def load_nested_records(cls, data, record=None):
+        if not data:
+            return data
+        
+        studyset_id = data.get("studyset", {}).get("id")
+        if not studyset_id:
+            return data
+        q = Studyset.query.filter_by(id=studyset_id)
+        q.options(
+            joinedload(
+                Studyset.studyset_studies).joinedload(
+                    StudysetStudy.study
+                ).joinedload(Study.analyses)
+        )
+        studyset = q.first()
+        data['studyset']["preloaded_data"] = studyset
+        studyset_studies = {(s.studyset_id, s.study_id): s for s in studyset.studyset_studies}
+        analyses = {a.id: a for s in studyset_studies.values() for a in s.study.analyses}
+        for aa in data.get("annotation_analyses", []):
+            analysis = analyses.get(aa.get("analysis").get("id"))
+            if analysis:
+                aa["analysis"]['preloaded_data'] = analysis
+            studyset_study = studyset_studies.get(
+                (studyset.id, aa.get("studyset_study").get("study").get("id"))
+            )
+            if studyset_study:
+                aa["studyset_study"]['preloaded_data'] = studyset_study
+        return data
+
     def after_update_or_create(self, record):
         q = Annotation.query.filter_by(id=record.id)
         q = q.options(nested_load(self))
