@@ -207,7 +207,7 @@ class SpecificationSchema(BaseSchema):
                     output_conditions[i] = True
                 elif cond.lower() == "false":
                     output_conditions[i] = False
-            data["conditions"] = conditions
+            data["conditions"] = output_conditions
 
         return data
 
