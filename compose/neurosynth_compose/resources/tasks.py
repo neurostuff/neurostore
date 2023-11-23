@@ -130,10 +130,10 @@ def create_or_update_neurostore_analysis(
                 "order": point_idx,
             }
             if not pd.isna(row["Cluster Size (mm3)"]):
-                point["subpeak"] = True
+                point["subpeak"] = False
                 point["cluster_size"] = row["Cluster Size (mm3)"]
             else:
-                point["subpeak"] = False
+                point["subpeak"] = True
             points.append(point)
             point_idx += 1
     # reference the uploaded images on neurovault to associate images

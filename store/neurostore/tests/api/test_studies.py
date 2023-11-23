@@ -148,6 +148,10 @@ def test_post_studies(auth_client, ingest_neurosynth, session):
 
     auth_client.post("/api/studies/", data=my_study)
 
+    my_second_study = {"name": "asdfasfa", "pmid": "100000", "doi": "asdf;lds"}
+
+    auth_client.post("/api/studies/", data=my_second_study)
+
 
 def test_delete_studies(auth_client, ingest_neurosynth, session):
     study_db = Study.query.first()
