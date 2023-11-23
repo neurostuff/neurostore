@@ -18,12 +18,14 @@ import {
     SpecificationReturn,
     StudysetReturn,
 } from 'neurosynth-compose-typescript-sdk';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import BaseDialog, { IDialog } from '../BaseDialog';
 import SelectSpecificationComponent from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationAlgorithmStep/SelectSpecificationComponent/SelectSpecificationComponent';
 import { IAnalysesSelection } from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase.types';
 import SelectAnalysesComponent from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent';
+import { isMultiGroupAlgorithm } from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
+import { getWeightAndConditionsForSpecification } from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationReview/CreateMetaAnalysisSpecificationReview.helpers';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 
@@ -97,7 +99,13 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
         )
             return;
 
-        const condition = [selectedValue.selectionValue] as string[] | boolean[];
+        const { weights, conditions, databaseStudyset } = getWeightAndConditionsForSpecification(
+            algorithmSpec.estimator,
+            selectedValue
+        );
+
+        console.log({ weights, conditions, databaseStudyset, selectedValue });
+
         mutate(
             {
                 specificationId: specification.id,
@@ -114,7 +122,9 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                           }
                         : null,
                     filter: selectedValue.selectionKey,
-                    conditions: condition,
+                    conditions,
+                    database_studyset: databaseStudyset,
+                    weights,
                 },
             },
             {
@@ -125,7 +135,19 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
         );
     };
 
-    const disable = !algorithmSpec.estimator || !selectedValue?.selectionKey;
+    const disabled = useMemo(() => {
+        const isMultiGroup = isMultiGroupAlgorithm(algorithmSpec.estimator);
+        return (
+            !selectedValue?.selectionKey ||
+            selectedValue?.selectionValue === undefined ||
+            (isMultiGroup && !selectedValue?.referenceDataset)
+        );
+    }, [
+        algorithmSpec.estimator,
+        selectedValue?.referenceDataset,
+        selectedValue?.selectionKey,
+        selectedValue?.selectionValue,
+    ]);
 
     return (
         <BaseDialog
@@ -146,7 +168,19 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                         margin: '1rem 2rem',
                     }}
                 >
-                    <Typography sx={{ marginBottom: '1rem', fontWeight: 'bold' }} gutterBottom>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' }} gutterBottom>
+                        Edit Algorithm:
+                    </Typography>
+                    <SelectSpecificationComponent
+                        algorithm={algorithmSpec}
+                        onSelectSpecification={(update) => setAlgorithmSpec(update)}
+                    />
+
+                    <Typography
+                        variant="h6"
+                        sx={{ marginBottom: '1rem', fontWeight: 'bold', marginTop: '1rem' }}
+                        gutterBottom
+                    >
                         Edit Analyses Selection:
                     </Typography>
                     <SelectAnalysesComponent
@@ -159,51 +193,42 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                         }}
                         algorithm={algorithmSpec}
                     />
+                </Box>
 
-                    <Typography sx={{ fontWeight: 'bold', marginTop: '3rem' }} gutterBottom>
-                        Edit Algorithm:
-                    </Typography>
-                    <SelectSpecificationComponent
-                        algorithm={algorithmSpec}
-                        onSelectSpecification={(update) => setAlgorithmSpec(update)}
-                    />
-
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            position: 'sticky',
-                            backgroundColor: 'white',
-                            padding: '10px 0',
-                            bottom: 0,
-                            alignItems: 'center',
-                            zIndex: 99,
-                        }}
-                    >
-                        {/* empty div used for equally spacing and centering components */}
-                        <Box>
-                            <SelectAnalysesSummaryComponent
-                                studysetId={
-                                    (metaAnalysis?.studyset as StudysetReturn)?.neurostore_id || ''
-                                }
-                                annotationdId={
-                                    (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id ||
-                                    ''
-                                }
-                                selectedValue={selectedValue}
-                            />
-                        </Box>
-                        <LoadingButton
-                            disableElevation
-                            variant="contained"
-                            text="Update"
-                            sx={{ width: '86px' }}
-                            loaderColor="secondary"
-                            isLoading={updateSpecificationIsLoading}
-                            disabled={disable}
-                            onClick={handleUpdateSpecification}
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        position: 'sticky',
+                        backgroundColor: 'white',
+                        padding: '10px 0',
+                        bottom: 0,
+                        alignItems: 'center',
+                        zIndex: 99,
+                    }}
+                >
+                    {/* empty div used for equally spacing and centering components */}
+                    <Box>
+                        <SelectAnalysesSummaryComponent
+                            studysetId={
+                                (metaAnalysis?.studyset as StudysetReturn)?.neurostore_id || ''
+                            }
+                            annotationdId={
+                                (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''
+                            }
+                            selectedValue={selectedValue}
                         />
                     </Box>
+                    <LoadingButton
+                        disableElevation
+                        variant="contained"
+                        text="Update"
+                        sx={{ width: '86px' }}
+                        loaderColor="secondary"
+                        isLoading={updateSpecificationIsLoading}
+                        disabled={disabled}
+                        onClick={handleUpdateSpecification}
+                    />
                 </Box>
             </StateHandlerComponent>
         </BaseDialog>

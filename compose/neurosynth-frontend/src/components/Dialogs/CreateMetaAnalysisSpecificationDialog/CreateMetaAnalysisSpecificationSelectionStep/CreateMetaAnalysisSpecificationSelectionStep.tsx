@@ -79,7 +79,7 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                         disabled={
                             !selectedValue?.selectionKey ||
                             selectedValue?.selectionValue === undefined ||
-                            (isMultiGroup && !selectedValue?.referenceDataset) // needs ref dataset for multigroup algos
+                            (isMultiGroup && !selectedValue?.referenceDataset) // we need a ref dataset for multigroup algos
                         }
                         onClick={() => handleNavigate(ENavigationButton.NEXT)}
                     >

@@ -23,6 +23,7 @@ import {
     isMultiGroupAlgorithm,
     isPredefinedReferenceDataset,
 } from '../CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
+import { getWeightAndConditionsForSpecification } from './CreateMetaAnalysisSpecificationReview.helpers';
 
 const CreateMetaAnalysisSpecificationReview: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
@@ -53,37 +54,10 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
         if (!props.algorithm?.estimator?.label || !props.selection?.selectionKey) return;
         if (!props.selection || !props.selection.selectionValue) return;
 
-        const isMultiGroup = isMultiGroupAlgorithm(props.algorithm.estimator);
-        const usingPredefinedDataset = isPredefinedReferenceDataset(
-            props.selection.referenceDataset
+        const { weights, conditions, databaseStudyset } = getWeightAndConditionsForSpecification(
+            props.algorithm.estimator,
+            props.selection
         );
-        let conditions: string[] | boolean[] = [];
-        let weights = [];
-        let databaseStudyset: string | undefined;
-
-        if (isMultiGroup && usingPredefinedDataset) {
-            // 1 for our dataset, -1 for the dataset we are comparing with
-            // for predefined reference datasets (i.e. neuroquery, neurostore, neurosynth) we do not include that here
-            weights = [1];
-            conditions = [props.selection.selectionValue] as string[] | boolean[];
-            databaseStudyset = props.selection.referenceDataset;
-        } else if (isMultiGroup) {
-            if (!props.selection.referenceDataset) {
-                enqueueSnackbar(
-                    'There was an error creating the specification. Please refresh the page and try again',
-                    { variant: 'error' }
-                );
-                throw new Error('no reference dataset');
-            }
-
-            weights = [1, -1];
-            conditions = [props.selection.selectionValue, props.selection.referenceDataset] as
-                | string[]
-                | boolean[];
-        } else {
-            weights = [1];
-            conditions = [props.selection.selectionValue] as string[] | boolean[];
-        }
 
         const metaAnalysis = await createMetaAnalysis(
             projectId,

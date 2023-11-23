@@ -138,7 +138,8 @@ const SelectSpecificationComponent: React.FC<{
             </Box>
 
             <Typography sx={{ margin: '1rem 0' }} gutterBottom>
-                Select the <b>corrector</b> that you would like to use for your meta-analysis
+                [Optional] Select the <b>corrector</b> that you would like to use for your
+                meta-analysis
             </Typography>
 
             <Box sx={CreateMetaAnalysisSpecificationDialogBaseStyles.highlightInput}>

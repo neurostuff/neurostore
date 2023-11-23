@@ -305,7 +305,15 @@ const MetaAnalysisPage: React.FC = (props) => {
                                 </MetaAnalysisSummaryRow>
                             )}
 
-                            <MetaAnalysisSummaryRow title="annotation" value={selectionText} />
+                            <MetaAnalysisSummaryRow title="annotation" value={selectionText}>
+                                {specification?.database_studyset && (
+                                    <>
+                                        <Typography sx={{ marginTop: '1rem', color: 'gray' }}>
+                                            Reference Dataset: {specification.database_studyset}
+                                        </Typography>
+                                    </>
+                                )}
+                            </MetaAnalysisSummaryRow>
                         </Box>
 
                         <Box>
