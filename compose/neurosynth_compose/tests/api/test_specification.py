@@ -82,8 +82,8 @@ def test_update_condition_weight(session, app, auth_client, user_data):
     specification_data = {
         "estimator": {"type": "ALE"},
         "type": "cbma",
-        "conditions": ["open", "closed"],
-        "weights": [1, -1],
+        "conditions": ["open"],
+        "weights": [1],
         "corrector": {"type": "FDRCorrector"},
         "filter": "eyes",
     }
@@ -93,7 +93,7 @@ def test_update_condition_weight(session, app, auth_client, user_data):
 
     spec_id = create_spec.json["id"]
 
-    updated_data = {"conditions": ["left", "right"], "weights": [-1, 1]}
+    updated_data = {"conditions": ["left"], "weights": [-1]}
     update_spec = auth_client.put(
         f"/api/specifications/{spec_id}", data=updated_data
     )

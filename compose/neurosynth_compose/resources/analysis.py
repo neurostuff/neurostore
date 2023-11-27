@@ -171,7 +171,7 @@ class BaseView(MethodView):
         # Update nested attributes recursively
         for field, res_name in cls._nested.items():
             field = (field,) if not isinstance(field, tuple) else field
-            if set(data.keys()).issubset(field):
+            if set(data.keys()) < set(field):
                 field = (list(data.keys())[0],)
 
             try:
