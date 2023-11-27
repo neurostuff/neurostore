@@ -93,7 +93,13 @@ def test_update_condition_weight(session, app, auth_client, user_data):
 
     spec_id = create_spec.json["id"]
 
-    updated_data = {"conditions": ["left"], "weights": [-1]}
+    updated_data = {
+        "conditions": ["ABC"],
+        "corrector": None,
+        "estimator": { "type": "ALE", "args": {} },
+        "filter": "some key",
+        "type": "CBMA"
+    }
     update_spec = auth_client.put(
         f"/api/specifications/{spec_id}", data=updated_data
     )
@@ -103,4 +109,8 @@ def test_update_condition_weight(session, app, auth_client, user_data):
     assert get_spec.status_code == 200
 
     for key, value in updated_data.items():
-        assert set(get_spec.json[key]) == set(value)
+        if isinstance(value, list):
+            assert set(get_spec.json[key]) == set(value)
+        else:
+            assert get_spec.json[key] == value
+        
