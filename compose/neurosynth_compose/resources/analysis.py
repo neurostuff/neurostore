@@ -171,8 +171,9 @@ class BaseView(MethodView):
         # Update nested attributes recursively
         for field, res_name in cls._nested.items():
             field = (field,) if not isinstance(field, tuple) else field
-            if set(data.keys()) < set(field):
-                field = (list(data.keys())[0],)
+            relevant_keys = set([k for k in data.keys() if k in field])
+            if relevant_keys and relevant_keys < set(field):
+                field = (list(relevant_keys)[0],)
 
             try:
                 rec_data = itemgetter(*field)(data)
