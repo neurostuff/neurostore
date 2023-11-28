@@ -6,27 +6,31 @@ import {
     useProjectExtractionStudysetId,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
+import {
+    IAlgorithmSelection,
+    IAnalysesSelection,
+} from '../CreateMetaAnalysisSpecificationDialogBase.types';
 import SelectAnalysesComponent from './SelectAnalysesComponent/SelectAnalysesComponent';
-import SelectAnalysesSummaryComponent from './SelectAnalysesSummaryComponent/SelectAnalysesSummaryComponent';
+import { isMultiGroupAlgorithm } from './SelectAnalysesComponent/SelectAnalysesComponent.helpers';
+import SelectAnalysesSummaryComponent from './SelectAnalysesComponent/SelectAnalysesSummaryComponent';
 
 const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
-    onChooseSelection: (selectionKey: string, type: EPropertyType) => void;
+    onChooseSelection: (selection: IAnalysesSelection) => void;
     onNavigate: (button: ENavigationButton) => void;
-    selection: { selectionKey: string | undefined; type: EPropertyType } | undefined;
+    selection: IAnalysesSelection;
+    algorithm: IAlgorithmSelection;
 }> = (props) => {
     const annotationId = useProjectExtractionAnnotationId();
     const studysetId = useProjectExtractionStudysetId();
-    const [selectedValue, setSelectedValue] = useState<
-        | {
-              selectionKey: string | undefined;
-              type: EPropertyType;
-          }
-        | undefined
-    >(props.selection);
+    const [selectedValue, setSelectedValue] = useState<IAnalysesSelection>(props.selection);
+
+    const isMultiGroup = isMultiGroupAlgorithm(props.algorithm?.estimator);
 
     const handleNavigate = (button: ENavigationButton) => {
         if (selectedValue?.selectionKey && selectedValue?.type !== EPropertyType.NONE)
-            props.onChooseSelection(selectedValue.selectionKey, selectedValue.type);
+            props.onChooseSelection({
+                ...selectedValue,
+            });
         props.onNavigate(button);
     };
 
@@ -39,19 +43,16 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                 </Typography>
             </Box>
             <Box>
-                <Typography gutterBottom>
+                <Typography gutterBottom sx={{ marginBottom: '1rem' }}>
                     Select the <b>annotation inclusion column</b> that you would like to use to
                     select the analyses for your meta-analysis.
-                </Typography>
-                <Typography sx={{ color: 'warning.dark', marginBottom: '1rem' }}>
-                    At the moment, only boolean columns will be supported. We will be adding support
-                    for the other types in the near future.
                 </Typography>
 
                 <SelectAnalysesComponent
                     selectedValue={selectedValue}
                     onSelectValue={(val) => setSelectedValue(val)}
-                    annotationdId={annotationId || ''}
+                    annotationId={annotationId || ''}
+                    algorithm={props.algorithm}
                 />
 
                 <Box
@@ -62,6 +63,12 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                         alignItems: 'center',
                     }}
                 >
+                    <Button
+                        onClick={() => handleNavigate(ENavigationButton.PREV)}
+                        variant="outlined"
+                    >
+                        back
+                    </Button>
                     <SelectAnalysesSummaryComponent
                         annotationdId={annotationId || ''}
                         studysetId={studysetId || ''}
@@ -69,7 +76,11 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                     />
                     <Button
                         variant="contained"
-                        disabled={!selectedValue?.selectionKey}
+                        disabled={
+                            !selectedValue?.selectionKey ||
+                            selectedValue?.selectionValue === undefined ||
+                            (isMultiGroup && !selectedValue?.referenceDataset) // we need a ref dataset for multigroup algos
+                        }
                         onClick={() => handleNavigate(ENavigationButton.NEXT)}
                     >
                         next

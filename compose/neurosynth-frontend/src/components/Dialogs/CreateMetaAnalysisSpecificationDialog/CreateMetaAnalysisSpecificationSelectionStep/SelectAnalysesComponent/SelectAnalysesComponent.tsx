@@ -1,144 +1,123 @@
-import {
-    Box,
-    ListItem,
-    ListItemText,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Typography,
-} from '@mui/material';
-import { Fragment, useEffect, useState } from 'react';
-import SelectAnalysesComponentStyles from './SelectAnalysesComponent.styles';
+import { Box, ListItem, ListItemText } from '@mui/material';
+import { EPropertyType } from 'components/EditMetadata';
 import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import { EPropertyType } from 'components/EditMetadata';
 import { useGetAnnotationById } from 'hooks';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
-import { AnnotationNoteValue } from 'components/HotTables/HotTables.types';
-
-export const getFilteredAnnotationNotes = (
-    annotationNotes: NoteCollectionReturn[],
-    selectionKey: string | undefined
-): NoteCollectionReturn[] => {
-    if (!annotationNotes || !selectionKey) return [];
-    return annotationNotes.filter((x) => {
-        const annotationNote = x.note as { [key: string]: AnnotationNoteValue };
-        return annotationNote[selectionKey] === true; // for now, we only care about boolean filters. Later, the filter process will get more complicated
-    });
-};
-
-// we can assume that the input is already sorted
-const annotationNotesToTableFormatHelper = (
-    notes: NoteCollectionReturn[],
-    selectedNotes: NoteCollectionReturn[]
-) => {
-    let currStudy = '';
-    const tableFormat: {
-        studyName: string;
-        studyId: string;
-        analyses: { analysisName: string; analysisId: string; isSelected: boolean }[];
-    }[] = [];
-
-    const selectedNotesMap = new Map();
-    selectedNotes.forEach((note) => selectedNotesMap.set(note.analysis, note));
-
-    [...notes]
-        .sort((a, b) => {
-            const firstStudyId = a.study as string;
-            const secondStudyId = b.study as string;
-            return firstStudyId.localeCompare(secondStudyId);
-        })
-        .forEach((note) => {
-            if (note.study === currStudy) {
-                tableFormat[tableFormat.length - 1].analyses.push({
-                    analysisId: note.analysis as string,
-                    analysisName: note.analysis_name as string,
-                    isSelected: selectedNotesMap.has(note.analysis),
-                });
-            } else {
-                currStudy = note.study as string;
-                tableFormat.push({
-                    studyName: note.study_name as string,
-                    studyId: note.study as string,
-                    analyses: [
-                        {
-                            analysisId: note.analysis as string,
-                            analysisName: note.analysis_name as string,
-                            isSelected: selectedNotesMap.has(note.analysis),
-                        },
-                    ],
-                });
-            }
-        });
-
-    return tableFormat;
-};
+import { useEffect, useMemo, useRef } from 'react';
+import {
+    IAlgorithmSelection,
+    IAnalysesSelection,
+} from '../../CreateMetaAnalysisSpecificationDialogBase.types';
+import SelectAnalysesComponentTable from './SelectAnalysesComponentTable';
+import SelectAnalysesStringValue from './SelectAnalysesStringValue';
+import {
+    isMultiGroupAlgorithm,
+    selectedReferenceDatasetIsDefaultDataset,
+} from './SelectAnalysesComponent.helpers';
+import SelectAnalysesMultiGroupComponent from './SelectAnalysesMultiGroupComponent';
+import { DEFAULT_REFERENCE_DATASETS } from './SelectAnalysesComponent.types';
+import CreateMetaAnalysisSpecificationDialogBaseStyles from '../../CreateMetaAnalysisSpecificationDialogBase.styles';
 
 const SelectAnalysesComponent: React.FC<{
-    annotationdId: string;
-    selectedValue:
-        | {
-              selectionKey: string | undefined;
-              type: EPropertyType;
-          }
-        | undefined;
-    onSelectValue: (
-        value: { selectionKey: string | undefined; type: EPropertyType } | undefined
-    ) => void;
+    annotationId: string;
+    selectedValue: IAnalysesSelection;
+    onSelectValue: (value: IAnalysesSelection) => void;
+    algorithm: IAlgorithmSelection;
 }> = (props) => {
-    const { annotationdId, selectedValue, onSelectValue } = props;
-    const [selectionOccurred, setSelectionOccurred] = useState(false);
-    const { data: annotation } = useGetAnnotationById(annotationdId);
-    const [annotationsSelected, setAnnotationsSelected] = useState<NoteCollectionReturn[]>([]);
+    const { annotationId, selectedValue, onSelectValue, algorithm } = props;
+    const { data: annotation } = useGetAnnotationById(annotationId);
+
+    // we need some notion of "touched" in order to know if the input is being seen for the first time (so we can set some default value)
+    // versus the input being cleared (in which case we dont do anything)
+    const selectionOccurred = useRef<boolean>(false);
 
     useEffect(() => {
-        if (selectedValue?.selectionKey) {
-            setSelectionOccurred(true);
-        } else if (!selectionOccurred && 'included' in (annotation?.note_keys || {})) {
-            onSelectValue({ selectionKey: 'included', type: EPropertyType.BOOLEAN });
-            setSelectionOccurred(true);
+        if (selectedValue.selectionKey) {
+            selectionOccurred.current = true;
+            return;
+        } else if (!selectionOccurred.current && 'included' in (annotation?.note_keys || {})) {
+            const initialVal: IAnalysesSelection = {
+                selectionKey: 'included',
+                type: EPropertyType.BOOLEAN,
+                selectionValue: true,
+            };
+
+            if (isMultiGroupAlgorithm(algorithm?.estimator)) {
+                initialVal.referenceDataset = DEFAULT_REFERENCE_DATASETS[0].label;
+            }
+
+            onSelectValue(initialVal);
+            selectionOccurred.current = true;
         }
-    }, [selectedValue?.selectionKey, annotation, onSelectValue, selectionOccurred]);
+    }, [
+        selectedValue.selectionKey,
+        annotation,
+        onSelectValue,
+        selectionOccurred,
+        algorithm?.estimator,
+    ]);
 
-    useEffect(() => {
-        setAnnotationsSelected((prev) => {
-            if (!selectedValue?.selectionKey) return [];
-            const filteredAnnotations = getFilteredAnnotationNotes(
-                (annotation?.notes || []) as NoteCollectionReturn[],
-                selectedValue.selectionKey
-            );
+    const options = useMemo(() => {
+        return Object.entries(annotation?.note_keys || {})
+            .map(([key, value]) => ({
+                selectionKey: key,
+                type: value as EPropertyType,
+                selectionValue: undefined,
+                referenceDataset: undefined,
+            }))
+            .filter((x) => x.type === EPropertyType.BOOLEAN || x.type === EPropertyType.STRING);
+    }, [annotation?.note_keys]);
 
-            return filteredAnnotations;
-        });
-    }, [selectedValue, annotation]);
+    const stringInclusionColSelected = selectedValue?.type === EPropertyType.STRING;
+    const showInclusionSummary = stringInclusionColSelected
+        ? !!selectedValue?.selectionValue
+        : !!selectedValue?.selectionKey;
+    const showMultiGroup = isMultiGroupAlgorithm(algorithm?.estimator);
 
-    const options = Object.entries(annotation?.note_keys || {})
-        .map(([key, value]) => ({
-            selectionKey: key,
-            type: value as EPropertyType,
-        }))
-        .filter((x) => x.type === EPropertyType.BOOLEAN);
+    const handleSelectColumn = (newVal: IAnalysesSelection | undefined) => {
+        if (newVal?.selectionKey === selectedValue.selectionKey) return; // we selected the same option that is already selected
 
-    const studiesList = selectedValue?.selectionKey
-        ? annotationNotesToTableFormatHelper(
-              (annotation?.notes || []) as NoteCollectionReturn[],
-              annotationsSelected
-          )
-        : [];
+        const referenceDatasetIsNowInvalid = !selectedReferenceDatasetIsDefaultDataset(
+            selectedValue.referenceDataset
+        );
+        if (!newVal) {
+            onSelectValue({
+                selectionKey: undefined,
+                type: undefined,
+                selectionValue: undefined,
+                referenceDataset: referenceDatasetIsNowInvalid
+                    ? undefined
+                    : selectedValue.referenceDataset,
+            });
+            return;
+        }
+
+        const update: IAnalysesSelection = {
+            selectionKey: newVal.selectionKey,
+            type: newVal.type,
+            selectionValue: newVal.type === EPropertyType.BOOLEAN ? true : undefined,
+            referenceDataset: referenceDatasetIsNowInvalid
+                ? undefined
+                : selectedValue.referenceDataset,
+        };
+        onSelectValue(update);
+    };
 
     return (
         <Box>
             <NeurosynthAutocomplete
+                sx={CreateMetaAnalysisSpecificationDialogBaseStyles.highlightInput}
                 label="Inclusion Column"
                 shouldDisable={false}
                 isOptionEqualToValue={(option, value) =>
                     option?.selectionKey === value?.selectionKey
                 }
-                value={selectedValue}
+                value={selectedValue?.selectionKey ? selectedValue : undefined}
                 size="medium"
+                inputPropsSx={{
+                    color: NeurosynthTableStyles[selectedValue?.type || EPropertyType.NONE],
+                }}
                 required={false}
                 renderOption={(params, option) => (
                     <ListItem {...params} key={option.selectionKey}>
@@ -151,71 +130,44 @@ const SelectAnalysesComponent: React.FC<{
                     </ListItem>
                 )}
                 getOptionLabel={(option) => option?.selectionKey || ''}
-                onChange={(_event, newVal, _reason) => onSelectValue(newVal || undefined)}
+                onChange={(_event, newVal, _reason) => handleSelectColumn(newVal || undefined)}
                 options={options}
             />
-            <Box sx={{ maxHeight: '40vh', overflow: 'auto', margin: '1rem 0' }}>
-                <TableContainer>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Study</TableCell>
-                                <TableCell sx={{ fontWeight: 'bold' }}>Analyses</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {studiesList.map((studyAnalyses) => (
-                                <Fragment key={studyAnalyses.studyId}>
-                                    <TableRow>
-                                        <TableCell
-                                            sx={[
-                                                SelectAnalysesComponentStyles.tableCell,
-                                                { maxWidth: '300px' },
-                                            ]}
-                                            rowSpan={studyAnalyses.analyses.length}
-                                        >
-                                            {studyAnalyses.studyName}
-                                        </TableCell>
-                                        <TableCell
-                                            sx={[
-                                                SelectAnalysesComponentStyles.tableCell,
-                                                studyAnalyses.analyses[0].isSelected
-                                                    ? SelectAnalysesComponentStyles.selected
-                                                    : SelectAnalysesComponentStyles['not-selected'],
-                                            ]}
-                                        >
-                                            {studyAnalyses.analyses[0].analysisName}
-                                        </TableCell>
-                                    </TableRow>
-                                    {studyAnalyses.analyses
-                                        .slice(1, studyAnalyses.analyses.length)
-                                        .map((analysis) => (
-                                            <TableRow key={analysis.analysisId}>
-                                                <TableCell
-                                                    sx={[
-                                                        SelectAnalysesComponentStyles.tableCell,
-                                                        analysis.isSelected
-                                                            ? SelectAnalysesComponentStyles.selected
-                                                            : SelectAnalysesComponentStyles[
-                                                                  'not-selected'
-                                                              ],
-                                                    ]}
-                                                >
-                                                    {analysis.analysisName}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                </Fragment>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-                {annotationsSelected.length === 0 && (
-                    <Typography sx={{ color: 'warning.dark', marginTop: '1rem' }}>
-                        No analyses selected
-                    </Typography>
-                )}
-            </Box>
+            {stringInclusionColSelected && (
+                <Box
+                    sx={{
+                        padding: '1rem 0 2rem 3rem',
+                        borderLeft: '6px solid',
+                        borderColor: 'secondary.main',
+                    }}
+                >
+                    <SelectAnalysesStringValue
+                        annotationId={annotationId}
+                        selectedValue={selectedValue}
+                        onSelectValue={(newVal) => onSelectValue(newVal)}
+                    />
+                </Box>
+            )}
+            {showInclusionSummary && (
+                <Box
+                    sx={{
+                        marginTop: '1rem',
+                    }}
+                >
+                    <SelectAnalysesComponentTable
+                        selectedValue={selectedValue}
+                        allNotes={annotation?.notes as NoteCollectionReturn[] | undefined}
+                    />
+                </Box>
+            )}
+            {showMultiGroup && (
+                <SelectAnalysesMultiGroupComponent
+                    onSelectValue={(newVal) => onSelectValue(newVal)}
+                    annotationId={annotationId}
+                    selectedValue={selectedValue}
+                    algorithm={algorithm}
+                />
+            )}
         </Box>
     );
 };

@@ -16,11 +16,12 @@ const useUpdateSpecification = () => {
         },
         unknown
     >(
-        (args) =>
-            API.NeurosynthServices.SpecificationsService.specificationsIdPut(
+        (args) => {
+            return API.NeurosynthServices.SpecificationsService.specificationsIdPut(
                 args.specificationId,
                 args.specification
-            ),
+            );
+        },
         {
             onSuccess: () => {
                 queryClient.invalidateQueries('specifications');

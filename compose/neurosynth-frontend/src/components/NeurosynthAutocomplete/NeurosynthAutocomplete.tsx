@@ -35,7 +35,9 @@ interface INeurosynthAutocomplete<T> {
     isError?: boolean;
     noOptionsText?: string;
     size?: 'small' | 'medium';
+    inputPropsSx?: SystemStyleObject;
     filterOptions?: (options: T[], state: FilterOptionsState<T>) => T[];
+    groupBy?: (option: T) => string;
 }
 
 const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
@@ -59,6 +61,8 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
         filterOptions = undefined,
         noOptionsText = undefined,
         size = 'small',
+        inputPropsSx = {},
+        groupBy = undefined,
     } = props;
 
     const handleOnChange = (_event: any, newVal: T | null, _reason: any) => {
@@ -73,6 +77,7 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
             loadingText="Loading..."
             onFocus={handleOnFocus}
             onBlur={handleOnBlur}
+            groupBy={groupBy}
             size={size}
             disabled={shouldDisable}
             isOptionEqualToValue={isOptionEqualToValue}
@@ -86,6 +91,7 @@ const NeurosynthAutocomplete = <T,>(props: INeurosynthAutocomplete<T>) => {
                     error={!isValid && required}
                     InputProps={{
                         ...params.InputProps,
+                        sx: inputPropsSx,
                         endAdornment: (
                             <>
                                 {isError && (

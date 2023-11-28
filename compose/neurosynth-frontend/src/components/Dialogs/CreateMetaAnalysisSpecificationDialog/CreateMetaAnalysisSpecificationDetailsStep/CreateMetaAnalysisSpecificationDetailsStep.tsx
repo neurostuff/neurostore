@@ -66,7 +66,7 @@ const CreateMetaAnalysisSpecificationDetailsStep: React.FC<{
                 sx={{ marginBottom: '1rem' }}
                 fullWidth
                 value={details.name}
-                label="name"
+                label="meta-analysis name"
                 name="name"
                 onChange={handleUpdateDetails}
             />
@@ -75,7 +75,7 @@ const CreateMetaAnalysisSpecificationDetailsStep: React.FC<{
                 sx={{ marginBottom: '1rem' }}
                 fullWidth
                 onChange={handleUpdateDetails}
-                label="description"
+                label="meta-analysis description"
                 name="description"
             />
             <NavigationButtons

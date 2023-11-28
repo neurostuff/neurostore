@@ -126,7 +126,7 @@ const MoveToExtractionCreateAnnotation: React.FC<{
                 <AddMetadataRow
                     valuePlaceholderText=""
                     showMetadataValueInput={false}
-                    allowNoneOption={false}
+                    allowNone={false}
                     onAddMetadataRow={handleAddAnnotationColumn}
                 />
             </Box>

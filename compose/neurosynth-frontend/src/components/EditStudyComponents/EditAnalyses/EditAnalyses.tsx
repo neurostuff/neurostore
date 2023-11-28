@@ -53,18 +53,13 @@ const EditAnalyses: React.FC = React.memo((props) => {
                     borderBottomRightRadius: '4px !important',
                 },
             ]}
+            accordionSummarySx={EditStudyComponentsStyles.accordionSummary}
             TitleElement={
                 <Typography sx={EditStudyComponentsStyles.accordionTitle}>Analyses</Typography>
             }
         >
             <Box sx={{ width: '100%', margin: '0.5rem 0' }}>
-                <Box
-                    sx={{
-                        marginBottom: '1rem',
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                    }}
-                >
+                <Box sx={{ marginBottom: '1rem' }}>
                     {numAnalyses === 0 && (
                         <Typography sx={{ color: 'warning.dark' }}>
                             There are no analyses for this study.
@@ -78,10 +73,7 @@ const EditAnalyses: React.FC = React.memo((props) => {
                     />
                     <Button
                         onClick={() => setCreateNewAnalysisDialogIsOpen(true)}
-                        sx={{
-                            width: '150px',
-                            marginLeft: 'auto',
-                        }}
+                        sx={{ width: '150px' }}
                         variant="contained"
                         disableElevation
                         startIcon={<Add />}

@@ -1,0 +1,74 @@
+{
+    "annotation": {
+      "created_at": "2023-11-27T21:45:53.007789+00:00",
+      "id": "32bQZ6goG54D",
+      "neurostore_id": "5LSBDTGqA6RF",
+      "snapshot": null,
+      "studyset": "73HRs8HaJbR8",
+      "updated_at": null,
+      "url": "https://neurostore.org/api/annotations/5LSBDTGqA6RF",
+      "user": "github|26612023",
+      "username": "Nicholas Lee"
+    },
+    "cached_annotation": "32bQZ6goG54D",
+    "cached_studyset": "4GKTowsnkpqo",
+    "created_at": "2023-11-27T21:45:53.258233+00:00",
+    "description": "ALE meta analysis",
+    "id": "3P8DpYp2Jhn6",
+    "name": "Bulk import test ALE Meta Analysis: HANDEDNESS (1)",
+    "neurostore_analysis": {
+      "created_at": "2023-11-27T21:45:53.280363+00:00",
+      "exception": null,
+      "id": "NkQnsicepDov",
+      "neurostore_id": null,
+      "status": "PENDING",
+      "traceback": null,
+      "updated_at": null
+    },
+    "neurostore_url": null,
+    "project": "3YK4ZD7aeyQU",
+    "provenance": null,
+    "results": [],
+    "run_key": "ynOyv2LWO-ZMS-f9pYmX2w",
+    "specification": {
+      "conditions": [
+        "ABC"
+      ],
+      "corrector": null,
+      "created_at": "2023-11-27T21:45:52.407039+00:00",
+      "database_studyset": "Neurostore Dataset",
+      "estimator": {
+        "args": {
+          "**kwargs": {},
+          "kernel__fwhm": null,
+          "kernel__sample_size": null,
+          "n_iters": 10000
+        },
+        "type": "ALESubtraction"
+      },
+      "filter": "some key",
+      "id": "rgiZsKGMdxzT",
+      "type": "CBMA",
+      "updated_at": "2023-11-28T02:43:14.502324+00:00",
+      "user": "github|26612023",
+      "username": "Nicholas Lee",
+      "weights": [
+        1.0
+      ]
+    },
+    "studyset": {
+      "created_at": "2023-11-27T21:45:52.785294+00:00",
+      "id": "4GKTowsnkpqo",
+      "neurostore_id": "73HRs8HaJbR8",
+      "snapshot": null,
+      "updated_at": null,
+      "url": "https://neurostore.org/api/studysets/73HRs8HaJbR8",
+      "user": "github|26612023",
+      "username": "Nicholas Lee",
+      "version": null
+    },
+    "updated_at": null,
+    "user": "github|26612023",
+    "username": "Nicholas Lee"
+  }
+  

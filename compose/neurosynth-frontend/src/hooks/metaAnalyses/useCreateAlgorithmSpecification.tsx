@@ -5,6 +5,7 @@ import {
     AnnotationPostBody,
     MetaAnalysisPostBody,
     MetaAnalysisReturn,
+    SpecificationConditions,
     SpecificationPostBody,
     SpecificationReturn,
     StudysetPostBody,
@@ -59,7 +60,10 @@ const useCreateAlgorithmSpecification = () => {
         metaAnalysisName: string | undefined,
         metaAnalysisDescription: string | undefined,
         estimatorArgs: IDynamicValueType | undefined,
-        correctorArgs: IDynamicValueType | undefined
+        correctorArgs: IDynamicValueType | undefined,
+        conditions: SpecificationConditions,
+        weights: number[],
+        databaseStudyset: string | undefined
     ) => {
         try {
             if (!projectId) throw new Error('no id from project');
@@ -81,6 +85,9 @@ const useCreateAlgorithmSpecification = () => {
                       }
                     : null,
                 filter: inclusionColumn,
+                conditions,
+                weights,
+                database_studyset: databaseStudyset,
             });
             if (!createdSpec.data.id) throw new Error('no id from created spec');
 
