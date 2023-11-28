@@ -40,7 +40,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
     const { mutate, isLoading: updateSpecificationIsLoading } = useUpdateSpecification();
     const [selectedValue, setSelectedValue] = useState<IAnalysesSelection>({
         selectionKey: specification?.filter || undefined,
-        type: getType(specification?.filter),
+        type: getType(specification?.conditions?.[0]),
         selectionValue: specification?.conditions?.[0],
         referenceDataset: specification?.database_studyset || undefined,
     });
@@ -62,7 +62,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
 
         setSelectedValue({
             selectionKey: specification.filter,
-            type: getType(specification.filter),
+            type: getType(specification?.conditions?.[0]),
             selectionValue: (specification.conditions || [])[0],
         });
 
@@ -103,8 +103,6 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
             algorithmSpec.estimator,
             selectedValue
         );
-
-        console.log({ weights, conditions, databaseStudyset, selectedValue });
 
         mutate(
             {
@@ -201,10 +199,11 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                         justifyContent: 'space-between',
                         position: 'sticky',
                         backgroundColor: 'white',
-                        padding: '10px 0',
+                        padding: '10px 2rem',
                         bottom: 0,
                         alignItems: 'center',
                         zIndex: 99,
+                        marginBottom: '1rem',
                     }}
                 >
                     {/* empty div used for equally spacing and centering components */}

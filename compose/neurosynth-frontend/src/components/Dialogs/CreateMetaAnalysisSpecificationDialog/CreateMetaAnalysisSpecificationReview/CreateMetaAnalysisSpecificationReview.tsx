@@ -18,11 +18,7 @@ import {
 import { useMemo } from 'react';
 import { useHistory } from 'react-router-dom';
 import { IAnalysesSelection } from '../CreateMetaAnalysisSpecificationDialogBase.types';
-import {
-    getFilteredAnnotationNotes,
-    isMultiGroupAlgorithm,
-    isPredefinedReferenceDataset,
-} from '../CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
+import { getFilteredAnnotationNotes } from '../CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
 import { getWeightAndConditionsForSpecification } from './CreateMetaAnalysisSpecificationReview.helpers';
 
 const CreateMetaAnalysisSpecificationReview: React.FC<{

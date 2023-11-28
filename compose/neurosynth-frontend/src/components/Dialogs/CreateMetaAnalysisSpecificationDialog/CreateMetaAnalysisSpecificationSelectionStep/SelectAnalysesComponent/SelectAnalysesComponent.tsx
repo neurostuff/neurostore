@@ -13,7 +13,7 @@ import SelectAnalysesComponentTable from './SelectAnalysesComponentTable';
 import SelectAnalysesStringValue from './SelectAnalysesStringValue';
 import {
     isMultiGroupAlgorithm,
-    selectedReferenceDatasetIsDefault,
+    selectedReferenceDatasetIsDefaultDataset,
 } from './SelectAnalysesComponent.helpers';
 import SelectAnalysesMultiGroupComponent from './SelectAnalysesMultiGroupComponent';
 import { DEFAULT_REFERENCE_DATASETS } from './SelectAnalysesComponent.types';
@@ -78,7 +78,7 @@ const SelectAnalysesComponent: React.FC<{
     const handleSelectColumn = (newVal: IAnalysesSelection | undefined) => {
         if (newVal?.selectionKey === selectedValue.selectionKey) return; // we selected the same option that is already selected
 
-        const referenceDatasetIsNowInvalid = !selectedReferenceDatasetIsDefault(
+        const referenceDatasetIsNowInvalid = !selectedReferenceDatasetIsDefaultDataset(
             selectedValue.referenceDataset
         );
         if (!newVal) {

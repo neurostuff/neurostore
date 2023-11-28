@@ -220,7 +220,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                         elevation={0}
                         expandIconColor={canEditSpecification ? 'secondary.main' : 'primary.main'}
                         sx={{
-                            border: '1px solid',
+                            border: '2px solid',
                             borderColor: canEditSpecification ? 'secondary.main' : 'primary.main',
                         }}
                         accordionSummarySx={{
@@ -290,24 +290,25 @@ const MetaAnalysisPage: React.FC = (props) => {
 
                             {metaAnalysisAnnotation?.neurostore_id && (
                                 <MetaAnalysisSummaryRow
-                                    title="annotation id"
+                                    title="annotation"
                                     value={metaAnalysisAnnotation.neurostore_id}
-                                >
-                                    <SelectAnalysesSummaryComponent
-                                        annotationdId={metaAnalysisAnnotation.neurostore_id || ''}
-                                        studysetId={metaAnalysisStudyset?.neurostore_id || ''}
-                                        selectedValue={{
-                                            selectionKey: specification?.filter || '',
-                                            type: getType(specification?.filter || ''),
-                                            selectionValue: specification?.conditions?.[0],
-                                        }}
-                                    />
-                                </MetaAnalysisSummaryRow>
+                                ></MetaAnalysisSummaryRow>
                             )}
 
-                            <MetaAnalysisSummaryRow title="annotation" value={selectionText}>
+                            <MetaAnalysisSummaryRow title="selection" value={selectionText}>
                                 {specification?.database_studyset && (
                                     <>
+                                        <SelectAnalysesSummaryComponent
+                                            annotationdId={
+                                                metaAnalysisAnnotation?.neurostore_id || ''
+                                            }
+                                            studysetId={metaAnalysisStudyset?.neurostore_id || ''}
+                                            selectedValue={{
+                                                selectionKey: specification?.filter || '',
+                                                type: getType(specification?.filter || ''),
+                                                selectionValue: specification?.conditions?.[0],
+                                            }}
+                                        />
                                         <Typography sx={{ marginTop: '1rem', color: 'gray' }}>
                                             Reference Dataset: {specification.database_studyset}
                                         </Typography>

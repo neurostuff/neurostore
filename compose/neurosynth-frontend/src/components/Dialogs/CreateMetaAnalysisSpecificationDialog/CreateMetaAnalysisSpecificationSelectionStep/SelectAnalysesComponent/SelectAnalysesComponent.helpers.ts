@@ -14,11 +14,6 @@ export const isMultiGroupAlgorithm = (estimator: IAutocompleteObject | null | un
     );
 };
 
-export const isPredefinedReferenceDataset = (name: string | null | undefined) => {
-    if (!name) return false;
-    return MULTIGROUP_ALGORITHMS.some((algo) => algo === name);
-};
-
 export const getFilteredAnnotationNotes = (
     annotationNotes: NoteCollectionReturn[],
     selectedValue: IAnalysesSelection | undefined
@@ -93,7 +88,9 @@ export const annotationNotesToTableFormatHelper = (
     return tableFormat;
 };
 
-export const selectedReferenceDatasetIsDefault = (selectedReferenceDataset: string | undefined) => {
+export const selectedReferenceDatasetIsDefaultDataset = (
+    selectedReferenceDataset: string | undefined
+) => {
     if (!selectedReferenceDataset) return false;
 
     return DEFAULT_REFERENCE_DATASETS.some((x) => x.label === selectedReferenceDataset);

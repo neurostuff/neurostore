@@ -104,7 +104,7 @@ const SelectSpecificationComponent: React.FC<{
                             elevation={0}
                             expandIconColor={'secondary.main'}
                             sx={{
-                                border: '1px solid',
+                                border: '2px solid',
                                 borderColor: 'secondary.main',
                             }}
                             accordionSummarySx={{
@@ -177,7 +177,7 @@ const SelectSpecificationComponent: React.FC<{
                             elevation={0}
                             expandIconColor={'secondary.main'}
                             sx={{
-                                border: '1px solid',
+                                border: '2px solid',
                                 borderColor: 'secondary.main',
                             }}
                             accordionSummarySx={{

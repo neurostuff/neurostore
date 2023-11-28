@@ -1,7 +1,7 @@
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import {
     isMultiGroupAlgorithm,
-    isPredefinedReferenceDataset,
+    selectedReferenceDatasetIsDefaultDataset,
 } from '../CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
 import { IAnalysesSelection } from '../CreateMetaAnalysisSpecificationDialogBase.types';
 
@@ -16,7 +16,9 @@ export const getWeightAndConditionsForSpecification = (
     if (!estimator) return { weights: [], conditions: [], databaseStudyset: undefined };
 
     const isMultiGroup = isMultiGroupAlgorithm(estimator);
-    const usingPredefinedDataset = isPredefinedReferenceDataset(selection.referenceDataset);
+    const usingPredefinedDataset = selectedReferenceDatasetIsDefaultDataset(
+        selection.referenceDataset
+    );
     let conditions: string[] | boolean[] = [];
     let weights = [];
     let databaseStudyset: string | undefined;

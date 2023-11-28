@@ -18,7 +18,9 @@ describe(PAGE_NAME, () => {
         cy.intercept('GET', `**/api/studies/mock-study-id*`, { fixture: 'study' }).as(
             'studyFixture'
         );
-        cy.intercept('GET', `**/api/projects/*`, { fixture: 'project' }).as('projectFixture');
+        cy.intercept('GET', `**/api/projects/*`, { fixture: 'projects/project' }).as(
+            'projectFixture'
+        );
         cy.intercept('GET', `**/api/annotations/*`, { fixture: 'annotation' }).as(
             'annotationFixture'
         );
