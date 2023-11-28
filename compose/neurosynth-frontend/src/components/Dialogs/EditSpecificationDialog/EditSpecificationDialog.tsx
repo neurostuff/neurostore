@@ -1,8 +1,8 @@
 import { Box, Typography } from '@mui/material';
 import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import SelectAnalysesSummaryComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesSummaryComponent/SelectAnalysesSummaryComponent';
-import { EPropertyType, getType } from 'components/EditMetadata';
+import SelectAnalysesSummaryComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesSummaryComponent';
+import { getType } from 'components/EditMetadata';
 import {
     IDynamicValueType,
     IMetaAnalysisParamsSpecification,
@@ -18,11 +18,14 @@ import {
     SpecificationReturn,
     StudysetReturn,
 } from 'neurosynth-compose-typescript-sdk';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import BaseDialog, { IDialog } from '../BaseDialog';
 import SelectSpecificationComponent from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationAlgorithmStep/SelectSpecificationComponent/SelectSpecificationComponent';
+import { IAnalysesSelection } from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase.types';
 import SelectAnalysesComponent from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent';
+import { isMultiGroupAlgorithm } from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
+import { getWeightAndConditionsForSpecification } from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationReview/CreateMetaAnalysisSpecificationReview.helpers';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 
@@ -35,15 +38,11 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
         isError: getMetaAnalysisIsError,
     } = useGetSpecificationById((metaAnalysis?.specification as SpecificationReturn)?.id);
     const { mutate, isLoading: updateSpecificationIsLoading } = useUpdateSpecification();
-    const [selectedValue, setSelectedValue] = useState<
-        | {
-              selectionKey: string | undefined;
-              type: EPropertyType;
-          }
-        | undefined
-    >({
+    const [selectedValue, setSelectedValue] = useState<IAnalysesSelection>({
         selectionKey: specification?.filter || undefined,
-        type: getType(specification?.filter),
+        type: getType(specification?.conditions?.[0]),
+        selectionValue: specification?.conditions?.[0],
+        referenceDataset: specification?.database_studyset || undefined,
     });
 
     const [algorithmSpec, setAlgorithmSpec] = useState<{
@@ -59,9 +58,12 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
     });
 
     useEffect(() => {
+        if (!specification?.filter) return;
+
         setSelectedValue({
-            selectionKey: specification?.filter || undefined,
-            type: getType(specification?.filter),
+            selectionKey: specification.filter,
+            type: getType(specification?.conditions?.[0]),
+            selectionValue: (specification.conditions || [])[0],
         });
 
         const estimator = specification?.estimator?.type
@@ -89,8 +91,18 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
     }, [specification, props.isOpen]); // add isOpen so that on close/open, the selected val, estimator & corrector are reset
 
     const handleUpdateSpecification = () => {
-        if (!specification?.id || !algorithmSpec.estimator?.label || !selectedValue?.selectionKey)
+        if (
+            !specification?.id ||
+            !algorithmSpec.estimator?.label ||
+            !selectedValue?.selectionKey ||
+            !selectedValue?.selectionValue
+        )
             return;
+
+        const { weights, conditions, databaseStudyset } = getWeightAndConditionsForSpecification(
+            algorithmSpec.estimator,
+            selectedValue
+        );
 
         mutate(
             {
@@ -108,6 +120,9 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                           }
                         : null,
                     filter: selectedValue.selectionKey,
+                    conditions,
+                    database_studyset: databaseStudyset,
+                    weights,
                 },
             },
             {
@@ -118,7 +133,19 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
         );
     };
 
-    const disable = !algorithmSpec.estimator || !selectedValue?.selectionKey;
+    const disabled = useMemo(() => {
+        const isMultiGroup = isMultiGroupAlgorithm(algorithmSpec.estimator);
+        return (
+            !selectedValue?.selectionKey ||
+            selectedValue?.selectionValue === undefined ||
+            (isMultiGroup && !selectedValue?.referenceDataset)
+        );
+    }, [
+        algorithmSpec.estimator,
+        selectedValue?.referenceDataset,
+        selectedValue?.selectionKey,
+        selectedValue?.selectionValue,
+    ]);
 
     return (
         <BaseDialog
@@ -139,18 +166,7 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                         margin: '1rem 2rem',
                     }}
                 >
-                    <Typography sx={{ marginBottom: '1rem', fontWeight: 'bold' }} gutterBottom>
-                        Edit Analyses Selection:
-                    </Typography>
-                    <SelectAnalysesComponent
-                        annotationdId={
-                            (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''
-                        }
-                        selectedValue={selectedValue}
-                        onSelectValue={(update) => setSelectedValue(update)}
-                    />
-
-                    <Typography sx={{ fontWeight: 'bold', marginTop: '3rem' }} gutterBottom>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' }} gutterBottom>
                         Edit Algorithm:
                     </Typography>
                     <SelectSpecificationComponent
@@ -158,42 +174,60 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                         onSelectSpecification={(update) => setAlgorithmSpec(update)}
                     />
 
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            position: 'sticky',
-                            backgroundColor: 'white',
-                            padding: '10px 0',
-                            bottom: 0,
-                            alignItems: 'center',
-                            zIndex: 99,
-                        }}
+                    <Typography
+                        variant="h6"
+                        sx={{ marginBottom: '1rem', fontWeight: 'bold', marginTop: '1rem' }}
+                        gutterBottom
                     >
-                        {/* empty div used for equally spacing and centering components */}
-                        <Box>
-                            <SelectAnalysesSummaryComponent
-                                studysetId={
-                                    (metaAnalysis?.studyset as StudysetReturn)?.neurostore_id || ''
-                                }
-                                annotationdId={
-                                    (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id ||
-                                    ''
-                                }
-                                selectedValue={selectedValue}
-                            />
-                        </Box>
-                        <LoadingButton
-                            disableElevation
-                            variant="contained"
-                            text="Update"
-                            sx={{ width: '86px' }}
-                            loaderColor="secondary"
-                            isLoading={updateSpecificationIsLoading}
-                            disabled={disable}
-                            onClick={handleUpdateSpecification}
+                        Edit Analyses Selection:
+                    </Typography>
+                    <SelectAnalysesComponent
+                        annotationId={
+                            (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''
+                        }
+                        selectedValue={selectedValue}
+                        onSelectValue={(update) => {
+                            setSelectedValue(update);
+                        }}
+                        algorithm={algorithmSpec}
+                    />
+                </Box>
+
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        position: 'sticky',
+                        backgroundColor: 'white',
+                        padding: '10px 2rem',
+                        bottom: 0,
+                        alignItems: 'center',
+                        zIndex: 99,
+                        marginBottom: '1rem',
+                    }}
+                >
+                    {/* empty div used for equally spacing and centering components */}
+                    <Box>
+                        <SelectAnalysesSummaryComponent
+                            studysetId={
+                                (metaAnalysis?.studyset as StudysetReturn)?.neurostore_id || ''
+                            }
+                            annotationdId={
+                                (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''
+                            }
+                            selectedValue={selectedValue}
                         />
                     </Box>
+                    <LoadingButton
+                        disableElevation
+                        variant="contained"
+                        text="Update"
+                        sx={{ width: '86px' }}
+                        loaderColor="secondary"
+                        isLoading={updateSpecificationIsLoading}
+                        disabled={disabled}
+                        onClick={handleUpdateSpecification}
+                    />
                 </Box>
             </StateHandlerComponent>
         </BaseDialog>

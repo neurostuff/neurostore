@@ -4,7 +4,14 @@ import { EPropertyType, IToggleTypeModel } from 'components/EditMetadata';
 import ToggleTypeStyles from './ToggleType.styles';
 
 const ToggleType: React.FC<IToggleTypeModel> = React.memo((props) => {
-    const { onToggle, type, allowNoneType = true } = props;
+    const {
+        onToggle,
+        type,
+        allowNone = true,
+        allowBoolean = true,
+        allowNumber = true,
+        allowString = true,
+    } = props;
 
     const handleSetType = (event: SelectChangeEvent<EPropertyType>, child: ReactNode) => {
         const selected = event.target.value as EPropertyType;
@@ -21,16 +28,22 @@ const ToggleType: React.FC<IToggleTypeModel> = React.memo((props) => {
                     value={type}
                     onChange={handleSetType}
                 >
-                    <MenuItem sx={ToggleTypeStyles.type_string} value="string">
-                        STRING
-                    </MenuItem>
-                    <MenuItem sx={ToggleTypeStyles.type_number} value="number">
-                        NUMBER
-                    </MenuItem>
-                    <MenuItem sx={ToggleTypeStyles.type_boolean} value="boolean">
-                        BOOLEAN
-                    </MenuItem>
-                    {allowNoneType && (
+                    {allowString && (
+                        <MenuItem sx={ToggleTypeStyles.type_string} value="string">
+                            STRING
+                        </MenuItem>
+                    )}
+                    {allowNumber && (
+                        <MenuItem sx={ToggleTypeStyles.type_number} value="number">
+                            NUMBER
+                        </MenuItem>
+                    )}
+                    {allowBoolean && (
+                        <MenuItem sx={ToggleTypeStyles.type_boolean} value="boolean">
+                            BOOLEAN
+                        </MenuItem>
+                    )}
+                    {allowNone && (
                         <MenuItem sx={ToggleTypeStyles.type_none} value="none">
                             NONE
                         </MenuItem>

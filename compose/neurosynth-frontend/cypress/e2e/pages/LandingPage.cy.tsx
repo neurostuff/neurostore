@@ -6,6 +6,7 @@ const PAGE_NAME = 'LandingPage';
 
 describe(PAGE_NAME, () => {
     beforeEach(() => {
+        cy.clearLocalStorage().clearSessionStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
         cy.intercept('GET', `**/api/base-studies/**`, { fixture: 'baseStudies' }).as(
             'baseStudiesFixture'

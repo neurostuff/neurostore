@@ -94,12 +94,66 @@ describe('ToggleType Component', () => {
         expect(mockOnToggle).toBeCalledWith(EPropertyType.NONE);
     });
 
+    it('should show all types by default', () => {
+        render(<ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} />);
+        const option = screen.getByRole('button', { name: 'STRING' });
+        userEvent.click(option);
+
+        expect(screen.queryByRole('option', { name: 'NONE' })).toBeTruthy();
+        expect(screen.queryByRole('option', { name: 'STRING' })).toBeTruthy();
+        expect(screen.queryByRole('option', { name: 'BOOLEAN' })).toBeTruthy();
+        expect(screen.queryByRole('option', { name: 'NUMBER' })).toBeTruthy();
+    });
+
     it('should remove the none type', () => {
         render(
-            <ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} allowNoneType={false} />
+            <ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} allowNone={false} />
         );
+        const option = screen.getByRole('button', { name: 'STRING' });
+        userEvent.click(option);
 
-        const noneOption = screen.queryByText('NONE');
-        expect(noneOption).toBeFalsy();
+        expect(screen.queryByRole('option', { name: 'NONE' })).toBeFalsy();
+        expect(screen.queryByRole('option', { name: 'STRING' })).toBeTruthy();
+        expect(screen.queryByRole('option', { name: 'BOOLEAN' })).toBeTruthy();
+        expect(screen.queryByRole('option', { name: 'NUMBER' })).toBeTruthy();
+    });
+
+    it('should remove the string type', () => {
+        render(
+            <ToggleType onToggle={mockOnToggle} type={EPropertyType.NUMBER} allowString={false} />
+        );
+        const option = screen.getByRole('button', { name: 'NUMBER' });
+        userEvent.click(option);
+
+        expect(screen.queryByRole('option', { name: 'NONE' })).toBeTruthy();
+        expect(screen.queryByRole('option', { name: 'STRING' })).toBeFalsy();
+        expect(screen.queryByRole('option', { name: 'BOOLEAN' })).toBeTruthy();
+        expect(screen.queryByRole('option', { name: 'NUMBER' })).toBeTruthy();
+    });
+
+    it('should remove the boolean type', () => {
+        render(
+            <ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} allowBoolean={false} />
+        );
+        const option = screen.getByRole('button', { name: 'STRING' });
+        userEvent.click(option);
+
+        expect(screen.queryByRole('option', { name: 'NONE' })).toBeTruthy();
+        expect(screen.queryByRole('option', { name: 'STRING' })).toBeTruthy();
+        expect(screen.queryByRole('option', { name: 'BOOLEAN' })).toBeFalsy();
+        expect(screen.queryByRole('option', { name: 'NUMBER' })).toBeTruthy();
+    });
+
+    it('should remove the number type', () => {
+        render(
+            <ToggleType onToggle={mockOnToggle} type={EPropertyType.STRING} allowNumber={false} />
+        );
+        const option = screen.getByRole('button', { name: 'STRING' });
+        userEvent.click(option);
+
+        expect(screen.queryByRole('option', { name: 'NONE' })).toBeTruthy();
+        expect(screen.queryByRole('option', { name: 'STRING' })).toBeTruthy();
+        expect(screen.queryByRole('option', { name: 'BOOLEAN' })).toBeTruthy();
+        expect(screen.queryByRole('option', { name: 'NUMBER' })).toBeFalsy();
     });
 });

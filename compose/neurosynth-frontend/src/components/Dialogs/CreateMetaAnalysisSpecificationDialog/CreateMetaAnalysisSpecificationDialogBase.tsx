@@ -1,15 +1,18 @@
 import { Box, Step, StepLabel, Stepper } from '@mui/material';
-import BaseDialog, { IDialog } from '../BaseDialog';
-import { useEffect, useState } from 'react';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import CreateMetaAnalysisSpecificationSelectionStep from './CreateMetaAnalysisSpecificationSelectionStep/CreateMetaAnalysisSpecificationSelectionStep';
-import { EPropertyType } from 'components/EditMetadata';
-import CreateMetaAnalysisSpecificationAlgorithmStep from './CreateMetaAnalysisSpecificationAlgorithmStep/CreateMetaAnalysisSpecificationAlgorithmStep';
 import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
-import CreateMetaAnalysisSpecificationReview from './CreateMetaAnalysisSpecificationReview/CreateMetaAnalysisSpecificationReview';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
-import CreateMetaAnalysisSpecificationDetailsStep from './CreateMetaAnalysisSpecificationDetailsStep/CreateMetaAnalysisSpecificationDetailsStep';
 import { useProjectName } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useEffect, useState } from 'react';
+import BaseDialog, { IDialog } from '../BaseDialog';
+import CreateMetaAnalysisSpecificationAlgorithmStep from './CreateMetaAnalysisSpecificationAlgorithmStep/CreateMetaAnalysisSpecificationAlgorithmStep';
+import CreateMetaAnalysisSpecificationDetailsStep from './CreateMetaAnalysisSpecificationDetailsStep/CreateMetaAnalysisSpecificationDetailsStep';
+import {
+    IAlgorithmSelection,
+    IAnalysesSelection,
+} from './CreateMetaAnalysisSpecificationDialogBase.types';
+import CreateMetaAnalysisSpecificationReview from './CreateMetaAnalysisSpecificationReview/CreateMetaAnalysisSpecificationReview';
+import CreateMetaAnalysisSpecificationSelectionStep from './CreateMetaAnalysisSpecificationSelectionStep/CreateMetaAnalysisSpecificationSelectionStep';
 
 const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => {
     const projectName = useProjectName();
@@ -19,16 +22,13 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
         name: `${projectName} Meta Analysis`,
         description: `this is a meta-analysis for ${projectName}`,
     });
-    const [selection, setSelection] = useState<{
-        selectionKey: string | undefined;
-        type: EPropertyType;
-    }>();
-    const [algorithm, setAlgorithm] = useState<{
-        estimator: IAutocompleteObject | null;
-        estimatorArgs: IDynamicValueType;
-        corrector: IAutocompleteObject | null;
-        correctorArgs: IDynamicValueType;
-    }>({
+    const [selection, setSelection] = useState<IAnalysesSelection>({
+        selectionKey: undefined,
+        selectionValue: undefined,
+        type: undefined,
+        referenceDataset: undefined,
+    });
+    const [algorithm, setAlgorithm] = useState<IAlgorithmSelection>({
         estimator: null,
         estimatorArgs: {},
         corrector: null,
@@ -51,7 +51,12 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
             corrector: null,
             correctorArgs: {},
         });
-        setSelection(undefined);
+        setSelection({
+            selectionKey: undefined,
+            selectionValue: undefined,
+            type: undefined,
+            referenceDataset: undefined,
+        });
     };
 
     const handleNavigate = (button: ENavigationButton) => {
@@ -72,10 +77,9 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
         });
     };
 
-    const handleChooseSelection = (selectionKey: string, type: EPropertyType) => {
+    const handleChooseSelection = (selection: IAnalysesSelection) => {
         setSelection({
-            selectionKey,
-            type,
+            ...selection,
         });
     };
 
@@ -98,16 +102,17 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
             dialogTitle="Create Meta-Analysis Specification"
             isOpen={props.isOpen}
             fullWidth
-            maxWidth="md"
+            dialogTitleSx={{ padding: '1rem 0rem 0rem 4rem' }}
+            maxWidth="lg"
             onCloseDialog={handleCloseDialog}
         >
-            <Box>
+            <Box sx={{ padding: '2rem' }}>
                 <Stepper activeStep={activeStep}>
                     <Step>
-                        <StepLabel>Select Analyses</StepLabel>
+                        <StepLabel>Enter Specification</StepLabel>
                     </Step>
                     <Step>
-                        <StepLabel>Enter Specification</StepLabel>
+                        <StepLabel>Select Analyses</StepLabel>
                     </Step>
                     <Step>
                         <StepLabel>Enter Details</StepLabel>
@@ -118,16 +123,17 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
                 </Stepper>
                 <Box sx={{ marginTop: '1rem' }}>
                     {activeStep === 0 && (
-                        <CreateMetaAnalysisSpecificationSelectionStep
-                            onChooseSelection={handleChooseSelection}
-                            selection={selection}
+                        <CreateMetaAnalysisSpecificationAlgorithmStep
+                            onChooseAlgorithm={handleChooseAlgorithm}
+                            algorithm={algorithm}
                             onNavigate={handleNavigate}
                         />
                     )}
                     {activeStep === 1 && (
-                        <CreateMetaAnalysisSpecificationAlgorithmStep
-                            onChooseAlgorithm={handleChooseAlgorithm}
+                        <CreateMetaAnalysisSpecificationSelectionStep
+                            onChooseSelection={handleChooseSelection}
                             algorithm={algorithm}
+                            selection={selection}
                             onNavigate={handleNavigate}
                         />
                     )}

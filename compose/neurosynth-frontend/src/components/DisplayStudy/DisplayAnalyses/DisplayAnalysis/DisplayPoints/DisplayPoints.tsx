@@ -44,8 +44,6 @@ const DisplayPoints: React.FC<{
         };
     }, []);
 
-    console.log(hotData.length);
-
     return (
         <Box sx={{ width: '100%' }}>
             <Typography sx={{ fontWeight: 'bold', marginBottom: '0.5rem' }} gutterBottom>

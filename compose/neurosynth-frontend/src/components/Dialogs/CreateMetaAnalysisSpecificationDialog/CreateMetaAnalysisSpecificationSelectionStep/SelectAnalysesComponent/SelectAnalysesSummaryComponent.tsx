@@ -1,22 +1,17 @@
 import { Box, Typography } from '@mui/material';
-import { EPropertyType } from 'components/EditMetadata';
 import { useGetAnnotationById, useGetStudysetById } from 'hooks';
-import { useEffect, useState } from 'react';
-import { getFilteredAnnotationNotes } from '../SelectAnalysesComponent/SelectAnalysesComponent';
 import { AnalysisReturn, NoteCollectionReturn, StudyReturn } from 'neurostore-typescript-sdk';
+import { useEffect, useState } from 'react';
+import { IAnalysesSelection } from '../../CreateMetaAnalysisSpecificationDialogBase.types';
+import { getFilteredAnnotationNotes } from './SelectAnalysesComponent.helpers';
 
 const SelectAnalysesSummaryComponent: React.FC<{
     annotationdId: string;
     studysetId: string;
-    selectedValue:
-        | {
-              selectionKey: string | undefined;
-              type: EPropertyType;
-          }
-        | undefined;
+    selectedValue: IAnalysesSelection | undefined;
 }> = (props) => {
     const { data: annotation } = useGetAnnotationById(props.annotationdId);
-    const { data: studyset } = useGetStudysetById(props.studysetId);
+    const { data: studyset } = useGetStudysetById(props.studysetId, true);
 
     const [count, setCount] = useState({
         studies: 0,
@@ -32,38 +27,38 @@ const SelectAnalysesSummaryComponent: React.FC<{
 
         const filteredAnnotations = getFilteredAnnotationNotes(
             (annotation.notes || []) as NoteCollectionReturn[],
-            props.selectedValue?.selectionKey
+            props.selectedValue
         );
 
         // populate map
-        const filteredAnnotationsToStudyMap = new Map<string, NoteCollectionReturn>();
+        const filteredAnnotationsAnalysisIdToNoteMap = new Map<string, NoteCollectionReturn>();
         const filteredAnnotationsStudyIdSet = new Set<string>();
         for (const filteredAnnotation of filteredAnnotations) {
             if (filteredAnnotation.study) {
                 filteredAnnotationsStudyIdSet.add(filteredAnnotation.study);
             }
             if (filteredAnnotation.analysis) {
-                filteredAnnotationsToStudyMap.set(filteredAnnotation.analysis, filteredAnnotation);
+                filteredAnnotationsAnalysisIdToNoteMap.set(
+                    filteredAnnotation.analysis,
+                    filteredAnnotation
+                );
             }
         }
 
         let numStudiesSelected = 0;
         let numAnalysesSelected = filteredAnnotations.length;
         let numCoordinatesSelected = 0;
-        const countedStudiesSet = new Set<string>();
         (studyset.studies as StudyReturn[]).forEach((study) => {
-            if (!filteredAnnotationsStudyIdSet.has(study.id || '')) return;
+            if (!study.id || !filteredAnnotationsStudyIdSet.has(study.id)) return;
+
+            if (study.analyses && study.analyses.length) numStudiesSelected++;
 
             ((study.analyses || []) as AnalysisReturn[]).forEach((analysis) => {
-                if (filteredAnnotationsToStudyMap.has(analysis.id || '')) {
-                    if (!countedStudiesSet.has(study.id || '')) {
-                        numStudiesSelected = numStudiesSelected + 1;
-                        countedStudiesSet.add(study.id || '');
-                    }
-
-                    numCoordinatesSelected =
-                        numCoordinatesSelected + (analysis.points || []).length;
+                if (!analysis.id || !filteredAnnotationsAnalysisIdToNoteMap.has(analysis.id)) {
+                    return;
                 }
+
+                numCoordinatesSelected = numCoordinatesSelected + (analysis.points || []).length;
             });
         });
 
@@ -72,7 +67,12 @@ const SelectAnalysesSummaryComponent: React.FC<{
             analyses: numAnalysesSelected,
             coordinates: numCoordinatesSelected,
         });
-    }, [annotation?.notes, props.selectedValue?.selectionKey, studyset?.studies]);
+    }, [
+        annotation?.notes,
+        props.selectedValue,
+        props.selectedValue?.selectionKey,
+        studyset?.studies,
+    ]);
 
     return (
         <Box sx={{ display: 'flex' }}>

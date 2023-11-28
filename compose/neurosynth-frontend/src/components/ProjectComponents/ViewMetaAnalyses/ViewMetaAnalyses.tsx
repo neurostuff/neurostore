@@ -33,7 +33,6 @@ const ViewMetaAnalyses: React.FC = () => {
                 ) : (
                     <Button
                         onClick={() => setCreateMetaAnalysisDialogIsOpen(true)}
-                        sx={{ marginBottom: '1rem' }}
                         variant="contained"
                         startIcon={<Add />}
                         disableElevation

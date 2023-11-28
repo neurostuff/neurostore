@@ -23,9 +23,12 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
         onAddMetadataRow,
         keyPlaceholderText,
         errorMessage,
+        allowBoolean = true,
+        allowString = true,
+        allowNumber = true,
         valuePlaceholderText,
+        allowNone = true,
         showToggleType = true,
-        allowNoneOption = true,
         showMetadataValueInput = true,
     } = props;
 
@@ -94,8 +97,11 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                 >
                     <ToggleType
                         type={currType}
+                        allowString={allowString}
+                        allowBoolean={allowBoolean}
+                        allowNumber={allowNumber}
                         onToggle={handleToggle}
-                        allowNoneType={allowNoneOption}
+                        allowNone={allowNone}
                     />
                 </Box>
             )}
