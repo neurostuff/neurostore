@@ -52,14 +52,18 @@ from .singular import singularize
 
 def create_user():
     from auth0.v3.authentication.users import Users
+    from auth0.v3.exceptions import Auth0Error
 
     auth = request.headers.get("Authorization", None)
     if auth is None:
         return None
     token = auth.split()[1]
-    profile_info = Users(
-        current_app.config["AUTH0_BASE_URL"].removeprefix("https://")
-    ).userinfo(access_token=token)
+    try:
+        profile_info = Users(
+            current_app.config["AUTH0_BASE_URL"].removeprefix("https://")
+        ).userinfo(access_token=token)
+    except Auth0Error:
+        profile_info = {}
 
     # user signed up with auth0, but has not made any queries yet...
     # should have endpoint to "create user" after sign on with auth0
@@ -167,7 +171,7 @@ class BaseView(MethodView):
         # Update nested attributes recursively
         for field, res_name in cls._nested.items():
             field = (field,) if not isinstance(field, tuple) else field
-            if set(data.keys()).issubset(field):
+            if set(data.keys()) < set(field):
                 field = (list(data.keys())[0],)
 
             try:
