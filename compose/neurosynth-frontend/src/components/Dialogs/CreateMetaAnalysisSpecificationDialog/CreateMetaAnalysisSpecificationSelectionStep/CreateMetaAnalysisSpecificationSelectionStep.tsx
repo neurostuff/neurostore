@@ -9,10 +9,11 @@ import { useState } from 'react';
 import {
     IAlgorithmSelection,
     IAnalysesSelection,
-} from '../CreateMetaAnalysisSpecificationDialogBase.types';
-import SelectAnalysesComponent from './SelectAnalysesComponent/SelectAnalysesComponent';
-import { isMultiGroupAlgorithm } from './SelectAnalysesComponent/SelectAnalysesComponent.helpers';
-import SelectAnalysesSummaryComponent from './SelectAnalysesComponent/SelectAnalysesSummaryComponent';
+} from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase.types';
+import SelectAnalysesComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent';
+import { isMultiGroupAlgorithm } from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
+import SelectAnalysesSummaryComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesSummaryComponent';
+import CreateMetaAnalysisSpecificationSelectionStepMultiGroup from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/CreateMetaAnalysisSpecificationSelectionStepMultiGroup';
 
 const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
     onChooseSelection: (selection: IAnalysesSelection) => void;
@@ -22,9 +23,9 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
 }> = (props) => {
     const annotationId = useProjectExtractionAnnotationId();
     const studysetId = useProjectExtractionStudysetId();
-    const [selectedValue, setSelectedValue] = useState<IAnalysesSelection>(props.selection);
-
     const isMultiGroup = isMultiGroupAlgorithm(props.algorithm?.estimator);
+
+    const [selectedValue, setSelectedValue] = useState<IAnalysesSelection>(props.selection);
 
     const handleNavigate = (button: ENavigationButton) => {
         if (selectedValue?.selectionKey && selectedValue?.type !== EPropertyType.NONE)
@@ -54,6 +55,14 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                     annotationId={annotationId || ''}
                     algorithm={props.algorithm}
                 />
+                {isMultiGroup && (
+                    <CreateMetaAnalysisSpecificationSelectionStepMultiGroup
+                        onSelectValue={(newVal) => setSelectedValue(newVal)}
+                        annotationId={annotationId}
+                        selectedValue={selectedValue}
+                        algorithm={props.algorithm}
+                    />
+                )}
 
                 <Box
                     sx={{
