@@ -34,6 +34,10 @@ import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { NeurostoreAnnotation } from 'utils/api';
 import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
+import {
+    isMultiGroupAlgorithm,
+    selectedReferenceDatasetIsDefaultDataset,
+} from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
 
 const getAnalysisTypeDescription = (name: string | undefined): string => {
     switch (name) {
@@ -125,6 +129,25 @@ const MetaAnalysisPage: React.FC = (props) => {
             : '';
         return `${selectionKey} ${selectionValue}`;
     }, [specification]);
+
+    const referenceDataset = useMemo(() => {
+        const isMulti = isMultiGroupAlgorithm({
+            label: specification?.estimator?.type || '',
+            description: '',
+        });
+
+        if (isMulti) {
+            return specification?.conditions?.[1] !== undefined
+                ? specification.conditions[1].toString()
+                : specification?.database_studyset;
+        } else {
+            return null;
+        }
+    }, [
+        specification?.conditions,
+        specification?.database_studyset,
+        specification?.estimator?.type,
+    ]);
 
     const metaAnalysisTypeDescription = useMemo(() => {
         return getAnalysisTypeDescription((metaAnalysis?.specification as Specification)?.type);
@@ -296,7 +319,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                             )}
 
                             <MetaAnalysisSummaryRow title="selection" value={selectionText}>
-                                {specification?.database_studyset && (
+                                {referenceDataset && (
                                     <>
                                         <SelectAnalysesSummaryComponent
                                             annotationdId={
@@ -310,7 +333,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                                             }}
                                         />
                                         <Typography sx={{ marginTop: '1rem', color: 'gray' }}>
-                                            Reference Dataset: {specification.database_studyset}
+                                            Reference Dataset: {referenceDataset}
                                         </Typography>
                                     </>
                                 )}

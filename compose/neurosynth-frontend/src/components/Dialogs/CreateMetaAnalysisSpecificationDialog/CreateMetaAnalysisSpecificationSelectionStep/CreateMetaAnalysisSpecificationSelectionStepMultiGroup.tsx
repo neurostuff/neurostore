@@ -20,7 +20,6 @@ const CreateMetaAnalysisSpecificationSelectionStepMultiGroup: React.FC<{
     selectedValue: IAnalysesSelection;
 }> = (props) => {
     const { algorithm, onSelectValue, annotationId, selectedValue } = props;
-
     const columnOptions = useInclusionColumnOptions(annotationId, selectedValue?.selectionKey);
     const colOptionsToMultiGroupOptions: IMultiGroupOption[] = useMemo(() => {
         return columnOptions
@@ -40,9 +39,7 @@ const CreateMetaAnalysisSpecificationSelectionStepMultiGroup: React.FC<{
     const selectedOption = useMemo(() => {
         if (!selectedValue.referenceDataset) return undefined;
 
-        const foundOption = multiGroupOptions.find(
-            (x) => x.label === selectedValue.referenceDataset
-        );
+        const foundOption = multiGroupOptions.find((x) => x.id === selectedValue.referenceDataset);
         return foundOption;
     }, [multiGroupOptions, selectedValue.referenceDataset]);
 
