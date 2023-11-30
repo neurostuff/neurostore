@@ -6,10 +6,14 @@ import { useMemo } from 'react';
 import {
     IAlgorithmSelection,
     IAnalysesSelection,
-} from '../../CreateMetaAnalysisSpecificationDialogBase.types';
-import { DEFAULT_REFERENCE_DATASETS, IMultiGroupOption } from './SelectAnalysesComponent.types';
-import useInclusionColumnOptions from './useInclusionColumnOptions';
-const SelectAnalysesMultiGroupComponent: React.FC<{
+} from '../CreateMetaAnalysisSpecificationDialogBase.types';
+import {
+    IMultiGroupOption,
+    DEFAULT_REFERENCE_DATASETS,
+} from './SelectAnalysesComponent/SelectAnalysesComponent.types';
+import useInclusionColumnOptions from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/useInclusionColumnOptions';
+
+const CreateMetaAnalysisSpecificationSelectionStepMultiGroup: React.FC<{
     algorithm: IAlgorithmSelection;
     onSelectValue: (option: IAnalysesSelection) => void;
     annotationId: string | undefined;
@@ -47,7 +51,7 @@ const SelectAnalysesMultiGroupComponent: React.FC<{
 
         onSelectValue({
             ...selectedValue,
-            referenceDataset: option?.label,
+            referenceDataset: option?.id,
         });
     };
 
@@ -92,4 +96,4 @@ const SelectAnalysesMultiGroupComponent: React.FC<{
     );
 };
 
-export default SelectAnalysesMultiGroupComponent;
+export default CreateMetaAnalysisSpecificationSelectionStepMultiGroup;

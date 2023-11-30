@@ -5,19 +5,18 @@ import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthT
 import { useGetAnnotationById } from 'hooks';
 import { NoteCollectionReturn } from 'neurostore-typescript-sdk';
 import { useEffect, useMemo, useRef } from 'react';
+import CreateMetaAnalysisSpecificationDialogBaseStyles from '../../CreateMetaAnalysisSpecificationDialogBase.styles';
 import {
     IAlgorithmSelection,
     IAnalysesSelection,
 } from '../../CreateMetaAnalysisSpecificationDialogBase.types';
-import SelectAnalysesComponentTable from './SelectAnalysesComponentTable';
-import SelectAnalysesStringValue from './SelectAnalysesStringValue';
 import {
     isMultiGroupAlgorithm,
     selectedReferenceDatasetIsDefaultDataset,
 } from './SelectAnalysesComponent.helpers';
-import SelectAnalysesMultiGroupComponent from './SelectAnalysesMultiGroupComponent';
 import { DEFAULT_REFERENCE_DATASETS } from './SelectAnalysesComponent.types';
-import CreateMetaAnalysisSpecificationDialogBaseStyles from '../../CreateMetaAnalysisSpecificationDialogBase.styles';
+import SelectAnalysesComponentTable from './SelectAnalysesComponentTable';
+import SelectAnalysesStringValue from './SelectAnalysesStringValue';
 
 const SelectAnalysesComponent: React.FC<{
     annotationId: string;
@@ -73,7 +72,6 @@ const SelectAnalysesComponent: React.FC<{
     const showInclusionSummary = stringInclusionColSelected
         ? !!selectedValue?.selectionValue
         : !!selectedValue?.selectionKey;
-    const showMultiGroup = isMultiGroupAlgorithm(algorithm?.estimator);
 
     const handleSelectColumn = (newVal: IAnalysesSelection | undefined) => {
         if (newVal?.selectionKey === selectedValue.selectionKey) return; // we selected the same option that is already selected
@@ -159,14 +157,6 @@ const SelectAnalysesComponent: React.FC<{
                         allNotes={annotation?.notes as NoteCollectionReturn[] | undefined}
                     />
                 </Box>
-            )}
-            {showMultiGroup && (
-                <SelectAnalysesMultiGroupComponent
-                    onSelectValue={(newVal) => onSelectValue(newVal)}
-                    annotationId={annotationId}
-                    selectedValue={selectedValue}
-                    algorithm={algorithm}
-                />
             )}
         </Box>
     );
