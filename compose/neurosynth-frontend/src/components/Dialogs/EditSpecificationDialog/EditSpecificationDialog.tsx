@@ -20,12 +20,13 @@ import {
 } from 'neurosynth-compose-typescript-sdk';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import BaseDialog, { IDialog } from '../BaseDialog';
-import SelectSpecificationComponent from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationAlgorithmStep/SelectSpecificationComponent/SelectSpecificationComponent';
-import { IAnalysesSelection } from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase.types';
-import SelectAnalysesComponent from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent';
-import { isMultiGroupAlgorithm } from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
-import { getWeightAndConditionsForSpecification } from '../CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationReview/CreateMetaAnalysisSpecificationReview.helpers';
+import BaseDialog, { IDialog } from 'components/Dialogs/BaseDialog';
+import SelectSpecificationComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationAlgorithmStep/SelectSpecificationComponent/SelectSpecificationComponent';
+import { IAnalysesSelection } from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase.types';
+import SelectAnalysesComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent';
+import { isMultiGroupAlgorithm } from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
+import { getWeightAndConditionsForSpecification } from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationReview/CreateMetaAnalysisSpecificationReview.helpers';
+import CreateMetaAnalysisSpecificationSelectionStepMultiGroup from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/CreateMetaAnalysisSpecificationSelectionStepMultiGroup';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 
@@ -64,6 +65,10 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
             selectionKey: specification.filter,
             type: getType(specification?.conditions?.[0]),
             selectionValue: (specification.conditions || [])[0],
+            referenceDataset:
+                specification?.conditions?.[1] !== undefined
+                    ? specification.conditions[1].toString()
+                    : specification?.database_studyset || undefined,
         });
 
         const estimator = specification?.estimator?.type
@@ -103,7 +108,6 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
             algorithmSpec.estimator,
             selectedValue
         );
-
         mutate(
             {
                 specificationId: specification.id,
@@ -132,6 +136,8 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
             }
         );
     };
+
+    const isMultiGroup = isMultiGroupAlgorithm(algorithmSpec.estimator);
 
     const disabled = useMemo(() => {
         const isMultiGroup = isMultiGroupAlgorithm(algorithmSpec.estimator);
@@ -191,6 +197,16 @@ const EditSpecificationDialog: React.FC<IDialog> = (props) => {
                         }}
                         algorithm={algorithmSpec}
                     />
+                    {isMultiGroup && (
+                        <CreateMetaAnalysisSpecificationSelectionStepMultiGroup
+                            onSelectValue={(newVal) => setSelectedValue(newVal)}
+                            annotationId={
+                                (metaAnalysis?.annotation as AnnotationReturn)?.neurostore_id || ''
+                            }
+                            selectedValue={selectedValue}
+                            algorithm={algorithmSpec}
+                        />
+                    )}
                 </Box>
 
                 <Box

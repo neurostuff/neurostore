@@ -4,6 +4,7 @@ import {
     selectedReferenceDatasetIsDefaultDataset,
 } from '../CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
 import { IAnalysesSelection } from '../CreateMetaAnalysisSpecificationDialogBase.types';
+import { EPropertyType } from 'components/EditMetadata';
 
 export const getWeightAndConditionsForSpecification = (
     estimator: IAutocompleteObject | null | undefined,
@@ -40,6 +41,21 @@ export const getWeightAndConditionsForSpecification = (
         weights = [1];
         conditions = [selection.selectionValue] as string[] | boolean[];
     }
+
+    // parse condition into correct type
+    conditions.forEach((condition, index) => {
+        switch (selection.type) {
+            case EPropertyType.BOOLEAN:
+                conditions[index] =
+                    typeof condition === 'boolean' ? condition : condition === 'true';
+                break;
+            case EPropertyType.STRING:
+                conditions[index] = condition.toString();
+                break;
+            default:
+                throw new Error('unsupported selection type');
+        }
+    });
 
     return {
         weights,

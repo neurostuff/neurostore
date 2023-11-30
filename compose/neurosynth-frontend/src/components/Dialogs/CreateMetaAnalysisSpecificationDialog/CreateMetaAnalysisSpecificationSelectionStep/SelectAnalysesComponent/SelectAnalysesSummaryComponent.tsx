@@ -77,6 +77,9 @@ const SelectAnalysesSummaryComponent: React.FC<{
     return (
         <Box sx={{ display: 'flex' }}>
             <Typography sx={{ marginRight: '0.5rem' }} variant="caption">
+                Included:
+            </Typography>{' '}
+            <Typography sx={{ marginRight: '0.5rem' }} variant="caption">
                 {count.studies} studies
             </Typography>{' '}
             |

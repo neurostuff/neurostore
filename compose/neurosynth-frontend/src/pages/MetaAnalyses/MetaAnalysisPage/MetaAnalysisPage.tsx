@@ -2,6 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Box, Button, Link, Paper, Typography } from '@mui/material';
 import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
+import { isMultiGroupAlgorithm } from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
 import SelectAnalysesSummaryComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesSummaryComponent';
 import EditSpecificationDialog from 'components/Dialogs/EditSpecificationDialog/EditSpecificationDialog';
 import DisplayMetaAnalysisResult from 'components/DisplayMetaAnalysisResult/DisplayMetaAnalysisResult';
@@ -125,6 +126,25 @@ const MetaAnalysisPage: React.FC = (props) => {
             : '';
         return `${selectionKey} ${selectionValue}`;
     }, [specification]);
+
+    const referenceDataset = useMemo(() => {
+        const isMulti = isMultiGroupAlgorithm({
+            label: specification?.estimator?.type || '',
+            description: '',
+        });
+
+        if (isMulti) {
+            return specification?.conditions?.[1] !== undefined
+                ? specification.conditions[1].toString()
+                : specification?.database_studyset;
+        } else {
+            return null;
+        }
+    }, [
+        specification?.conditions,
+        specification?.database_studyset,
+        specification?.estimator?.type,
+    ]);
 
     const metaAnalysisTypeDescription = useMemo(() => {
         return getAnalysisTypeDescription((metaAnalysis?.specification as Specification)?.type);
@@ -296,7 +316,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                             )}
 
                             <MetaAnalysisSummaryRow title="selection" value={selectionText}>
-                                {specification?.database_studyset && (
+                                {referenceDataset && (
                                     <>
                                         <SelectAnalysesSummaryComponent
                                             annotationdId={
@@ -310,7 +330,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                                             }}
                                         />
                                         <Typography sx={{ marginTop: '1rem', color: 'gray' }}>
-                                            Reference Dataset: {specification.database_studyset}
+                                            Reference Dataset: {referenceDataset}
                                         </Typography>
                                     </>
                                 )}

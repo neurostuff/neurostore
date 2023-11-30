@@ -93,5 +93,5 @@ export const selectedReferenceDatasetIsDefaultDataset = (
 ) => {
     if (!selectedReferenceDataset) return false;
 
-    return DEFAULT_REFERENCE_DATASETS.some((x) => x.label === selectedReferenceDataset);
+    return DEFAULT_REFERENCE_DATASETS.some((x) => x.id === selectedReferenceDataset);
 };
