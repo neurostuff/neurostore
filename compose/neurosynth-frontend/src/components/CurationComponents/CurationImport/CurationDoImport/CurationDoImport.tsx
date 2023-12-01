@@ -14,24 +14,35 @@ export enum EImportMode {
 
 export interface IImportArgs {
     onNavigate: (button: ENavigationButton) => void;
+    onIsResolvingDuplicates: (isResolvingDuplicates: boolean) => void;
+    isResolvingDuplicates: boolean;
     onImportStubs: (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => void;
 }
 
-const CurationImport: React.FC<{
+const CurationDoImport: React.FC<{
     mode: EImportMode;
+    isResolvingDuplicates: boolean;
+    onIsResolvingDuplicates: (isResolvingDuplicates: boolean) => void;
     onImportStubs: (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => void;
     onNavigate: (button: ENavigationButton) => void;
 }> = (props) => {
     if (props.mode === EImportMode.NEUROSTORE_IMPORT) {
         return (
             <BaseImportFromNeurostore
+                onIsResolvingDuplicates={props.onIsResolvingDuplicates}
+                isResolvingDuplicates={props.isResolvingDuplicates}
                 onImportStubs={props.onImportStubs}
                 onNavigate={props.onNavigate}
             />
         );
     } else if (props.mode === EImportMode.PUBMED_IMPORT) {
         return (
-            <BaseImportPMIDs onImportStubs={props.onImportStubs} onNavigate={props.onNavigate} />
+            <BaseImportPMIDs
+                onIsResolvingDuplicates={props.onIsResolvingDuplicates}
+                isResolvingDuplicates={props.isResolvingDuplicates}
+                onImportStubs={props.onImportStubs}
+                onNavigate={props.onNavigate}
+            />
         );
     } else if (props.mode === EImportMode.MANUAL_CREATE) {
         return (
@@ -40,6 +51,8 @@ const CurationImport: React.FC<{
     } else {
         return (
             <BaseImportStandardFormat
+                onIsResolvingDuplicates={props.onIsResolvingDuplicates}
+                isResolvingDuplicates={props.isResolvingDuplicates}
                 onImportStubs={props.onImportStubs}
                 onNavigate={props.onNavigate}
             />
@@ -47,4 +60,4 @@ const CurationImport: React.FC<{
     }
 };
 
-export default CurationImport;
+export default CurationDoImport;

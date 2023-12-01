@@ -2,33 +2,35 @@ import { Box } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import { useState } from 'react';
 import { hasDuplicates } from '../../helpers/utils';
-import { IImportArgs } from '../CurationImport';
+import { IImportArgs } from '../CurationDoImport';
 import ResolveImportDuplicates from '../ResolveImportDuplicates/ResolveImportDuplicates';
 import NeurostoreSearch from './NeurostoreSearch';
 
 const BaseImportFromNeurostore: React.FC<IImportArgs> = (props) => {
-    const [resolveDuplicates, setResolveDuplicates] = useState(false);
+    const { onNavigate, onImportStubs, onIsResolvingDuplicates, isResolvingDuplicates } = props;
     const [stubs, setStubs] = useState<ICurationStubStudy[]>([]);
 
     const handleOnImportStubs = (stubs: ICurationStubStudy[]) => {
         const duplicatesExist = hasDuplicates(stubs);
         if (duplicatesExist) {
             setStubs(stubs);
-            setResolveDuplicates(true);
+            onIsResolvingDuplicates(true);
         } else {
-            props.onImportStubs(stubs);
+            onIsResolvingDuplicates(false);
+            onImportStubs(stubs);
         }
     };
 
     const handleResolveStubs = (updatedStubs: ICurationStubStudy[]) => {
-        props.onImportStubs(updatedStubs);
+        onIsResolvingDuplicates(false);
+        onImportStubs(updatedStubs);
     };
 
-    if (resolveDuplicates) {
+    if (isResolvingDuplicates) {
         return (
             <ResolveImportDuplicates
                 onResolveStubs={handleResolveStubs}
-                onNavigate={props.onNavigate}
+                onNavigate={onNavigate}
                 stubs={stubs}
             />
         );

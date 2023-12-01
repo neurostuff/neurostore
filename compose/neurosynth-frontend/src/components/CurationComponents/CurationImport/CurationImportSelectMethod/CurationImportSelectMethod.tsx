@@ -1,8 +1,9 @@
-import { Box, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Box, FormControl, FormControlLabel, Radio, RadioGroup, Typography } from '@mui/material';
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { EImportMode } from '../CurationImport/CurationImport';
+import { EImportMode } from 'components/CurationComponents/CurationImport/CurationDoImport/CurationDoImport';
+import CurationImportSelectMethodStyles from 'components/CurationComponents/CurationImport/CurationImportSelectMethod/CurationImportSelectMethod.styles';
 
 const CurationImportSelectMethod: React.FC<{
     importMethod: EImportMode;
@@ -11,31 +12,91 @@ const CurationImportSelectMethod: React.FC<{
 }> = (props) => {
     return (
         <Box sx={{ marginTop: '2rem' }}>
-            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                <FormControl sx={{ width: '600px' }}>
-                    <InputLabel id="num-col-label">Import Method</InputLabel>
-                    <Select
-                        label="Import Method"
-                        value={props.importMethod}
-                        onChange={(event) => {
-                            props.onChangeImportMode(event.target.value as EImportMode);
-                        }}
-                    >
-                        <MenuItem value={EImportMode.NEUROSTORE_IMPORT}>
-                            Import via Neurostore
-                        </MenuItem>
-                        <MenuItem value={EImportMode.PUBMED_IMPORT}>
-                            Import via Pubmed ID (PMID) List
-                        </MenuItem>
-                        <MenuItem value={EImportMode.MANUAL_CREATE}>
-                            Manually Create a New Study
-                        </MenuItem>
-                        <MenuItem value={EImportMode.FILE_IMPORT}>
-                            Import via File Format (RIS, endnote, and BibTex)
-                        </MenuItem>
-                    </Select>
-                </FormControl>
-            </Box>
+            <FormControl sx={{ width: '100%' }}>
+                <RadioGroup
+                    value={props.importMethod}
+                    onChange={(event) => {
+                        props.onChangeImportMode(event.target.value as EImportMode);
+                    }}
+                >
+                    <FormControlLabel
+                        sx={[
+                            CurationImportSelectMethodStyles.radio,
+                            props.importMethod === EImportMode.NEUROSTORE_IMPORT
+                                ? CurationImportSelectMethodStyles.selected
+                                : { border: '2px solid transparent' },
+                        ]}
+                        value={EImportMode.NEUROSTORE_IMPORT}
+                        label={
+                            <>
+                                <Typography variant="h6">Import via Neurostore</Typography>
+                                <Typography variant="body1" sx={{ color: 'muted.main' }}>
+                                    Use our database full of automatically extracted coordinates
+                                </Typography>
+                            </>
+                        }
+                        control={<Radio />}
+                    />
+                    <FormControlLabel
+                        sx={[
+                            CurationImportSelectMethodStyles.radio,
+                            props.importMethod === EImportMode.PUBMED_IMPORT
+                                ? CurationImportSelectMethodStyles.selected
+                                : { border: '2px solid transparent' },
+                        ]}
+                        value={EImportMode.PUBMED_IMPORT}
+                        label={
+                            <>
+                                <Typography variant="h6">
+                                    Import via Pubmed ID (PMID) List
+                                </Typography>
+                                <Typography variant="body1" sx={{ color: 'muted.main' }}>
+                                    Import studies from a collection in pubmed
+                                </Typography>
+                            </>
+                        }
+                        control={<Radio />}
+                    />
+                    <FormControlLabel
+                        sx={[
+                            CurationImportSelectMethodStyles.radio,
+                            props.importMethod === EImportMode.MANUAL_CREATE
+                                ? CurationImportSelectMethodStyles.selected
+                                : { border: '2px solid transparent' },
+                        ]}
+                        value={EImportMode.MANUAL_CREATE}
+                        label={
+                            <>
+                                <Typography variant="h6">Manually create a new study</Typography>
+                                <Typography variant="body1" sx={{ color: 'muted.main' }}>
+                                    Create a new study from scratch, manually filling in the title,
+                                    authors, PMID, DOI, etc
+                                </Typography>
+                            </>
+                        }
+                        control={<Radio />}
+                    />
+                    <FormControlLabel
+                        sx={[
+                            CurationImportSelectMethodStyles.radio,
+                            props.importMethod === EImportMode.FILE_IMPORT
+                                ? CurationImportSelectMethodStyles.selected
+                                : { border: '2px solid transparent' },
+                        ]}
+                        value={EImportMode.FILE_IMPORT}
+                        label={
+                            <>
+                                <Typography variant="h6">Import via File Format</Typography>
+                                <Typography variant="body1" sx={{ color: 'muted.main' }}>
+                                    Import studies from widely used standard formats such as RIS,
+                                    endnote, or BibTex
+                                </Typography>
+                            </>
+                        }
+                        control={<Radio />}
+                    />
+                </RadioGroup>
+            </FormControl>
             <Box sx={{ marginTop: '2rem' }}>
                 <NavigationButtons prevButtonDisabled onButtonClick={props.onNavigate} />
             </Box>

@@ -1,11 +1,11 @@
-import { Box, Button, Link, Typography } from '@mui/material';
+import { useAuth0 } from '@auth0/auth0-react';
+import { Box, Button, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
-import FullTextLinkComponent from 'components/FullTextLinkComponent/FullTextLinkComponent';
+import DisplayStudyChipLinks from 'components/DisplayStudy/DisplayStudyChipLinks/DisplayStudyChipLinks';
 import TextEdit from 'components/TextEdit/TextEdit';
-import { ISource } from 'hooks/projects/useGetProjects';
 import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
+import { ISource } from 'hooks/projects/useGetProjects';
 import {
     useDeleteStub,
     useProjectCurationColumns,
@@ -13,7 +13,6 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import React, { useState } from 'react';
 import EditableStubSummaryHeader from './EditableStubSummaryHeader';
-import { useAuth0 } from '@auth0/auth0-react';
 
 interface IEditableStubSummary {
     stub: ICurationStubStudy | undefined;
@@ -88,45 +87,11 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                 />
             </Box>
 
-            <Box
-                sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                }}
-            >
-                <FullTextLinkComponent paperTitle={props.stub.title} />
-                {props.stub.neurostoreId && (
-                    <Link
-                        underline="hover"
-                        target="_blank"
-                        href={`/base-studies/${props.stub.neurostoreId}`}
-                        sx={{ marginRight: '10px' }}
-                    >
-                        view study in neurostore
-                    </Link>
-                )}
-                <TextEdit
-                    sx={{ width: '500px' }}
-                    onSave={handleUpdateStub}
-                    label="articleLink"
-                    textToEdit={props.stub.articleLink}
-                >
-                    {props.stub.articleLink ? (
-                        <Link
-                            underline="hover"
-                            target="_blank"
-                            href={props.stub.articleLink}
-                            sx={{ marginRight: '10px' }}
-                        >
-                            view article link
-                        </Link>
-                    ) : (
-                        <Typography sx={{ color: 'warning.dark' }}>
-                            No external article link
-                        </Typography>
-                    )}
-                </TextEdit>
-            </Box>
+            <DisplayStudyChipLinks
+                doi={props.stub.doi}
+                pmid={props.stub.pmid}
+                studyName={props.stub.title}
+            />
 
             <Box>
                 <TextEdit
@@ -147,53 +112,26 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                 </TextEdit>
             </Box>
 
-            <TextEdit
-                sx={{ width: '100%', input: { fontSize: '1.25rem' } }}
-                onSave={handleUpdateStub}
-                label="authors"
-                textToEdit={props.stub.authors}
-            >
-                <Typography sx={{ color: props.stub.authors ? '' : 'warning.dark' }} variant="h6">
-                    {props.stub.authors || 'No Authors'}
+            <Typography sx={{ color: props.stub.authors ? '' : 'warning.dark' }} variant="h6">
+                {props.stub.authors || 'No Authors'}
+            </Typography>
+
+            <Box sx={{ display: 'flex' }}>
+                <Typography
+                    sx={{ color: props.stub.journal ? 'initial' : 'warning.dark' }}
+                    variant="h6"
+                >
+                    {props.stub.journal || 'No Journal'}
                 </Typography>
-            </TextEdit>
-            <Box sx={{ display: 'flex' }}>
-                <TextEdit
-                    sx={{
-                        width: '350px',
-                        input: { padding: 0, fontSize: '1.25rem' },
-                    }}
-                    label="journal"
-                    textToEdit={props.stub.journal}
-                    onSave={handleUpdateStub}
-                >
-                    <Typography
-                        sx={{ color: props.stub.journal ? 'initial' : 'warning.dark' }}
-                        variant="h6"
-                    >
-                        {props.stub.journal || 'No Journal'}
-                    </Typography>
-                </TextEdit>
             </Box>
-            <Box sx={{ display: 'flex' }}>
-                <TextEdit
-                    sx={{
-                        width: '350px',
-                        input: { padding: 0, fontSize: '1.25rem' },
-                    }}
-                    label="year"
-                    fieldName="articleYear"
-                    textToEdit={props.stub.articleYear || ''}
-                    onSave={handleUpdateStub}
-                >
-                    <Typography
-                        sx={{ color: props.stub.articleYear ? 'initial' : 'warning.dark' }}
-                        variant="h6"
-                    >
-                        {props.stub.articleYear || 'No Year'}
-                    </Typography>
-                </TextEdit>
-            </Box>
+
+            <Typography
+                sx={{ color: props.stub.articleYear ? 'initial' : 'warning.dark' }}
+                variant="h6"
+            >
+                {props.stub.articleYear || 'No Year'}
+            </Typography>
+
             <Box sx={{ display: 'flex' }}>
                 <Typography sx={{ marginRight: '10px' }} variant="h6">
                     PMID:
@@ -222,18 +160,7 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                     label="doi"
                     textToEdit={props.stub.doi}
                 >
-                    {props.stub.doi ? (
-                        <Link
-                            target="_blank"
-                            href={`https://doi.org/${props.stub.doi}`}
-                            underline="hover"
-                            sx={{
-                                fontSize: '1.25rem',
-                            }}
-                        >
-                            {props.stub.doi}
-                        </Link>
-                    ) : (
+                    {props.stub.doi && (
                         <Typography
                             sx={{ color: props.stub.doi ? 'initial' : 'warning.dark' }}
                             variant="h6"
@@ -244,43 +171,27 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                 </TextEdit>
             </Box>
 
-            <TextEdit label="keywords" onSave={handleUpdateStub} textToEdit={props.stub.keywords}>
-                <Typography
-                    sx={{
-                        color: props.stub.keywords ? 'initial' : 'warning.dark',
-                        fontWeight: props.stub.keywords ? 'bold' : 'initial',
-                    }}
-                >
-                    {props.stub.keywords || 'No Keywords'}
-                </Typography>
-            </TextEdit>
-            <TextEdit
-                label="description"
-                onSave={handleUpdateStub}
-                fieldName="abstractText"
-                textToEdit={props.stub.abstractText}
-                multiline
-            >
-                <Typography
-                    sx={{
-                        whiteSpace: 'break-spaces',
-                        color: props.stub.abstractText ? 'initial' : 'warning.dark',
-                    }}
-                >
-                    {props.stub.abstractText || 'No Abstract'}
-                </Typography>
-            </TextEdit>
+            <Typography sx={{ whiteSpace: 'break-spaces' }}>
+                Source: {props.stub.identificationSource.label}
+            </Typography>
 
-            <Box sx={{ margin: '1rem 0' }}>
-                <IdentificationSourcePopup
-                    label="source"
-                    disabled={!isAuthenticated}
-                    onAddSource={(source) => handleUpdateStub(source, 'identificationSource')}
-                    onCreateSource={(source) => handleUpdateStub(source, 'identificationSource')}
-                    initialValue={props.stub.identificationSource}
-                    size="small"
-                />
-            </Box>
+            <Typography
+                sx={{
+                    color: props.stub.keywords ? 'initial' : 'warning.dark',
+                    fontWeight: props.stub.keywords ? 'bold' : 'initial',
+                }}
+            >
+                {props.stub.keywords || 'No Keywords'}
+            </Typography>
+
+            <Typography
+                sx={{
+                    whiteSpace: 'break-spaces',
+                    color: props.stub.abstractText ? 'initial' : 'warning.dark',
+                }}
+            >
+                {props.stub.abstractText || 'No Abstract'}
+            </Typography>
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <ConfirmationDialog

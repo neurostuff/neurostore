@@ -2,14 +2,17 @@ import { Box, TextField } from '@mui/material';
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
+import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
 import { ISource } from 'hooks/projects/useGetProjects';
 import { ChangeEvent, useState } from 'react';
-import CreateStubStudyStyles from './CreateStubStudy.styles';
 import { v4 as uuidv4 } from 'uuid';
-import { IImportArgs } from '../CurationImport';
+import CreateStubStudyStyles from './CreateStubStudy.styles';
 
-const CreateStubStudy: React.FC<IImportArgs> = (props) => {
+const CreateStubStudy: React.FC<{
+    onNavigate: (button: ENavigationButton) => void;
+    onImportStubs: (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => void;
+}> = (props) => {
     const [formFieldTouched, setFormFieldTouched] = useState({
         name: false,
         doi: false,

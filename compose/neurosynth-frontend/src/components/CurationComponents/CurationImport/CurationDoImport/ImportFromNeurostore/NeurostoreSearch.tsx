@@ -19,7 +19,7 @@ import {
 } from 'pages/helpers/utils';
 import { useEffect, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
-import { IImportArgs } from '../CurationImport';
+import { IImportArgs } from '../CurationDoImport';
 import { studiesToStubs } from './helpers/utils';
 
 const NeurostoreSearch: React.FC<IImportArgs> = (props) => {

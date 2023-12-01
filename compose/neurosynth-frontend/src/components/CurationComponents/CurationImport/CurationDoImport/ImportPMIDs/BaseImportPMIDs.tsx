@@ -2,16 +2,15 @@ import { ICurationStubStudy } from 'components/CurationComponents/CurationStubSt
 import React from 'react';
 import { useState } from 'react';
 import { hasDuplicates } from '../../helpers/utils';
-import { IImportArgs } from '../CurationImport';
+import { IImportArgs } from '../CurationDoImport';
 import ResolveImportDuplicates from '../ResolveImportDuplicates/ResolveImportDuplicates';
 import FetchPMIDs from './FetchPMIDs';
 import UploadPMIDs from './UploadPMIDs';
 
 const BaseImportPMIDs: React.FC<IImportArgs> = (props) => {
-    const { onNavigate, onImportStubs } = props;
+    const { onNavigate, onImportStubs, onIsResolvingDuplicates, isResolvingDuplicates } = props;
 
     const [uploadIdsPhase, setUploadIdsPhase] = useState(true);
-    const [resolveDuplicates, setResolveDuplicates] = useState(false);
     const [parsedIds, setParsedIds] = useState<string[]>([]);
     const [stubs, setStubs] = useState<ICurationStubStudy[]>([]);
 
@@ -24,17 +23,18 @@ const BaseImportPMIDs: React.FC<IImportArgs> = (props) => {
         (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => {
             const duplicatesExist = hasDuplicates(stubs);
             if (duplicatesExist) {
-                setResolveDuplicates(true);
+                onIsResolvingDuplicates(true);
                 setStubs(stubs);
             } else {
+                onIsResolvingDuplicates(false);
                 onImportStubs(stubs, unimportedStubs);
             }
         },
-        [onImportStubs]
+        [onImportStubs, onIsResolvingDuplicates]
     );
 
     const handleDuplicateStubsResolved = (updatedStubs: ICurationStubStudy[]) => {
-        props.onImportStubs(updatedStubs);
+        onImportStubs(updatedStubs);
     };
 
     if (uploadIdsPhase) {
@@ -43,11 +43,11 @@ const BaseImportPMIDs: React.FC<IImportArgs> = (props) => {
         );
     }
 
-    if (resolveDuplicates) {
+    if (isResolvingDuplicates) {
         return (
             <ResolveImportDuplicates
                 stubs={stubs}
-                onNavigate={props.onNavigate}
+                onNavigate={onNavigate}
                 onResolveStubs={handleDuplicateStubsResolved}
             />
         );
