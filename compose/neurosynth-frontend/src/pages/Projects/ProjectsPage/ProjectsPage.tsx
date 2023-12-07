@@ -38,7 +38,7 @@ const ProjectsPage: React.FC = (props) => {
         <StateHandlerComponent isLoading={false} isError={isError}>
             <Box sx={{ display: 'flex' }}>
                 <Typography gutterBottom variant="h4">
-                    Projects
+                    My Projects
                 </Typography>
             </Box>
 

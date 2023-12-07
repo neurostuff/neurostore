@@ -1,17 +1,18 @@
-import { Step, StepLabel, Stepper, Box } from '@mui/material';
+import { Box, Step, StepLabel, Stepper, Typography } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { useEffect, useState } from 'react';
+import CurationDoImport, {
+    EImportMode,
+} from 'components/CurationComponents/CurationImport/CurationDoImport/CurationDoImport';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ICurationStubStudy } from '../CurationStubStudy/CurationStubStudyDraggableContainer';
-import CurationImport, { EImportMode } from './CurationImport/CurationImport';
-import CurationImportResolveDuplicates from './CurationImportResolveDuplicates/CurationImportResolveDuplicates';
+import BaseImportNameAndReview from './CurationImportNameAndReview/BaseImportNameAndReview';
 import CurationImportSelectMethod from './CurationImportSelectMethod/CurationImportSelectMethod';
-import CurationImportReview from './CurationImportReview/CurationImportReview';
-import CurationImportTag from './CurationImportTag/CurationImportTag';
 
 const CurationImportBase: React.FC = (props) => {
     const [activeStep, setActiveStep] = useState(0);
     const [importMode, setImportMode] = useState<EImportMode>(EImportMode.NEUROSTORE_IMPORT);
+    const [isResolvingDuplicates, setIsResolvingDuplicates] = useState(false);
     const [stubs, setStubs] = useState<ICurationStubStudy[]>([]);
     const [unimportedStubs, setUnimportedStubs] = useState<string[]>([]);
     const location = useLocation();
@@ -28,10 +29,14 @@ const CurationImportBase: React.FC = (props) => {
     };
 
     const handleNavigate = (button: ENavigationButton) => {
+        setIsResolvingDuplicates(false);
         setActiveStep((prev) => {
             if (button === ENavigationButton.NEXT) {
-                if (activeStep < 4) return prev + 1;
-                return prev;
+                if (activeStep < 2) {
+                    return prev + 1;
+                } else {
+                    return prev;
+                }
             } else {
                 if (activeStep > 0) return prev - 1;
                 return prev;
@@ -42,8 +47,15 @@ const CurationImportBase: React.FC = (props) => {
     const handleImportStubs = (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => {
         setStubs(stubs);
         if (unimportedStubs) setUnimportedStubs(unimportedStubs);
-        setActiveStep((prev) => prev + 1);
     };
+
+    const secondStepIsResolvingDuplicates = useMemo(() => {
+        return isResolvingDuplicates && activeStep === 1;
+    }, [activeStep, isResolvingDuplicates]);
+
+    const thirdStepIsResolvingDuplicates = useMemo(() => {
+        return isResolvingDuplicates && activeStep === 2;
+    }, [activeStep, isResolvingDuplicates]);
 
     return (
         <Box>
@@ -52,16 +64,64 @@ const CurationImportBase: React.FC = (props) => {
                     <StepLabel>Choose Method</StepLabel>
                 </Step>
                 <Step>
-                    <StepLabel>Import</StepLabel>
+                    <StepLabel
+                        sx={{
+                            '.MuiStepLabel-iconContainer': {
+                                svg: {
+                                    color: secondStepIsResolvingDuplicates ? 'warning.dark' : '',
+                                },
+                            },
+                        }}
+                    >
+                        <Typography
+                            sx={{
+                                color: secondStepIsResolvingDuplicates ? 'warning.dark' : 'inherit',
+                                display: 'inline',
+                            }}
+                            variant="body2"
+                        >
+                            Import
+                        </Typography>
+                        {secondStepIsResolvingDuplicates && (
+                            <Typography
+                                variant="body2"
+                                sx={{ color: 'warning.dark', display: 'inline' }}
+                            >
+                                {' '}
+                                (resolving duplicates...)
+                            </Typography>
+                        )}
+                    </StepLabel>
                 </Step>
                 <Step>
-                    <StepLabel>Review</StepLabel>
-                </Step>
-                <Step>
-                    <StepLabel>Tag</StepLabel>
-                </Step>
-                <Step>
-                    <StepLabel>Resolve Duplicates</StepLabel>
+                    <StepLabel
+                        sx={{
+                            '.MuiStepLabel-iconContainer': {
+                                svg: {
+                                    color: thirdStepIsResolvingDuplicates ? 'warning.dark' : '',
+                                },
+                            },
+                        }}
+                    >
+                        <Typography
+                            sx={{
+                                color: thirdStepIsResolvingDuplicates ? 'warning.dark' : 'inherit',
+                                display: 'inline',
+                            }}
+                            variant="body2"
+                        >
+                            Name and Review
+                        </Typography>
+                        {thirdStepIsResolvingDuplicates && (
+                            <Typography
+                                variant="body2"
+                                sx={{ color: 'warning.dark', display: 'inline' }}
+                            >
+                                {' '}
+                                (resolving duplicates...)
+                            </Typography>
+                        )}
+                    </StepLabel>
                 </Step>
             </Stepper>
             <Box>
@@ -73,28 +133,24 @@ const CurationImportBase: React.FC = (props) => {
                     />
                 )}
                 {activeStep === 1 && (
-                    <CurationImport
+                    <CurationDoImport
+                        stubs={stubs}
+                        onIsResolvingDuplicates={(val) => setIsResolvingDuplicates(val)}
+                        isResolvingDuplicates={isResolvingDuplicates}
                         onImportStubs={handleImportStubs}
                         mode={importMode}
                         onNavigate={handleNavigate}
                     />
                 )}
                 {activeStep === 2 && (
-                    <CurationImportReview
-                        onNavigate={handleNavigate}
+                    <BaseImportNameAndReview
+                        onUpdateStubs={(stubs) => setStubs(stubs)}
+                        onIsResolvingDuplicates={(val) => setIsResolvingDuplicates(val)}
+                        isResolvingDuplicates={isResolvingDuplicates}
                         stubs={stubs}
                         unimportedStubs={unimportedStubs}
-                    />
-                )}
-                {activeStep === 3 && (
-                    <CurationImportTag
-                        onUpdateStubs={(stubs) => setStubs(stubs)}
-                        stubs={stubs}
                         onNavigate={handleNavigate}
                     />
-                )}
-                {activeStep === 4 && (
-                    <CurationImportResolveDuplicates onNavigate={handleNavigate} stubs={stubs} />
                 )}
             </Box>
         </Box>

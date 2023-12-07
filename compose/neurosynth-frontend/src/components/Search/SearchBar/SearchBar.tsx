@@ -43,7 +43,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
         descOrder: true,
         nameSearch: undefined, // this defaults to undefined if empty in useGetBaseStudies
         descriptionSearch: undefined, // this defaults to undefined if empty in useGetBaseStudies
-        publicationSearch: undefined, // this defaults to undefined if empty in useGetBaseStudies
+        journalSearch: undefined, // this defaults to undefined if empty in useGetBaseStudies
         authorSearch: undefined,
     });
 
@@ -70,7 +70,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
             descOrder: searchCriteria.descOrder,
             nameSearch: searchCriteria.nameSearch,
             descriptionSearch: searchCriteria.descriptionSearch,
-            publicationSearch: searchCriteria.publicationSearch,
+            journalSearch: searchCriteria.journalSearch,
             authorSearch: searchCriteria.authorSearch,
         });
     }, [location.search]);
@@ -84,7 +84,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
             descOrder: true,
             nameSearch: undefined,
             descriptionSearch: undefined,
-            publicationSearch: undefined,
+            journalSearch: undefined,
             authorSearch: undefined,
         });
     };
@@ -183,7 +183,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                             <SearchBarFilters
                                 nameSearch={searchState.nameSearch}
                                 descriptionSearch={searchState.descriptionSearch}
-                                publicationSearch={searchState.publicationSearch}
+                                journalSearch={searchState.journalSearch}
                                 authorSearch={searchState.authorSearch}
                                 onAddFilter={handleAddFilter}
                                 onRemoveFilter={handleRemoveFilter}

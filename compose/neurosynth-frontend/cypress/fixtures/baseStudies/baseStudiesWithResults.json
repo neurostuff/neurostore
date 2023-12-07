@@ -1,0 +1,67 @@
+{
+    "metadata": {
+        "total_count": 4
+    },
+    "results": [
+        {
+            "authors": "Kelley WM, Miezin FM, McDermott KB, Buckner RL, Raichle ME, Cohen NJ, Ollinger JM, Akbudak E, Conturo TE, Snyder AZ, Petersen SE",
+            "created_at": "2023-06-21T22:17:27.973390+00:00",
+            "description": null,
+            "doi": "10.1016/S0896-6273(00)80474-2",
+            "id": "4JnokyihF8Ao",
+            "level": "group",
+            "metadata": null,
+            "name": "Hemispheric specialization in human dorsal frontal cortex and medial temporal lobe for verbal and nonverbal memory encoding.",
+            "pmid": "9620697",
+            "publication": "Neuron",
+            "updated_at": "2023-08-23T23:18:16.418526+00:00",
+            "user": null,
+            "year": null
+          },
+          {
+            "authors": "LaBar KS, Gatenby JC, Gore JC, LeDoux JE, Phelps EA",
+            "created_at": "2023-06-21T22:17:27.973390+00:00",
+            "description": null,
+            "doi": "10.1016/S0896-6273(00)80475-4",
+            "id": "6vfY9XuN9fh6",
+            "level": "group",
+            "metadata": null,
+            "name": "Human amygdala activation during conditioned fear acquisition and extinction: a mixed-trial fMRI study.",
+            "pmid": "9620698",
+            "publication": "Neuron",
+            "updated_at": "2023-08-23T23:18:16.418526+00:00",
+            "user": null,
+            "year": null
+          },
+          {
+            "authors": "Buchel C, Morris J, Dolan RJ, Friston KJ",
+            "created_at": "2023-06-21T22:17:27.973390+00:00",
+            "description": null,
+            "doi": "10.1016/S0896-6273(00)80476-6",
+            "id": "VyRqkaSbaUdE",
+            "level": "group",
+            "metadata": null,
+            "name": "Brain systems mediating aversive conditioning: an event-related fMRI study.",
+            "pmid": "9620699",
+            "publication": "Neuron",
+            "updated_at": "2023-08-23T23:18:16.418526+00:00",
+            "user": null,
+            "year": null
+          },
+          {
+            "authors": "Owen AM, Stern CE, Look RB, Tracey I, Rosen BR, Petrides M",
+            "created_at": "2023-06-21T22:17:27.973390+00:00",
+            "description": null,
+            "doi": null,
+            "id": "78pnBAS5drv2",
+            "level": "group",
+            "metadata": null,
+            "name": "Functional organization of spatial and nonspatial working memory processing within the human lateral frontal cortex.",
+            "pmid": "9636217",
+            "publication": "Proceedings of the National Academy of Sciences of the United States of America",
+            "updated_at": "2023-08-23T23:18:16.418526+00:00",
+            "user": null,
+            "year": null
+          }
+    ]
+}

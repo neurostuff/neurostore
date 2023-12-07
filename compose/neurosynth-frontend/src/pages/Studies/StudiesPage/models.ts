@@ -5,7 +5,7 @@ export enum SortBy {
     DESCRIPTION = 'description',
     CREATEDAT = 'created_at',
     SOURCE = 'source',
-    PUBLICATION = 'publication',
+    JOURNAL = 'journal',
 }
 
 export enum Source {
@@ -21,7 +21,7 @@ export enum SearchBy {
     TITLE = 'title',
     DESCRIPTION = 'description',
     AUTHORS = 'authors',
-    PUBLICATION = 'publication',
+    JOURNAL = 'journal',
 }
 
 export enum SearchDataType {
@@ -35,7 +35,7 @@ export const SearchByMapping = {
     [SearchBy.AUTHORS]: 'authorSearch',
     [SearchBy.DESCRIPTION]: 'descriptionSearch',
     [SearchBy.TITLE]: 'nameSearch',
-    [SearchBy.PUBLICATION]: 'publicationSearch',
+    [SearchBy.JOURNAL]: 'journalSearch',
 };
 
 export class SearchCriteria {
@@ -51,7 +51,7 @@ export class SearchCriteria {
         public authorSearch: string | undefined = undefined,
         public showUnique: boolean | undefined = undefined,
         public source: Source | undefined = undefined,
-        public publicationSearch: string | undefined = undefined,
+        public journalSearch: string | undefined = undefined,
         public userId: string | undefined = undefined,
         public dataType: SearchDataType | undefined = SearchDataType.ALL,
         public studysetOwner: string | undefined = undefined,

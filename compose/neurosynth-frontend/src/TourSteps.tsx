@@ -99,7 +99,7 @@ const TourSteps: { [key: string]: StepType[] } = {
                     <Typography variant="h5">Details</Typography>
                     <Typography variant="subtitle1">
                         This page holds information on a particular study, including the{' '}
-                        <b>study title, authors, publication, DOI, and description.</b>
+                        <b>study title, authors, journal, DOI, and description.</b>
                     </Typography>
                 </div>
             ),
@@ -306,7 +306,7 @@ const TourSteps: { [key: string]: StepType[] } = {
                     <Typography variant="h5">Studyset Details</Typography>
                     <Typography variant="subtitle1">
                         If you own this studyset, you will be able to edit the studyset name and
-                        associated publication, DOI, and description.
+                        associated journal, DOI, and description.
                     </Typography>
                 </div>
             ),

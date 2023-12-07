@@ -14,7 +14,7 @@ export const baseStudiesSearchHelper = (searchCriteria: Partial<SearchCriteria>)
         searchCriteria.authorSearch || undefined,
         searchCriteria.level,
         searchCriteria.dataType === SearchDataType.ALL ? 'both' : searchCriteria.dataType,
-        searchCriteria.publicationSearch || undefined,
+        searchCriteria.journalSearch || undefined,
         searchCriteria.pmid,
         searchCriteria.doi,
         searchCriteria.flat,

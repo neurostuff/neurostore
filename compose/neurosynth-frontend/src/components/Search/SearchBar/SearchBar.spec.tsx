@@ -54,7 +54,7 @@ describe('SearchBar Component', () => {
             descOrder: expect.any(Boolean),
             descriptionSearch: undefined,
             nameSearch: undefined,
-            publicationSearch: undefined,
+            journalSearch: undefined,
             sortBy: expect.any(String),
             source: expect.any(String),
             genericSearchStr: 'ABCDEF', // this is the thing we care about and want to test
