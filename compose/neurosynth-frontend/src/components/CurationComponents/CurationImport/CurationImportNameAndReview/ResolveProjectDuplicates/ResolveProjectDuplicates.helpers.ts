@@ -1,7 +1,6 @@
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
-import { IResolveProjectDuplicatesCurationStubStudy } from './ResolveProjectDuplicates.types';
 import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import { IResolveProjectDuplicatesCurationStubStudy } from './ResolveProjectDuplicates.types';
 
 export const flattenColumns = (
     cols: ICurationColumn[]

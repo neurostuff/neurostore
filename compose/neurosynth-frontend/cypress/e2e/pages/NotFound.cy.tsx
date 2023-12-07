@@ -1,3 +1,5 @@
+/// <reference types="cypress" />
+
 export {};
 
 describe('NotFoundPage', () => {
