@@ -1,0 +1,44 @@
+%0 Journal Article
+%T Role of the anterior insula in task-level control and focal attention
+%A Nelson, Steven M
+%A Dosenbach, Nico UF
+%A Cohen, Alexander L
+%A Wheeler, Mark E
+%A Schlaggar, Bradley L
+%A Petersen, Steven E
+%J Brain structure and function
+%V 214
+%P 669-680
+%@ 1863-2653
+%D 2010
+%I Springer-Verlag
+
+
+%0 Journal Article
+%T Role of the anterior insula in task-level control and focal attention
+%A Nelson, Steven M
+%A Dosenbach, Nico UF
+%A Cohen, Alexander L
+%A Wheeler, Mark E
+%A Schlaggar, Bradley L
+%A Petersen, Steven E
+%J Brain structure and function
+%V 214
+%P 669-680
+%@ 1863-2653
+%D 2010
+%I Springer-Verlag
+
+
+%0 Journal Article
+%T The neural mechanisms of inter-temporal decision-making: understanding variability
+%A Peters, Jan
+%A Büchel, Christian
+%J Trends in cognitive sciences
+%V 15
+%N 5
+%P 227-239
+%@ 1364-6613
+%D 2011
+%I Elsevier Current Trends
+

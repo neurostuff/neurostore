@@ -25,6 +25,12 @@ const CurationImportSelectMethod: React.FC<{
                     onChange={(event) => {
                         props.onChangeImportMode(event.target.value as EImportMode);
                     }}
+                    sx={{
+                        '.MuiFormControlLabel-root': {
+                            marginLeft: '0 !important',
+                            marginRight: '0 !important',
+                        },
+                    }}
                 >
                     <FormControlLabel
                         sx={[
