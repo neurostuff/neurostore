@@ -17,6 +17,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import ReadOnlyStubSummary from '../../ReadOnlyStubSummary';
+import DuplicateCaseStyles from '../../CurationImportResolveDuplicates/DuplicateCase/DuplicateCase.styles';
+import CurationImportBaseStyles from '../../CurationImportBase.styles';
 
 type IResolveImportDuplicatesCurationStubStudy = ICurationStubStudy & {
     resolution?: 'duplicate' | 'not-duplicate';
@@ -24,8 +26,8 @@ type IResolveImportDuplicatesCurationStubStudy = ICurationStubStudy & {
 
 const ResolveImportDuplicates: React.FC<{
     stubs: ICurationStubStudy[];
-    onResolveStubs: (stubs: ICurationStubStudy[]) => void;
     onNavigate: (button: ENavigationButton) => void;
+    onImportStubs: (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => void;
 }> = (props) => {
     const [duplicates, setDuplicates] = useState<IResolveImportDuplicatesCurationStubStudy[][]>([]);
     const [isValid, setIsValid] = useState(false);
@@ -42,19 +44,21 @@ const ResolveImportDuplicates: React.FC<{
         setDuplicates(duplicates);
     }, [props.stubs]);
 
+    // resolution is an optional property in the IResolveImportDuplicatesCurationStubStudy object that is not initially set,
+    // but is added during this function call when the user makes a selection
     const handleResolveDuplicate = (
         duplicateListIndex: number,
         duplicateStubIndex: number,
-        resolution?: 'duplicate' | 'not-duplicate'
+        userResolution?: 'duplicate' | 'not-duplicate'
     ) => {
-        if (!resolution) return;
+        if (!userResolution) return;
 
         setDuplicates((prev) => {
             const update = [...prev];
 
             const duplicateList = [...update[duplicateListIndex]];
 
-            if (resolution === 'duplicate') {
+            if (userResolution === 'duplicate') {
                 duplicateList[duplicateStubIndex] = {
                     ...duplicateList[duplicateStubIndex],
                     resolution: 'duplicate',
@@ -102,11 +106,12 @@ const ResolveImportDuplicates: React.FC<{
                 };
         });
 
-        props.onResolveStubs(updatedStubs);
+        props.onImportStubs(updatedStubs);
+        props.onNavigate(ENavigationButton.NEXT);
     };
 
     return (
-        <Box sx={{ marginTop: '1rem' }}>
+        <Box sx={{ margin: '1rem 0 6rem 0' }}>
             <Typography variant="h6" sx={{ marginBottom: '1rem', color: 'error.dark' }}>
                 Duplicates were found in your import file
             </Typography>
@@ -129,7 +134,14 @@ const ResolveImportDuplicates: React.FC<{
                             expanded={duplicateIndex === currStub}
                             onChange={() => setCurrStub(duplicateIndex)}
                         >
-                            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                            <AccordionSummary
+                                expandIcon={<ExpandMoreIcon />}
+                                sx={{
+                                    ':hover': {
+                                        backgroundColor: '#f2f2f2',
+                                    },
+                                }}
+                            >
                                 {isResolved ? (
                                     <CheckCircleOutlineIcon color="success" />
                                 ) : (
@@ -146,7 +158,13 @@ const ResolveImportDuplicates: React.FC<{
                             </AccordionSummary>
                             <AccordionDetails>
                                 {duplicateList.map((stub, duplicateStubIndex) => (
-                                    <Box key={stub.id} sx={{ display: 'flex' }}>
+                                    <Box
+                                        key={stub.id}
+                                        sx={[
+                                            { display: 'flex', marginBottom: '10px' },
+                                            DuplicateCaseStyles.resolutionContainer,
+                                        ]}
+                                    >
                                         <Box
                                             sx={{
                                                 width: 'calc(100% - 380px)',
@@ -188,13 +206,24 @@ const ResolveImportDuplicates: React.FC<{
                 })}
             </Box>
 
-            <Box sx={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between' }}>
-                <Button variant="outlined" onClick={() => props.onNavigate(ENavigationButton.PREV)}>
-                    back
-                </Button>
-                <Button variant="contained" disabled={!isValid} onClick={handleClickNext}>
-                    next
-                </Button>
+            <Box sx={CurationImportBaseStyles.fixedContainer}>
+                <Box sx={CurationImportBaseStyles.fixedButtonsContainer}>
+                    <Button
+                        variant="outlined"
+                        onClick={() => props.onNavigate(ENavigationButton.PREV)}
+                    >
+                        back
+                    </Button>
+                    <Button
+                        variant="contained"
+                        sx={CurationImportBaseStyles.nextButton}
+                        disableElevation
+                        disabled={!isValid}
+                        onClick={handleClickNext}
+                    >
+                        next
+                    </Button>
+                </Box>
             </Box>
         </Box>
     );

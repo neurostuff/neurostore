@@ -3,16 +3,12 @@ import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import { SystemStyleObject } from '@mui/system';
-import { ITag } from 'hooks/projects/useGetProjects';
+import { useProjectCurationInfoTags } from 'pages/Projects/ProjectPage/ProjectStore';
+import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
-import {
-    useCreateNewCurationInfoTag,
-    useProjectCurationInfoTags,
-} from 'pages/Projects/ProjectPage/ProjectStore';
 
-interface AutoSelectOption {
+export interface AutoSelectOption {
     id: string;
     label: string;
     addOptionActualLabel?: string | null;
@@ -28,14 +24,14 @@ const filterOptions = createFilterOptions<AutoSelectOption>({
 interface ITagSelectorPopup {
     label?: string;
     sx?: SystemStyleObject;
-    onAddTag: (tag: ITag) => void;
-    onCreateTag?: (tag: ITag) => void;
+    onAddTag: (tag: AutoSelectOption) => void;
+    onCreateTag?: (tag: AutoSelectOption) => void;
     isLoading?: boolean;
     size?: 'small' | 'medium';
     placeholder?: string;
     addOptionText?: string;
-    autoCreateTagOnClick?: boolean;
     onClearInput?: () => void;
+    value: AutoSelectOption | undefined;
 }
 
 const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
@@ -43,15 +39,12 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
         placeholder = 'start typing',
         addOptionText = 'Add',
         label = 'select tag',
-        autoCreateTagOnClick = true,
         onClearInput = () => {},
+        value = null,
     } = props;
 
-    const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(null);
     const [tagOption, setTagOptions] = useState<AutoSelectOption[]>([]);
-
     const infoTags = useProjectCurationInfoTags();
-    const createNewInfoTag = useCreateNewCurationInfoTag();
 
     useEffect(() => {
         const filteredTagOptions = infoTags
@@ -71,19 +64,12 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
     }, [infoTags]);
 
     const handleCreateTag = (tagName: string) => {
-        const newTag: ITag = {
+        const newTag: AutoSelectOption = {
             id: uuidv4(),
             label: tagName,
-            isExclusionTag: false,
-            isAssignable: true,
+            addOptionActualLabel: null,
         };
 
-        if (autoCreateTagOnClick) createNewInfoTag(newTag);
-        setSelectedValue({
-            id: newTag.id,
-            label: newTag.label,
-            addOptionActualLabel: null,
-        });
         if (props.onCreateTag) props.onCreateTag(newTag);
     };
 
@@ -98,13 +84,7 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
             );
             if (foundValue) {
                 // do not create a new tag if an identical label exists
-                setSelectedValue(foundValue);
-                props.onAddTag({
-                    id: foundValue.id,
-                    label: foundValue.label,
-                    isExclusionTag: false,
-                    isAssignable: true,
-                });
+                props.onAddTag(foundValue);
             } else {
                 handleCreateTag(newValue);
             }
@@ -113,27 +93,18 @@ const TagSelectorPopup: React.FC<ITagSelectorPopup> = (props) => {
             handleCreateTag(newValue.addOptionActualLabel);
             // if the user clicks an option, we get an AutoSelectOption and handle it here
         } else {
-            setSelectedValue(newValue);
             if (newValue) {
-                props.onAddTag({
-                    id: newValue.id,
-                    label: newValue.label,
-                    isExclusionTag: false,
-                    isAssignable: true,
-                });
+                props.onAddTag(newValue);
             } else {
                 onClearInput();
             }
         }
     };
 
-    // const isLoading = getProjectIsLoading || updateProjectIsLoading || props.isLoading;
-    // const isError = getProjectIsError || updateProjectIsError;
-
     return (
         <Autocomplete
             sx={props.sx || { width: '250px' }}
-            value={selectedValue || null}
+            value={value}
             options={tagOption}
             freeSolo
             isOptionEqualToValue={(option, value) => {

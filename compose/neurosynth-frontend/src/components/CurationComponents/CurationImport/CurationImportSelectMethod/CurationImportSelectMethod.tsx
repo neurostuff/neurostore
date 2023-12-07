@@ -1,9 +1,16 @@
-import { Box, FormControl, FormControlLabel, Radio, RadioGroup, Typography } from '@mui/material';
-import NavigationButtons, {
-    ENavigationButton,
-} from 'components/Buttons/NavigationButtons/NavigationButtons';
+import {
+    Box,
+    Button,
+    FormControl,
+    FormControlLabel,
+    Radio,
+    RadioGroup,
+    Typography,
+} from '@mui/material';
+import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { EImportMode } from 'components/CurationComponents/CurationImport/CurationDoImport/CurationDoImport';
 import CurationImportSelectMethodStyles from 'components/CurationComponents/CurationImport/CurationImportSelectMethod/CurationImportSelectMethod.styles';
+import CurationImportBaseStyles from '../CurationImportBase.styles';
 
 const CurationImportSelectMethod: React.FC<{
     importMethod: EImportMode;
@@ -11,7 +18,7 @@ const CurationImportSelectMethod: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
 }> = (props) => {
     return (
-        <Box sx={{ marginTop: '2rem' }}>
+        <Box sx={{ margin: '2rem 0 6rem 0' }}>
             <FormControl sx={{ width: '100%' }}>
                 <RadioGroup
                     value={props.importMethod}
@@ -97,8 +104,23 @@ const CurationImportSelectMethod: React.FC<{
                     />
                 </RadioGroup>
             </FormControl>
-            <Box sx={{ marginTop: '2rem' }}>
-                <NavigationButtons prevButtonDisabled onButtonClick={props.onNavigate} />
+
+            <Box sx={CurationImportBaseStyles.fixedContainer}>
+                <Box
+                    sx={[
+                        CurationImportBaseStyles.fixedButtonsContainer,
+                        { justifyContent: 'flex-end' },
+                    ]}
+                >
+                    <Button
+                        variant="contained"
+                        sx={CurationImportBaseStyles.nextButton}
+                        disableElevation
+                        onClick={() => props.onNavigate(ENavigationButton.NEXT)}
+                    >
+                        next
+                    </Button>
+                </Box>
             </Box>
         </Box>
     );

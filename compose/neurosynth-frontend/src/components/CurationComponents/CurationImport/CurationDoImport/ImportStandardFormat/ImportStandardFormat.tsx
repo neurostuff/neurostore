@@ -1,14 +1,13 @@
-import { Box, Button, TextField, Typography } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
-import NavigationButtons, {
-    ENavigationButton,
-} from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { ChangeEvent, useEffect, useState } from 'react';
+import { Box, Button, TextField, Typography } from '@mui/material';
+import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import { v4 as uuidv4 } from 'uuid';
-import { ISource } from 'hooks/projects/useGetProjects';
 import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
+import { ISource } from 'hooks/projects/useGetProjects';
 import { ENeurosynthSourceIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
+import { ChangeEvent, useEffect, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import CurationImportBaseStyles from '../../CurationImportBase.styles';
 const Cite = require('citation-js');
 require('@citation-js/plugin-enw');
 require('@citation-js/plugin-bibtex');
@@ -176,7 +175,7 @@ const ImportStandardFormat: React.FC<{
     };
 
     return (
-        <Box sx={{ width: '100%' }}>
+        <Box sx={{ width: '100%', marginBottom: '6rem' }}>
             <Box
                 sx={{
                     margin: '2rem 0 1rem 0',
@@ -235,14 +234,24 @@ const ImportStandardFormat: React.FC<{
                     </Box>
                 </>
             )}
-            <Box sx={{ marginTop: '1rem' }}>
-                <NavigationButtons
-                    nextButtonStyle="contained"
-                    nextButtonDisabled={
-                        !source || uploadState.stubs.length === 0 || !uploadState.isValid
-                    }
-                    onButtonClick={handleButtonClick}
-                />
+            <Box sx={CurationImportBaseStyles.fixedContainer}>
+                <Box sx={CurationImportBaseStyles.fixedButtonsContainer}>
+                    <Button
+                        variant="outlined"
+                        onClick={() => handleButtonClick(ENavigationButton.PREV)}
+                    >
+                        back
+                    </Button>
+                    <Button
+                        variant="contained"
+                        sx={CurationImportBaseStyles.nextButton}
+                        disableElevation
+                        disabled={!source || uploadState.stubs.length === 0 || !uploadState.isValid}
+                        onClick={() => handleButtonClick(ENavigationButton.NEXT)}
+                    >
+                        next
+                    </Button>
+                </Box>
             </Box>
         </Box>
     );

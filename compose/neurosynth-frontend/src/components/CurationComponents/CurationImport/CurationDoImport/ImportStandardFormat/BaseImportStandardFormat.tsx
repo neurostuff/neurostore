@@ -1,25 +1,27 @@
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import { useState } from 'react';
 import { hasDuplicates } from '../../helpers/utils';
 import { IImportArgs } from '../CurationDoImport';
 import ResolveImportDuplicates from '../ResolveImportDuplicates/ResolveImportDuplicates';
 import ImportStandardFormat from './ImportStandardFormat';
+import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 
 const BaseImportStandardFormat: React.FC<IImportArgs> = (props) => {
-    const { onNavigate, onImportStubs, onIsResolvingDuplicates, isResolvingDuplicates } = props;
-    const [stubs, setStubs] = useState<ICurationStubStudy[]>([]);
+    const { onNavigate, onImportStubs, onIsResolvingDuplicates, isResolvingDuplicates, stubs } =
+        props;
 
     const handleImportStubs = (stubs: ICurationStubStudy[]) => {
+        onImportStubs(stubs);
         const duplicatesExist = hasDuplicates(stubs);
         if (duplicatesExist) {
-            setStubs(stubs);
             onIsResolvingDuplicates(true);
         } else {
-            onImportStubs(stubs);
+            onIsResolvingDuplicates(false);
+            onNavigate(ENavigationButton.NEXT);
         }
     };
 
-    const onResolveStubs = (updatedStubs: ICurationStubStudy[]) => {
+    const handleResolveStubs = (updatedStubs: ICurationStubStudy[]) => {
+        onIsResolvingDuplicates(false);
         onImportStubs(updatedStubs);
     };
 
@@ -27,7 +29,7 @@ const BaseImportStandardFormat: React.FC<IImportArgs> = (props) => {
         return (
             <ResolveImportDuplicates
                 onNavigate={() => onIsResolvingDuplicates(false)}
-                onResolveStubs={onResolveStubs}
+                onImportStubs={handleResolveStubs}
                 stubs={stubs}
             />
         );

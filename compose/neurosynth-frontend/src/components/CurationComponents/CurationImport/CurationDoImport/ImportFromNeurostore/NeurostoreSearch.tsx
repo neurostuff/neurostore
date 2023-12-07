@@ -21,6 +21,7 @@ import { useEffect, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { IImportArgs } from '../CurationDoImport';
 import { studiesToStubs } from './helpers/utils';
+import CurationImportBaseStyles from '../../CurationImportBase.styles';
 
 const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
     const { isLoading: authenticationIsLoading } = useAuth0();
@@ -87,7 +88,6 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
 
     const handleButtonClick = async (button: ENavigationButton) => {
         if (button === ENavigationButton.PREV) {
-            history.push(`/projects/${projectId}/curation/import`);
             props.onNavigate(button);
             return;
         }
@@ -101,14 +101,16 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
             const dataResults = allDataForSearch?.data?.results || [];
             if (dataResults.length !== studyData?.metadata?.total_count)
                 throw new Error('search result and query result do not match');
-
-            const newStubs = studiesToStubs(allDataForSearch?.data?.results || []);
+            const newStubs = studiesToStubs(
+                location?.search,
+                allDataForSearch?.data?.results || []
+            );
+            setImportIsLoading(false);
             props.onImportStubs(newStubs);
         } catch (e) {
             console.error(e);
-            enqueueSnackbar('There was an error importing studies', { variant: 'error' });
-        } finally {
             setImportIsLoading(false);
+            enqueueSnackbar('There was an error importing studies', { variant: 'error' });
         }
     };
 
@@ -131,6 +133,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
                         color: 'primary.contrastText',
                     },
                 }}
+                tablePaginationSelectorStyles={{ marginBottom: '80px' }}
             >
                 <Box sx={{ marginBottom: '1rem' }}>
                     <NeurosynthTable
@@ -194,24 +197,27 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
                 </Box>
             </SearchContainer>
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                <Button
-                    variant="outlined"
-                    size="large"
-                    onClick={() => handleButtonClick(ENavigationButton.PREV)}
-                >
-                    back
-                </Button>
-                <LoadingButton
-                    variant="contained"
-                    size="large"
-                    text={`Import ${studyData?.metadata?.total_count || 0} studies from neurostore`}
-                    onClick={() => handleButtonClick(ENavigationButton.NEXT)}
-                    disableElevation
-                    sx={{ width: '400px' }}
-                    loaderColor="secondary"
-                    isLoading={importIsLoading}
-                ></LoadingButton>
+            <Box sx={CurationImportBaseStyles.fixedContainer}>
+                <Box sx={CurationImportBaseStyles.fixedButtonsContainer}>
+                    <Button
+                        variant="outlined"
+                        onClick={() => handleButtonClick(ENavigationButton.PREV)}
+                    >
+                        back
+                    </Button>
+                    <LoadingButton
+                        variant="contained"
+                        text={`Import ${
+                            studyData?.metadata?.total_count || 0
+                        } studies from neurostore`}
+                        onClick={() => handleButtonClick(ENavigationButton.NEXT)}
+                        disableElevation
+                        sx={{ width: '400px' }}
+                        disabled={(studyData?.metadata?.total_count || 0) === 0}
+                        loaderColor="secondary"
+                        isLoading={importIsLoading}
+                    ></LoadingButton>
+                </Box>
             </Box>
         </StateHandlerComponent>
     );

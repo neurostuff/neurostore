@@ -1,6 +1,6 @@
 import { Box, Pagination, TablePagination, Typography } from '@mui/material';
+import { SystemStyleObject } from '@mui/system';
 import SearchBar from 'components/Search/SearchBar/SearchBar';
-import { Style } from 'index';
 import { SearchCriteria } from 'pages/Studies/StudiesPage/models';
 import { ChangeEvent } from 'react';
 import SearchContainerStyles from './SearchContainer.styles';
@@ -13,7 +13,8 @@ export interface ISearchContainer {
     pageSize: number;
     pageOfResults: number;
     searchButtonColor?: string;
-    paginationSelectorStyles?: Style;
+    paginationSelectorStyles?: SystemStyleObject;
+    tablePaginationSelectorStyles?: SystemStyleObject;
     searchMode?: 'study-search' | 'studyset-search';
 }
 
@@ -37,6 +38,7 @@ const SearchContainer: React.FC<ISearchContainer> = (props) => {
         children,
         searchButtonColor = 'primary',
         paginationSelectorStyles = {},
+        tablePaginationSelectorStyles = {},
         searchMode = 'study-search',
     } = props;
 
@@ -86,7 +88,7 @@ const SearchContainer: React.FC<ISearchContainer> = (props) => {
                 // whereas 0 and 1 are the same in the backend
                 page={totalCount === undefined ? 0 : pageOfResults - 1}
                 count={totalCount || 0}
-                sx={SearchContainerStyles.paginator}
+                sx={[SearchContainerStyles.paginator, tablePaginationSelectorStyles]}
             />
         </>
     );

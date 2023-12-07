@@ -17,6 +17,7 @@ export interface IImportArgs {
     onIsResolvingDuplicates: (isResolvingDuplicates: boolean) => void;
     isResolvingDuplicates: boolean;
     onImportStubs: (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => void;
+    stubs: ICurationStubStudy[];
 }
 
 const CurationDoImport: React.FC<{
@@ -25,10 +26,12 @@ const CurationDoImport: React.FC<{
     onIsResolvingDuplicates: (isResolvingDuplicates: boolean) => void;
     onImportStubs: (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => void;
     onNavigate: (button: ENavigationButton) => void;
+    stubs: ICurationStubStudy[];
 }> = (props) => {
     if (props.mode === EImportMode.NEUROSTORE_IMPORT) {
         return (
             <BaseImportFromNeurostore
+                stubs={props.stubs}
                 onIsResolvingDuplicates={props.onIsResolvingDuplicates}
                 isResolvingDuplicates={props.isResolvingDuplicates}
                 onImportStubs={props.onImportStubs}
@@ -38,6 +41,7 @@ const CurationDoImport: React.FC<{
     } else if (props.mode === EImportMode.PUBMED_IMPORT) {
         return (
             <BaseImportPMIDs
+                stubs={props.stubs}
                 onIsResolvingDuplicates={props.onIsResolvingDuplicates}
                 isResolvingDuplicates={props.isResolvingDuplicates}
                 onImportStubs={props.onImportStubs}
@@ -51,6 +55,7 @@ const CurationDoImport: React.FC<{
     } else {
         return (
             <BaseImportStandardFormat
+                stubs={props.stubs}
                 onIsResolvingDuplicates={props.onIsResolvingDuplicates}
                 isResolvingDuplicates={props.isResolvingDuplicates}
                 onImportStubs={props.onImportStubs}

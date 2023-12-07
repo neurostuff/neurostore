@@ -74,7 +74,7 @@ const ProjectPage: React.FC = (props) => {
                 <Box sx={{ marginBottom: '0.5rem' }}>
                     <TextEdit
                         onSave={(updatedName, label) => updateProjectName(updatedName)}
-                        sx={{ input: { fontSize: '2rem' }, width: '50%' }}
+                        sx={{ input: { fontSize: '1.5rem' }, width: '50%' }}
                         textToEdit={projectName || ''}
                     >
                         <Typography

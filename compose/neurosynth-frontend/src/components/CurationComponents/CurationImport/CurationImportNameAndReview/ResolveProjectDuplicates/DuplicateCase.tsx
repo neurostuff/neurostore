@@ -17,7 +17,7 @@ import NavigationButtons, {
 import ReadOnlyStubSummary from 'components/CurationComponents/CurationImport/ReadOnlyStubSummary';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import React from 'react';
-import DuplicateCaseStyles from './DuplicateCase.styles';
+import DuplicateCaseStyles from '../../CurationImportResolveDuplicates/DuplicateCase/DuplicateCase.styles';
 
 type IResolveProjectDuplicatesCurationStubStudy = ICurationStubStudy & {
     columnIndex?: number;
@@ -166,6 +166,8 @@ const DuplicateCase: React.FC<{
                 <Box sx={{ margin: '1rem 0' }}>
                     <NavigationButtons
                         nextButtonStyle="contained"
+                        nextButtonText="next duplicate case"
+                        prevButtonText="previous duplicate case"
                         prevButtonDisabled={index === 0}
                         nextButtonDisabled={!isResolved}
                         onButtonClick={onPrevOrNextCase}

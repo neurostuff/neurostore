@@ -75,10 +75,10 @@ const ReadOnlyStubSummaryVirtualizedItem: React.FC<
             <Typography sx={{ marginTop: '4px' }} noWrap variant="body1">
                 {titleText}
             </Typography>
-            <Typography sx={{ color: doi ? 'initial' : 'warning.dark' }} noWrap variant="body2">
+            <Typography sx={{ color: authors ? 'initial' : 'warning.dark' }} noWrap variant="body2">
                 {authors || 'No authors'}
             </Typography>
-            <Typography sx={{ color: doi ? 'initial' : 'warning.dark' }} noWrap variant="body2">
+            <Typography sx={{ color: journal ? 'initial' : 'warning.dark' }} noWrap variant="body2">
                 {journal || 'No journal'}
             </Typography>
             <Box sx={{ display: 'flex' }}>

@@ -6,13 +6,14 @@ import { IImportArgs } from '../CurationDoImport';
 import ResolveImportDuplicates from '../ResolveImportDuplicates/ResolveImportDuplicates';
 import FetchPMIDs from './FetchPMIDs';
 import UploadPMIDs from './UploadPMIDs';
+import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 
 const BaseImportPMIDs: React.FC<IImportArgs> = (props) => {
-    const { onNavigate, onImportStubs, onIsResolvingDuplicates, isResolvingDuplicates } = props;
+    const { onNavigate, onImportStubs, onIsResolvingDuplicates, isResolvingDuplicates, stubs } =
+        props;
 
     const [uploadIdsPhase, setUploadIdsPhase] = useState(true);
     const [parsedIds, setParsedIds] = useState<string[]>([]);
-    const [stubs, setStubs] = useState<ICurationStubStudy[]>([]);
 
     const handlePubmedIdsUploaded = (parsedIds: string[]) => {
         setParsedIds(parsedIds);
@@ -21,19 +22,20 @@ const BaseImportPMIDs: React.FC<IImportArgs> = (props) => {
 
     const handleStubsRetrieved = React.useCallback(
         (stubs: ICurationStubStudy[], unimportedStubs?: string[]) => {
+            onImportStubs(stubs, unimportedStubs);
             const duplicatesExist = hasDuplicates(stubs);
             if (duplicatesExist) {
                 onIsResolvingDuplicates(true);
-                setStubs(stubs);
             } else {
                 onIsResolvingDuplicates(false);
-                onImportStubs(stubs, unimportedStubs);
+                onNavigate(ENavigationButton.NEXT);
             }
         },
-        [onImportStubs, onIsResolvingDuplicates]
+        [onImportStubs, onIsResolvingDuplicates, onNavigate]
     );
 
-    const handleDuplicateStubsResolved = (updatedStubs: ICurationStubStudy[]) => {
+    const handleResolveStubs = (updatedStubs: ICurationStubStudy[]) => {
+        onIsResolvingDuplicates(false);
         onImportStubs(updatedStubs);
     };
 
@@ -48,7 +50,7 @@ const BaseImportPMIDs: React.FC<IImportArgs> = (props) => {
             <ResolveImportDuplicates
                 stubs={stubs}
                 onNavigate={onNavigate}
-                onResolveStubs={handleDuplicateStubsResolved}
+                onImportStubs={handleResolveStubs}
             />
         );
     }

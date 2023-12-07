@@ -1,15 +1,22 @@
-import { Box, Button, TextField } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
+import { Box, Button, TextField } from '@mui/material';
+import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { ChangeEvent, useEffect, useState } from 'react';
-import NavigationButtons, {
-    ENavigationButton,
-} from 'components/Buttons/NavigationButtons/NavigationButtons';
+import CurationImportBaseStyles from '../../CurationImportBase.styles';
 
 enum EValidationReason {
     EMPTY = 'PubMed ID input is empty',
     INCORRECT = 'PubMed ID format is incorrect or unsupported',
     TOO_BIG = 'Please limit uploads to 1500 PMIDs at a time',
 }
+
+const isValidNumberList = (rawIdText: string | undefined) => {
+    if (!rawIdText) return false;
+    return rawIdText
+        .trim()
+        .split(/[\r?\n]+/)
+        .every((pmid) => /^\d+$/.test(pmid));
+};
 
 const UploadPMIDs: React.FC<{
     onPubmedIdsUploaded: (parsedIds: string[]) => void;
@@ -39,13 +46,7 @@ const UploadPMIDs: React.FC<{
             return;
         }
 
-        // testing for PMIDs - we expect any number of numbers followed by a newline
-        // [0-9]+ = matches 1 - any number of digits
-        // (?: ...) = noncapturing group, groups more efficiently as it does not parse
-        // \\[rn]|[\r\n] = matches either the literal "\r", literal "\n", newline, or carriage return
-        const regex = /^(?:[0-9]+(?:[\r\n])?)+$/;
-        const isValid = regex.test(uploadState.rawIdText);
-
+        const isValid = isValidNumberList(uploadState.rawIdText);
         if (!isValid) {
             setUploadState((prev) => ({
                 ...prev,
@@ -54,7 +55,10 @@ const UploadPMIDs: React.FC<{
             }));
             return;
         }
-        const textIdsToStringArr = uploadState.rawIdText.split(/\r?\n/).filter((x) => !!x);
+        const textIdsToStringArr = uploadState.rawIdText
+            .split(/[\r?\n]+/)
+            .map((x) => x.trim())
+            .filter((x) => !!x);
         if (textIdsToStringArr.length > 1500) {
             setUploadState((prev) => ({
                 ...prev,
@@ -112,7 +116,7 @@ const UploadPMIDs: React.FC<{
     };
 
     return (
-        <Box sx={{ width: '100%' }}>
+        <Box sx={{ width: '100%', marginBottom: '6rem' }}>
             <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
                 <Button component="label" endIcon={<FileUploadIcon />}>
                     {uploadState.file?.name || 'Upload File'}
@@ -147,12 +151,26 @@ const UploadPMIDs: React.FC<{
                     />
                 </Box>
             </Box>
-            <Box sx={{ marginTop: '1rem' }}>
-                <NavigationButtons
-                    nextButtonStyle="contained"
-                    nextButtonDisabled={uploadState.parsedIdList.length === 0}
-                    onButtonClick={handleButtonClick}
-                />
+            <Box sx={CurationImportBaseStyles.fixedContainer}>
+                <Box sx={CurationImportBaseStyles.fixedButtonsContainer}>
+                    <Button
+                        variant="outlined"
+                        onClick={() => handleButtonClick(ENavigationButton.PREV)}
+                    >
+                        back
+                    </Button>
+                    <Button
+                        variant="contained"
+                        sx={CurationImportBaseStyles.nextButton}
+                        disableElevation
+                        disabled={
+                            uploadState.parsedIdList.length === 0 || uploadState.isValid === false
+                        }
+                        onClick={() => handleButtonClick(ENavigationButton.NEXT)}
+                    >
+                        next
+                    </Button>
+                </Box>
             </Box>
         </Box>
     );

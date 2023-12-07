@@ -1,13 +1,10 @@
-import { Box, Paper, Typography } from '@mui/material';
-import NavigationButtons, {
-    ENavigationButton,
-} from 'components/Buttons/NavigationButtons/NavigationButtons';
+import { Box, Divider, Paper, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
+import { useMemo } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import ReadOnlyStubSummaryVirtualizedItem from './ReadOnlyStubSummaryVirtualizedItem';
-import { useMemo } from 'react';
 
 const CurationImportReviewFixedSizeListRow: React.FC<
     ListChildComponentProps<{
@@ -24,10 +21,8 @@ const LIST_HEIGHT = 140;
 const CurationImportReview: React.FC<{
     stubs: ICurationStubStudy[];
     unimportedStubs: string[];
-    onNavigate: (button: ENavigationButton) => void;
 }> = (props) => {
-    const { stubs, onNavigate } = props;
-
+    const { stubs, unimportedStubs } = props;
     const nonExcludedStubs = useMemo(() => {
         return stubs.filter((x) => !x.exclusionTag);
     }, [stubs]);
@@ -56,52 +51,35 @@ const CurationImportReview: React.FC<{
     }, [excludedStubs.length, windowHeight]);
 
     return (
-        <>
-            <Paper elevation={0}>
-                <Box sx={{ paddingTop: '0.5rem' }}>
-                    <Typography gutterBottom sx={{ fontWeight: 'bold' }} variant="h6">
-                        Importing {nonExcludedStubs.length} studies
-                    </Typography>
-                    {props.unimportedStubs.length > 0 && (
-                        <>
-                            <Typography color="warning.dark">
-                                We encountered issues importing {props.unimportedStubs.length}{' '}
-                                studies. You may have to create these studies manually:
-                            </Typography>
-                            <Typography color="warning.dark" gutterBottom>
-                                {props.unimportedStubs.reduce((acc, curr, currIndex, arr) => {
-                                    return currIndex === arr.length - 1
-                                        ? `${acc}${curr}`
-                                        : `${acc}${curr}, `;
-                                }, '')}
-                            </Typography>
-                        </>
-                    )}
-                </Box>
+        <Box sx={{ marginBottom: '6rem' }}>
+            <Paper sx={{ paddingTop: '0.5rem' }} elevation={0}>
+                <Divider sx={{ margin: '0.5rem 0 1rem 0' }} />
+                <Typography gutterBottom variant="h6">
+                    Summary
+                </Typography>
+                {unimportedStubs.length > 0 && (
+                    <>
+                        <Typography color="error.main">
+                            We encountered issues importing {props.unimportedStubs.length} studies.
+                            You may have to create these studies manually:
+                        </Typography>
+                        <Typography color="error.main" gutterBottom>
+                            {props.unimportedStubs.reduce((acc, curr, currIndex, arr) => {
+                                return currIndex === arr.length - 1
+                                    ? `${acc}${curr}`
+                                    : `${acc}${curr}, `;
+                            }, '')}
+                        </Typography>
+                    </>
+                )}
             </Paper>
-            <Box sx={{ margin: '1rem 0', backgroundColor: '#f6f6f6' }}>
-                <FixedSizeList
-                    height={includedStudiesListHeight}
-                    itemCount={nonExcludedStubs.length}
-                    width="100%"
-                    itemSize={LIST_HEIGHT}
-                    itemKey={(index, data) => data.stubs[index]?.id}
-                    layout="vertical"
-                    itemData={{
-                        stubs: nonExcludedStubs,
-                    }}
-                    overscanCount={3}
-                >
-                    {CurationImportReviewFixedSizeListRow}
-                </FixedSizeList>
-            </Box>
-            {excludedStubs.length > 0 && (
-                <Box sx={{ margin: '1.5rem 0' }}>
+            {nonExcludedStubs.length > 0 && (
+                <Box sx={{ marginBottom: '1rem' }}>
                     <NeurosynthAccordion
-                        expandIconColor={'primary.main'}
+                        expandIconColor={'success.main'}
                         sx={{
                             border: '1px solid',
-                            borderColor: 'primary.main',
+                            borderColor: 'success.main',
                         }}
                         accordionSummarySx={{
                             ':hover': {
@@ -109,8 +87,45 @@ const CurationImportReview: React.FC<{
                             },
                         }}
                         TitleElement={
-                            <Typography sx={{ color: 'primary.main' }}>
-                                {excludedStubs.length} Duplicates
+                            <Typography sx={{ color: 'success.main' }}>
+                                Click to view {nonExcludedStubs.length} imported studies
+                            </Typography>
+                        }
+                        elevation={0}
+                    >
+                        <FixedSizeList
+                            height={includedStudiesListHeight}
+                            itemCount={nonExcludedStubs.length}
+                            width="100%"
+                            itemSize={LIST_HEIGHT}
+                            itemKey={(index, data) => data.stubs[index]?.id}
+                            layout="vertical"
+                            itemData={{
+                                stubs: nonExcludedStubs,
+                            }}
+                            overscanCount={3}
+                        >
+                            {CurationImportReviewFixedSizeListRow}
+                        </FixedSizeList>
+                    </NeurosynthAccordion>
+                </Box>
+            )}
+            {excludedStubs.length > 0 && (
+                <Box sx={{ margin: '1.5rem 0' }}>
+                    <NeurosynthAccordion
+                        expandIconColor={'warning.dark'}
+                        sx={{
+                            border: '1px solid',
+                            borderColor: 'warning.dark',
+                        }}
+                        accordionSummarySx={{
+                            ':hover': {
+                                backgroundColor: '#f2f2f2',
+                            },
+                        }}
+                        TitleElement={
+                            <Typography sx={{ color: 'warning.dark' }}>
+                                Click to view {excludedStubs.length} duplicate studies
                             </Typography>
                         }
                         elevation={0}
@@ -132,12 +147,7 @@ const CurationImportReview: React.FC<{
                     </NeurosynthAccordion>
                 </Box>
             )}
-            <NavigationButtons
-                nextButtonStyle="contained"
-                nextButtonDisabled={stubs.length === 0}
-                onButtonClick={onNavigate}
-            />
-        </>
+        </Box>
     );
 };
 

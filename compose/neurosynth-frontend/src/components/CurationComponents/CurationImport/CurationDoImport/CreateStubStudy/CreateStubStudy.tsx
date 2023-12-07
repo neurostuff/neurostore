@@ -1,12 +1,11 @@
-import { Box, TextField } from '@mui/material';
-import NavigationButtons, {
-    ENavigationButton,
-} from 'components/Buttons/NavigationButtons/NavigationButtons';
+import { Box, Button, TextField } from '@mui/material';
+import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import IdentificationSourcePopup from 'components/CurationComponents/SelectorPopups/SourcePopup/SourcePopup';
 import { ISource } from 'hooks/projects/useGetProjects';
 import { ChangeEvent, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import CurationImportBaseStyles from '../../CurationImportBase.styles';
 import CreateStubStudyStyles from './CreateStubStudy.styles';
 
 const CreateStubStudy: React.FC<{
@@ -89,13 +88,14 @@ const CreateStubStudy: React.FC<{
                     identificationSource: form.identificationSource as ISource,
                 },
             ]);
+            props.onNavigate(button);
         }
     };
 
     const disableCreateButton = form.name.length === 0 || !form.identificationSource;
 
     return (
-        <Box sx={{ padding: '10px 0', margin: '2rem 0' }}>
+        <Box sx={{ padding: '10px 0', margin: '2rem 0 6rem 0' }}>
             <TextField
                 onChange={handleUpdateForm}
                 required
@@ -204,11 +204,24 @@ const CreateStubStudy: React.FC<{
                 name="abstract"
                 placeholder="Lorem Ipsum..."
             />
-            <Box sx={{ margin: '2rem 0' }}>
-                <NavigationButtons
-                    onButtonClick={handleButtonClick}
-                    nextButtonDisabled={disableCreateButton}
-                />
+            <Box sx={CurationImportBaseStyles.fixedContainer}>
+                <Box sx={CurationImportBaseStyles.fixedButtonsContainer}>
+                    <Button
+                        variant="outlined"
+                        onClick={() => handleButtonClick(ENavigationButton.PREV)}
+                    >
+                        back
+                    </Button>
+                    <Button
+                        variant="contained"
+                        sx={CurationImportBaseStyles.nextButton}
+                        disableElevation
+                        disabled={disableCreateButton}
+                        onClick={() => handleButtonClick(ENavigationButton.NEXT)}
+                    >
+                        next
+                    </Button>
+                </Box>
             </Box>
         </Box>
     );

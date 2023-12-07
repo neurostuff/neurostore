@@ -1,67 +1,24 @@
-import { Box, Typography } from '@mui/material';
-import NavigationButtons, {
-    ENavigationButton,
-} from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
+import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
+import {
+    IDuplicateCase,
+    IResolveProjectDuplicatesCurationStubStudy,
+} from './ResolveProjectDuplicates.types';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import {
-    useProjectCurationColumns,
-    useProjectId,
-    useUpdateCurationColumns,
-} from 'pages/Projects/ProjectPage/ProjectStore';
-import {
-    ENeurosynthTagIds,
-    defaultExclusionTags,
-} from 'pages/Projects/ProjectPage/ProjectStore.helpers';
-import React, { useCallback, useEffect, useState } from 'react';
-import { useHistory } from 'react-router-dom';
-import { createDuplicateMap } from '../helpers/utils';
-import DuplicateCase from '../CurationImportNameAndReview/ResolveProjectDuplicates/DuplicateCase';
+import { useCallback, useEffect, useState } from 'react';
+import { useProjectCurationColumns } from 'pages/Projects/ProjectPage/ProjectStore';
+import { flattenColumns } from './ResolveProjectDuplicates.helpers';
+import { createDuplicateMap } from '../../helpers/utils';
+import { defaultExclusionTags } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
+import React from 'react';
+import { Box, Button, Typography } from '@mui/material';
+import DuplicateCase from './DuplicateCase';
+import CurationImportBaseStyles from '../../CurationImportBase.styles';
 
-type IResolveProjectDuplicatesCurationStubStudy = ICurationStubStudy & {
-    columnIndex?: number;
-    studyIndex?: number;
-    resolution?: 'duplicate' | 'not-duplicate' | 'resolved';
-    colName?: string;
-};
-
-const flattenColumns = (cols: ICurationColumn[]): IResolveProjectDuplicatesCurationStubStudy[] => {
-    const allStubsInProject: IResolveProjectDuplicatesCurationStubStudy[] = (cols || []).reduce(
-        (acc, curr, currIndex) => {
-            const convertedStudies = curr.stubStudies.map((study, studyIndex) => {
-                const resolutionStr: 'duplicate' | 'not-duplicate' | 'resolved' | undefined =
-                    study.exclusionTag
-                        ? study.exclusionTag.id === ENeurosynthTagIds.DUPLICATE_EXCLUSION_ID
-                            ? 'duplicate'
-                            : 'resolved'
-                        : undefined;
-
-                return {
-                    ...study,
-                    columnIndex: currIndex,
-                    studyIndex: studyIndex,
-                    colName: curr.name,
-                    resolution: resolutionStr,
-                };
-            });
-
-            acc.push(...convertedStudies);
-
-            return acc;
-        },
-        [] as IResolveProjectDuplicatesCurationStubStudy[] // we need to typecast as typescript infers this type as never[]
-    );
-
-    return allStubsInProject;
-};
-
-const CurationImportResolveDuplicates: React.FC<{
-    stubs: ICurationStubStudy[];
+const ResolveProjectDuplicates: React.FC<{
+    onFinalizeImport: (duplicateCases: IDuplicateCase[]) => void;
     onNavigate: (button: ENavigationButton) => void;
+    stubs: ICurationStubStudy[];
 }> = (props) => {
-    const updateCurationColumns = useUpdateCurationColumns();
-    const history = useHistory();
-    const projectId = useProjectId();
     const [duplicates, setDuplicates] = useState<
         {
             importedStub: ICurationStubStudy & {
@@ -127,6 +84,7 @@ const CurationImportResolveDuplicates: React.FC<{
                 const update = [...prev];
                 const updatedProjectDuplicates = [...update[duplicateCaseIndex].projectDuplicates];
 
+                // update the item being clicked immediately
                 if (isImportedStub) {
                     update[duplicateCaseIndex] = {
                         ...update[duplicateCaseIndex],
@@ -146,6 +104,7 @@ const CurationImportResolveDuplicates: React.FC<{
                     };
                 }
 
+                // if not duplicate is selected, we want to set the other items as duplicate automatically
                 if (resolution === 'not-duplicate') {
                     if (
                         !isImportedStub &&
@@ -189,69 +148,8 @@ const CurationImportResolveDuplicates: React.FC<{
         []
     );
 
-    const handleNavigate = (button: ENavigationButton) => {
-        if (button === ENavigationButton.PREV) {
-            props.onNavigate(button);
-        } else {
-            // handle import
-            const updatedImport = [...props.stubs];
-            const updatedColumns = [...columns];
-
-            duplicates.forEach(({ importedStub, projectDuplicates }) => {
-                // update the status of the stub being imported
-                updatedImport[importedStub.index] = {
-                    ...updatedImport[importedStub.index],
-                    exclusionTag: importedStub.exclusionTag,
-                };
-
-                // update the status of all the duplicates in the project
-                projectDuplicates.forEach((projectDuplicateStub) => {
-                    if (
-                        projectDuplicateStub.columnIndex === undefined ||
-                        projectDuplicateStub.studyIndex === undefined
-                    ) {
-                        return;
-                    }
-
-                    const updatedStubStudies = [
-                        ...updatedColumns[projectDuplicateStub.columnIndex].stubStudies,
-                    ];
-
-                    if (
-                        projectDuplicateStub.columnIndex > 0 &&
-                        projectDuplicateStub.resolution === 'duplicate'
-                    ) {
-                        // remove stubs that have already been promoted that the user resolved as a duplicate
-                        updatedStubStudies.splice(projectDuplicateStub.studyIndex);
-                        const { columnIndex, studyIndex, resolution, colName, ...stub } =
-                            projectDuplicateStub;
-
-                        // add the stub back to the first column in order to demote it
-                        updatedColumns[0] = {
-                            ...updatedColumns[0],
-                            stubStudies: [stub, ...updatedColumns[0].stubStudies],
-                        };
-                    } else {
-                        updatedStubStudies[projectDuplicateStub.studyIndex] = {
-                            ...updatedStubStudies[projectDuplicateStub.studyIndex],
-                            exclusionTag: projectDuplicateStub.exclusionTag,
-                        };
-                    }
-
-                    updatedColumns[projectDuplicateStub.columnIndex] = {
-                        ...updatedColumns[projectDuplicateStub.columnIndex],
-                        stubStudies: updatedStubStudies,
-                    };
-                });
-            });
-
-            updatedColumns[0] = {
-                ...updatedColumns[0],
-                stubStudies: [...updatedImport, ...updatedColumns[0].stubStudies],
-            };
-            updateCurationColumns(updatedColumns);
-            history.push(`/projects/${projectId}/curation`);
-        }
+    const handleClickNext = () => {
+        props.onFinalizeImport(duplicates);
     };
 
     const handleOnExpand = React.useCallback((index: number) => {
@@ -266,31 +164,11 @@ const CurationImportResolveDuplicates: React.FC<{
         });
     }, []);
 
-    if (duplicates.length === 0) {
-        return (
-            <Box sx={{ margin: '1rem 0' }}>
-                <Typography gutterBottom variant="h6">
-                    No duplicates detected between the studies in your import and the studies within
-                    your project.
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'warning.dark' }}>
-                    Note: Neurosynth Compose primarily does a quick and simple search for any
-                    matching PMIDs, DOIs, or titles that may exist in this project already. This is
-                    not a comprehensive search and independent analysis should be done to make sure
-                    duplicates are correctly identified.
-                </Typography>
-                <Box sx={{ marginTop: '1rem' }}>
-                    <NavigationButtons onButtonClick={handleNavigate} nextButtonStyle="contained" />
-                </Box>
-            </Box>
-        );
-    }
-
     return (
-        <Box sx={{ margin: '1rem 0' }}>
+        <Box sx={{ margin: '1rem 0 6rem 0' }}>
             <Typography variant="h6" sx={{ marginBottom: '1rem', color: 'error.dark' }}>
                 {duplicates.length} {duplicates.length > 1 ? 'studies have ' : 'study has '}{' '}
-                potential duplicates that already exist within the project
+                duplicates that already exist within the project
             </Typography>
             <Typography sx={{ color: 'gray' }}>
                 Some studies that you are importing have potential existing duplicates.
@@ -314,16 +192,27 @@ const CurationImportResolveDuplicates: React.FC<{
                     />
                 );
             })}
-            <Box sx={{ marginTop: '1rem' }}>
-                <NavigationButtons
-                    nextButtonStyle="contained"
-                    nextButtonDisabled={!duplicateResolutionComplete}
-                    nextButtonText="complete import"
-                    onButtonClick={handleNavigate}
-                />
+            <Box sx={CurationImportBaseStyles.fixedContainer}>
+                <Box sx={CurationImportBaseStyles.fixedButtonsContainer}>
+                    <Button
+                        variant="outlined"
+                        onClick={() => props.onNavigate(ENavigationButton.PREV)}
+                    >
+                        back
+                    </Button>
+                    <Button
+                        variant="contained"
+                        sx={CurationImportBaseStyles.nextButton}
+                        disableElevation
+                        disabled={!duplicateResolutionComplete}
+                        onClick={handleClickNext}
+                    >
+                        next
+                    </Button>
+                </Box>
             </Box>
         </Box>
     );
 };
 
-export default CurationImportResolveDuplicates;
+export default ResolveProjectDuplicates;
