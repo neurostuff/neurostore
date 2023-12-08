@@ -15,7 +15,7 @@ import {
     Typography,
 } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
-import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionDialogBase';
+import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionDialog';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetStudysetById } from 'hooks';
 import useGetExtractionSummary, { IExtractionSummary } from 'hooks/useGetExtractionSummary';
@@ -194,7 +194,7 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                                                 confirmText="Mark all as complete"
                                                 isOpen={markAllAsCompleteConfirmationDialogIsOpen}
                                                 dialogTitle="Are you sure you want to mark all the studies as complete?"
-                                                dialogMessage="The selection phase will be enabled when all studies in the extraction phase have been marked as complete. You can skip or expedite the extraction process by clicking this button. This may result in some studies in the studyset having incomplete or unextracted data."
+                                                dialogMessage="You can skip reviewing to expedite the process, but any studies you have not reviewed may have incomplete or inaccurate metadata or coordinates."
                                             />
                                             <Button
                                                 sx={{

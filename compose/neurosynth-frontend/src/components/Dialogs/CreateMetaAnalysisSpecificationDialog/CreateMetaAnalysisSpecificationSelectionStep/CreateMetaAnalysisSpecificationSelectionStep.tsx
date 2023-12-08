@@ -70,6 +70,7 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
+                        marginTop: '1rem',
                     }}
                 >
                     <Button

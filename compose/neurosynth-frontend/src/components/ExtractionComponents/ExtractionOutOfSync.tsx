@@ -1,7 +1,7 @@
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Box, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import { selectBestVersionsForStudyset } from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionIngest/helpers/utils';
+import { selectBestVersionsForStudyset } from 'components/Dialogs/MoveToExtractionDialog/MovetoExtractionDialog.helpers';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
 import useIngest from 'hooks/studies/useIngest';
 import { BaseStudy, BaseStudyReturn, StudyReturn } from 'neurostore-typescript-sdk';

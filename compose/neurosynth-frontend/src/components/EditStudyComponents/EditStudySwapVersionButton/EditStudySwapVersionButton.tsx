@@ -1,9 +1,9 @@
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
-import { Button, ButtonGroup, ListItem, Menu, Typography } from '@mui/material';
+import { Button, ButtonGroup, ListItem, ListItemButton, Menu, Typography } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
-import { lastUpdatedAtSortFn } from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionIngest/helpers/utils';
+import { lastUpdatedAtSortFn } from 'components/Dialogs/MoveToExtractionDialog/MovetoExtractionDialog.helpers';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
 import useGetBaseStudyById from 'hooks/studies/useGetBaseStudyById';
 import { StudyReturn } from 'neurostore-typescript-sdk';
@@ -158,30 +158,36 @@ const EditStudySwapVersionButton: React.FC = (props) => {
                 anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
                 transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
             >
-                {baseStudyVersions.map((baseStudyVersion) => (
-                    <ListItem key={baseStudyVersion.id} sx={{ padding: '0.2rem 1rem' }}>
-                        <ButtonGroup variant="text">
-                            <Button
-                                onClick={() => handleSelectVersion(baseStudyVersion.id)}
-                                color={baseStudyVersion.id === studyId ? 'secondary' : 'primary'}
-                                sx={{ width: '450px' }}
-                            >
-                                Switch to version {baseStudyVersion.id} | Owner:{' '}
-                                {!baseStudyVersion.username
-                                    ? 'neurosynth'
-                                    : baseStudyVersion.username}
-                            </Button>
-                            <Button
-                                color={baseStudyVersion.id === studyId ? 'secondary' : 'primary'}
-                                href={`/base-studies/${baseStudyId}/${studyId}`}
-                                target="_blank"
-                                endIcon={<OpenInNewIcon />}
-                            >
-                                View version
-                            </Button>
-                        </ButtonGroup>
-                    </ListItem>
-                ))}
+                {baseStudyVersions.map((baseStudyVersion) => {
+                    const isCurrentlySelected = baseStudyVersion.id === studyId;
+                    const username = baseStudyVersion.username
+                        ? baseStudyVersion.username
+                        : 'neurosynth';
+
+                    return (
+                        <ListItem key={baseStudyVersion.id} sx={{ padding: '0.2rem 1rem' }}>
+                            <ListItemButton selected={isCurrentlySelected}>
+                                <ButtonGroup variant="text">
+                                    <Button
+                                        onClick={() => handleSelectVersion(baseStudyVersion.id)}
+                                        color={isCurrentlySelected ? 'secondary' : 'primary'}
+                                        sx={{ width: '450px' }}
+                                    >
+                                        Switch to version {baseStudyVersion.id} | Owner: {username}
+                                    </Button>
+                                    <Button
+                                        color={isCurrentlySelected ? 'secondary' : 'primary'}
+                                        href={`/base-studies/${baseStudyId}/${studyId}`}
+                                        target="_blank"
+                                        endIcon={<OpenInNewIcon />}
+                                    >
+                                        View version
+                                    </Button>
+                                </ButtonGroup>
+                            </ListItemButton>
+                        </ListItem>
+                    );
+                })}
             </Menu>
         </>
     );
