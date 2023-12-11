@@ -26,14 +26,14 @@ import { FixedSizeList, ListChildComponentProps } from 'react-window';
 
 const selectedChipLocalStorageKey = 'SELECTED_CHIP';
 
-export enum ESelectedChip {
+export enum EExtractionStatus {
     'COMPLETED' = 'completed',
     'SAVEDFORLATER' = 'savedforlater',
     'UNCATEGORIZED' = 'uncategorized',
 }
 
 const ReadOnlyStudySummaryFixedSizeListRow: React.FC<
-    ListChildComponentProps<{ studies: StudyReturn[]; currentSelectedChip: ESelectedChip }>
+    ListChildComponentProps<{ studies: StudyReturn[]; currentSelectedChip: EExtractionStatus }>
 > = (props) => {
     const study = props.data.studies[props.index];
     const currentSelectedChip = props.data.currentSelectedChip;
@@ -70,9 +70,9 @@ const ExtractionPage: React.FC = (props) => {
 
     const [fieldBeingUpdated, setFieldBeingUpdated] = useState('');
     const selectedChipInLocalStorage =
-        (localStorage.getItem(selectedChipLocalStorageKey) as ESelectedChip) ||
-        ESelectedChip.UNCATEGORIZED;
-    const [currentChip, setCurrentChip] = useState<ESelectedChip>(selectedChipInLocalStorage);
+        (localStorage.getItem(selectedChipLocalStorageKey) as EExtractionStatus) ||
+        EExtractionStatus.UNCATEGORIZED;
+    const [currentChip, setCurrentChip] = useState<EExtractionStatus>(selectedChipInLocalStorage);
     const [studiesDisplayedState, setStudiesDisplayedState] = useState<{
         uncategorized: StudyReturn[];
         saveForLater: StudyReturn[];
@@ -100,7 +100,7 @@ const ExtractionPage: React.FC = (props) => {
 
     useEffect(() => {
         if (studyStatusList && studyset?.studies) {
-            const map = new Map<string, 'COMPLETE' | 'SAVEFORLATER'>();
+            const map = new Map<string, EExtractionStatus>();
 
             studyStatusList.forEach((studyStatus) => {
                 map.set(studyStatus.id, studyStatus.status);
@@ -120,7 +120,9 @@ const ExtractionPage: React.FC = (props) => {
 
                     if (map.has(study.id)) {
                         const status = map.get(study.id);
-                        status === 'COMPLETE' ? completed.push(study) : saveForLater.push(study);
+                        status === EExtractionStatus.COMPLETED
+                            ? completed.push(study)
+                            : saveForLater.push(study);
                     } else {
                         uncategorized.push(study);
                     }
@@ -135,7 +137,7 @@ const ExtractionPage: React.FC = (props) => {
         }
     }, [studyStatusList, studyset?.studies]);
 
-    const handleSelectChip = (arg: ESelectedChip) => {
+    const handleSelectChip = (arg: EExtractionStatus) => {
         if (projectId) {
             setCurrentChip(arg);
             localStorage.setItem(selectedChipLocalStorageKey, arg);
@@ -162,16 +164,16 @@ const ExtractionPage: React.FC = (props) => {
     };
 
     const studiesDisplayed =
-        currentChip === ESelectedChip.COMPLETED
+        currentChip === EExtractionStatus.COMPLETED
             ? studiesDisplayedState.completed
-            : currentChip === ESelectedChip.SAVEDFORLATER
+            : currentChip === EExtractionStatus.SAVEDFORLATER
             ? studiesDisplayedState.saveForLater
             : studiesDisplayedState.uncategorized;
 
     const text =
-        currentChip === ESelectedChip.COMPLETED
+        currentChip === EExtractionStatus.COMPLETED
             ? 'completed'
-            : currentChip === ESelectedChip.SAVEDFORLATER
+            : currentChip === EExtractionStatus.SAVEDFORLATER
             ? 'saved for later'
             : 'uncategorized';
 
@@ -262,20 +264,24 @@ const ExtractionPage: React.FC = (props) => {
                     <Box>
                         <Chip
                             size="medium"
-                            onClick={() => handleSelectChip(ESelectedChip.UNCATEGORIZED)}
+                            onClick={() => handleSelectChip(EExtractionStatus.UNCATEGORIZED)}
                             color="warning"
                             sx={{ marginRight: '8px' }}
                             variant={
-                                currentChip === ESelectedChip.UNCATEGORIZED ? 'filled' : 'outlined'
+                                currentChip === EExtractionStatus.UNCATEGORIZED
+                                    ? 'filled'
+                                    : 'outlined'
                             }
                             icon={<QuestionMarkIcon />}
                             label={`Uncategorized (${studiesDisplayedState.uncategorized.length})`}
                         />
                         <Chip
                             size="medium"
-                            onClick={() => handleSelectChip(ESelectedChip.SAVEDFORLATER)}
+                            onClick={() => handleSelectChip(EExtractionStatus.SAVEDFORLATER)}
                             variant={
-                                currentChip === ESelectedChip.SAVEDFORLATER ? 'filled' : 'outlined'
+                                currentChip === EExtractionStatus.SAVEDFORLATER
+                                    ? 'filled'
+                                    : 'outlined'
                             }
                             color="info"
                             sx={{ marginRight: '8px' }}
@@ -284,9 +290,9 @@ const ExtractionPage: React.FC = (props) => {
                         />
                         <Chip
                             size="medium"
-                            onClick={() => handleSelectChip(ESelectedChip.COMPLETED)}
+                            onClick={() => handleSelectChip(EExtractionStatus.COMPLETED)}
                             variant={
-                                currentChip === ESelectedChip.COMPLETED ? 'filled' : 'outlined'
+                                currentChip === EExtractionStatus.COMPLETED ? 'filled' : 'outlined'
                             }
                             color="success"
                             sx={{ marginRight: '8px' }}

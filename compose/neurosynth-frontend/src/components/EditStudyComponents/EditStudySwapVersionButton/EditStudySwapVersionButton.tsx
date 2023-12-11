@@ -170,13 +170,11 @@ const EditStudySwapVersionButton: React.FC = (props) => {
                                 <ButtonGroup variant="text">
                                     <Button
                                         onClick={() => handleSelectVersion(baseStudyVersion.id)}
-                                        color={isCurrentlySelected ? 'secondary' : 'primary'}
                                         sx={{ width: '450px' }}
                                     >
                                         Switch to version {baseStudyVersion.id} | Owner: {username}
                                     </Button>
                                     <Button
-                                        color={isCurrentlySelected ? 'secondary' : 'primary'}
                                         href={`/base-studies/${baseStudyId}/${studyId}`}
                                         target="_blank"
                                         endIcon={<OpenInNewIcon />}

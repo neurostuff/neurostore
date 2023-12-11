@@ -11,6 +11,7 @@ import {
 } from 'hooks/projects/useGetProjects';
 import { v4 as uuidv4 } from 'uuid';
 import { ProjectStoreActions, ProjectStoreMetadata } from './ProjectStore';
+import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
 
 export enum ENeurosynthSourceIds {
     NEUROSTORE = 'neurosynth_neurostore_id_source',
@@ -440,7 +441,7 @@ export const removeTagFromStubHelper = (
 export const addOrUpdateStudyListStatusHelper = (
     state: IStudyExtractionStatus[],
     id: string,
-    newStatus: 'COMPLETE' | 'SAVEFORLATER'
+    newStatus: EExtractionStatus
 ): IStudyExtractionStatus[] => {
     const updatedState = [...state];
 
@@ -487,7 +488,7 @@ export const setGivenStudyStatusesAsCompleteHelper = (
         .filter((studyId) => !!studyId)
         .map((studyId) => ({
             id: studyId,
-            status: 'COMPLETE',
+            status: EExtractionStatus.COMPLETED,
         }));
 };
 

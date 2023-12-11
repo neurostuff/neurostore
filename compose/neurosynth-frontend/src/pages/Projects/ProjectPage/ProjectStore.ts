@@ -37,6 +37,7 @@ import {
     setGivenStudyStatusesAsCompleteHelper,
     updateStubFieldHelper,
 } from './ProjectStore.helpers';
+import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
 
 export type ProjectStoreMetadata = {
     shouldUpdate: boolean; // this flag is for the debouncer
@@ -90,7 +91,7 @@ export type ProjectStoreActions = {
     promoteStub: (columnIndex: number, stubId: string) => void;
     promoteAllUncategorized: () => void; // TODO: improve this
     updateExtractionMetadata: (metadata: Partial<IExtractionMetadata>) => void;
-    addOrUpdateStudyListStatus: (id: string, status: 'COMPLETE' | 'SAVEFORLATER') => void;
+    addOrUpdateStudyListStatus: (id: string, status: EExtractionStatus) => void;
     replaceStudyListStatusId: (idToFindAndReplace: string, replaceWithId: string) => void;
     setGivenStudyStatusesAsComplete: (studyIdList: string[]) => void;
     deleteStub: (columnIndex: number, stubId: string) => void;

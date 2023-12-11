@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import DisplayStudyChipLinks from 'components/DisplayStudy/DisplayStudyChipLinks/DisplayStudyChipLinks';
-import FloatingStatusButtons from 'components/EditStudyComponents/FloatingStatusButtons/FloatingStatusButtons';
+import EditStudyToolbar from 'components/EditStudyComponents/EditStudyToolbar/EditStudyToolbar';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import { useProjectId, useProjectName } from 'pages/Projects/ProjectPage/ProjectStore';
 import {
@@ -26,7 +26,7 @@ const EditStudyPageHeader: React.FC = (props) => {
 
     return (
         <>
-            <FloatingStatusButtons studyId={studyId || ''} />
+            <EditStudyToolbar />
             <Box sx={{ marginBottom: '0.5rem' }}>
                 <NeurosynthBreadcrumbs
                     breadcrumbItems={[
