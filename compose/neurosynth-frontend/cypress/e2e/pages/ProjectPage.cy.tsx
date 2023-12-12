@@ -9,9 +9,6 @@ describe(PAGE_NAME, () => {
     beforeEach(() => {
         cy.clearLocalStorage().clearSessionStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
-        cy.intercept('GET', `**/api/meta-analyses*`, { fixture: 'metaAnalyses' }).as(
-            'metaAnalysesFixture'
-        );
         cy.intercept('GET', `**/api/projects/*`, { fixture: 'projects/projectExtractionStep' }).as(
             'projectFixture'
         );
@@ -19,6 +16,6 @@ describe(PAGE_NAME, () => {
     });
 
     it('should load successfully', () => {
-        cy.visit(PATH).wait('@metaAnalysesFixture').wait('@projectFixture');
+        cy.visit(PATH).wait('@projectFixture');
     });
 });

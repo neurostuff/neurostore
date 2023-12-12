@@ -24,8 +24,8 @@ const DangerZone: React.FC = (props) => {
         if (confirm) {
             deleteProject(projectId, {
                 onSuccess: () => {
-                    history.push('/projects');
                     enqueueSnackbar('Deleted project successfully', { variant: 'success' });
+                    history.push('/projects');
                 },
             });
         }

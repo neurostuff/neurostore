@@ -144,7 +144,6 @@ const CurationImportBase: React.FC = (props) => {
                 )}
                 {activeStep === 2 && (
                     <BaseImportNameAndReview
-                        onUpdateStubs={(stubs) => setStubs(stubs)}
                         onIsResolvingDuplicates={(val) => setIsResolvingDuplicates(val)}
                         isResolvingDuplicates={isResolvingDuplicates}
                         stubs={stubs}

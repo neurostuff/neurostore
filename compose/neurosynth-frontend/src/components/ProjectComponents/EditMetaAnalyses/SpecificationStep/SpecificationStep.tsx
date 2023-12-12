@@ -1,8 +1,13 @@
+import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
 import { Box, Button, Step, StepContent, StepLabel, StepProps, Typography } from '@mui/material';
+import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
+import {
+    useAllowEditMetaAnalyses,
+    useProjectMetaAnalysisCanEdit,
+} from 'pages/Projects/ProjectPage/ProjectStore';
+import { useEffect } from 'react';
+import { useHistory, useLocation, useParams } from 'react-router-dom';
 import ProjectComponentsStyles from '../../ProjectComponents.styles';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import { useHistory, useParams } from 'react-router-dom';
-import { useAllowEditMetaAnalyses } from 'pages/Projects/ProjectPage/ProjectStore';
 
 interface ISpecificationStep {
     disabled: boolean;
@@ -12,7 +17,17 @@ const SpecificationStep: React.FC<ISpecificationStep & StepProps> = (props) => {
     const { disabled, ...stepProps } = props;
     const history = useHistory();
     const { projectId } = useParams<{ projectId: string }>();
+    const location = useLocation<IProjectPageLocationState>();
     const allowEditMetaAnalyses = useAllowEditMetaAnalyses();
+    const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
+
+    useEffect(() => {
+        if (disabled) return;
+        const shouldScrollDown = location?.state?.projectPage?.scrollToMetaAnalysisProceed;
+        if (shouldScrollDown) {
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+    }, [disabled, location?.state?.projectPage?.scrollToMetaAnalysisProceed]);
 
     const handleClickProceed = () => {
         allowEditMetaAnalyses();
@@ -39,14 +54,21 @@ const SpecificationStep: React.FC<ISpecificationStep & StepProps> = (props) => {
                     </Typography>
                     <Box sx={[ProjectComponentsStyles.stepCard, { height: '230px' }]}>
                         <Button
-                            endIcon={<ArrowForwardIosIcon />}
+                            endIcon={
+                                canEditMetaAnalyses ? undefined : <KeyboardDoubleArrowRightIcon />
+                            }
                             color="primary"
                             onClick={handleClickProceed}
-                            variant={disabled ? 'text' : 'outlined'}
+                            variant={
+                                disabled ? 'text' : canEditMetaAnalyses ? 'outlined' : 'contained'
+                            }
                             disabled={disabled}
+                            disableElevation
                             sx={{ width: '100%', height: '100%' }}
                         >
-                            Proceed to Meta-Analyses Page
+                            {canEditMetaAnalyses
+                                ? 'View meta-analyses'
+                                : 'Proceed to Meta-Analyses Page'}
                         </Button>
                     </Box>
                 </Box>

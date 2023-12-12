@@ -4,11 +4,11 @@ import StudyListItemStyles from './ReadOnlyStudySummary.styles';
 import CheckIcon from '@mui/icons-material/Check';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useHistory, useParams } from 'react-router-dom';
-import { ESelectedChip } from 'pages/ExtractionPage/ExtractionPage';
+import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
 import { useProjectExtractionAddOrUpdateStudyListStatus } from 'pages/Projects/ProjectPage/ProjectStore';
 
 const ReadOnlyStudySummaryVirtualizedItem: React.FC<
-    StudyReturn & { currentSelectedChip: ESelectedChip; style: React.CSSProperties }
+    StudyReturn & { currentSelectedChip: EExtractionStatus; style: React.CSSProperties }
 > = (props) => {
     const { projectId }: { projectId: string } = useParams();
     const history = useHistory();
@@ -20,19 +20,19 @@ const ReadOnlyStudySummaryVirtualizedItem: React.FC<
         }
     };
 
-    const handleUpdateStatus = (studyId: string, status: 'COMPLETE' | 'SAVEFORLATER') => {
+    const handleUpdateStatus = (studyId: string, status: EExtractionStatus) => {
         if (studyId) {
             addOrUpdateStudyListStatus(studyId, status);
         }
     };
 
     const showMarkAsCompleteButton =
-        props.currentSelectedChip === ESelectedChip.UNCATEGORIZED ||
-        props.currentSelectedChip === ESelectedChip.SAVEDFORLATER;
+        props.currentSelectedChip === EExtractionStatus.UNCATEGORIZED ||
+        props.currentSelectedChip === EExtractionStatus.SAVEDFORLATER;
 
-    const showMarkAsSaveForLaterbutton =
-        props.currentSelectedChip === ESelectedChip.UNCATEGORIZED ||
-        props.currentSelectedChip === ESelectedChip.COMPLETED;
+    const showMarkAsSaveForLaterButton =
+        props.currentSelectedChip === EExtractionStatus.UNCATEGORIZED ||
+        props.currentSelectedChip === EExtractionStatus.COMPLETED;
 
     return (
         <Box style={props.style}>
@@ -66,7 +66,10 @@ const ReadOnlyStudySummaryVirtualizedItem: React.FC<
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        handleUpdateStatus(props.id || '', 'COMPLETE');
+                                        handleUpdateStatus(
+                                            props.id || '',
+                                            EExtractionStatus.COMPLETED
+                                        );
                                     }}
                                 >
                                     <CheckIcon color="success" />
@@ -74,7 +77,7 @@ const ReadOnlyStudySummaryVirtualizedItem: React.FC<
                             </Tooltip>
                         </Box>
                     )}
-                    {showMarkAsSaveForLaterbutton && (
+                    {showMarkAsSaveForLaterButton && (
                         <Box>
                             <Tooltip placement="right" title="move to save for later">
                                 <IconButton
@@ -82,7 +85,10 @@ const ReadOnlyStudySummaryVirtualizedItem: React.FC<
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        handleUpdateStatus(props.id || '', 'SAVEFORLATER');
+                                        handleUpdateStatus(
+                                            props.id || '',
+                                            EExtractionStatus.SAVEDFORLATER
+                                        );
                                     }}
                                 >
                                     <BookmarkIcon color="info" />

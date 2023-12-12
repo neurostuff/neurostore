@@ -8,32 +8,35 @@ import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBr
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
+import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
+import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
 import {
     useInitProjectStoreIfRequired,
     useProjectCurationColumn,
     useProjectExtractionStudyStatusList,
     useProjectExtractionStudysetId,
+    useProjectMetaAnalysisCanEdit,
     useProjectName,
     useProjectNumCurationColumns,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { resolveStudysetAndCurationDifferences } from 'pages/helpers/utils';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 
 const selectedChipLocalStorageKey = 'SELECTED_CHIP';
 
-export enum ESelectedChip {
+export enum EExtractionStatus {
     'COMPLETED' = 'completed',
     'SAVEDFORLATER' = 'savedforlater',
     'UNCATEGORIZED' = 'uncategorized',
 }
 
 const ReadOnlyStudySummaryFixedSizeListRow: React.FC<
-    ListChildComponentProps<{ studies: StudyReturn[]; currentSelectedChip: ESelectedChip }>
+    ListChildComponentProps<{ studies: StudyReturn[]; currentSelectedChip: EExtractionStatus }>
 > = (props) => {
     const study = props.data.studies[props.index];
     const currentSelectedChip = props.data.currentSelectedChip;
@@ -49,7 +52,7 @@ const ReadOnlyStudySummaryFixedSizeListRow: React.FC<
 
 const ExtractionPage: React.FC = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
-    const history = useHistory();
+    const history = useHistory<IProjectPageLocationState>();
     const windowHeight = useGetWindowHeight();
 
     useInitProjectStoreIfRequired();
@@ -59,6 +62,8 @@ const ExtractionPage: React.FC = (props) => {
     const studyStatusList = useProjectExtractionStudyStatusList();
     const numColumns = useProjectNumCurationColumns();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
+    const extractionSummary = useGetExtractionSummary(projectId || '');
+    const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
 
     const {
         data: studyset,
@@ -70,9 +75,9 @@ const ExtractionPage: React.FC = (props) => {
 
     const [fieldBeingUpdated, setFieldBeingUpdated] = useState('');
     const selectedChipInLocalStorage =
-        (localStorage.getItem(selectedChipLocalStorageKey) as ESelectedChip) ||
-        ESelectedChip.UNCATEGORIZED;
-    const [currentChip, setCurrentChip] = useState<ESelectedChip>(selectedChipInLocalStorage);
+        (localStorage.getItem(selectedChipLocalStorageKey) as EExtractionStatus) ||
+        EExtractionStatus.UNCATEGORIZED;
+    const [currentChip, setCurrentChip] = useState<EExtractionStatus>(selectedChipInLocalStorage);
     const [studiesDisplayedState, setStudiesDisplayedState] = useState<{
         uncategorized: StudyReturn[];
         saveForLater: StudyReturn[];
@@ -100,7 +105,7 @@ const ExtractionPage: React.FC = (props) => {
 
     useEffect(() => {
         if (studyStatusList && studyset?.studies) {
-            const map = new Map<string, 'COMPLETE' | 'SAVEFORLATER'>();
+            const map = new Map<string, EExtractionStatus>();
 
             studyStatusList.forEach((studyStatus) => {
                 map.set(studyStatus.id, studyStatus.status);
@@ -120,7 +125,9 @@ const ExtractionPage: React.FC = (props) => {
 
                     if (map.has(study.id)) {
                         const status = map.get(study.id);
-                        status === 'COMPLETE' ? completed.push(study) : saveForLater.push(study);
+                        status === EExtractionStatus.COMPLETED
+                            ? completed.push(study)
+                            : saveForLater.push(study);
                     } else {
                         uncategorized.push(study);
                     }
@@ -135,7 +142,7 @@ const ExtractionPage: React.FC = (props) => {
         }
     }, [studyStatusList, studyset?.studies]);
 
-    const handleSelectChip = (arg: ESelectedChip) => {
+    const handleSelectChip = (arg: EExtractionStatus) => {
         if (projectId) {
             setCurrentChip(arg);
             localStorage.setItem(selectedChipLocalStorageKey, arg);
@@ -161,21 +168,39 @@ const ExtractionPage: React.FC = (props) => {
         }
     };
 
+    const handleMoveToSpecificationPhase = () => {
+        if (canEditMetaAnalyses) {
+            history.push(`/projects/${projectId}/meta-analyses`);
+        } else {
+            history.push(`/projects/${projectId}/edit`, {
+                projectPage: {
+                    scrollToMetaAnalysisProceed: true,
+                },
+            });
+        }
+    };
+
     const studiesDisplayed =
-        currentChip === ESelectedChip.COMPLETED
+        currentChip === EExtractionStatus.COMPLETED
             ? studiesDisplayedState.completed
-            : currentChip === ESelectedChip.SAVEDFORLATER
+            : currentChip === EExtractionStatus.SAVEDFORLATER
             ? studiesDisplayedState.saveForLater
             : studiesDisplayedState.uncategorized;
 
     const text =
-        currentChip === ESelectedChip.COMPLETED
+        currentChip === EExtractionStatus.COMPLETED
             ? 'completed'
-            : currentChip === ESelectedChip.SAVEDFORLATER
+            : currentChip === EExtractionStatus.SAVEDFORLATER
             ? 'saved for later'
             : 'uncategorized';
 
     const pxInVh = Math.round((windowHeight * 60) / 100);
+
+    const isReadyToMoveToNextStep = useMemo(
+        () =>
+            extractionSummary.total === extractionSummary.completed && extractionSummary.total > 0,
+        [extractionSummary]
+    );
 
     return (
         <StateHandlerComponent isError={getStudysetIsError} isLoading={getStudysetIsLoading}>
@@ -205,6 +230,7 @@ const ExtractionPage: React.FC = (props) => {
                     </Box>
                     <Box>
                         <Button
+                            sx={{ width: '220px' }}
                             color="secondary"
                             variant="contained"
                             disableElevation
@@ -214,6 +240,17 @@ const ExtractionPage: React.FC = (props) => {
                         >
                             View Annotations
                         </Button>
+                        {isReadyToMoveToNextStep && (
+                            <Button
+                                sx={{ marginLeft: '1rem' }}
+                                onClick={handleMoveToSpecificationPhase}
+                                color="success"
+                                variant="contained"
+                                disableElevation
+                            >
+                                Move to Specification Phase
+                            </Button>
+                        )}
                     </Box>
                 </Box>
                 {showReconcilePrompt && <ExtractionOutOfSync />}
@@ -262,20 +299,24 @@ const ExtractionPage: React.FC = (props) => {
                     <Box>
                         <Chip
                             size="medium"
-                            onClick={() => handleSelectChip(ESelectedChip.UNCATEGORIZED)}
+                            onClick={() => handleSelectChip(EExtractionStatus.UNCATEGORIZED)}
                             color="warning"
                             sx={{ marginRight: '8px' }}
                             variant={
-                                currentChip === ESelectedChip.UNCATEGORIZED ? 'filled' : 'outlined'
+                                currentChip === EExtractionStatus.UNCATEGORIZED
+                                    ? 'filled'
+                                    : 'outlined'
                             }
                             icon={<QuestionMarkIcon />}
                             label={`Uncategorized (${studiesDisplayedState.uncategorized.length})`}
                         />
                         <Chip
                             size="medium"
-                            onClick={() => handleSelectChip(ESelectedChip.SAVEDFORLATER)}
+                            onClick={() => handleSelectChip(EExtractionStatus.SAVEDFORLATER)}
                             variant={
-                                currentChip === ESelectedChip.SAVEDFORLATER ? 'filled' : 'outlined'
+                                currentChip === EExtractionStatus.SAVEDFORLATER
+                                    ? 'filled'
+                                    : 'outlined'
                             }
                             color="info"
                             sx={{ marginRight: '8px' }}
@@ -284,9 +325,9 @@ const ExtractionPage: React.FC = (props) => {
                         />
                         <Chip
                             size="medium"
-                            onClick={() => handleSelectChip(ESelectedChip.COMPLETED)}
+                            onClick={() => handleSelectChip(EExtractionStatus.COMPLETED)}
                             variant={
-                                currentChip === ESelectedChip.COMPLETED ? 'filled' : 'outlined'
+                                currentChip === EExtractionStatus.COMPLETED ? 'filled' : 'outlined'
                             }
                             color="success"
                             sx={{ marginRight: '8px' }}

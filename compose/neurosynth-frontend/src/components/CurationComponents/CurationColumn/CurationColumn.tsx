@@ -186,10 +186,10 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
             {props.columnIndex === 0 && (
                 <>
                     <ConfirmationDialog
-                        dialogTitle="Are you sure you want to promote all uncategorized studies?"
-                        dialogMessage="Once you do this, it cannot be undone"
+                        dialogTitle="Are you sure you want to promote non duplicated studies?"
+                        dialogMessage="By taking this action, all non duplicated studies will be promoted to the next stage"
                         rejectText="Cancel"
-                        confirmText="Promote All"
+                        confirmText="Continue"
                         isOpen={warningDialogIsOpen}
                         onCloseDialog={handlePromoteAllUnCategorized}
                     />
@@ -205,7 +205,7 @@ const CurationColumn: React.FC<{ columnIndex: number }> = React.memo((props) => 
                         }}
                         disabled={!isAuthenticated}
                     >
-                        Promote all uncategorized studies
+                        Promote Non Duplicated Studies
                     </Button>
                 </>
             )}

@@ -171,8 +171,13 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                 </TextEdit>
             </Box>
 
-            <Typography sx={{ whiteSpace: 'break-spaces' }}>
-                Source: {props.stub.identificationSource.label}
+            <Typography
+                sx={{
+                    whiteSpace: 'break-spaces',
+                    color: props.stub.identificationSource ? 'initial' : 'warning.dark',
+                }}
+            >
+                Source: {props.stub.identificationSource?.label || 'No source'}
             </Typography>
 
             <Typography
