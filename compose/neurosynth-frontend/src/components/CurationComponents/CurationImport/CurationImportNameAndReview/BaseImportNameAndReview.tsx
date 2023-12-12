@@ -6,39 +6,32 @@ import {
     useProjectId,
     useUpdateCurationColumns,
 } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useHistory } from 'react-router-dom';
 import { createDuplicateMap } from '../helpers/utils';
 import ResolveProjectDuplicates from './ResolveProjectDuplicates/ResolveProjectDuplicates';
 import { flattenColumns } from './ResolveProjectDuplicates/ResolveProjectDuplicates.helpers';
 import { IDuplicateCase } from './ResolveProjectDuplicates/ResolveProjectDuplicates.types';
-import { useHistory } from 'react-router-dom';
 
 const BaseImportNameAndReview: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
-    onUpdateStubs: (stubs: ICurationStubStudy[]) => void;
     stubs: ICurationStubStudy[];
     unimportedStubs: string[];
     isResolvingDuplicates: boolean;
     onIsResolvingDuplicates: (update: boolean) => void;
 }> = (props) => {
-    const {
-        onNavigate,
-        onUpdateStubs,
-        stubs,
-        unimportedStubs,
-        isResolvingDuplicates,
-        onIsResolvingDuplicates,
-    } = props;
+    const { onNavigate, stubs, unimportedStubs, isResolvingDuplicates, onIsResolvingDuplicates } =
+        props;
 
     const columns = useProjectCurationColumns();
     const updateCurationColumns = useUpdateCurationColumns();
     const history = useHistory();
     const projectId = useProjectId();
 
-    const hasDuplicates = () => {
+    const hasDuplicates = (stubs: ICurationStubStudy[]) => {
         const allStubsInProject = flattenColumns(columns);
         const { duplicateMapping } = createDuplicateMap(allStubsInProject);
 
-        return props.stubs.some((importedStub) => {
+        return stubs.some((importedStub) => {
             if (importedStub.exclusionTag !== null) return false;
             const formattedTitle = importedStub.title.toLocaleLowerCase().trim();
             if (importedStub.doi && duplicateMapping.has(importedStub.doi)) return true;
@@ -49,19 +42,18 @@ const BaseImportNameAndReview: React.FC<{
     };
 
     const handleDoneNamingImport = (stubs: ICurationStubStudy[]) => {
-        onUpdateStubs(stubs);
-        const duplicatesExist = hasDuplicates();
+        const duplicatesExist = hasDuplicates(stubs);
         if (duplicatesExist) {
             onIsResolvingDuplicates(true);
         } else {
             onIsResolvingDuplicates(false);
-            onFinalizeImport([]);
+            onFinalizeImport(stubs, []);
         }
     };
 
-    const onFinalizeImport = (duplicates: IDuplicateCase[]) => {
+    const onFinalizeImport = (stubs: ICurationStubStudy[], duplicates: IDuplicateCase[]) => {
         // handle import
-        const updatedImport = [...props.stubs];
+        const updatedImport = [...stubs];
         const updatedColumns = [...columns];
 
         duplicates.forEach(({ importedStub, projectDuplicates }) => {

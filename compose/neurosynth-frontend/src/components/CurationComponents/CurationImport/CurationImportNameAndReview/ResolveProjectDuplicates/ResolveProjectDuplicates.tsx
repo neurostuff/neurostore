@@ -15,7 +15,7 @@ import DuplicateCase from './DuplicateCase';
 import CurationImportBaseStyles from '../../CurationImportBase.styles';
 
 const ResolveProjectDuplicates: React.FC<{
-    onFinalizeImport: (duplicateCases: IDuplicateCase[]) => void;
+    onFinalizeImport: (stubs: ICurationStubStudy[], duplicateCases: IDuplicateCase[]) => void;
     onNavigate: (button: ENavigationButton) => void;
     stubs: ICurationStubStudy[];
 }> = (props) => {
@@ -149,7 +149,7 @@ const ResolveProjectDuplicates: React.FC<{
     );
 
     const handleClickNext = () => {
-        props.onFinalizeImport(duplicates);
+        props.onFinalizeImport(props.stubs, duplicates);
     };
 
     const handleOnExpand = React.useCallback((index: number) => {

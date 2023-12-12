@@ -13,6 +13,52 @@ import { useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import CurationImportBaseStyles from '../CurationImportBase.styles';
 import CurationImportReview from './CurationImportReview';
+import { SearchBy, SearchByMapping } from 'pages/Studies/StudiesPage/models';
+
+const createCleanTagName = (searchTerm: string) => {
+    const parsedSearch = new URLSearchParams(searchTerm);
+    const search = parsedSearch.get(SearchByMapping[SearchBy.ALL]);
+    const searchString = search ? `${search} ` : '';
+    const title = parsedSearch.get(SearchByMapping[SearchBy.TITLE]);
+    const titleSearchString = title ? `title=${title}` : '';
+    const description = parsedSearch.get(SearchByMapping[SearchBy.DESCRIPTION]);
+    const descriptionSearchString = description ? `description=${description} ` : '';
+    const author = parsedSearch.get(SearchByMapping[SearchBy.AUTHORS]);
+    const authorSearchString = author ? `author=${author}` : '';
+    const journal = parsedSearch.get(SearchByMapping[SearchBy.JOURNAL]);
+    const journalSearchString = journal ? `journal=${journal}` : '';
+    const dataType = parsedSearch.get('dataType');
+    const dataTypeSearchString = dataType ? `datatype=${dataType}` : '';
+
+    const allParametersString = [
+        titleSearchString,
+        descriptionSearchString,
+        authorSearchString,
+        journalSearchString,
+        dataTypeSearchString,
+    ]
+        .filter((x) => x !== '')
+        .reduce((acc, curr, index, arr) => {
+            if (arr.length === 0) {
+                return '';
+            } else if (arr.length === 1) {
+                return `(${acc}${curr})`;
+            } else if (index === 0) {
+                return `(${acc}${curr}`;
+            } else if (index >= arr.length - 1) {
+                return `${acc}, ${curr})`;
+            } else {
+                return `${acc}, ${curr}`;
+            }
+        }, '');
+
+    return `${searchString}${allParametersString}`;
+
+    // return `${searchString ? searchString + ' ' : ''}${descriptionSearchString ? descriptionSearchString : ''} ${
+
+    // }`
+};
+
 const CurationImportNameAndReview: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
     onUpdateStubs: (stubs: ICurationStubStudy[]) => void;
@@ -35,7 +81,7 @@ const CurationImportNameAndReview: React.FC<{
         } else {
             setTag({
                 id: uuidv4(),
-                label: searchTerm,
+                label: createCleanTagName(searchTerm),
                 addOptionActualLabel: null,
             });
         }

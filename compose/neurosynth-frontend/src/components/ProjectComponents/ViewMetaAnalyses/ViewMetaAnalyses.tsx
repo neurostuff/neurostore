@@ -1,5 +1,5 @@
 import { Add } from '@mui/icons-material';
-import { Box, Button, Link, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import CreateMetaAnalysisSpecificationDialogBase from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetMetaAnalysesByProjectId, useGuard } from 'hooks';
@@ -33,26 +33,18 @@ const ViewMetaAnalyses: React.FC = () => {
                 onCloseDialog={() => setCreateMetaAnalysisDialogIsOpen(false)}
             />
             <Box sx={{ width: '100%', paddingLeft: '1%' }}>
-                {(data || []).length === 0 ? (
-                    <Typography color="warning.dark">
-                        No Meta-Analyses for this project. Get started by{' '}
-                        <Link
-                            underline="hover"
-                            sx={{ cursor: 'pointer' }}
-                            onClick={() => setCreateMetaAnalysisDialogIsOpen(true)}
-                        >
-                            clicking here
-                        </Link>
+                <Button
+                    onClick={() => setCreateMetaAnalysisDialogIsOpen(true)}
+                    variant="contained"
+                    startIcon={<Add />}
+                    disableElevation
+                >
+                    Meta-Analysis Specification
+                </Button>
+                {(data || []).length === 0 && (
+                    <Typography sx={{ marginTop: '1rem' }} color="warning.dark">
+                        No Meta-Analyses for this project. Get started by clicking the button above
                     </Typography>
-                ) : (
-                    <Button
-                        onClick={() => setCreateMetaAnalysisDialogIsOpen(true)}
-                        variant="contained"
-                        startIcon={<Add />}
-                        disableElevation
-                    >
-                        Meta-Analysis Specification
-                    </Button>
                 )}
             </Box>
             <Box sx={{ padding: '0.5rem 0', display: 'flex', flexWrap: 'wrap' }}>
