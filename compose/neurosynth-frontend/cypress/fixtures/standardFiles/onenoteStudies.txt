@@ -1,0 +1,144 @@
+%0 Journal Article
+%T Role of the anterior insula in task-level control and focal attention
+%A Nelson, Steven M
+%A Dosenbach, Nico UF
+%A Cohen, Alexander L
+%A Wheeler, Mark E
+%A Schlaggar, Bradley L
+%A Petersen, Steven E
+%J Brain structure and function
+%V 214
+%P 669-680
+%@ 1863-2653
+%D 2010
+%I Springer-Verlag
+
+
+%0 Journal Article
+%T Self-control in decision-making involves modulation of the vmPFC valuation system
+%A Hare, Todd A
+%A Camerer, Colin F
+%A Rangel, Antonio
+%J Science
+%V 324
+%N 5927
+%P 646-648
+%@ 0036-8075
+%D 2009
+%I American Association for the Advancement of Science
+
+
+%0 Journal Article
+%T The neural mechanisms of inter-temporal decision-making: understanding variability
+%A Peters, Jan
+%A Büchel, Christian
+%J Trends in cognitive sciences
+%V 15
+%N 5
+%P 227-239
+%@ 1364-6613
+%D 2011
+%I Elsevier Current Trends
+
+
+%0 Journal Article
+%T Congruence of BOLD response across intertemporal choice conditions: fictive and real money gains and losses
+%A Bickel, Warren K
+%A Pitcock, Jeffery A
+%A Yi, Richard
+%A Angtuaco, Edgardo JC
+%J Journal of Neuroscience
+%V 29
+%N 27
+%P 8839-8846
+%@ 0270-6474
+%D 2009
+%I Society for Neuroscience
+
+
+%0 Journal Article
+%T Delay discounting of real and hypothetical rewards.
+%A Madden, Gregory J
+%A Begotka, Andrea M
+%A Raiff, Bethany R
+%A Kastern, Lana L
+%J Experimental and clinical psychopharmacology
+%V 11
+%N 2
+%P 139
+%@ 1936-2293
+%D 2003
+%I American Psychological Association
+
+
+%0 Journal Article
+%T Separate neural systems value immediate and delayed monetary rewards
+%A McClure, Samuel M
+%A Laibson, David I
+%A Loewenstein, George
+%A Cohen, Jonathan D
+%J Science
+%V 306
+%N 5695
+%P 503-507
+%@ 0036-8075
+%D 2004
+%I American Association for the Advancement of Science
+
+
+%0 Journal Article
+%T Dissociable neural representations of future reward magnitude and delay during temporal discounting
+%A Ballard, Kacey
+%A Knutson, Brian
+%J Neuroimage
+%V 45
+%N 1
+%P 143-150
+%@ 1053-8119
+%D 2009
+%I Academic Press
+
+
+%0 Journal Article
+%T Within‐subject comparison of real and hypothetical money rewards in delay discounting
+%A Johnson, Matthew W
+%A Bickel, Warren K
+%J Journal of the experimental analysis of behavior
+%V 77
+%N 2
+%P 129-146
+%@ 0022-5002
+%D 2002
+%I Blackwell Publishing Ltd Oxford, UK
+
+
+%0 Journal Article
+%T Time discounting and time preference: A critical review
+%A Frederick, Shane
+%A Loewenstein, George
+%A O’donoghue, Ted
+%J Journal of economic literature
+%V 40
+%N 2
+%P 351-401
+%@ 0022-0515
+%D 2002
+%I American Economic Association
+
+
+%0 Journal Article
+%T Lateral prefrontal cortex and self-control in intertemporal choice
+%A Figner, Bernd
+%A Knoch, Daria
+%A Johnson, Eric J
+%A Krosch, Amy R
+%A Lisanby, Sarah H
+%A Fehr, Ernst
+%A Weber, Elke U
+%J Nature neuroscience
+%V 13
+%N 5
+%P 538-539
+%@ 1097-6256
+%D 2010
+%I Nature Publishing Group US New York

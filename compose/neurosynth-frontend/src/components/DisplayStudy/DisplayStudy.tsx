@@ -19,7 +19,7 @@ const DisplayStudy: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
         doi,
         pmid,
         authors,
-        publication,
+        publication: journal,
         metadata,
         analyses = [],
     } = props;
@@ -42,7 +42,7 @@ const DisplayStudy: React.FC<Optional<IStoreStudy, 'metadata'>> = (props) => {
                 </Box>
                 <Typography>{authors}</Typography>
                 <Box>
-                    <Typography gutterBottom>{publication}</Typography>
+                    <Typography gutterBottom>{journal}</Typography>
                     <DisplayStudyChipLinks studyName={name} pmid={pmid} doi={doi} />
                 </Box>
                 <TextExpansion

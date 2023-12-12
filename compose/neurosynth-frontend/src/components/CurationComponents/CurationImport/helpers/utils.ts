@@ -21,7 +21,7 @@ export const createDuplicateMap = <T extends ICurationStubStudy>(stubs: T[]) => 
             duplicatedStubs!.push(stub);
         } else {
             const newDuplicatedStubsList: T[] = [];
-            newDuplicatedStubsList.push(stub);
+            newDuplicatedStubsList.push({ ...stub });
             duplicatesList.push(newDuplicatedStubsList);
             if (stub.doi) map.set(stub.doi, newDuplicatedStubsList);
             if (stub.pmid) map.set(stub.pmid, newDuplicatedStubsList);

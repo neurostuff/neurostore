@@ -21,6 +21,7 @@ export interface ICurationStubStudy {
     identificationSource: ISource;
     tags: ITag[];
     neurostoreId?: string;
+    searchTerm?: string;
 }
 
 const handleAnimation = (style: DraggableStyle | undefined, snapshot: DraggableStateSnapshot) => {

@@ -1,10 +1,9 @@
-import { Box, Chip, Typography } from '@mui/material';
-import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { Chip } from '@mui/material';
 import useGetFullText from 'hooks/external/useGetFullText';
 import { useStudyName } from 'pages/Studies/StudyStore';
 import { useEffect, useState } from 'react';
 import DisplayStudyChipLinksStyles from './DisplayStudyChipLinks.styles';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 let debounce: NodeJS.Timeout;
 
@@ -14,9 +13,10 @@ const FullTextChip: React.FC<{ name?: string | null }> = (props) => {
     useEffect(() => {
         debounce = setTimeout(() => {
             setDebouncedName(existingName || '');
-        }, 1000);
+        }, 500);
 
         return () => {
+            setDebouncedName('');
             clearTimeout(debounce);
         };
     }, [existingName]);
@@ -28,25 +28,8 @@ const FullTextChip: React.FC<{ name?: string | null }> = (props) => {
         isError: getFullTextIsError,
     } = useGetFullText(debouncedName);
 
-    if (getFullTextIsLoading || !debouncedName) {
-        return (
-            <Box sx={{ display: 'inline-block', textAlign: 'center', width: '200px' }}>
-                <ProgressLoader sx={{ marginRight: '15px' }} size={20} />
-                <Typography variant="caption">Searching for full text</Typography>
-            </Box>
-        );
-    } else if (getFullTextIsError) {
-        return (
-            <Typography variant="caption" sx={{ color: 'error.main', display: 'inline' }}>
-                There was an error trying to retrieve the full text
-            </Typography>
-        );
-    } else if (fullTextURL === '') {
-        return (
-            <Typography variant="caption" sx={{ display: 'inline', color: 'warning.dark' }}>
-                No full text found
-            </Typography>
-        );
+    if (getFullTextIsLoading || !debouncedName || getFullTextIsError || fullTextURL === '') {
+        return <></>;
     } else {
         return (
             <Chip

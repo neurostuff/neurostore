@@ -1,26 +1,23 @@
-import { Box, Button, IconButton, Tooltip, Typography } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import StyleIcon from '@mui/icons-material/Style';
-import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import ExclusionSelectorPopup from 'components/CurationComponents/SelectorPopups/ExclusionSelectorPopup/ExclusionSelectorPopup';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import { useAuth0 } from '@auth0/auth0-react';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import CloseIcon from '@mui/icons-material/Close';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import { Box, Chip, IconButton, Tooltip, Typography } from '@mui/material';
+import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
+import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
+import ExclusionSelectorPopup from 'components/CurationComponents/SelectorPopups/ExclusionSelectorPopup/ExclusionSelectorPopup';
 import { ITag } from 'hooks/projects/useGetProjects';
-import { useRef, useState } from 'react';
-import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
-import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
-import NeurosynthConfirmationChip from 'components/NeurosynthConfirmationChip/NeurosynthConfirmationChip';
-import TagSelectorPopup from 'components/CurationComponents/SelectorPopups/TagSelectorPopup/TagSelectorPopup';
 import {
     useAddTagToStub,
     usePromoteStub,
-    useSetExclusionFromStub,
     useRemoveTagFromStub,
+    useSetExclusionFromStub,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import React from 'react';
-import { defaultInfoTags } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
-import { useAuth0 } from '@auth0/auth0-react';
+import {
+    ENeurosynthTagIds,
+    defaultInfoTags,
+} from 'pages/Projects/ProjectPage/ProjectStore.helpers';
+import React, { useState } from 'react';
 
 interface IEditableStubSummaryHeader {
     type: 'excluded' | 'included' | 'default';
@@ -31,14 +28,13 @@ interface IEditableStubSummaryHeader {
 
 const EditableStubSummaryHeader: React.FC<IEditableStubSummaryHeader> = React.memo((props) => {
     const { isAuthenticated } = useAuth0();
-    const addTagsRef = useRef<HTMLButtonElement>(null);
 
     const [exclusionTagSelectorIsOpen, setExclusionTagSelectorIsOpen] = useState(false);
-    const [tagSelectorIsOpen, setTagSelectorIsOpen] = useState(false);
 
     const addTagToStub = useAddTagToStub();
-    const promoteStub = usePromoteStub();
     const removeTagFromStub = useRemoveTagFromStub();
+    const promoteStub = usePromoteStub();
+
     const setExclusionForStub = useSetExclusionFromStub();
 
     const handleAddTag = (tag: ITag) => {
@@ -92,7 +88,7 @@ const EditableStubSummaryHeader: React.FC<IEditableStubSummaryHeader> = React.me
         case 'included':
             categorizeHeader = (
                 <Box>
-                    <Typography sx={{ color: 'success.main' }} variant="h5">
+                    <Typography sx={{ color: 'success.main' }} variant="h5" gutterBottom={false}>
                         Included
                     </Typography>
                 </Box>
@@ -100,7 +96,7 @@ const EditableStubSummaryHeader: React.FC<IEditableStubSummaryHeader> = React.me
             break;
         default:
             categorizeHeader = (
-                <>
+                <Box sx={{ display: 'flex', marginBottom: '8px' }}>
                     <Tooltip
                         placement="top"
                         title="Clicking this button will promote the study to the next column"
@@ -147,7 +143,7 @@ const EditableStubSummaryHeader: React.FC<IEditableStubSummaryHeader> = React.me
                         disabled={!isAuthenticated}
                         columnIndex={props.columnIndex}
                     />
-                </>
+                </Box>
             );
             break;
     }
@@ -155,8 +151,8 @@ const EditableStubSummaryHeader: React.FC<IEditableStubSummaryHeader> = React.me
     return (
         <Box sx={{ minWidth: '700px' }}>
             <Box sx={{ display: 'flex' }}>
-                <Box sx={{ display: 'flex', marginBottom: '8px' }}>{categorizeHeader}</Box>
-                <Box sx={{ marginLeft: 'auto' }}>
+                <Box>{categorizeHeader}</Box>
+                {/* <Box sx={{ marginLeft: 'auto' }}>
                     <NeurosynthPopper
                         open={tagSelectorIsOpen}
                         anchorElement={addTagsRef?.current}
@@ -183,17 +179,17 @@ const EditableStubSummaryHeader: React.FC<IEditableStubSummaryHeader> = React.me
                     >
                         add tags
                     </Button>
-                </Box>
+                </Box> */}
             </Box>
 
             <Box>
                 {(props.stub.tags || []).map((tag) => (
-                    <NeurosynthConfirmationChip
-                        sx={{ margin: '3px' }}
+                    <Chip
                         key={tag.id}
-                        onDelete={() => handleRemoveTag(tag.id)}
+                        sx={{ margin: '3px' }}
                         disabled={!isAuthenticated}
                         label={tag.label}
+                        onDelete={tag.isAssignable ? undefined : () => handleRemoveTag(tag.id)}
                     />
                 ))}
             </Box>

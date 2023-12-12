@@ -1,0 +1,658 @@
+<?xml version="1.0"?>
+<!DOCTYPE PubmedArticleSet PUBLIC "-//NLM//DTD PubMedArticle, 1st January 2023//EN" "https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_230101.dtd">
+<PubmedArticleSet>
+    <PubmedArticle>
+        <MedlineCitation Status="MEDLINE" Owner="NLM">
+            <PMID Version="1">123</PMID>
+            <DateCompleted>
+                <Year>1976</Year>
+                <Month>02</Month>
+                <Day>09</Day>
+            </DateCompleted>
+            <DateRevised>
+                <Year>2019</Year>
+                <Month>07</Month>
+                <Day>05</Day>
+            </DateRevised>
+            <Article PubModel="Print">
+                <Journal>
+                    <ISSN IssnType="Print">0007-1323</ISSN>
+                    <JournalIssue CitedMedium="Print">
+                        <Volume>62</Volume>
+                        <Issue>10</Issue>
+                        <PubDate>
+                            <Year>1975</Year>
+                            <Month>Oct</Month>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>The British journal of surgery</Title>
+                    <ISOAbbreviation>Br J Surg</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>The importance of an innervated and intact antrum and pylorus in
+                    preventing postoperative duodenogastric reflux and gastritis.</ArticleTitle>
+                <Pagination>
+                    <StartPage>845</StartPage>
+                    <EndPage>849</EndPage>
+                    <MedlinePgn>845-9</MedlinePgn>
+                </Pagination>
+                <Abstract>
+                    <AbstractText>This study has investigated the relationship between
+                        duodenogastric reflux, gastritis and certain symptoms 6-12 months after
+                        three operations for uncomplicated duodenal ulcer. The operations studied
+                        were proximal gastric vagotomy (PGV, 20 cases), truncal vagotomy and
+                        pyloroplasty (TV+P, 22 cases) and truncal vagotomy and antrectomy (TV+A, 21
+                        cases). Duodenogastric reflux was assessed both by a radiological technique
+                        and by measuring the concentration of bilirubin in the gastric aspirate
+                        before and after operation. Incidence and severity of postoperative
+                        gastritis were determined by endoscopic biopsy. Symptoms were assessed by
+                        symptomatic score and Visick grading. There was a significant correlation
+                        between duodenal reflux and histological evidence of both severe superficial
+                        gastritis and glandular atrophy (P less than 0-01). There was also a close
+                        association between the degree of reflux and the presence of severe
+                        heartburn, epigastric pain and bile vomiting after operation. The amount of
+                        reflux did not differ before operation. There was significantly less reflux
+                        following PGV than after either TV+P (P less than 0-025) or TV+A (P less
+                        than 0-001). The results indicate that an operation which preserves an
+                        innervated and intact antrum and pylorus will protect against postoperative
+                        duodenogastric reflux, gastritis and symptoms.</AbstractText>
+                </Abstract>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>Keighley</LastName>
+                        <ForeName>M R</ForeName>
+                        <Initials>MR</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Asquith</LastName>
+                        <ForeName>P</ForeName>
+                        <Initials>P</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Edwards</LastName>
+                        <ForeName>J A</ForeName>
+                        <Initials>JA</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Alexander-Williams</LastName>
+                        <ForeName>J</ForeName>
+                        <Initials>J</Initials>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                </PublicationTypeList>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>England</Country>
+                <MedlineTA>Br J Surg</MedlineTA>
+                <NlmUniqueID>0372553</NlmUniqueID>
+                <ISSNLinking>0007-1323</ISSNLinking>
+            </MedlineJournalInfo>
+            <ChemicalList>
+                <Chemical>
+                    <RegistryNumber>RFM9X3LJ49</RegistryNumber>
+                    <NameOfSubstance UI="D001663">Bilirubin</NameOfSubstance>
+                </Chemical>
+            </ChemicalList>
+            <CitationSubset>IM</CitationSubset>
+            <MeshHeadingList>
+                <MeshHeading>
+                    <DescriptorName UI="D000328" MajorTopicYN="N">Adult</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D001663" MajorTopicYN="N">Bilirubin</DescriptorName>
+                    <QualifierName UI="Q000032" MajorTopicYN="N">analysis</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D004378" MajorTopicYN="N">Duodenal Diseases</DescriptorName>
+                    <QualifierName UI="Q000000981" MajorTopicYN="N">diagnostic imaging</QualifierName>
+                    <QualifierName UI="Q000517" MajorTopicYN="Y">prevention &amp; control</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D004381" MajorTopicYN="N">Duodenal Ulcer</DescriptorName>
+                    <QualifierName UI="Q000601" MajorTopicYN="N">surgery</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D004724" MajorTopicYN="N">Endoscopy</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D005260" MajorTopicYN="N">Female</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D005750" MajorTopicYN="N">Gastric Juice</DescriptorName>
+                    <QualifierName UI="Q000032" MajorTopicYN="N">analysis</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D005753" MajorTopicYN="N">Gastric Mucosa</DescriptorName>
+                    <QualifierName UI="Q000473" MajorTopicYN="N">pathology</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D005756" MajorTopicYN="N">Gastritis</DescriptorName>
+                    <QualifierName UI="Q000473" MajorTopicYN="N">pathology</QualifierName>
+                    <QualifierName UI="Q000517" MajorTopicYN="Y">prevention &amp; control</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D006356" MajorTopicYN="N">Heartburn</DescriptorName>
+                    <QualifierName UI="Q000150" MajorTopicYN="N">complications</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D006801" MajorTopicYN="N">Humans</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D006863" MajorTopicYN="N">Hydrogen-Ion Concentration</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D008297" MajorTopicYN="N">Male</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D008875" MajorTopicYN="N">Middle Aged</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D011183" MajorTopicYN="N">Postoperative Complications</DescriptorName>
+                    <QualifierName UI="Q000517" MajorTopicYN="Y">prevention &amp; control</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D011706" MajorTopicYN="N">Pyloric Antrum</DescriptorName>
+                    <QualifierName UI="Q000294" MajorTopicYN="Y">innervation</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D011708" MajorTopicYN="N">Pylorus</DescriptorName>
+                    <QualifierName UI="Q000294" MajorTopicYN="N">innervation</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D011859" MajorTopicYN="N">Radiography</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D013272" MajorTopicYN="N">Stomach Diseases</DescriptorName>
+                    <QualifierName UI="Q000473" MajorTopicYN="N">pathology</QualifierName>
+                    <QualifierName UI="Q000517" MajorTopicYN="N">prevention &amp; control</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D014628" MajorTopicYN="N">Vagotomy</DescriptorName>
+                </MeshHeading>
+            </MeshHeadingList>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>1975</Year>
+                    <Month>10</Month>
+                    <Day>1</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>1975</Year>
+                    <Month>10</Month>
+                    <Day>1</Day>
+                    <Hour>0</Hour>
+                    <Minute>1</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>1975</Year>
+                    <Month>10</Month>
+                    <Day>1</Day>
+                    <Hour>0</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>ppublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">123</ArticleId>
+                <ArticleId IdType="doi">10.1002/bjs.1800621024</ArticleId>
+            </ArticleIdList>
+        </PubmedData>
+    </PubmedArticle>
+    <PubmedArticle>
+        <MedlineCitation Status="MEDLINE" Owner="NLM">
+            <PMID Version="1">234</PMID>
+            <DateCompleted>
+                <Year>1976</Year>
+                <Month>03</Month>
+                <Day>01</Day>
+            </DateCompleted>
+            <DateRevised>
+                <Year>2019</Year>
+                <Month>08</Month>
+                <Day>27</Day>
+            </DateRevised>
+            <Article PubModel="Print">
+                <Journal>
+                    <ISSN IssnType="Print">0301-5548</ISSN>
+                    <JournalIssue CitedMedium="Print">
+                        <Volume>34</Volume>
+                        <Issue>4</Issue>
+                        <PubDate>
+                            <Year>1975</Year>
+                            <Month>Dec</Month>
+                            <Day>05</Day>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>European journal of applied physiology and occupational physiology</Title>
+                    <ISOAbbreviation>Eur J Appl Physiol Occup Physiol</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>Changes in erythrocyte 2,3 diphosphoglycerate in women following short
+                    term maximal exercise.</ArticleTitle>
+                <Pagination>
+                    <StartPage>227</StartPage>
+                    <EndPage>232</EndPage>
+                    <MedlinePgn>227-32</MedlinePgn>
+                </Pagination>
+                <Abstract>
+                    <AbstractText>15 untrained women were subjected to a walking treadmill test to
+                        determine the influence of maximal exercise upon synthesis of erythrocyte
+                        2,3 DPG. Although there was a 9.8% increase in the 2,3 DPG content following
+                        exercise, there was a concomitant 9.4% increase in the hemoglobin level;
+                        therefore, when 2,3 DPG is expressed as a ratio to hemoglobin (See Article),
+                        there was no significant change as a result of exercise stress. It was
+                        suggested that three additive factors produced during strenuous exercise;
+                        decreased pH; increased hemoglobin concentration; and increased CO2
+                        production result in by-product inhibition of 2,3 DPG synthesis. It is
+                        concluded that 2,3 DPG does not provide a physiologic benefit in the
+                        adaptation of the oxygen transport system to exercise.</AbstractText>
+                </Abstract>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>Bonner</LastName>
+                        <ForeName>H W</ForeName>
+                        <Initials>HW</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Tate</LastName>
+                        <ForeName>C A</ForeName>
+                        <Initials>CA</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Buffington</LastName>
+                        <ForeName>C K</ForeName>
+                        <Initials>CK</Initials>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                </PublicationTypeList>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>Germany</Country>
+                <MedlineTA>Eur J Appl Physiol Occup Physiol</MedlineTA>
+                <NlmUniqueID>0410266</NlmUniqueID>
+                <ISSNLinking>0301-5548</ISSNLinking>
+            </MedlineJournalInfo>
+            <ChemicalList>
+                <Chemical>
+                    <RegistryNumber>0</RegistryNumber>
+                    <NameOfSubstance UI="D004163">Diphosphoglyceric Acids</NameOfSubstance>
+                </Chemical>
+                <Chemical>
+                    <RegistryNumber>0</RegistryNumber>
+                    <NameOfSubstance UI="D006454">Hemoglobins</NameOfSubstance>
+                </Chemical>
+                <Chemical>
+                    <RegistryNumber>142M471B3J</RegistryNumber>
+                    <NameOfSubstance UI="D002245">Carbon Dioxide</NameOfSubstance>
+                </Chemical>
+                <Chemical>
+                    <RegistryNumber>S88TT14065</RegistryNumber>
+                    <NameOfSubstance UI="D010100">Oxygen</NameOfSubstance>
+                </Chemical>
+            </ChemicalList>
+            <CitationSubset>IM</CitationSubset>
+            <MeshHeadingList>
+                <MeshHeading>
+                    <DescriptorName UI="D000328" MajorTopicYN="N">Adult</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D002245" MajorTopicYN="N">Carbon Dioxide</DescriptorName>
+                    <QualifierName UI="Q000097" MajorTopicYN="N">blood</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D004163" MajorTopicYN="N">Diphosphoglyceric Acids</DescriptorName>
+                    <QualifierName UI="Q000096" MajorTopicYN="N">biosynthesis</QualifierName>
+                    <QualifierName UI="Q000097" MajorTopicYN="Y">blood</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D004912" MajorTopicYN="N">Erythrocytes</DescriptorName>
+                    <QualifierName UI="Q000378" MajorTopicYN="Y">metabolism</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D005260" MajorTopicYN="N">Female</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D006454" MajorTopicYN="N">Hemoglobins</DescriptorName>
+                    <QualifierName UI="Q000378" MajorTopicYN="N">metabolism</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D006801" MajorTopicYN="N">Humans</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D006863" MajorTopicYN="N">Hydrogen-Ion Concentration</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D010100" MajorTopicYN="N">Oxygen</DescriptorName>
+                    <QualifierName UI="Q000097" MajorTopicYN="N">blood</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D010101" MajorTopicYN="N">Oxygen Consumption</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D005082" MajorTopicYN="Y">Physical Exertion</DescriptorName>
+                </MeshHeading>
+            </MeshHeadingList>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>1975</Year>
+                    <Month>12</Month>
+                    <Day>5</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>1975</Year>
+                    <Month>12</Month>
+                    <Day>5</Day>
+                    <Hour>0</Hour>
+                    <Minute>1</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>1975</Year>
+                    <Month>12</Month>
+                    <Day>5</Day>
+                    <Hour>0</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>ppublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">234</ArticleId>
+                <ArticleId IdType="doi">10.1007/BF00999936</ArticleId>
+            </ArticleIdList>
+            <ReferenceList>
+                <Reference>
+                    <Citation>Annu Rev Med. 1974;25:29-38</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">4274753</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>J Biol Chem. 1970 Jun;245(12 ):3232-41</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">4317427</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Int Z Angew Physiol. 1971;30(1):34-9</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">5136941</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Biochemistry. 1969 Jun;8(6):2567-71</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">5799137</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Scand J Clin Lab Invest. 1974 Jun;33(4):347-52</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">4852400</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>J Appl Physiol. 1964 Mar;19:243-5</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">14155288</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>J Appl Physiol. 1962 Nov;17:967-70</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">13989261</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Scand J Clin Lab Invest. 1965;17(6):515-23</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">5858746</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>J Biol Chem. 1971 Feb 10;246(3):547-54</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">5542668</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Science. 1971 Mar 26;171(3977):1205-11</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">5545197</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Nature. 1969 Feb 15;221(5181):618-22</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">5774935</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Adv Exp Med Biol. 1972;28:99-119</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">5085189</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>J Pediatr. 1973 Jul;83(1):41-5</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">4768935</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Fed Proc. 1970 May-Jun;29(3):1101-4</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">5443776</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Scand J Clin Lab Invest. 1972 May;29(3):329-33</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">5037629</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>J Appl Physiol. 1971 May;30(5):625-31</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">5572784</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>J Appl Physiol. 1971 Jun;30(6):827-32</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">5580800</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Proc Soc Exp Biol Med. 1969 Dec;132(3):886-7</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">5361007</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>J Clin Invest. 1968 Dec;47(12 ):2652-6</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">5725278</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>J Clin Invest. 1971 Mar;50(3):700-6</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">5545127</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Med Sci Sports. 1972 Winter;4(4):182-6</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">4648576</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Med Sci Sports. 1974 Winter;6(4):238-41</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">4461985</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Proc Natl Acad Sci U S A. 1968 Oct;61(2):756-60</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">5246006</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>Am J Physiol. 1968 Jul;215(1):23-9</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">5659338</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>J Appl Physiol. 1974 Feb;36(2):214-7</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">4811380</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>J Appl Physiol. 1972 Jul;33(1):55-61</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">5037411</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+                <Reference>
+                    <Citation>J Appl Physiol. 1974 Nov;37(5):658-64</Citation>
+                    <ArticleIdList>
+                        <ArticleId IdType="pubmed">4436190</ArticleId>
+                    </ArticleIdList>
+                </Reference>
+            </ReferenceList>
+        </PubmedData>
+    </PubmedArticle>
+    <PubmedArticle>
+        <MedlineCitation Status="MEDLINE" Owner="NLM">
+            <PMID Version="1">345</PMID>
+            <DateCompleted>
+                <Year>1976</Year>
+                <Month>02</Month>
+                <Day>19</Day>
+            </DateCompleted>
+            <DateRevised>
+                <Year>2018</Year>
+                <Month>02</Month>
+                <Day>14</Day>
+            </DateRevised>
+            <Article PubModel="Print">
+                <Journal>
+                    <ISSN IssnType="Print">0300-5526</ISSN>
+                    <JournalIssue CitedMedium="Print">
+                        <Volume>5</Volume>
+                        <Issue>3-4</Issue>
+                        <PubDate>
+                            <Year>1975</Year>
+                        </PubDate>
+                    </JournalIssue>
+                    <Title>Intervirology</Title>
+                    <ISOAbbreviation>Intervirology</ISOAbbreviation>
+                </Journal>
+                <ArticleTitle>Failure of rubella virus to replicate in mosquitos.</ArticleTitle>
+                <Pagination>
+                    <StartPage>216</StartPage>
+                    <EndPage>219</EndPage>
+                    <MedlinePgn>216-9</MedlinePgn>
+                </Pagination>
+                <Abstract>
+                    <AbstractText>Rubella virus failed to replicate in mosquitoes (Aedes albopictus
+                        and Culex fatigans) following parenteral inoculation. The virus demonstrated
+                        in mosquitoes tested immediately after inoculation but was not detected in
+                        insects sampled 7, 14 and 21 days postinoculation. This experiment provides
+                        further evidence that rubella is not an arbovirus, but does not invalidate
+                        its classification as a togavirus.</AbstractText>
+                </Abstract>
+                <AuthorList CompleteYN="Y">
+                    <Author ValidYN="Y">
+                        <LastName>Tesh</LastName>
+                        <ForeName>R B</ForeName>
+                        <Initials>RB</Initials>
+                    </Author>
+                    <Author ValidYN="Y">
+                        <LastName>Rosen</LastName>
+                        <ForeName>L</ForeName>
+                        <Initials>L</Initials>
+                    </Author>
+                </AuthorList>
+                <Language>eng</Language>
+                <PublicationTypeList>
+                    <PublicationType UI="D016428">Journal Article</PublicationType>
+                </PublicationTypeList>
+            </Article>
+            <MedlineJournalInfo>
+                <Country>Switzerland</Country>
+                <MedlineTA>Intervirology</MedlineTA>
+                <NlmUniqueID>0364265</NlmUniqueID>
+                <ISSNLinking>0300-5526</ISSNLinking>
+            </MedlineJournalInfo>
+            <CitationSubset>IM</CitationSubset>
+            <MeshHeadingList>
+                <MeshHeading>
+                    <DescriptorName UI="D000330" MajorTopicYN="N">Aedes</DescriptorName>
+                    <QualifierName UI="Q000382" MajorTopicYN="N">microbiology</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D000818" MajorTopicYN="N">Animals</DescriptorName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D001103" MajorTopicYN="N">Arboviruses</DescriptorName>
+                    <QualifierName UI="Q000145" MajorTopicYN="N">classification</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D003465" MajorTopicYN="N">Culex</DescriptorName>
+                    <QualifierName UI="Q000382" MajorTopicYN="N">microbiology</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D009033" MajorTopicYN="N">Culicidae</DescriptorName>
+                    <QualifierName UI="Q000382" MajorTopicYN="Y">microbiology</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D012412" MajorTopicYN="N">Rubella virus</DescriptorName>
+                    <QualifierName UI="Q000145" MajorTopicYN="N">classification</QualifierName>
+                    <QualifierName UI="Q000254" MajorTopicYN="Y">growth &amp; development</QualifierName>
+                </MeshHeading>
+                <MeshHeading>
+                    <DescriptorName UI="D014779" MajorTopicYN="Y">Virus Replication</DescriptorName>
+                </MeshHeading>
+            </MeshHeadingList>
+        </MedlineCitation>
+        <PubmedData>
+            <History>
+                <PubMedPubDate PubStatus="pubmed">
+                    <Year>1975</Year>
+                    <Month>1</Month>
+                    <Day>1</Day>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="medline">
+                    <Year>1975</Year>
+                    <Month>1</Month>
+                    <Day>1</Day>
+                    <Hour>0</Hour>
+                    <Minute>1</Minute>
+                </PubMedPubDate>
+                <PubMedPubDate PubStatus="entrez">
+                    <Year>1975</Year>
+                    <Month>1</Month>
+                    <Day>1</Day>
+                    <Hour>0</Hour>
+                    <Minute>0</Minute>
+                </PubMedPubDate>
+            </History>
+            <PublicationStatus>ppublish</PublicationStatus>
+            <ArticleIdList>
+                <ArticleId IdType="pubmed">345</ArticleId>
+                <ArticleId IdType="doi">10.1159/000149898</ArticleId>
+            </ArticleIdList>
+        </PubmedData>
+    </PubmedArticle>
+</PubmedArticleSet>

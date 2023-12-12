@@ -61,7 +61,7 @@ const EditAnalyses: React.FC = React.memo((props) => {
             <Box sx={{ width: '100%', margin: '0.5rem 0' }}>
                 <Box sx={{ marginBottom: '1rem' }}>
                     {numAnalyses === 0 && (
-                        <Typography sx={{ color: 'warning.dark' }}>
+                        <Typography sx={{ color: 'warning.dark' }} gutterBottom>
                             There are no analyses for this study.
                         </Typography>
                     )}

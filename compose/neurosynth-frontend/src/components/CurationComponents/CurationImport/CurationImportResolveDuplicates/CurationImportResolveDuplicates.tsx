@@ -16,7 +16,7 @@ import {
 import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { createDuplicateMap } from '../helpers/utils';
-import DuplicateCase from './DuplicateCase/DuplicateCase';
+import DuplicateCase from '../CurationImportNameAndReview/ResolveProjectDuplicates/DuplicateCase';
 
 type IResolveProjectDuplicatesCurationStubStudy = ICurationStubStudy & {
     columnIndex?: number;
@@ -89,20 +89,17 @@ const CurationImportResolveDuplicates: React.FC<{
             props.stubs.forEach((importedStub, stubIndex) => {
                 if (importedStub.exclusionTag !== null) return;
 
-                let key = undefined;
+                let duplicatedStubs: IResolveProjectDuplicatesCurationStubStudy[] | undefined;
                 const formattedTitle = importedStub.title.toLocaleLowerCase().trim();
                 if (importedStub.doi && duplicateMapping.has(importedStub.doi)) {
-                    key = importedStub.doi;
+                    duplicatedStubs = duplicateMapping.get(importedStub.doi);
                 } else if (importedStub.pmid && duplicateMapping.has(importedStub.pmid)) {
-                    key = importedStub.pmid;
+                    duplicatedStubs = duplicateMapping.get(importedStub.pmid);
                 } else if (importedStub.title && duplicateMapping.has(formattedTitle)) {
                     // in the future, this title search can be replaced with a fuzzier search via a string comparison algorithm
-                    key = formattedTitle;
+                    duplicatedStubs = duplicateMapping.get(formattedTitle);
                 }
-                if (key) {
-                    const duplicatedStubs = duplicateMapping.get(
-                        key
-                    ) as IResolveProjectDuplicatesCurationStubStudy[];
+                if (duplicatedStubs) {
                     update.push({
                         importedStub: {
                             ...importedStub,

@@ -8,9 +8,9 @@ describe(PAGE_NAME, () => {
     beforeEach(() => {
         cy.clearLocalStorage().clearSessionStorage();
         cy.intercept('GET', 'https://api.appzi.io/**', { fixture: 'appzi' }).as('appziFixture');
-        cy.intercept('GET', `**/api/base-studies/**`, { fixture: 'baseStudies' }).as(
-            'baseStudiesFixture'
-        );
+        cy.intercept('GET', `**/api/base-studies/**`, {
+            fixture: 'baseStudies/baseStudiesNoResults',
+        }).as('baseStudiesFixture');
         cy.intercept('GET', `**/api/points/**`, { fixture: 'points' }).as('pointsFixture');
     });
 

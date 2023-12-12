@@ -15,7 +15,7 @@ import { useEffect, useRef, useState } from 'react';
 
 const SearchBarFilters: React.FC<{
     nameSearch: string | undefined;
-    publicationSearch: string | undefined;
+    journalSearch: string | undefined;
     descriptionSearch: string | undefined;
     authorSearch: string | undefined;
     onAddFilter: (newFilter: { filter: SearchBy; value: string }) => void;
@@ -23,7 +23,7 @@ const SearchBarFilters: React.FC<{
 }> = (props) => {
     const {
         nameSearch,
-        publicationSearch,
+        journalSearch,
         descriptionSearch,
         authorSearch,
         onAddFilter,
@@ -48,7 +48,7 @@ const SearchBarFilters: React.FC<{
         .filter(
             (filterOption) =>
                 filterOption !== SearchBy.ALL &&
-                !existingFilters.find((existingFilter) => existingFilter.filter === filterOption)
+                existingFilters.every((existingFilter) => existingFilter.filter !== filterOption)
         );
 
     // used when creating a new filter in the popup
@@ -64,14 +64,13 @@ const SearchBarFilters: React.FC<{
         setExistingFilters(() => {
             const filters = [];
             if (nameSearch) filters.push({ filter: SearchBy.TITLE, value: nameSearch });
-            if (publicationSearch)
-                filters.push({ filter: SearchBy.PUBLICATION, value: publicationSearch });
+            if (journalSearch) filters.push({ filter: SearchBy.JOURNAL, value: journalSearch });
             if (descriptionSearch)
                 filters.push({ filter: SearchBy.DESCRIPTION, value: descriptionSearch });
             if (authorSearch) filters.push({ filter: SearchBy.AUTHORS, value: authorSearch });
             return filters;
         });
-    }, [nameSearch, publicationSearch, descriptionSearch, authorSearch]);
+    }, [nameSearch, journalSearch, descriptionSearch, authorSearch]);
 
     const handleAddFilter = () => {
         if (newFilter.filter !== undefined && newFilter.value) {

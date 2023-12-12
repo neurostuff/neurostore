@@ -4,6 +4,7 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useEffect, useState } from 'react';
 import useGetStudysetById from './studysets/useGetStudysetById';
+import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
 
 export interface IExtractionSummary {
     savedForLater: number;
@@ -49,10 +50,10 @@ const useGetExtractionSummary = (projectId: string) => {
                 const foundStatus = studyStatusList.find((status) => status.id === studyId);
 
                 switch (foundStatus?.status) {
-                    case 'COMPLETE':
+                    case EExtractionStatus.COMPLETED:
                         summary.completed++;
                         break;
-                    case 'SAVEFORLATER':
+                    case EExtractionStatus.SAVEDFORLATER:
                         summary.savedForLater++;
                         break;
                     default:

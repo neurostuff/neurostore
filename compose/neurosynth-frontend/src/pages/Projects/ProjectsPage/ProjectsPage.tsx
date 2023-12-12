@@ -3,7 +3,7 @@ import { Box, Link, TableCell, TableRow, Typography } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import useGetProjects from 'hooks/projects/useGetProjects';
+import useGetProjects, { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
 import { useIsMutating } from 'react-query';
 import { useHistory } from 'react-router-dom';
 import { generateNewProjectData } from '../ProjectPage/ProjectStore.helpers';
@@ -31,6 +31,14 @@ const ProjectsPage: React.FC = (props) => {
         });
     };
 
+    const handleSelectProject = (project: INeurosynthProjectReturn) => {
+        if (project?.provenance?.metaAnalysisMetadata?.canEditMetaAnalyses) {
+            history.push(`/projects/${project?.id}/meta-analyses`);
+        } else {
+            history.push(`/projects/${project?.id}/edit`);
+        }
+    };
+
     const createProjectIsFetching = createProjectIsFetchingNum > 0;
     const noProjects = (data?.length || []) === 0;
 
@@ -38,7 +46,7 @@ const ProjectsPage: React.FC = (props) => {
         <StateHandlerComponent isLoading={false} isError={isError}>
             <Box sx={{ display: 'flex' }}>
                 <Typography gutterBottom variant="h4">
-                    Projects
+                    My Projects
                 </Typography>
             </Box>
 
@@ -86,7 +94,7 @@ const ProjectsPage: React.FC = (props) => {
                             data-tour={index === 0 ? 'StudiesPage-4' : null}
                             sx={NeurosynthTableStyles.tableRow}
                             key={project?.id || index}
-                            onClick={() => history.push(`/projects/${project?.id}`)}
+                            onClick={() => handleSelectProject(project)}
                         >
                             <TableCell>
                                 {project?.name || <Box sx={{ color: 'warning.dark' }}>No name</Box>}

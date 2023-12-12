@@ -4,7 +4,6 @@ import EditMetaAnalyses from 'components/ProjectComponents/EditMetaAnalyses/Edit
 import ViewMetaAnalyses from 'components/ProjectComponents/ViewMetaAnalyses/ViewMetaAnalyses';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
-import useGetMetaAnalysesByProjectId from 'hooks/metaAnalyses/useGetMetaAnalysesByProjectId';
 import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
 import {
     useGetProjectIsLoading,
@@ -15,12 +14,13 @@ import {
     useUpdateProjectDescription,
     useUpdateProjectName,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 import { Route, Switch, useHistory, useLocation, useParams } from 'react-router-dom';
 
 export interface IProjectPageLocationState {
     projectPage?: {
         openCurationDialog?: boolean;
+        scrollToMetaAnalysisProceed?: boolean;
     };
 }
 
@@ -28,7 +28,6 @@ export interface IProjectPageLocationState {
 // const metaAnalysisId = (project?.meta_analyses as MetaAnalysis[]).
 const ProjectPage: React.FC = (props) => {
     const { projectId }: { projectId: string } = useParams();
-    const { data: metaAnalyses } = useGetMetaAnalysesByProjectId(projectId || '');
     const location = useLocation();
     const history = useHistory();
 
@@ -41,14 +40,10 @@ const ProjectPage: React.FC = (props) => {
     const projectName = useProjectName();
     const projectDescription = useProjectDescription();
 
-    // we only want this to run once on initial render
-    useEffect(() => {
-        metaAnalysesTabEnabled
-            ? history.replace(`/projects/${projectId}/meta-analyses`)
-            : history.replace(`/projects/${projectId}/edit`);
-    }, [history, metaAnalyses, metaAnalysesTabEnabled, projectId]);
-
-    const tab = location.pathname.includes('meta-analyses') ? 1 : 0;
+    const tab = useMemo(
+        () => (location.pathname.includes('meta-analyses') ? 1 : 0),
+        [location.pathname]
+    );
 
     return (
         <StateHandlerComponent isLoading={getProjectIsLoading} isError={false}>
@@ -74,7 +69,7 @@ const ProjectPage: React.FC = (props) => {
                 <Box sx={{ marginBottom: '0.5rem' }}>
                     <TextEdit
                         onSave={(updatedName, label) => updateProjectName(updatedName)}
-                        sx={{ input: { fontSize: '2rem' }, width: '50%' }}
+                        sx={{ input: { fontSize: '1.5rem' }, width: '50%' }}
                         textToEdit={projectName || ''}
                     >
                         <Typography
