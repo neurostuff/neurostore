@@ -49,7 +49,8 @@ class SpecificationCondition(BaseMixin, db.Model):
     )
     condition = relationship("Condition", backref=backref("specification_conditions"))
     specification = relationship(
-        "Specification", backref=backref("specification_conditions")
+        "Specification",
+        backref=backref("specification_conditions", cascade="all, delete-orphan"),
     )
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
     user = relationship("User", backref=backref("specification_conditions"))

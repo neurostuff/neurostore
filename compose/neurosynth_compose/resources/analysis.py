@@ -190,7 +190,7 @@ class BaseView(MethodView):
                 if cls._attribute_name:
                     existing_nested = getattr(record, cls._attribute_name, None)
 
-                if existing_nested and len(existing_nested) == len(rec_data):
+                if existing_nested:
                     _ = [
                         rd.update({"id": ns.id})
                         for rd, ns in zip(

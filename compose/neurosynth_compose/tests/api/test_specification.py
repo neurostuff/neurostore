@@ -112,3 +112,59 @@ def test_update_condition_weight(session, app, auth_client, user_data):
             assert set(get_spec.json[key]) == set(value)
         else:
             assert get_spec.json[key] == value
+
+
+def test_other_specification_conditions(session, app, auth_client, user_data):
+    specification_data = {
+        "conditions": [True, False],
+        "corrector": None,
+        "database_studyset": None,
+        "estimator": {
+            "args": {
+                "**kwargs": {},
+                "kernel__fwhm": None,
+                "kernel__sample_size": None,
+                "n_iters": 10000,
+            },
+            "type": "ALESubtraction",
+        },
+        "filter": "included",
+        "type": "CBMA",
+        "weights": [1, -1],
+    }
+
+    create_spec = auth_client.post("/api/specifications", data=specification_data)
+
+    updated_data = {
+        "type": "CBMA",
+        "estimator": {
+            "type": "ALESubtraction",
+            "args": {
+                "**kwargs": {},
+                "kernel__fwhm": None,
+                "kernel__sample_size": None,
+                "n_iters": 10000,
+            },
+        },
+        "corrector": None,
+        "filter": "included",
+        "conditions": [True],
+        "database_studyset": "neuroquery",
+        "weights": [1],
+    }
+
+    assert create_spec.status_code == 200
+
+    spec_id = create_spec.json["id"]
+
+    update_spec = auth_client.put(f"/api/specifications/{spec_id}", data=updated_data)
+    assert update_spec.status_code == 200
+
+    get_spec = auth_client.get(f"/api/specifications/{spec_id}")
+    assert get_spec.status_code == 200
+
+    for key, value in updated_data.items():
+        if isinstance(value, list):
+            assert set(get_spec.json[key]) == set(value)
+        else:
+            assert get_spec.json[key] == value
