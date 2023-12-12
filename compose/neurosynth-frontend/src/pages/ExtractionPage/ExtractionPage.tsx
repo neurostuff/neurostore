@@ -8,19 +8,22 @@ import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBr
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
+import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
+import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
 import {
     useInitProjectStoreIfRequired,
     useProjectCurationColumn,
     useProjectExtractionStudyStatusList,
     useProjectExtractionStudysetId,
+    useProjectMetaAnalysisCanEdit,
     useProjectName,
     useProjectNumCurationColumns,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { resolveStudysetAndCurationDifferences } from 'pages/helpers/utils';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 
@@ -49,7 +52,7 @@ const ReadOnlyStudySummaryFixedSizeListRow: React.FC<
 
 const ExtractionPage: React.FC = (props) => {
     const { projectId }: { projectId: string | undefined } = useParams();
-    const history = useHistory();
+    const history = useHistory<IProjectPageLocationState>();
     const windowHeight = useGetWindowHeight();
 
     useInitProjectStoreIfRequired();
@@ -59,6 +62,8 @@ const ExtractionPage: React.FC = (props) => {
     const studyStatusList = useProjectExtractionStudyStatusList();
     const numColumns = useProjectNumCurationColumns();
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
+    const extractionSummary = useGetExtractionSummary(projectId || '');
+    const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
 
     const {
         data: studyset,
@@ -163,6 +168,18 @@ const ExtractionPage: React.FC = (props) => {
         }
     };
 
+    const handleMoveToSpecificationPhase = () => {
+        if (canEditMetaAnalyses) {
+            history.push(`/projects/${projectId}/meta-analyses`);
+        } else {
+            history.push(`/projects/${projectId}/edit`, {
+                projectPage: {
+                    scrollToMetaAnalysisProceed: true,
+                },
+            });
+        }
+    };
+
     const studiesDisplayed =
         currentChip === EExtractionStatus.COMPLETED
             ? studiesDisplayedState.completed
@@ -178,6 +195,12 @@ const ExtractionPage: React.FC = (props) => {
             : 'uncategorized';
 
     const pxInVh = Math.round((windowHeight * 60) / 100);
+
+    const isReadyToMoveToNextStep = useMemo(
+        () =>
+            extractionSummary.total === extractionSummary.completed && extractionSummary.total > 0,
+        [extractionSummary]
+    );
 
     return (
         <StateHandlerComponent isError={getStudysetIsError} isLoading={getStudysetIsLoading}>
@@ -207,6 +230,7 @@ const ExtractionPage: React.FC = (props) => {
                     </Box>
                     <Box>
                         <Button
+                            sx={{ width: '220px' }}
                             color="secondary"
                             variant="contained"
                             disableElevation
@@ -216,6 +240,17 @@ const ExtractionPage: React.FC = (props) => {
                         >
                             View Annotations
                         </Button>
+                        {isReadyToMoveToNextStep && (
+                            <Button
+                                sx={{ marginLeft: '1rem' }}
+                                onClick={handleMoveToSpecificationPhase}
+                                color="success"
+                                variant="contained"
+                                disableElevation
+                            >
+                                Move to Specification Phase
+                            </Button>
+                        )}
                     </Box>
                 </Box>
                 {showReconcilePrompt && <ExtractionOutOfSync />}

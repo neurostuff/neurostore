@@ -14,6 +14,7 @@ import {
     useProjectExtractionStudyStatusList,
     useProjectExtractionStudysetId,
     useProjectId,
+    useProjectMetaAnalysisCanEdit,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useStudyId } from 'pages/Studies/StudyStore';
 import { useCallback, useMemo } from 'react';
@@ -42,6 +43,7 @@ const EditStudyToolbar: React.FC = (props) => {
     const { data: studyset } = useGetStudysetById(studysetId, false);
     const studyStatusList = useProjectExtractionStudyStatusList();
     const history = useHistory<IProjectPageLocationState>();
+    const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
 
     const updateStudyListStatus = useProjectExtractionAddOrUpdateStudyListStatus();
 
@@ -124,11 +126,15 @@ const EditStudyToolbar: React.FC = (props) => {
     };
 
     const handleContinueToMetaAnalysisCreation = () => {
-        history.push(`/projects/${projectId}/edit`, {
-            projectPage: {
-                scrollToMetaAnalysisProceed: true,
-            },
-        });
+        if (canEditMetaAnalyses) {
+            history.push(`/projects/${projectId}/meta-analyses`);
+        } else {
+            history.push(`/projects/${projectId}/edit`, {
+                projectPage: {
+                    scrollToMetaAnalysisProceed: true,
+                },
+            });
+        }
     };
 
     const percentageCompleteString = useMemo((): string => {
