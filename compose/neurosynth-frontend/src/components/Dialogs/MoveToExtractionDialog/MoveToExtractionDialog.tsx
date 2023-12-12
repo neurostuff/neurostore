@@ -1,5 +1,9 @@
 import { Box, CircularProgress, LinearProgress, Typography } from '@mui/material';
+import { EPropertyType } from 'components/EditMetadata';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useCreateAnnotation, useCreateStudyset, useUpdateStudyset } from 'hooks';
+import useIngest from 'hooks/studies/useIngest';
+import { BaseStudy, BaseStudyReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import {
     useProjectCurationColumn,
@@ -11,16 +15,12 @@ import {
     useProjectNumCurationColumns,
     useUpdateExtractionMetadata,
 } from 'pages/Projects/ProjectPage/ProjectStore';
+import { setAnalysesInAnnotationAsIncluded } from 'pages/helpers/utils';
 import { useMemo, useState } from 'react';
+import { useHistory } from 'react-router-dom';
 import BaseDialog, { IDialog } from '../BaseDialog';
 import MoveToExtractionIntroduction from './MoveToExtractionIntroduction';
-import { EPropertyType } from 'components/EditMetadata';
-import { BaseStudy, BaseStudyReturn } from 'neurostore-typescript-sdk';
 import { selectBestVersionsForStudyset } from './MovetoExtractionDialog.helpers';
-import { setAnalysesInAnnotationAsIncluded } from 'pages/helpers/utils';
-import useIngest from 'hooks/studies/useIngest';
-import { useHistory } from 'react-router-dom';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 
 const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
     const numColumns = useProjectNumCurationColumns();
@@ -28,9 +28,8 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
     const projectId = useProjectId();
     const projectName = useProjectName();
     const projectDescription = useProjectDescription();
-    const { mutateAsync: createStudyset, isLoading: createStudysetIsLoading } = useCreateStudyset();
-    const { mutateAsync: createAnnotation, isLoading: createAnnotationIsLoading } =
-        useCreateAnnotation();
+    const { mutateAsync: createStudyset } = useCreateStudyset();
+    const { mutateAsync: createAnnotation } = useCreateAnnotation();
     const updateExtractionMetadata = useUpdateExtractionMetadata();
     const studysetId = useProjectExtractionStudysetId();
     const annotationId = useProjectExtractionAnnotationId();
