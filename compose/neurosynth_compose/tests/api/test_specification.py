@@ -116,47 +116,41 @@ def test_update_condition_weight(session, app, auth_client, user_data):
 
 def test_other_specification_conditions(session, app, auth_client, user_data):
     specification_data = {
-        "conditions": [
-            True,
-            False
-        ],
+        "conditions": [True, False],
         "corrector": None,
         "database_studyset": None,
         "estimator": {
             "args": {
-            "**kwargs": {},
-            "kernel__fwhm": None,
-            "kernel__sample_size": None,
-            "n_iters": 10000
+                "**kwargs": {},
+                "kernel__fwhm": None,
+                "kernel__sample_size": None,
+                "n_iters": 10000,
             },
-        "type": "ALESubtraction"
+            "type": "ALESubtraction",
         },
         "filter": "included",
         "type": "CBMA",
-        "weights": [
-            1,
-            -1
-        ]
+        "weights": [1, -1],
     }
 
     create_spec = auth_client.post("/api/specifications", data=specification_data)
 
     updated_data = {
-       "type":"CBMA",
-       "estimator": {
-           "type":"ALESubtraction", 
+        "type": "CBMA",
+        "estimator": {
+            "type": "ALESubtraction",
             "args": {
-                "**kwargs":{},
-                "kernel__fwhm":None,
-                "kernel__sample_size":None,
-                "n_iters":10000
-            }
+                "**kwargs": {},
+                "kernel__fwhm": None,
+                "kernel__sample_size": None,
+                "n_iters": 10000,
+            },
         },
-        "corrector":None,
-        "filter":"included",
-        "conditions":[True],
-        "database_studyset":"neuroquery",
-        "weights":[1]
+        "corrector": None,
+        "filter": "included",
+        "conditions": [True],
+        "database_studyset": "neuroquery",
+        "weights": [1],
     }
 
     assert create_spec.status_code == 200
