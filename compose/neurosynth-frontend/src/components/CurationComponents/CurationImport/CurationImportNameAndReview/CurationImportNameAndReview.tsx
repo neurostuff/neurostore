@@ -15,7 +15,8 @@ import CurationImportBaseStyles from '../CurationImportBase.styles';
 import CurationImportReview from './CurationImportReview';
 import { SearchBy, SearchByMapping } from 'pages/Studies/StudiesPage/models';
 
-const createCleanTagName = (searchTerm: string) => {
+const createCleanTagName = (searchTerm: string | undefined) => {
+    if (!searchTerm) return '';
     const parsedSearch = new URLSearchParams(searchTerm);
     const search = parsedSearch.get(SearchByMapping[SearchBy.ALL]);
     const searchString = search ? `${search} ` : '';
@@ -53,10 +54,6 @@ const createCleanTagName = (searchTerm: string) => {
         }, '');
 
     return `${searchString}${allParametersString}`;
-
-    // return `${searchString ? searchString + ' ' : ''}${descriptionSearchString ? descriptionSearchString : ''} ${
-
-    // }`
 };
 
 const CurationImportNameAndReview: React.FC<{
@@ -73,15 +70,15 @@ const CurationImportNameAndReview: React.FC<{
     const intialized = useRef<boolean>(false);
 
     useEffect(() => {
-        const searchTerm = stubs[0]?.searchTerm;
-        if (tag || !searchTerm || intialized.current) return;
-        const existingTag = infoTags.find((infoTag) => infoTag.label === searchTerm);
+        const tagName = createCleanTagName(stubs[0]?.searchTerm);
+        if (tag || !tagName || intialized.current) return;
+        const existingTag = infoTags.find((infoTag) => infoTag.label === tagName);
         if (existingTag) {
             setTag(existingTag);
         } else {
             setTag({
                 id: uuidv4(),
-                label: createCleanTagName(searchTerm),
+                label: tagName,
                 addOptionActualLabel: null,
             });
         }
@@ -129,10 +126,13 @@ const CurationImportNameAndReview: React.FC<{
             <Box sx={{ margin: '1rem 0' }}>
                 <Typography
                     gutterBottom
-                    sx={{ fontWeight: 'bold', marginRight: '4px' }}
+                    sx={{ fontWeight: 'bold', marginRight: '4px', display: 'inline' }}
                     variant="h6"
                 >
-                    Give your import a name (or add to previous import)
+                    Give your import a name (or add to previous import):{' '}
+                </Typography>
+                <Typography sx={{ display: 'inline' }} variant="h6">
+                    {tag?.label || ''}
                 </Typography>
 
                 <TagSelectorPopup
