@@ -16,7 +16,7 @@ describe('CreateSpecificationDialog', () => {
     it('should show the dialog', () => {
         cy.visit('/projects/abc123').wait('@projectFixture');
         cy.contains('button', 'View Meta-Analyses').click();
-        cy.contains('a', 'clicking here').click();
+        cy.contains('button', 'Meta-Analysis Specification').click();
         cy.get('.MuiDialog-container').should('be.visible');
     });
 });
