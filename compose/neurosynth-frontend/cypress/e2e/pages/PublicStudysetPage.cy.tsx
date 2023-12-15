@@ -2,7 +2,7 @@
 
 export {};
 
-const PATH = '/studysets';
+const PATH = '/studysets/abc123';
 const PAGE_NAME = 'StudysetsPage';
 
 describe(PAGE_NAME, () => {
@@ -12,9 +12,11 @@ describe(PAGE_NAME, () => {
     });
 
     it('should load successfully', () => {
-        cy.intercept('GET', `**/api/projects*`).as('realProjectsRequest');
-        cy.intercept('GET', `**/api/studysets/**`).as('realStudysetRequest');
-        cy.visit(PATH).wait('@realStudysetRequest');
+        cy.intercept('GET', `**/api/studysets/**`, { fixture: 'studyset' }).as('studysetRequest');
+        cy.intercept('GET', `**/api/annotations/**`, { fixture: 'annotation' }).as(
+            'annotationRequest'
+        );
+        cy.visit(PATH).wait('@studysetRequest').wait('@annotationRequest');
     });
 
     // describe('Search', () => {

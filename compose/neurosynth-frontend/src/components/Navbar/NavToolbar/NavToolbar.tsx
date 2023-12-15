@@ -72,10 +72,6 @@ const NavToolbar: React.FC<INav> = (props) => {
                                 onClick: () => history.push('/base-studies'),
                             },
                             {
-                                label: 'STUDYSETS',
-                                onClick: () => history.push('/studysets'),
-                            },
-                            {
                                 label: 'META-ANALYSES',
                                 onClick: () => history.push('/meta-analyses'),
                             },

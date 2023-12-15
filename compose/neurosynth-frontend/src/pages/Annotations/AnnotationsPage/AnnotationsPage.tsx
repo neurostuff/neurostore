@@ -11,12 +11,17 @@ import {
 import { useParams } from 'react-router-dom';
 
 const AnnotationsPage: React.FC = () => {
+    const { annotationId } = useParams<{ annotationId: string }>();
     useInitProjectStoreIfRequired();
-    const annotationId = useProjectExtractionAnnotationId();
+    const annotationIdFromProject = useProjectExtractionAnnotationId();
     const projectName = useProjectName();
 
     const { projectId }: { projectId: string } = useParams();
-    const { data, isLoading: getAnnotationIsLoading, isError } = useGetAnnotationById(annotationId);
+    const {
+        data,
+        isLoading: getAnnotationIsLoading,
+        isError,
+    } = useGetAnnotationById(annotationIdFromProject || annotationId);
 
     const viewingThisPageFromProject = !!projectId;
 
@@ -52,12 +57,15 @@ const AnnotationsPage: React.FC = () => {
                     </Box>
                 )}
                 <Box>
-                    <Typography variant="h5">{data?.name}</Typography>
+                    <Typography variant="h5" gutterBottom>
+                        {data?.name}
+                    </Typography>
                     <Typography sx={{ color: 'muted.main' }}>{data?.description || ''}</Typography>
                 </Box>
-                <StateHandlerComponent isLoading={getAnnotationIsLoading} isError={isError}>
-                    <EditAnnotationsHotTable annotationId={annotationId} />
-                </StateHandlerComponent>
+                <EditAnnotationsHotTable
+                    annotationId={annotationIdFromProject || annotationId}
+                    isViewingFromProject={viewingThisPageFromProject}
+                />
             </StateHandlerComponent>
         </Box>
     );

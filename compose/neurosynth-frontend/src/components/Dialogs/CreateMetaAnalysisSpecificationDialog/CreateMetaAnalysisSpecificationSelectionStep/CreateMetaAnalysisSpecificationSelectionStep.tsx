@@ -1,4 +1,4 @@
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, Link, Typography } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
 import { EPropertyType } from 'components/EditMetadata';
 import {
@@ -44,9 +44,27 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                 </Typography>
             </Box>
             <Box>
+                <Typography gutterBottom>
+                    Select the{' '}
+                    <Link
+                        target="_blank"
+                        href="https://neurostuff.github.io/compose-docs/guide/glossary#annotation"
+                    >
+                        annotation
+                    </Link>{' '}
+                    column for inclusion. This will determine which{' '}
+                    <Link
+                        target="_blank"
+                        href="https://neurostuff.github.io/compose-docs/guide/glossary#analysis"
+                    >
+                        analyses
+                    </Link>{' '}
+                    are used for this meta-analysis.
+                </Typography>
+
                 <Typography gutterBottom sx={{ marginBottom: '1rem' }}>
-                    Select the <b>annotation inclusion column</b> that you would like to use to
-                    select the analyses for your meta-analysis.
+                    By default, the "included" column includes all studies & analyses. At the
+                    moment, only boolean and string annotations are supported.
                 </Typography>
 
                 <SelectAnalysesComponent

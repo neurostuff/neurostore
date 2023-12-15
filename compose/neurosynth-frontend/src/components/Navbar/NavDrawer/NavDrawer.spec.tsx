@@ -150,11 +150,9 @@ describe('NavDrawer component', () => {
         );
 
         expect(screen.queryByText('STUDIES')).not.toBeInTheDocument();
-        expect(screen.queryByText('STUDYSETS')).not.toBeInTheDocument();
         expect(screen.queryByText('META-ANALYSES')).not.toBeInTheDocument();
         userEvent.click(screen.getByText('EXPLORE'));
         expect(screen.getByText('STUDIES')).toBeInTheDocument();
-        expect(screen.getByText('STUDYSETS')).toBeInTheDocument();
         expect(screen.getByText('META-ANALYSES')).toBeInTheDocument();
     });
 
@@ -170,15 +168,12 @@ describe('NavDrawer component', () => {
         );
 
         expect(screen.queryByText('STUDIES')).not.toBeInTheDocument();
-        expect(screen.queryByText('STUDYSETS')).not.toBeInTheDocument();
         expect(screen.queryByText('META-ANALYSES')).not.toBeInTheDocument();
         userEvent.click(screen.getByText('EXPLORE'));
         expect(screen.getByText('STUDIES')).toBeInTheDocument();
-        expect(screen.getByText('STUDYSETS')).toBeInTheDocument();
         expect(screen.getByText('META-ANALYSES')).toBeInTheDocument();
         userEvent.click(screen.getByText('EXPLORE'));
         expect(screen.queryByText('STUDIES')).not.toBeInTheDocument();
-        expect(screen.queryByText('STUDYSETS')).not.toBeInTheDocument();
         expect(screen.queryByText('META-ANALYSES')).not.toBeInTheDocument();
     });
 });
