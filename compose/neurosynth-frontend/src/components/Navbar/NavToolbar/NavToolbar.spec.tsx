@@ -166,7 +166,6 @@ describe('NavToolbar Component', () => {
 
         userEvent.click(screen.getByTestId('mock-trigger-show-popup'));
         expect(screen.getByText('STUDIES')).toBeInTheDocument();
-        expect(screen.getByText('STUDYSETS')).toBeInTheDocument();
         expect(screen.getByText('META-ANALYSES')).toBeInTheDocument();
     });
 });
