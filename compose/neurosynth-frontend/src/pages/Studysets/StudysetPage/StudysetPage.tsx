@@ -1,14 +1,10 @@
-import { useAuth0 } from '@auth0/auth0-react';
-import AddIcon from '@mui/icons-material/Add';
 import HelpIcon from '@mui/icons-material/Help';
-import { Box, Button, IconButton, TableCell, TableRow, Typography } from '@mui/material';
+import { Box, IconButton, TableCell, TableRow, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import TextEdit from 'components/TextEdit/TextEdit';
-import TextExpansion from 'components/TextExpansion/TextExpansion';
 import {
     useCreateAnnotation,
     useGetAnnotationsByStudysetId,
@@ -24,7 +20,6 @@ import StudysetPageStyles from './StudysetPage.styles';
 
 const StudysetsPage: React.FC = (props) => {
     const { startTour } = useGetTour('StudysetPage');
-    const { user, isAuthenticated } = useAuth0();
     const history = useHistory();
 
     const [
@@ -35,14 +30,14 @@ const StudysetsPage: React.FC = (props) => {
 
     const params: { studysetId: string } = useParams();
 
-    const { mutate: updateStudysetName, isLoading: updateStudysetNameIsLoading } =
-        useUpdateStudyset();
-    const { mutate: updateStudysetDescription, isLoading: updateStudysetDescriptionIsLoading } =
-        useUpdateStudyset();
-    const { mutate: updateStudysetPublication, isLoading: updateStudysetPublicationIsLoading } =
-        useUpdateStudyset();
-    const { mutate: updateStudysetDoi, isLoading: updateStudysetDoiIsLoading } =
-        useUpdateStudyset();
+    // const { mutate: updateStudysetName, isLoading: updateStudysetNameIsLoading } =
+    //     useUpdateStudyset();
+    // const { mutate: updateStudysetDescription, isLoading: updateStudysetDescriptionIsLoading } =
+    //     useUpdateStudyset();
+    // const { mutate: updateStudysetPublication, isLoading: updateStudysetPublicationIsLoading } =
+    //     useUpdateStudyset();
+    // const { mutate: updateStudysetDoi, isLoading: updateStudysetDoiIsLoading } =
+    //     useUpdateStudyset();
     const { mutate: deleteStudyFromStudyset, isLoading: deleteStudyFromStudysetIsLoading } =
         useUpdateStudyset();
     const {
@@ -56,36 +51,34 @@ const StudysetsPage: React.FC = (props) => {
     );
     const { mutate: createAnnotation } = useCreateAnnotation();
 
-    const thisUserOwnsthisStudyset = (studyset?.user || undefined) === (user?.sub || null);
-
-    const handleUpdateField = (updatedText: string, label: string) => {
-        const updateStudysetObj = {
-            studysetId: params.studysetId,
-            studyset: {
-                [label]: updatedText,
-            },
-        };
-        /**
-         * in order to make sure that each field visually loads independently, we need to split the studyset update
-         * into separate useQuery instances (otherwise to name will show the loading icon for all fields)
-         */
-        switch (label) {
-            case 'name':
-                updateStudysetName(updateStudysetObj);
-                break;
-            case 'description':
-                updateStudysetDescription(updateStudysetObj);
-                break;
-            case 'doi':
-                updateStudysetDoi(updateStudysetObj);
-                break;
-            case 'publication':
-                updateStudysetPublication(updateStudysetObj);
-                break;
-            default:
-                break;
-        }
-    };
+    // const handleUpdateField = (updatedText: string, label: string) => {
+    //     const updateStudysetObj = {
+    //         studysetId: params.studysetId,
+    //         studyset: {
+    //             [label]: updatedText,
+    //         },
+    //     };
+    //     /**
+    //      * in order to make sure that each field visually loads independently, we need to split the studyset update
+    //      * into separate useQuery instances (otherwise to name will show the loading icon for all fields)
+    //      */
+    //     switch (label) {
+    //         case 'name':
+    //             updateStudysetName(updateStudysetObj);
+    //             break;
+    //         case 'description':
+    //             updateStudysetDescription(updateStudysetObj);
+    //             break;
+    //         case 'doi':
+    //             updateStudysetDoi(updateStudysetObj);
+    //             break;
+    //         case 'publication':
+    //             updateStudysetPublication(updateStudysetObj);
+    //             break;
+    //         default:
+    //             break;
+    //     }
+    // };
 
     const handleCloseDeleteStudyFromStudysetDialog = (confirm: boolean | undefined, data: any) => {
         if (confirm) {
@@ -131,87 +124,30 @@ const StudysetsPage: React.FC = (props) => {
                 sx={{ display: 'flex', marginBottom: '1rem', width: '100%' }}
             >
                 <Box sx={{ flexGrow: 1 }}>
-                    <TextEdit
-                        isLoading={updateStudysetNameIsLoading}
-                        editIconIsVisible={thisUserOwnsthisStudyset}
-                        onSave={handleUpdateField}
-                        sx={{ input: { fontSize: '1.5rem' }, width: '50%' }}
-                        label="name"
-                        textToEdit={studyset?.name || ''}
-                    >
-                        <Box sx={StudysetPageStyles.displayedText}>
-                            <Typography
-                                sx={[
-                                    StudysetPageStyles.displayedText,
-                                    !studyset?.name ? StudysetPageStyles.noData : {},
-                                ]}
-                                variant="h5"
-                            >
-                                {studyset?.name || 'No name'}
-                            </Typography>
-                        </Box>
-                    </TextEdit>
-                    <TextEdit
-                        isLoading={updateStudysetPublicationIsLoading}
-                        editIconIsVisible={thisUserOwnsthisStudyset}
-                        sx={{ input: { fontSize: '1.25rem' }, width: '50%' }}
-                        onSave={handleUpdateField}
-                        label="publication"
-                        textToEdit={studyset?.publication || ''}
-                    >
-                        <Box sx={StudysetPageStyles.displayedText}>
-                            <Typography
-                                variant="h6"
-                                sx={[
-                                    StudysetPageStyles.displayedText,
-                                    !studyset?.publication ? StudysetPageStyles.noData : {},
-                                ]}
-                            >
-                                {studyset?.publication || 'No publication'}
-                            </Typography>
-                        </Box>
-                    </TextEdit>
-                    <TextEdit
-                        isLoading={updateStudysetDoiIsLoading}
-                        editIconIsVisible={thisUserOwnsthisStudyset}
-                        sx={{ input: { fontSize: '1.25rem' }, width: '50%' }}
-                        label="doi"
-                        onSave={handleUpdateField}
-                        textToEdit={studyset?.doi || ''}
-                    >
-                        <Box sx={StudysetPageStyles.displayedText}>
-                            <Typography
-                                variant="h6"
-                                sx={[
-                                    StudysetPageStyles.displayedText,
-                                    !studyset?.doi ? StudysetPageStyles.noData : {},
-                                ]}
-                            >
-                                {studyset?.doi || 'No DOI'}
-                            </Typography>
-                        </Box>
-                    </TextEdit>
-                    <TextEdit
-                        isLoading={updateStudysetDescriptionIsLoading}
-                        editIconIsVisible={thisUserOwnsthisStudyset}
-                        sx={{ input: { fontSize: '1.25rem' }, width: '50%' }}
-                        onSave={handleUpdateField}
-                        label="description"
-                        textToEdit={studyset?.description || ''}
-                        multiline
-                    >
-                        <Box
-                            sx={{
-                                ...StudysetPageStyles.displayedText,
-                                ...(!studyset?.description ? StudysetPageStyles.noData : {}),
-                            }}
+                    <Box sx={StudysetPageStyles.displayedText}>
+                        <Typography
+                            gutterBottom
+                            sx={[
+                                StudysetPageStyles.displayedText,
+                                !studyset?.name ? StudysetPageStyles.noData : {},
+                            ]}
+                            variant="h5"
                         >
-                            <TextExpansion
-                                textSx={{ fontSize: '1.25rem', whiteSpace: 'break-spaces' }}
-                                text={studyset?.description || 'No description'}
-                            />
-                        </Box>
-                    </TextEdit>
+                            {studyset?.name || 'No name'}
+                        </Typography>
+                    </Box>
+                    <Box sx={StudysetPageStyles.displayedText}>
+                        <Typography
+                            sx={{ color: studyset?.description ? 'inherit' : 'primary.main' }}
+                        >
+                            {studyset?.description || 'No description'}
+                        </Typography>
+                    </Box>
+                    <Box sx={StudysetPageStyles.displayedText}>
+                        <Typography sx={{ color: 'muted.main' }}>
+                            Studyset Owner: {studyset?.username || 'No username'}
+                        </Typography>
+                    </Box>
                 </Box>
                 <Box>
                     <IconButton onClick={() => startTour()} color="primary">
@@ -237,18 +173,8 @@ const StudysetsPage: React.FC = (props) => {
                                 margin: 'auto 0',
                             }}
                         >
-                            Annotations for this studyset
+                            Annotation for this studyset
                         </Typography>
-                        <Button
-                            data-tour="StudysetPage-5"
-                            onClick={() => setCreateDetailsIsOpen(true)}
-                            variant="contained"
-                            sx={{ width: '200px' }}
-                            startIcon={<AddIcon />}
-                            disabled={!isAuthenticated}
-                        >
-                            new Annotation
-                        </Button>
                         <CreateDetailsDialog
                             titleText="Create new Annotation"
                             isOpen={createDetailsIsOpen}
@@ -272,11 +198,6 @@ const StudysetsPage: React.FC = (props) => {
                                 key: 'description',
                                 styles: { fontWeight: 'bold', color: 'primary.contrastText' },
                             },
-                            {
-                                text: 'Owner',
-                                key: 'owner',
-                                styles: { fontWeight: 'bold', color: 'primary.contrastText' },
-                            },
                         ]}
                         rows={(annotations || []).map((annotation, index) => (
                             <TableRow
@@ -293,9 +214,6 @@ const StudysetsPage: React.FC = (props) => {
                                     {annotation?.description || (
                                         <Box sx={{ color: 'warning.dark' }}>No description</Box>
                                     )}
-                                </TableCell>
-                                <TableCell>
-                                    {annotation?.username || 'Neurosynth-Compose'}
                                 </TableCell>
                             </TableRow>
                         ))}

@@ -1,3 +1,4 @@
+import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
 import { useAuth0 } from '@auth0/auth0-react';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Box, Button, Link, Paper, Typography } from '@mui/material';
@@ -7,7 +8,10 @@ import SelectAnalysesSummaryComponent from 'components/Dialogs/CreateMetaAnalysi
 import EditSpecificationDialog from 'components/Dialogs/EditSpecificationDialog/EditSpecificationDialog';
 import DisplayMetaAnalysisResult from 'components/DisplayMetaAnalysisResult/DisplayMetaAnalysisResult';
 import { getType } from 'components/EditMetadata';
-import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
+import {
+    IDynamicValueType,
+    IMetaAnalysisParamsSpecification,
+} from 'components/MetaAnalysisConfigComponents';
 import DynamicInputDisplay from 'components/MetaAnalysisConfigComponents/DynamicInputDisplay/DynamicInputDisplay';
 import MetaAnalysisSummaryRow from 'components/MetaAnalysisConfigComponents/MetaAnalysisSummaryRow/MetaAnalysisSummaryRow';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
@@ -36,6 +40,8 @@ import { useParams } from 'react-router-dom';
 import { NeurostoreAnnotation } from 'utils/api';
 import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
 
+const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
+
 const getAnalysisTypeDescription = (name: string | undefined): string => {
     switch (name) {
         case EAnalysisType.CBMA:
@@ -45,6 +51,11 @@ const getAnalysisTypeDescription = (name: string | undefined): string => {
         default:
             return '';
     }
+};
+
+const getEstimatorDescription = (type: string | undefined, estimator: string | undefined) => {
+    if (!estimator || !type) return '';
+    return metaAnalysisSpecification?.[type as 'CBMA' | 'IBMA']?.[estimator].summary || '';
 };
 
 const MetaAnalysisPage: React.FC = (props) => {
@@ -232,6 +243,11 @@ const MetaAnalysisPage: React.FC = (props) => {
                                 </Typography>
                             </Box>
                         </TextEdit>
+                        {metaAnalysis?.username && (
+                            <Typography sx={{ color: 'muted.main' }}>
+                                Analysis Owner: {metaAnalysis.username}
+                            </Typography>
+                        )}
                     </Box>
                 </Box>
 
@@ -265,7 +281,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                                     sx={{
                                         display: 'flex',
                                         justifyContent: 'flex-end',
-                                        marginTop: '1rem',
+                                        marginTop: '0.5rem',
                                     }}
                                 >
                                     <EditSpecificationDialog
@@ -284,14 +300,6 @@ const MetaAnalysisPage: React.FC = (props) => {
                                     </Button>
                                 </Box>
                             )}
-
-                            <Typography sx={{ fontWeight: 'bold' }}>Details</Typography>
-
-                            <MetaAnalysisSummaryRow
-                                title="meta-analysis name"
-                                value={metaAnalysis?.name || ''}
-                                caption={metaAnalysis?.description || ''}
-                            />
                         </Box>
 
                         <Box>
@@ -305,15 +313,17 @@ const MetaAnalysisPage: React.FC = (props) => {
 
                             <MetaAnalysisSummaryRow
                                 title="studyset id"
-                                value={metaAnalysisStudyset?.neurostore_id || ''}
+                                value={
+                                    <Link
+                                        target="_blank"
+                                        href={`/studysets/${
+                                            metaAnalysisStudyset?.neurostore_id || ''
+                                        }`}
+                                    >
+                                        {metaAnalysisStudyset?.neurostore_id || ''}
+                                    </Link>
+                                }
                             />
-
-                            {metaAnalysisAnnotation?.neurostore_id && (
-                                <MetaAnalysisSummaryRow
-                                    title="annotation"
-                                    value={metaAnalysisAnnotation.neurostore_id}
-                                ></MetaAnalysisSummaryRow>
-                            )}
 
                             <MetaAnalysisSummaryRow title="selection" value={selectionText}>
                                 {referenceDataset && (
@@ -343,6 +353,10 @@ const MetaAnalysisPage: React.FC = (props) => {
                             <MetaAnalysisSummaryRow
                                 title="algorithm and optional arguments"
                                 value={specification?.estimator?.type || ''}
+                                caption={getEstimatorDescription(
+                                    metaAnalysisSpecification?.type,
+                                    specification?.estimator?.type
+                                )}
                             >
                                 <DynamicInputDisplay
                                     dynamicArg={

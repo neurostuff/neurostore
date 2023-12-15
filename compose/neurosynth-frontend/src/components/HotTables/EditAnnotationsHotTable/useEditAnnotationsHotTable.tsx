@@ -13,7 +13,7 @@ import {
     createColumns,
 } from 'components/HotTables/EditAnnotationsHotTable/EditAnnotationsHotTable.helpers';
 
-const useEditAnnotationsHotTable = (annotationId?: string) => {
+const useEditAnnotationsHotTable = (annotationId?: string, disableEdit?: boolean) => {
     const {
         data: annotations,
         isLoading: getAnnotationIsLoading,
@@ -60,12 +60,12 @@ const useEditAnnotationsHotTable = (annotationId?: string) => {
         setAnnotationsHotState({
             hotDataToStudyMapping,
             noteKeys,
-            hotColumns: createColumns(noteKeys),
+            hotColumns: createColumns(noteKeys, disableEdit),
             hotData: hotData,
             mergeCells: getMergeCells(hotDataToStudyMapping),
             isEdited: false,
         });
-    }, [annotations]);
+    }, [annotations, disableEdit]);
 
     const theUserOwnsThisAnnotation = useMemo(() => {
         return (user?.sub || null) === (annotations?.user || undefined);

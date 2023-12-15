@@ -13,7 +13,6 @@ import LandingPage from '../LandingPage/LandingPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
 
 const StudysetPage = React.lazy(() => import('../Studysets/StudysetPage/StudysetPage'));
-const StudysetsPage = React.lazy(() => import('../Studysets/StudysetsPage/StudysetsPage'));
 const EditStudyPage = React.lazy(() => import('../Studies/EditStudyPage/EditStudyPage'));
 const StudiesPage = React.lazy(() => import('../Studies/StudiesPage/StudiesPage'));
 const StudyPage = React.lazy(() => import('../Studies/StudyPage/StudyPage'));
@@ -109,11 +108,6 @@ const BaseNavigation: React.FC = (_props) => {
                         <MetaAnalysisPage />
                     </Box>
                 </Route>
-                <Route path="/studysets" exact>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <StudysetsPage />
-                    </Box>
-                </Route>
                 <Route path="/studysets/:studysetId" exact>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <StudysetPage />
@@ -135,6 +129,7 @@ const BaseNavigation: React.FC = (_props) => {
                         <BaseStudyPage />
                     </Box>
                 </Route>
+                {/* This route is used for the studyset page. It can be removed once we add base study Ids to studyset studies */}
                 <Route path={'/studies/:studyId'} exact={true}>
                     <Box sx={BaseNavigationStyles.pagesContainer}>
                         <StudyPage />

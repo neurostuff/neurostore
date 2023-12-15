@@ -89,7 +89,7 @@ const EditStudySwapVersionButton: React.FC = (props) => {
             });
 
             updateStudysetWithNewStudyId(studyId, versionToSwapTo);
-            await setAnalysesInAnnotationAsIncluded(annotationId, versionToSwapTo);
+            await setAnalysesInAnnotationAsIncluded(annotationId);
 
             history.push(`/projects/${projectId}/extraction/studies/${versionToSwapTo}`);
 

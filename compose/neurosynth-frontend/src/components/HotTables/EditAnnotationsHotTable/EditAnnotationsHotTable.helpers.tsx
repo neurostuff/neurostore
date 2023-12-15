@@ -147,7 +147,7 @@ export const createColumnHeader = (
     );
 };
 
-export const createColumns = (noteKeys: NoteKeyType[]) =>
+export const createColumns = (noteKeys: NoteKeyType[], disable?: boolean) =>
     [
         {
             className: `${styles['study-col']} ${styles['read-only-col']} truncate`,
@@ -159,7 +159,7 @@ export const createColumns = (noteKeys: NoteKeyType[]) =>
         },
         ...noteKeys.map((x) => {
             return {
-                readOnly: false,
+                readOnly: disable !== undefined ? disable : false,
                 className: styles[x.type],
                 allowInvalid: false,
                 type: x.type === EPropertyType.BOOLEAN ? 'checkbox' : 'text',
