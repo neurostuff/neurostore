@@ -407,10 +407,6 @@ const MetaAnalysisPage: React.FC = (props) => {
                                 >
                                     Run your meta-analysis via one of the following methods.
                                 </Typography>
-                                <Typography sx={{ color: 'white' }}>
-                                    Once neurosynth-compose has detected the status of your run, it
-                                    will appear on this page.
-                                </Typography>
                             </Box>
                         </Box>
 
@@ -461,10 +457,16 @@ const MetaAnalysisPage: React.FC = (props) => {
                                 >
                                     Locally via docker
                                 </Typography>
-                                <Typography>
-                                    Click the "Help" button in the navigation panel at the top to
-                                    learn more about this in the documentation
+                                <Typography sx={{ marginBottom: '0.5rem' }}>
+                                    copy the docker command below to run this meta-analysis locally
                                 </Typography>
+                                <Box>
+                                    <CodeSnippet
+                                        linesOfCode={[
+                                            `docker run ghcr.io/neurostuff/nsc-runner:latest ${metaAnalysis?.id}`,
+                                        ]}
+                                    />
+                                </Box>
                             </Box>
                         </Box>
                     </Paper>
