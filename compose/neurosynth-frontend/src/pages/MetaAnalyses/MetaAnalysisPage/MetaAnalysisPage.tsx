@@ -407,10 +407,6 @@ const MetaAnalysisPage: React.FC = (props) => {
                                 >
                                     Run your meta-analysis via one of the following methods.
                                 </Typography>
-                                <Typography sx={{ color: 'white' }}>
-                                    Once neurosynth-compose has detected the status of your run, it
-                                    will appear on this page.
-                                </Typography>
                             </Box>
                         </Box>
 
@@ -462,7 +458,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                                     Locally via docker
                                 </Typography>
                                 <Typography sx={{ marginBottom: '0.5rem' }}>
-                                    copy the docker command below and run it in your terminal
+                                    copy the docker command below to run this meta-analysis locally
                                 </Typography>
                                 <Box>
                                     <CodeSnippet
