@@ -461,10 +461,16 @@ const MetaAnalysisPage: React.FC = (props) => {
                                 >
                                     Locally via docker
                                 </Typography>
-                                <Typography>
-                                    Click the "Help" button in the navigation panel at the top to
-                                    learn more about this in the documentation
+                                <Typography sx={{ marginBottom: '0.5rem' }}>
+                                    copy the docker command below and run it in your terminal
                                 </Typography>
+                                <Box>
+                                    <CodeSnippet
+                                        linesOfCode={[
+                                            `docker run ghcr.io/neurostuff/nsc-runner:latest ${metaAnalysis?.id}`,
+                                        ]}
+                                    />
+                                </Box>
                             </Box>
                         </Box>
                     </Paper>
