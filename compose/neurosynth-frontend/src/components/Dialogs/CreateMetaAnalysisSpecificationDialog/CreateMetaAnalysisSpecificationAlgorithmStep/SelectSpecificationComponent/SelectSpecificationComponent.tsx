@@ -8,32 +8,10 @@ import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecificatio
 import DynamicForm from 'components/MetaAnalysisConfigComponents/DynamicForm/DynamicForm';
 import CreateMetaAnalysisSpecificationDialogBaseStyles from '../../CreateMetaAnalysisSpecificationDialogBase.styles';
 import {
-    metaAnalysisSpecification,
+    getDefaultValuesForTypeAndParameter,
     metaAnalyticAlgorithms,
     correctorOptions,
 } from '../../CreateMetaAnalysisSpecificationDialogConstants';
-
-const getDefaultValuesForTypeAndParameter = (
-    type: EAnalysisType | 'CORRECTOR',
-    parameterLabel: string | undefined
-): IDynamicValueType => {
-    if (type && parameterLabel) {
-        const parameters = metaAnalysisSpecification[type][parameterLabel].parameters;
-        const defaultVals: IDynamicValueType = {};
-        for (const [key, value] of Object.entries(parameters)) {
-            if (parameters[key].type === null) {
-                // in the case of kwargs or any other input with no default value
-                defaultVals[key] = {};
-            } else {
-                defaultVals[key] = value.default;
-            }
-        }
-
-        return defaultVals;
-    }
-
-    return {};
-};
 
 const SelectSpecificationComponent: React.FC<{
     onSelectSpecification: (algorithm: {
