@@ -1,9 +1,5 @@
-import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
 import { Box, ListItem, ListItemText, Typography } from '@mui/material';
-import {
-    IDynamicValueType,
-    IMetaAnalysisParamsSpecification,
-} from 'components/MetaAnalysisConfigComponents';
+import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
 import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import NeurosynthAutocomplete, {
     IAutocompleteObject,
@@ -11,9 +7,11 @@ import NeurosynthAutocomplete, {
 import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
 import DynamicForm from 'components/MetaAnalysisConfigComponents/DynamicForm/DynamicForm';
 import CreateMetaAnalysisSpecificationDialogBaseStyles from '../../CreateMetaAnalysisSpecificationDialogBase.styles';
-import { useMemo } from 'react';
-
-const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
+import {
+    metaAnalysisSpecification,
+    metaAnalyticAlgorithms,
+    correctorOptions,
+} from '../../CreateMetaAnalysisSpecificationDialogConstants';
 
 const getDefaultValuesForTypeAndParameter = (
     type: EAnalysisType | 'CORRECTOR',
@@ -51,42 +49,6 @@ const SelectSpecificationComponent: React.FC<{
         correctorArgs: IDynamicValueType;
     };
 }> = (props) => {
-    // const initialized = useRef<boolean>(false);
-
-    const metaAnalyticAlgorithms: IAutocompleteObject[] = useMemo(
-        () =>
-            Object.keys(metaAnalysisSpecification[EAnalysisType.CBMA]).map((algoName) => ({
-                label: algoName,
-                description: metaAnalysisSpecification[EAnalysisType.CBMA][algoName]?.summary || '',
-            })),
-        []
-    );
-
-    // useEffect(() => {
-    //     if (props.algorithm?.estimator || initialized.current) return;
-
-    //     const algorithmOpt = metaAnalyticAlgorithms.find((algo) => algo.label === 'MKDADensity');
-    //     if (!algorithmOpt) return;
-    //     props.onSelectSpecification({
-    //         ...props.algorithm,
-    //         estimator: algorithmOpt,
-    //         estimatorArgs: getDefaultValuesForTypeAndParameter(
-    //             EAnalysisType.CBMA,
-    //             algorithmOpt?.label
-    //         ),
-    //     });
-    //     initialized.current = true;
-    // }, [props.algorithm?.estimator, metaAnalyticAlgorithms, props]);
-
-    const correctorOptions: IAutocompleteObject[] = useMemo(
-        () =>
-            Object.keys(metaAnalysisSpecification.CORRECTOR).map((corrector) => ({
-                label: corrector,
-                description: metaAnalysisSpecification.CORRECTOR[corrector]?.summary,
-            })),
-        []
-    );
-
     return (
         <Box>
             <Typography sx={{ margin: '1rem 0' }} gutterBottom>
