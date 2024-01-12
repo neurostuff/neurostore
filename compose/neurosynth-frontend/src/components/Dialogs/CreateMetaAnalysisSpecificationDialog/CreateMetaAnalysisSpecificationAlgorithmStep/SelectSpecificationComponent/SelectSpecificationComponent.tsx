@@ -11,7 +11,7 @@ import NeurosynthAutocomplete, {
 import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
 import DynamicForm from 'components/MetaAnalysisConfigComponents/DynamicForm/DynamicForm';
 import CreateMetaAnalysisSpecificationDialogBaseStyles from '../../CreateMetaAnalysisSpecificationDialogBase.styles';
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo } from 'react';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 
@@ -51,7 +51,7 @@ const SelectSpecificationComponent: React.FC<{
         correctorArgs: IDynamicValueType;
     };
 }> = (props) => {
-    const initialized = useRef<boolean>(false);
+    // const initialized = useRef<boolean>(false);
 
     const metaAnalyticAlgorithms: IAutocompleteObject[] = useMemo(
         () =>
@@ -62,21 +62,21 @@ const SelectSpecificationComponent: React.FC<{
         []
     );
 
-    useEffect(() => {
-        if (props.algorithm?.estimator || initialized.current) return;
+    // useEffect(() => {
+    //     if (props.algorithm?.estimator || initialized.current) return;
 
-        const algorithmOpt = metaAnalyticAlgorithms.find((algo) => algo.label === 'MKDADensity');
-        if (!algorithmOpt) return;
-        props.onSelectSpecification({
-            ...props.algorithm,
-            estimator: algorithmOpt,
-            estimatorArgs: getDefaultValuesForTypeAndParameter(
-                EAnalysisType.CBMA,
-                algorithmOpt?.label
-            ),
-        });
-        initialized.current = true;
-    }, [props.algorithm?.estimator, metaAnalyticAlgorithms, props]);
+    //     const algorithmOpt = metaAnalyticAlgorithms.find((algo) => algo.label === 'MKDADensity');
+    //     if (!algorithmOpt) return;
+    //     props.onSelectSpecification({
+    //         ...props.algorithm,
+    //         estimator: algorithmOpt,
+    //         estimatorArgs: getDefaultValuesForTypeAndParameter(
+    //             EAnalysisType.CBMA,
+    //             algorithmOpt?.label
+    //         ),
+    //     });
+    //     initialized.current = true;
+    // }, [props.algorithm?.estimator, metaAnalyticAlgorithms, props]);
 
     const correctorOptions: IAutocompleteObject[] = useMemo(
         () =>

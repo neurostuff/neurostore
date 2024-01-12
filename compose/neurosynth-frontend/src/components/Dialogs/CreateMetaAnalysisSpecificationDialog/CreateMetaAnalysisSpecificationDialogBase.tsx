@@ -1,9 +1,14 @@
 import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import { ENavigationButton } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
+import {
+    IDynamicValueType,
+    IMetaAnalysisParamsSpecification,
+} from 'components/MetaAnalysisConfigComponents';
+import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
 import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
 import { useProjectName } from 'pages/Projects/ProjectPage/ProjectStore';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
 import BaseDialog, { IDialog } from '../BaseDialog';
 import CreateMetaAnalysisSpecificationAlgorithmStep from './CreateMetaAnalysisSpecificationAlgorithmStep/CreateMetaAnalysisSpecificationAlgorithmStep';
 import CreateMetaAnalysisSpecificationDetailsStep from './CreateMetaAnalysisSpecificationDetailsStep/CreateMetaAnalysisSpecificationDetailsStep';
@@ -28,10 +33,32 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
         type: undefined,
         referenceDataset: undefined,
     });
+    const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
+    const metaAnalyticAlgorithms: IAutocompleteObject[] = useMemo(
+        () =>
+            Object.keys(metaAnalysisSpecification[EAnalysisType.CBMA]).map((algoName) => ({
+                label: algoName,
+                description: metaAnalysisSpecification[EAnalysisType.CBMA][algoName]?.summary || '',
+            })),
+        [metaAnalysisSpecification]
+    );
+    const correctorOptions: IAutocompleteObject[] = useMemo(
+        () =>
+            Object.keys(metaAnalysisSpecification.CORRECTOR).map((corrector) => ({
+                label: corrector,
+                description: metaAnalysisSpecification.CORRECTOR[corrector]?.summary,
+            })),
+        [metaAnalysisSpecification.CORRECTOR]
+    );
+
+    const correctorOpt =
+        correctorOptions.find((corrector) => corrector.label === 'FDRCorrector') || null;
+    const algorithmOpt =
+        metaAnalyticAlgorithms.find((algo) => algo.label === 'MKDADensity') || null;
     const [algorithm, setAlgorithm] = useState<IAlgorithmSelection>({
-        estimator: null,
+        estimator: algorithmOpt,
         estimatorArgs: {},
-        corrector: null,
+        corrector: correctorOpt,
         correctorArgs: {},
     });
 
@@ -46,9 +73,9 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
         props.onCloseDialog();
         setActiveStep(0);
         setAlgorithm({
-            estimator: null,
+            estimator: algorithmOpt,
             estimatorArgs: {},
-            corrector: null,
+            corrector: correctorOpt,
             correctorArgs: {},
         });
         setSelection({
