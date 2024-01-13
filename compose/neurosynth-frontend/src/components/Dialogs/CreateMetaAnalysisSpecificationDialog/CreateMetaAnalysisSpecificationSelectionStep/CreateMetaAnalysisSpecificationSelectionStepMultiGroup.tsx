@@ -36,6 +36,10 @@ const CreateMetaAnalysisSpecificationSelectionStepMultiGroup: React.FC<{
         return [...DEFAULT_REFERENCE_DATASETS, ...colOptionsToMultiGroupOptions];
     }, [colOptionsToMultiGroupOptions]);
 
+    const defaultOption = useMemo(() => {
+        return multiGroupOptions.find((option) => option.id === 'neurostore');
+    }, [multiGroupOptions]);
+
     const selectedOption = useMemo(() => {
         if (!selectedValue.referenceDataset) return undefined;
 
@@ -73,12 +77,11 @@ const CreateMetaAnalysisSpecificationSelectionStepMultiGroup: React.FC<{
                     groupBy={(option) => option?.type || ''}
                     shouldDisable={false}
                     isOptionEqualToValue={(option, value) => option?.label === value?.label}
-                    value={selectedOption}
+                    value={selectedOption || defaultOption}
                     size="medium"
                     inputPropsSx={{
                         color: NeurosynthTableStyles[EPropertyType.NONE],
                     }}
-                    required={false}
                     renderOption={(params, option) => (
                         <ListItem {...params} key={option?.label}>
                             <ListItemText primary={option?.label || ''} />
