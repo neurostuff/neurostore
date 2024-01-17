@@ -5,6 +5,7 @@ import { IAutocompleteObject } from 'components/NeurosynthAutocomplete/Neurosynt
 import { useProjectName } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useEffect, useState } from 'react';
 import BaseDialog, { IDialog } from '../BaseDialog';
+import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
 import CreateMetaAnalysisSpecificationAlgorithmStep from './CreateMetaAnalysisSpecificationAlgorithmStep/CreateMetaAnalysisSpecificationAlgorithmStep';
 import CreateMetaAnalysisSpecificationDetailsStep from './CreateMetaAnalysisSpecificationDetailsStep/CreateMetaAnalysisSpecificationDetailsStep';
 import {
@@ -13,6 +14,11 @@ import {
 } from './CreateMetaAnalysisSpecificationDialogBase.types';
 import CreateMetaAnalysisSpecificationReview from './CreateMetaAnalysisSpecificationReview/CreateMetaAnalysisSpecificationReview';
 import CreateMetaAnalysisSpecificationSelectionStep from './CreateMetaAnalysisSpecificationSelectionStep/CreateMetaAnalysisSpecificationSelectionStep';
+import {
+    getDefaultValuesForTypeAndParameter,
+    correctorOpt,
+    algorithmOpt,
+} from './CreateMetaAnalysisSpecificationDialogConstants';
 
 const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => {
     const projectName = useProjectName();
@@ -29,10 +35,10 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
         referenceDataset: undefined,
     });
     const [algorithm, setAlgorithm] = useState<IAlgorithmSelection>({
-        estimator: null,
-        estimatorArgs: {},
-        corrector: null,
-        correctorArgs: {},
+        estimator: algorithmOpt,
+        estimatorArgs: getDefaultValuesForTypeAndParameter(EAnalysisType.CBMA, algorithmOpt?.label),
+        corrector: correctorOpt,
+        correctorArgs: getDefaultValuesForTypeAndParameter('CORRECTOR', correctorOpt?.label),
     });
 
     useEffect(() => {
@@ -46,10 +52,13 @@ const CreateMetaAnalysisSpecificationDialogBase: React.FC<IDialog> = (props) => 
         props.onCloseDialog();
         setActiveStep(0);
         setAlgorithm({
-            estimator: null,
-            estimatorArgs: {},
-            corrector: null,
-            correctorArgs: {},
+            estimator: algorithmOpt,
+            estimatorArgs: getDefaultValuesForTypeAndParameter(
+                EAnalysisType.CBMA,
+                algorithmOpt?.label
+            ),
+            corrector: correctorOpt,
+            correctorArgs: getDefaultValuesForTypeAndParameter('CORRECTOR', correctorOpt?.label),
         });
         setSelection({
             selectionKey: undefined,
