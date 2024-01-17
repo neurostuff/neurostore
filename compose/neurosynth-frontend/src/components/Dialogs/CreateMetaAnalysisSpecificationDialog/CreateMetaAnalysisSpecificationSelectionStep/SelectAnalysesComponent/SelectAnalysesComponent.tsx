@@ -43,7 +43,7 @@ const SelectAnalysesComponent: React.FC<{
             };
 
             if (isMultiGroupAlgorithm(algorithm?.estimator)) {
-                initialVal.referenceDataset = DEFAULT_REFERENCE_DATASETS[0].label;
+                initialVal.referenceDataset = DEFAULT_REFERENCE_DATASETS[0].id;
             }
 
             onSelectValue(initialVal);
