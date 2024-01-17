@@ -69,7 +69,7 @@ const CreateMetaAnalysisSpecificationSelectionStepMultiGroup: React.FC<{
                 }}
             >
                 <NeurosynthAutocomplete
-                    label="Select value to filter on"
+                    label="Select reference group"
                     groupBy={(option) => option?.type || ''}
                     shouldDisable={false}
                     isOptionEqualToValue={(option, value) => option?.label === value?.label}
