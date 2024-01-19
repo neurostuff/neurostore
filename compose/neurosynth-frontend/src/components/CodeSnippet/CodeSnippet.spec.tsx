@@ -47,7 +47,7 @@ describe('CodeSnippet', () => {
 
             const copybutton = screen.getByRole('button', { name: 'copy' });
             userEvent.click(copybutton);
-            expect(navigator.clipboard.writeText).toHaveBeenCalledWith('\nexample 1\nexample 2');
+            expect(navigator.clipboard.writeText).toHaveBeenCalledWith('example 1\nexample 2');
         });
     });
 });
