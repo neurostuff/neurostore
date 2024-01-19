@@ -57,7 +57,7 @@ const EditStudyToolbar: React.FC = (props) => {
         if (!studyset?.studies) return undefined;
 
         const CURR_SELECTED_CHIP_STATUS =
-            (localStorage.getItem('SELECTED_CHIP') as EExtractionStatus) ||
+            (localStorage.getItem(`SELECTED_CHIP-${projectId}`) as EExtractionStatus) ||
             EExtractionStatus.UNCATEGORIZED;
 
         const currStudyIndex = (studyset.studies || []).findIndex((study) => study === studyId);
@@ -77,13 +77,13 @@ const EditStudyToolbar: React.FC = (props) => {
             if (aStudyStatus === CURR_SELECTED_CHIP_STATUS) return aStudyId;
         }
         return undefined;
-    }, [studyId, studyStatusList, studyset]);
+    }, [projectId, studyId, studyStatusList, studyset]);
 
     const getValidNextStudyId = useCallback((): string | undefined => {
         if (!studyset?.studies) return undefined;
 
         const CURR_SELECTED_CHIP_STATUS =
-            (localStorage.getItem('SELECTED_CHIP') as EExtractionStatus) ||
+            (localStorage.getItem(`SELECTED_CHIP-${projectId}`) as EExtractionStatus) ||
             EExtractionStatus.UNCATEGORIZED;
         const currStudyIndex = (studyset.studies || []).findIndex((study) => study === studyId);
         if (currStudyIndex < 0) {
@@ -105,7 +105,7 @@ const EditStudyToolbar: React.FC = (props) => {
             }
         }
         return undefined;
-    }, [studyId, studyStatusList, studyset]);
+    }, [projectId, studyId, studyStatusList, studyset]);
 
     const handleMoveToPreviousStudy = () => {
         const prevId = getValidPrevStudyId();
@@ -163,13 +163,13 @@ const EditStudyToolbar: React.FC = (props) => {
     }, [getValidNextStudyId]);
 
     const currSelectedChipText = useMemo(() => {
-        const currSelectedChip = (localStorage.getItem('SELECTED_CHIP') ||
+        const currSelectedChip = (localStorage.getItem(`SELECTED_CHIP-${projectId}`) ||
             EExtractionStatus.UNCATEGORIZED) as EExtractionStatus;
         return getCurrSelectedChipText(currSelectedChip);
-    }, []);
+    }, [projectId]);
 
     const prevNextArrowColor = useMemo(() => {
-        const currSelectedChip = (localStorage.getItem('SELECTED_CHIP') ||
+        const currSelectedChip = (localStorage.getItem(`SELECTED_CHIP-${projectId}`) ||
             EExtractionStatus.UNCATEGORIZED) as EExtractionStatus;
         switch (currSelectedChip) {
             case EExtractionStatus.UNCATEGORIZED:
@@ -181,7 +181,7 @@ const EditStudyToolbar: React.FC = (props) => {
             default:
                 return 'warning.main';
         }
-    }, []);
+    }, [projectId]);
 
     return (
         <Box sx={EditStudyToolbarStyles.stickyContainer}>
