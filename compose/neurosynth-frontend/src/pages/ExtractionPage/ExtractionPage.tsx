@@ -27,8 +27,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 
-const selectedChipLocalStorageKey = 'SELECTED_CHIP';
-
 export enum EExtractionStatus {
     'COMPLETED' = 'completed',
     'SAVEDFORLATER' = 'savedforlater',
@@ -74,6 +72,7 @@ const ExtractionPage: React.FC = (props) => {
     const { mutate } = useUpdateStudyset();
 
     const [fieldBeingUpdated, setFieldBeingUpdated] = useState('');
+    const selectedChipLocalStorageKey = `SELECTED_CHIP-${projectId}`;
     const selectedChipInLocalStorage =
         (localStorage.getItem(selectedChipLocalStorageKey) as EExtractionStatus) ||
         EExtractionStatus.UNCATEGORIZED;
