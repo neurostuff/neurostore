@@ -8,6 +8,8 @@ import {
     useStudyId,
     useStudyLastUpdated,
     useStudyName,
+    useStudyYear,
+    useStudyAuthors,
     useStudyUsername,
 } from 'pages/Studies/StudyStore';
 import { useMemo } from 'react';
@@ -16,6 +18,8 @@ const EditStudyPageHeader: React.FC = (props) => {
     const studyId = useStudyId();
     const projectId = useProjectId();
     const studyName = useStudyName();
+    const studyYear = useStudyYear();
+    const studyAuthors = useStudyAuthors();
     const projectName = useProjectName();
     const studyOwnerUsername = useStudyUsername();
     const lastUpdatedAt = useStudyLastUpdated();
@@ -68,6 +72,16 @@ const EditStudyPageHeader: React.FC = (props) => {
                 </Box>
                 <Box>
                     <DisplayStudyChipLinks />
+                </Box>
+                <Box>
+                    <Typography variant="h5">
+                        {studyYear && `(${studyYear}).`} {studyName}
+                    </Typography>
+                    {studyAuthors && (
+                        <Typography variant="caption" sx={{ color: 'muted.main' }}>
+                            {studyAuthors}
+                        </Typography>
+                    )}
                 </Box>
             </Box>
         </>
