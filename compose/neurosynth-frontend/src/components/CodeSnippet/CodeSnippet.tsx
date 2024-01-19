@@ -7,7 +7,9 @@ const CodeSnippet: React.FC<{ linesOfCode: string[] }> = (props) => {
 
     const copyToClipboard = (_event: React.MouseEvent) => {
         setCopied(true);
-        const codeString = props.linesOfCode.reduce((prev, curr) => `${prev}\n${curr}`, '');
+        const codeString = props.linesOfCode.reduce((prev, curr, index) => {
+            return index === 0 ? curr : `${prev}\n${curr}`;
+        }, '');
         navigator.clipboard.writeText(codeString);
         setTimeout(() => {
             setCopied(false);
