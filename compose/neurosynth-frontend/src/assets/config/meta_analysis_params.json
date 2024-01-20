@@ -1,5 +1,5 @@
 {
-    "VERSION": "0.2.1+5.gaf2de97.dirty",
+    "VERSION": "0.2.1+7.gb500b35",
     "CBMA": {
         "ALE": {
             "summary": "Activation likelihood estimation.",
@@ -22,7 +22,7 @@
                 "kernel__fwhm": {
                     "description": "Full-width half-max for Gaussian kernel, if you want to have a constant kernel across Contrasts. Mutually exclusive with ``sample_size``.",
                     "type": "float",
-                    "default": null
+                    "default": 8
                 },
                 "kernel__sample_size": {
                     "description": "Sample size, used to derive FWHM for Gaussian kernel based on formulae from Eickhoff et al. (2012). This sample size overwrites the Contrast-specific sample sizes in the dataset, in order to hold kernel constant across Contrasts. Mutually exclusive with ``fwhm``.",
@@ -31,25 +31,23 @@
                 }
             },
             "FWE_enabled": true,
-            "FWE_parameters": [
-                {
-                    "voxel_thresh": {
-                        "description": "Cluster-defining p-value threshold. Default is 0.001.",
-                        "type": "float",
-                        "default": 0.001
-                    },
-                    "n_iters": {
-                        "description": "Number of iterations to build the voxel-level, cluster-size, and cluster-mass FWE null distributions. Default is 5000.",
-                        "type": "int",
-                        "default": 5000
-                    },
-                    "vfwe_only": {
-                        "description": "If True, only calculate the voxel-level FWE-corrected maps. Voxel-level correction can be performed very quickly if the Estimator's ``null_method`` was \"montecarlo\". Default is False.",
-                        "type": "bool",
-                        "default": false
-                    }
+            "FWE_parameters": {
+                "voxel_thresh": {
+                    "description": "Cluster-defining p-value threshold. Default is 0.001.",
+                    "type": "float",
+                    "default": 0.001
+                },
+                "n_iters": {
+                    "description": "Number of iterations to build the voxel-level, cluster-size, and cluster-mass FWE null distributions. Default is 5000.",
+                    "type": "int",
+                    "default": 5000
+                },
+                "vfwe_only": {
+                    "description": "If True, only calculate the voxel-level FWE-corrected maps. Voxel-level correction can be performed very quickly if the Estimator's ``null_method`` was \"montecarlo\". Default is False.",
+                    "type": "bool",
+                    "default": false
                 }
-            ]
+            }
         },
         "ALESubtraction": {
             "summary": "ALE subtraction analysis.",
@@ -67,7 +65,7 @@
                 "kernel__fwhm": {
                     "description": "Full-width half-max for Gaussian kernel, if you want to have a constant kernel across Contrasts. Mutually exclusive with ``sample_size``.",
                     "type": "float",
-                    "default": null
+                    "default": 8
                 },
                 "kernel__sample_size": {
                     "description": "Sample size, used to derive FWHM for Gaussian kernel based on formulae from Eickhoff et al. (2012). This sample size overwrites the Contrast-specific sample sizes in the dataset, in order to hold kernel constant across Contrasts. Mutually exclusive with ``fwhm``.",
@@ -108,25 +106,23 @@
                 }
             },
             "FWE_enabled": true,
-            "FWE_parameters": [
-                {
-                    "voxel_thresh": {
-                        "description": "Cluster-defining p-value threshold. Default is 0.001.",
-                        "type": "float",
-                        "default": 0.001
-                    },
-                    "n_iters": {
-                        "description": "Number of iterations to build the voxel-level, cluster-size, and cluster-mass FWE null distributions. Default is 5000.",
-                        "type": "int",
-                        "default": 5000
-                    },
-                    "vfwe_only": {
-                        "description": "If True, only calculate the voxel-level FWE-corrected maps. Voxel-level correction can be performed very quickly if the Estimator's ``null_method`` was \"montecarlo\". Default is False.",
-                        "type": "bool",
-                        "default": false
-                    }
+            "FWE_parameters": {
+                "voxel_thresh": {
+                    "description": "Cluster-defining p-value threshold. Default is 0.001.",
+                    "type": "float",
+                    "default": 0.001
+                },
+                "n_iters": {
+                    "description": "Number of iterations to build the voxel-level, cluster-size, and cluster-mass FWE null distributions. Default is 5000.",
+                    "type": "int",
+                    "default": 5000
+                },
+                "vfwe_only": {
+                    "description": "If True, only calculate the voxel-level FWE-corrected maps. Voxel-level correction can be performed very quickly if the Estimator's ``null_method`` was \"montecarlo\". Default is False.",
+                    "type": "bool",
+                    "default": false
                 }
-            ]
+            }
         },
         "MKDAChi2": {
             "summary": "Multilevel kernel density analysis- Chi-square analysis.",
@@ -153,20 +149,18 @@
                 }
             },
             "FWE_enabled": true,
-            "FWE_parameters": [
-                {
-                    "voxel_thresh": {
-                        "description": "Voxel-level threshold. Default is 0.001.",
-                        "type": "float",
-                        "default": 0.001
-                    },
-                    "n_iters": {
-                        "description": "Number of iterations to build the vFWE null distribution. Default is 1000.",
-                        "type": "int",
-                        "default": 1000
-                    }
+            "FWE_parameters": {
+                "voxel_thresh": {
+                    "description": "Voxel-level threshold. Default is 0.001.",
+                    "type": "float",
+                    "default": 0.001
+                },
+                "n_iters": {
+                    "description": "Number of iterations to build the vFWE null distribution. Default is 1000.",
+                    "type": "int",
+                    "default": 1000
                 }
-            ]
+            }
         },
         "MKDADensity": {
             "summary": "Multilevel kernel density analysis- Density analysis.",
@@ -198,57 +192,23 @@
                 }
             },
             "FWE_enabled": true,
-            "FWE_parameters": [
-                {
-                    "voxel_thresh": {
-                        "description": "Cluster-defining p-value threshold. Default is 0.001.",
-                        "type": "float",
-                        "default": 0.001
-                    },
-                    "n_iters": {
-                        "description": "Number of iterations to build the voxel-level, cluster-size, and cluster-mass FWE null distributions. Default is 5000.",
-                        "type": "int",
-                        "default": 5000
-                    },
-                    "vfwe_only": {
-                        "description": "If True, only calculate the voxel-level FWE-corrected maps. Voxel-level correction can be performed very quickly if the Estimator's ``null_method`` was \"montecarlo\". Default is False.",
-                        "type": "bool",
-                        "default": false
-                    }
-                }
-            ]
-        },
-        "SCALE": {
-            "summary": "Specific coactivation likelihood estimation.",
-            "parameters": {
-                "xyz": {
-                    "description": "Numpy array with XYZ coordinates. Voxels are rows and x, y, z (meaning coordinates) values are the three columnns.  .. versionchanged:: 0.0.12      This parameter was previously incorrectly labeled as \"optional\" and indicated that     it supports tab-delimited files, which it does not (yet).",
-                    "type": "(N x 3) :obj:`numpy.ndarray",
-                    "default": null
+            "FWE_parameters": {
+                "voxel_thresh": {
+                    "description": "Cluster-defining p-value threshold. Default is 0.001.",
+                    "type": "float",
+                    "default": 0.001
                 },
                 "n_iters": {
-                    "description": "Number of iterations for statistical inference. Default: 5000",
+                    "description": "Number of iterations to build the voxel-level, cluster-size, and cluster-mass FWE null distributions. Default is 5000.",
                     "type": "int",
                     "default": 5000
                 },
-                "**kwargs": {
-                    "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix '\\kernel__' in the variable name.",
-                    "type": null,
-                    "default": null
-                },
-                "kernel__fwhm": {
-                    "description": "Full-width half-max for Gaussian kernel, if you want to have a constant kernel across Contrasts. Mutually exclusive with ``sample_size``.",
-                    "type": "float",
-                    "default": null
-                },
-                "kernel__sample_size": {
-                    "description": "Sample size, used to derive FWHM for Gaussian kernel based on formulae from Eickhoff et al. (2012). This sample size overwrites the Contrast-specific sample sizes in the dataset, in order to hold kernel constant across Contrasts. Mutually exclusive with ``fwhm``.",
-                    "type": "int",
-                    "default": null
+                "vfwe_only": {
+                    "description": "If True, only calculate the voxel-level FWE-corrected maps. Voxel-level correction can be performed very quickly if the Estimator's ``null_method`` was \"montecarlo\". Default is False.",
+                    "type": "bool",
+                    "default": false
                 }
-            },
-            "FWE_enabled": false,
-            "FWE_parameters": null
+            }
         }
     },
     "IBMA": {
@@ -362,15 +322,13 @@
                 }
             },
             "FWE_enabled": true,
-            "FWE_parameters": [
-                {
-                    "n_iters": {
-                        "description": "The number of iterations to run in estimating the null distribution. Default is 5000.",
-                        "type": "int",
-                        "default": 5000
-                    }
+            "FWE_parameters": {
+                "n_iters": {
+                    "description": "The number of iterations to run in estimating the null distribution. Default is 5000.",
+                    "type": "int",
+                    "default": 5000
                 }
-            ]
+            }
         },
         "SampleSizeBasedLikelihood": {
             "summary": "Method estimates with known sample sizes but unknown sampling variances.",
@@ -462,7 +420,7 @@
             "parameters": {
                 "method": {
                     "description": "The FWE correction to use. Note that the 'montecarlo' method is only available for a subset of Estimators. To determine what methods are available for the Estimator you're using, use :meth:`inspect`.",
-                    "type": "{'bonferoni', 'montecarlo'}",
+                    "type": "str",
                     "default": "bonferroni"
                 },
                 "voxel_thresh": {

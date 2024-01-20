@@ -38,6 +38,10 @@ DEFAULT_KERNELS = {
     "SCALE": "ALEKernel",
 }
 
+BLACKLIST_ALGORITHMS = [
+    "SCALE"
+]
+
 BLACKLIST_PARAMS = [
     "n_cores",
     "memory_limit",
@@ -144,12 +148,17 @@ def _check_fwe(cls):
             if param.name not in BLACKLIST_PARAMS
         },
 
+        if isinstance(method_default_parameters, tuple):
+            method_default_parameters = method_default_parameters[0]
+
         return True, method_default_parameters
     else:
         return False, None
 
 
 for algo, cls in NIMARE_COORDINATE_ALGORITHMS:
+    if algo in BLACKLIST_ALGORITHMS:
+        continue
     docs = ClassDoc(cls)
     cls_signature = inspect.signature(cls)
 
@@ -202,6 +211,8 @@ for corrector, cls in NIMARE_CORRECTORS:
 
 
 for algo, cls in NIMARE_IMAGE_ALGORITHMS:
+    if algo in BLACKLIST_ALGORITHMS:
+        continue
     docs = ClassDoc(cls)
     cls_signature = inspect.signature(cls)
     config["IBMA"][algo] = {
@@ -219,8 +230,12 @@ for algo, cls in NIMARE_IMAGE_ALGORITHMS:
         "FWE_parameters": _check_fwe(cls)[1],
     }
 
-# SET MANUAL DEFAULTS
-
+# SET MANUAL DEFAULTS (Hacks!)
+# for some reason treating this as a set causes errors :(
+config["CORRECTOR"]["FWECorrector"]["parameters"]["method"]["type"] = "str"
+# since we don't have sample size, setting another reasonable default
+config["CBMA"]["ALE"]["parameters"]["kernel__fwhm"]["default"] = 8
+config["CBMA"]["ALESubtraction"]["parameters"]["kernel__fwhm"]["default"] = 8
 
 # save config file
 fname = (
