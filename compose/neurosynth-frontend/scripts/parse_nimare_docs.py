@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 
 
-from numpydoc.docscrape import ClassDoc
+from numpydoc.docscrape import ClassDoc, FunctionDoc
 import nimare.meta.cbma as nicoords
 import nimare.meta.ibma as niimgs
 import nimare.meta.kernel as nikern
@@ -12,7 +12,7 @@ import nimare.correct as crrct
 import nimare
 
 PARAM_OPTIONAL_REGEX = re.compile(
-    r"(?:\:obj\:`)?(?P<type>.*?)`?(?:, optional|\(optional\))?$"
+    r"(?:\:obj\:`)?(?P<type>\{.*\}|.*?)(?:`)?(?:(?:, optional|\(optional\))|(?:, default=(?P<default>.*)))?$"
 )
 
 NIMARE_CORRECTORS = [
@@ -45,6 +45,10 @@ BLACKLIST_PARAMS = [
     "inputs_",
     "masker",
     "kernel_transformer",
+    "memory",
+    "memory_level",
+    "result",
+    "self",
 ]
 
 config = {
@@ -61,26 +65,107 @@ def _derive_type(type_name):
         type_name, _ = spl[0], spl[1:]
     optional_type = PARAM_OPTIONAL_REGEX.match(type_name)
     if optional_type:
-        return optional_type.group("type")
-    return type_name
+        return optional_type.group("type"), optional_type.group("default")
+    return type_name, None
+
+
+def _derive_default(class_signature, param):
+    default = getattr(
+        cls_signature.parameters.get(param.name), "default", None
+    )
+    if isinstance(default, tuple):
+        default = default[0]
+
+    if default is inspect._empty:
+        default = None
+
+    # try to parse default from docstring
+    if default is None:
+        dtype, default = _derive_type(param.type)
+        if default is not None:
+            if dtype == "int":
+                default = int(default)
+            elif dtype == "float":
+                default = float(default)
+            elif dtype == "bool":
+                if default.lower() == "true":
+                    default = True
+                elif default.lower() == "false":
+                    default = False
+            elif dtype == "str":
+                default = str(default)
+            elif dtype == "list":
+                default = list(default)
+            elif dtype == "tuple":
+                default = tuple(default)
+            elif dtype == "dict":
+                default = dict(default)
+            elif dtype == "set":
+                default = set(default)
+            elif dtype == "NoneType":
+                default = None
+            else:
+                raise ValueError(f"Unknown type: {dtype}")
+    if isinstance(default, tuple):
+        default = default[0]
+    return default
+
+
+def _check_fwe(cls):
+    # Check if the method exists
+    has_method = hasattr(cls, 'correct_fwe_montecarlo')
+    if has_method:
+        # Get the method
+        method = getattr(cls, 'correct_fwe_montecarlo')
+
+        # Get the source code of the method
+        source_code = inspect.getsource(method)
+
+        # Check if the source code contains 'NotImplementedError'
+        fwe_enabled = 'NotImplementedError' not in source_code
+    else:
+        fwe_enabled = False
+
+    if fwe_enabled:
+        # Get the signature of the method
+        method_signature = inspect.signature(method)
+
+        # get the function docstring
+        mdocs = FunctionDoc(method)
+
+        # Get the default parameters of the method
+        method_default_parameters = {
+            param.name: {
+                "description": " ".join(param.desc),
+                "type": _derive_type(param.type)[0] or None,
+                "default": _derive_default(method_signature, param),
+            }
+            for param in mdocs._parsed_data["Parameters"]
+            if param.name not in BLACKLIST_PARAMS
+        },
+
+        return True, method_default_parameters
+    else:
+        return False, None
 
 
 for algo, cls in NIMARE_COORDINATE_ALGORITHMS:
     docs = ClassDoc(cls)
     cls_signature = inspect.signature(cls)
+
     config["CBMA"][algo] = {
         "summary": " ".join(docs._parsed_data["Summary"]),
         "parameters": {
             param.name: {
                 "description": " ".join(param.desc),
-                "type": _derive_type(param.type) or None,
-                "default": getattr(
-                    cls_signature.parameters.get(param.name), "default", None
-                ),
+                "type": _derive_type(param.type)[0] or None,
+                "default": _derive_default(cls_signature, param),
             }
             for param in docs._parsed_data["Parameters"]
             if param.name not in BLACKLIST_PARAMS
         },
+        "FWE_enabled": _check_fwe(cls)[0],
+        "FWE_parameters": _check_fwe(cls)[1],
     }
 
     kern_cls = getattr(nikern, DEFAULT_KERNELS[algo])
@@ -91,10 +176,8 @@ for algo, cls in NIMARE_COORDINATE_ALGORITHMS:
             "kernel__"
             + param.name: {
                 "description": " ".join(param.desc),
-                "type": _derive_type(param.type),
-                "default": getattr(
-                    kern_cls_signature.parameters.get(param.name), "default", None
-                ),
+                "type": _derive_type(param.type)[0],
+                "default": _derive_default(kern_cls_signature, param),
             }
             for param in kern_docs._parsed_data["Parameters"]
             if param.name not in BLACKLIST_PARAMS
@@ -109,10 +192,8 @@ for corrector, cls in NIMARE_CORRECTORS:
         "parameters": {
             param.name: {
                 "description": " ".join(param.desc),
-                "type": _derive_type(param.type) or None,
-                "default": getattr(
-                    cls_signature.parameters.get(param.name), "default", None
-                ),
+                "type": _derive_type(param.type)[0] or None,
+                "default": _derive_default(cls_signature, param),
             }
             for param in docs._parsed_data["Parameters"]
             if param.name not in BLACKLIST_PARAMS
@@ -128,20 +209,23 @@ for algo, cls in NIMARE_IMAGE_ALGORITHMS:
         "parameters": {
             param.name: {
                 "description": " ".join(param.desc),
-                "type": _derive_type(param.type) or None,
-                "default": getattr(
-                    cls_signature.parameters.get(param.name), "default", None
-                ),
+                "type": _derive_type(param.type)[0] or None,
+                "default": _derive_default(cls_signature, param),
             }
             for param in docs._parsed_data["Parameters"]
             if param.name not in BLACKLIST_PARAMS
         },
+        "FWE_enabled": _check_fwe(cls)[0],
+        "FWE_parameters": _check_fwe(cls)[1],
     }
+
+# SET MANUAL DEFAULTS
 
 
 # save config file
 fname = (
     Path(__file__).parent.parent
+    / "NiMARE"
     / "src"
     / "assets"
     / "config"
