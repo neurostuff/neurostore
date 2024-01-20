@@ -8,10 +8,29 @@ import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
 
 const getDefaultValuesForTypeAndParameter = (
     type: EAnalysisType | 'CORRECTOR',
-    parameterLabel: string | undefined
+    parameterLabel: string | undefined,
+    estimatorReferenceLabel?: string | undefined,
+    estimatorReferenceType?: EAnalysisType
 ): IDynamicValueType => {
     if (type && parameterLabel) {
-        const parameters = metaAnalysisSpecification[type][parameterLabel].parameters;
+        let parameters = metaAnalysisSpecification[type][parameterLabel].parameters;
+        if (
+            type === 'CORRECTOR' &&
+            parameterLabel === 'FWECorrector' &&
+            estimatorReferenceLabel &&
+            estimatorReferenceType &&
+            metaAnalysisSpecification[estimatorReferenceType][estimatorReferenceLabel]
+                .FWE_enabled === true
+        ) {
+            const FWE_parameters =
+                metaAnalysisSpecification[estimatorReferenceType][estimatorReferenceLabel]
+                    .FWE_parameters;
+            if (FWE_parameters !== null) {
+                FWE_parameters['method'] = { ...parameters['method'] };
+                FWE_parameters['method'].default = 'montecarlo';
+                parameters = FWE_parameters;
+            }
+        }
         const defaultVals: IDynamicValueType = {};
         for (const [key, value] of Object.entries(parameters)) {
             if (parameters[key].type === null) {

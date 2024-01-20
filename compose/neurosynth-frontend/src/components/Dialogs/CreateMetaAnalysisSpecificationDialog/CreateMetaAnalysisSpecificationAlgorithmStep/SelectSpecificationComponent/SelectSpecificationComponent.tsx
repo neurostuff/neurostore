@@ -49,14 +49,29 @@ const SelectSpecificationComponent: React.FC<{
                     value={props.algorithm?.estimator}
                     getOptionLabel={(option) => option?.label || ''}
                     onChange={(_event, newVal, _reason) => {
-                        props.onSelectSpecification({
+                        // Create a new algorithm object with the updated estimator
+                        const updatedAlgorithm = {
                             ...props.algorithm,
                             estimator: newVal,
                             estimatorArgs: getDefaultValuesForTypeAndParameter(
                                 EAnalysisType.CBMA,
                                 newVal?.label
                             ),
-                        });
+                        };
+                        props.onSelectSpecification(updatedAlgorithm);
+
+                        // Trigger update for the corrector
+                        const newCorrectorArgs = getDefaultValuesForTypeAndParameter(
+                            'CORRECTOR',
+                            props.algorithm?.corrector?.label,
+                            newVal?.label,
+                            EAnalysisType.CBMA
+                        );
+
+                        // Update the corrector in the algorithm object
+                        updatedAlgorithm.correctorArgs = newCorrectorArgs;
+
+                        props.onSelectSpecification(updatedAlgorithm);
                     }}
                     options={metaAnalyticAlgorithms}
                 />
@@ -127,7 +142,9 @@ const SelectSpecificationComponent: React.FC<{
                             corrector: newVal,
                             correctorArgs: getDefaultValuesForTypeAndParameter(
                                 'CORRECTOR',
-                                newVal?.label
+                                newVal?.label,
+                                props.algorithm.estimator?.label,
+                                EAnalysisType.CBMA
                             ),
                         });
                     }}
