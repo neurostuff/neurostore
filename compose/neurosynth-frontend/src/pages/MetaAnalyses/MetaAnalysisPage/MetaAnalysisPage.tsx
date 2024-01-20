@@ -463,7 +463,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                                 <Box>
                                     <CodeSnippet
                                         linesOfCode={[
-                                            `docker run ghcr.io/neurostuff/nsc-runner:latest ${metaAnalysis?.id}`,
+                                            `docker run ghcr.io/neurostuff/nsc-runner:latest ${metaAnalysis?.id} --n-cores 1`,
                                         ]}
                                     />
                                 </Box>
