@@ -1,33 +1,51 @@
 {
-    "VERSION": "0.0.11",
+    "VERSION": "0.2.1+7.gb500b35",
     "CBMA": {
         "ALE": {
             "summary": "Activation likelihood estimation.",
             "parameters": {
                 "null_method": {
-                    "description": "Method by which to determine uncorrected p-values. \"approximate\" is faster, but slightly less accurate. \"montecarlo\" can be much slower, and is only slightly more accurate.",
+                    "description": "Method by which to determine uncorrected p-values. The available options are  ======================= ================================================================= \"approximate\" (default) Build a histogram of summary-statistic values and their                         expected frequencies under the assumption of random spatial                         associated between studies, via a weighted convolution, as                         described in :footcite:t:`eickhoff2012activation`.                          This method is much faster, but slightly less accurate, than the                         \"montecarlo\" option. \"montecarlo\"            Perform a large number of permutations, in which the coordinates                         in the studies are randomly drawn from the Estimator's brain mask                         and the full set of resulting summary-statistic values are                         incorporated into a null distribution (stored as a histogram for                         memory reasons).                          This method is must slower, and is only slightly more accurate. ======================= =================================================================",
                     "type": "{\"approximate\", \"montecarlo\"}",
                     "default": "approximate"
                 },
                 "n_iters": {
-                    "description": "Number of iterations to use to define the null distribution. This is only used if ``null_method==\"montecarlo\"``. Default is 10000.",
+                    "description": "Number of iterations to use to define the null distribution. This is only used if ``null_method==\"montecarlo\"``. Default is 5000.",
                     "type": "int",
-                    "default": 10000
+                    "default": 5000
                 },
                 "**kwargs": {
-                    "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix '\\kernel__' in the variable name. Another optional argument is ``mask``.",
+                    "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix ``kernel__`` in the variable name. Another optional argument is ``mask``.",
                     "type": null,
                     "default": null
                 },
                 "kernel__fwhm": {
                     "description": "Full-width half-max for Gaussian kernel, if you want to have a constant kernel across Contrasts. Mutually exclusive with ``sample_size``.",
                     "type": "float",
-                    "default": null
+                    "default": 8
                 },
                 "kernel__sample_size": {
                     "description": "Sample size, used to derive FWHM for Gaussian kernel based on formulae from Eickhoff et al. (2012). This sample size overwrites the Contrast-specific sample sizes in the dataset, in order to hold kernel constant across Contrasts. Mutually exclusive with ``fwhm``.",
                     "type": "int",
                     "default": null
+                }
+            },
+            "FWE_enabled": true,
+            "FWE_parameters": {
+                "voxel_thresh": {
+                    "description": "Cluster-defining p-value threshold. Default is 0.001.",
+                    "type": "float",
+                    "default": 0.001
+                },
+                "n_iters": {
+                    "description": "Number of iterations to build the voxel-level, cluster-size, and cluster-mass FWE null distributions. Default is 5000.",
+                    "type": "int",
+                    "default": 5000
+                },
+                "vfwe_only": {
+                    "description": "If True, only calculate the voxel-level FWE-corrected maps. Voxel-level correction can be performed very quickly if the Estimator's ``null_method`` was \"montecarlo\". Default is False.",
+                    "type": "bool",
+                    "default": false
                 }
             }
         },
@@ -35,39 +53,41 @@
             "summary": "ALE subtraction analysis.",
             "parameters": {
                 "n_iters": {
-                    "description": "Default is 10000.",
+                    "description": "Default is 5000.",
                     "type": "int",
-                    "default": 10000
+                    "default": 5000
                 },
                 "**kwargs": {
-                    "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix '\\kernel__' in the variable name. Another optional argument is ``mask``.",
+                    "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix ``kernel__`` in the variable name. Another optional argument is ``mask``.",
                     "type": null,
                     "default": null
                 },
                 "kernel__fwhm": {
                     "description": "Full-width half-max for Gaussian kernel, if you want to have a constant kernel across Contrasts. Mutually exclusive with ``sample_size``.",
                     "type": "float",
-                    "default": null
+                    "default": 8
                 },
                 "kernel__sample_size": {
                     "description": "Sample size, used to derive FWHM for Gaussian kernel based on formulae from Eickhoff et al. (2012). This sample size overwrites the Contrast-specific sample sizes in the dataset, in order to hold kernel constant across Contrasts. Mutually exclusive with ``fwhm``.",
                     "type": "int",
                     "default": null
                 }
-            }
+            },
+            "FWE_enabled": false,
+            "FWE_parameters": null
         },
         "KDA": {
             "summary": "Kernel density analysis.",
             "parameters": {
                 "null_method": {
-                    "description": "Method by which to determine uncorrected p-values. \"approximate\" is faster, but slightly less accurate. \"montecarlo\" can be much slower, and is only slightly more accurate.",
+                    "description": "Method by which to determine uncorrected p-values. The available options are  ======================= ================================================================= \"approximate\" (default) Build a histogram of summary-statistic values and their                         expected frequencies under the assumption of random spatial                         associated between studies, via a weighted convolution.                          This method is much faster, but slightly less accurate. \"montecarlo\"            Perform a large number of permutations, in which the coordinates                         in the studies are randomly drawn from the Estimator's brain mask                         and the full set of resulting summary-statistic values are                         incorporated into a null distribution (stored as a histogram for                         memory reasons).                          This method is must slower, and is only slightly more accurate. ======================= =================================================================",
                     "type": "{\"approximate\", \"montecarlo\"}",
                     "default": "approximate"
                 },
                 "n_iters": {
-                    "description": "Number of iterations to use to define the null distribution. This is only used if ``null_method==\"montecarlo\"``. Default is 10000.",
+                    "description": "Number of iterations to use to define the null distribution. This is only used if ``null_method==\"montecarlo\"``. Default is 5000.",
                     "type": "int",
-                    "default": 10000
+                    "default": 5000
                 },
                 "**kwargs": {
                     "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix '\\kernel__' in the variable name.",
@@ -83,6 +103,24 @@
                     "description": "Value for sphere.",
                     "type": "int",
                     "default": 1
+                }
+            },
+            "FWE_enabled": true,
+            "FWE_parameters": {
+                "voxel_thresh": {
+                    "description": "Cluster-defining p-value threshold. Default is 0.001.",
+                    "type": "float",
+                    "default": 0.001
+                },
+                "n_iters": {
+                    "description": "Number of iterations to build the voxel-level, cluster-size, and cluster-mass FWE null distributions. Default is 5000.",
+                    "type": "int",
+                    "default": 5000
+                },
+                "vfwe_only": {
+                    "description": "If True, only calculate the voxel-level FWE-corrected maps. Voxel-level correction can be performed very quickly if the Estimator's ``null_method`` was \"montecarlo\". Default is False.",
+                    "type": "bool",
+                    "default": false
                 }
             }
         },
@@ -109,20 +147,33 @@
                     "type": "int",
                     "default": 1
                 }
+            },
+            "FWE_enabled": true,
+            "FWE_parameters": {
+                "voxel_thresh": {
+                    "description": "Voxel-level threshold. Default is 0.001.",
+                    "type": "float",
+                    "default": 0.001
+                },
+                "n_iters": {
+                    "description": "Number of iterations to build the vFWE null distribution. Default is 1000.",
+                    "type": "int",
+                    "default": 1000
+                }
             }
         },
         "MKDADensity": {
             "summary": "Multilevel kernel density analysis- Density analysis.",
             "parameters": {
                 "null_method": {
-                    "description": "Method by which to determine uncorrected p-values. \"approximate\" is faster, but slightly less accurate. \"montecarlo\" can be much slower, and is only slightly more accurate.",
+                    "description": "Method by which to determine uncorrected p-values. The available options are  ======================= ================================================================= \"approximate\" (default) Build a histogram of summary-statistic values and their                         expected frequencies under the assumption of random spatial                         associated between studies, via a weighted convolution.                          This method is much faster, but slightly less accurate. \"montecarlo\"            Perform a large number of permutations, in which the coordinates                         in the studies are randomly drawn from the Estimator's brain mask                         and the full set of resulting summary-statistic values are                         incorporated into a null distribution (stored as a histogram for                         memory reasons).                          This method is must slower, and is only slightly more accurate. ======================= =================================================================",
                     "type": "{\"approximate\", \"montecarlo\"}",
                     "default": "approximate"
                 },
                 "n_iters": {
-                    "description": "Number of iterations to use to define the null distribution. This is only used if ``null_method==\"montecarlo\"``. Default is 10000.",
+                    "description": "Number of iterations to use to define the null distribution. This is only used if ``null_method==\"montecarlo\"``. Default is 5000.",
                     "type": "int",
-                    "default": 10000
+                    "default": 5000
                 },
                 "**kwargs": {
                     "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix '\\kernel__' in the variable name.",
@@ -139,40 +190,23 @@
                     "type": "int",
                     "default": 1
                 }
-            }
-        },
-        "SCALE": {
-            "summary": "Specific coactivation likelihood estimation.",
-            "parameters": {
+            },
+            "FWE_enabled": true,
+            "FWE_parameters": {
                 "voxel_thresh": {
-                    "description": "Uncorrected voxel-level threshold. Default: 0.001",
+                    "description": "Cluster-defining p-value threshold. Default is 0.001.",
                     "type": "float",
                     "default": 0.001
                 },
                 "n_iters": {
-                    "description": "Number of iterations for correction. Default: 10000",
+                    "description": "Number of iterations to build the voxel-level, cluster-size, and cluster-mass FWE null distributions. Default is 5000.",
                     "type": "int",
-                    "default": 10000
+                    "default": 5000
                 },
-                "xyz": {
-                    "description": "Tab-delimited file of coordinates from database or numpy array with XYZ coordinates. Voxels are rows and x, y, z (meaning coordinates) values are the three columns.",
-                    "type": "str",
-                    "default": null
-                },
-                "**kwargs": {
-                    "description": "Keyword arguments. Arguments for the kernel_transformer can be assigned here, with the prefix '\\kernel__' in the variable name.",
-                    "type": null,
-                    "default": null
-                },
-                "kernel__fwhm": {
-                    "description": "Full-width half-max for Gaussian kernel, if you want to have a constant kernel across Contrasts. Mutually exclusive with ``sample_size``.",
-                    "type": "float",
-                    "default": null
-                },
-                "kernel__sample_size": {
-                    "description": "Sample size, used to derive FWHM for Gaussian kernel based on formulae from Eickhoff et al. (2012). This sample size overwrites the Contrast-specific sample sizes in the dataset, in order to hold kernel constant across Contrasts. Mutually exclusive with ``fwhm``.",
-                    "type": "int",
-                    "default": null
+                "vfwe_only": {
+                    "description": "If True, only calculate the voxel-level FWE-corrected maps. Voxel-level correction can be performed very quickly if the Estimator's ``null_method`` was \"montecarlo\". Default is False.",
+                    "type": "bool",
+                    "default": false
                 }
             }
         }
@@ -180,80 +214,145 @@
     "IBMA": {
         "DerSimonianLaird": {
             "summary": "DerSimonian-Laird meta-regression estimator.",
-            "parameters": {}
+            "parameters": {
+                "aggressive_mask": {
+                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
+                    "type": "bool",
+                    "default": true
+                }
+            },
+            "FWE_enabled": false,
+            "FWE_parameters": null
         },
         "Fishers": {
             "summary": "An image-based meta-analytic test using t- or z-statistic images.",
-            "parameters": {}
+            "parameters": {
+                "aggressive_mask": {
+                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
+                    "type": "bool",
+                    "default": true
+                }
+            },
+            "FWE_enabled": false,
+            "FWE_parameters": null
         },
         "Hedges": {
             "summary": "Hedges meta-regression estimator.",
-            "parameters": {}
+            "parameters": {
+                "aggressive_mask": {
+                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
+                    "type": "bool",
+                    "default": true
+                }
+            },
+            "FWE_enabled": false,
+            "FWE_parameters": null
         },
         "PermutedOLS": {
             "summary": "An analysis with permuted ordinary least squares (OLS), using nilearn.",
             "parameters": {
+                "aggressive_mask": {
+                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
+                    "type": "bool",
+                    "default": null
+                },
                 "two_sided": {
                     "description": "If True, performs an unsigned t-test. Both positive and negative effects are considered; the null hypothesis is that the effect is zero. If False, only positive effects are considered as relevant. The null hypothesis is that the effect is zero or negative. Default is True.",
                     "type": "bool",
                     "default": true
+                }
+            },
+            "FWE_enabled": true,
+            "FWE_parameters": {
+                "n_iters": {
+                    "description": "The number of iterations to run in estimating the null distribution. Default is 5000.",
+                    "type": "int",
+                    "default": 5000
                 }
             }
         },
         "SampleSizeBasedLikelihood": {
             "summary": "Method estimates with known sample sizes but unknown sampling variances.",
             "parameters": {
+                "aggressive_mask": {
+                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
+                    "type": "bool",
+                    "default": null
+                },
                 "method": {
-                    "description": "The estimation method to use. Either 'ml' (for maximum-likelihood) or 'reml' (restricted maximum-likelihood). Default is 'ml'.",
-                    "type": "{\"ml\", \"reml\"}",
+                    "description": "The estimation method to use. The available options are  ============== ============================= \"ml\" (default) Maximum likelihood \"reml\"         Restricted maximum likelihood ============== =============================",
+                    "type": "{'ml', 'reml'}",
                     "default": "ml"
                 }
-            }
+            },
+            "FWE_enabled": false,
+            "FWE_parameters": null
         },
         "Stouffers": {
             "summary": "A t-test on z-statistic images.",
             "parameters": {
+                "aggressive_mask": {
+                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
+                    "type": "bool",
+                    "default": null
+                },
                 "use_sample_size": {
-                    "description": "Whether to use sample sizes for weights (i.e., \"weighted Stouffer's\") or not. Default is False.",
+                    "description": "Whether to use sample sizes for weights (i.e., \"weighted Stouffer's\") or not, as described in :footcite:t:`zaykin2011optimally`. Default is False.",
                     "type": "bool",
                     "default": false
                 }
-            }
+            },
+            "FWE_enabled": false,
+            "FWE_parameters": null
         },
         "VarianceBasedLikelihood": {
             "summary": "A likelihood-based meta-analysis method for estimates with known variances.",
             "parameters": {
+                "aggressive_mask": {
+                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
+                    "type": "bool",
+                    "default": null
+                },
                 "method": {
-                    "description": "The estimation method to use. Either 'ml' (for maximum-likelihood) or 'reml' (restricted maximum-likelihood). Default is 'ml'.",
-                    "type": "{\"ml\", \"reml\"}",
+                    "description": "The estimation method to use. The available options are  ============== ============================= \"ml\" (default) Maximum likelihood \"reml\"         Restricted maximum likelihood ============== =============================",
+                    "type": "{'ml', 'reml'}",
                     "default": "ml"
                 }
-            }
+            },
+            "FWE_enabled": false,
+            "FWE_parameters": null
         },
         "WeightedLeastSquares": {
             "summary": "Weighted least-squares meta-regression.",
             "parameters": {
+                "aggressive_mask": {
+                    "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
+                    "type": "bool",
+                    "default": null
+                },
                 "tau2": {
                     "description": "Assumed/known value of tau^2. Must be >= 0. Default is 0.",
                     "type": "float",
                     "default": 0
                 }
-            }
+            },
+            "FWE_enabled": false,
+            "FWE_parameters": null
         }
     },
     "CORRECTOR": {
         "FDRCorrector": {
             "summary": "Perform false discovery rate correction on a meta-analysis.",
             "parameters": {
-                "alpha": {
-                    "description": "The FDR correction rate to use.",
-                    "type": "float",
-                    "default": 0.05
-                },
                 "method": {
-                    "description": "The FDR correction to use. Either 'indep' (for independent or positively correlated values) or 'negcorr' (for general or negatively correlated tests).",
+                    "description": "The FDR correction to use. Either 'indep' (for independent or positively correlated values) or 'negcorr' (for general or negatively correlated tests). Default is 'indep'.",
                     "type": "str",
                     "default": "indep"
+                },
+                "alpha": {
+                    "description": "The FDR correction rate to use. Default is 0.05.",
+                    "type": "float",
+                    "default": 0.05
                 }
             }
         },
@@ -261,9 +360,19 @@
             "summary": "Perform family-wise error rate correction on a meta-analysis.",
             "parameters": {
                 "method": {
-                    "description": "The FWE correction to use. Available internal methods are 'bonferroni'. Additional methods may be implemented within the provided Estimator.",
+                    "description": "The FWE correction to use. Note that the 'montecarlo' method is only available for a subset of Estimators. To determine what methods are available for the Estimator you're using, use :meth:`inspect`.",
                     "type": "str",
                     "default": "bonferroni"
+                },
+                "voxel_thresh": {
+                    "description": "Only used if ``method='montecarlo'``. The uncorrected voxel-level threshold to use.",
+                    "type": "float",
+                    "default": null
+                },
+                "n_iters": {
+                    "description": "Number of iterations to use for Monte Carlo correction. Default varies by Estimator. For publication-quality results, 5000 or more iterations are recommended.",
+                    "type": "int",
+                    "default": 5000
                 },
                 "**kwargs": {
                     "description": "Keyword arguments to be used by the FWE correction implementation.",

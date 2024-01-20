@@ -35,6 +35,10 @@ export interface IMetaAnalysisParamsSpecification {
             parameters: {
                 [key: string]: IParameter;
             };
+            FWE_enabled: boolean;
+            FWE_parameters: {
+                [key: string]: IParameter;
+            } | null;
         };
     };
     IBMA: {
@@ -43,6 +47,10 @@ export interface IMetaAnalysisParamsSpecification {
             parameters: {
                 [key: string]: IParameter;
             };
+            FWE_enabled: boolean;
+            FWE_parameters: {
+                [key: string]: IParameter;
+            } | null;
         };
     };
     CORRECTOR: {
