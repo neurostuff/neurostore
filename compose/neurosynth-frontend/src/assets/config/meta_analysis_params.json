@@ -224,12 +224,6 @@
             "FWE_enabled": false,
             "FWE_parameters": null
         },
-        "Estimator": {
-            "summary": "Estimators take in Datasets and return MetaResults.",
-            "parameters": {},
-            "FWE_enabled": false,
-            "FWE_parameters": null
-        },
         "Fishers": {
             "summary": "An image-based meta-analytic test using t- or z-statistic images.",
             "parameters": {
@@ -249,59 +243,6 @@
                     "description": "Voxels with a value of zero of NaN in any of the input maps will be removed from the analysis. If False, all voxels are included by running a separate analysis on bags of voxels that belong that have a valid value across the same studies. Default is True.",
                     "type": "bool",
                     "default": true
-                }
-            },
-            "FWE_enabled": false,
-            "FWE_parameters": null
-        },
-        "IBMAEstimator": {
-            "summary": "Base class for meta-analysis methods in :mod:`~nimare.meta`.",
-            "parameters": {},
-            "FWE_enabled": false,
-            "FWE_parameters": null
-        },
-        "Memory": {
-            "summary": "A context object for caching a function's return value each time it is called with the same input arguments.",
-            "parameters": {
-                "location: str, pathlib.Path or None": {
-                    "description": "The path of the base directory to use as a data store or None. If None is given, no caching is done and the Memory object is completely transparent. This option replaces cachedir since version 0.12.",
-                    "type": null,
-                    "default": null
-                },
-                "backend: str, optional": {
-                    "description": "Type of store backend for reading/writing cache files. Default: 'local'. The 'local' backend is using regular filesystem operations to manipulate data (open, mv, etc) in the backend.",
-                    "type": null,
-                    "default": null
-                },
-                "cachedir: str or None, optional": {
-                    "description": ".. deprecated: 0.12     'cachedir' has been deprecated in 0.12 and will be     removed in 0.14. Use the 'location' parameter instead.",
-                    "type": null,
-                    "default": null
-                },
-                "mmap_mode: {None, 'r+', 'r', 'w+', 'c'}, optional": {
-                    "description": "The memmapping mode used when loading from cache numpy arrays. See numpy.load for the meaning of the arguments.",
-                    "type": null,
-                    "default": null
-                },
-                "compress: boolean, or integer, optional": {
-                    "description": "Whether to zip the stored data on disk. If an integer is given, it should be between 1 and 9, and sets the amount of compression. Note that compressed arrays cannot be read by memmapping.",
-                    "type": null,
-                    "default": null
-                },
-                "verbose: int, optional": {
-                    "description": "Verbosity flag, controls the debug messages that are issued as functions are evaluated.",
-                    "type": null,
-                    "default": null
-                },
-                "bytes_limit: int, optional": {
-                    "description": "Limit in bytes of the size of the cache. By default, the size of the cache is unlimited. When reducing the size of the cache, ``joblib`` keeps the most recently accessed items first.  **Note:** You need to call :meth:`joblib.Memory.reduce_size` to actually reduce the cache size to be less than ``bytes_limit``.",
-                    "type": null,
-                    "default": null
-                },
-                "backend_options: dict, optional": {
-                    "description": "Contains a dictionnary of named parameters used to configure the store backend.",
-                    "type": null,
-                    "default": null
                 }
             },
             "FWE_enabled": false,

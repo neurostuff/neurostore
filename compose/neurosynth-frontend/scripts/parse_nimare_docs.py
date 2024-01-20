@@ -25,7 +25,14 @@ NIMARE_COORDINATE_ALGORITHMS = inspect.getmembers(nicoords, inspect.isclass)
 NIMARE_IMAGE_ALGORITHMS = [
     cls
     for cls in inspect.getmembers(niimgs, inspect.isclass)
-    if cls[0] not in ["NiftiMasker", "MetaEstimator"]
+    if cls[0] not in [
+        "NiftiMasker",
+        "MetaEstimator",
+        "Memory",
+        "Estimator",
+        "IBMAEstimator",
+        "Memory"
+    ]
 ]
 
 
