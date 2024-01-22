@@ -138,12 +138,20 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
         const includedStubs = curationIncludedStudies.stubStudies;
 
         // the BE ingestion only checks for these three properties
-        const stubsToBaseStudies: Array<Pick<BaseStudy, 'name' | 'doi' | 'pmid'>> =
-            includedStubs.map((stub) => ({
-                name: stub.title,
-                doi: stub.doi,
-                pmid: stub.pmid,
-            }));
+        const stubsToBaseStudies: Array<
+            Pick<
+                BaseStudy,
+                'name' | 'doi' | 'pmid' | 'year' | 'description' | 'publication' | 'authors'
+            >
+        > = includedStubs.map((stub) => ({
+            name: stub.title,
+            doi: stub.doi,
+            pmid: stub.pmid,
+            year: Number(stub.articleYear),
+            description: stub.abstractText,
+            publication: stub.journal,
+            authors: stub.authors,
+        }));
 
         try {
             const res = await asyncIngest(stubsToBaseStudies);
