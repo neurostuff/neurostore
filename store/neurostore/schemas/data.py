@@ -51,10 +51,14 @@ class ObjToString(fields.Field):
         return str(value.id)
 
     def _deserialize(self, value, attr, data, **kwargs):
-        # presuming the value is an id
         if self.many:
-            return [{"id": v} for v in value]
-        return {"id": value}
+            value_instance = value[0] if len(value) > 0 else None
+        else:
+            value_instance = value
+
+        if self.many:
+            return [{"id": v} if isinstance(v, str) else v for v in value]
+        return {"id": value} if isinstance(value, str) else value
 
 class StringOrNested(fields.Nested):
     """Handle read/write only fields. Handle nested serialization/deserialization"""
@@ -74,7 +78,13 @@ class StringOrNested(fields.Nested):
             ]
             for f in id_fields:
                 schema.exclude.add(f)
-
+        if self.context.get("info"):
+            info_fields = [
+                field
+                for field, f_obj in schema._declared_fields.items()
+                if f_obj.metadata.get("info_field")
+            ]
+            schema.only = schema.set_class(info_fields)
         # have the changes take effect
         schema._init_fields()
 
@@ -89,7 +99,7 @@ class StringOrNested(fields.Nested):
         if not value_instance:
             return value
             
-        if not self.context.get("nested"):
+        if not self.context.get("nested") and not self.context.get("info"):
             return self.string_field._serialize(value, attr, obj, many=self.many)
         
         schema = self._modify_schema()
@@ -189,7 +199,14 @@ class BaseSchema(Schema):
             ]
             for f in id_fields:
                 exclude += (f,)
-        
+        if context.get("flat"):
+            relationships = [
+                field
+                for field, f_obj in self._declared_fields.items()
+                if isinstance(f_obj, (fields.Nested, fields.Pluck, StringOrNested))
+            ]
+            for f in relationships:
+                exclude += (f,)
         kwargs["exclude"] = exclude
         super().__init__(*args, **kwargs)
 
@@ -312,16 +329,8 @@ class AnalysisConditionSchema(BaseDataSchema):
 
 
 class StudysetStudySchema(BaseDataSchema):
-    studyset_id = fields.String(metadata={"id_field": True})
-    study_id = fields.String(metadata={"id_field": True})
-
-    @pre_load
-    def process_values(self, data, **kwargs):
-        pass
-
-    @pre_dump
-    def filter_values(self, data, **kwargs):
-        pass
+    studyset_id = fields.String() # primary key needed (no id_field)
+    study_id = fields.String() # primary key needed (no id_field)
 
 
 class AnalysisSchema(BaseDataSchema):
@@ -464,9 +473,9 @@ class StudysetSchema(BaseDataSchema):
 class AnnotationAnalysisSchema(BaseDataSchema):
     note = fields.Dict()
     annotation = StringOrNested("AnnotationSchema", use_nested=False, load_only=True)
-    analysis_id = fields.String(data_key="analysis", metadata={"id_field": True})
-    study_id = fields.String(data_key="study", metadata={"id_field": True})
-    studyset_id = fields.String(data_key="studyset", load_only=True, metadata={"id_field": True})
+    analysis_id = fields.String(data_key="analysis") # not marked with id_field because it's a primary relationship
+    study_id = fields.String(data_key="study") # primary key needed for StudysetStudy
+    studyset_id = fields.String(data_key="studyset", load_only=True) # primary key needed for StudysetStudy
     study_name = fields.Function(
         lambda aa: aa.studyset_study.study.name, dump_only=True
     )

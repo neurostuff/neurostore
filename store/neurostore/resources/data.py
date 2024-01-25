@@ -206,15 +206,19 @@ class AnnotationsView(ObjectView, ListView):
             parent = cls._model.query.filter_by(id=source_id).first_or_404()
             parent_source = parent.source
             parent_source_id = parent.source_id
-
-        schema = cls._schema(copy=True)
+        
+        context = {
+            "clone": True,
+            "nested": True,
+        }
+        schema = cls._schema(context=context)
         tmp_data = schema.dump(annotation)
-        for note in tmp_data["notes"]:
-            note.pop("analysis_name")
-            note.pop("study_name")
-            note.pop("study_year")
-            note.pop("publication")
-            note.pop("authors")
+        # for note in tmp_data["notes"]:
+        #     note.pop("analysis_name")
+        #     note.pop("study_name")
+        #     note.pop("study_year")
+        #     note.pop("publication")
+        #     note.pop("authors")
         data = schema.load(tmp_data)
         data["source"] = "neurostore"
         data["source_id"] = source_id
@@ -267,8 +271,8 @@ class BaseStudiesView(ObjectView, ListView):
         return q
 
     def serialize_records(self, records, args, exclude=tuple()):
-        if args.get("flat"):
-            exclude = ("versions",)
+        # if args.get("flat"):
+        #     exclude = ("versions",)
 
         return super().serialize_records(records, args, exclude)
 
@@ -426,10 +430,10 @@ class StudiesView(ObjectView, ListView):
                 study.studysets = study.studysets.filter(
                     Studyset.user_id == args.get("studyset_owner")
                 ).all()
-        if args.get("flat"):
-            exclude += ("analyses",)
+        # if args.get("flat"):
+        #     exclude += ("analyses",)
 
-        exclude += ("studysets", "has_coordinates", "has_images")
+        # exclude += ("studysets", "has_coordinates", "has_images")
         return super().serialize_records(records, args, exclude)
 
     @classmethod

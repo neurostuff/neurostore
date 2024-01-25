@@ -88,8 +88,8 @@ def test_put_studies(auth_client, ingest_neurosynth, data, session):
     assert put_resp.json()["metadata"] == updated_study_entry.metadata_
 
 
-def test_clone_studies(auth_client, ingest_neurosynth, ingest_neurovault, session):
-    study_entry = Study.query.filter(Study.metadata_.isnot(None)).first()
+def test_clone_studies(auth_client, ingest_neurosynth, session):
+    study_entry = Study.query.first()
     resp = auth_client.post(f"/api/studies/?source_id={study_entry.id}", data={})
     data = resp.json()
     assert data["name"] == study_entry.name
