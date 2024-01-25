@@ -452,8 +452,13 @@ class StudiesView(ObjectView, ListView):
             parent_source = parent.source
             parent_source_id = parent.source_id
 
-        schema = cls._schema(copy=True)
-        data = schema.load(schema.dump(study), unknown=EXCLUDE)
+        context = {
+            "clone": True,
+            "nested": True
+        }
+        schema = cls._schema(context=context)
+        dump_study = schema.dump(study)
+        data = schema.load(dump_study)
         data["source"] = "neurostore"
         data["source_id"] = source_id
         data["source_updated_at"] = study.updated_at or study.created_at

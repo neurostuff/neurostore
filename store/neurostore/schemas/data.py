@@ -1,4 +1,5 @@
 import sys
+from typing import Any, Mapping
 
 from marshmallow import (
     fields,
@@ -7,13 +8,20 @@ from marshmallow import (
     post_dump,
     pre_dump,
     pre_load,
+    EXCLUDE,
 )
+from marshmallow.exceptions import ValidationError
 from flask import request
 import orjson
 from marshmallow.decorators import post_load
 from pyld import jsonld
 import pandas as pd
 
+# context parameters
+# clone: create a new object with new ids (true or false)
+# nested: serialize nested objects (true or false)
+# flat: do not display any relationships
+# info: only display info fields
 
 class BooleanOrString(fields.Field):
     def __init__(self, *args, **kwargs):
@@ -32,112 +40,197 @@ class BooleanOrString(fields.Field):
         return self.string_field._deserialize(value, attr, data, **kwargs)
 
 
+class ObjToString(fields.Field):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.many = kwargs.get("many", False)
+    
+    def _serialize(self, value, attr, obj, **kwargs):
+        if self.many:
+            return [v.id for v in value]
+        return str(value.id)
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        # presuming the value is an id
+        if self.many:
+            return [{"id": v} for v in value]
+        return {"id": value}
+
 class StringOrNested(fields.Nested):
-    """Custom Field that serializes a nested object as either a string
-    or a full object, depending on "nested" or "source" request argument"""
-
-    def __init__(self, nested, **kwargs):
+    """Handle read/write only fields. Handle nested serialization/deserialization"""
+    def __init__(self, nested, *args, **kwargs):
         super().__init__(nested, **kwargs)
-        self.use_nested = kwargs.get("use_nested", True)
+        self.string_field = ObjToString(*args, **kwargs)
 
-    def _serialize(self, value, attr, obj, **ser_kwargs):
-        if isinstance(self.nested, str):
-            self.nested = getattr(sys.modules[__name__], self.nested)
-        if value is None:
-            return None
-        if self.use_nested and (self.context.get("nested") or self.context.get("copy")):
-            context = self.context
-            nested_schema = self.nested(context=context)
-            return nested_schema.dump(value, many=self.many)
-        elif self.context.get("info"):
-            info_fields = [
-                "_id",
-                "updated_at",
-                "created_at",
-                "source",
-                "user",
-                "username",
-                "studysets",
-                "has_coordinates",
-                "has_images",
+    def _modify_schema(self):
+        """Only relevant when nested=True"""
+        schema = self.schema
+        schema.context = self.context
+        if self.context.get("clone"):
+            id_fields = [
+                field
+                for field, f_obj in schema._declared_fields.items()
+                if f_obj.metadata.get("id_field")
             ]
-            nested_schema = self.nested(
-                context=self.context,
-                only=info_fields,
-            )
-            return nested_schema.dump(value, many=self.many)
-        else:
-            return [v.id for v in value] if self.many else value.id
+            for f in id_fields:
+                schema.exclude.add(f)
 
-    def _deserialize(self, value, attr, data, **ser_kwargs):
-        if isinstance(self.nested, str):
-            self.nested = getattr(sys.modules[__name__], self.nested)
+        # have the changes take effect
+        schema._init_fields()
 
-        if isinstance(value, list):
-            if self.context.get("copy"):
-                return self.schema.load(
-                    [v for v in value if not isinstance(v, str)], many=True
-                )
-            return self.schema.load(
-                [{"id": v} if isinstance(v, str) else v for v in value], many=True
-            )
-        elif isinstance(value, str):
-            if self.context.get("copy"):
-                return None
-            return self.schema.load({"id": value})
+        return schema
+
+    def _serialize(self, value, attr, obj, **kwargs):
+        if self.many:
+            value_instance = value[0] if len(value) > 0 else None
         else:
-            return self.schema.load(value)
+            value_instance = value
+
+        if not value_instance:
+            return value
+            
+        if not self.context.get("nested"):
+            return self.string_field._serialize(value, attr, obj, many=self.many)
+        
+        schema = self._modify_schema()
+        return schema.dump(value, many=self.many)
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if self.many:
+            value_instance = value[0] if len(value) > 0 else None
+        else:
+            value_instance = value
+
+        if not value_instance:
+            return value
+
+        if isinstance(value_instance, str):
+            return self.string_field._deserialize(value, attr, data, many=self.many)
+       
+        schema = self._modify_schema()
+        return schema.load(value, many=self.many)
+
+# class StringOrNested(fields.Nested):
+#     """Custom Field that serializes a nested object as either a string
+#     or a full object, depending on "nested" or "source" request argument"""
+
+#     def __init__(self, nested, **kwargs):
+#         super().__init__(nested, **kwargs)
+#         self.use_nested = kwargs.get("use_nested", True)
+
+#     def _serialize(self, value, attr, obj, **ser_kwargs):
+#         if isinstance(self.nested, str):
+#             self.nested = getattr(sys.modules[__name__], self.nested)
+#         if value is None:
+#             return None
+#         if self.use_nested and (self.context.get("nested") or self.context.get("copy")):
+#             context = self.context
+#             nested_schema = self.nested(context=context)
+#             return nested_schema.dump(value, many=self.many)
+#         elif self.context.get("info"):
+#             info_fields = [
+#                 "id",
+#                 "updated_at",
+#                 "created_at",
+#                 "source",
+#                 "user",
+#                 "username",
+#                 "studysets",
+#                 "has_coordinates",
+#                 "has_images",
+#             ]
+#             nested_schema = self.nested(
+#                 context=self.context,
+#                 only=info_fields,
+#             )
+#             return nested_schema.dump(value, many=self.many)
+#         else:
+#             return [v.id for v in value] if self.many else value.id
+
+#     def _deserialize(self, value, attr, data, **ser_kwargs):
+#         if isinstance(self.nested, str):
+#             self.nested = getattr(sys.modules[__name__], self.nested)
+
+#         if isinstance(value, list):
+#             if self.context.get("copy"):
+#                 return self.schema.load(
+#                     [v for v in value if not isinstance(v, str)], many=True
+#                 )
+#             return self.schema.load(
+#                 [{"id": v} if isinstance(v, str) else v for v in value], many=True
+#             )
+#         elif isinstance(value, str):
+#             if self.context.get("copy"):
+#                 return None
+#             return self.schema.load({"id": value})
+#         else:
+#             return self.schema.load(value)
 
 
 # https://github.com/marshmallow-code/marshmallow/issues/466#issuecomment-285342071
 class BaseSchemaOpts(SchemaOpts):
-    def __init__(self, meta, **kwargs):
-        super().__init__(meta)
+    def __init__(self, meta, *args, **kwargs):
+        meta.unknown = EXCLUDE
+        super().__init__(meta, *args, **kwargs)
         self.allow_none = getattr(meta, "allow_none", ())
-
+        self.render_module = orjson
+        
 
 class BaseSchema(Schema):
-    def __init__(self, copy=None, *args, **kwargs):
-        empty_exclude = "exclude" in kwargs and (
-            kwargs["exclude"] == [] or kwargs["exclude"] == ()
-        )
-        exclude = list(kwargs.pop("exclude", []))
-        default_exclude = None
-        if getattr(self.Meta, "exclude", None) and empty_exclude:
-            default_exclude = self.opts.exclude
-            self.opts.exclude = set(exclude)
-        if copy is None and kwargs.get("context") and kwargs.get("context").get("copy"):
-            copy = kwargs.get("context").get("copy")
+    def __init__(self, *args, **kwargs):
+        exclude = kwargs.get("exclude") or self.opts.exclude
+        context = kwargs.get("context", {})
+        # if cloning and not only id, exclude id fields
+        if context.get("clone") and kwargs.get("only") != ("id",):
+            id_fields = [
+                field
+                for field, f_obj in self._declared_fields.items()
+                if f_obj.metadata.get("id_field")
+            ]
+            for f in id_fields:
+                exclude += (f,)
+        
+        kwargs["exclude"] = exclude
+        super().__init__(*args, **kwargs)
 
-        if kwargs.get("context"):
-            kwargs["context"]["copy"] = copy
-        else:
-            kwargs["context"] = {"copy": copy}
-        if copy and "_id" not in (kwargs.get("only", []) or []):
-            exclude.extend(
-                [
-                    field
-                    for field, f_obj in self._declared_fields.items()
-                    if f_obj.metadata.get("db_only")
-                ]
-            )
-        super().__init__(*args, exclude=exclude, **kwargs)
-        # TODO: not good practice to change core attribute and change it back
-        # could lead to race conditions
-        if default_exclude:
-            self.opts.exclude = default_exclude
+
+    # def __init__(self, copy=None, *args, **kwargs):
+    #     empty_exclude = "exclude" in kwargs and (
+    #         kwargs["exclude"] == [] or kwargs["exclude"] == ()
+    #     )
+    #     exclude = list(kwargs.pop("exclude", []))
+    #     default_exclude = None
+    #     if getattr(self.Meta, "exclude", None) and empty_exclude:
+    #         default_exclude = self.opts.exclude
+    #         self.opts.exclude = set(exclude)
+    #     if copy is None and kwargs.get("context") and kwargs.get("context").get("copy"):
+    #         copy = kwargs.get("context").get("copy")
+
+    #     if kwargs.get("context"):
+    #         kwargs["context"]["copy"] = copy
+    #     else:
+    #         kwargs["context"] = {"copy": copy}
+    #     if copy and "id" not in (kwargs.get("only", []) or []):
+    #         exclude.extend(
+    #             [
+    #                 field
+    #                 for field, f_obj in self._declared_fields.items()
+    #                 if f_obj.metadata.get("db_only")
+    #             ]
+    #         )
+    #     super().__init__(*args, exclude=exclude, **kwargs)
+    #     # TODO: not good practice to change core attribute and change it back
+    #     # could lead to race conditions
+    #     if default_exclude:
+    #         self.opts.exclude = default_exclude
 
     OPTIONS_CLASS = BaseSchemaOpts
     # normal return key
-    id_key = "id"
+    
+    created_at = fields.DateTime(dump_only=True, metadata={"info_field": True})
+    updated_at = fields.DateTime(dump_only=True, metadata={"info_field": True})
 
-    _id = fields.String(
-        attribute="id", data_key=id_key, dump_only=True, metadata={"db_only": True}
-    )
-    created_at = fields.DateTime(dump_only=True, metadata={"db_only": True})
-    updated_at = fields.DateTime(dump_only=True, metadata={"db_only": True})
-
-    id = fields.String(load_only=True)
+    id = fields.String(metadata={"info_field": True, "id_field": True})
 
     def on_bind_field(self, field_name, field_obj):
         super().on_bind_field(field_name, field_obj)
@@ -147,50 +240,47 @@ class BaseSchema(Schema):
 
 class BaseDataSchema(BaseSchema):
     user = fields.String(
-        attribute="user_id", dump_only=True, metadata={"db_only": True}
+        attribute="user_id", dump_only=True, metadata={"info_field": True}
     )
     username = fields.String(
-        attribute="user.name", dump_only=True, metadata={"db_only": True}
+        attribute="user.name", dump_only=True, metadata={"info_field": True}
     )
 
 
 class ConditionSchema(BaseDataSchema):
+
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
-        render_module = orjson
 
 
 class EntitySchema(BaseDataSchema):
-    analysis_id = fields.String(data_key="analysis")
+    analysis_id = fields.String(data_key="analysis", metadata={"id_field": True})
 
     class Meta:
         additional = ("level", "label")
         allow_none = ("level", "label")
-        render_module = orjson
 
 
 class ImageSchema(BaseDataSchema):
     # serialization
-    analysis = StringOrNested("AnalysisSchema", use_nested=False)
-    analysis_name = fields.String(dump_only=True, metadata={"db_only": True})
-    add_date = fields.DateTime(dump_only=True, metadata={"db_only": True})
+    analysis = fields.Pluck("AnalysisSchema", "id", metadata={"id_field": True})
+    analysis_name = fields.String(allow_none=True, dump_only=True)
+    add_date = fields.DateTime(dump_only=True)
 
     class Meta:
         additional = ("url", "filename", "space", "value_type")
         allow_none = ("url", "filename", "space", "value_type")
-        render_module = orjson
 
 
 class PointValueSchema(BaseDataSchema):
     class Meta:
         additional = allow_none = ("kind", "value")
-        render_module = orjson
 
 
 class PointSchema(BaseDataSchema):
     # serialization
-    analysis = StringOrNested("AnalysisSchema", use_nested=False)
+    analysis = fields.Pluck("AnalysisSchema", "id", metadata={"id_field": True})
     values = fields.Nested(PointValueSchema, many=True)
     entities = fields.Nested(EntitySchema, many=True, load_only=True)
     cluster_size = fields.Float(allow_none=True)
@@ -205,7 +295,6 @@ class PointSchema(BaseDataSchema):
     class Meta:
         additional = ("kind", "space", "coordinates", "image", "label_id")
         allow_none = ("kind", "space", "coordinates", "image", "label_id")
-        render_module = orjson
 
     @pre_load
     def process_values(self, data, **kwargs):
@@ -219,15 +308,12 @@ class PointSchema(BaseDataSchema):
 class AnalysisConditionSchema(BaseDataSchema):
     weight = fields.Float()
     condition = StringOrNested(ConditionSchema)
-    analysis_id = fields.String(data_key="analysis")
-
-    class Meta:
-        render_module = orjson
+    analysis_id = fields.String(data_key="analysis", metadata={"id_field": True})
 
 
 class StudysetStudySchema(BaseDataSchema):
-    studyset_id = fields.String()
-    study_id = fields.String()
+    studyset_id = fields.String(metadata={"id_field": True})
+    study_id = fields.String(metadata={"id_field": True})
 
     @pre_load
     def process_values(self, data, **kwargs):
@@ -237,13 +323,10 @@ class StudysetStudySchema(BaseDataSchema):
     def filter_values(self, data, **kwargs):
         pass
 
-    class Meta:
-        render_module = orjson
-
 
 class AnalysisSchema(BaseDataSchema):
     # serialization
-    study = StringOrNested("StudySchema", use_nested=False)
+    study = fields.Pluck("StudySchema", "id", metadata={"id_field": True})
     conditions = StringOrNested(ConditionSchema, many=True, dump_only=True)
 
     analysis_conditions = fields.Nested(AnalysisConditionSchema, many=True)
@@ -255,7 +338,6 @@ class AnalysisSchema(BaseDataSchema):
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
-        render_module = orjson
 
     @pre_load
     def load_values(self, data, **kwargs):
@@ -289,9 +371,6 @@ class StudySetStudyInfoSchema(Schema):
     name = fields.String(dump_only=True)
     description = fields.String(dump_only=True)
 
-    class Meta:
-        render_module = orjson
-
 
 class BaseStudySchema(BaseDataSchema):
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
@@ -319,20 +398,22 @@ class BaseStudySchema(BaseDataSchema):
             "year",
             "level",
         )
-        render_module = orjson
 
 
 class StudySchema(BaseDataSchema):
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
     analyses = StringOrNested(AnalysisSchema, many=True)
-    source = fields.String(dump_only=True, metadata={"db_only": True}, allow_none=True)
+    source = fields.String(dump_only=True, metadata={"info_field": True}, allow_none=True)
     source_id = fields.String(
-        dump_only=True, metadata={"db_only": True}, allow_none=True
+        dump_only=True, allow_none=True
     )
-    studysets = fields.Pluck("StudysetSchema", "_id", many=True, dump_only=True)
+    studysets = fields.Pluck(
+        "StudysetSchema", "id",
+        many=True, dump_only=True,
+        metadata={"id_field": True, "info_field": True})
     base_study = fields.Pluck(
-        "BaseStudySchema", "_id", dump_only=True, metadata={"db_only": True}
+        "BaseStudySchema", "id", dump_only=True,
     )
     has_coordinates = fields.Bool(dump_only=True)
     has_images = fields.Bool(dump_only=True)
@@ -340,7 +421,7 @@ class StudySchema(BaseDataSchema):
     #    "StudySetStudyInfoSchema", dump_only=True, metadata={"db_only": True}, many=True
     # )
     source_updated_at = fields.DateTime(
-        dump_only=True, metadata={"db_only": True}, allow_none=True
+        dump_only=True, allow_none=True
     )
 
     class Meta:
@@ -366,7 +447,6 @@ class StudySchema(BaseDataSchema):
             "year",
             "level",
         )
-        render_module = orjson
 
 
 class StudysetSchema(BaseDataSchema):
@@ -384,9 +464,9 @@ class StudysetSchema(BaseDataSchema):
 class AnnotationAnalysisSchema(BaseDataSchema):
     note = fields.Dict()
     annotation = StringOrNested("AnnotationSchema", use_nested=False, load_only=True)
-    analysis_id = fields.String(data_key="analysis")
-    study_id = fields.String(data_key="study")
-    studyset_id = fields.String(data_key="studyset", load_only=True)
+    analysis_id = fields.String(data_key="analysis", metadata={"id_field": True})
+    study_id = fields.String(data_key="study", metadata={"id_field": True})
+    studyset_id = fields.String(data_key="studyset", load_only=True, metadata={"id_field": True})
     study_name = fields.Function(
         lambda aa: aa.studyset_study.study.name, dump_only=True
     )
@@ -401,9 +481,6 @@ class AnnotationAnalysisSchema(BaseDataSchema):
     publication = fields.Function(
         lambda aa: aa.studyset_study.study.publication, dump_only=True
     )
-
-    class Meta:
-        render_module = orjson
 
     @post_load
     def add_id(self, data, **kwargs):
@@ -428,12 +505,12 @@ class AnnotationSchema(BaseDataSchema):
     )
     annotation = fields.String(dump_only=True)
     annotation_csv = fields.String(dump_only=True)
-    source = fields.String(dump_only=True, metadata={"db_only": True}, allow_none=True)
+    source = fields.String(dump_only=True, allow_none=True)
     source_id = fields.String(
-        dump_only=True, metadata={"db_only": True}, allow_none=True
+        dump_only=True, allow_none=True
     )
     source_updated_at = fields.DateTime(
-        dump_only=True, metadata={"db_only": True}, allow_none=True
+        dump_only=True, allow_none=True
     )
 
     note_keys = fields.Dict()
@@ -444,7 +521,6 @@ class AnnotationSchema(BaseDataSchema):
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
-        render_module = orjson
 
     @pre_load
     def add_studyset_id(self, data, **kwargs):
@@ -480,51 +556,6 @@ class AnnotationSchema(BaseDataSchema):
         if isinstance(data.get("studyset_id"), str):
             data["studyset"] = {"id": data.pop("studyset_id")}
         return data
-
-
-class JSONLDBaseSchema(BaseSchema):
-    id_key = "@id"
-    # Serialization fields
-    context = fields.Constant(
-        {"@vocab": "http://neurostore.org/nimads/"}, data_key="@context", dump_only=True
-    )
-    _type = fields.Function(
-        lambda model: model.__class__.__name__, data_key="@type", dump_only=True
-    )
-
-    # De-serialization fields
-    id = fields.Method(None, "_extract_id", data_key=id_key, load_only=True)
-
-    def _extract_id(self, iri):
-        return iri.strip("/").split("/")[-1]
-
-    @post_dump(pass_original=True)
-    def process_jsonld(self, data, original, **kwargs):
-        if isinstance(original, (list, tuple)):
-            return data
-        method = request.args.get("process", "compact")
-        context = {"@context": {"@vocab": "http://neurostore.org/nimads/"}}
-        if method == "flatten":
-            return jsonld.flatten(data, context)
-        elif method == "expand":
-            return jsonld.expand(data)
-        else:
-            return jsonld.compact(data, context)
-
-
-class JSONLDPointSchema(PointSchema):
-    # serialization
-    analysis = fields.Function(lambda image: image.analysis.IRI, dump_only=True)
-
-
-class JSONLDImageSchema(ImageSchema):
-    # serialization
-    analysis = fields.Function(lambda image: image.analysis.IRI, dump_only=True)
-
-
-class JSONLSAnalysisSchema(AnalysisSchema):
-    # serialization
-    study = fields.Function(lambda analysis: analysis.study.IRI, dump_only=True)
 
 
 class BaseSnapshot(object):

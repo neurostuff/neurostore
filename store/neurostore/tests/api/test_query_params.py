@@ -18,7 +18,7 @@ def test_nested(auth_client, ingest_neurosynth, nested, resource_schema, session
     fields = [
         f
         for f in schema.fields
-        if isinstance(schema.fields[f], StringOrNested) and schema.fields[f].use_nested
+        if isinstance(schema.fields[f], StringOrNested)
     ]
     for field in fields:
         if nested == "true":
