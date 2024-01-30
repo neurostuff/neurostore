@@ -209,6 +209,7 @@ class PointSchema(BaseDataSchema):
     cluster_size = fields.Float(allow_none=True)
     subpeak = fields.Boolean(allow_none=True)
     order = fields.Integer()
+    coordinates = fields.List(fields.Float(), dump_only=True)
 
     # deserialization
     x = fields.Float(load_only=True)
@@ -216,8 +217,8 @@ class PointSchema(BaseDataSchema):
     z = fields.Float(load_only=True)
 
     class Meta:
-        additional = ("kind", "space", "coordinates", "image", "label_id")
-        allow_none = ("kind", "space", "coordinates", "image", "label_id")
+        additional = ("kind", "space", "image", "label_id")
+        allow_none = ("kind", "space", "image", "label_id")
 
     @pre_load
     def process_values(self, data, **kwargs):
@@ -225,6 +226,14 @@ class PointSchema(BaseDataSchema):
         if data.get("coordinates"):
             coords = [float(c) for c in data.pop("coordinates")]
             data["x"], data["y"], data["z"] = coords
+        return data
+
+    @pre_dump
+    def pre_dump_process(self, data, **kwargs):
+        if getattr(data, "coordinates", None) or data.get("coordinates"):
+            return data
+        if isinstance(data, dict):
+            data["coordinates"] = [data["x"], data["y"], data["z"]]
         return data
 
 

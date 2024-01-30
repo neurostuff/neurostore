@@ -529,13 +529,15 @@ class ListView(BaseView):
         args = parser.parse(self._user_args, request, location="query")
         source_id = args.get("source_id")
         source = args.get("source") or "neurostore"
+
+        unknown = self.__class__._schema.opts.unknown
+        data = parser.parse(
+            self.__class__._schema(exclude=("id",)), request, unknown=unknown
+        )
+
         if source_id:
-            data = self._load_from_source(source, source_id)
-        else:
-            unknown = self.__class__._schema.opts.unknown
-            data = parser.parse(
-                self.__class__._schema(exclude=("id",)), request, unknown=unknown
-            )
+            data = self._load_from_source(source, source_id, data)
+
         args["nested"] = bool(args.get("nested") or request.args.get("source_id"))
 
         with db.session.no_autoflush:

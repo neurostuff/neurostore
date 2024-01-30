@@ -1,6 +1,7 @@
 import pytest
 
 from ...models import Studyset, Study, User, Analysis
+from ...schemas import StudySchema
 
 
 def test_create_study_as_user_and_analysis_as_bot(auth_clients, session):
@@ -109,6 +110,34 @@ def test_clone_studies(auth_client, ingest_neurosynth, session):
     assert set([an["name"] for an in data2["analyses"]]) == set(
         [an.name for an in study_entry.analyses]
     )
+
+
+def test_clone_studies_with_data(auth_client, ingest_neurosynth, session):
+    study_entry = Study.query.first()
+    schema = StudySchema(context={"nested": True})
+    study_data = schema.dump(study_entry)
+    half_points = len(study_data["analyses"][0]["points"]) // 2
+
+    first_analysis_points = study_data["analyses"][0]["points"][0:half_points]
+    second_analysis_points = study_data["analyses"][0]["points"][half_points:]
+    first_analysis_points[0]["coordinates"] = [0, 0, 0]
+    second_analysis_points[0]["coordinates"] = [0, 0, 0]
+    study_data["analyses"][0]["points"] = first_analysis_points
+    study_data["analyses"].append(
+        {"name": "new analysis", "points": second_analysis_points}
+    )
+
+    resp = auth_client.post(
+        f"/api/studies/?source_id={study_entry.id}",
+        data=study_data,
+    )
+    data = resp.json()
+    assert data["name"] == study_entry.name
+    assert data["source_id"] == study_entry.id
+    assert data["source"] == "neurostore"
+    assert data["analyses"][0]["points"][0]["coordinates"] == [0, 0, 0]
+    assert data["analyses"][1]["points"][0]["coordinates"] == [0, 0, 0]
+    assert "new analysis" in [a["name"] for a in data["analyses"]]
 
 
 def test_private_studies(user_data, auth_clients, session):

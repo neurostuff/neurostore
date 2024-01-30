@@ -58,7 +58,7 @@ def test_info_base_study(auth_client, ingest_neurosynth, session):
     assert single_reg_resp.status_code == 200
     info_fields = ["has_coordinates", "has_images", "studysets"]
     for field in info_fields:
-        assert field in single_info_resp.json()['versions'][0]
+        assert field in single_info_resp.json()["versions"][0]
     assert "id" in single_info_resp.json()["versions"][0]
     assert isinstance(single_reg_resp.json()["versions"][0], str)
 
