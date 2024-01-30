@@ -53,7 +53,6 @@ LIST_NESTED_ARGS = {
     "nested": fields.Boolean(load_default=False),
 }
 
-
 # Individual resource views
 
 
@@ -191,9 +190,9 @@ class AnnotationsView(ObjectView, ListView):
         return data
 
     @classmethod
-    def _load_from_source(cls, source, source_id):
+    def _load_from_source(cls, source, source_id, data=None):
         if source == "neurostore":
-            return cls.load_from_neurostore(source_id)
+            return cls.load_from_neurostore(source_id, data=None)
 
     @classmethod
     def load_from_neurostore(cls, source_id):
@@ -418,16 +417,16 @@ class StudiesView(ObjectView, ListView):
         return super().serialize_records(records, args, exclude)
 
     @classmethod
-    def _load_from_source(cls, source, source_id):
+    def _load_from_source(cls, source, source_id, data=None):
         if source == "neurostore":
-            return cls.load_from_neurostore(source_id)
+            return cls.load_from_neurostore(source_id, data)
         elif source == "neurovault":
-            return cls.load_from_neurovault(source_id)
+            return cls.load_from_neurovault(source_id, data)
         elif source == "pubmed":
-            return cls.load_from_pubmed(source_id)
+            return cls.load_from_pubmed(source_id, data)
 
     @classmethod
-    def load_from_neurostore(cls, source_id):
+    def load_from_neurostore(cls, source_id, data=None):
         study = cls._model.query.filter_by(id=source_id).first_or_404()
         parent_source_id = study.source_id
         parent_source = study.source
@@ -437,15 +436,19 @@ class StudiesView(ObjectView, ListView):
             parent_source = parent.source
             parent_source_id = parent.source_id
 
-        context = {"clone": True, "nested": True}
-        schema = cls._schema(context=context)
-        dump_study = schema.dump(study)
-        data = schema.load(dump_study)
-        data["source"] = "neurostore"
-        data["source_id"] = source_id
-        data["source_updated_at"] = study.updated_at or study.created_at
-        data["base_study"] = {"id": study.base_study_id}
-        return data
+        update_schema = cls._schema(context={"nested": True})
+        clone_data = update_schema.load(update_schema.dump(study))
+        # update data with new source
+        clone_data.update(data)
+
+        context = {"nested": True, "clone": True}
+        return_schema = cls._schema(context=context)
+        clone_data = return_schema.load(return_schema.dump(clone_data))
+        clone_data["source"] = "neurostore"
+        clone_data["source_id"] = source_id
+        clone_data["source_updated_at"] = study.updated_at or study.created_at
+        clone_data["base_study"] = {"id": study.base_study_id}
+        return clone_data
 
     @classmethod
     def load_from_neurovault(cls, source_id):
