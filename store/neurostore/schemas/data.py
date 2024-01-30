@@ -77,6 +77,8 @@ class StringOrNested(fields.Nested):
                 if f_obj.metadata.get("info_field")
             ]
             schema.only = schema.set_class(info_fields)
+            # set exclude to an empty set
+            schema.exclude = schema.set_class()
         # have the changes take effect
         schema._init_fields()
 
@@ -333,11 +335,8 @@ class StudySchema(BaseDataSchema):
         "id",
         dump_only=True,
     )
-    has_coordinates = fields.Bool(dump_only=True)
-    has_images = fields.Bool(dump_only=True)
-    # studysets = fields.Nested(
-    #    "StudySetStudyInfoSchema", dump_only=True, metadata={"db_only": True}, many=True
-    # )
+    has_coordinates = fields.Bool(dump_only=True, metadata={"info_field": True})
+    has_images = fields.Bool(dump_only=True, metadata={"info_field": True})
     source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
 
     class Meta:
