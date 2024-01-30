@@ -1,6 +1,3 @@
-import sys
-from typing import Any, Mapping
-
 from marshmallow import (
     fields,
     Schema,
@@ -10,11 +7,8 @@ from marshmallow import (
     pre_load,
     EXCLUDE,
 )
-from marshmallow.exceptions import ValidationError
-from flask import request
 import orjson
 from marshmallow.decorators import post_load
-from pyld import jsonld
 import pandas as pd
 
 # context parameters
@@ -52,11 +46,6 @@ class ObjToString(fields.Field):
         return str(value.id)
 
     def _deserialize(self, value, attr, data, **kwargs):
-        if self.many:
-            value_instance = value[0] if len(value) > 0 else None
-        else:
-            value_instance = value
-
         if self.many:
             return [{"id": v} if isinstance(v, str) else v for v in value]
         return {"id": value} if isinstance(value, str) else value
@@ -124,63 +113,6 @@ class StringOrNested(fields.Nested):
         return schema.load(value, many=self.many)
 
 
-# class StringOrNested(fields.Nested):
-#     """Custom Field that serializes a nested object as either a string
-#     or a full object, depending on "nested" or "source" request argument"""
-
-#     def __init__(self, nested, **kwargs):
-#         super().__init__(nested, **kwargs)
-#         self.use_nested = kwargs.get("use_nested", True)
-
-#     def _serialize(self, value, attr, obj, **ser_kwargs):
-#         if isinstance(self.nested, str):
-#             self.nested = getattr(sys.modules[__name__], self.nested)
-#         if value is None:
-#             return None
-#         if self.use_nested and (self.context.get("nested") or self.context.get("copy")):
-#             context = self.context
-#             nested_schema = self.nested(context=context)
-#             return nested_schema.dump(value, many=self.many)
-#         elif self.context.get("info"):
-#             info_fields = [
-#                 "id",
-#                 "updated_at",
-#                 "created_at",
-#                 "source",
-#                 "user",
-#                 "username",
-#                 "studysets",
-#                 "has_coordinates",
-#                 "has_images",
-#             ]
-#             nested_schema = self.nested(
-#                 context=self.context,
-#                 only=info_fields,
-#             )
-#             return nested_schema.dump(value, many=self.many)
-#         else:
-#             return [v.id for v in value] if self.many else value.id
-
-#     def _deserialize(self, value, attr, data, **ser_kwargs):
-#         if isinstance(self.nested, str):
-#             self.nested = getattr(sys.modules[__name__], self.nested)
-
-#         if isinstance(value, list):
-#             if self.context.get("copy"):
-#                 return self.schema.load(
-#                     [v for v in value if not isinstance(v, str)], many=True
-#                 )
-#             return self.schema.load(
-#                 [{"id": v} if isinstance(v, str) else v for v in value], many=True
-#             )
-#         elif isinstance(value, str):
-#             if self.context.get("copy"):
-#                 return None
-#             return self.schema.load({"id": value})
-#         else:
-#             return self.schema.load(value)
-
-
 # https://github.com/marshmallow-code/marshmallow/issues/466#issuecomment-285342071
 class BaseSchemaOpts(SchemaOpts):
     def __init__(self, meta, *args, **kwargs):
@@ -213,36 +145,6 @@ class BaseSchema(Schema):
                 exclude += (f,)
         kwargs["exclude"] = exclude
         super().__init__(*args, **kwargs)
-
-    # def __init__(self, copy=None, *args, **kwargs):
-    #     empty_exclude = "exclude" in kwargs and (
-    #         kwargs["exclude"] == [] or kwargs["exclude"] == ()
-    #     )
-    #     exclude = list(kwargs.pop("exclude", []))
-    #     default_exclude = None
-    #     if getattr(self.Meta, "exclude", None) and empty_exclude:
-    #         default_exclude = self.opts.exclude
-    #         self.opts.exclude = set(exclude)
-    #     if copy is None and kwargs.get("context") and kwargs.get("context").get("copy"):
-    #         copy = kwargs.get("context").get("copy")
-
-    #     if kwargs.get("context"):
-    #         kwargs["context"]["copy"] = copy
-    #     else:
-    #         kwargs["context"] = {"copy": copy}
-    #     if copy and "id" not in (kwargs.get("only", []) or []):
-    #         exclude.extend(
-    #             [
-    #                 field
-    #                 for field, f_obj in self._declared_fields.items()
-    #                 if f_obj.metadata.get("db_only")
-    #             ]
-    #         )
-    #     super().__init__(*args, exclude=exclude, **kwargs)
-    #     # TODO: not good practice to change core attribute and change it back
-    #     # could lead to race conditions
-    #     if default_exclude:
-    #         self.opts.exclude = default_exclude
 
     OPTIONS_CLASS = BaseSchemaOpts
     # normal return key

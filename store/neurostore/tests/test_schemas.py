@@ -14,7 +14,6 @@ def test_clone_study(ingest_neurosynth):
     study_entry = Study.query.first()
 
     shallow_clone = StudySchema(context={"clone": True}).dump(study_entry)
-    deep_clone = StudySchema(context={"clone": True, "nested": True}).dump(study_entry)
 
     assert "id" not in shallow_clone
 

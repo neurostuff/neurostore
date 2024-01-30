@@ -1,7 +1,6 @@
 import string
 
 from flask import request
-from marshmallow import EXCLUDE
 from webargs.flaskparser import parser
 from webargs import fields
 import sqlalchemy.sql.expression as sae
