@@ -532,8 +532,12 @@ class ListView(BaseView):
         if source_id:
             data = self._load_from_source(source, source_id)
         else:
-            data = parser.parse(self.__class__._schema, request)
+            unknown = self.__class__._schema.opts.unknown
+            data = parser.parse(
+                self.__class__._schema(exclude=("id",)), request, unknown=unknown
+            )
         args["nested"] = bool(args.get("nested") or request.args.get("source_id"))
+
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
 

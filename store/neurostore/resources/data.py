@@ -1,7 +1,6 @@
 import string
 
 from flask import request
-from marshmallow import EXCLUDE
 from webargs.flaskparser import parser
 from webargs import fields
 import sqlalchemy.sql.expression as sae
@@ -207,14 +206,12 @@ class AnnotationsView(ObjectView, ListView):
             parent_source = parent.source
             parent_source_id = parent.source_id
 
-        schema = cls._schema(copy=True)
+        context = {
+            "clone": True,
+            "nested": True,
+        }
+        schema = cls._schema(context=context)
         tmp_data = schema.dump(annotation)
-        for note in tmp_data["notes"]:
-            note.pop("analysis_name")
-            note.pop("study_name")
-            note.pop("study_year")
-            note.pop("publication")
-            note.pop("authors")
         data = schema.load(tmp_data)
         data["source"] = "neurostore"
         data["source_id"] = source_id
@@ -265,12 +262,6 @@ class BaseStudiesView(ObjectView, ListView):
             q = q.filter(self._model.level == args.get("level"))
 
         return q
-
-    def serialize_records(self, records, args, exclude=tuple()):
-        if args.get("flat"):
-            exclude = ("versions",)
-
-        return super().serialize_records(records, args, exclude)
 
     def join_tables(self, q):
         "join relevant tables to speed up query"
@@ -382,8 +373,6 @@ class StudiesView(ObjectView, ListView):
         "pmid",
     )
 
-    # _default_exclude = ("has_coordinates", "has_images", "studysets")
-
     def view_search(self, q, args):
         # search studies for data_type
         if args.get("data_type"):
@@ -426,10 +415,6 @@ class StudiesView(ObjectView, ListView):
                 study.studysets = study.studysets.filter(
                     Studyset.user_id == args.get("studyset_owner")
                 ).all()
-        if args.get("flat"):
-            exclude += ("analyses",)
-
-        exclude += ("studysets", "has_coordinates", "has_images")
         return super().serialize_records(records, args, exclude)
 
     @classmethod
@@ -452,8 +437,10 @@ class StudiesView(ObjectView, ListView):
             parent_source = parent.source
             parent_source_id = parent.source_id
 
-        schema = cls._schema(copy=True)
-        data = schema.load(schema.dump(study), unknown=EXCLUDE)
+        context = {"clone": True, "nested": True}
+        schema = cls._schema(context=context)
+        dump_study = schema.dump(study)
+        data = schema.load(dump_study)
         data["source"] = "neurostore"
         data["source_id"] = source_id
         data["source_updated_at"] = study.updated_at or study.created_at
