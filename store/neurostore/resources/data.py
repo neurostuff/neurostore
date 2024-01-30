@@ -206,7 +206,7 @@ class AnnotationsView(ObjectView, ListView):
             parent = cls._model.query.filter_by(id=source_id).first_or_404()
             parent_source = parent.source
             parent_source_id = parent.source_id
-        
+
         context = {
             "clone": True,
             "nested": True,
@@ -456,10 +456,7 @@ class StudiesView(ObjectView, ListView):
             parent_source = parent.source
             parent_source_id = parent.source_id
 
-        context = {
-            "clone": True,
-            "nested": True
-        }
+        context = {"clone": True, "nested": True}
         schema = cls._schema(context=context)
         dump_study = schema.dump(study)
         data = schema.load(dump_study)

@@ -55,14 +55,15 @@ def test_create(auth_client, user_data, endpoint, model, schema, session):
         assert resp.status_code == 200
     sf = schema().fields
     # do not check keys if they are nested (difficult to generally check)
-    d_key_sf = {
-        (sf[k].data_key if sf[k].data_key else k): v for k, v in sf.items()
-    }
+    d_key_sf = {(sf[k].data_key if sf[k].data_key else k): v for k, v in sf.items()}
     for k, v in payload.items():
-        if not isinstance(
-            d_key_sf.get(k),
-            (StringOrNested, fields.Nested),
-        ) and k != "id":
+        if (
+            not isinstance(
+                d_key_sf.get(k),
+                (StringOrNested, fields.Nested),
+            )
+            and k != "id"
+        ):
             assert v == resp.json()[k]
 
 

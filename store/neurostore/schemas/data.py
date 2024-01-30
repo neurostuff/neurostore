@@ -23,6 +23,7 @@ import pandas as pd
 # flat: do not display any relationships
 # info: only display info fields
 
+
 class BooleanOrString(fields.Field):
     def __init__(self, *args, **kwargs):
         self.bool_field = fields.Boolean(*args, **kwargs)
@@ -44,7 +45,7 @@ class ObjToString(fields.Field):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.many = kwargs.get("many", False)
-    
+
     def _serialize(self, value, attr, obj, **kwargs):
         if self.many:
             return [v.id for v in value]
@@ -60,8 +61,10 @@ class ObjToString(fields.Field):
             return [{"id": v} if isinstance(v, str) else v for v in value]
         return {"id": value} if isinstance(value, str) else value
 
+
 class StringOrNested(fields.Nested):
     """Handle read/write only fields. Handle nested serialization/deserialization"""
+
     def __init__(self, nested, *args, **kwargs):
         super().__init__(nested, **kwargs)
         self.string_field = ObjToString(*args, **kwargs)
@@ -98,10 +101,10 @@ class StringOrNested(fields.Nested):
 
         if not value_instance:
             return value
-            
+
         if not self.context.get("nested") and not self.context.get("info"):
             return self.string_field._serialize(value, attr, obj, many=self.many)
-        
+
         schema = self._modify_schema()
         return schema.dump(value, many=self.many)
 
@@ -116,9 +119,10 @@ class StringOrNested(fields.Nested):
 
         if isinstance(value_instance, str):
             return self.string_field._deserialize(value, attr, data, many=self.many)
-       
+
         schema = self._modify_schema()
         return schema.load(value, many=self.many)
+
 
 # class StringOrNested(fields.Nested):
 #     """Custom Field that serializes a nested object as either a string
@@ -184,7 +188,7 @@ class BaseSchemaOpts(SchemaOpts):
         super().__init__(meta, *args, **kwargs)
         self.allow_none = getattr(meta, "allow_none", ())
         self.render_module = orjson
-        
+
 
 class BaseSchema(Schema):
     def __init__(self, *args, **kwargs):
@@ -209,7 +213,6 @@ class BaseSchema(Schema):
                 exclude += (f,)
         kwargs["exclude"] = exclude
         super().__init__(*args, **kwargs)
-
 
     # def __init__(self, copy=None, *args, **kwargs):
     #     empty_exclude = "exclude" in kwargs and (
@@ -243,7 +246,7 @@ class BaseSchema(Schema):
 
     OPTIONS_CLASS = BaseSchemaOpts
     # normal return key
-    
+
     created_at = fields.DateTime(dump_only=True, metadata={"info_field": True})
     updated_at = fields.DateTime(dump_only=True, metadata={"info_field": True})
 
@@ -265,7 +268,6 @@ class BaseDataSchema(BaseSchema):
 
 
 class ConditionSchema(BaseDataSchema):
-
     class Meta:
         additional = ("name", "description")
         allow_none = ("name", "description")
@@ -329,8 +331,8 @@ class AnalysisConditionSchema(BaseDataSchema):
 
 
 class StudysetStudySchema(BaseDataSchema):
-    studyset_id = fields.String() # primary key needed (no id_field)
-    study_id = fields.String() # primary key needed (no id_field)
+    studyset_id = fields.String()  # primary key needed (no id_field)
+    study_id = fields.String()  # primary key needed (no id_field)
 
 
 class AnalysisSchema(BaseDataSchema):
@@ -413,25 +415,28 @@ class StudySchema(BaseDataSchema):
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
     analyses = StringOrNested(AnalysisSchema, many=True)
-    source = fields.String(dump_only=True, metadata={"info_field": True}, allow_none=True)
-    source_id = fields.String(
-        dump_only=True, allow_none=True
+    source = fields.String(
+        dump_only=True, metadata={"info_field": True}, allow_none=True
     )
+    source_id = fields.String(dump_only=True, allow_none=True)
     studysets = fields.Pluck(
-        "StudysetSchema", "id",
-        many=True, dump_only=True,
-        metadata={"id_field": True, "info_field": True})
+        "StudysetSchema",
+        "id",
+        many=True,
+        dump_only=True,
+        metadata={"id_field": True, "info_field": True},
+    )
     base_study = fields.Pluck(
-        "BaseStudySchema", "id", dump_only=True,
+        "BaseStudySchema",
+        "id",
+        dump_only=True,
     )
     has_coordinates = fields.Bool(dump_only=True)
     has_images = fields.Bool(dump_only=True)
     # studysets = fields.Nested(
     #    "StudySetStudyInfoSchema", dump_only=True, metadata={"db_only": True}, many=True
     # )
-    source_updated_at = fields.DateTime(
-        dump_only=True, allow_none=True
-    )
+    source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
 
     class Meta:
         # by default exclude this
@@ -473,9 +478,13 @@ class StudysetSchema(BaseDataSchema):
 class AnnotationAnalysisSchema(BaseDataSchema):
     note = fields.Dict()
     annotation = StringOrNested("AnnotationSchema", use_nested=False, load_only=True)
-    analysis_id = fields.String(data_key="analysis") # not marked with id_field because it's a primary relationship
-    study_id = fields.String(data_key="study") # primary key needed for StudysetStudy
-    studyset_id = fields.String(data_key="studyset", load_only=True) # primary key needed for StudysetStudy
+    analysis_id = fields.String(
+        data_key="analysis"
+    )  # not marked with id_field because it's a primary relationship
+    study_id = fields.String(data_key="study")  # primary key needed for StudysetStudy
+    studyset_id = fields.String(
+        data_key="studyset", load_only=True
+    )  # primary key needed for StudysetStudy
     study_name = fields.Function(
         lambda aa: aa.studyset_study.study.name, dump_only=True
     )
@@ -515,12 +524,8 @@ class AnnotationSchema(BaseDataSchema):
     annotation = fields.String(dump_only=True)
     annotation_csv = fields.String(dump_only=True)
     source = fields.String(dump_only=True, allow_none=True)
-    source_id = fields.String(
-        dump_only=True, allow_none=True
-    )
-    source_updated_at = fields.DateTime(
-        dump_only=True, allow_none=True
-    )
+    source_id = fields.String(dump_only=True, allow_none=True)
+    source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
 
     note_keys = fields.Dict()
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
