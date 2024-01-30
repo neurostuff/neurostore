@@ -192,10 +192,10 @@ class AnnotationsView(ObjectView, ListView):
     @classmethod
     def _load_from_source(cls, source, source_id, data=None):
         if source == "neurostore":
-            return cls.load_from_neurostore(source_id, data=None)
+            return cls.load_from_neurostore(source_id, data)
 
     @classmethod
-    def load_from_neurostore(cls, source_id):
+    def load_from_neurostore(cls, source_id, data=None):
         annotation = cls._model.query.filter_by(id=source_id).first_or_404()
         parent_source_id = annotation.source_id
         parent_source = annotation.source
@@ -451,11 +451,11 @@ class StudiesView(ObjectView, ListView):
         return clone_data
 
     @classmethod
-    def load_from_neurovault(cls, source_id):
+    def load_from_neurovault(cls, source_id, data=None):
         pass
 
     @classmethod
-    def load_from_pubmed(cls, source_id):
+    def load_from_pubmed(cls, source_id, data=None):
         pass
 
     def pre_nested_record_update(record):
