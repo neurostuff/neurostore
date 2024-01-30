@@ -212,12 +212,6 @@ class AnnotationsView(ObjectView, ListView):
         }
         schema = cls._schema(context=context)
         tmp_data = schema.dump(annotation)
-        # for note in tmp_data["notes"]:
-        #     note.pop("analysis_name")
-        #     note.pop("study_name")
-        #     note.pop("study_year")
-        #     note.pop("publication")
-        #     note.pop("authors")
         data = schema.load(tmp_data)
         data["source"] = "neurostore"
         data["source_id"] = source_id
@@ -268,12 +262,6 @@ class BaseStudiesView(ObjectView, ListView):
             q = q.filter(self._model.level == args.get("level"))
 
         return q
-
-    def serialize_records(self, records, args, exclude=tuple()):
-        # if args.get("flat"):
-        #     exclude = ("versions",)
-
-        return super().serialize_records(records, args, exclude)
 
     def join_tables(self, q):
         "join relevant tables to speed up query"
@@ -429,10 +417,6 @@ class StudiesView(ObjectView, ListView):
                 study.studysets = study.studysets.filter(
                     Studyset.user_id == args.get("studyset_owner")
                 ).all()
-        # if args.get("flat"):
-        #     exclude += ("analyses",)
-
-        # exclude += ("studysets", "has_coordinates", "has_images")
         return super().serialize_records(records, args, exclude)
 
     @classmethod

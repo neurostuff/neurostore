@@ -533,7 +533,6 @@ class ListView(BaseView):
             data = self._load_from_source(source, source_id)
         else:
             unknown = self.__class__._schema.opts.unknown
-            # context = {"exclude": {"deep": False, "items": ("id",)}}
             data = parser.parse(
                 self.__class__._schema(exclude=("id",)), request, unknown=unknown
             )
