@@ -132,7 +132,9 @@ class BaseSchema(Schema):
     created_at = fields.DateTime()
     updated_at = fields.DateTime(allow_none=True)
     user_id = fields.String(data_key="user")
-    username = fields.String(attribute="user.name", dump_only=True, metadata={"info_field": True})
+    username = fields.String(
+        attribute="user.name", dump_only=True, metadata={"info_field": True}
+    )
 
 
 class ConditionSchema(Schema):
