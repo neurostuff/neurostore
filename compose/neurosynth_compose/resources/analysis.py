@@ -224,7 +224,7 @@ class ObjectView(BaseView):
         record = self._model.query.filter_by(id=id).first_or_404()
         args = parser.parse(self._user_args, request, location="query")
 
-        return self.__class__._schema(context={"nested": args.get("nested")}).dump(
+        return self.__class__._schema(context=args).dump(
             record
         )
 
@@ -279,6 +279,7 @@ LIST_USER_ARGS = {
     "dataset_id": fields.String(missing=None),
     "export": fields.Boolean(missing=False),
     "data_type": fields.String(missing=None),
+    "info": fields.Boolean(missing=False),
 }
 
 
@@ -352,10 +353,8 @@ class ListView(BaseView):
         records = q.paginate(
             page=args["page"], per_page=args["page_size"], error_out=False
         ).items
-        # check if results should be nested
-        nested = True if args.get("nested") else False
         content = self.__class__._schema(
-            only=self._only, many=True, context={"nested": nested}
+            only=self._only, many=True, context=args,
         ).dump(records)
         response = {
             "metadata": {},

@@ -67,8 +67,21 @@ class StringOrNested(fields.Nested):
             if self.metadata.get("nested", None) is False
             else self.context.get("nested")
         )
+        info = self.context.get("info")
+        if info:
+            schema = self.schema
+            info_fields = [
+                field
+                for field, f_obj in schema._declared_fields.items()
+                if f_obj.metadata.get("info_field")
+            ]
+            schema.only = schema.set_class(info_fields)
+            # set exclude to an empty set
+            schema.exclude = schema.set_class()
+            schema._init_fields()
+
         nested_attr = self.metadata.get("pluck")
-        if nested:
+        if nested or info:
             many = self.schema.many or self.many
             nested_obj = getattr(obj, self.data_key or self.name)
             return self.schema.dump(nested_obj, many=many)
@@ -115,11 +128,11 @@ class StringOrNested(fields.Nested):
 
 
 class BaseSchema(Schema):
-    id = PGSQLString()
+    id = PGSQLString(metadata={"info_field": True})
     created_at = fields.DateTime()
     updated_at = fields.DateTime(allow_none=True)
     user_id = fields.String(data_key="user")
-    username = fields.String(attribute="user.name", dump_only=True)
+    username = fields.String(attribute="user.name", dump_only=True, metadata={"info_field": True})
 
 
 class ConditionSchema(Schema):
@@ -284,8 +297,8 @@ class MetaAnalysisResultSchema(BaseSchema):
 
 
 class MetaAnalysisSchema(BaseSchema):
-    name = fields.String(allow_none=True)
-    description = fields.String(allow_none=True)
+    name = fields.String(allow_none=True, metadata={"info_field": True})
+    description = fields.String(allow_none=True, metadata={"info_field": True})
     provenance = fields.Dict(allow_none=True)
     specification_id = StringOrNested(SpecificationSchema, data_key="specification")
     neurostore_analysis = fields.Nested("NeurostoreAnalysisSchema", dump_only=True)
@@ -324,6 +337,8 @@ class MetaAnalysisSchema(BaseSchema):
 
     @post_dump
     def create_neurostore_url(self, data, **kwargs):
+        if self.context.get("info"):
+            return data
         if data.get("neurostore_analysis", None) and data["neurostore_analysis"].get(
             "neurostore_id", None
         ):
