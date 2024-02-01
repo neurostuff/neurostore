@@ -19,6 +19,7 @@ from ..models import (
 )
 from auth0.v3.authentication import GetToken
 import shortuuid
+import vcr
 
 import logging
 
@@ -336,8 +337,9 @@ def ingest_neurosynth(session):
 
 
 @pytest.fixture(scope="function")
+@vcr.use_cassette('cassettes/ingest_neurovault.yml')
 def ingest_neurovault(session):
-    return ingest.ingest_neurovault(limit=5)
+    return ingest.ingest_neurovault(limit=5, max_images=50)
 
 
 @pytest.fixture(scope="function")
