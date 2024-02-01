@@ -337,7 +337,7 @@ class StudySchema(BaseDataSchema):
         "id",
         many=True,
         dump_only=True,
-        metadata={"id_field": True, "info_field": True},
+        metadata={"id_field": True},
     )
     base_study = fields.Pluck(
         "BaseStudySchema",
