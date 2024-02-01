@@ -8,6 +8,7 @@ import useGetWindowHeight from './useGetWindowHeight';
 import useCreateAlgorithmSpecification from './metaAnalyses/useCreateAlgorithmSpecification';
 import useGetMetaAnalysesByIds from './metaAnalyses/useGetMetaAnalysesByIds';
 import useGetMetaAnalysisById from './metaAnalyses/useGetMetaAnalysisById';
+import useGetMetaAnalysesPublic from './metaAnalyses/useGetMetaAnalysesPublic';
 import useGetAnnotationsByStudysetId from './analyses/useGetAnnotationsByStudysetId';
 import useCreatePoint from './analyses/useCreatePoint';
 import useUpdateStudy from './studies/useUpdateStudy';
@@ -48,6 +49,7 @@ export {
     useCreateAlgorithmSpecification,
     useGetMetaAnalysesByIds,
     useGetMetaAnalysisById,
+    useGetMetaAnalysesPublic,
     // STUDYSETS
     useGetStudysets,
     useGetStudysetById,
