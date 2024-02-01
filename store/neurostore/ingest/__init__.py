@@ -141,7 +141,9 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
                 [
                     add_collection(c)
                     for c in data["results"]
-                    if c["DOI"] is not None and c["number_of_images"] > 0 and (max_images is None or c["number_of_images"] < max_images)
+                    if c["DOI"] is not None
+                    and c["number_of_images"] > 0
+                    and (max_images is None or c["number_of_images"] < max_images)
                 ],
             )
         )

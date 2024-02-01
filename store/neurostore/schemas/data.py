@@ -167,7 +167,10 @@ class BaseDataSchema(BaseSchema):
         attribute="user_id", dump_only=True, metadata={"info_field": True}
     )
     username = fields.String(
-        attribute="user.name", dump_only=True, metadata={"info_field": True}, default=None,
+        attribute="user.name",
+        dump_only=True,
+        metadata={"info_field": True},
+        default=None,
     )
 
 

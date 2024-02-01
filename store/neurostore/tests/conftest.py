@@ -337,7 +337,7 @@ def ingest_neurosynth(session):
 
 
 @pytest.fixture(scope="function")
-@vcr.use_cassette('cassettes/ingest_neurovault.yml')
+@vcr.use_cassette("cassettes/ingest_neurovault.yml")
 def ingest_neurovault(session):
     return ingest.ingest_neurovault(limit=5, max_images=50)
 
