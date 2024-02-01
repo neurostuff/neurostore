@@ -66,6 +66,7 @@ export type ProjectStoreActions = {
     updateProjectName: (name: string) => void;
     updateProjectDescription: (description: string) => void;
     initProjectStore: (project: INeurosynthProjectReturn | undefined) => void;
+    updateProjectMetaAnalyses: (meta_analyses: string[]) => void;
     updateProjectMetadata: (metadata: Partial<ProjectStoreMetadata>) => void;
     clearProjectStore: () => void;
     initCuration: (cols: string[], isPrisma: boolean) => void;
@@ -196,6 +197,12 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                 },
                 updated_at: res.data.updated_at,
                 created_at: res.data.created_at,
+            }));
+        },
+        updateProjectMetaAnalyses: (meta_analyses: string[]) => {
+            set((state) => ({
+                ...state,
+                meta_analyses: meta_analyses,
             }));
         },
         updateProjectInDBDebounced: () => {
@@ -881,6 +888,8 @@ export const useProjectExtractionSetGivenStudyStatusesAsComplete = () =>
 // metaAnalysisAlgorithm updater hooks
 export const useAllowEditMetaAnalyses = () =>
     useProjectStore((state) => state.allowEditMetaAnalyses);
+export const useUpdateProjectMetaAnalyses = () =>
+    useProjectStore((state) => state.updateProjectMetaAnalyses);
 
 // metaAnalysisAlgorithm retrieval hooks
 export const useProjectMetaAnalysisCanEdit = () =>
