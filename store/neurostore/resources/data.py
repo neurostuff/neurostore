@@ -262,10 +262,11 @@ class BaseStudiesView(ObjectView, ListView):
 
         return q
 
-    def join_tables(self, q):
+    def join_tables(self, q, args):
         "join relevant tables to speed up query"
-        q = q.options(joinedload("versions"))
-        return super().join_tables(q)
+        if not args.get("flat"):
+            q = q.options(joinedload("versions"))
+        return super().join_tables(q, args)
 
     def post(self):
         from .base import clear_cache
@@ -402,11 +403,12 @@ class StudiesView(ObjectView, ListView):
             )
         return q
 
-    def join_tables(self, q):
+    def join_tables(self, q, args):
         "join relevant tables to speed up query"
-        q = q.options(joinedload("base_study"))
-        q = q.options(joinedload("analyses"))
-        return super().join_tables(q)
+        if not args.get("flat"):
+            q = q.options(joinedload("base_study"))
+            q = q.options(joinedload("analyses"))
+        return super().join_tables(q, args)
 
     def serialize_records(self, records, args, exclude=tuple()):
         if args.get("studyset_owner"):

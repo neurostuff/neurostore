@@ -1,5 +1,6 @@
 """Test Base Study Endpoint"""
 from neurostore.models import BaseStudy, Analysis
+from neurostore.schemas import StudySchema
 
 
 def test_post_list_of_studies(auth_client, ingest_neuroquery):
@@ -56,10 +57,18 @@ def test_info_base_study(auth_client, ingest_neurosynth, session):
 
     assert single_info_resp.status_code == 200
     assert single_reg_resp.status_code == 200
-    info_fields = ["has_coordinates", "has_images", "studysets"]
-    for field in info_fields:
-        assert field in single_info_resp.json()["versions"][0]
-    assert "id" in single_info_resp.json()["versions"][0]
+
+    info_fields = [
+        f
+        for f, v in StudySchema._declared_fields.items()
+        if v.metadata.get("info_field")
+    ]
+
+    study = single_info_resp.json()["versions"][0]
+
+    for f in info_fields:
+        assert f in study
+
     assert isinstance(single_reg_resp.json()["versions"][0], str)
 
 

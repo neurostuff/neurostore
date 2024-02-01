@@ -167,7 +167,7 @@ class BaseDataSchema(BaseSchema):
         attribute="user_id", dump_only=True, metadata={"info_field": True}
     )
     username = fields.String(
-        attribute="user.name", dump_only=True, metadata={"info_field": True}
+        attribute="user.name", dump_only=True, metadata={"info_field": True}, default=None,
     )
 
 
@@ -337,15 +337,15 @@ class StudySchema(BaseDataSchema):
         "id",
         many=True,
         dump_only=True,
-        metadata={"id_field": True, "info_field": True},
+        metadata={"id_field": True},
     )
     base_study = fields.Pluck(
         "BaseStudySchema",
         "id",
         dump_only=True,
     )
-    has_coordinates = fields.Bool(dump_only=True, metadata={"info_field": True})
-    has_images = fields.Bool(dump_only=True, metadata={"info_field": True})
+    has_coordinates = fields.Bool(dump_only=True)
+    has_images = fields.Bool(dump_only=True)
     source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
 
     class Meta:
