@@ -2,25 +2,12 @@ import { Box, TableCell, TableRow, Typography } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import { useGetMetaAnalysesByIds } from 'hooks';
-import { useProjectMetaAnalyses } from 'pages/Projects/ProjectPage/ProjectStore';
-import { MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
+import { useGetMetaAnalysesPublic } from 'hooks';
 import { useHistory } from 'react-router-dom';
 
 const MetaAnalysesPage: React.FC = (props) => {
     const history = useHistory();
-    const projectMetaAnalyses = useProjectMetaAnalyses() || [];
-    let metaAnalysisIds: string[] = [];
-    if (projectMetaAnalyses.length > 0) {
-        if (typeof projectMetaAnalyses[0] === 'string') {
-            metaAnalysisIds = projectMetaAnalyses as string[];
-        } else {
-            metaAnalysisIds = (projectMetaAnalyses as MetaAnalysisReturn[])
-                .map((metaAnalysis) => metaAnalysis.id)
-                .filter((id): id is string => id !== undefined);
-        }
-    }
-    const { data, isLoading, isError } = useGetMetaAnalysesByIds(metaAnalysisIds);
+    const { data, isLoading, isError } = useGetMetaAnalysesPublic();
 
     return (
         <>
