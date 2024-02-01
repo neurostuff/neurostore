@@ -28,4 +28,6 @@ wrapt~=1.12
 openapi-spec-validator~=0.3
 scipy~=1.9
 pytest~=7.1
+vcrpy~=6.0
+pytest-recording~=0.13.1
 orjson~=3.8

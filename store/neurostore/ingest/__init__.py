@@ -29,7 +29,7 @@ from neurostore.models import (
 from neurostore.models.data import StudysetStudy, _check_type
 
 
-def ingest_neurovault(verbose=False, limit=20, overwrite=False):
+def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None):
     # Store existing studies for quick lookup
     all_studies = {s.doi: s for s in Study.query.filter_by(source="neurovault").all()}
 
@@ -141,7 +141,9 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False):
                 [
                     add_collection(c)
                     for c in data["results"]
-                    if c["DOI"] is not None and c["number_of_images"]
+                    if c["DOI"] is not None
+                    and c["number_of_images"] > 0
+                    and (max_images is None or c["number_of_images"] < max_images)
                 ],
             )
         )
