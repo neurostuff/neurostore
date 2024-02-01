@@ -2,10 +2,10 @@ import { Box, TextField } from '@mui/material';
 import NavigationButtons, {
     ENavigationButton,
 } from 'components/Buttons/NavigationButtons/NavigationButtons';
-import { useGetMetaAnalysesByProjectId } from 'hooks';
-import { useProjectName } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useGetMetaAnalysesByIds } from 'hooks';
+import { useProjectName, useProjectMetaAnalyses } from 'pages/Projects/ProjectPage/ProjectStore';
+import { MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
 import { ChangeEvent, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 
 const CreateMetaAnalysisSpecificationDetailsStep: React.FC<{
     details: { name: string; description: string };
@@ -15,8 +15,18 @@ const CreateMetaAnalysisSpecificationDetailsStep: React.FC<{
     onUpdateDetails: (details: { name: string; description: string }) => void;
     onNavigate: (button: ENavigationButton) => void;
 }> = (props) => {
-    const { projectId } = useParams<{ projectId: string | undefined }>();
-    const { data } = useGetMetaAnalysesByProjectId(projectId);
+    const projectMetaAnalyses = useProjectMetaAnalyses() || [];
+    let metaAnalysisIds: string[] = [];
+    if (projectMetaAnalyses.length > 0) {
+        if (typeof projectMetaAnalyses[0] === 'string') {
+            metaAnalysisIds = projectMetaAnalyses as string[];
+        } else {
+            metaAnalysisIds = (projectMetaAnalyses as MetaAnalysisReturn[])
+                .map((metaAnalysis) => metaAnalysis.id)
+                .filter((id): id is string => id !== undefined);
+        }
+    }
+    const { data } = useGetMetaAnalysesByIds(metaAnalysisIds);
     const { details, selectionKey, algorithmName, correctorName, onUpdateDetails, onNavigate } =
         props;
     const projectName = useProjectName();

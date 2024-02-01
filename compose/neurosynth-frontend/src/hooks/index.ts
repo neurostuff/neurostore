@@ -6,7 +6,7 @@ import useGetTour from './useGetTour';
 import useGetWindowHeight from './useGetWindowHeight';
 
 import useCreateAlgorithmSpecification from './metaAnalyses/useCreateAlgorithmSpecification';
-import useGetMetaAnalysesByProjectId from './metaAnalyses/useGetMetaAnalysesByProjectId';
+import useGetMetaAnalysesByIds from './metaAnalyses/useGetMetaAnalysesByIds';
 import useGetMetaAnalysisById from './metaAnalyses/useGetMetaAnalysisById';
 import useGetAnnotationsByStudysetId from './analyses/useGetAnnotationsByStudysetId';
 import useCreatePoint from './analyses/useCreatePoint';
@@ -46,7 +46,7 @@ export {
     useCreateStudy,
     // META-ANALYSES
     useCreateAlgorithmSpecification,
-    useGetMetaAnalysesByProjectId,
+    useGetMetaAnalysesByIds,
     useGetMetaAnalysisById,
     // STUDYSETS
     useGetStudysets,

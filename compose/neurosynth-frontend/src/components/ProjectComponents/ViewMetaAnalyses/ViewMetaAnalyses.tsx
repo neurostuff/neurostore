@@ -2,18 +2,31 @@ import { Add } from '@mui/icons-material';
 import { Box, Button, Typography } from '@mui/material';
 import CreateMetaAnalysisSpecificationDialogBase from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationDialogBase';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useGetMetaAnalysesByProjectId, useGuard } from 'hooks';
+import { useGetMetaAnalysesByIds, useGuard } from 'hooks';
 import {
     useProjectId,
+    useProjectMetaAnalyses,
     useProjectMetaAnalysisCanEdit,
 } from 'pages/Projects/ProjectPage/ProjectStore';
+import { MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ViewMetaAnalysis from './ViewMetaAnalysis';
 
 const ViewMetaAnalyses: React.FC = () => {
     const { projectId }: { projectId: string } = useParams();
-    const { data, isLoading, isError } = useGetMetaAnalysesByProjectId(projectId);
+    const projectMetaAnalyses = useProjectMetaAnalyses() || [];
+    let metaAnalysisIds: string[] = [];
+    if (projectMetaAnalyses.length > 0) {
+        if (typeof projectMetaAnalyses[0] === 'string') {
+            metaAnalysisIds = projectMetaAnalyses as string[];
+        } else {
+            metaAnalysisIds = (projectMetaAnalyses as MetaAnalysisReturn[])
+                .map((metaAnalysis) => metaAnalysis.id)
+                .filter((id): id is string => id !== undefined);
+        }
+    }
+    const { data, isLoading, isError } = useGetMetaAnalysesByIds(metaAnalysisIds);
     const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
     const projectIdFromProject = useProjectId();
     const [createMetaAnalysisDialogIsOpen, setCreateMetaAnalysisDialogIsOpen] = useState(false);
