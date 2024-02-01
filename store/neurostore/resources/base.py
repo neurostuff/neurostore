@@ -433,7 +433,7 @@ class ListView(BaseView):
     def view_search(self, q, args):
         return q
 
-    def join_tables(self, q):
+    def join_tables(self, q, args):
         if self._model is User:
             return q
         return q.options(joinedload("user"))
@@ -504,8 +504,7 @@ class ListView(BaseView):
         q = q.order_by(getattr(attr, desc)())
 
         # join the relevant tables for output
-        if not args.get("flat"):
-            q = self.join_tables(q)
+        q = self.join_tables(q, args)
 
         pagination_query = q.paginate(
             page=args["page"],
