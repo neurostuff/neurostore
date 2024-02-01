@@ -344,8 +344,8 @@ class StudySchema(BaseDataSchema):
         "id",
         dump_only=True,
     )
-    has_coordinates = fields.Bool(dump_only=True, metadata={"info_field": True})
-    has_images = fields.Bool(dump_only=True, metadata={"info_field": True})
+    has_coordinates = fields.Bool(dump_only=True)
+    has_images = fields.Bool(dump_only=True)
     source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
 
     class Meta:
