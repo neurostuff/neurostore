@@ -278,6 +278,7 @@ LIST_USER_ARGS = {
     "export": fields.Boolean(missing=False),
     "data_type": fields.String(missing=None),
     "info": fields.Boolean(missing=False),
+    "ids": fields.List(fields.String(), missing=None),
 }
 
 
@@ -304,6 +305,8 @@ class ListView(BaseView):
         # Search
         s = args["search"]
 
+        if args.get("ids"):
+            q = q.filter(m.id.in_(args.get("ids")))
         # query items that are owned by a user_id
         if args.get("user_id"):
             q = q.filter(m.user_id == args.get("user_id"))
