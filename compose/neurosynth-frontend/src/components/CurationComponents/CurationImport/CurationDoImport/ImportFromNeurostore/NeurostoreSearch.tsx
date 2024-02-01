@@ -42,7 +42,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
     });
 
     const { data, isLoading, isError, isFetching } = useGetDebouncedBaseStudies(
-        { ...searchCriteria, flat: true },
+        { ...searchCriteria, flat: true, info: false },
         !authenticationIsLoading
     );
 
@@ -97,6 +97,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
                 ...searchCriteria,
                 pageOfResults: 1,
                 pageSize: 29999,
+                info: false,
             });
             const dataResults = allDataForSearch?.data?.results || [];
             if (dataResults.length !== studyData?.metadata?.total_count)
