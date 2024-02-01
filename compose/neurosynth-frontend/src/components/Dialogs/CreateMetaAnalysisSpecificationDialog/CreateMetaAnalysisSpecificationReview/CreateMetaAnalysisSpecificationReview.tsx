@@ -14,6 +14,8 @@ import {
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectId,
+    useProjectMetaAnalyses,
+    useUpdateProjectMetaAnalyses,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useMemo } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -43,6 +45,9 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
     const { data: annotations } = useGetAnnotationById(annotationId);
     const { createMetaAnalysis, isLoading, isError } = useCreateAlgorithmSpecification();
     const { enqueueSnackbar } = useSnackbar();
+    const projectMetaAnalyses = useProjectMetaAnalyses() || [];
+    const updateProjectMetaAnalyses = useUpdateProjectMetaAnalyses();
+
     // TODO: implement studyset snapshot
     // const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -74,9 +79,18 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
         if (!metaAnalysis.data.specification || !metaAnalysis.data.id)
             throw new Error('no specification ID found when creating a meta-analysis');
 
+        // Ensure that metaAnalysis.data.id is a string
+        if (typeof metaAnalysis.data.id !== 'string') {
+            throw new Error('metaAnalysis.data.id must be a string');
+        }
+        const updatedMetaAnalyses = [...projectMetaAnalyses, metaAnalysis.data.id] as string[];
+        // Update the project meta analyses
+        updateProjectMetaAnalyses(updatedMetaAnalyses);
+
         enqueueSnackbar('created meta analysis specification successfully', {
             variant: 'success',
         });
+
         history.push(`/projects/${projectId}/meta-analyses/${metaAnalysis.data.id}`);
     };
 
