@@ -1,11 +1,6 @@
 import { Box } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
-import {
-    AnalysisReturn,
-    ConditionRequest,
-    PointRequest,
-    StudyRequest,
-} from 'neurostore-typescript-sdk';
+import { AnalysisReturn, StudyRequest } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import {
     useProjectExtractionAnnotationId,
@@ -19,7 +14,6 @@ import {
     useCreateStudy,
     useGetStudysetById,
     useUpdateAnnotationById,
-    useUpdateStudy,
     useUpdateStudyset,
 } from 'hooks';
 import EditStudyPageStyles from 'pages/Studies/EditStudyPage/EditStudyPage.styles';
@@ -77,7 +71,6 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
     const { data: studyset } = useGetStudysetById(studysetId || undefined, false);
     const { mutateAsync: updateStudyset } = useUpdateStudyset();
     const { mutateAsync: createStudy } = useCreateStudy();
-    const { mutateAsync: updateStudy } = useUpdateStudy();
     const { mutateAsync: updateAnnotation } = useUpdateAnnotationById(annotationId);
 
     const [isCloning, setIsCloning] = useState(false);
@@ -163,21 +156,7 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
             publication: storeStudy.publication,
             authors: storeStudy.authors,
             year: storeStudy.year,
-            analyses: storeAnalysesToStudyAnalyses(storeStudy.analyses).map((analysis) => {
-                const scrubbedAnalysis = { ...analysis };
-                ((scrubbedAnalysis.points || []) as PointRequest[]).forEach((point) => {
-                    delete point.id;
-                    delete point.analysis;
-                });
-                ((scrubbedAnalysis.conditions || []) as ConditionRequest[]).forEach((condition) => {
-                    delete condition.id;
-                });
-
-                delete scrubbedAnalysis.id;
-                delete scrubbedAnalysis.study;
-
-                return scrubbedAnalysis;
-            }),
+            analyses: storeAnalysesToStudyAnalyses(storeStudy.analyses),
         };
 
         return updatedStudy;
@@ -202,18 +181,11 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
             if (currentStudyBeingEditedIndex < 0) throw new Error('study not found in studyset');
 
             // 1. clone the study
-            const clonedStudy = (await createStudy(storeStudy.id)).data;
+            const clonedStudy = (
+                await createStudy({ sourceId: storeStudy.id, data: getNewScrubbedStudyFromStore() })
+            ).data;
             const clonedStudyId = clonedStudy.id;
             if (!clonedStudyId) throw new Error('study not cloned correctly');
-
-            // 2. update the clone with our latest updates
-            await updateStudy({
-                studyId: clonedStudyId,
-                study: {
-                    ...getNewScrubbedStudyFromStore(),
-                    id: clonedStudyId,
-                },
-            });
 
             const updatedClone = (
                 await API.NeurostoreServices.StudiesService.studiesIdGet(clonedStudyId, true)
