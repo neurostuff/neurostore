@@ -1,5 +1,5 @@
 import { AxiosError, AxiosResponse } from 'axios';
-import { StudyReturn } from 'neurostore-typescript-sdk';
+import { StudyReturn, StudyRequest } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import { useMutation, useQueryClient } from 'react-query';
 import API from 'utils/api';
@@ -7,9 +7,14 @@ import API from 'utils/api';
 const useCreateStudy = () => {
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
-    return useMutation<AxiosResponse<StudyReturn>, AxiosError, string, unknown>(
-        (studyId) =>
-            API.NeurostoreServices.StudiesService.studiesPost(undefined, studyId, undefined),
+    return useMutation<
+        AxiosResponse<StudyReturn>,
+        AxiosError,
+        { sourceId: string; data: StudyRequest },
+        unknown
+    >(
+        ({ sourceId, data }) =>
+            API.NeurostoreServices.StudiesService.studiesPost(undefined, sourceId, data),
         {
             onSuccess: () => {
                 queryClient.invalidateQueries('studies');
