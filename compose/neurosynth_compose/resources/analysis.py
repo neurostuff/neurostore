@@ -62,11 +62,10 @@ def create_user():
 
     try:
         profile_info = Users(
-        current_app.config["AUTH0_BASE_URL"].removeprefix("https://")
-    ).userinfo(access_token=token)
+            current_app.config["AUTH0_BASE_URL"].removeprefix("https://")
+        ).userinfo(access_token=token)
     except Auth0Error:
         profile_info = {}
-    
 
     # user signed up with auth0, but has not made any queries yet...
     # should have endpoint to "create user" after sign on with auth0
@@ -74,9 +73,7 @@ def create_user():
     if "@" in name:
         name = profile_info.get("nickname", "Unknown")
 
-    current_user = User(
-        external_id=connexion.context["user"], name=name
-    )
+    current_user = User(external_id=connexion.context["user"], name=name)
 
     return current_user
 
