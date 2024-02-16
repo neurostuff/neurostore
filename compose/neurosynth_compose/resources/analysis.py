@@ -57,7 +57,9 @@ def create_user():
     auth = request.headers.get("Authorization", None)
     if auth is None:
         return None
+
     token = auth.split()[1]
+
     try:
         profile_info = Users(
             current_app.config["AUTH0_BASE_URL"].removeprefix("https://")
@@ -67,9 +69,11 @@ def create_user():
 
     # user signed up with auth0, but has not made any queries yet...
     # should have endpoint to "create user" after sign on with auth0
-    current_user = User(
-        external_id=connexion.context["user"], name=profile_info.get("name", "Unknown")
-    )
+    name = profile_info.get("name", "Unknown")
+    if "@" in name:
+        name = profile_info.get("nickname", "Unknown")
+
+    current_user = User(external_id=connexion.context["user"], name=name)
 
     return current_user
 

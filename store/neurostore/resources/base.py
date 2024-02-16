@@ -44,8 +44,12 @@ def create_user():
 
     # user signed up with auth0, but has not made any queries yet...
     # should have endpoint to "create user" after sign on with auth0
+    name = profile_info.get("name", "Unknown")
+    if "@" in name:
+        name = profile_info.get("nickname", "Unknown")
+
     current_user = User(
-        external_id=context["user"], name=profile_info.get("name", "Unknown")
+        external_id=context["user"], name=name
     )
 
     return current_user
