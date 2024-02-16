@@ -8,8 +8,7 @@ import React, { useMemo } from 'react';
 const EditAnalysesListItem: React.FC<{
     analysis: AnalysisReturn | IStoreAnalysis;
     selected: boolean;
-    index: number;
-    onSelectAnalysis: (analysisId: string, index: number) => void;
+    onSelectAnalysis: (analysisId: string) => void;
 }> = React.memo((props) => {
     const { analysis, selected, onSelectAnalysis } = props;
     const { hasDuplicateName, hasNoName, hasNoPoints, hasNonMNICoordinates } = useDisplayWarnings(
@@ -18,7 +17,7 @@ const EditAnalysesListItem: React.FC<{
 
     const handleSelectAnalysis = () => {
         if (!analysis.id) return;
-        onSelectAnalysis(analysis.id, props.index);
+        onSelectAnalysis(analysis.id);
     };
 
     const showWarningIcon = useMemo(() => {
@@ -33,9 +32,12 @@ const EditAnalysesListItem: React.FC<{
                 selected={selected}
             >
                 <ListItemText
-                    sx={{ wordBreak: 'break-word' }}
-                    primary={analysis?.name || ''}
-                    secondary={analysis?.description || ''}
+                    sx={{ wordBreak: 'break-word', color: analysis?.name ? '' : 'warning.dark' }}
+                    secondaryTypographyProps={{
+                        color: analysis?.description ? '' : 'warning.dark',
+                    }}
+                    primary={analysis?.name || 'No name'}
+                    secondary={analysis?.description || 'No description'}
                 />
                 {showWarningIcon && (
                     <Tooltip title="This analysis has a warning" placement="top">

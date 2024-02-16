@@ -60,28 +60,24 @@ const EditStudyPageHeader: React.FC = (props) => {
                     />
                     <ProjectIsLoadingText />
                 </Box>
-                <Box sx={{ margin: '5px 0 10px 0', display: 'flex' }}>
-                    <Box>
-                        <Typography variant="body2" sx={{ color: 'muted.main' }}>
-                            Study owner: {studyOwnerUsername ? studyOwnerUsername : 'neurosynth'}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: 'muted.main' }}>
-                            Last updated: {nicelyFormattedDate}
-                        </Typography>
-                    </Box>
-                </Box>
-                <Box>
-                    <DisplayStudyChipLinks />
-                </Box>
-                <Box>
+                <Box sx={{ marginTop: '1rem', display: 'flex', flexDirection: 'column' }}>
                     <Typography variant="h5">
                         {studyYear && `(${studyYear}).`} {studyName}
                     </Typography>
                     {studyAuthors && (
-                        <Typography variant="caption" sx={{ color: 'muted.main' }}>
+                        <Typography variant="body2" sx={{ color: 'muted.main' }}>
                             {studyAuthors}
                         </Typography>
                     )}
+                    <Typography variant="body2" sx={{ color: 'muted.main' }}>
+                        Study owner: {studyOwnerUsername ? studyOwnerUsername : 'neurosynth'}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'muted.main' }}>
+                        Last updated: {nicelyFormattedDate}
+                    </Typography>
+                </Box>
+                <Box sx={{ margin: '0.5rem 0 1rem 0' }}>
+                    <DisplayStudyChipLinks />
                 </Box>
             </Box>
         </>
