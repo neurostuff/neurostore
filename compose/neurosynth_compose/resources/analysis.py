@@ -52,23 +52,21 @@ from .singular import singularize
 
 def create_user():
     from auth0.v3.authentication.users import Users
-    from auth0.v3.exceptions import Auth0Error
 
     auth = request.headers.get("Authorization", None)
-    if auth is None:
-        return None
     token = auth.split()[1]
-    try:
-        profile_info = Users(
-            current_app.config["AUTH0_BASE_URL"].removeprefix("https://")
-        ).userinfo(access_token=token)
-    except Auth0Error:
-        profile_info = {}
+    profile_info = Users(
+        current_app.config["AUTH0_BASE_URL"].removeprefix("https://")
+    ).userinfo(access_token=token)
 
     # user signed up with auth0, but has not made any queries yet...
     # should have endpoint to "create user" after sign on with auth0
+    name = profile_info.get("name", "Unknown")
+    if "@" in name:
+        name = profile_info.get("nickname", "Unknown")
+
     current_user = User(
-        external_id=connexion.context["user"], name=profile_info.get("name", "Unknown")
+        external_id=connexion.context["user"], name=name
     )
 
     return current_user
