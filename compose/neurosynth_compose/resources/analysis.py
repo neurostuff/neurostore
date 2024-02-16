@@ -56,7 +56,7 @@ def create_user():
 
     auth = request.headers.get("Authorization", None)
     if auth is None:
-        return abort(403)
+        return None
 
     token = auth.split()[1]
 
