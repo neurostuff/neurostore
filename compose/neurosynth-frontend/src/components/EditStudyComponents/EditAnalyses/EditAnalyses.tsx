@@ -1,19 +1,12 @@
 import { Add } from '@mui/icons-material';
 import { Box, Button, Divider, Typography } from '@mui/material';
-import CreateDetailsDialog from 'components/Dialogs/CreateDetailsDialog/CreateDetailsDialog';
-import {
-    useAddOrUpdateAnalysis,
-    useNumStudyAnalyses,
-    useStudyAnalyses,
-    useStudyId,
-} from 'pages/Studies/StudyStore';
-import { useCallback, useEffect, useState } from 'react';
+import EditStudyComponentsStyles from 'components/EditStudyComponents/EditStudyComponents.styles';
+import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
+import { useAddOrUpdateAnalysis, useStudyAnalyses, useStudyId } from 'pages/Studies/StudyStore';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useCreateAnnotationNote } from 'stores/AnnotationStore.actions';
 import EditAnalysesList from './EditAnalysesList/EditAnalysesList';
 import EditAnalysis from './EditAnalysis/EditAnalysis';
-import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
-import EditStudyComponentsStyles from 'components/EditStudyComponents/EditStudyComponents.styles';
-import { useCreateAnnotationNote } from 'stores/AnnotationStore.actions';
-import React from 'react';
 
 const EditAnalyses: React.FC = React.memo((props) => {
     const analyses = useStudyAnalyses();
@@ -21,7 +14,6 @@ const EditAnalyses: React.FC = React.memo((props) => {
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
     const createAnnotationNote = useCreateAnnotationNote();
     const [selectedAnalysisId, setSelectedAnalysisId] = useState<string>();
-    const [createNewAnalysisDialogIsOpen, setCreateNewAnalysisDialogIsOpen] = useState(false);
 
     const handleCreateNewAnalysis = () => {
         if (!studyId) return;
@@ -61,7 +53,7 @@ const EditAnalyses: React.FC = React.memo((props) => {
             // select the first analysis on first render
             setSelectedAnalysisId(analyses[0].id);
         }
-    }, []);
+    }, [analyses, selectedAnalysisId]);
 
     return (
         <NeurosynthAccordion
@@ -87,12 +79,6 @@ const EditAnalyses: React.FC = React.memo((props) => {
                             There are no analyses for this study.
                         </Typography>
                     )}
-                    <CreateDetailsDialog
-                        titleText="Create new analysis"
-                        onCreate={handleCreateNewAnalysis}
-                        onCloseDialog={() => setCreateNewAnalysisDialogIsOpen(false)}
-                        isOpen={createNewAnalysisDialogIsOpen}
-                    />
                     <Button
                         onClick={handleCreateNewAnalysis}
                         sx={{ width: '150px' }}
