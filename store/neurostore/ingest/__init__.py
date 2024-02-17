@@ -75,6 +75,7 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
         analyses = {}
         images = []
         conditions = set()
+        order = 0
         for img in data["results"]:
             aname = img["name"]
             if aname not in analyses:
@@ -83,8 +84,9 @@ def ingest_neurovault(verbose=False, limit=20, overwrite=False, max_images=None)
                     "name": aname,
                     "description": img["description"],
                     "study": s,
+                    "order": order,
                 }
-
+                order += 1
                 analysis = Analysis(**analysis_kwargs)
                 if condition:
                     cond = next(
@@ -288,8 +290,8 @@ def ingest_neurosynth(max_rows=None):
             analyses = []
             points = []
 
-            for t_id, df in study_coord_data.groupby("table_id"):
-                a = Analysis(name=str(t_id), study=s)
+            for order, (t_id, df) in enumerate(study_coord_data.groupby("table_id")):
+                a = Analysis(name=str(t_id), study=s, order=order, table_id=str(t_id))
                 analyses.append(a)
                 point_idx = 0
                 for _, p in df.iterrows():
@@ -397,8 +399,8 @@ def ingest_neuroquery(max_rows=None):
         analyses = []
         points = []
 
-        for t_id, df in study_coord_data.groupby("table_id"):
-            a = Analysis(name=str(t_id), table_id=str(t_id), study=s)
+        for order, (t_id, df) in enumerate(study_coord_data.groupby("table_id")):
+            a = Analysis(name=str(t_id), table_id=str(t_id), order=order, study=s)
             analyses.append(a)
             point_idx = 0
             for _, p in df.iterrows():
@@ -572,13 +574,14 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
             except KeyError:
                 print(f"pmid: {id_} has no coordinates")
                 continue
-            for t_id, df in study_coord_data.groupby("table_id"):
+            for order, (t_id, df) in enumerate(study_coord_data.groupby("table_id")):
                 a = (
                     Analysis.query.filter_by(table_id=str(t_id)).one_or_none()
                     or Analysis()
                 )
                 a.name = df["table_label"][0] or str(t_id)
                 a.table_id = str(t_id)
+                a.order = a.order or order
                 a.description = (
                     df["table_caption"][0]
                     if not df["table_caption"].isna()[0]

@@ -255,7 +255,7 @@ class AnalysisSchema(BaseDataSchema):
     # serialization
     study = fields.Pluck("StudySchema", "id", metadata={"id_field": True})
     conditions = StringOrNested(ConditionSchema, many=True, dump_only=True)
-
+    order = fields.Integer()
     analysis_conditions = fields.Nested(AnalysisConditionSchema, many=True)
     images = StringOrNested(ImageSchema, many=True)
     points = StringOrNested(PointSchema, many=True)

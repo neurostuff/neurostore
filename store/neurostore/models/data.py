@@ -238,6 +238,7 @@ class Analysis(BaseMixin, db.Model):
     study_id = db.Column(db.Text, db.ForeignKey("studies.id", ondelete="CASCADE"))
     name = db.Column(db.String)
     description = db.Column(db.String)
+    order = db.Column(db.Integer)
     # used to keep track of neurosynth analyses (in case of neurosynth/ace updates)
     table_id = db.Column(db.String)
     points = relationship(
