@@ -505,7 +505,7 @@ class ListView(BaseView):
         # but weird things are happening. look into this as time allows.
         # if isinstance(attr, ColumnAssociationProxyInstance):
         #     q = q.join(*attr.attr)
-        q = q.order_by(getattr(attr, desc)())
+        q = q.order_by(getattr(attr, desc)(), m.id.desc())
 
         # join the relevant tables for output
         q = self.join_tables(q, args)
