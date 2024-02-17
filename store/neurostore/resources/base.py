@@ -48,9 +48,7 @@ def create_user():
     if "@" in name:
         name = profile_info.get("nickname", "Unknown")
 
-    current_user = User(
-        external_id=context["user"], name=name
-    )
+    current_user = User(external_id=context["user"], name=name)
 
     return current_user
 
