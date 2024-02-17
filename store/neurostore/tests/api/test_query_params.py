@@ -67,8 +67,13 @@ def test_data_type(
 
 
 def test_page_size(auth_client, ingest_neurosynth, session):
-    get_page_size = auth_client.get("/api/studies/?page_size=5")
-    assert get_page_size.status_code == 200
+    num_studies = Study.query.count()
+    results = []
+    for i in range(1, num_studies+1):
+        get_page_size = auth_client.get(f"/api/studies/?page_size=1&page={i}")
+        assert get_page_size.status_code == 200
+        results.append(get_page_size.json()["results"][0]["id"])
+    assert len(set(results)) == num_studies
 
 
 def test_common_queries(auth_client, ingest_neurosynth, session):
