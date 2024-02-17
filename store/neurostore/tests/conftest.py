@@ -401,7 +401,7 @@ def user_data(session, mock_add_users):
                         versions=[study],
                     )
 
-                    analysis = Analysis(user=user, entities=[entity])
+                    analysis = Analysis(user=user, entities=[entity], order=0)
 
                     condition = Condition(
                         name=name + "condition",
