@@ -87,9 +87,6 @@ const EditStudySwapVersionButton: React.FC = (props) => {
                     studies: updatedStudyset,
                 },
             });
-
-            console.log({ res });
-
             updateStudyListStatusWithNewStudyId(studyId, versionToSwapTo);
             await setAnalysesInAnnotationAsIncluded(annotationId);
 
