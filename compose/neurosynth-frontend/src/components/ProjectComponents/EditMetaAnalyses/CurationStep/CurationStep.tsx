@@ -21,8 +21,9 @@ import ProjectComponentsStyles from '../../ProjectComponents.styles';
 import { useState } from 'react';
 import CreateCurationBoardDialog from 'components/Dialogs/CreateCurationBoardDialog/CreateCurationBoardDialog';
 import CurationStepStyles from 'components/ProjectComponents/EditMetaAnalyses/CurationStep/CurationStep.style';
-import useGetCurationSummary, { ICurationSummary } from 'hooks/useGetCurationSummary';
 import { useInitCuration } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useGetCurationSummary } from 'hooks';
+import { ICurationSummary } from 'hooks/useGetCurationSummary';
 
 enum ECurationBoardTypes {
     PRISMA,

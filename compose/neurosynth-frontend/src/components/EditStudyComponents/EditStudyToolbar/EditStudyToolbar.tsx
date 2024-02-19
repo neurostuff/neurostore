@@ -4,8 +4,7 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import CheckIcon from '@mui/icons-material/Check';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import { Box, CircularProgress, IconButton, Tooltip } from '@mui/material';
-import { useGetStudysetById } from 'hooks';
-import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
+import { useGetStudysetById, useGetExtractionSummary } from 'hooks';
 import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
 import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
 import {
@@ -20,6 +19,7 @@ import { useStudyId } from 'pages/Studies/StudyStore';
 import { useCallback, useMemo } from 'react';
 import { useHistory } from 'react-router-dom';
 import EditStudyToolbarStyles from './EditStudyToolbar.styles';
+import { StudyReturn } from 'neurostore-typescript-sdk';
 
 const getCurrSelectedChipText = (selectedChip: EExtractionStatus) => {
     switch (selectedChip) {
@@ -34,13 +34,22 @@ const getCurrSelectedChipText = (selectedChip: EExtractionStatus) => {
     }
 };
 
+const getCurrSelectedChip = (projectId: string | undefined) => {
+    return (
+        (localStorage.getItem(`SELECTED_CHIP-${projectId}`) as EExtractionStatus) ||
+        EExtractionStatus.UNCATEGORIZED
+    );
+};
+
 const EditStudyToolbar: React.FC = (props) => {
     const projectId = useProjectId();
     const studyId = useStudyId();
     const extractionStatus = useProjectExtractionStudyStatus(studyId || '');
     const extractionSummary = useGetExtractionSummary(projectId || '');
     const studysetId = useProjectExtractionStudysetId();
-    const { data: studyset } = useGetStudysetById(studysetId, false);
+    // nested msut be true so that we maintain to alphabetical study order
+    // if nested is false, we do not have access to study names and so will be given study Ids in random order
+    const { data: studyset } = useGetStudysetById(studysetId, true);
     const studyStatusList = useProjectExtractionStudyStatusList();
     const history = useHistory<IProjectPageLocationState>();
     const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
@@ -56,25 +65,24 @@ const EditStudyToolbar: React.FC = (props) => {
     const getValidPrevStudyId = useCallback((): string | undefined => {
         if (!studyset?.studies) return undefined;
 
-        const CURR_SELECTED_CHIP_STATUS =
-            (localStorage.getItem(`SELECTED_CHIP-${projectId}`) as EExtractionStatus) ||
-            EExtractionStatus.UNCATEGORIZED;
-
-        const currStudyIndex = (studyset.studies || []).findIndex((study) => study === studyId);
-        if (currStudyIndex < 0) {
-            return undefined;
-        }
-
+        const CURR_SELECTED_CHIP_STATUS = getCurrSelectedChip(projectId);
+        const currStudyIndex = (studyset.studies || []).findIndex(
+            (study) => (study as StudyReturn)?.id === studyId
+        );
+        if (currStudyIndex < 0) return undefined;
         const map = new Map<string, EExtractionStatus>();
         studyStatusList.forEach((studyStatus) => {
             map.set(studyStatus.id, studyStatus.status);
         });
 
+        // go through all previous studies to find the next one before this current selected study that has the current selected chip status.
+        // This will also take care of the case where the current study selected is the first one
         for (let i = currStudyIndex - 1; i >= 0; i--) {
-            const aStudyId = studyset.studies[i] as string;
-            const aStudyStatus = map.get(aStudyId) || EExtractionStatus.UNCATEGORIZED;
+            const aStudy = studyset.studies[i] as StudyReturn;
+            if (!aStudy?.id) return undefined;
+            const aStudyStatus = map.get(aStudy.id) || EExtractionStatus.UNCATEGORIZED;
 
-            if (aStudyStatus === CURR_SELECTED_CHIP_STATUS) return aStudyId;
+            if (aStudyStatus === CURR_SELECTED_CHIP_STATUS) return aStudy.id;
         }
         return undefined;
     }, [projectId, studyId, studyStatusList, studyset]);
@@ -82,27 +90,22 @@ const EditStudyToolbar: React.FC = (props) => {
     const getValidNextStudyId = useCallback((): string | undefined => {
         if (!studyset?.studies) return undefined;
 
-        const CURR_SELECTED_CHIP_STATUS =
-            (localStorage.getItem(`SELECTED_CHIP-${projectId}`) as EExtractionStatus) ||
-            EExtractionStatus.UNCATEGORIZED;
-        const currStudyIndex = (studyset.studies || []).findIndex((study) => study === studyId);
-        if (currStudyIndex < 0) {
-            return undefined;
-        }
+        const CURR_SELECTED_CHIP_STATUS = getCurrSelectedChip(projectId);
+        const currStudyIndex = (studyset.studies || []).findIndex(
+            (study) => (study as StudyReturn)?.id === studyId
+        );
+        if (currStudyIndex < 0) return undefined;
         const map = new Map<string, EExtractionStatus>();
         studyStatusList.forEach((studyStatus) => {
             map.set(studyStatus.id, studyStatus.status);
         });
 
-        // go through all previous studies to find the next one before this current selected study that has CURR_SELECTED_CHIP status
-        // this will also take care of the case where the current study selected is the first one
         for (let i = currStudyIndex + 1; i <= studyset.studies.length; i++) {
-            const aStudyId = studyset.studies[i] as string;
-            const aStudyStatus = map.get(aStudyId) || EExtractionStatus.UNCATEGORIZED;
+            const aStudy = studyset.studies[i] as StudyReturn;
+            if (!aStudy?.id) return undefined;
+            const aStudyStatus = map.get(aStudy.id) || EExtractionStatus.UNCATEGORIZED;
 
-            if (aStudyStatus === CURR_SELECTED_CHIP_STATUS) {
-                return aStudyId;
-            }
+            if (aStudyStatus === CURR_SELECTED_CHIP_STATUS) return aStudy.id;
         }
         return undefined;
     }, [projectId, studyId, studyStatusList, studyset]);

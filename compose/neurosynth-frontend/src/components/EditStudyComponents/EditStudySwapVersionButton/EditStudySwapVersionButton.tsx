@@ -27,7 +27,7 @@ const EditStudySwapVersionButton: React.FC = (props) => {
     const studyId = useStudyId();
     const { data: baseStudy } = useGetBaseStudyById(baseStudyId || '');
     const { mutateAsync: updateStudyset } = useUpdateStudyset();
-    const updateStudysetWithNewStudyId = useProjectExtractionReplaceStudyListStatusId();
+    const updateStudyListStatusWithNewStudyId = useProjectExtractionReplaceStudyListStatusId();
     const studysetId = useProjectExtractionStudysetId();
     const { data: studyset } = useGetStudysetById(studysetId, false);
     const history = useHistory();
@@ -81,14 +81,16 @@ const EditStudySwapVersionButton: React.FC = (props) => {
             if (currentStudyBeingEditedIndex < 0) throw new Error('study not found in studyset');
 
             updatedStudyset[currentStudyBeingEditedIndex] = versionToSwapTo;
-            await updateStudyset({
+            const res = await updateStudyset({
                 studysetId: studysetId,
                 studyset: {
                     studies: updatedStudyset,
                 },
             });
 
-            updateStudysetWithNewStudyId(studyId, versionToSwapTo);
+            console.log({ res });
+
+            updateStudyListStatusWithNewStudyId(studyId, versionToSwapTo);
             await setAnalysesInAnnotationAsIncluded(annotationId);
 
             history.push(`/projects/${projectId}/extraction/studies/${versionToSwapTo}`);

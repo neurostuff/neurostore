@@ -1,4 +1,10 @@
-import { mockAnnotations, mockConditions, mockStudy, mockStudysets } from 'testing/mockData';
+import {
+    mockAnnotations,
+    mockConditions,
+    mockStudy,
+    mockStudysetNested,
+    mockStudysets,
+} from 'testing/mockData';
 import useInputValidation from 'hooks/useInputValidation'; // don't need to mock this as it isn't making any api calls
 
 const useUpdateAnalysis = jest.fn().mockReturnValue({
@@ -106,6 +112,19 @@ const useDeleteProject = jest.fn().mockReturnValue({
     mutate: jest.fn(),
 });
 
+const useGetExtractionSummary = jest.fn().mockReturnValue({
+    savedForLater: 0,
+    uncategorized: 0,
+    completed: 0,
+    total: 0,
+});
+
+const useGetStudysetById = jest.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    data: mockStudysetNested(),
+});
+
 const useIsMounted = () => {
     return {
         __esModule: true,
@@ -136,4 +155,6 @@ export {
     useGetAnnotationsByStudysetId,
     useCreateProject,
     useDeleteProject,
+    useGetExtractionSummary,
+    useGetStudysetById,
 };

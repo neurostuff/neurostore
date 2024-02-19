@@ -1,5 +1,5 @@
 import { AxiosError, AxiosResponse } from 'axios';
-import { StudysetReturn } from 'neurostore-typescript-sdk';
+import { StudyReturn, StudysetReturn } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
@@ -20,7 +20,19 @@ const useGetStudysetById = (studysetId?: string, nested?: boolean) => {
             onError: (err) => {
                 enqueueSnackbar('there was an error retrieving the studyset', { variant: 'error' });
             },
-            select: (res) => res.data,
+            select: (res) => {
+                res.data.studies?.sort((a, b) => {
+                    if (typeof a === 'string' && typeof b === 'string') {
+                        return a.localeCompare(b);
+                    } else {
+                        const studyA = a as StudyReturn;
+                        const studyB = b as StudyReturn;
+                        return (studyA.name || '').localeCompare(studyB.name || '');
+                    }
+                });
+
+                return res.data;
+            },
         }
     );
 

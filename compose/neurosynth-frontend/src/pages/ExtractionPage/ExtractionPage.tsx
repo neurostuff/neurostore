@@ -193,7 +193,7 @@ const ExtractionPage: React.FC = (props) => {
             ? 'saved for later'
             : 'uncategorized';
 
-    const pxInVh = Math.round((windowHeight * 60) / 100);
+    const pxInVh = useMemo(() => Math.round((windowHeight * 60) / 100), [windowHeight]);
 
     const isReadyToMoveToNextStep = useMemo(
         () =>
