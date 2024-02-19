@@ -81,7 +81,7 @@ const EditStudySwapVersionButton: React.FC = (props) => {
             if (currentStudyBeingEditedIndex < 0) throw new Error('study not found in studyset');
 
             updatedStudyset[currentStudyBeingEditedIndex] = versionToSwapTo;
-            const res = await updateStudyset({
+            await updateStudyset({
                 studysetId: studysetId,
                 studyset: {
                     studies: updatedStudyset,
