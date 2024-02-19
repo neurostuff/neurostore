@@ -4,8 +4,8 @@ import { IStoreAnalysis } from 'pages/Studies/StudyStore.helpers';
 
 const DisplayAnalysesList: React.FC<{
     analyses: IStoreAnalysis[];
-    selectedIndex: number;
-    onSelectAnalysisIndex: (index: number) => void;
+    selectedId: string | undefined;
+    onSelectAnalysisIndex: (id: string) => void;
 }> = (props) => {
     return (
         <Box
@@ -23,13 +23,12 @@ const DisplayAnalysesList: React.FC<{
                 }}
                 disablePadding
             >
-                {props.analyses.map((analysis, index) => (
+                {props.analyses.map((analysis) => (
                     <EditAnalysesListItem
-                        key={analysis.id || index}
+                        key={analysis.id}
                         analysis={analysis}
-                        index={index}
-                        selected={props.selectedIndex === index}
-                        onSelectAnalysis={(id, i) => props.onSelectAnalysisIndex(i)}
+                        selected={(props.selectedId || undefined) === (analysis.id || null)}
+                        onSelectAnalysis={(id) => props.onSelectAnalysisIndex(id)}
                     />
                 ))}
             </List>

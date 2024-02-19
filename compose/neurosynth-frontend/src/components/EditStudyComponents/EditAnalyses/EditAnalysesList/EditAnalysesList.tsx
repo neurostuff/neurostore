@@ -1,42 +1,21 @@
 import { Box, List } from '@mui/material';
-import { useStudyAnalyses } from 'pages/Studies/StudyStore';
-import { useCallback, useEffect, useState } from 'react';
+import { IStoreAnalysis } from 'pages/Studies/StudyStore.helpers';
+import { useCallback } from 'react';
 import EditAnalysesListItem from './EditAnalysesListItem';
 
 const EditAnalysesList: React.FC<{
     onSelectAnalysis: (analysisId: string) => void;
     selectedAnalysisId?: string;
+    analyses: IStoreAnalysis[];
 }> = (props) => {
-    const { onSelectAnalysis, selectedAnalysisId } = props;
-
-    const analyses = useStudyAnalyses();
-    const [selectedIndex, setSelectedIndex] = useState(0);
+    const { onSelectAnalysis, selectedAnalysisId, analyses } = props;
 
     const handleSelectAnalysis = useCallback(
-        (analysisId: string, index: number) => {
-            setSelectedIndex(index);
+        (analysisId: string) => {
             onSelectAnalysis(analysisId);
         },
         [onSelectAnalysis]
     );
-
-    useEffect(() => {
-        if (!analyses[0]?.id) return;
-
-        if (!selectedAnalysisId) {
-            // select the first analysis on first render
-            onSelectAnalysis(analyses[0].id);
-            return;
-        }
-
-        if (!analyses.find((x) => x.id === selectedAnalysisId)) {
-            // when a new analysis is created and saved in the DB, it is given a neurostore ID which replaces the temporary one
-            // initially given. We need to handle this case, otherwise the UI will show nothing is currently selected
-            const newAnalysisId = analyses[selectedIndex].id;
-            if (!newAnalysisId) return;
-            onSelectAnalysis(newAnalysisId);
-        }
-    }, [analyses, onSelectAnalysis, selectedIndex, selectedAnalysisId]);
 
     return (
         <Box
@@ -54,13 +33,12 @@ const EditAnalysesList: React.FC<{
                 }}
                 disablePadding
             >
-                {analyses.map((analysis, index) => (
+                {analyses.map((analysis) => (
                     <EditAnalysesListItem
-                        key={analysis.id || index}
+                        key={analysis.id}
                         analysis={analysis}
-                        index={index}
                         onSelectAnalysis={handleSelectAnalysis}
-                        selected={(analysis.id || null) === (props.selectedAnalysisId || undefined)}
+                        selected={(analysis.id || null) === (selectedAnalysisId || undefined)}
                     />
                 ))}
             </List>

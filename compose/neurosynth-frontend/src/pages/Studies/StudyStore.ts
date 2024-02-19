@@ -329,7 +329,7 @@ const useStudyStore = create<
                             id: uuid(), // this is a temporary ID until one is assigned via neurostore
                         };
                         createdOrUpdatedAnalysis = createdAnalysis;
-                        updatedAnalyses.unshift(createdAnalysis);
+                        updatedAnalyses.push(createdAnalysis);
                     } else {
                         const editedAnalysis: IStoreAnalysis = {
                             ...updatedAnalyses[foundAnalysisIndex],

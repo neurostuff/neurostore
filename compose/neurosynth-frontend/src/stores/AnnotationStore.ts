@@ -167,6 +167,7 @@ export const useAnnotationStore = create<
                     annotation: {
                         ...state.annotation,
                         notes: [
+                            ...state.annotation.notes,
                             {
                                 study: studyId,
                                 study_name: '',
@@ -182,7 +183,6 @@ export const useAnnotationStore = create<
                                 },
                                 isNew: true,
                             },
-                            ...state.annotation.notes,
                         ],
                     },
                 };
