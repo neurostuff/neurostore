@@ -32,8 +32,12 @@ import useDeleteStudyset from './studysets/useDeleteStudyset';
 import useGetBaseStudies from './studies/useGetBaseStudies';
 import useGetStudyById from './studies/useGetStudyById';
 import useUpdateAnnotationById from './analyses/useUpdateAnnotationById';
+import useGetExtractionSummary from './useGetExtractionSummary';
+import useGetCurationSummary from './useGetCurationSummary';
 
 export {
+    useGetCurationSummary,
+    useGetExtractionSummary,
     useIsMounted,
     useInputValidation,
     useGetToken,

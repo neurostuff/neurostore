@@ -27,7 +27,7 @@ const EditStudySwapVersionButton: React.FC = (props) => {
     const studyId = useStudyId();
     const { data: baseStudy } = useGetBaseStudyById(baseStudyId || '');
     const { mutateAsync: updateStudyset } = useUpdateStudyset();
-    const updateStudysetWithNewStudyId = useProjectExtractionReplaceStudyListStatusId();
+    const updateStudyListStatusWithNewStudyId = useProjectExtractionReplaceStudyListStatusId();
     const studysetId = useProjectExtractionStudysetId();
     const { data: studyset } = useGetStudysetById(studysetId, false);
     const history = useHistory();
@@ -87,8 +87,7 @@ const EditStudySwapVersionButton: React.FC = (props) => {
                     studies: updatedStudyset,
                 },
             });
-
-            updateStudysetWithNewStudyId(studyId, versionToSwapTo);
+            updateStudyListStatusWithNewStudyId(studyId, versionToSwapTo);
             await setAnalysesInAnnotationAsIncluded(annotationId);
 
             history.push(`/projects/${projectId}/extraction/studies/${versionToSwapTo}`);

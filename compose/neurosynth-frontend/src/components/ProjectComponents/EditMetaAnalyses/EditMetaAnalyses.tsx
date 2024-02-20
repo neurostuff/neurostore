@@ -2,8 +2,7 @@ import { Stepper } from '@mui/material';
 import CurationStep from 'components/ProjectComponents/EditMetaAnalyses/CurationStep/CurationStep';
 import ExtractionStep from 'components/ProjectComponents/EditMetaAnalyses/ExtractionStep/ExtractionStep';
 import SpecificationStep from 'components/ProjectComponents/EditMetaAnalyses/SpecificationStep/SpecificationStep';
-import { useGetStudysetById } from 'hooks';
-import useGetCurationSummary from 'hooks/useGetCurationSummary';
+import { useGetStudysetById, useGetCurationSummary } from 'hooks';
 import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import ProjectPageStyles from 'pages/Projects/ProjectPage/ProjectPage.styles';
 import {

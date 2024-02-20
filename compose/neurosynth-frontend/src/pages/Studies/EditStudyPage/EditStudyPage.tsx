@@ -2,7 +2,7 @@ import { Box } from '@mui/material';
 import EditAnalyses from 'components/EditStudyComponents/EditAnalyses/EditAnalyses';
 import EditStudyAnnotations from 'components/EditStudyComponents/EditStudyAnnotations/EditStudyAnnotations';
 import EditStudyDetails from 'components/EditStudyComponents/EditStudyDetails/EditStudyDetails';
-import EditStudyPageHeader from 'components/EditStudyComponents/EditStudyHeader/EditStudyHeader';
+import EditStudyPageHeader from 'components/EditStudyComponents/EditStudyPageHeader/EditStudyPageHeader';
 import EditStudyMetadata from 'components/EditStudyComponents/EditStudyMetadata/EditStudyMetadata';
 import EditStudySaveButton from 'components/EditStudyComponents/EditStudySaveButton/EditStudySaveButton';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';

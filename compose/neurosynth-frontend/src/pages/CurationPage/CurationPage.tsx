@@ -4,7 +4,6 @@ import CurationBoard from 'components/CurationComponents/CurationBoard/CurationB
 import PrismaDialog from 'components/Dialogs/PrismaDialog/PrismaDialog';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import useGetCurationSummary from 'hooks/useGetCurationSummary';
 import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
 import {
     useInitProjectStoreIfRequired,
@@ -16,7 +15,7 @@ import {
 import { useState } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import ProjectIsLoadingText from './ProjectIsLoadingText';
-import { useGetStudysetById } from 'hooks';
+import { useGetStudysetById, useGetCurationSummary } from 'hooks';
 
 const CurationPage: React.FC = (props) => {
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);

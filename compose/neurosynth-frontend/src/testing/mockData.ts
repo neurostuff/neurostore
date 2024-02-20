@@ -132,6 +132,32 @@ const mockStudysets: () => StudysetReturn[] = () => [
     },
 ];
 
+const mockStudysetNested: () => StudysetReturn = () => ({
+    created_at: '2024-02-16T20:17:48.641342+00:00',
+    description: '',
+    doi: null,
+    id: '3tuNUkQTqxvP',
+    name: 'Mock Studyset',
+    pmid: null,
+    publication: null,
+    studies: mockStudies(),
+    updated_at: null,
+    user: 'github|26612023',
+});
+
+const mockStudysetNotNested: () => StudysetReturn = () => ({
+    created_at: '2024-02-16T20:17:48.641342+00:00',
+    description: '',
+    doi: null,
+    id: '3tuNUkQTqxvP',
+    name: 'Mock Studyset',
+    pmid: null,
+    publication: null,
+    studies: ['5cLR4qwokFqV', '6cbdeyacHieR'],
+    updated_at: null,
+    user: 'github|26612023',
+});
+
 const mockAnnotations: () => NeurostoreAnnotation[] = () => [
     {
         description: 'this is an annotation',
@@ -439,4 +465,6 @@ export {
     mockPoints,
     mockMetaAnalyses,
     mockStudies,
+    mockStudysetNested,
+    mockStudysetNotNested,
 };
