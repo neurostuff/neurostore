@@ -413,6 +413,7 @@ LIST_USER_ARGS = {
     "desc": fields.Boolean(load_default=True),
     "page_size": fields.Int(load_default=20, validate=lambda val: val < 30000),
     "user_id": fields.String(load_default=None),
+    "return_all": fields.Boolean(load_default=False),
 }
 
 
@@ -474,11 +475,13 @@ class ListView(BaseView):
         # Search
         s = args["search"]
 
+        use_tsquery = False
         # For multi-column search, default to using search fields
         # temporary fix for pmid search
         if s is not None and s.isdigit():
             q = q.filter_by(pmid=s)
         elif s is not None and self._fulltext_fields:
+            use_tsquery = True
             tsquery = sa.func.websearch_to_tsquery(s, postgresql_regconfig="english")
             q = q.filter(m.__ts_vector__.op("@@")(tsquery))
 
@@ -491,24 +494,37 @@ class ListView(BaseView):
         q = self.view_search(q, args)
         # Sort
         sort_col = args["sort"]
-        desc = False if sort_col != "created_at" else args["desc"]
-        desc = {False: "asc", True: "desc"}[desc]
+        if use_tsquery and sort_col == "relevance":
+            q = q.order_by(sa.func.ts_rank(m.__ts_vector__, tsquery).desc())
+        else:
+            desc = False if sort_col != "created_at" else args["desc"]
+            desc = {False: "asc", True: "desc"}[desc]
 
-        attr = getattr(m, sort_col)
+            attr = getattr(m, sort_col)
 
-        # Case-insensitive sorting
-        if sort_col != "created_at":
-            attr = func.lower(attr)
+            # Case-insensitive sorting
+            if sort_col != "created_at":
+                attr = func.lower(attr)
 
-        # TODO: if the sort field is proxied, bad stuff happens. In theory
-        # the next two lines should address this by joining the proxied model,
-        # but weird things are happening. look into this as time allows.
-        # if isinstance(attr, ColumnAssociationProxyInstance):
-        #     q = q.join(*attr.attr)
-        q = q.order_by(getattr(attr, desc)(), m.id.desc())
+            # TODO: if the sort field is proxied, bad stuff happens. In theory
+            # the next two lines should address this by joining the proxied model,
+            # but weird things are happening. look into this as time allows.
+            # if isinstance(attr, ColumnAssociationProxyInstance):
+            #     q = q.join(*attr.attr)
+    
+            q = q.order_by(getattr(attr, desc)(), m.id.desc())
 
         # join the relevant tables for output
         q = self.join_tables(q, args)
+
+        if args["return_all"]:
+            records = q.all()
+            content = self.serialize_records(records, args)
+            response = {
+                "metadata": {"total_count": len(records)},
+                "results": content,
+            }
+            return response, 200
 
         pagination_query = q.paginate(
             page=args["page"],

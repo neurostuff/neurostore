@@ -99,3 +99,9 @@ def test_multiword_queries(auth_client, ingest_neurosynth, session):
 
     multi_word_search = auth_client.get(f"/api/studies/?search={multiple_words}")
     assert multi_word_search.status_code == 200
+
+
+def test_return_all(auth_client, ingest_neurosynth, session):
+    get_all = auth_client.get("/api/studies/?return_all=true")
+    assert get_all.status_code == 200
+    assert len(get_all.json()["results"]) == Study.query.count()
