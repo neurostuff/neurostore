@@ -1,3 +1,5 @@
 const useStudyId = jest.fn().mockReturnValue('study-id');
 
-export { useStudyId };
+const useStudyName = jest.fn().mockResolvedValue('test-study-name');
+
+export { useStudyId, useStudyName };

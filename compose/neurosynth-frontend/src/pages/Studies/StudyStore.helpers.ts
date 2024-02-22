@@ -199,7 +199,7 @@ export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStor
     });
 
     return (studyAnalyses || []).sort((a, b) => {
-        return (a.name || '').localeCompare(b.name || '');
+        return (a.order as number) - (b.order as number);
 
         // previously sorted by date: may want this again in the future
         // const dateA = Date.parse(a.created_at || '');

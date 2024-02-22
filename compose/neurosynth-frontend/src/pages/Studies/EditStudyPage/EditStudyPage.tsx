@@ -20,6 +20,8 @@ import {
     useInitStudyStore,
     useStudyId,
 } from '../StudyStore';
+import EditStudyPageStyles from './EditStudyPage.styles';
+import EditStudySwapVersionButton from 'components/EditStudyComponents/EditStudySwapVersionButton/EditStudySwapVersionButton';
 
 const EditStudyPage: React.FC = (props) => {
     const { studyId } = useParams<{ studyId: string }>();
@@ -68,7 +70,10 @@ const EditStudyPage: React.FC = (props) => {
             <Box sx={{ marginBottom: '5rem' }}>
                 <EditAnalyses />
             </Box>
-            <EditStudySaveButton />
+            <Box sx={EditStudyPageStyles.loadingButtonContainer}>
+                <EditStudySwapVersionButton />
+                <EditStudySaveButton />
+            </Box>
         </StateHandlerComponent>
     );
 };

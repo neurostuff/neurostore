@@ -1,4 +1,3 @@
-import { Box } from '@mui/material';
 import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 import { AnalysisReturn, StudyRequest } from 'neurostore-typescript-sdk';
 import { useSnackbar } from 'notistack';
@@ -16,7 +15,7 @@ import {
     useUpdateAnnotationById,
     useUpdateStudyset,
 } from 'hooks';
-import EditStudyPageStyles from 'pages/Studies/EditStudyPage/EditStudyPage.styles';
+import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysets';
 import {
     useStudy,
     useStudyAnalyses,
@@ -38,9 +37,7 @@ import {
 import { storeNotesToDBNotes } from 'stores/AnnotationStore.helpers';
 import API from 'utils/api';
 import { arrayToMetadata } from '../EditStudyMetadata/EditStudyMetadata';
-import EditStudySwapVersionButton from '../EditStudySwapVersionButton/EditStudySwapVersionButton';
 import { hasDuplicateStudyAnalysisNames, hasEmptyStudyPoints } from './EditStudySaveButton.helpers';
-import { STUDYSET_QUERY_STRING } from 'hooks/studysets/useGetStudysets';
 
 const EditStudySaveButton: React.FC = React.memo((props) => {
     const { user } = useAuth0();
@@ -273,19 +270,16 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
     };
 
     return (
-        <Box sx={EditStudyPageStyles.loadingButtonContainer}>
-            <EditStudySwapVersionButton />
-            <LoadingButton
-                text="save"
-                isLoading={updateStudyIsLoading || updateAnnotationIsLoading || isCloning}
-                variant="contained"
-                loaderColor="secondary"
-                disabled={!studyHasBeenEdited && !annotationHasBeenEdited}
-                disableElevation
-                sx={{ width: '280px', height: '36px' }}
-                onClick={handleSave}
-            />
-        </Box>
+        <LoadingButton
+            text="save"
+            isLoading={updateStudyIsLoading || updateAnnotationIsLoading || isCloning}
+            variant="contained"
+            loaderColor="secondary"
+            disabled={!studyHasBeenEdited && !annotationHasBeenEdited}
+            disableElevation
+            sx={{ width: '280px', height: '36px' }}
+            onClick={handleSave}
+        />
     );
 });
 
