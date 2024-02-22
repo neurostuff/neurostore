@@ -50,6 +50,51 @@ class BaseMixin(object):
         return f"http://neurostore.org/api/{self.__tablename__}/{self.id}"
 
 
+class TagSet(BaseMixin, db.Model):
+    __tablename__ = "tag_sets"
+
+    name = db.Column(db.String)
+    version = db.Column(db.String)
+    date_extracted = db.Column(db.DateTime(timezone=True))
+    description = db.Column(db.String)
+    metadata = db.Column(JSONB)
+    tags = relationship(
+        "Tag",
+        backref=backref("tag_set"),
+        cascade="all, delete-orphan",
+    )
+
+
+class Tag(BaseMixin, db.Model):
+    __tablename__ = "tags"
+
+    name = db.Column(db.String)
+    description = db.Column(db.String)
+    metadata = db.Column(JSONB)
+    automated = db.Column(db.Boolean)
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
+    user = relationship("User", backref=backref("tags"))
+    values = relationship(
+        "TagValue",
+        backref=backref("tag"),
+        cascade="all, delete-orphan"
+    )
+    study = relationship(
+        "BaseStudy",
+        backref=backref("tags"),
+    )
+
+
+class TagValue(BaseMixin, db.Model):
+    __tablename__ = "tag_values"
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
+    user = relationship("User", backref=backref("tag_values"))
+    automated = db.Column(db.Boolean)
+    integer_value = db.Column(db.Integer)
+    float_value = db.Column(db.Float)
+    string_value = db.Column(db.String)
+
+
 class Studyset(BaseMixin, db.Model):
     __tablename__ = "studysets"
 
@@ -139,6 +184,7 @@ class BaseStudy(BaseMixin, db.Model):
     has_coordinates = db.Column(db.Boolean, default=False, nullable=False)
     has_images = db.Column(db.Boolean, default=False, nullable=False)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
+
     __ts_vector__ = db.Column(
         TSVector(),
         db.Computed(
