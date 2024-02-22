@@ -199,7 +199,7 @@ export const studyAnalysesToStoreAnalyses = (analyses?: AnalysisReturn[]): IStor
     });
 
     return (studyAnalyses || []).sort((a, b) => {
-        return (a.name || '').localeCompare(b.name || '');
+        return (a.order as number) - (b.order as number);
 
         // previously sorted by date: may want this again in the future
         // const dateA = Date.parse(a.created_at || '');
@@ -214,7 +214,7 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
     // we therefore need to scrub the id from the analysis if it was newly created by us.
     // we also need to remove the readonly attributes and any attributes we added
     const updatedAnalyses: AnalysisRequest[] = (analyses || []).map(
-        ({ isNew, conditions, points, pointSpace, pointStatistic, ...analysisArgs }) => {
+        ({ isNew, conditions, points, pointSpace, pointStatistic, ...analysisArgs }, index) => {
             const scrubbedConditions: ConditionRequest[] = conditions.map(({ isNew, ...args }) => ({
                 name: args.name,
                 description: args.description,
@@ -250,6 +250,7 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
                 conditions: scrubbedConditions,
                 points: scrubbedPoints,
                 id: isNew ? undefined : analysisArgs.id,
+                order: index + 1, // order is not 0 indexed in the BE
             };
         }
     );

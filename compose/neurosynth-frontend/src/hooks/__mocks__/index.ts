@@ -125,6 +125,12 @@ const useGetStudysetById = jest.fn().mockReturnValue({
     data: mockStudysetNested(),
 });
 
+const useGetFullText = jest.fn().mockReturnValue({
+    isLoading: false,
+    isError: false,
+    data: '',
+});
+
 const useIsMounted = () => {
     return {
         __esModule: true,
@@ -157,4 +163,5 @@ export {
     useDeleteProject,
     useGetExtractionSummary,
     useGetStudysetById,
+    useGetFullText,
 };

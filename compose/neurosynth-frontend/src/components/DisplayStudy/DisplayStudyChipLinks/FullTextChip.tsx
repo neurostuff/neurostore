@@ -1,6 +1,6 @@
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Chip } from '@mui/material';
-import useGetFullText from 'hooks/external/useGetFullText';
+import { useGetFullText } from 'hooks';
 import { useStudyName } from 'pages/Studies/StudyStore';
 import { useEffect, useState } from 'react';
 import DisplayStudyChipLinksStyles from './DisplayStudyChipLinks.styles';
