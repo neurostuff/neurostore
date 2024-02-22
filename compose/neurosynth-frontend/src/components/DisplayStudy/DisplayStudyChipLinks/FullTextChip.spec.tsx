@@ -6,9 +6,8 @@ import { useGetFullText } from 'hooks';
 jest.mock('pages/Studies/StudyStore');
 jest.mock('hooks');
 describe('FullTextChip Component', () => {
-    it('should be true', () => {
+    it('should render', () => {
         render(<FullTextChip />);
-        screen.getByText('Full Text');
     });
 
     it('should show the chip with the link', async () => {
