@@ -50,7 +50,7 @@ const ConfirmationDialog: React.FC<IConfirmationDialog> = (props) => {
                     <Button
                         sx={{ width: '250px', marginRight: '15px' }}
                         onClick={() => props.onCloseDialog(false, props.data)}
-                        variant="contained"
+                        variant="text"
                         color="error"
                     >
                         {props.rejectText ? props.rejectText : 'Reject'}
