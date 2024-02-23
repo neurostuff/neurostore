@@ -277,7 +277,7 @@ class AnalysisSchema(BaseDataSchema):
             ]
         elif data.get("conditions") is not None:
             data["analysis_conditions"] = [
-                {"condition": cond} for cond in data.get("conditions")
+                {"condition": cond, "weight": 0} for cond in data.get("conditions")
             ]
 
         data.pop("conditions", None)
@@ -288,6 +288,7 @@ class AnalysisSchema(BaseDataSchema):
     def dump_values(self, data, **kwargs):
         if data.get("analysis_conditions") is not None:
             data["conditions"] = [ac["condition"] for ac in data["analysis_conditions"]]
+            data["weights"] = [ac["weight"] for ac in data["analysis_conditions"]]
         data.pop("analysis_conditions", None)
 
         return data
