@@ -28,6 +28,7 @@ const EditAnalyses: React.FC = React.memo((props) => {
         if (!createdAnalysis.id) return;
 
         createAnnotationNote(createdAnalysis.id, studyId, '');
+        setSelectedAnalysisId(createdAnalysis.id);
     };
 
     const handleSelectAnalysis = useCallback((analysisId: string) => {
