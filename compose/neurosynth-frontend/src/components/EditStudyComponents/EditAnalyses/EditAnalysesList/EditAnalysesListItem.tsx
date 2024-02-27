@@ -27,6 +27,7 @@ const EditAnalysesListItem: React.FC<{
     return (
         <ListItem disablePadding divider>
             <ListItemButton
+                autoFocus={selected}
                 sx={{ minHeight: '49px' }}
                 onClick={handleSelectAnalysis}
                 selected={selected}
