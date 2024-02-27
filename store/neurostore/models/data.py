@@ -50,7 +50,25 @@ class BaseMixin(object):
         return f"http://neurostore.org/api/{self.__tablename__}/{self.id}"
 
 
-class TagSet(BaseMixin, db.Model):
+class PipelineDescription(BaseMixin, db.Model):
+    __tablename__ = "pipeline_descriptions"
+    name = db.Column(db.String)
+    version = db.Column(db.String)
+    date_extracted = db.Column(db.DateTime(timezone=True))
+    description = db.Column(db.String)
+    metadata = db.Column(JSONB)
+    tags = relationship(
+        "Tag",
+        backref=backref("tag_set"),
+        cascade="all, delete-orphan",
+    )
+    study = relationship(
+        "BaseStudy",
+        backref=backref("tags"),
+    )
+
+
+class TagGroup(BaseMixin, db.Model):
     __tablename__ = "tag_sets"
 
     name = db.Column(db.String)
