@@ -489,13 +489,13 @@ class ListView(BaseView):
         q = self.view_search(q, args)
         # Sort
         sort_col = args["sort"]
-        desc = False if sort_col != "created_at" else args["desc"]
+        desc = args["desc"]
         desc = {False: "asc", True: "desc"}[desc]
 
         attr = getattr(m, sort_col)
 
         # Case-insensitive sorting
-        if sort_col != "created_at":
+        if sort_col != "created_at" and sort_col != "updated_at":
             attr = func.lower(attr)
 
         # TODO: if the sort field is proxied, bad stuff happens. In theory
@@ -503,7 +503,7 @@ class ListView(BaseView):
         # but weird things are happening. look into this as time allows.
         # if isinstance(attr, ColumnAssociationProxyInstance):
         #     q = q.join(*attr.attr)
-        q = q.order_by(getattr(attr, desc)(), m.id.desc())
+        q = q.order_by(getattr(attr, desc)(), getattr(m.id, desc)())
 
         # join the relevant tables for output
         q = self.join_tables(q, args)
