@@ -280,6 +280,7 @@ def test_put_nonexistent_analysis(auth_client, ingest_neurosynth, session):
         == 400
     )
 
+
 def test_post_put_subset_of_analyses(auth_client, ingest_neurosynth, session):
     dset = Studyset.query.first()
     # y for x in non_flat for y in x
@@ -299,15 +300,10 @@ def test_post_put_subset_of_analyses(auth_client, ingest_neurosynth, session):
         "name": "mah notes",
     }
 
-    # improper post
-    improper_post = auth_client.post("/api/annotations/", data=payload)
-    assert improper_post.status_code == 400
-    # add missing note back in
-    data.append(missing_note)
     annot = auth_client.post("/api/annotations/", data=payload)
+    assert annot.status_code == 200
     # have to pass all the notes even if only updating one attribute
     # remove last note again
-    missing_note = data.pop()
 
     assert (
         auth_client.put(
@@ -315,6 +311,7 @@ def test_post_put_subset_of_analyses(auth_client, ingest_neurosynth, session):
         ).status_code
         == 400
     )
+
 
 def test_correct_note_overwrite(auth_client, ingest_neurosynth, session):
     dset = Studyset.query.first()

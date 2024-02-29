@@ -1,6 +1,7 @@
 """
 https://github.com/clips/pattern/blob/d25511f9ca7ed9356b801d8663b8b5168464e68f/pattern/text/en/inflect.py#L458-L636
 """
+
 import re
 
 # Adapted from Bermi Ferrer's Inflector for Python:

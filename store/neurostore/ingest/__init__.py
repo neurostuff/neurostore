@@ -1,6 +1,7 @@
 """
 Ingest and sync data from various sources (Neurosynth, NeuroVault, etc.).
 """
+
 import os.path as op
 import re
 from pathlib import Path
@@ -597,9 +598,11 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
                         y=p["y"],
                         z=p["z"],
                         space=metadata_row.coordinate_space,
-                        kind=df["statistic"][0]
-                        if not df["statistic"].isna()[0]
-                        else "unknown",
+                        kind=(
+                            df["statistic"][0]
+                            if not df["statistic"].isna()[0]
+                            else "unknown"
+                        ),
                         analysis=a,
                         entities=[Entity(label=a.name, level="group", analysis=a)],
                         order=point_idx,

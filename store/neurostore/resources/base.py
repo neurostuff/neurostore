@@ -1,6 +1,7 @@
 """
 Base Classes/functions for constructing views
 """
+
 import re
 
 from connexion.context import context
@@ -542,8 +543,6 @@ class ListView(BaseView):
         data = parser.parse(
             self.__class__._schema(exclude=("id",)), request, unknown=unknown
         )
-
-        self.db_validation(data)
 
         if source_id:
             data = self._load_from_source(source, source_id, data)

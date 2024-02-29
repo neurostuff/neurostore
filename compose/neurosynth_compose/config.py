@@ -1,6 +1,7 @@
 """ This is an EXAMPLE config file
  Rename this file to config.py and set variables
 """
+
 import os
 from pathlib import Path
 

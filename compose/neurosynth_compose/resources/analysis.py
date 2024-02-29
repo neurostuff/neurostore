@@ -7,6 +7,7 @@ from flask import abort, request, jsonify, current_app
 from flask.views import MethodView
 
 # from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
+from sqlalchemy.orm import joinedload
 from marshmallow.exceptions import ValidationError
 import sqlalchemy.sql.expression as sae
 from sqlalchemy import func
@@ -102,6 +103,12 @@ class BaseView(MethodView):
     _model = None
     _nested = {}
     _attribute_name = None
+
+    def db_validation(self, data):
+        """
+        Custom validation for database constraints.
+        """
+        pass
 
     @classmethod
     def _external_request(cls, data, record, id):
@@ -257,6 +264,7 @@ class ObjectView(BaseView):
                 ),
             )
         else:
+            self.db_validation({"id": id})
             db.session.delete(record)
 
         db.session.commit()
@@ -398,6 +406,18 @@ class MetaAnalysesView(ObjectView, ListView):
         "results": "MetaAnalysisResultsView",
     }
 
+    def db_validation(self, data):
+        ma = (
+            MetaAnalysis.query.options(joinedload(MetaAnalysis.results))
+            .filter_by(id=data["id"])
+            .one()
+        )
+        if ma.results:
+            abort(
+                409,
+                description="this meta-analysis already has results and cannot be deleted.",
+            )
+
     def post(self):
         try:
             data = parser.parse(self.__class__._schema, request)
@@ -536,9 +556,9 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             access_token = request.headers.get("Authorization")
             neurostore_analysis_upload = create_or_update_neurostore_analysis.si(
                 ns_analysis_id=ns_analysis.id,
-                cluster_table=str(cluster_table_fnames[0])
-                if cluster_table_fnames
-                else None,
+                cluster_table=(
+                    str(cluster_table_fnames[0]) if cluster_table_fnames else None
+                ),
                 nv_collection_id=result.neurovault_collection.id,
                 access_token=access_token,
             )
@@ -569,6 +589,19 @@ class ProjectsView(ObjectView, ListView):
     _nested = {
         "meta_analyses": "MetaAnalysesView",
     }
+
+    def db_validation(self, data):
+        q = Project.query.filter_by(id=data["id"])
+        q = q.options(
+            joinedload(Project.meta_analyses).options(joinedload(MetaAnalysis.results))
+        )
+        proj = q.one()
+        for ma in proj.meta_analyses:
+            if ma.results:
+                abort(
+                    409,
+                    description="this project already has results and cannot be deleted.",
+                )
 
     def post(self):
         try:
