@@ -25,13 +25,14 @@ NIMARE_COORDINATE_ALGORITHMS = inspect.getmembers(nicoords, inspect.isclass)
 NIMARE_IMAGE_ALGORITHMS = [
     cls
     for cls in inspect.getmembers(niimgs, inspect.isclass)
-    if cls[0] not in [
+    if cls[0]
+    not in [
         "NiftiMasker",
         "MetaEstimator",
         "Memory",
         "Estimator",
         "IBMAEstimator",
-        "Memory"
+        "Memory",
     ]
 ]
 
@@ -45,9 +46,7 @@ DEFAULT_KERNELS = {
     "SCALE": "ALEKernel",
 }
 
-BLACKLIST_ALGORITHMS = [
-    "SCALE"
-]
+BLACKLIST_ALGORITHMS = ["SCALE"]
 
 BLACKLIST_PARAMS = [
     "n_cores",
@@ -81,9 +80,7 @@ def _derive_type(type_name):
 
 
 def _derive_default(class_signature, param):
-    default = getattr(
-        cls_signature.parameters.get(param.name), "default", None
-    )
+    default = getattr(cls_signature.parameters.get(param.name), "default", None)
     if isinstance(default, tuple):
         default = default[0]
 
@@ -124,16 +121,16 @@ def _derive_default(class_signature, param):
 
 def _check_fwe(cls):
     # Check if the method exists
-    has_method = hasattr(cls, 'correct_fwe_montecarlo')
+    has_method = hasattr(cls, "correct_fwe_montecarlo")
     if has_method:
         # Get the method
-        method = getattr(cls, 'correct_fwe_montecarlo')
+        method = getattr(cls, "correct_fwe_montecarlo")
 
         # Get the source code of the method
         source_code = inspect.getsource(method)
 
         # Check if the source code contains 'NotImplementedError'
-        fwe_enabled = 'NotImplementedError' not in source_code
+        fwe_enabled = "NotImplementedError" not in source_code
     else:
         fwe_enabled = False
 
@@ -145,15 +142,17 @@ def _check_fwe(cls):
         mdocs = FunctionDoc(method)
 
         # Get the default parameters of the method
-        method_default_parameters = {
-            param.name: {
-                "description": " ".join(param.desc),
-                "type": _derive_type(param.type)[0] or None,
-                "default": _derive_default(method_signature, param),
-            }
-            for param in mdocs._parsed_data["Parameters"]
-            if param.name not in BLACKLIST_PARAMS
-        },
+        method_default_parameters = (
+            {
+                param.name: {
+                    "description": " ".join(param.desc),
+                    "type": _derive_type(param.type)[0] or None,
+                    "default": _derive_default(method_signature, param),
+                }
+                for param in mdocs._parsed_data["Parameters"]
+                if param.name not in BLACKLIST_PARAMS
+            },
+        )
 
         if isinstance(method_default_parameters, tuple):
             method_default_parameters = method_default_parameters[0]
