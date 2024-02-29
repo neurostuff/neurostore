@@ -62,6 +62,12 @@ class BaseView(MethodView):
     _view_fields = {}
     # _default_exclude = None
 
+    def db_validation(self, data):
+        """
+        Custom validation for database constraints.
+        """
+        pass
+
     def pre_nested_record_update(record):
         """
         Processing of a record before updating nested components (defined in specific classes).
@@ -372,6 +378,7 @@ class ObjectView(BaseView):
     def put(self, id):
         request_data = self.insert_data(id, request.json)
         data = self.__class__._schema().load(request_data)
+        self.db_validation(data)
 
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data, id)
@@ -535,6 +542,8 @@ class ListView(BaseView):
         data = parser.parse(
             self.__class__._schema(exclude=("id",)), request, unknown=unknown
         )
+
+        self.db_validation(data)
 
         if source_id:
             data = self._load_from_source(source, source_id, data)
