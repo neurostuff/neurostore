@@ -1,5 +1,4 @@
 import string
-from werkzeug.exceptions import BadRequest
 from flask import request, abort
 from webargs.flaskparser import parser
 from webargs import fields
