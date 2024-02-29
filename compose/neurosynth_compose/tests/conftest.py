@@ -442,6 +442,7 @@ def user_data(app, db, mock_add_users):
 
                 meta_analysis = MetaAnalysis(
                     name=user.id + "'s meta analysis",
+                    description=user.id + "'s meta analysis",
                     user=user,
                     specification=specification,
                     studyset=studyset,
@@ -450,6 +451,7 @@ def user_data(app, db, mock_add_users):
 
                 project = Project(
                     name=user.id + "'s project",
+                    description=user.id + "'s project",
                     meta_analyses=[meta_analysis],
                     neurostore_study=ns_study,
                     user=user,
@@ -459,6 +461,7 @@ def user_data(app, db, mock_add_users):
                 ns_empty_study = NeurostoreStudy(neurostore_id=generate_id())
                 empty_project = Project(
                     name=user.id + "'s empty project",
+                    description=user.id + "'s empty project",
                     public=public,
                     neurostore_study=ns_empty_study,
                 )
