@@ -1,6 +1,7 @@
 """
 Utilities for changing the loading structure for queries
 """
+
 from sqlalchemy.orm import subqueryload
 from sqlalchemy.orm.strategy_options import _UnboundLoad
 from . import data

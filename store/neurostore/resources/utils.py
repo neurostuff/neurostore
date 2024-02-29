@@ -1,6 +1,7 @@
 """
 Utilities for View construction and function
 """
+
 import re
 
 from connexion.context import context

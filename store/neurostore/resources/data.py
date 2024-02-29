@@ -1,6 +1,5 @@
 import string
-
-from flask import request
+from flask import request, abort
 from webargs.flaskparser import parser
 from webargs import fields
 import sqlalchemy.sql.expression as sae
@@ -216,6 +215,21 @@ class AnnotationsView(ObjectView, ListView):
         data["source_id"] = source_id
         data["source_updated_at"] = annotation.updated_at or annotation.created_at
         return data
+
+    def db_validation(self, data):
+        studyset_id = data.get("studyset", {}).get("id")
+        q = Studyset.query.filter_by(id=studyset_id)
+        q = q.options(joinedload(Studyset.studies).options(joinedload(Study.analyses)))
+        studyset = q.one()
+        ss_analysis_ids = {a.id for s in studyset.studies for a in s.analyses}
+        data_analysis_ids = {
+            aa["analysis"]["id"] for aa in data.get("annotation_analyses")
+        }
+        if ss_analysis_ids != data_analysis_ids:
+            abort(
+                400,
+                description="annotation request must contain all analyses from the studyset.",
+            )
 
 
 @view_maker

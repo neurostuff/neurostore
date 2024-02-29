@@ -1,4 +1,5 @@
 """Test Base Study Endpoint"""
+
 from neurostore.models import BaseStudy, Analysis
 from neurostore.schemas import StudySchema
 

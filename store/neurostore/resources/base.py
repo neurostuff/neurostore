@@ -1,6 +1,7 @@
 """
 Base Classes/functions for constructing views
 """
+
 import re
 
 from connexion.context import context
@@ -61,6 +62,12 @@ class BaseView(MethodView):
     _composite_key = {}
     _view_fields = {}
     # _default_exclude = None
+
+    def db_validation(self, data):
+        """
+        Custom validation for database constraints.
+        """
+        pass
 
     def pre_nested_record_update(record):
         """
@@ -372,6 +379,7 @@ class ObjectView(BaseView):
     def put(self, id):
         request_data = self.insert_data(id, request.json)
         data = self.__class__._schema().load(request_data)
+        self.db_validation(data)
 
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data, id)

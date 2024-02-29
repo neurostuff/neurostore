@@ -281,6 +281,38 @@ def test_put_nonexistent_analysis(auth_client, ingest_neurosynth, session):
     )
 
 
+def test_post_put_subset_of_analyses(auth_client, ingest_neurosynth, session):
+    dset = Studyset.query.first()
+    # y for x in non_flat for y in x
+    data = [
+        {"study": s.id, "analysis": a.id, "note": {"foo": a.id, "doo": s.id}}
+        for s in dset.studies
+        for a in s.analyses
+    ]
+    # remove last note
+    data.pop()
+
+    note_keys = {"foo": "string", "doo": "string"}
+    payload = {
+        "studyset": dset.id,
+        "notes": data,
+        "note_keys": note_keys,
+        "name": "mah notes",
+    }
+
+    annot = auth_client.post("/api/annotations/", data=payload)
+    assert annot.status_code == 200
+    # have to pass all the notes even if only updating one attribute
+    # remove last note again
+
+    assert (
+        auth_client.put(
+            f"/api/annotations/{annot.json()['id']}", data=payload
+        ).status_code
+        == 400
+    )
+
+
 def test_correct_note_overwrite(auth_client, ingest_neurosynth, session):
     dset = Studyset.query.first()
     # y for x in non_flat for y in x

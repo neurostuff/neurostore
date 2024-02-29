@@ -1,6 +1,7 @@
 """
     Command line management tools.
 """
+
 import os
 
 import click
