@@ -290,7 +290,7 @@ def test_post_put_subset_of_analyses(auth_client, ingest_neurosynth, session):
         for a in s.analyses
     ]
     # remove last note
-    missing_note = data.pop()
+    data.pop()
 
     note_keys = {"foo": "string", "doo": "string"}
     payload = {
