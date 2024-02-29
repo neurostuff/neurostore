@@ -119,3 +119,6 @@ doc/generated/
 
 # Pytest
 .pytest_cache/
+
+# all dot directories
+.*/

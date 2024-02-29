@@ -5,7 +5,9 @@ from flask import current_app
 TOKEN = "INSERT TOKEN"
 
 
-user_endpoint = Users(domain=current_app.config["AUTH0_BASE_URL"].removeprefix("https://"), token=TOKEN)
+user_endpoint = Users(
+    domain=current_app.config["AUTH0_BASE_URL"].removeprefix("https://"), token=TOKEN
+)
 
 result = user_endpoint.list(per_page=100)["users"]
 
