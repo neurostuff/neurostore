@@ -12,6 +12,7 @@ export interface ICurationStubStudy {
     authors: string;
     keywords: string;
     pmid: string;
+    pmcid: string;
     doi: string;
     articleYear: string | undefined;
     journal: string;

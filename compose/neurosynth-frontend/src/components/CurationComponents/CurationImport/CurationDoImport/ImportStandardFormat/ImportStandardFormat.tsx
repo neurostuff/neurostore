@@ -103,6 +103,7 @@ const ImportStandardFormat: React.FC<{
                     }, ''),
                     keywords: '',
                     pmid: article.PMID || '',
+                    pmcid: article.PMCID || '',
                     doi: article.DOI || '',
                     articleYear: `${article?.issued?.['date-parts']?.[0]?.[0] || ''}`,
                     journal: article['container-title'] || '',

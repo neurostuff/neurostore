@@ -177,6 +177,7 @@ export interface INeurosynthParsedPubmedArticle {
     abstractText: string;
     DOI: string;
     PMID: string;
+    PMCID: string;
     articleYear: string | undefined;
     journal: {
         title: string;
@@ -226,6 +227,16 @@ const extractPMIDHelper = (
     if (!pmidArticleId || !extractedPMID) return '';
 
     return typeof extractedPMID === 'number' ? extractedPMID.toString() : extractedPMID;
+};
+
+const extractPMCIDHelper = (articleIds: IPubMedArticleId[] | undefined): string => {
+    if (!articleIds || articleIds.length === 0) return '';
+    const pmcArticleId = articleIds.find(
+        (articleId) => articleId['@_IdType']?.toLocaleLowerCase() === 'pmc'
+    );
+    if (!pmcArticleId?.['#text']) return '';
+    // this is safe to cast as string because all PMC IDs are of the format: "PMCXXXXXXX"
+    return pmcArticleId['#text'] as string;
 };
 
 const extractAbstractHelper = (
@@ -348,11 +359,11 @@ const splitIdsIntoSeparateRequests = (
                 const withoutItalics = (res.data as string).replaceAll(/<\/?i>/g, '');
                 const parsedJSON = parser.parse(withoutItalics) as IArticleListFromPubmed;
 
-                if (!parsedJSON?.PubmedArticleSet?.PubmedArticle) return [];
-
-                const articleList = parsedJSON.PubmedArticleSet.PubmedArticle;
+                const articleList = parsedJSON?.PubmedArticleSet?.PubmedArticle;
+                if (!articleList) return [];
 
                 return articleList.map((article) => {
+                    console.log({ article });
                     const pubmedArticleRef = article?.MedlineCitation?.Article;
                     const pubmedArticleIdRef = article?.PubmedData?.ArticleIdList;
 
@@ -363,6 +374,7 @@ const splitIdsIntoSeparateRequests = (
                         article?.MedlineCitation?.PMID?.['#text'],
                         pubmedArticleIdRef?.ArticleId
                     );
+                    const pmicid = extractPMCIDHelper(pubmedArticleIdRef?.ArticleId);
                     const abstract = extractAbstractHelper(
                         pubmedArticleRef?.Abstract?.AbstractText
                     );
@@ -382,6 +394,7 @@ const splitIdsIntoSeparateRequests = (
                         DOI: doi,
                         keywords: keywords,
                         PMID: pmid,
+                        PMCID: pmicid,
                         articleYear: year,
                         journal: {
                             title: pubmedArticleRef?.Journal?.Title || '',
