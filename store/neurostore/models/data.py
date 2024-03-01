@@ -1,4 +1,7 @@
 import sqlalchemy as sa
+from sqlalchemy import exists, and_
+from sqlalchemy.ext.hybrid import hybrid_property
+
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import ForeignKeyConstraint
 from sqlalchemy.ext.associationproxy import association_proxy
@@ -65,15 +68,22 @@ class Studyset(BaseMixin, db.Model):
     pmid = db.Column(db.String)
     public = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
-    user = relationship("User", backref=backref("studysets"))
+    user = relationship("User", backref=backref("studysets", cascade_backrefs=False), cascade_backrefs=False)
     studies = relationship(
         "Study",
         cascade="all",
         secondary="studyset_studies",
-        backref=backref("studysets", lazy="dynamic"),
+        backref=backref("studysets", lazy="dynamic", cascade_backrefs=False),
+        cascade_backrefs=False,
     )
-    annotations = relationship("Annotation", cascade="all, delete", backref="studyset")
-    __ts_vector__ = db.Column(
+    annotations = relationship(
+        "Annotation",
+        cascade="all, delete",
+        backref="studyset",
+        cascade_backrefs=False,
+        )
+    _ts_vector = db.Column(
+        "__ts_vector__",
         TSVector(),
         db.Computed(
             "to_tsvector('english', coalesce(name, '') || ' ' || coalesce(description, ''))",
@@ -90,15 +100,16 @@ class Annotation(BaseMixin, db.Model):
     source_id = db.Column(db.String)
     source_updated_at = db.Column(db.DateTime(timezone=True))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
-    user = relationship("User", backref=backref("annotations"))
+    user = relationship("User", backref=backref("annotations", cascade_backrefs=False), cascade_backrefs=False)
     studyset_id = db.Column(db.Text, db.ForeignKey("studysets.id"))
     metadata_ = db.Column(JSONB)
     public = db.Column(db.Boolean, default=True)
     note_keys = db.Column(MutableDict.as_mutable(JSONB))
     annotation_analyses = relationship(
         "AnnotationAnalysis",
-        backref=backref("annotation"),
+        backref=backref("annotation", cascade_backrefs=False),
         cascade="all, delete-orphan",
+        cascade_backrefs=False,
     )
 
 
@@ -139,7 +150,8 @@ class BaseStudy(BaseMixin, db.Model):
     has_coordinates = db.Column(db.Boolean, default=False, nullable=False)
     has_images = db.Column(db.Boolean, default=False, nullable=False)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
-    __ts_vector__ = db.Column(
+    _ts_vector = db.Column(
+        "__ts_vector__",
         TSVector(),
         db.Computed(
             "to_tsvector('english', coalesce(name, '') || ' ' || coalesce(description, ''))",
@@ -147,9 +159,9 @@ class BaseStudy(BaseMixin, db.Model):
         ),
     )
 
-    user = relationship("User", backref=backref("base_studies"))
+    user = relationship("User", backref=backref("base_studies", cascade_backrefs=False), cascade_backrefs=False)
     # retrieve versions of same study
-    versions = relationship("Study", backref=backref("base_study"))
+    versions = relationship("Study", backref=backref("base_study", cascade_backrefs=False), cascade_backrefs=False)
 
     def update_has_images_and_points(self):
         # Calculate has_images and has_coordinates for the BaseStudy
@@ -159,7 +171,7 @@ class BaseStudy(BaseMixin, db.Model):
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
         db.UniqueConstraint("doi", "pmid", name="doi_pmid"),
-        sa.Index("ix_base_study___ts_vector__", __ts_vector__, postgresql_using="gin"),
+        sa.Index("ix_base_study___ts_vector__", _ts_vector, postgresql_using="gin"),
     )
 
 
@@ -181,18 +193,20 @@ class Study(BaseMixin, db.Model):
     source_updated_at = db.Column(db.DateTime(timezone=True))
     base_study_id = db.Column(db.Text, db.ForeignKey("base_studies.id"))
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
-    __ts_vector__ = db.Column(
+    _ts_vector = db.Column(
+        "__ts_vector__",
         TSVector(),
         db.Computed(
             "to_tsvector('english', coalesce(name, '') || ' ' || coalesce(description, ''))",
             persisted=True,
         ),
     )
-    user = relationship("User", backref=backref("studies"))
+    user = relationship("User", backref=backref("studies", cascade_backrefs=False), cascade_backrefs=False)
     analyses = relationship(
         "Analysis",
-        backref=backref("study"),
+        backref=backref("study", cascade_backrefs=False),
         cascade="all, delete, delete-orphan",
+        cascade_backrefs=False,
     )
 
     @property
@@ -205,7 +219,7 @@ class Study(BaseMixin, db.Model):
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
-        sa.Index("ix_study___ts_vector__", __ts_vector__, postgresql_using="gin"),
+        sa.Index("ix_study___ts_vector__", _ts_vector, postgresql_using="gin"),
     )
 
 
@@ -223,12 +237,13 @@ class StudysetStudy(db.Model):
         viewonly=True,
     )
     studyset = relationship(
-        "Studyset", backref=backref("studyset_studies"), viewonly=True
+        "Studyset", backref=backref("studyset_studies"), viewonly=True,
     )
     annotation_analyses = relationship(
         "AnnotationAnalysis",
         cascade="all, delete-orphan",
-        backref=backref("studyset_study"),
+        backref=backref("studyset_study", cascade_backrefs=False),
+        cascade_backrefs=False,
     )
 
 
@@ -243,26 +258,30 @@ class Analysis(BaseMixin, db.Model):
     table_id = db.Column(db.String)
     points = relationship(
         "Point",
-        backref=backref("analysis"),
+        backref=backref("analysis", cascade_backrefs=False),
         cascade="all, delete-orphan",
+        cascade_backrefs=False,
     )
     images = relationship(
         "Image",
-        backref=backref("analysis"),
+        backref=backref("analysis", cascade_backrefs=False),
         cascade="all, delete-orphan",
+        cascade_backrefs=False,
     )
     weights = association_proxy("analysis_conditions", "weight")
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
-    user = relationship("User", backref=backref("analyses"))
+    user = relationship("User", backref=backref("analyses", cascade_backrefs=False), cascade_backrefs=False)
     analysis_conditions = relationship(
         "AnalysisConditions",
-        backref=backref("analysis"),
+        backref=backref("analysis", cascade_backrefs=False),
         cascade="all, delete-orphan",
+        cascade_backrefs=False,
     )
     annotation_analyses = relationship(
         "AnnotationAnalysis",
-        backref=backref("analysis"),
+        backref=backref("analysis", cascade_backrefs=False),
         cascade="all, delete-orphan",
+        cascade_backrefs=False,
     )
 
     @property
@@ -286,11 +305,12 @@ class Condition(BaseMixin, db.Model):
     name = db.Column(db.String)
     description = db.Column(db.String)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
-    user = relationship("User", backref=backref("conditions"))
+    user = relationship("User", backref=backref("conditions", cascade_backrefs=False), cascade_backrefs=False)
     analysis_conditions = relationship(
         "AnalysisConditions",
-        backref=backref("condition"),
+        backref=backref("condition", cascade_backrefs=False),
         cascade="all, delete",
+        cascade_backrefs=False,
     )
 
 
@@ -333,7 +353,7 @@ class Entity(BaseMixin, db.Model):
     # constrained enumeration (bids-entity, run, session, subject, group, meta)
     level = db.Column(db.String)
     data = db.Column(JSONB)  # metadata (participants.tsv, or something else)
-    analysis = relationship("Analysis", backref=backref("entities"))
+    analysis = relationship("Analysis", backref=backref("entities", cascade_backrefs=False), cascade_backrefs=False)
     __table_args__ = (db.CheckConstraint(level.in_(["group", "meta"])),)
 
 
@@ -357,10 +377,10 @@ class Point(BaseMixin, db.Model):
     order = db.Column(db.Integer)
 
     entities = relationship(
-        "Entity", secondary=PointEntityMap, backref=backref("points")
+        "Entity", secondary=PointEntityMap, backref=backref("points", cascade_backrefs=False), cascade_backrefs=False
     )
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
-    user = relationship("User", backref=backref("points"))
+    user = relationship("User", backref=backref("points", cascade_backrefs=False), cascade_backrefs=False)
 
 
 class Image(BaseMixin, db.Model):
@@ -376,10 +396,10 @@ class Image(BaseMixin, db.Model):
 
     analysis_name = association_proxy("analysis", "name")
     entities = relationship(
-        "Entity", secondary=ImageEntityMap, backref=backref("images")
+        "Entity", secondary=ImageEntityMap, backref=backref("images", cascade_backrefs=False), cascade_backrefs=False
     )
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
-    user = relationship("User", backref=backref("images"))
+    user = relationship("User", backref=backref("images", cascade_backrefs=False), cascade_backrefs=False)
 
 
 class PointValue(BaseMixin, db.Model):
@@ -388,9 +408,9 @@ class PointValue(BaseMixin, db.Model):
     point_id = db.Column(db.Text, db.ForeignKey("points.id", ondelete="CASCADE"))
     kind = db.Column(db.String)
     value = db.Column(db.Float)
-    point = relationship("Point", backref=backref("values"))
+    point = relationship("Point", backref=backref("values", cascade_backrefs=False), cascade_backrefs=False)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
-    user = relationship("User", backref=backref("point_values"))
+    user = relationship("User", backref=backref("point_values", cascade_backrefs=False), cascade_backrefs=False)
 
 
 from . import event_listeners  # noqa E402

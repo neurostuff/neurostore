@@ -3,11 +3,10 @@ Utilities for changing the loading structure for queries
 """
 
 from sqlalchemy.orm import subqueryload
-from sqlalchemy.orm.strategy_options import _UnboundLoad
 from . import data
 
 
-def nested_load(view, options=None, include_linked=False):
+def nested_load(view, options=None, query=None, include_linked=False):
     """
     SQL: Change lazy loading to eager loading when accessing all
     nested attributes.
@@ -25,6 +24,8 @@ def nested_load(view, options=None, include_linked=False):
         nested_view = getattr(data, view._nested[nested_keys[0]])
         if nested_view._nested:
             options = nested_load(nested_view, options)
+        elif query:
+            return query.options(options)
     elif len(nested_keys) > 1:
         nested_loads = []
         for k in nested_keys:
@@ -39,8 +40,11 @@ def nested_load(view, options=None, include_linked=False):
                 nested_loads.append(subqueryload(getattr(view._model, k)))
         if options:
             options = options.options(*nested_loads)
-        else:
-            print("Error")
+        elif query:
+            return query.options(*nested_loads)
 
-            options = _UnboundLoad().options(*nested_loads)
+            # options = _UnboundLoad().options(*nested_loads)
+    if query:
+        options = query.options(options)
+
     return options

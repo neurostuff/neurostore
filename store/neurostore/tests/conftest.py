@@ -1,6 +1,7 @@
 import pytest
 from os import environ
 from neurostore.models.data import Analysis, Condition
+from sqlalchemy.orm import scoped_session, sessionmaker
 from ..database import db as _db
 import sqlalchemy as sa
 from flask_sqlalchemy import __version__ as FLASK_SQL_VER
@@ -120,7 +121,7 @@ def real_db(real_app):
 
     yield _db
 
-    _db.session.remove()
+    # _db.session.remove()
     sa.orm.close_all_sessions()
     _db.drop_all()
 
@@ -160,51 +161,78 @@ def app(mock_auth):
 @pytest.fixture(scope="session")
 def db(app):
     """Session-wide test database."""
-    _db.init_app(app)
+    _db = app.extensions["sqlalchemy"]
+    _db.drop_all()
     _db.create_all()
 
     yield _db
 
-    _db.session.remove()
-    sa.orm.close_all_sessions()
-    _db.drop_all()
-
+    # _db.session.remove()
+    # sa.orm.close_all_sessions()
+    # _db.drop_all()
 
 @pytest.fixture(scope="function")
 def session(db):
-    """Creates a new db session for a test.
-    Changes in session are rolled back"""
+    """https://docs.sqlalchemy.org/en/20/orm/session_transaction.html#joining-a-session-into-an-external-transaction-such-as-for-test-suites"""
     from ..core import cache
 
     connection = db.engine.connect()
     transaction = connection.begin()
 
-    options = dict(bind=connection, binds={})
-    if FLASK_SQL_VER.startswith("3."):
-        session = db._make_scoped_session(options=options)
-    else:
-        session = db.create_scoped_session(options=options)
-
-    session.begin_nested()
-
-    # session is actually a scoped_session
-    # for the `after_transaction_end` event, we need a session instance to
-    # listen for, hence the `session()` call
-    @sa.event.listens_for(session(), "after_transaction_end")
-    def resetart_savepoint(sess, trans):
-        if trans.nested and not trans._parent.nested:
-            session.expire_all()
-            session.begin_nested()
-
+    session = scoped_session(
+        session_factory=sessionmaker(
+            bind=connection,
+            join_transaction_mode="create_savepoint",
+        )
+    )
     db.session = session
     cache.clear()
-
     yield session
 
     cache.clear()
-    session.remove()
     transaction.rollback()
+    db.session.close()
     connection.close()
+
+# @pytest.fixture(scope="function")
+# def session(db):
+#     """Creates a new db session for a test.
+#     Changes in session are rolled back"""
+#     from ..core import cache
+
+#     connection = db.engine.connect()
+#     transaction = connection.begin()
+
+#     options = dict(bind=connection, binds={}, future=True)
+#     if FLASK_SQL_VER.startswith("3."):
+#         session = db._make_scoped_session(options=options)
+#     else:
+#         session = db.create_scoped_session(options=options)
+
+#     # session.begin_nested()
+#     nested = connection.begin_nested()
+
+#     # session is actually a scoped_session
+#     # for the `after_transaction_end` event, we need a session instance to
+#     # listen for, hence the `session()` call
+#     @sa.event.listens_for(session, "after_transaction_end")
+#     def resetart_savepoint(sess, trans):
+#         nonlocal nested
+#         if not nested.is_active:
+#             nested = connection.begin_nested()
+#         # if trans.nested and not trans._parent.nested:
+#         #     session.expire_all()
+#         #     session.begin_nested()
+
+#     db.session = session
+#     cache.clear()
+
+#     yield session
+
+#     cache.clear()
+#     session.remove()
+#     transaction.rollback()
+#     connection.close()
 
 
 """
@@ -233,7 +261,7 @@ def auth_clients(mock_add_users, app):
 
 
 @pytest.fixture(scope="function")
-def mock_add_users(app, db, mock_auth):
+def mock_add_users(app, db, session, mock_auth):
     # from neurostore.resources.auth import decode_token
     from jose.jwt import encode
 

@@ -100,7 +100,7 @@ class StudysetsView(ObjectView, ListView):
         # check if results should be nested
         nested = True if args.get("nested") else False
         if nested:
-            q = q.options(nested_load(self))
+            q = nested_load(self, query=q)
 
         return q
 
@@ -158,7 +158,6 @@ class AnnotationsView(ObjectView, ListView):
 
     def after_update_or_create(self, record):
         q = Annotation.query.filter_by(id=record.id)
-        q = q.options(nested_load(self))
         q = q.options(
             joinedload(Annotation.studyset),
             joinedload(Annotation.annotation_analyses).options(
@@ -171,7 +170,7 @@ class AnnotationsView(ObjectView, ListView):
         return q.first()
 
     def view_search(self, q, args):
-        q = q.options(nested_load(self))
+        q = nested_load(self, query=q)
 
         # query annotations for a specific studyset
         if args.get("studyset_id"):
@@ -279,7 +278,7 @@ class BaseStudiesView(ObjectView, ListView):
     def join_tables(self, q, args):
         "join relevant tables to speed up query"
         if not args.get("flat"):
-            q = q.options(joinedload("versions"))
+            q = q.options(joinedload(self._model.versions))
         return super().join_tables(q, args)
 
     def post(self):
@@ -420,8 +419,8 @@ class StudiesView(ObjectView, ListView):
     def join_tables(self, q, args):
         "join relevant tables to speed up query"
         if not args.get("flat"):
-            q = q.options(joinedload("base_study"))
-            q = q.options(joinedload("analyses"))
+            q = q.options(joinedload(self._model.base_study))
+            q = q.options(joinedload(self._model.analyses))
         return super().join_tables(q, args)
 
     def serialize_records(self, records, args, exclude=tuple()):

@@ -303,7 +303,7 @@ class StudySetStudyInfoSchema(Schema):
 class BaseStudySchema(BaseDataSchema):
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
-    versions = StringOrNested("StudySchema", many=True, use_nested=False)
+    versions = StringOrNested("StudySchema", many=True)
 
     class Meta:
         additional = (
@@ -391,7 +391,7 @@ class StudysetSchema(BaseDataSchema):
 
 class AnnotationAnalysisSchema(BaseDataSchema):
     note = fields.Dict()
-    annotation = StringOrNested("AnnotationSchema", use_nested=False, load_only=True)
+    annotation = StringOrNested("AnnotationSchema", load_only=True)
     analysis_id = fields.String(
         data_key="analysis"
     )  # not marked with id_field because it's a primary relationship

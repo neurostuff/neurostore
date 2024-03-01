@@ -1,7 +1,7 @@
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import inspect
 from sqlalchemy.orm import joinedload
-from flask_sqlalchemy.session import Session
+from sqlalchemy.orm import Session
 from sqlalchemy import event
 from .data import (
     AnnotationAnalysis,

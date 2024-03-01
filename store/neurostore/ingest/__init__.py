@@ -269,6 +269,7 @@ def ingest_neurosynth(max_rows=None):
                 for col, value in study_info.items():
                     source_attr = getattr(base_study, col)
                     setattr(base_study, col, source_attr or value)
+            to_commit.append(base_study)
             study_coord_data = coord_data.loc[[id_]]
             md = {
                 "year": int(metadata_row.year),
@@ -314,7 +315,7 @@ def ingest_neurosynth(max_rows=None):
 
         # add studies to studyset
         d.studies = studies
-        db.session.add(d)
+        db.session.add_all([d] + studies + to_commit)
         db.session.commit()
 
         # create annotation object
@@ -337,7 +338,7 @@ def ingest_neurosynth(max_rows=None):
             studyset_study = StudysetStudy.query.filter_by(
                 study_id=study.id, studyset_id=d.id
             ).one()
-
+            to_commit.extend([study, studyset_study] + study.analyses)
             for analysis in study.analyses:
                 # add annotation
                 notes.append(
@@ -354,7 +355,7 @@ def ingest_neurosynth(max_rows=None):
             k: _check_type(v) for k, v in annotation_row._asdict().items()
         }
         annot.annotation_analyses = notes
-        db.session.add(annot)
+        db.session.add_all([annot] + notes + to_commit)
         db.session.commit()
 
 
@@ -384,6 +385,7 @@ def ingest_neuroquery(max_rows=None):
 
         if base_study is None:
             base_study = BaseStudy(name=metadata_row["title"], level="group", pmid=id_)
+
         study_coord_data = coord_data.loc[[id_]]
         s = Study(
             name=metadata_row["title"] or base_study.name,
@@ -418,8 +420,8 @@ def ingest_neuroquery(max_rows=None):
                 points.append(point)
                 point_idx += 1
 
-        db.session.add_all([s] + analyses + points)
-        db.session.commit()
+        db.session.add_all([s] + analyses + points + [base_study])
+        # db.session.commit()
 
     # make a neuroquery studyset
     d = Studyset(

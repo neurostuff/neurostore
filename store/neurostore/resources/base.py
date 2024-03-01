@@ -352,8 +352,8 @@ class ObjectView(BaseView):
             args["nested"] = request.args.get("nested", False) == "true"
 
         q = self._model.query
-        if args["nested"] or self._model is Annotation:
-            q = q.options(nested_load(self))
+        if args["nested"] and self._model is not Annotation:
+            q = nested_load(self, query=q)
         if self._model is Annotation:
             q = q.options(
                 joinedload(Annotation.annotation_analyses).options(
@@ -398,10 +398,9 @@ class ObjectView(BaseView):
             abort(403)
         else:
             db.session.delete(record)
+            # clear relevant caches
+            clear_cache(self.__class__, record, request.path)
             db.session.commit()
-
-        # clear relevant caches
-        clear_cache(self.__class__, record, request.path)
 
         return 204
 
@@ -446,7 +445,7 @@ class ListView(BaseView):
     def join_tables(self, q, args):
         if self._model is User:
             return q
-        return q.options(joinedload("user"))
+        return q.options(joinedload(self._model.user))
 
     def serialize_records(self, records, args, exclude=tuple()):
         """serialize records from search"""
@@ -486,7 +485,7 @@ class ListView(BaseView):
             q = q.filter_by(pmid=s)
         elif s is not None and self._fulltext_fields:
             tsquery = sa.func.websearch_to_tsquery(s, postgresql_regconfig="english")
-            q = q.filter(m.__ts_vector__.op("@@")(tsquery))
+            q = q.filter(m._ts_vector.op("@@")(tsquery))
 
         # Alternatively (or in addition), search on individual fields.
         for field in self._search_fields:
