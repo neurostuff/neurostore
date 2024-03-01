@@ -24,6 +24,7 @@ const ReadOnlyStubSummary: React.FC<ICurationStubStudy> = (props) => {
                 <Link
                     underline="hover"
                     target="_blank"
+                    rel="noreferrer"
                     href={`/base-studies/${neurostoreId}`}
                     sx={{ marginRight: '10px' }}
                 >
@@ -34,6 +35,7 @@ const ReadOnlyStubSummary: React.FC<ICurationStubStudy> = (props) => {
                 <Link
                     underline="hover"
                     target="_blank"
+                    rel="noreferrer"
                     href={`${PUBMED_ARTICLE_URL_PREFIX}${pmid}`}
                     sx={{ marginRight: '10px' }}
                 >
@@ -44,6 +46,7 @@ const ReadOnlyStubSummary: React.FC<ICurationStubStudy> = (props) => {
                 <Link
                     underline="hover"
                     target="_blank"
+                    rel="noreferrer"
                     href={articleLink}
                     sx={{ marginRight: '10px' }}
                 >

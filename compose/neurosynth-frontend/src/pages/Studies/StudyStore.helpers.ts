@@ -114,7 +114,7 @@ export interface IStoreStudy extends Omit<StudyReturn, 'metadata' | 'analyses'> 
 
 export type StudyDetails = Pick<
     StudyReturn,
-    'name' | 'description' | 'publication' | 'authors' | 'doi' | 'pmid' | 'year'
+    'name' | 'description' | 'publication' | 'authors' | 'doi' | 'pmid' | 'pmcid' | 'year'
 >;
 
 export const studyPointsToStorePoints = (
@@ -256,4 +256,30 @@ export const storeAnalysesToStudyAnalyses = (analyses?: IStoreAnalysis[]): Analy
     );
 
     return updatedAnalyses;
+};
+
+export const getEmptyStudy = (): IStoreStudy => {
+    return {
+        id: undefined,
+        base_study: undefined,
+        name: undefined,
+        description: undefined,
+        doi: undefined,
+        pmid: undefined,
+        pmcid: undefined,
+        authors: undefined,
+        year: undefined,
+        publication: undefined,
+        public: undefined,
+        metadata: [],
+        analyses: [],
+        studysets: [],
+        user: undefined,
+        username: undefined,
+        source: undefined,
+        source_id: undefined,
+        source_updated_at: undefined,
+        created_at: undefined,
+        updated_at: undefined,
+    };
 };

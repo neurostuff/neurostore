@@ -16,7 +16,7 @@ export const studiesToStubs = (
             title: study.name || '',
             authors: study.authors || '',
             keywords: '',
-            pmcid: (study as any).pmcid || '', // TODO CHANGE THIS BACK
+            pmcid: study.pmcid || '',
             pmid: pmid === 'NaN' ? '' : pmid,
             doi: doi === 'NaN' ? '' : doi,
             articleYear: study.year?.toString() || '',

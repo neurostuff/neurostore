@@ -48,6 +48,7 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                     Select the{' '}
                     <Link
                         target="_blank"
+                        rel="noreferrer"
                         href="https://neurostuff.github.io/compose-docs/guide/glossary#annotation"
                     >
                         annotation
@@ -55,6 +56,7 @@ const CreateMetaAnalysisSpecificationSelectionStep: React.FC<{
                     column for inclusion. This will determine which{' '}
                     <Link
                         target="_blank"
+                        rel="noreferrer"
                         href="https://neurostuff.github.io/compose-docs/guide/glossary#analysis"
                     >
                         analyses

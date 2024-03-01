@@ -47,6 +47,7 @@ const DisplayMetaAnalysisResult: React.FC<{
                     sx={{ fontWeight: 'normal' }}
                     underline="hover"
                     target="_blank"
+                    rel="noreferrer"
                     href={
                         neurovaultLink.includes('/api')
                             ? neurovaultLink.replace(/\/api/, '')

@@ -132,7 +132,8 @@ describe('ImportStudiesDialog', () => {
             cy.contains('label', 'Authors').should('be.visible');
             cy.contains('label', 'DOI').should('be.visible');
             cy.contains('label', 'Journal').should('be.visible');
-            cy.contains('label', 'PMID').should('be.visible');
+            cy.contains('label', 'PubMed ID').should('be.visible');
+            cy.contains('label', 'PubMed Central ID').should('be.visible');
             cy.contains('label', 'Article Year').should('be.visible');
             cy.contains('label', 'article link').should('be.visible');
             cy.contains('label', 'Keywords').should('be.visible');

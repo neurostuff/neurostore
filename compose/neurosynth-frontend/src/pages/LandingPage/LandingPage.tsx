@@ -69,6 +69,7 @@ const LandingPage = () => {
                                 color="secondary"
                                 endIcon={<OpenInNew />}
                                 target="_blank"
+                                rel="noreferrer"
                                 href="https://neurostuff.github.io/compose-docs/"
                             >
                                 Learn More

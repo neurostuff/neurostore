@@ -64,11 +64,11 @@ const EditStudyPage: React.FC = (props) => {
             }
         >
             <EditStudyPageHeader />
-            <EditStudyDetails />
-            <EditStudyMetadata />
             <EditStudyAnnotations />
+            <EditAnalyses />
+            <EditStudyDetails />
             <Box sx={{ marginBottom: '5rem' }}>
-                <EditAnalyses />
+                <EditStudyMetadata />
             </Box>
             <Box sx={EditStudyPageStyles.loadingButtonContainer}>
                 <EditStudySwapVersionButton />

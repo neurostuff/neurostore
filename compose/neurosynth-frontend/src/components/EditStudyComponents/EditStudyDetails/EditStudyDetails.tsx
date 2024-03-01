@@ -5,6 +5,7 @@ import {
     useStudyDescription,
     useStudyDOI,
     useStudyName,
+    useStudyPMCID,
     useStudyPMID,
     useStudyPublication,
     useStudyYear,
@@ -21,6 +22,7 @@ const EditStudyDetails: React.FC = React.memo((props) => {
     const publication = useStudyPublication();
     const doi = useStudyDOI();
     const pmid = useStudyPMID();
+    const pmcid = useStudyPMCID();
     const year = useStudyYear();
     const updateStudyDetails = useUpdateStudyDetails();
 
@@ -40,15 +42,7 @@ const EditStudyDetails: React.FC = React.memo((props) => {
         <NeurosynthAccordion
             elevation={0}
             expandIconColor="secondary.main"
-            sx={[
-                EditStudyComponentsStyles.accordion,
-                {
-                    borderTop: '2px solid',
-                    borderColor: 'secondary.main',
-                    borderTopLeftRadius: '4px !important',
-                    borderTopRightRadius: '4px !important',
-                },
-            ]}
+            sx={[EditStudyComponentsStyles.accordion]}
             accordionSummarySx={EditStudyComponentsStyles.accordionSummary}
             TitleElement={
                 <>
@@ -76,11 +70,11 @@ const EditStudyDetails: React.FC = React.memo((props) => {
                 />
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <TextField
-                        label="pmid"
+                        label="journal"
                         size="small"
                         sx={{ width: '49%', marginBottom: '0.75rem' }}
-                        value={pmid || ''}
-                        onChange={(event) => handleUpdate(event.target.value, 'pmid')}
+                        value={publication || ''}
+                        onChange={(event) => handleUpdate(event.target.value, 'publication')}
                     />
                     <TextField
                         label="doi"
@@ -92,22 +86,29 @@ const EditStudyDetails: React.FC = React.memo((props) => {
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <TextField
+                        label="pmid"
+                        size="small"
+                        sx={{ width: '33%', marginBottom: '0.75rem' }}
+                        value={pmid || ''}
+                        onChange={(event) => handleUpdate(event.target.value, 'pmid')}
+                    />
+                    <TextField
+                        label="pmcid"
+                        size="small"
+                        sx={{ width: '33%', marginBottom: '0.75rem' }}
+                        value={pmcid || ''}
+                        onChange={(event) => handleUpdate(event.target.value, 'pmcid')}
+                    />
+                    <TextField
                         onWheel={(event) => {
                             event.preventDefault();
                         }}
                         label="year"
                         size="small"
-                        sx={{ width: '49%', marginBottom: '0.75rem' }}
+                        sx={{ width: '33%', marginBottom: '0.75rem' }}
                         type="number"
                         value={year || ''}
                         onChange={(event) => handleUpdate(event.target.value, 'year')}
-                    />
-                    <TextField
-                        label="journal"
-                        size="small"
-                        sx={{ width: '49%', marginBottom: '0.75rem' }}
-                        value={publication || ''}
-                        onChange={(event) => handleUpdate(event.target.value, 'publication')}
                     />
                 </Box>
                 <TextField

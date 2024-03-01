@@ -316,6 +316,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                                 value={
                                     <Link
                                         target="_blank"
+                                        rel="noreferrer"
                                         href={`/studysets/${
                                             metaAnalysisStudyset?.neurostore_id || ''
                                         }`}

@@ -14,8 +14,14 @@ import { v4 as uuidv4 } from 'uuid';
 import CurationImportBaseStyles from '../CurationImportBase.styles';
 import CurationImportReview from './CurationImportReview';
 import { SearchBy, SearchByMapping } from 'pages/Studies/StudiesPage/models';
+import { EImportMode } from '../CurationDoImport/CurationDoImport';
 
-const createCleanTagName = (searchTerm: string | undefined) => {
+const createTagName = (searchTerm: string | undefined, importMode: EImportMode) => {
+    if (importMode !== EImportMode.NEUROSTORE_IMPORT) {
+        return `${importMode}-${new Date().toISOString()}`;
+    }
+
+    // for pubmed and standard format imports or if the user just does not enter a search term, then we give back a tag with just the date searched
     if (!searchTerm) return '';
     const parsedSearch = new URLSearchParams(searchTerm);
     const search = parsedSearch.get(SearchByMapping[SearchBy.ALL]);
@@ -57,12 +63,13 @@ const createCleanTagName = (searchTerm: string | undefined) => {
 };
 
 const CurationImportNameAndReview: React.FC<{
+    importMode: EImportMode;
     onNavigate: (button: ENavigationButton) => void;
     onUpdateStubs: (stubs: ICurationStubStudy[]) => void;
     stubs: ICurationStubStudy[];
     unimportedStubs: string[];
 }> = (props) => {
-    const { onUpdateStubs, onNavigate, stubs, unimportedStubs } = props;
+    const { onUpdateStubs, onNavigate, stubs, unimportedStubs, importMode } = props;
     const infoTags = useProjectCurationInfoTags();
     const createNewInfoTag = useCreateNewCurationInfoTag();
     const [tag, setTag] = useState<AutoSelectOption | undefined>();
@@ -70,8 +77,8 @@ const CurationImportNameAndReview: React.FC<{
     const intialized = useRef<boolean>(false);
 
     useEffect(() => {
-        const tagName = createCleanTagName(stubs[0]?.searchTerm);
-        if (tag || !tagName || intialized.current) return;
+        const tagName = createTagName(stubs[0]?.searchTerm, importMode);
+        if (!tagName || tag || intialized.current) return;
         const existingTag = infoTags.find((infoTag) => infoTag.label === tagName);
         if (existingTag) {
             setTag(existingTag);
@@ -83,7 +90,7 @@ const CurationImportNameAndReview: React.FC<{
             });
         }
         intialized.current = true;
-    }, [infoTags, stubs, tag]);
+    }, [importMode, infoTags, stubs, tag]);
 
     const handleAddTag = (tag: AutoSelectOption) => {
         setTag(tag);

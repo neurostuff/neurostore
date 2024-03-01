@@ -91,6 +91,7 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                 doi={props.stub.doi}
                 pmid={props.stub.pmid}
                 studyName={props.stub.title}
+                pmcid={props.stub.pmcid}
             />
 
             <Box>
@@ -116,6 +117,13 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                 {props.stub.authors || 'No Authors'}
             </Typography>
 
+            <Typography
+                sx={{ color: props.stub.articleYear ? 'initial' : 'warning.dark' }}
+                variant="h6"
+            >
+                Year: {props.stub.articleYear || 'No Year'}
+            </Typography>
+
             <Box sx={{ display: 'flex' }}>
                 <Typography
                     sx={{ color: props.stub.journal ? 'initial' : 'warning.dark' }}
@@ -124,13 +132,6 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                     {props.stub.journal || 'No Journal'}
                 </Typography>
             </Box>
-
-            <Typography
-                sx={{ color: props.stub.articleYear ? 'initial' : 'warning.dark' }}
-                variant="h6"
-            >
-                {props.stub.articleYear || 'No Year'}
-            </Typography>
 
             <Box sx={{ display: 'flex' }}>
                 <Typography sx={{ marginRight: '10px' }} variant="h6">
@@ -147,6 +148,24 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                         variant="h6"
                     >
                         {props.stub.pmid || 'No PMID'}
+                    </Typography>
+                </TextEdit>
+            </Box>
+            <Box sx={{ display: 'flex' }}>
+                <Typography sx={{ marginRight: '10px' }} variant="h6">
+                    PMCID:
+                </Typography>
+                <TextEdit
+                    sx={{ input: { padding: 0, fontSize: '1.25rem' } }}
+                    textToEdit={props.stub.pmcid}
+                    label="pmcid"
+                    onSave={handleUpdateStub}
+                >
+                    <Typography
+                        sx={{ color: props.stub.pmid ? 'initial' : 'warning.dark' }}
+                        variant="h6"
+                    >
+                        {props.stub.pmcid || 'No PMCID'}
                     </Typography>
                 </TextEdit>
             </Box>
