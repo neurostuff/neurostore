@@ -116,7 +116,8 @@ def real_app():
 @pytest.fixture(scope="session")
 def real_db(real_app):
     """Session-wide test database."""
-    _db.init_app(real_app)
+    _db = real_app.extensions["sqlalchemy"]
+    _db.drop_all()
     _db.create_all()
 
     yield _db
