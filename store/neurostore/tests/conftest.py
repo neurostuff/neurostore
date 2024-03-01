@@ -380,6 +380,7 @@ def user_data(session, mock_add_users):
                     )
                     doi = "doi:" + shortuuid.ShortUUID().random(length=7)
                     pmid = shortuuid.ShortUUID().random(length=8)
+                    pmcid = shortuuid.ShortUUID().random(length=8)
                     study = Study(
                         name=name + "study",
                         user=user,
@@ -389,6 +390,8 @@ def user_data(session, mock_add_users):
                     )
                     if public:
                         study.doi = doi
+                        study.pmid = pmid
+                        study.pmcid = pmcid
 
                     base_study = BaseStudy(
                         name=name + "study",
@@ -398,6 +401,7 @@ def user_data(session, mock_add_users):
                         level=level,
                         doi=doi,
                         pmid=pmid,
+                        pmcid=pmcid,
                         versions=[study],
                     )
 
