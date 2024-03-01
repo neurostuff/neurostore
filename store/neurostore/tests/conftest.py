@@ -192,8 +192,9 @@ def session(db):
     yield session
 
     cache.clear()
+    # session.rollback()
+    session.close()
     transaction.rollback()
-    db.session.close()
     connection.close()
 
 

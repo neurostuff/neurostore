@@ -340,22 +340,19 @@ def ingest_neurosynth(max_rows=None):
             ).one()
             to_commit.extend([study, studyset_study] + study.analyses)
             for analysis in study.analyses:
-                # add annotation
-                notes.append(
-                    AnnotationAnalysis(
-                        note=annotation_row._asdict(),
-                        analysis=analysis,
-                        annotation=annot,
-                        studyset_study=studyset_study,
-                    )
-                )
+                to_commit.append(analysis)
+                # add note (event automatically created an annotation_analysis object)
+                analysis.annotation_analyses[0].note = annotation_row._asdict()
+                notes.append(analysis.annotation_analyses[0])
 
         # add notes to annotation
         annot.note_keys = {
             k: _check_type(v) for k, v in annotation_row._asdict().items()
         }
         annot.annotation_analyses = notes
-        db.session.add_all([annot] + notes + to_commit)
+        for note in notes:
+            to_commit.append(note.analysis)
+        db.session.add_all([annot] + notes + to_commit + [d])
         db.session.commit()
 
 
