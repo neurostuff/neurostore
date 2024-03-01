@@ -1,10 +1,10 @@
-import { Box, Chip, Divider, Tooltip, Typography } from '@mui/material';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { Box, Chip, Divider, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import {
     PUBMED_ARTICLE_URL_PREFIX,
     PUBMED_CENTRAL_ARTICLE_URL_PREFIX,
 } from 'hooks/external/useGetPubMedIds';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 
 /**
  * Study summary for studies that are being imported and tagged. We cannot reuse the ReadOnlyStubSummary easily here because
