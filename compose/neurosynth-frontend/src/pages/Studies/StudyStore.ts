@@ -169,7 +169,7 @@ const useStudyStore = create<
                             publication: state.study.publication,
                             metadata: arrayToMetadata(state.study.metadata),
                             analyses: storeAnalysesToStudyAnalyses(state.study.analyses),
-                        } as any); // TODO: remove this
+                        });
 
                         const newAnalysesWereCreated = state.study.analyses.some(
                             (analysis) => analysis.isNew
