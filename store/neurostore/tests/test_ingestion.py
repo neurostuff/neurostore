@@ -11,4 +11,3 @@ def test_ingest_neurovault(ingest_neurovault, session):
 
 def test_ingest_neuroquery(ingest_neuroquery, session):
     pass
-

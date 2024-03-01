@@ -172,6 +172,7 @@ def db(app):
     # sa.orm.close_all_sessions()
     # _db.drop_all()
 
+
 @pytest.fixture(scope="function")
 def session(db):
     """https://docs.sqlalchemy.org/en/20/orm/session_transaction.html#joining-a-session-into-an-external-transaction-such-as-for-test-suites"""
@@ -194,6 +195,7 @@ def session(db):
     transaction.rollback()
     db.session.close()
     connection.close()
+
 
 # @pytest.fixture(scope="function")
 # def session(db):

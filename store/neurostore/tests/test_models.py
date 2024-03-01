@@ -10,7 +10,6 @@ from ..models import (
 )
 
 
-
 def test_Study(app):
     Study()
 
