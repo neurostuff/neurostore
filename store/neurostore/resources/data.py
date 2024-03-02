@@ -104,6 +104,17 @@ class StudysetsView(ObjectView, ListView):
 
         return q
 
+    def join_tables(self, q, args):
+        if args.get('load_annotations'):
+            q = q.options(joinedload(Studyset.annotations))
+        q = q.options(joinedload(Studyset.studies))
+        return super().join_tables(q, args)
+
+    def after_update_or_create(self, record):
+        q = self._model.query.filter_by(id=record.id)
+        q = self.join_tables(q, {"load_annotations": True})
+        return q.one()
+
     def serialize_records(self, records, args):
         if args.get("nested"):
             snapshot = StudysetSnapshot()
@@ -196,7 +207,9 @@ class AnnotationsView(ObjectView, ListView):
 
     @classmethod
     def load_from_neurostore(cls, source_id, data=None):
-        annotation = cls._model.query.filter_by(id=source_id).first_or_404()
+        q = cls._model.query.filter_by(id=source_id)
+        q = cls().join_tables(q, {})
+        annotation = q.first_or_404()
         parent_source_id = annotation.source_id
         parent_source = annotation.source
         while parent_source_id is not None and parent_source == "neurostore":
@@ -216,6 +229,18 @@ class AnnotationsView(ObjectView, ListView):
         data["source_id"] = source_id
         data["source_updated_at"] = annotation.updated_at or annotation.created_at
         return data
+
+    def join_tables(self, q, args):
+        q = q.options(
+                joinedload(Annotation.user),
+                joinedload(Annotation.annotation_analyses).options(
+                    joinedload(AnnotationAnalysis.analysis),
+                    joinedload(AnnotationAnalysis.studyset_study).options(
+                        joinedload(StudysetStudy.study)
+                    ),
+                )
+            )
+        return q
 
     def db_validation(self, data):
         studyset_id = data.get("studyset", {}).get("id")
@@ -421,7 +446,7 @@ class StudiesView(ObjectView, ListView):
     def join_tables(self, q, args):
         "join relevant tables to speed up query"
         if not args.get("flat"):
-            q = q.options(joinedload("base_study"))
+            # q = q.options(joinedload("base_study"))
             q = q.options(joinedload("analyses"))
         return super().join_tables(q, args)
 
@@ -444,7 +469,9 @@ class StudiesView(ObjectView, ListView):
 
     @classmethod
     def load_from_neurostore(cls, source_id, data=None):
-        study = cls._model.query.filter_by(id=source_id).first_or_404()
+        q = cls._model.query.filter_by(id=source_id)
+        q = q.options(nested_load(cls()))
+        study = q.first_or_404()
         parent_source_id = study.source_id
         parent_source = study.source
         while parent_source_id is not None and parent_source == "neurostore":
@@ -537,6 +564,13 @@ class AnalysesView(ObjectView, ListView):
         "annotation_analyses": "AnnotationAnalysesResource",
     }
     _search_fields = ("name", "description")
+
+    def join_tables(self, q, args):
+        q = q.options(
+                joinedload(self._model.images),
+                joinedload(self._model.points),
+            )
+        return super().join_tables(q, args)
 
 
 @view_maker

@@ -43,4 +43,7 @@ def nested_load(view, options=None, include_linked=False):
             print("Error")
 
             options = _UnboundLoad().options(*nested_loads)
+    elif options is None and len(nested_keys) == 0:
+        return _UnboundLoad()
+
     return options

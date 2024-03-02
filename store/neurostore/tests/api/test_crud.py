@@ -41,8 +41,9 @@ def test_create(auth_client, user_data, endpoint, model, schema, session):
     user = User.query.filter_by(name="user1").first()
 
     rows = model.query.filter_by(user=user).all()
-    for row in rows:
-        payload = schema().dump(row)
+    s = schema()
+    for row in rows:   
+        payload = s.dump(row)
         if model is BaseStudy:
             payload["doi"] = payload["doi"] + "new"
             payload["pmid"] = payload["pmid"] + "new"
@@ -63,6 +64,7 @@ def test_create(auth_client, user_data, endpoint, model, schema, session):
                 (StringOrNested, fields.Nested),
             )
             and k != "id"
+            and not d_key_sf.get(k).dump_only
         ):
             assert v == resp.json()[k]
 
