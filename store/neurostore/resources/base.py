@@ -356,6 +356,7 @@ class ObjectView(BaseView):
             q = q.options(nested_load(self))
         if self._model is Annotation:
             q = q.options(
+                joinedload(Annotation.user),
                 joinedload(Annotation.annotation_analyses).options(
                     joinedload(AnnotationAnalysis.analysis),
                     joinedload(AnnotationAnalysis.studyset_study).options(
@@ -515,6 +516,16 @@ class ListView(BaseView):
 
         # join the relevant tables for output
         q = self.join_tables(q, args)
+        if self._model is Annotation:
+            q = q.options(
+                joinedload(Annotation.user),
+                joinedload(Annotation.annotation_analyses).options(
+                    joinedload(AnnotationAnalysis.analysis),
+                    joinedload(AnnotationAnalysis.studyset_study).options(
+                        joinedload(StudysetStudy.study)
+                    ),
+                )
+            )
 
         pagination_query = q.paginate(
             page=args["page"],

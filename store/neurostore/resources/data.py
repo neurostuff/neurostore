@@ -161,6 +161,7 @@ class AnnotationsView(ObjectView, ListView):
         q = q.options(nested_load(self))
         q = q.options(
             joinedload(Annotation.studyset),
+            joinedload(Annotation.user),
             joinedload(Annotation.annotation_analyses).options(
                 joinedload(AnnotationAnalysis.analysis),
                 joinedload(AnnotationAnalysis.studyset_study).options(
