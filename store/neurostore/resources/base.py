@@ -137,7 +137,9 @@ class BaseView(MethodView):
             if cls._model is User:
                 q = cls._model.query.filter_by(id=id)
             else:
-                q = cls._model.query.options(joinedload(cls._model.user)).filter_by(id=id)
+                q = cls._model.query.options(joinedload(cls._model.user)).filter_by(
+                    id=id
+                )
             record = q.first()
             if record is None:
                 abort(422)
@@ -313,7 +315,6 @@ def clear_cache(cls, record, path, previous_cls=None):
         #     if previous_cls and linked_class in previous_cls:
         #         return
 
-
         linked_records = getattr(record, link)
         linked_records = (
             [linked_records] if not isinstance(linked_records, list) else linked_records
@@ -472,7 +473,6 @@ class ListView(BaseView):
 
     def view_search(self, q, args):
         return q
-
 
     def serialize_records(self, records, args, exclude=tuple()):
         """serialize records from search"""

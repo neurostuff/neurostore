@@ -237,7 +237,9 @@ class StudysetStudy(db.Model):
 class Analysis(BaseMixin, db.Model):
     __tablename__ = "analyses"
 
-    study_id = db.Column(db.Text, db.ForeignKey("studies.id", ondelete="CASCADE"), index=True)
+    study_id = db.Column(
+        db.Text, db.ForeignKey("studies.id", ondelete="CASCADE"), index=True
+    )
     name = db.Column(db.String)
     description = db.Column(db.String)
     order = db.Column(db.Integer)
@@ -310,16 +312,24 @@ class AnalysisConditions(db.Model):
 PointEntityMap = db.Table(
     "point_entities",
     db.Model.metadata,
-    db.Column("point", db.Text, db.ForeignKey("points.id", ondelete="CASCADE"), index=True),
-    db.Column("entity", db.Text, db.ForeignKey("entities.id", ondelete="CASCADE"), index=True),
+    db.Column(
+        "point", db.Text, db.ForeignKey("points.id", ondelete="CASCADE"), index=True
+    ),
+    db.Column(
+        "entity", db.Text, db.ForeignKey("entities.id", ondelete="CASCADE"), index=True
+    ),
 )
 
 
 ImageEntityMap = db.Table(
     "image_entities",
     db.Model.metadata,
-    db.Column("image", db.Text, db.ForeignKey("images.id", ondelete="CASCADE"), index=True),
-    db.Column("entity", db.Text, db.ForeignKey("entities.id", ondelete="CASCADE"), index=True),
+    db.Column(
+        "image", db.Text, db.ForeignKey("images.id", ondelete="CASCADE"), index=True
+    ),
+    db.Column(
+        "entity", db.Text, db.ForeignKey("entities.id", ondelete="CASCADE"), index=True
+    ),
 )
 
 
@@ -330,7 +340,9 @@ class Entity(BaseMixin, db.Model):
     __tablename__ = "entities"
 
     # link to analysis
-    analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"), index=True)
+    analysis_id = db.Column(
+        db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"), index=True
+    )
     label = db.Column(db.String)  # bids-entity
     # constrained enumeration (bids-entity, run, session, subject, group, meta)
     level = db.Column(db.String)
@@ -353,7 +365,9 @@ class Point(BaseMixin, db.Model):
     kind = db.Column(db.String)
     image = db.Column(db.String)  # what does image represent
     label_id = db.Column(db.Float, default=None)
-    analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"), index=True)
+    analysis_id = db.Column(
+        db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"), index=True
+    )
     cluster_size = db.Column(db.Float)
     subpeak = db.Column(db.Boolean)
     order = db.Column(db.Integer)
@@ -372,7 +386,9 @@ class Image(BaseMixin, db.Model):
     filename = db.Column(db.String)
     space = db.Column(db.String)
     value_type = db.Column(db.String)
-    analysis_id = db.Column(db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"), index=True)
+    analysis_id = db.Column(
+        db.Text, db.ForeignKey("analyses.id", ondelete="CASCADE"), index=True
+    )
     data = db.Column(JSONB)
     add_date = db.Column(db.DateTime(timezone=True))
 
@@ -387,7 +403,9 @@ class Image(BaseMixin, db.Model):
 class PointValue(BaseMixin, db.Model):
     __tablename__ = "point_values"
 
-    point_id = db.Column(db.Text, db.ForeignKey("points.id", ondelete="CASCADE"), index=True)
+    point_id = db.Column(
+        db.Text, db.ForeignKey("points.id", ondelete="CASCADE"), index=True
+    )
     kind = db.Column(db.String)
     value = db.Column(db.Float)
     point = relationship("Point", backref=backref("values"))

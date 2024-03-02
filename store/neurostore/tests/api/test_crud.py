@@ -42,7 +42,7 @@ def test_create(auth_client, user_data, endpoint, model, schema, session):
 
     rows = model.query.filter_by(user=user).all()
     s = schema()
-    for row in rows:   
+    for row in rows:
         payload = s.dump(row)
         if model is BaseStudy:
             payload["doi"] = payload["doi"] + "new"

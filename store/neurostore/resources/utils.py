@@ -17,13 +17,13 @@ def camel_case_split(str):
 
 
 def get_current_user():
-    if context.get('user_obj'):
-        return context['user_obj']
+    if context.get("user_obj"):
+        return context["user_obj"]
 
     user = context.get("user")
     if user:
-        context['user_obj'] = models.User.query.filter_by(external_id=user).first()
-        return context['user_obj']
+        context["user_obj"] = models.User.query.filter_by(external_id=user).first()
+        return context["user_obj"]
     return None
 
 

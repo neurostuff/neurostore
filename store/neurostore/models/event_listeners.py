@@ -1,7 +1,10 @@
+import traceback
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import inspect
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import joinedload
 from flask_sqlalchemy.session import Session
+import time
 from sqlalchemy import event
 from .data import (
     AnnotationAnalysis,
@@ -171,7 +174,7 @@ event.listen(Study.analyses, "bulk_replace", add_annotation_analyses_study)
 @event.listens_for(Session, "before_flush")
 def before_flush(session, flush_context, instances):
     """Update the base study attributes has_coordinates and has_images"""
-
+    # TODO: check for lazy loads here
     changed_objects = set(session.dirty) | set(session.new) | set(session.deleted)
 
     # Find unique BaseStudies affected by the changes
@@ -237,3 +240,14 @@ def before_flush(session, flush_context, instances):
             continue
 
         base_study.update_has_images_and_points()
+
+
+@event.listens_for(Engine, "before_cursor_execute")
+def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    # (not any([ 'ingest_' in a for a in traceback.format_stack()])) and (not any([ 'conftest' in a for a in traceback.format_stack()])) and ("SELECT" in statement or "INSERT" in statment)
+    conn.info.setdefault("query_start_time", []).append(time.time())
+
+
+@event.listens_for(Engine, "after_cursor_execute")
+def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    total = time.time() - conn.info["query_start_time"].pop(-1)

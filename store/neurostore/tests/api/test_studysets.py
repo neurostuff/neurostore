@@ -18,7 +18,9 @@ def test_post_and_get_studysets(auth_client, ingest_neurosynth, session):
     get_resp = auth_client.get(f"/api/studysets/{post_resp.json()['id']}")
 
     assert (
-        set(get_resp.json()['studies']) == set(post_resp.json()['studies']) == set(study_ids)
+        set(get_resp.json()["studies"])
+        == set(post_resp.json()["studies"])
+        == set(study_ids)
     )
 
 

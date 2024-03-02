@@ -35,7 +35,6 @@ def test_post_annotation(auth_client, ingest_neurosynth, session):
     assert resp.status_code == 200
 
 
-
 def test_get_annotations(auth_client, ingest_neurosynth, session):
     # import pandas as pd
     # from io import StringIO

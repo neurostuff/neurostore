@@ -105,7 +105,7 @@ class StudysetsView(ObjectView, ListView):
         return q
 
     def join_tables(self, q, args):
-        if args.get('load_annotations'):
+        if args.get("load_annotations"):
             q = q.options(joinedload(Studyset.annotations))
         q = q.options(joinedload(Studyset.studies))
         return super().join_tables(q, args)
@@ -232,14 +232,14 @@ class AnnotationsView(ObjectView, ListView):
 
     def join_tables(self, q, args):
         q = q.options(
-                joinedload(Annotation.user),
-                joinedload(Annotation.annotation_analyses).options(
-                    joinedload(AnnotationAnalysis.analysis),
-                    joinedload(AnnotationAnalysis.studyset_study).options(
-                        joinedload(StudysetStudy.study)
-                    ),
-                )
-            )
+            joinedload(Annotation.user),
+            joinedload(Annotation.annotation_analyses).options(
+                joinedload(AnnotationAnalysis.analysis),
+                joinedload(AnnotationAnalysis.studyset_study).options(
+                    joinedload(StudysetStudy.study)
+                ),
+            ),
+        )
         return q
 
     def db_validation(self, data):
@@ -567,9 +567,9 @@ class AnalysesView(ObjectView, ListView):
 
     def join_tables(self, q, args):
         q = q.options(
-                joinedload(self._model.images),
-                joinedload(self._model.points),
-            )
+            joinedload(self._model.images),
+            joinedload(self._model.points),
+        )
         return super().join_tables(q, args)
 
 
