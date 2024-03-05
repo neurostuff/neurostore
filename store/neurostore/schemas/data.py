@@ -349,11 +349,6 @@ class StudySchema(BaseDataSchema):
         metadata={"id_field": True},
     )
     base_study_id = fields.String(data_key="base_study", allow_none=True)
-    # base_study = fields.Pluck(
-    #     "BaseStudySchema",
-    #     "id",
-    #     dump_only=True,
-    # )
     has_coordinates = fields.Bool(dump_only=True)
     has_images = fields.Bool(dump_only=True)
     source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
