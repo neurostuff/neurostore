@@ -1,10 +1,7 @@
-import traceback
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import inspect
-from sqlalchemy.engine import Engine
 from sqlalchemy.orm import joinedload
 from flask_sqlalchemy.session import Session
-import time
 from sqlalchemy import event
 from .data import (
     AnnotationAnalysis,
@@ -235,15 +232,40 @@ def before_flush(session, flush_context, instances):
     setattr(flush_context, "base_studies_to_update", unique_base_studies)
 
 
+# from sqlalchemy.engine import Engine
+# import traceback
+
+
 # @event.listens_for(Engine, "before_cursor_execute")
 # def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
 #     if (
-#         (not any([ ('ingest_' in a and "before_cursor_execute" not in a) for a in traceback.format_stack()]))
-#         and (any([ ('_emit_lazyload' in a and "before_cursor_execute" not in a) for a in traceback.format_stack()]))
-#         and (not any([ ('conftest' in a and "before_cursor_execute" not in a) for a in traceback.format_stack()]))
+#         (
+#             not any(
+#                 [
+#                     ("ingest_" in a and "before_cursor_execute" not in a)
+#                     for a in traceback.format_stack()
+#                 ]
+#             )
+#         )
+#         and (
+#             any(
+#                 [
+#                     ("_emit_lazyload" in a and "before_cursor_execute" not in a)
+#                     for a in traceback.format_stack()
+#                 ]
+#             )
+#         )
+#         and (
+#             not any(
+#                 [
+#                     ("conftest" in a and "before_cursor_execute" not in a)
+#                     for a in traceback.format_stack()
+#                 ]
+#             )
+#         )
 #         and ("SELECT" in statement or "INSERT" in statement or "UPDATE" in statement)
 #     ):
-#         conn.info.setdefault("query_start_time", []).append(time.time())
+#         pass
 
 
 # @event.listens_for(Engine, "after_cursor_execute")

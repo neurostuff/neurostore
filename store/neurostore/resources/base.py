@@ -8,12 +8,9 @@ from connexion.context import context
 from flask import abort, request, current_app  # jsonify
 from flask.views import MethodView
 
-# from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
-# from flask import make_response
 import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
-from sqlalchemy.orm import joinedload, selectinload, subqueryload
-from sqlalchemy import inspect
+from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
 from webargs.flaskparser import parser
@@ -33,44 +30,6 @@ from ..models import (
 )
 from ..schemas.data import StudysetSnapshot
 from . import data as viewdata
-
-
-# def load_all_relationships(model, query, loaded_relationships=None, path=None):
-#     if loaded_relationships is None:
-#         loaded_relationships = set()
-#     if path is None:
-#         path = set()
-
-#     # Get the mapper object associated with the model
-#     mapper_obj = inspect(model).mapper
-
-#     # Get all relationships for the mapper object
-#     relationships = mapper_obj.relationships
-
-#     # Apply selectinload or subqueryload to each relationship that has not been loaded yet
-#     for relationship in relationships:
-#         if relationship not in loaded_relationships:
-#             # Construct full path to the relationship
-#             full_path = path.union({relationship.key})
-#             full_path_str = '.'.join(full_path)
-
-#             # Apply selectinload or subqueryload based on relationship type
-#             if relationship.direction.name == 'MANYTOONE':
-#                 query = query.options(selectinload(full_path_str))
-#             elif relationship.direction.name == 'MANYTOMANY':
-#                 query = query.options(selectinload(full_path_str), subqueryload(full_path_str))
-#             else:
-#                 # Handle other types of relationships as needed
-#                 pass
-
-#             loaded_relationships.add(relationship)
-
-#             # If the relationship has nested relationships, recursively load them
-#             if relationship.mapper.relationships:
-#                 nested_model = relationship.mapper.class_
-#                 query = load_all_relationships(nested_model, query, loaded_relationships, full_path)
-
-#     return query
 
 
 def create_user():
@@ -345,15 +304,6 @@ def clear_cache(cls, record, path, previous_cls=None):
 
     # clear cache for all linked objects
     for link, link_view_name in cls._linked.items():
-        # attributes I want to pre-empt a database query for:
-        # annotations
-        # studyset_studies
-        # current hacky solution
-        # if link == "annotations":
-        #     linked_class = getattr(viewdata, link_view_name)
-        #     if previous_cls and linked_class in previous_cls:
-        #         return
-
         linked_records = getattr(record, link)
         linked_records = (
             [linked_records] if not isinstance(linked_records, list) else linked_records
@@ -415,16 +365,6 @@ class ObjectView(BaseView):
         q = self._model.query
         if args["nested"] or self._model is Annotation:
             q = q.options(nested_load(self))
-        # if self._model is Annotation:
-        #     q = q.options(
-        #         joinedload(Annotation.user),
-        #         joinedload(Annotation.annotation_analyses).options(
-        #             joinedload(AnnotationAnalysis.analysis),
-        #             joinedload(AnnotationAnalysis.studyset_study).options(
-        #                 joinedload(StudysetStudy.study)
-        #             ),
-        #         )
-        #     )
         q = self.join_tables(q, args)
 
         record = q.filter_by(id=id).first_or_404()
@@ -580,16 +520,6 @@ class ListView(BaseView):
 
         # join the relevant tables for output
         q = self.join_tables(q, args)
-        # if self._model is Annotation:
-        #     q = q.options(
-        #         joinedload(Annotation.user),
-        #         joinedload(Annotation.annotation_analyses).options(
-        #             joinedload(AnnotationAnalysis.analysis),
-        #             joinedload(AnnotationAnalysis.studyset_study).options(
-        #                 joinedload(StudysetStudy.study)
-        #             ),
-        #         )
-        #     )
 
         pagination_query = q.paginate(
             page=args["page"],
