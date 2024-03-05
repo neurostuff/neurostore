@@ -348,7 +348,7 @@ class StudySchema(BaseDataSchema):
         dump_only=True,
         metadata={"id_field": True},
     )
-    base_study_id = fields.String(data_key="base_study")
+    base_study_id = fields.String(data_key="base_study", allow_none=True)
     # base_study = fields.Pluck(
     #     "BaseStudySchema",
     #     "id",
