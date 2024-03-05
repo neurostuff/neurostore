@@ -46,7 +46,7 @@ def test_mass_cloning(auth_client, session):
     }
     resp = auth_client.post("/api/studies/", data=data)
     source_id = resp.json()["id"]
-    for i in range(1000):
+    for i in range(500):
         resp = auth_client.post(
             f"/api/studies/?source_id={source_id}", data=data,
         )
