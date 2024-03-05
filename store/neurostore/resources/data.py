@@ -472,19 +472,6 @@ class StudiesView(ObjectView, ListView):
     @classmethod
     def load_from_neurostore(cls, source_id, data=None):
         q = cls._model.query.filter_by(id=source_id)
-        q = q.options(nested_load(cls()))
-        q.options(
-            joinedload(Study.user),
-            joinedload(Study.analyses).options(
-                joinedload(Analysis.user),
-                joinedload(Analysis.images).options(
-                    joinedload(Image.user),
-                ),
-                joinedload(Analysis.points).options(
-                    joinedload(Point.user),
-                )
-            )
-        )
         study = q.first_or_404()
         parent_source_id = study.source_id
         parent_source = study.source
