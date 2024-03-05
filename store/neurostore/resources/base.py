@@ -12,7 +12,8 @@ from flask.views import MethodView
 # from flask import make_response
 import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload, subqueryload
+from sqlalchemy import inspect
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
 from webargs.flaskparser import parser
@@ -32,6 +33,44 @@ from ..models import (
 )
 from ..schemas.data import StudysetSnapshot
 from . import data as viewdata
+
+
+# def load_all_relationships(model, query, loaded_relationships=None, path=None):
+#     if loaded_relationships is None:
+#         loaded_relationships = set()
+#     if path is None:
+#         path = set()
+
+#     # Get the mapper object associated with the model
+#     mapper_obj = inspect(model).mapper
+
+#     # Get all relationships for the mapper object
+#     relationships = mapper_obj.relationships
+
+#     # Apply selectinload or subqueryload to each relationship that has not been loaded yet
+#     for relationship in relationships:
+#         if relationship not in loaded_relationships:
+#             # Construct full path to the relationship
+#             full_path = path.union({relationship.key})
+#             full_path_str = '.'.join(full_path)
+
+#             # Apply selectinload or subqueryload based on relationship type
+#             if relationship.direction.name == 'MANYTOONE':
+#                 query = query.options(selectinload(full_path_str))
+#             elif relationship.direction.name == 'MANYTOMANY':
+#                 query = query.options(selectinload(full_path_str), subqueryload(full_path_str))
+#             else:
+#                 # Handle other types of relationships as needed
+#                 pass
+
+#             loaded_relationships.add(relationship)
+
+#             # If the relationship has nested relationships, recursively load them
+#             if relationship.mapper.relationships:
+#                 nested_model = relationship.mapper.class_
+#                 query = load_all_relationships(nested_model, query, loaded_relationships, full_path)
+
+#     return query
 
 
 def create_user():
@@ -421,7 +460,7 @@ class ObjectView(BaseView):
             q = self.join_tables(q, {})
         else:
             q = q.options(nested_load(self))
-
+        # q = load_all_relationships(self._model, q)
         record = q.one()
 
         current_user = get_current_user()

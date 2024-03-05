@@ -171,6 +171,15 @@ event.listen(Studyset.studies, "bulk_replace", add_annotation_analyses_studyset)
 event.listen(Study.analyses, "bulk_replace", add_annotation_analyses_study)
 
 
+@event.listens_for(Session, "after_flush_postexec")
+def receive_after_flush_postexec(session, flush_context):
+    "listen for the 'after_flush_postexec' event"
+    base_studies = getattr(flush_context, "base_studies_to_update", [])
+    for bs in base_studies:
+        bs.update_has_images_and_points()
+    setattr(flush_context, "base_studies_to_update", [])
+
+
 @event.listens_for(Session, "before_flush")
 def before_flush(session, flush_context, instances):
     """Update the base study attributes has_coordinates and has_images"""
@@ -220,34 +229,24 @@ def before_flush(session, flush_context, instances):
     unique_base_studies = {
         base_study
         for base_study in [get_base_study(obj) for obj in changed_objects]
-        if base_study is not None
+        if base_study is not None and base_study not in session.deleted
     }
 
-    # Update the has_images and has_points for each unique BaseStudy
-    for base_study in unique_base_studies:
-        if (
-            inspect(base_study).attrs.versions.history.added
-            and base_study.has_coordinates is True
-            and base_study.has_images is True
-        ):
-            continue
-
-        if (
-            inspect(base_study).attrs.versions.history.deleted
-            and base_study.has_coordinates is False
-            and base_study.has_images is False
-        ):
-            continue
-
-        base_study.update_has_images_and_points()
+    setattr(flush_context, "base_studies_to_update", unique_base_studies)
 
 
-@event.listens_for(Engine, "before_cursor_execute")
-def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-    # (not any([ 'ingest_' in a for a in traceback.format_stack()])) and (not any([ 'conftest' in a for a in traceback.format_stack()])) and ("SELECT" in statement or "INSERT" in statment)
-    conn.info.setdefault("query_start_time", []).append(time.time())
+# @event.listens_for(Engine, "before_cursor_execute")
+# def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+#     if (
+#         (not any([ ('ingest_' in a and "before_cursor_execute" not in a) for a in traceback.format_stack()]))
+#         and (any([ ('_emit_lazyload' in a and "before_cursor_execute" not in a) for a in traceback.format_stack()]))
+#         and (not any([ ('conftest' in a and "before_cursor_execute" not in a) for a in traceback.format_stack()]))
+#         and ("SELECT" in statement or "INSERT" in statement or "UPDATE" in statement)
+#     ):
+#         conn.info.setdefault("query_start_time", []).append(time.time())
 
 
-@event.listens_for(Engine, "after_cursor_execute")
-def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-    total = time.time() - conn.info["query_start_time"].pop(-1)
+# @event.listens_for(Engine, "after_cursor_execute")
+# def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+#     # total = time.time() - conn.info["query_start_time"].pop(-1)
+#     pass
