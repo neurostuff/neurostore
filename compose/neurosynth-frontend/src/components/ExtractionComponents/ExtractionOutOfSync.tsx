@@ -35,12 +35,28 @@ const ExtractionOutOfSync: React.FC = (props) => {
         if (!studysetId || !annotationId) return;
         setIsLoading(true);
 
-        const stubsToBaseStudies: Array<Pick<BaseStudy, 'name' | 'doi' | 'pmid'>> =
-            curationIncludedStudies.stubStudies.map((stub) => ({
-                name: stub.title,
-                doi: stub.doi,
-                pmid: stub.pmid,
-            }));
+        const stubsToBaseStudies: Array<
+            Pick<
+                BaseStudy,
+                | 'name'
+                | 'doi'
+                | 'pmid'
+                | 'pmcid'
+                | 'year'
+                | 'description'
+                | 'publication'
+                | 'authors'
+            >
+        > = curationIncludedStudies.stubStudies.map((stub) => ({
+            name: stub.title,
+            doi: stub.doi,
+            pmid: stub.pmid,
+            pmcid: stub.pmcid,
+            year: Number(stub.articleYear),
+            description: stub.abstractText,
+            publication: stub.journal,
+            authors: stub.authors,
+        }));
 
         const studiesInStudyset = new Set<string>();
         ((studyset?.studies || []) as Array<StudyReturn>).forEach((study) => {

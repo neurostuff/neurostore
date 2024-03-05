@@ -69,7 +69,7 @@ const ProjectPage: React.FC = (props) => {
                 <Box sx={{ marginBottom: '0.5rem' }}>
                     <TextEdit
                         onSave={(updatedName, label) => updateProjectName(updatedName)}
-                        sx={{ input: { fontSize: '1.5rem' }, width: '50%' }}
+                        sx={{ input: { fontSize: '1.5rem' } }}
                         textToEdit={projectName || ''}
                     >
                         <Typography
@@ -83,11 +83,15 @@ const ProjectPage: React.FC = (props) => {
                         onSave={(updatedDescription, label) =>
                             updateProjectDescription(updatedDescription)
                         }
-                        sx={{ input: { fontSize: '1.25rem' }, width: '50%' }}
+                        sx={{ input: { fontSize: '1.25rem' } }}
                         textToEdit={projectDescription || ''}
+                        multiline
                     >
                         <Typography
-                            sx={{ color: projectDescription ? 'muted.main' : 'warning.dark' }}
+                            sx={{
+                                color: projectDescription ? 'muted.main' : 'warning.dark',
+                                whiteSpace: 'pre-line',
+                            }}
                             variant="h6"
                         >
                             {projectDescription || 'No description'}

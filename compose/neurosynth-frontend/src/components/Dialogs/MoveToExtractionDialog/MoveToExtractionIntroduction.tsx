@@ -10,6 +10,7 @@ const MoveToExtractionIntroduction: React.FC<{
                 <Link
                     underline="hover"
                     target="_blank"
+                    rel="noreferrer"
                     href="https://neurostuff.github.io/compose-docs/guide/walkthrough/Project/Extraction"
                 >
                     Extraction
@@ -32,6 +33,7 @@ const MoveToExtractionIntroduction: React.FC<{
                 <Link
                     underline="hover"
                     target="_blank"
+                    rel="noreferrer"
                     href="https://neurostuff.github.io/compose-docs/guide/glossary#studyset"
                 >
                     Studyset
@@ -42,6 +44,7 @@ const MoveToExtractionIntroduction: React.FC<{
                 <Link
                     underline="hover"
                     target="_blank"
+                    rel="noreferrer"
                     href="https://neurostuff.github.io/compose-docs/guide/glossary#analyses"
                 >
                     Analyses
@@ -53,6 +56,7 @@ const MoveToExtractionIntroduction: React.FC<{
                 <Link
                     underline="hover"
                     target="_blank"
+                    rel="noreferrer"
                     href="https://neurostuff.github.io/compose-docs/guide/glossary#annotations"
                 >
                     Annotations

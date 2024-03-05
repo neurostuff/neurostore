@@ -39,10 +39,17 @@ def test_get_analyses(auth_client, ingest_neurosynth, session):
 
     # Query specify analysis ID
     resp = auth_client.get(f"/api/analyses/{a_id}")
+    resp_json = resp.json()
     assert resp.status_code == 200
-    assert resp.json() == analysis
+    assert set(resp_json["points"]) == set(analysis['points'])
+    assert set(resp_json["images"]) == set(analysis['images'])
+    resp_json.pop("points")
+    resp_json.pop("images")
+    analysis.pop("points")
+    analysis.pop("images")
 
-    assert resp.json()["id"] == a_id
+    assert resp_json == analysis
+    assert resp_json["id"] == a_id
 
 
 def test_post_analyses(auth_client, ingest_neurosynth, session):

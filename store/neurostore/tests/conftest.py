@@ -46,6 +46,20 @@ auth_test = pytest.mark.skipif(
     reason="Only run when --auth is given",
 )
 
+def pytest_addoption(parser):
+    parser.addoption(
+        "--performance",
+        action="store_true",
+        default=False,
+        help="Run performance tests",
+    )
+
+
+performance_test = pytest.mark.skipif(
+    "not config.getoption('--performance')",
+    reason="Only run when --performance is given",
+)
+
 """
 Test fixtures for bypassing authentication
 """
@@ -369,6 +383,27 @@ def ingest_neurosynth(session):
 
 
 @pytest.fixture(scope="function")
+def ingest_neurosynth_large(session):
+    """Add a studyset with two subjects"""
+    return ingest.ingest_neurosynth(100)
+
+
+@pytest.fixture(scope="function")
+def assign_neurosynth_to_user(session, ingest_neurosynth_large, auth_client):
+    """assign the studyset and all studies/analyses/points to the user."""
+    studyset = Studyset.query.filter_by(name="neurosynth").first()
+    user = User.query.filter_by(external_id=auth_client.username).first()
+    studyset.user = user
+    for study in studyset.studies:
+        study.user = user
+        for analysis in study.analyses:
+            analysis.user = user
+
+    session.add(studyset)
+    session.commit()
+
+
+@pytest.fixture(scope="function")
 @vcr.use_cassette("cassettes/ingest_neurovault.yml")
 def ingest_neurovault(session):
     return ingest.ingest_neurovault(limit=5, max_images=50)
@@ -412,6 +447,7 @@ def user_data(session, mock_add_users):
                     )
                     doi = "doi:" + shortuuid.ShortUUID().random(length=7)
                     pmid = shortuuid.ShortUUID().random(length=8)
+                    pmcid = shortuuid.ShortUUID().random(length=8)
                     study = Study(
                         name=name + "study",
                         user=user,
@@ -421,6 +457,8 @@ def user_data(session, mock_add_users):
                     )
                     if public:
                         study.doi = doi
+                        study.pmid = pmid
+                        study.pmcid = pmcid
 
                     base_study = BaseStudy(
                         name=name + "study",
@@ -430,6 +468,7 @@ def user_data(session, mock_add_users):
                         level=level,
                         doi=doi,
                         pmid=pmid,
+                        pmcid=pmcid,
                         versions=[study],
                     )
 

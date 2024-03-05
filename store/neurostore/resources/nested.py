@@ -42,9 +42,9 @@ def nested_load(view, options=None, query=None, include_linked=False):
             options = options.options(*nested_loads)
         elif query:
             return query.options(*nested_loads)
-
-            # options = _UnboundLoad().options(*nested_loads)
-    if query:
+    if query and options:
         options = query.options(options)
+    elif query and not options:
+        options = query.options()
 
     return options

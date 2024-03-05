@@ -46,6 +46,7 @@ const CurationStubListItem: React.FC<ICurationStubListItem> = React.memo((props)
                 )}
                 <Box sx={{ width: '100%' }}>
                     <Typography noWrap variant="body1">
+                        {props.stub.articleYear ? `(${props.stub.articleYear}). ` : ''}{' '}
                         {props.stub.title}
                     </Typography>
                 </Box>

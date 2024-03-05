@@ -8,8 +8,6 @@ from connexion.context import context
 from flask import abort, request, current_app  # jsonify
 from flask.views import MethodView
 
-# from sqlalchemy.ext.associationproxy import ColumnAssociationProxyInstance
-# from flask import make_response
 import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.orm import joinedload
@@ -63,6 +61,9 @@ class BaseView(MethodView):
     _view_fields = {}
     # _default_exclude = None
 
+    def eager_load(self, q, args):
+        return q
+
     def db_validation(self, data):
         """
         Custom validation for database constraints.
@@ -85,11 +86,18 @@ class BaseView(MethodView):
         """
         Processing of a record after updating or creating (defined in specific classes).
         """
-        return record
+        q = self._model.query.filter_by(id=record.id)
+        q = self.join_tables(q, {})
+        return q.one()
 
     @classmethod
     def load_nested_records(cls, data, record=None):
         return data
+
+    def join_tables(self, q, args):
+        if self._model is User:
+            return q
+        return q.options(joinedload("user"))
 
     @classmethod
     def update_or_create(cls, data, id=None, user=None, record=None, commit=True):
@@ -127,7 +135,13 @@ class BaseView(MethodView):
             record = cls._model()
             record.user = current_user
         elif record is None:
-            record = cls._model.query.filter_by(id=id).first()
+            if cls._model is User:
+                q = cls._model.query.filter_by(id=id)
+            else:
+                q = cls._model.query.options(joinedload(cls._model.user)).filter_by(
+                    id=id
+                )
+            record = q.first()
             if record is None:
                 abort(422)
 
@@ -352,17 +366,10 @@ class ObjectView(BaseView):
             args["nested"] = request.args.get("nested", False) == "true"
 
         q = self._model.query
-        if args["nested"] and self._model is not Annotation:
-            q = nested_load(self, query=q)
-        if self._model is Annotation:
-            q = q.options(
-                joinedload(Annotation.annotation_analyses).options(
-                    joinedload(AnnotationAnalysis.analysis),
-                    joinedload(AnnotationAnalysis.studyset_study).options(
-                        joinedload(StudysetStudy.study)
-                    ),
-                )
-            )
+        # if args["nested"] or self._model is Annotation:
+        #     q = nested_load(self, query=q)
+        #     q = self.join_tables(q, args)
+
         record = q.filter_by(id=id).first_or_404()
         if self._model is Studyset and args["nested"]:
             snapshot = StudysetSnapshot()
@@ -391,7 +398,13 @@ class ObjectView(BaseView):
         return self.__class__._schema().dump(record)
 
     def delete(self, id):
-        record = self.__class__._model.query.filter_by(id=id).one()
+        q = self.__class__._model.query.filter_by(id=id)
+        # if self._model is Annotation:
+        #     q = self.join_tables(q, {})
+        # else:
+        #     q = nested_load(self, query=q)
+        # q = load_all_relationships(self._model, q)
+        record = q.one()
 
         current_user = get_current_user()
         if record.user_id != current_user.external_id:
@@ -493,7 +506,7 @@ class ListView(BaseView):
             if s is not None:
                 q = q.filter(getattr(m, field).ilike(f"%{s}%"))
 
-        q = self.view_search(q, args)
+        # q = self.view_search(q, args)
         # Sort
         sort_col = args["sort"]
         desc = args["desc"]
@@ -513,7 +526,7 @@ class ListView(BaseView):
         q = q.order_by(getattr(attr, desc)(), getattr(m.id, desc)())
 
         # join the relevant tables for output
-        q = self.join_tables(q, args)
+        # q = self.join_tables(q, args)
 
         pagination_query = q.paginate(
             page=args["page"],

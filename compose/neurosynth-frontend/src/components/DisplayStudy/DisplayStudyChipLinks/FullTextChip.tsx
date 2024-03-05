@@ -1,5 +1,5 @@
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { Chip } from '@mui/material';
+import { Chip, Tooltip } from '@mui/material';
 import { useGetFullText } from 'hooks';
 import { useStudyName } from 'pages/Studies/StudyStore';
 import { useEffect, useState } from 'react';
@@ -32,17 +32,20 @@ const FullTextChip: React.FC<{ name?: string | null }> = (props) => {
         return <></>;
     } else {
         return (
-            <Chip
-                icon={<OpenInNewIcon />}
-                color="primary"
-                label="Full Text"
-                component="a"
-                href={fullTextURL}
-                target="_blank"
-                clickable
-                sx={DisplayStudyChipLinksStyles.chip}
-                variant="outlined"
-            />
+            <Tooltip placement="top" title="View the full article in PDF form via Semantic Scholar">
+                <Chip
+                    icon={<OpenInNewIcon />}
+                    color="primary"
+                    label="full text (PDF)"
+                    component="a"
+                    href={fullTextURL}
+                    target="_blank"
+                    rel="noreferrer"
+                    clickable
+                    sx={DisplayStudyChipLinksStyles.chip}
+                    variant="outlined"
+                />
+            </Tooltip>
         );
     }
 };

@@ -190,7 +190,8 @@ class EntitySchema(BaseDataSchema):
 
 class ImageSchema(BaseDataSchema):
     # serialization
-    analysis = fields.Pluck("AnalysisSchema", "id", metadata={"id_field": True})
+    analysis_id = fields.String(data_key="analysis", metadata={"id_field": True})
+    # analysis = fields.Pluck("AnalysisSchema", "id", metadata={"id_field": True})
     analysis_name = fields.String(allow_none=True, dump_only=True)
     add_date = fields.DateTime(dump_only=True)
 
@@ -206,7 +207,8 @@ class PointValueSchema(BaseDataSchema):
 
 class PointSchema(BaseDataSchema):
     # serialization
-    analysis = fields.Pluck("AnalysisSchema", "id", metadata={"id_field": True})
+    analysis_id = fields.String(data_key="analysis", metadata={"id_field": True})
+    # analysis = fields.Pluck("AnalysisSchema", "id", metadata={"id_field": True})
     values = fields.Nested(PointValueSchema, many=True)
     entities = fields.Nested(EntitySchema, many=True, load_only=True)
     cluster_size = fields.Float(allow_none=True)
@@ -253,7 +255,8 @@ class StudysetStudySchema(BaseDataSchema):
 
 class AnalysisSchema(BaseDataSchema):
     # serialization
-    study = fields.Pluck("StudySchema", "id", metadata={"id_field": True})
+    study_id = fields.String(data_key="study", metadata={"id_field": True})
+    # study = fields.Pluck("StudySchema", "id", metadata={"id_field": True})
     conditions = StringOrNested(ConditionSchema, many=True, dump_only=True)
     order = fields.Integer()
     analysis_conditions = fields.Nested(AnalysisConditionSchema, many=True)
@@ -312,6 +315,7 @@ class BaseStudySchema(BaseDataSchema):
             "publication",
             "doi",
             "pmid",
+            "pmcid",
             "authors",
             "year",
             "level",
@@ -322,6 +326,7 @@ class BaseStudySchema(BaseDataSchema):
             "publication",
             "doi",
             "pmid",
+            "pmcid",
             "authors",
             "year",
             "level",
@@ -343,11 +348,7 @@ class StudySchema(BaseDataSchema):
         dump_only=True,
         metadata={"id_field": True},
     )
-    base_study = fields.Pluck(
-        "BaseStudySchema",
-        "id",
-        dump_only=True,
-    )
+    base_study_id = fields.String(data_key="base_study", allow_none=True)
     has_coordinates = fields.Bool(dump_only=True)
     has_images = fields.Bool(dump_only=True)
     source_updated_at = fields.DateTime(dump_only=True, allow_none=True)
@@ -361,6 +362,7 @@ class StudySchema(BaseDataSchema):
             "publication",
             "doi",
             "pmid",
+            "pmcid",
             "authors",
             "year",
             "level",
@@ -371,6 +373,7 @@ class StudySchema(BaseDataSchema):
             "publication",
             "doi",
             "pmid",
+            "pmcid",
             "authors",
             "year",
             "level",

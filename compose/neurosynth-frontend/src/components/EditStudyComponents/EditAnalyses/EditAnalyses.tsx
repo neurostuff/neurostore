@@ -50,7 +50,7 @@ const EditAnalyses: React.FC = React.memo((props) => {
     };
 
     useEffect(() => {
-        if (!selectedAnalysisId) {
+        if (!selectedAnalysisId && analyses.length > 0) {
             // select the first analysis on first render
             setSelectedAnalysisId(analyses[0].id);
         }
@@ -61,13 +61,7 @@ const EditAnalyses: React.FC = React.memo((props) => {
             elevation={0}
             defaultExpanded
             expandIconColor="secondary.main"
-            sx={[
-                EditStudyComponentsStyles.accordion,
-                {
-                    borderBottomLeftRadius: '4px !important',
-                    borderBottomRightRadius: '4px !important',
-                },
-            ]}
+            sx={[EditStudyComponentsStyles.accordion]}
             accordionSummarySx={EditStudyComponentsStyles.accordionSummary}
             TitleElement={
                 <Typography sx={EditStudyComponentsStyles.accordionTitle}>Analyses</Typography>

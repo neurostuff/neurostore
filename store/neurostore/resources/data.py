@@ -3,7 +3,7 @@ from flask import request, abort
 from webargs.flaskparser import parser
 from webargs import fields
 import sqlalchemy.sql.expression as sae
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, defaultload
 from sqlalchemy.sql import func
 
 
@@ -14,6 +14,8 @@ from ..database import db
 from ..models import (
     Studyset,
     Study,
+    Image,
+    Point,
     Annotation,
     Analysis,
     AnalysisConditions,
@@ -104,6 +106,17 @@ class StudysetsView(ObjectView, ListView):
 
         return q
 
+    def join_tables(self, q, args):
+        if args.get("load_annotations"):
+            q = q.options(joinedload(Studyset.annotations))
+        q = q.options(joinedload(Studyset.studies))
+        return super().join_tables(q, args)
+
+    def after_update_or_create(self, record):
+        q = self._model.query.filter_by(id=record.id)
+        q = self.join_tables(q, {"load_annotations": True})
+        return q.one()
+
     def serialize_records(self, records, args):
         if args.get("nested"):
             snapshot = StudysetSnapshot()
@@ -160,6 +173,7 @@ class AnnotationsView(ObjectView, ListView):
         q = Annotation.query.filter_by(id=record.id)
         q = q.options(
             joinedload(Annotation.studyset),
+            joinedload(Annotation.user),
             joinedload(Annotation.annotation_analyses).options(
                 joinedload(AnnotationAnalysis.analysis),
                 joinedload(AnnotationAnalysis.studyset_study).options(
@@ -194,7 +208,9 @@ class AnnotationsView(ObjectView, ListView):
 
     @classmethod
     def load_from_neurostore(cls, source_id, data=None):
-        annotation = cls._model.query.filter_by(id=source_id).first_or_404()
+        q = cls._model.query.filter_by(id=source_id)
+        q = cls().join_tables(q, {})
+        annotation = q.first_or_404()
         parent_source_id = annotation.source_id
         parent_source = annotation.source
         while parent_source_id is not None and parent_source == "neurostore":
@@ -214,6 +230,19 @@ class AnnotationsView(ObjectView, ListView):
         data["source_id"] = source_id
         data["source_updated_at"] = annotation.updated_at or annotation.created_at
         return data
+
+    def join_tables(self, q, args):
+        if not args.get("nested"):
+            q = q.options(
+                joinedload(Annotation.user),
+                defaultload(Annotation.annotation_analyses).options(
+                    defaultload(AnnotationAnalysis.analysis),
+                    defaultload(AnnotationAnalysis.studyset_study).options(
+                        joinedload(StudysetStudy.study)
+                    ),
+                ),
+            )
+        return q
 
     def db_validation(self, data):
         studyset_id = data.get("studyset", {}).get("id")
@@ -419,7 +448,7 @@ class StudiesView(ObjectView, ListView):
     def join_tables(self, q, args):
         "join relevant tables to speed up query"
         if not args.get("flat"):
-            q = q.options(joinedload(self._model.base_study))
+            # q = q.options(joinedload("base_study"))
             q = q.options(joinedload(self._model.analyses))
         return super().join_tables(q, args)
 
@@ -442,7 +471,21 @@ class StudiesView(ObjectView, ListView):
 
     @classmethod
     def load_from_neurostore(cls, source_id, data=None):
-        study = cls._model.query.filter_by(id=source_id).first_or_404()
+        q = cls._model.query.filter_by(id=source_id)
+        q = nested_load(cls(), query=q)
+        q.options(
+            joinedload(Study.user),
+            joinedload(Study.analyses).options(
+                joinedload(Analysis.user),
+                joinedload(Analysis.images).options(
+                    joinedload(Image.user),
+                ),
+                joinedload(Analysis.points).options(
+                    joinedload(Point.user),
+                )
+            )
+        )
+        study = q.first_or_404()
         parent_source_id = study.source_id
         parent_source = study.source
         while parent_source_id is not None and parent_source == "neurostore":
@@ -536,6 +579,14 @@ class AnalysesView(ObjectView, ListView):
     }
     _search_fields = ("name", "description")
 
+    def join_tables(self, q, args):
+        if not args.get("nested"):
+            q = q.options(
+                joinedload(self._model.images),
+                joinedload(self._model.points),
+            )
+        return super().join_tables(q, args)
+
 
 @view_maker
 class ConditionsView(ObjectView, ListView):
@@ -560,6 +611,12 @@ class PointsView(ObjectView, ListView):
         "analysis": "AnalysesView",
     }
     _search_fields = ("space", "analysis_name")
+
+    def eager_load(self, q, args=None):
+        q = q.options(
+            joinedload(Point.values),
+            joinedload(Point.user),
+        )
 
 
 @view_maker
