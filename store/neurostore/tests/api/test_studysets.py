@@ -15,11 +15,12 @@ def test_post_and_get_studysets(auth_client, ingest_neurosynth, session):
     post_resp = auth_client.post("/api/studysets/", data=post_data)
     assert post_resp.status_code == 200
 
-    get_resp = auth_client.get("/api/studysets/")
+    get_resp = auth_client.get(f"/api/studysets/{post_resp.json()['id']}")
 
     assert (
-        next(d for d in get_resp.json()["results"] if d["name"] == "rock road")
-        == post_resp.json()
+        set(get_resp.json()["studies"])
+        == set(post_resp.json()["studies"])
+        == set(study_ids)
     )
 
 
