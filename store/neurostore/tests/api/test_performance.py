@@ -39,7 +39,8 @@ def test_mass_cloning(auth_client, session):
         "analyses": [
             {
                 "name": "analysis0",
-                "points": [{"x": 0, "y": 0, "z": 0, "space": "mni", "order": 1}],
+                "points": [{"x": 0, "y": 0, "z": 0, "space": "mni", "order": 0, "values": []}],
+                "order": 0,
             }
         ],
     }
