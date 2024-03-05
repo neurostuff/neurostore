@@ -16,8 +16,6 @@ from ..models import (
     Study,
     Annotation,
     Analysis,
-    Image,
-    Point,
     AnalysisConditions,
     AnnotationAnalysis,
     Entity,

@@ -1,6 +1,7 @@
 from neurostore.models import Study
 from time import time
 
+
 def test_mass_deletion(assign_neurosynth_to_user, auth_client, session):
     studies = Study.query.all()
     start_time = time()
@@ -20,13 +21,11 @@ def test_mass_creation(auth_client, session):
             "analyses": [
                 {
                     "name": f"analysis{i}",
-                    "points": [
-                        {"x": 0, "y": 0, "z": 0, "space": "mni", "order": 1}
-                    ],
+                    "points": [{"x": 0, "y": 0, "z": 0, "space": "mni", "order": 1}],
                 }
-            ]
+            ],
         }
-        resp = auth_client.post("/api/studies/", data={"name": f"study{i}"})
+        resp = auth_client.post("/api/studies/", data=data)
         assert resp.status_code == 200
     end_time = time()
     total_time = end_time - start_time
@@ -40,16 +39,16 @@ def test_mass_cloning(auth_client, session):
         "analyses": [
             {
                 "name": "analysis0",
-                "points": [
-                    {"x": 0, "y": 0, "z": 0, "space": "mni", "order": 1}
-                ],
+                "points": [{"x": 0, "y": 0, "z": 0, "space": "mni", "order": 1}],
             }
-        ]
+        ],
     }
-    resp = auth_client.post("/api/studies/", data={"name": "study0"})
+    resp = auth_client.post("/api/studies/", data=data)
     source_id = resp.json()["id"]
     for i in range(1000):
-        resp = auth_client.post(f"/api/studies/?source_id={source_id}", data={"name": f"study{i}"})
+        resp = auth_client.post(
+            f"/api/studies/?source_id={source_id}", data={"name": f"study{i}"}
+        )
         assert resp.status_code == 200
     end_time = time()
     total_time = end_time - start_time

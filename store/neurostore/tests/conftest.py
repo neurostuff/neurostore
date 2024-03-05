@@ -9,7 +9,6 @@ from ..models import (
     User,
     BaseStudy,
     Study,
-    Analysis,
     Studyset,
     Annotation,
     AnnotationAnalysis,
@@ -342,6 +341,7 @@ def ingest_neurosynth_large(session):
     """Add a studyset with two subjects"""
     return ingest.ingest_neurosynth(100)
 
+
 @pytest.fixture(scope="function")
 def assign_neurosynth_to_user(session, ingest_neurosynth_large, auth_client):
     """assign the studyset and all studies/analyses/points to the user."""
@@ -355,6 +355,7 @@ def assign_neurosynth_to_user(session, ingest_neurosynth_large, auth_client):
 
     session.add(studyset)
     session.commit()
+
 
 @pytest.fixture(scope="function")
 @vcr.use_cassette("cassettes/ingest_neurovault.yml")
