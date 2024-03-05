@@ -137,16 +137,23 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
         if (!newStudysetId || !newAnnotationId) return;
         const includedStubs = curationIncludedStudies.stubStudies;
 
-        // the BE ingestion only checks for these three properties
         const stubsToBaseStudies: Array<
             Pick<
                 BaseStudy,
-                'name' | 'doi' | 'pmid' | 'year' | 'description' | 'publication' | 'authors'
+                | 'name'
+                | 'doi'
+                | 'pmid'
+                | 'pmcid'
+                | 'year'
+                | 'description'
+                | 'publication'
+                | 'authors'
             >
         > = includedStubs.map((stub) => ({
             name: stub.title,
             doi: stub.doi,
             pmid: stub.pmid,
+            pmcid: stub.pmcid,
             year: Number(stub.articleYear),
             description: stub.abstractText,
             publication: stub.journal,

@@ -86,6 +86,7 @@ const NavToolbar: React.FC<INav> = (props) => {
                         ]}
                         variant="outlined"
                         target="_blank"
+                        rel="noreferrer"
                         href="https://neurostuff.github.io/compose-docs/"
                     >
                         DOCS

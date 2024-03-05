@@ -11,16 +11,24 @@ import { createDuplicateMap } from '../helpers/utils';
 import ResolveProjectDuplicates from './ResolveProjectDuplicates/ResolveProjectDuplicates';
 import { flattenColumns } from './ResolveProjectDuplicates/ResolveProjectDuplicates.helpers';
 import { IDuplicateCase } from './ResolveProjectDuplicates/ResolveProjectDuplicates.types';
+import { EImportMode } from '../CurationDoImport/CurationDoImport';
 
 const BaseImportNameAndReview: React.FC<{
+    importMode: EImportMode;
     onNavigate: (button: ENavigationButton) => void;
     stubs: ICurationStubStudy[];
     unimportedStubs: string[];
     isResolvingDuplicates: boolean;
     onIsResolvingDuplicates: (update: boolean) => void;
 }> = (props) => {
-    const { onNavigate, stubs, unimportedStubs, isResolvingDuplicates, onIsResolvingDuplicates } =
-        props;
+    const {
+        onNavigate,
+        stubs,
+        unimportedStubs,
+        isResolvingDuplicates,
+        onIsResolvingDuplicates,
+        importMode,
+    } = props;
 
     const columns = useProjectCurationColumns();
     const updateCurationColumns = useUpdateCurationColumns();
@@ -128,6 +136,7 @@ const BaseImportNameAndReview: React.FC<{
             onUpdateStubs={handleDoneNamingImport}
             stubs={stubs}
             unimportedStubs={unimportedStubs}
+            importMode={importMode}
         />
     );
 };

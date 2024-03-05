@@ -18,6 +18,7 @@ import {
     IStorePoint,
     IStoreStudy,
     StudyDetails,
+    getEmptyStudy,
     storeAnalysesToStudyAnalyses,
     studyAnalysesToStoreAnalyses,
 } from './StudyStore.helpers';
@@ -60,28 +61,7 @@ const useStudyStore = create<
     persist(
         (set) => {
             return {
-                study: {
-                    id: undefined,
-                    base_study: undefined,
-                    name: undefined,
-                    description: undefined,
-                    doi: undefined,
-                    pmid: undefined,
-                    authors: undefined,
-                    year: undefined,
-                    publication: undefined,
-                    public: undefined,
-                    metadata: [],
-                    analyses: [],
-                    studysets: [],
-                    user: undefined,
-                    username: undefined,
-                    source: undefined,
-                    source_id: undefined,
-                    source_updated_at: undefined,
-                    created_at: undefined,
-                    updated_at: undefined,
-                },
+                study: getEmptyStudy(),
                 conditions: [],
                 storeMetadata: {
                     studyIsEdited: false,
@@ -143,28 +123,7 @@ const useStudyStore = create<
                 },
                 clearStudyStore: () => {
                     set((state) => ({
-                        study: {
-                            id: undefined,
-                            base_study: undefined,
-                            name: undefined,
-                            description: undefined,
-                            doi: undefined,
-                            pmid: undefined,
-                            authors: undefined,
-                            year: undefined,
-                            publication: undefined,
-                            public: undefined,
-                            storeMetadata: [],
-                            analyses: [],
-                            studysets: [],
-                            user: undefined,
-                            source: undefined,
-                            source_id: undefined,
-                            source_updated_at: undefined,
-                            created_at: undefined,
-                            updated_at: undefined,
-                            metadata: [],
-                        },
+                        study: getEmptyStudy(),
                         storeMetadata: {
                             studyIsEdited: false,
                             getStudyIsLoading: false,
@@ -204,6 +163,7 @@ const useStudyStore = create<
                             description: state.study.description,
                             doi: state.study.doi,
                             pmid: state.study.pmid,
+                            pmcid: state.study.pmcid,
                             authors: state.study.authors,
                             year: state.study.year,
                             publication: state.study.publication,
@@ -619,6 +579,7 @@ export const useStudyName = () => useStudyStore((state) => state.study.name);
 export const useStudyDescription = () => useStudyStore((state) => state.study.description);
 export const useStudyAuthors = () => useStudyStore((state) => state.study.authors);
 export const useStudyPMID = () => useStudyStore((state) => state.study.pmid);
+export const useStudyPMCID = () => useStudyStore((state) => state.study.pmcid);
 export const useStudyDOI = () => useStudyStore((state) => state.study.doi);
 export const useStudyPublication = () => useStudyStore((state) => state.study.publication);
 export const useStudyYear = () => useStudyStore((state) => state.study.year);

@@ -55,6 +55,7 @@ const FetchPMIDs: React.FC<{
                 authors: authorString,
                 keywords: keywordsString,
                 pmid: x.PMID,
+                pmcid: x.PMCID,
                 doi: x.DOI,
                 journal: x.journal.title,
                 articleYear: x.articleYear,
@@ -63,7 +64,7 @@ const FetchPMIDs: React.FC<{
                 exclusionTag: null,
                 tags: [],
                 identificationSource: defaultIdentificationSources.pubmed,
-            };
+            } as ICurationStubStudy;
         });
         props.onStubsUploaded(stubs, unimportedStubs);
     }, [data, isLoading, isSuccess, props, props.onStubsUploaded]);

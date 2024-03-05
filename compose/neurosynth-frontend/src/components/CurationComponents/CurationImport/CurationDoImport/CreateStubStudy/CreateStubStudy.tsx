@@ -78,6 +78,7 @@ const CreateStubStudy: React.FC<{
                     authors: form.authors,
                     keywords: form.keywords,
                     pmid: form.pmid,
+                    pmcid: '',
                     doi: form.doi,
                     journal: form.journal,
                     articleYear: form.articleYear,
@@ -130,22 +131,31 @@ const CreateStubStudy: React.FC<{
                     name="doi"
                     label="DOI"
                     placeholder="10.1016/S0896-6273(00)80715-1"
-                    sx={{ display: 'flex', flex: '1 1 300px', marginRight: '15px' }}
+                    sx={{ width: '35%', marginRight: '15px' }}
                 />
                 <TextField
                     onChange={handleUpdateForm}
-                    sx={{ display: 'flex', flex: '1 1 100px', marginRight: '15px' }}
-                    label="PMID"
+                    sx={{ width: '25%', marginRight: '15px' }}
+                    label="PubMed ID"
                     value={form.pmid}
                     name="pmid"
                     fullWidth
-                    placeholder="2393823"
+                    placeholder="21706013"
+                />
+                <TextField
+                    onChange={handleUpdateForm}
+                    sx={{ width: '25%', marginRight: '15px' }}
+                    label="PubMed Central ID"
+                    value={form.pmid}
+                    name="pmcid"
+                    fullWidth
+                    placeholder="PMC3146590"
                 />
                 <TextField
                     onWheel={(event) => {
                         event.preventDefault();
                     }}
-                    sx={{ display: 'flex', flex: '1 1 100px' }}
+                    sx={{ width: '15%' }}
                     onChange={handleUpdateForm}
                     value={form.articleYear}
                     label="Article Year"

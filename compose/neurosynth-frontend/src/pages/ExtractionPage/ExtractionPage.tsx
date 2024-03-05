@@ -284,7 +284,10 @@ const ExtractionPage: React.FC = (props) => {
                             onSave={handleUpdateStudyset}
                             textToEdit={studyset?.description || ''}
                         >
-                            <Typography sx={{ color: 'muted.main' }} variant="body1">
+                            <Typography
+                                sx={{ color: 'muted.main', whiteSpace: 'pre-line' }}
+                                variant="body1"
+                            >
                                 {studyset?.description || (
                                     <Box component="span" sx={{ color: 'warning.dark' }}>
                                         No description

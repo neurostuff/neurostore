@@ -176,6 +176,7 @@ const EditStudySwapVersionButton: React.FC = (props) => {
                                     <Button
                                         href={`/base-studies/${baseStudyId}/${studyId}`}
                                         target="_blank"
+                                        rel="noreferrer"
                                         endIcon={<OpenInNewIcon />}
                                     >
                                         View version

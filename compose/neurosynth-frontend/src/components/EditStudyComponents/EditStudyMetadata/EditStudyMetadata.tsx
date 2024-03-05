@@ -81,7 +81,13 @@ const EditStudyMetadata: React.FC = (props) => {
         <NeurosynthAccordion
             elevation={0}
             expandIconColor="secondary.main"
-            sx={EditStudyComponentsStyles.accordion}
+            sx={[
+                EditStudyComponentsStyles.accordion,
+                {
+                    borderBottomLeftRadius: '4px !important',
+                    borderBottomRightRadius: '4px !important',
+                },
+            ]}
             accordionSummarySx={EditStudyComponentsStyles.accordionSummary}
             TitleElement={
                 <Typography sx={EditStudyComponentsStyles.accordionTitle}>Metadata</Typography>

@@ -11,7 +11,15 @@ const EditStudyAnnotations: React.FC = (props) => {
             elevation={0}
             defaultExpanded
             expandIconColor="secondary.main"
-            sx={EditStudyComponentsStyles.accordion}
+            sx={[
+                EditStudyComponentsStyles.accordion,
+                {
+                    borderTop: '2px solid',
+                    borderColor: 'secondary.main',
+                    borderTopLeftRadius: '4px !important',
+                    borderTopRightRadius: '4px !important',
+                },
+            ]}
             accordionSummarySx={EditStudyComponentsStyles.accordionSummary}
             TitleElement={
                 <Typography sx={EditStudyComponentsStyles.accordionTitle}>

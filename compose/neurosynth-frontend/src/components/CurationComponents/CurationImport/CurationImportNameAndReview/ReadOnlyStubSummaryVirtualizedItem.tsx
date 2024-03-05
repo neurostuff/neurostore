@@ -1,7 +1,10 @@
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, Chip, Divider, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import {
+    PUBMED_ARTICLE_URL_PREFIX,
+    PUBMED_CENTRAL_ARTICLE_URL_PREFIX,
+} from 'hooks/external/useGetPubMedIds';
 
 /**
  * Study summary for studies that are being imported and tagged. We cannot reuse the ReadOnlyStubSummary easily here because
@@ -10,8 +13,18 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 const ReadOnlyStubSummaryVirtualizedItem: React.FC<
     ICurationStubStudy & { style: React.CSSProperties }
 > = (props) => {
-    const { articleLink, articleYear, title, authors, pmid, doi, journal, neurostoreId, style } =
-        props;
+    const {
+        articleLink,
+        articleYear,
+        title,
+        authors,
+        pmid,
+        doi,
+        journal,
+        neurostoreId,
+        style,
+        pmcid,
+    } = props;
 
     const articleYearText = articleYear ? `(${articleYear}) ` : '';
     const titleText = title ? `${articleYearText}${title}` : 'No title';
@@ -34,6 +47,7 @@ const ReadOnlyStubSummaryVirtualizedItem: React.FC<
                         component="a"
                         icon={<OpenInNewIcon />}
                         target="_blank"
+                        rel="noreferrer"
                         clickable
                         color="primary"
                         variant="outlined"
@@ -48,6 +62,7 @@ const ReadOnlyStubSummaryVirtualizedItem: React.FC<
                         component="a"
                         icon={<OpenInNewIcon />}
                         target="_blank"
+                        rel="noreferrer"
                         clickable
                         color="primary"
                         variant="outlined"
@@ -57,11 +72,27 @@ const ReadOnlyStubSummaryVirtualizedItem: React.FC<
                         size="small"
                     />
                 )}
+                {pmcid && (
+                    <Chip
+                        component="a"
+                        icon={<OpenInNewIcon />}
+                        target="_blank"
+                        rel="noreferrer"
+                        clickable
+                        color="primary"
+                        variant="outlined"
+                        href={`${PUBMED_CENTRAL_ARTICLE_URL_PREFIX}${pmcid}`}
+                        sx={{ marginRight: '10px', height: '24px' }}
+                        label="view full article (web)"
+                        size="small"
+                    />
+                )}
                 {articleLink && (
                     <Chip
                         component="a"
                         icon={<OpenInNewIcon />}
                         target="_blank"
+                        rel="noreferrer"
                         clickable
                         color="primary"
                         variant="outlined"
