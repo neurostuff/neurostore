@@ -167,7 +167,7 @@ class BaseDataSchema(BaseSchema):
         attribute="user_id", dump_only=True, metadata={"info_field": True}
     )
     username = fields.Function(
-        lambda m: m.user.username if m.user else None,
+        lambda m: m.user.name if m.user else None,
         dump_only=True,
         metadata={"info_field": True},
         default=None,
