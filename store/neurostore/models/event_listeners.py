@@ -232,43 +232,43 @@ def before_flush(session, flush_context, instances):
     setattr(flush_context, "base_studies_to_update", unique_base_studies)
 
 
-# from sqlalchemy.engine import Engine
-# import traceback
+from sqlalchemy.engine import Engine
+import traceback
 
 
-# @event.listens_for(Engine, "before_cursor_execute")
-# def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-#     if (
-#         (
-#             not any(
-#                 [
-#                     ("ingest_" in a and "before_cursor_execute" not in a)
-#                     for a in traceback.format_stack()
-#                 ]
-#             )
-#         )
-#         and (
-#             any(
-#                 [
-#                     ("_emit_lazyload" in a and "before_cursor_execute" not in a)
-#                     for a in traceback.format_stack()
-#                 ]
-#             )
-#         )
-#         and (
-#             not any(
-#                 [
-#                     ("conftest" in a and "before_cursor_execute" not in a)
-#                     for a in traceback.format_stack()
-#                 ]
-#             )
-#         )
-#         and ("SELECT" in statement or "INSERT" in statement or "UPDATE" in statement)
-#     ):
-#         pass
+@event.listens_for(Engine, "before_cursor_execute")
+def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    if (
+        (
+            not any(
+                [
+                    ("ingest_" in a and "before_cursor_execute" not in a)
+                    for a in traceback.format_stack()
+                ]
+            )
+        )
+        and (
+            any(
+                [
+                    ("_emit_lazyload" in a and "before_cursor_execute" not in a)
+                    for a in traceback.format_stack()
+                ]
+            )
+        )
+        and (
+            not any(
+                [
+                    ("conftest" in a and "before_cursor_execute" not in a)
+                    for a in traceback.format_stack()
+                ]
+            )
+        )
+        and ("SELECT" in statement or "INSERT" in statement or "UPDATE" in statement)
+    ):
+        pass
 
 
-# @event.listens_for(Engine, "after_cursor_execute")
-# def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-#     # total = time.time() - conn.info["query_start_time"].pop(-1)
-#     pass
+@event.listens_for(Engine, "after_cursor_execute")
+def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+    # total = time.time() - conn.info["query_start_time"].pop(-1)
+    pass
