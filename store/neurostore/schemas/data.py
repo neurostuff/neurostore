@@ -231,14 +231,18 @@ class PointSchema(BaseDataSchema):
         if data.get("coordinates"):
             coords = [float(c) for c in data.pop("coordinates")]
             data["x"], data["y"], data["z"] = coords
+            del data['coordinates']
         return data
 
     @pre_dump
     def pre_dump_process(self, data, **kwargs):
-        if getattr(data, "coordinates", None) or data.get("coordinates"):
+        if hasattr(data, "coordinates") or data.get("coordinates"):
             return data
         if isinstance(data, dict):
             data["coordinates"] = [data["x"], data["y"], data["z"]]
+            del data["x"]
+            del data["y"]
+            del data["z"]
         return data
 
 

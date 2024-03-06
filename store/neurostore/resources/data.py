@@ -3,7 +3,7 @@ from flask import request, abort
 from webargs.flaskparser import parser
 from webargs import fields
 import sqlalchemy.sql.expression as sae
-from sqlalchemy.orm import joinedload, defaultload
+from sqlalchemy.orm import joinedload, defaultload, raiseload, subqueryload, selectinload
 from sqlalchemy.sql import func
 
 
@@ -12,14 +12,17 @@ from .base import BaseView, ObjectView, ListView
 from .nested import nested_load
 from ..database import db
 from ..models import (
+    User,
     Studyset,
     Study,
     Image,
     Point,
+    PointValue,
     Annotation,
     Analysis,
     AnalysisConditions,
     AnnotationAnalysis,
+    Condition,
     Entity,
 )
 from ..models.data import StudysetStudy, BaseStudy
@@ -63,6 +66,11 @@ class StudysetsView(ObjectView, ListView):
         **LIST_CLONE_ARGS,
         **LIST_NESTED_ARGS,
     }
+    # reorg int o2m and m2o
+    _o2m = {
+        "studies": "StudiesView",
+        "annotations": "AnnotationsView"
+    }
 
     _nested = {
         "studies": "StudiesView",
@@ -87,8 +95,8 @@ class StudysetsView(ObjectView, ListView):
         study_results = (
             Study.query.filter(Study.id.in_(existing_studies))
             .options(
-                joinedload(Study.analyses),
-                joinedload(Study.user),
+                selectinload(Study.analyses),
+                selectinload(Study.user),
             )
             .all()
         )
@@ -98,18 +106,69 @@ class StudysetsView(ObjectView, ListView):
             data["preloaded_studies"] = study_dict
         return data
 
+    def eager_load(self, q, args=None):
+        args = args or {}
+        if args.get("nested"):
+            q = q.options(
+                selectinload(Studyset.studies).options(
+                    raiseload("*", sql_only=True),
+                    # selectinload(Study.user).load_only(User.name, User.external_id).options(
+                    #     raiseload("*", sql_only=True)),
+                    selectinload(Study.analyses).options(
+                        raiseload("*", sql_only=True),
+                        # selectinload(Analysis.user).load_only(User.name, User.external_id).options(
+                        #     raiseload("*", sql_only=True)
+                        # ),
+                        selectinload(Analysis.images).options(
+                            raiseload("*", sql_only=True),
+                            # selectinload(Image.user).load_only(User.name, User.external_id).options(
+                            #     raiseload("*", sql_only=True)
+                            # ),
+                        ),
+                        selectinload(Analysis.points).options(
+                            raiseload("*", sql_only=True),
+                            # selectinload(Point.user).load_only(User.name, User.external_id).options(
+                            #     raiseload("*", sql_only=True)
+                            # ),
+                            selectinload(Point.values).options(
+                                raiseload("*", sql_only=True)
+                            ),
+                        ),
+                        selectinload(Analysis.analysis_conditions).options(
+                            raiseload("*", sql_only=True),
+                        #     selectinload(AnalysisConditions.condition).options(
+                        #         raiseload("*", sql_only=True)
+                        #     ),
+                        ),
+                    ),
+                ),
+                # selectinload(Studyset.user).load_only(User.name, User.external_id).options(
+                #     raiseload("*", sql_only=True)
+                # ),
+            )
+        else:
+            q = q.options(
+                selectinload(Studyset.studies).load_only(Study.id).options(
+                    raiseload("*", sql_only=True)
+                ),
+                selectinload(Studyset.user).load_only(User.name, User.external_id).options(
+                    raiseload("*", sql_only=True)
+                ),
+            )
+        return q
+
     def view_search(self, q, args):
         # check if results should be nested
-        nested = True if args.get("nested") else False
-        if nested:
-            q = nested_load(self, query=q)
+        # nested = True if args.get("nested") else False
+        # if nested:
+        #     q = nested_load(self, query=q)
 
         return q
 
     def join_tables(self, q, args):
         if args.get("load_annotations"):
-            q = q.options(joinedload(Studyset.annotations))
-        q = q.options(joinedload(Studyset.studies))
+            q = q.options(selectinload(Studyset.annotations))
+        q = q.options(selectinload(Studyset.studies))
         return super().join_tables(q, args)
 
     def after_update_or_create(self, record):
@@ -128,6 +187,9 @@ class StudysetsView(ObjectView, ListView):
 @view_maker
 class AnnotationsView(ObjectView, ListView):
     _view_fields = {**LIST_CLONE_ARGS, "studyset_id": fields.String(load_default=None)}
+    _o2m = {"annotation_analyses": "AnnotationAnalysesResource"}
+    _m2o = {"studyset": "StudysetsView"}
+
     _nested = {"annotation_analyses": "AnnotationAnalysesResource"}
     _linked = {
         "studyset": "StudysetsView",
@@ -146,9 +208,9 @@ class AnnotationsView(ObjectView, ListView):
             return data
         q = Studyset.query.filter_by(id=studyset_id)
         q = q.options(
-            joinedload(Studyset.studyset_studies)
-            .joinedload(StudysetStudy.study)
-            .joinedload(Study.analyses)
+            selectinload(Studyset.studyset_studies)
+            .selectinload(StudysetStudy.study)
+            .selectinload(Study.analyses)
         )
         studyset = q.first()
         data["studyset"]["preloaded_data"] = studyset
@@ -172,19 +234,37 @@ class AnnotationsView(ObjectView, ListView):
     def after_update_or_create(self, record):
         q = Annotation.query.filter_by(id=record.id)
         q = q.options(
-            joinedload(Annotation.studyset),
-            joinedload(Annotation.user),
-            joinedload(Annotation.annotation_analyses).options(
-                joinedload(AnnotationAnalysis.analysis),
-                joinedload(AnnotationAnalysis.studyset_study).options(
-                    joinedload(StudysetStudy.study)
+            selectinload(Annotation.studyset),
+            selectinload(Annotation.user),
+            selectinload(Annotation.annotation_analyses).options(
+                selectinload(AnnotationAnalysis.analysis),
+                selectinload(AnnotationAnalysis.studyset_study).options(
+                    selectinload(StudysetStudy.study)
                 ),
             ),
         )
         return q.first()
 
+    def eager_load(self, q, args=None):
+        q = q.options(
+            selectinload(Annotation.user).load_only(User.name, User.external_id).options(
+                raiseload("*", sql_only=True)
+            ),
+            selectinload(Annotation.annotation_analyses).options(
+                selectinload(AnnotationAnalysis.analysis).load_only(Analysis.id).options(
+                    raiseload("*", sql_only=True)
+                ),
+                selectinload(AnnotationAnalysis.studyset_study).options(
+                    selectinload(StudysetStudy.study).load_only(Study.id).options(
+                        raiseload("*", sql_only=True)
+                    )
+                ),
+            ),
+        )
+        return q
+
     def view_search(self, q, args):
-        q = nested_load(self, query=q)
+        # q = nested_load(self, query=q)
 
         # query annotations for a specific studyset
         if args.get("studyset_id"):
@@ -234,11 +314,11 @@ class AnnotationsView(ObjectView, ListView):
     def join_tables(self, q, args):
         if not args.get("nested"):
             q = q.options(
-                joinedload(Annotation.user),
+                selectinload(Annotation.user),
                 defaultload(Annotation.annotation_analyses).options(
                     defaultload(AnnotationAnalysis.analysis),
                     defaultload(AnnotationAnalysis.studyset_study).options(
-                        joinedload(StudysetStudy.study)
+                        selectinload(StudysetStudy.study)
                     ),
                 ),
             )
@@ -247,7 +327,7 @@ class AnnotationsView(ObjectView, ListView):
     def db_validation(self, data):
         studyset_id = data.get("studyset", {}).get("id")
         q = Studyset.query.filter_by(id=studyset_id)
-        q = q.options(joinedload(Studyset.studies).options(joinedload(Study.analyses)))
+        q = q.options(selectinload(Studyset.studies).options(selectinload(Study.analyses)))
         studyset = q.one()
         ss_analysis_ids = {a.id for s in studyset.studies for a in s.analyses}
         data_analysis_ids = {
@@ -262,6 +342,7 @@ class AnnotationsView(ObjectView, ListView):
 
 @view_maker
 class BaseStudiesView(ObjectView, ListView):
+    _o2m = {"versions": "StudiesView"}
     _nested = {"versions": "StudiesView"}
 
     _view_fields = {
@@ -283,6 +364,15 @@ class BaseStudiesView(ObjectView, ListView):
         "doi",
         "pmid",
     )
+
+    def eager_load(self, q, args=None):
+        q = q.options(
+            selectinload(BaseStudy.versions).load_only(Study.id).options(
+            raiseload("*", sql_only=True)),
+            selectinload(BaseStudy.user).load_only(User.name, User.external_id).options(
+                raiseload("*", sql_only=True)),
+            )
+        return q
 
     def view_search(self, q, args):
         # search studies for data_type
@@ -307,7 +397,7 @@ class BaseStudiesView(ObjectView, ListView):
     def join_tables(self, q, args):
         "join relevant tables to speed up query"
         if not args.get("flat"):
-            q = q.options(joinedload(self._model.versions))
+            q = q.options(selectinload(self._model.versions))
         return super().join_tables(q, args)
 
     def post(self):
@@ -331,13 +421,13 @@ class BaseStudiesView(ObjectView, ListView):
                 | (BaseStudy.name.in_(names))
             )
             .options(
-                joinedload(BaseStudy.versions).options(
-                    joinedload(Study.studyset_studies).joinedload(
+                selectinload(BaseStudy.versions).options(
+                    selectinload(Study.studyset_studies).selectinload(
                         StudysetStudy.studyset
                     ),
-                    joinedload(Study.user),
+                    selectinload(Study.user),
                 ),
-                joinedload(BaseStudy.user),
+                selectinload(BaseStudy.user),
             )
             .all()
         )
@@ -393,6 +483,13 @@ class StudiesView(ObjectView, ListView):
     }
 
     _multi_search = ("name", "description")
+    _m2o = {
+        "base_study": "BaseStudiesView",
+    }
+    _o2m = {
+        "analyses": "AnalysesView",
+        "studyset_studies": "StudysetStudiesResource",
+    }
 
     _parent = {
         "base_study": "BaseStudiesView",
@@ -415,8 +512,57 @@ class StudiesView(ObjectView, ListView):
         "pmid",
     )
 
+    def eager_load(self, q, args=None):
+        args = args or {}
+        if args.get("nested"):
+            q = q.options(
+                selectinload(Study.user).load_only(User.name, User.external_id).options(
+                        raiseload("*", sql_only=True)),
+                selectinload(Study.analyses).options(
+                    raiseload("*", sql_only=True),
+                    selectinload(Analysis.user).load_only(User.name, User.external_id).options(
+                    raiseload("*", sql_only=True)
+                    ),
+                    selectinload(Analysis.images).options(
+                        raiseload("*", sql_only=True),
+                        # selectinload(Image.user).load_only(User.name, User.external_id).options(
+                        #     raiseload("*", sql_only=True)
+                        # ),
+                    ),
+                    selectinload(Analysis.points).options(
+                        raiseload("*", sql_only=True),
+                        selectinload(Point.user).load_only(User.name, User.external_id).options(
+                            raiseload("*", sql_only=True)
+                        ),
+                        selectinload(Point.values).options(
+                            raiseload("*", sql_only=True)
+                        ),
+                    ),
+                    selectinload(Analysis.analysis_conditions).options(
+                        raiseload("*", sql_only=True),
+                        # selectinload(AnalysisConditions.condition).options(
+                        #     raiseload("*", sql_only=True)
+                        # ),
+                    ),
+                ),
+            )
+        else:
+            q = q.options(
+                selectinload(Study.analyses).load_only(Analysis.id).options(
+                raiseload("*", sql_only=True)),
+                selectinload(Study.user).load_only(User.name, User.external_id).options(
+                    raiseload("*", sql_only=True))
+                )
+        return q
+
     def view_search(self, q, args):
         # search studies for data_type
+        q = q.options(defaultload(Study.analyses).options(
+            selectinload(Analysis.images).options(
+                raiseload("*", sql_only=True)),
+            selectinload(Analysis.points).options(
+                raiseload("*", sql_only=True)),
+        ))
         if args.get("data_type"):
             if args["data_type"] == "coordinate":
                 q = q.filter(self._model.analyses.any(Analysis.points.any()))
@@ -448,8 +594,8 @@ class StudiesView(ObjectView, ListView):
     def join_tables(self, q, args):
         "join relevant tables to speed up query"
         if not args.get("flat"):
-            # q = q.options(joinedload("base_study"))
-            q = q.options(joinedload(self._model.analyses))
+            # q = q.options(selectinload("base_study"))
+            q = q.options(selectinload(self._model.analyses))
         return super().join_tables(q, args)
 
     def serialize_records(self, records, args, exclude=tuple()):
@@ -474,14 +620,14 @@ class StudiesView(ObjectView, ListView):
         q = cls._model.query.filter_by(id=source_id)
         q = nested_load(cls(), query=q)
         q.options(
-            joinedload(Study.user),
-            joinedload(Study.analyses).options(
-                joinedload(Analysis.user),
-                joinedload(Analysis.images).options(
-                    joinedload(Image.user),
+            selectinload(Study.user),
+            selectinload(Study.analyses).options(
+                selectinload(Analysis.user),
+                selectinload(Analysis.images).options(
+                    selectinload(Image.user),
                 ),
-                joinedload(Analysis.points).options(
-                    joinedload(Point.user),
+                selectinload(Analysis.points).options(
+                    selectinload(Point.user),
                 )
             )
         )
@@ -565,6 +711,17 @@ class StudiesView(ObjectView, ListView):
 @view_maker
 class AnalysesView(ObjectView, ListView):
     _view_fields = {**LIST_NESTED_ARGS}
+    _o2m = {
+        "images": "ImagesView",
+        "points": "PointsView",
+        "analysis_conditions": "AnalysisConditionsResource",
+        "entities": "EntitiesResource",
+        "annotation_analyses": "AnnotationAnalysesResource",
+    }
+    _m2o = {
+        "study": "StudiesView",
+    }
+
     _nested = {
         "images": "ImagesView",
         "points": "PointsView",
@@ -579,30 +736,113 @@ class AnalysesView(ObjectView, ListView):
     }
     _search_fields = ("name", "description")
 
+    def eager_load(self, q, args=None):
+        args = args or {}
+        if args.get("nested"):
+            q = q.options(
+                selectinload(Analysis.user).load_only(User.name, User.external_id).options(
+                    raiseload("*", sql_only=True)
+                ),
+                selectinload(Analysis.images).options(
+                    raiseload("*", sql_only=True),
+                    # selectinload(Image.user).load_only(User.name, User.external_id).options(
+                    #     raiseload("*", sql_only=True)
+                    # ),
+                ),
+                selectinload(Analysis.points).options(
+                    raiseload("*", sql_only=True),
+                    selectinload(Point.user).load_only(User.name, User.external_id).options(
+                        raiseload("*", sql_only=True)
+                    ),
+                    selectinload(Point.values).options(
+                        raiseload("*", sql_only=True)
+                    ),
+                ),
+                selectinload(Analysis.analysis_conditions).options(
+                    raiseload("*", sql_only=True),
+                    # selectinload(AnalysisConditions.condition).options(
+                    #     raiseload("*", sql_only=True)
+                    # ),
+                ),
+            )
+        else:
+            q = q.options(
+                selectinload(Analysis.user).load_only(User.name, User.external_id).options(
+                    raiseload("*", sql_only=True)
+                ),
+                selectinload(Analysis.analysis_conditions).options(
+                    selectinload(AnalysisConditions.condition).load_only(Condition.id).options(
+                        raiseload("*", sql_only=True)
+                    )
+                ),
+                selectinload(Analysis.images).load_only(Image.id).options(
+                    raiseload("*", sql_only=True)
+                ),
+                selectinload(Analysis.points).load_only(Point.id).options(
+                    raiseload("*", sql_only=True)
+                ),
+            )
+        # analysis.user
+        # analysis.analysis_conditions
+        # analysis.conditions
+        # analysis.images
+        # analysis.points
+        return q
+    
     def join_tables(self, q, args):
         if not args.get("nested"):
             q = q.options(
-                joinedload(self._model.images),
-                joinedload(self._model.points),
+                selectinload(self._model.images),
+                selectinload(self._model.points),
             )
         return super().join_tables(q, args)
 
 
 @view_maker
 class ConditionsView(ObjectView, ListView):
+    _o2m = {
+        "analysis_conditions": "AnalysisConditionsResource",
+    }
     _search_fields = ("name", "description")
+
+    def eager_load(self, q, args=None):
+        q = q.options(selectinload(Condition.user).options(
+            raiseload("*", sql_only=True)
+            ))
+        return q
 
 
 @view_maker
 class ImagesView(ObjectView, ListView):
+    _m2o = {
+        "analysis": "AnalysesView",
+    }
     _parent = {
         "analysis": "AnalysesView",
     }
     _search_fields = ("filename", "space", "value_type", "analysis_name")
 
+    def eager_load(self, q, args=None):
+        q = q.options(
+            selectinload(Image.user).load_only(User.name, User.external_id).options(
+                raiseload("*", sql_only=True)
+            ),
+            selectinload(Image.analysis).load_only(Analysis.name, Analysis.id).options(
+                raiseload("*", sql_only=True)
+            ),
+        )
+        return q
+
 
 @view_maker
 class PointsView(ObjectView, ListView):
+    _o2m = {
+        "values": "PointValuesView",
+        "entities": "EntitiesResource",
+    }
+    _m2o = {
+        "analysis": "AnalysesView",
+    }
     _nested = {
         "values": "PointValuesView",
         "entities": "EntitiesResource",
@@ -614,18 +854,29 @@ class PointsView(ObjectView, ListView):
 
     def eager_load(self, q, args=None):
         q = q.options(
-            joinedload(Point.values),
-            joinedload(Point.user),
+            selectinload(Point.values).load_only(PointValue.kind, PointValue.value).options(
+                raiseload("*", sql_only=True)
+            ),
+            selectinload(Point.user).load_only(User.name, User.external_id).options(
+                raiseload("*", sql_only=True)
+            ),
         )
+        return q
 
 
 @view_maker
 class PointValuesView(ObjectView, ListView):
-    pass
+    _m2o = {
+        "point": "PointsView",
+    }
 
 
 # Utility resources for updating data
 class AnalysisConditionsResource(BaseView):
+    _m2o = {
+        "analysis": "AnalysesView",
+        "condition": "ConditionsView",
+    }
     _nested = {"condition": "ConditionsView"}
     _parent = {"analysis": "AnalysesView"}
     _model = AnalysisConditions
@@ -634,6 +885,12 @@ class AnalysisConditionsResource(BaseView):
 
 
 class AnnotationAnalysesResource(BaseView):
+    _m2o = {
+        "annotation": "AnnotationsView",
+        "analysis": "AnalysesView",
+        "studyset_study": "StudysetStudiesResource",
+    }
+
     _parent = {
         "annotation": "AnnotationsView",
     }
@@ -647,6 +904,11 @@ class AnnotationAnalysesResource(BaseView):
 
 
 class StudysetStudiesResource(BaseView):
+    _m2o = {
+        "studyset": "StudysetsView",
+        "study": "StudiesView",
+    }
+
     _parent = {
         "studyset": "StudysetsView",
         "study": "StudiesView",
@@ -660,6 +922,11 @@ class StudysetStudiesResource(BaseView):
 
 
 class EntitiesResource(BaseView):
+    _m2o = {
+        "image": "ImagesView",
+        "point": "PointsView",
+    }
+
     _parent = {
         "image": "ImagesView",
         "point": "PointsView",

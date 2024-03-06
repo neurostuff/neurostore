@@ -10,7 +10,7 @@ from flask.views import MethodView
 
 import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, raiseload, selectinload, load_only
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
 from webargs.flaskparser import parser
@@ -54,6 +54,8 @@ def create_user():
 
 class BaseView(MethodView):
     _model = None
+    _o2m = {}
+    _m2o = {}
     _nested = {}
     _parent = {}
     _linked = {}
@@ -282,14 +284,35 @@ def clear_cache(cls, record, path, previous_cls=None):
     base_keys = [k.decode("utf8") for k in base_keys]
     cache.delete_many(*base_keys)
 
+    load_only_args = []
+    o2m_exist = True if cls._o2m.items() else False
+    m2o_exist = True if cls._m2o.items() else False
+    if not o2m_exist and not m2o_exist:
+        return
+
+    if  m2o_exist and isinstance(record, str):
+        for m in cls._o2m:
+            load_only_args.append(m + "_id")
+    
+    if o2m_exist and isinstance(record, str):
+        for o in cls._m2o:
+            q = q.options(selectinload(getattr(cls._model, o)))
+            load_only_args.append(o)
+    
+    if isinstance(record, str):
+        q = cls._model.query
+        q.filter_by(id=record)
+        load_only_args = [getattr(cls._model, arg) for arg in load_only_args]
+        q = q.options(load_only(*load_only_args))
+        record = q.one()
     # clear cache for all parent objects
     for parent, parent_view_name in cls._parent.items():
-        parent_record = getattr(record, parent)
-        if parent_record:
+        parent_id = getattr(record, parent + '_id', None)
+        if parent_id:
             parent_path = (
                 "/api/"
                 + CAMEL_CASE_MATCH.sub("-", parent_view_name.rstrip("View")).lower()
-                + f"/{parent_record.id}"
+                + f"/{parent_id}"
             )
             parent_class = getattr(viewdata, parent_view_name)
             if previous_cls and parent_class in previous_cls:
@@ -300,7 +323,7 @@ def clear_cache(cls, record, path, previous_cls=None):
                 previous_cls.append(cls)
             clear_cache(
                 parent_class,
-                parent_record,
+                parent_id,
                 parent_path,
                 previous_cls=previous_cls,
             )
@@ -399,6 +422,7 @@ class ObjectView(BaseView):
 
     def delete(self, id):
         q = self.__class__._model.query.filter_by(id=id)
+        q = q.options(raiseload("*", sql_only=True))
         # if self._model is Annotation:
         #     q = self.join_tables(q, {})
         # else:
@@ -479,6 +503,7 @@ class ListView(BaseView):
 
         m = self._model  # for brevity
         q = m.query
+        # q = q.options(raiseload("*", sql_only=True))
 
         # query items that are owned by a user_id
         if args.get("user_id"):
@@ -506,7 +531,7 @@ class ListView(BaseView):
             if s is not None:
                 q = q.filter(getattr(m, field).ilike(f"%{s}%"))
 
-        # q = self.view_search(q, args)
+        q = self.view_search(q, args)
         # Sort
         sort_col = args["sort"]
         desc = args["desc"]
@@ -527,6 +552,7 @@ class ListView(BaseView):
 
         # join the relevant tables for output
         # q = self.join_tables(q, args)
+        q = self.eager_load(q, args)
 
         pagination_query = q.paginate(
             page=args["page"],

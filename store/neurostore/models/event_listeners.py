@@ -247,14 +247,14 @@ def before_cursor_execute(conn, cursor, statement, parameters, context, executem
                 ]
             )
         )
-        and (
-            any(
-                [
-                    ("_emit_lazyload" in a and "before_cursor_execute" not in a)
-                    for a in traceback.format_stack()
-                ]
-            )
-        )
+        # and (
+        #     any(
+        #         [
+        #             ("_emit_lazyload" in a and "before_cursor_execute" not in a)
+        #             for a in traceback.format_stack()
+        #         ]
+        #     )
+        # )
         and (
             not any(
                 [

@@ -34,8 +34,8 @@ def generate_id():
 
 class BaseMixin(object):
     id = db.Column(db.Text, primary_key=True, index=True, default=generate_id)
-    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
-    updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
+    created_at = db.Column(db.DateTime(timezone=True), index=True, server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), index=True, onupdate=func.now())
 
     # this _should_ work, but user sometimes is not properly committed,
     # look into as time permits
@@ -66,7 +66,7 @@ class Studyset(BaseMixin, db.Model):
     doi = db.Column(db.String)
     pmid = db.Column(db.String)
     public = db.Column(db.Boolean, default=True)
-    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     user = relationship("User", backref=backref("studysets", passive_deletes=True))
     studies = relationship(
         "Study",
@@ -96,7 +96,7 @@ class Annotation(BaseMixin, db.Model):
     source = db.Column(db.String)
     source_id = db.Column(db.String)
     source_updated_at = db.Column(db.DateTime(timezone=True))
-    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"))
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     user = relationship("User", backref=backref("annotations", passive_deletes=True))
     studyset_id = db.Column(
         db.Text, db.ForeignKey("studysets.id", ondelete="CASCADE"), index=True
@@ -321,7 +321,7 @@ class Analysis(BaseMixin, db.Model):
     table_id = db.Column(db.String)
     points = relationship(
         "Point",
-        backref=backref("analysis"),
+        backref=backref("analysis", passive_deletes=True),
         passive_deletes=True,
         cascade="all, delete-orphan",
         cascade_backrefs=False,
@@ -436,9 +436,13 @@ class Entity(BaseMixin, db.Model):
 class Point(BaseMixin, db.Model):
     __tablename__ = "points"
 
-    @property
+    @hybrid_property
     def coordinates(self):
         return [self.x, self.y, self.z]
+
+    @coordinates.expression
+    def coordinates(cls):
+        return func.array(cls.x, cls.y, cls.z)
 
     x = db.Column(db.Float)
     y = db.Column(db.Float)
