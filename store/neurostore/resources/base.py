@@ -436,6 +436,7 @@ class ObjectView(BaseView):
         q = q.options(raiseload("*", sql_only=True))
         # load all the relationships for cache to be cleared
         q = q.options(*load_endpoint_relationships(self.__class__))
+        # q = q.options(joinedload(self.__class__._model.user))
         record = q.one()
 
         current_user = get_current_user()
