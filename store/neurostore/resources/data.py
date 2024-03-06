@@ -715,7 +715,6 @@ class AnalysesView(ObjectView, ListView):
         "images": "ImagesView",
         "points": "PointsView",
         "analysis_conditions": "AnalysisConditionsResource",
-        "entities": "EntitiesResource",
         "annotation_analyses": "AnnotationAnalysesResource",
     }
     _m2o = {
@@ -726,7 +725,6 @@ class AnalysesView(ObjectView, ListView):
         "images": "ImagesView",
         "points": "PointsView",
         "analysis_conditions": "AnalysisConditionsResource",
-        "entities": "EntitiesResource",
     }
     _parent = {
         "study": "StudiesView",
@@ -838,7 +836,6 @@ class ImagesView(ObjectView, ListView):
 class PointsView(ObjectView, ListView):
     _o2m = {
         "values": "PointValuesView",
-        "entities": "EntitiesResource",
     }
     _m2o = {
         "analysis": "AnalysesView",

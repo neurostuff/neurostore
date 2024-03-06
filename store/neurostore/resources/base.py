@@ -269,6 +269,40 @@ class BaseView(MethodView):
 
 CAMEL_CASE_MATCH = re.compile(r"(?<!^)(?=[A-Z])")
 
+def load_endpoint_relationships(cls, visited=None):
+    visited = visited or set()
+
+    if cls in visited:
+        return []
+
+    visited.add(cls)
+
+    options = []
+    relationship_dict = {('o2m', k): v for k, v in cls._o2m.items()}
+    relationship_dict.update({('m2o', k): v for k, v in cls._m2o.items()})
+    for (direction, relationship), new_cls_name in relationship_dict.items():
+        parent_class = getattr(viewdata, new_cls_name)
+        nested_options = load_endpoint_relationships(parent_class, visited)
+        if direction == 'o2m':
+            options.append(selectinload(getattr(cls._model, relationship)).options(*nested_options))
+        elif direction == 'm2o':
+            options.append(joinedload(getattr(cls._model, relationship)).options(*nested_options))
+    return options
+
+def load_nested_relationships(model, visited=None):
+    visited = visited or set()
+
+    if model in visited:
+        return []
+
+    visited.add(model)
+    
+    options = []
+    for relationship in model.__mapper__.relationships:
+        nested_options = load_nested_relationships(relationship.mapper.class_, visited)
+        options.append(selectinload(getattr(model, relationship.key)).options(*nested_options))
+    return options
+
 
 def clear_cache(cls, record, path, previous_cls=None):
     # redis cache get keys
@@ -284,35 +318,14 @@ def clear_cache(cls, record, path, previous_cls=None):
     base_keys = [k.decode("utf8") for k in base_keys]
     cache.delete_many(*base_keys)
 
-    load_only_args = []
-    o2m_exist = True if cls._o2m.items() else False
-    m2o_exist = True if cls._m2o.items() else False
-    if not o2m_exist and not m2o_exist:
-        return
-
-    if  m2o_exist and isinstance(record, str):
-        for m in cls._o2m:
-            load_only_args.append(m + "_id")
-    
-    if o2m_exist and isinstance(record, str):
-        for o in cls._m2o:
-            q = q.options(selectinload(getattr(cls._model, o)))
-            load_only_args.append(o)
-    
-    if isinstance(record, str):
-        q = cls._model.query
-        q.filter_by(id=record)
-        load_only_args = [getattr(cls._model, arg) for arg in load_only_args]
-        q = q.options(load_only(*load_only_args))
-        record = q.one()
     # clear cache for all parent objects
     for parent, parent_view_name in cls._parent.items():
-        parent_id = getattr(record, parent + '_id', None)
-        if parent_id:
+        parent_record = getattr(record, parent)
+        if parent_record:
             parent_path = (
                 "/api/"
                 + CAMEL_CASE_MATCH.sub("-", parent_view_name.rstrip("View")).lower()
-                + f"/{parent_id}"
+                + f"/{parent_record.id}"
             )
             parent_class = getattr(viewdata, parent_view_name)
             if previous_cls and parent_class in previous_cls:
@@ -323,7 +336,7 @@ def clear_cache(cls, record, path, previous_cls=None):
                 previous_cls.append(cls)
             clear_cache(
                 parent_class,
-                parent_id,
+                parent_record,
                 parent_path,
                 previous_cls=previous_cls,
             )
@@ -337,23 +350,32 @@ def clear_cache(cls, record, path, previous_cls=None):
 
         for linked_record in linked_records:
             if isinstance(linked_record, StudysetStudy):
-                linked_record = linked_record.studyset
                 link_view_name = "StudysetsView"
-            if isinstance(linked_record, AnnotationAnalysis):
-                linked_record = linked_record.annotation
+            elif isinstance(linked_record, AnnotationAnalysis):
                 link_view_name = "AnnotationsView"
+
+            linked_class = getattr(viewdata, link_view_name)
+
+            if previous_cls is None:
+                previous_cls = [cls]
+            else:
+                previous_cls.append(cls)
+            
+            if linked_class in previous_cls:
+                return
+           
+            
+            if isinstance(linked_record, StudysetStudy):
+                # shouldn't get here
+                linked_record = linked_record.studyset
+            elif isinstance(linked_record, AnnotationAnalysis):
+                linked_record = linked_record.annotation
             linked_path = (
                 "/api/"
                 + CAMEL_CASE_MATCH.sub("-", link_view_name.rstrip("View")).lower()
                 + f"/{linked_record.id}"
             )
-            linked_class = getattr(viewdata, link_view_name)
-            if previous_cls and linked_class in previous_cls:
-                return
-            if previous_cls is None:
-                previous_cls = [cls]
-            else:
-                previous_cls.append(cls)
+            
             clear_cache(
                 linked_class,
                 linked_record,
@@ -423,11 +445,8 @@ class ObjectView(BaseView):
     def delete(self, id):
         q = self.__class__._model.query.filter_by(id=id)
         q = q.options(raiseload("*", sql_only=True))
-        # if self._model is Annotation:
-        #     q = self.join_tables(q, {})
-        # else:
-        #     q = nested_load(self, query=q)
-        # q = load_all_relationships(self._model, q)
+        # load all the relationships for cache to be cleared
+        q = q.options(*load_endpoint_relationships(self.__class__))
         record = q.one()
 
         current_user = get_current_user()
