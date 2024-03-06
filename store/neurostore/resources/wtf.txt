@@ -1,0 +1,36 @@
+joinedload(Studyset.studies).options(
+                    raiseload("*", sql_only=True),
+                    joinedload(Study.user).load_only(User.name, User.external_id).options(
+                        raiseload("*", sql_only=True)),
+                    joinedload(Study.analyses).options(
+                        raiseload("*", sql_only=True),
+                        joinedload(Analysis.user).load_only(User.name, User.external_id).options(
+                            raiseload("*", sql_only=True)
+                        ),
+                        joinedload(Analysis.images).options(
+                            raiseload("*", sql_only=True),
+                            joinedload(Image.user).load_only(User.name, User.external_id).options(
+                                raiseload("*", sql_only=True)
+                            ),
+                        ),
+                        joinedload(Analysis.points).options(
+                            raiseload("*", sql_only=True),
+                            joinedload(Point.user).load_only(User.name, User.external_id).options(
+                                raiseload("*", sql_only=True)
+                            ),
+                            joinedload(Point.values).options(
+                                raiseload("*", sql_only=True)
+                            ),
+                        ),
+                        joinedload(Analysis.analysis_conditions).options(
+                            raiseload("*", sql_only=True),
+                            joinedload(AnalysisConditions.condition).options(
+                                raiseload("*", sql_only=True)
+                            ),
+                        ),
+                    ),
+                ),
+                joinedload(Studyset.user).load_only(User.name, User.external_id).options(
+                    raiseload("*", sql_only=True)
+                ),
+            )

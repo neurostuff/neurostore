@@ -277,7 +277,8 @@ class AnnotationsView(ObjectView, ListView):
         if not data.get("studyset"):
             with db.session.no_autoflush:
                 data["studyset"] = (
-                    self._model.query.filter_by(id=id).first().studyset.id
+                    self._model.query.options(
+                        joinedload(self._model.studyset)).filter_by(id=id).first().studyset.id
                 )
         return data
 

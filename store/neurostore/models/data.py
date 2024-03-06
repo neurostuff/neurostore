@@ -122,6 +122,7 @@ class AnnotationAnalysis(db.Model):
             ondelete="CASCADE",
         ),
     )
+    __mapper_args__ = {"confirm_deleted_rows": False}
 
     study_id = db.Column(db.Text, nullable=False)
     studyset_id = db.Column(db.Text, nullable=False)

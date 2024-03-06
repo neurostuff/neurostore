@@ -231,7 +231,6 @@ class PointSchema(BaseDataSchema):
         if data.get("coordinates"):
             coords = [float(c) for c in data.pop("coordinates")]
             data["x"], data["y"], data["z"] = coords
-            del data['coordinates']
         return data
 
     @pre_dump
@@ -239,10 +238,7 @@ class PointSchema(BaseDataSchema):
         if hasattr(data, "coordinates") or data.get("coordinates"):
             return data
         if isinstance(data, dict):
-            data["coordinates"] = [data["x"], data["y"], data["z"]]
-            del data["x"]
-            del data["y"]
-            del data["z"]
+            data["coordinates"] = [data.pop("x"), data.pop("y"), data.pop("z")]
         return data
 
 

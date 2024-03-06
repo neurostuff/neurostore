@@ -133,14 +133,17 @@ class BaseView(MethodView):
 
         # allow compose bot to make changes
         compose_bot = current_app.config["COMPOSE_AUTH0_CLIENT_ID"] + "@clients"
+        q = cls._model.query
+        q = q.options(raiseload("*", sql_only=True))
+        q = q.options(*load_endpoint_relationships(cls))
         if id is None and record is None:
             record = cls._model()
             record.user = current_user
         elif record is None:
             if cls._model is User:
-                q = cls._model.query.filter_by(id=id)
+                q = q.filter_by(id=id)
             else:
-                q = cls._model.query.options(joinedload(cls._model.user)).filter_by(
+                q = q.options(selectinload(cls._model.user)).filter_by(
                     id=id
                 )
             record = q.first()
@@ -287,20 +290,6 @@ def load_endpoint_relationships(cls, visited=None):
             options.append(selectinload(getattr(cls._model, relationship)).options(*nested_options))
         elif direction == 'm2o':
             options.append(joinedload(getattr(cls._model, relationship)).options(*nested_options))
-    return options
-
-def load_nested_relationships(model, visited=None):
-    visited = visited or set()
-
-    if model in visited:
-        return []
-
-    visited.add(model)
-    
-    options = []
-    for relationship in model.__mapper__.relationships:
-        nested_options = load_nested_relationships(relationship.mapper.class_, visited)
-        options.append(selectinload(getattr(model, relationship.key)).options(*nested_options))
     return options
 
 
