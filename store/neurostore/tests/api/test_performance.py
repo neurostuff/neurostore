@@ -2,18 +2,40 @@ from neurostore.tests.conftest import performance_test
 from neurostore.models import Study
 from time import time
 
-@performance_test
+import yappi
+import contextlib
+
+@contextlib.contextmanager
+def profiled_yappi(output_file="yappi_profile.prof", sort_type='cumulative'):
+    yappi.start()
+    try:
+        yield
+    finally:
+        yappi.stop()
+        
+        stats = yappi.get_func_stats()
+        stats.sort("ttot")
+        # You might want to include thread stats as well.
+        # For that, you would use yappi.get_thread_stats()
+
+        stats.save(output_file, type="pstat")
+
+        yappi.clear_stats()  # Clear stats after writing to file to avoid accumulating results across runs
+
+
+# @performance_test
 def test_mass_deletion(assign_neurosynth_to_user, auth_client, session):
     studies = Study.query.all()
     start_time = time()
-    for s in studies:
-        resp = auth_client.delete(f"/api/studies/{s.id}")
-        assert resp.status_code == 200
+    with profiled_yappi():
+        for s in studies:
+            resp = auth_client.delete(f"/api/studies/{s.id}")
+            assert resp.status_code == 200
     end_time = time()
     total_time = end_time - start_time
     print("Total time to delete all studies: ", total_time)
 
-@performance_test
+# @performance_test
 def test_mass_creation(auth_client, session):
     start_time = time()
     for i in range(1000):

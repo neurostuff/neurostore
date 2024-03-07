@@ -1,5 +1,5 @@
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import inspect
+from sqlalchemy import inspect, select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import Session
 from sqlalchemy import event
@@ -168,107 +168,119 @@ event.listen(Studyset.studies, "bulk_replace", add_annotation_analyses_studyset)
 event.listen(Study.analyses, "bulk_replace", add_annotation_analyses_study)
 
 
-@event.listens_for(Session, "after_flush_postexec")
-def receive_after_flush_postexec(session, flush_context):
-    "listen for the 'after_flush_postexec' event"
-    base_studies = getattr(flush_context, "base_studies_to_update", [])
-    for bs in base_studies:
-        bs.update_has_images_and_points()
-    setattr(flush_context, "base_studies_to_update", [])
+# @event.listens_for(Session, "after_flush_postexec")
+# def receive_after_flush_postexec(session, flush_context):
+#     "listen for the 'after_flush_postexec' event"
+#     base_studies = getattr(flush_context, "base_studies_to_update", [])
+#     for bs in base_studies:
+#         bs.update_has_images_and_points()
+#     setattr(flush_context, "base_studies_to_update", [])
 
 
-@event.listens_for(Session, "before_flush")
-def before_flush(session, flush_context, instances):
-    """Update the base study attributes has_coordinates and has_images"""
-    # TODO: check for lazy loads here
-    changed_objects = set(session.dirty) | set(session.new) | set(session.deleted)
-
-    # Find unique BaseStudies affected by the changes
-    def get_nested_attr(obj, nested_attr):
-        attrs = nested_attr.split(".")
-        result = obj
-        for attr in attrs:
-            result = getattr(result, attr, None)
-            if result is None:
-                return
-        return result
-
-    def get_base_study(obj):
-        base_study = None
-
-        if isinstance(obj, (Point, Image)):
-            if obj in session.new or session.deleted:
-                base_study = get_nested_attr(obj, "analysis.study.base_study")
-        elif isinstance(obj, Analysis):
-            relevant_attrs = ("study", "points", "images")
-            for attr in relevant_attrs:
-                attr_history = get_nested_attr(inspect(obj), f"attrs.{attr}.history")
-                if attr_history.added or attr_history.deleted:
-                    base_study = get_nested_attr(obj, "study.base_study")
-                    break
-        elif isinstance(obj, Study):
-            relevant_attrs = ("base_study", "analyses")
-            for attr in relevant_attrs:
-                attr_history = get_nested_attr(inspect(obj), f"attrs.{attr}.history")
-                if attr_history.added or attr_history.deleted:
-                    base_study = obj.base_study
-                    break
-        elif isinstance(obj, BaseStudy):
-            relevant_attrs = ("versions",)
-            for attr in relevant_attrs:
-                attr_history = get_nested_attr(inspect(obj), f"attrs.{attr}.history")
-                if attr_history.added or attr_history.deleted:
-                    base_study = obj
-                    break
-
-        return base_study
-
-    unique_base_studies = {
-        base_study
-        for base_study in [get_base_study(obj) for obj in changed_objects]
-        if base_study is not None and base_study not in session.deleted
-    }
-
-    setattr(flush_context, "base_studies_to_update", unique_base_studies)
+# @event.listens_for(Session, "before_flush")
+# def before_flush(session, flush_context, instances):
+#     """Update the base study attributes has_coordinates and has_images"""
+#     # TODO: check for lazy loads here
+#     changed_objects = set(session.dirty) | set(session.new) | set(session.deleted)
 
 
-from sqlalchemy.engine import Engine
-import traceback
+#     # Find unique BaseStudies affected by the changes
+#     def get_nested_attr(obj, nested_attr):
+#         attrs = nested_attr.split(".")
+#         result = obj
+#         for attr in attrs:
+#             result = getattr(result, attr, None)
+#             if result is None:
+#                 return
+#         return result
+
+#     def get_base_study(obj):
+#         base_study = None
+
+#         if isinstance(obj, (Point, Image)):
+#             if isinstance(obj, Point):
+#                 model = Point
+#             else:
+#                 model = Image
+#             query = (
+#                 select(BaseStudy.id)
+#                 .join(Analysis, model.analysis_id == Analysis.id)
+#                 .join(Study, Analysis.study_id == Study.id)
+#                 .join(BaseStudy, Study.base_study_id == BaseStudy.id)
+#                 .filter(model.id == obj.id)
+#             )
+#             if obj in session.new or session.deleted:
+#                 base_study = get_nested_attr(obj, "analysis.study.base_study")
+#         elif isinstance(obj, Analysis):
+#             relevant_attrs = ("study", "points", "images")
+#             for attr in relevant_attrs:
+#                 attr_history = get_nested_attr(inspect(obj), f"attrs.{attr}.history")
+#                 if attr_history.added or attr_history.deleted:
+#                     base_study = get_nested_attr(obj, "study.base_study")
+#                     break
+#         elif isinstance(obj, Study):
+#             relevant_attrs = ("base_study", "analyses")
+#             for attr in relevant_attrs:
+#                 attr_history = get_nested_attr(inspect(obj), f"attrs.{attr}.history")
+#                 if attr_history.added or attr_history.deleted:
+#                     base_study = obj.base_study
+#                     break
+#         elif isinstance(obj, BaseStudy):
+#             relevant_attrs = ("versions",)
+#             for attr in relevant_attrs:
+#                 attr_history = get_nested_attr(inspect(obj), f"attrs.{attr}.history")
+#                 if attr_history.added or attr_history.deleted:
+#                     base_study = obj
+#                     break
+
+#         return base_study
+
+#     unique_base_studies = {
+#         base_study
+#         for base_study in [get_base_study(obj) for obj in changed_objects]
+#         if base_study is not None and base_study not in session.deleted
+#     }
+
+#     setattr(flush_context, "base_studies_to_update", unique_base_studies)
 
 
-@event.listens_for(Engine, "before_cursor_execute")
-def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-    if (
-        (
-            not any(
-                [
-                    ("ingest_" in a and "before_cursor_execute" not in a)
-                    for a in traceback.format_stack()
-                ]
-            )
-        )
-        # and (
-        #     any(
-        #         [
-        #             ("_emit_lazyload" in a and "before_cursor_execute" not in a)
-        #             for a in traceback.format_stack()
-        #         ]
-        #     )
-        # )
-        and (
-            not any(
-                [
-                    ("conftest" in a and "before_cursor_execute" not in a)
-                    for a in traceback.format_stack()
-                ]
-            )
-        )
-        and ("SELECT" in statement or "INSERT" in statement or "UPDATE" in statement)
-    ):
-        pass
+# from sqlalchemy.engine import Engine
+# import traceback
 
 
-@event.listens_for(Engine, "after_cursor_execute")
-def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-    # total = time.time() - conn.info["query_start_time"].pop(-1)
-    pass
+# @event.listens_for(Engine, "before_cursor_execute")
+# def before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+#     if (
+#         (
+#             not any(
+#                 [
+#                     ("ingest_" in a and "before_cursor_execute" not in a)
+#                     for a in traceback.format_stack()
+#                 ]
+#             )
+#         )
+#         # and (
+#         #     any(
+#         #         [
+#         #             ("_emit_lazyload" in a and "before_cursor_execute" not in a)
+#         #             for a in traceback.format_stack()
+#         #         ]
+#         #     )
+#         # )
+#         and (
+#             not any(
+#                 [
+#                     ("conftest" in a and "before_cursor_execute" not in a)
+#                     for a in traceback.format_stack()
+#                 ]
+#             )
+#         )
+#         and ("SELECT" in statement or "INSERT" in statement or "UPDATE" in statement)
+#     ):
+#         pass
+
+
+# @event.listens_for(Engine, "after_cursor_execute")
+# def after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
+#     # total = time.time() - conn.info["query_start_time"].pop(-1)
+#     pass

@@ -10,7 +10,7 @@ from flask.views import MethodView
 
 import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
-from sqlalchemy.orm import joinedload, raiseload, selectinload, load_only
+from sqlalchemy.orm import joinedload, raiseload, selectinload, load_only, subqueryload
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
 from webargs.flaskparser import parser
@@ -25,6 +25,10 @@ from ..models import (
     AnnotationAnalysis,
     Studyset,
     BaseStudy,
+    Study,
+    Analysis,
+    Point,
+    Image,
     User,
     Annotation,
 )
@@ -63,6 +67,65 @@ class BaseView(MethodView):
     _view_fields = {}
     # _default_exclude = None
 
+    def get_affected_ids(self, id):
+        """
+        Get all the ids that are affected by a change to a record..
+        Affected meaning the output from that endpoint would change.
+        """
+        return {"base-studies": []}
+
+    def update_base_studies(self, base_studies):
+        # See if any base_studies are affected
+        if not base_studies:
+            return
+
+        points_subquery = (
+            sa.select(Point.analysis_id)
+            .where(Point.analysis_id == Analysis.id)
+            .correlate(Analysis)
+            .exists()
+        )
+
+        images_subquery = (
+            sa.select(Image.analysis_id)
+            .where(Image.analysis_id == Analysis.id)
+            .correlate(Analysis)
+            .exists()
+        )
+
+        query = (
+            sa.select(
+                BaseStudy.id,
+                BaseStudy.has_images,
+                BaseStudy.has_coordinates,
+                points_subquery.label("new_has_images"),
+                images_subquery.label("new_has_coordinates"),
+            )
+            .where(
+                BaseStudy.id.in_(base_studies),
+                Study.base_study_id == BaseStudy.id,
+                Analysis.study_id == Study.id,
+            )
+        )
+
+        with db.session.no_autoflush:
+            affected_base_studies = db.session.execute(query).fetchall()
+            update_base_studies = []
+            for bs in affected_base_studies:
+                if bs.new_has_images != bs.has_images or bs.new_has_coordinates != bs.has_coordinates:
+                    update_base_studies.append(
+                        {
+                            "id": bs.id,
+                            "has_images": bs.new_has_images,
+                            "has_coordinates": bs.new_has_coordinates
+                        }
+                    )
+                    
+            db.session.execute(
+                sa.update(BaseStudy),
+                update_base_studies,
+            )
+
     def eager_load(self, q, args):
         return q
 
@@ -99,7 +162,7 @@ class BaseView(MethodView):
     def join_tables(self, q, args):
         if self._model is User:
             return q
-        return q.options(joinedload("user"))
+        return q.options(selectinload("user"))
 
     @classmethod
     def update_or_create(cls, data, id=None, user=None, record=None, commit=True):
@@ -135,7 +198,6 @@ class BaseView(MethodView):
         compose_bot = current_app.config["COMPOSE_AUTH0_CLIENT_ID"] + "@clients"
         q = cls._model.query
         q = q.options(raiseload("*", sql_only=True))
-        q = q.options(*load_endpoint_relationships(cls))
         if id is None and record is None:
             record = cls._model()
             record.user = current_user
@@ -272,105 +334,79 @@ class BaseView(MethodView):
 
 CAMEL_CASE_MATCH = re.compile(r"(?<!^)(?=[A-Z])")
 
-def load_endpoint_relationships(cls, visited=None):
+def load_endpoint_relationships(cls, visited=None, only_m2o=False, prev_cls=None):
     visited = visited or set()
 
     if cls in visited:
         return []
 
     visited.add(cls)
-
+    
     options = []
-    relationship_dict = {('o2m', k): v for k, v in cls._o2m.items()}
-    relationship_dict.update({('m2o', k): v for k, v in cls._m2o.items()})
+
+    relationship_dict = {
+        ('m2o', k): v for k, v in cls._m2o.items()
+    }
+    
+    if not only_m2o:
+        relationship_dict.update({('o2m', k): v for k, v in cls._o2m.items()})
+
+
     for (direction, relationship), new_cls_name in relationship_dict.items():
         parent_class = getattr(viewdata, new_cls_name)
-        nested_options = load_endpoint_relationships(parent_class, visited)
         if direction == 'o2m':
-            options.append(selectinload(getattr(cls._model, relationship)).options(*nested_options))
+            # only need to traverse the one-to-many relationships
+            # don't want point -> analysis -> points
+            # exclude circular relationship
+            nested_options = load_endpoint_relationships(parent_class, visited, use_m2o=False, prev_cls=cls)
+            parent_columns = [] # I only want to load ID
+        if direction == "m2o":
+            nested_options = load_endpoint_relationships(parent_class, visited, use_m2o=True, prev_cls=cls)
+            parent_columns = [k for k, v in  parent_class._o2m.items() if v != cls.__name__]
+        # only load necessary parent columns
+        if hasattr(parent_class._model, "id"):
+            parent_columns.append("id")
+        parent_columns = [getattr(parent_class._model, k) for k in parent_columns]
+        if direction == 'o2m':
+            options.append(
+                selectinload(
+                    getattr(
+                        cls._model, relationship
+                    )
+                ).load_only(
+                    *parent_columns
+                ).options(
+                    *nested_options
+                    )
+            )
         elif direction == 'm2o':
-            options.append(joinedload(getattr(cls._model, relationship)).options(*nested_options))
+            options.append(
+                joinedload(
+                    getattr(
+                        cls._model, relationship
+                    )
+                ).load_only(
+                    *parent_columns
+                ).options(
+                    *nested_options
+                )
+            )
     return options
 
+# to clear a cache, I want to invalidate all the o2m of the current class
+# and then every m2o of every class above it
+def clear_cache(unique_ids):
+    for resource, ids in unique_ids.items():
+        base_path = f"/api/{resource}/"
+        base_keys = cache.cache._write_client.keys(f"*{base_path}/_*")
+        base_keys = [k.decode("utf8") for k in base_keys]
+        cache.delete_many(*base_keys)
 
-def clear_cache(cls, record, path, previous_cls=None):
-    # redis cache get keys
-    if path.count("/") >= 3:
-        keys = cache.cache._write_client.keys(f"*{path}*")
-        keys = [k.decode("utf8") for k in keys]
-        cache.delete_many(*keys)
-        base_path = "/".join(path.split("/")[:-1]) + "/"
-    else:
-        base_path = path
-
-    base_keys = cache.cache._write_client.keys(f"*{base_path}/_*")
-    base_keys = [k.decode("utf8") for k in base_keys]
-    cache.delete_many(*base_keys)
-
-    # clear cache for all parent objects
-    for parent, parent_view_name in cls._parent.items():
-        parent_record = getattr(record, parent)
-        if parent_record:
-            parent_path = (
-                "/api/"
-                + CAMEL_CASE_MATCH.sub("-", parent_view_name.rstrip("View")).lower()
-                + f"/{parent_record.id}"
-            )
-            parent_class = getattr(viewdata, parent_view_name)
-            if previous_cls and parent_class in previous_cls:
-                return
-            if previous_cls is None:
-                previous_cls = [cls]
-            else:
-                previous_cls.append(cls)
-            clear_cache(
-                parent_class,
-                parent_record,
-                parent_path,
-                previous_cls=previous_cls,
-            )
-
-    # clear cache for all linked objects
-    for link, link_view_name in cls._linked.items():
-        linked_records = getattr(record, link)
-        linked_records = (
-            [linked_records] if not isinstance(linked_records, list) else linked_records
-        )
-
-        for linked_record in linked_records:
-            if isinstance(linked_record, StudysetStudy):
-                link_view_name = "StudysetsView"
-            elif isinstance(linked_record, AnnotationAnalysis):
-                link_view_name = "AnnotationsView"
-
-            linked_class = getattr(viewdata, link_view_name)
-
-            if previous_cls is None:
-                previous_cls = [cls]
-            else:
-                previous_cls.append(cls)
-            
-            if linked_class in previous_cls:
-                return
-           
-            
-            if isinstance(linked_record, StudysetStudy):
-                # shouldn't get here
-                linked_record = linked_record.studyset
-            elif isinstance(linked_record, AnnotationAnalysis):
-                linked_record = linked_record.annotation
-            linked_path = (
-                "/api/"
-                + CAMEL_CASE_MATCH.sub("-", link_view_name.rstrip("View")).lower()
-                + f"/{linked_record.id}"
-            )
-            
-            clear_cache(
-                linked_class,
-                linked_record,
-                linked_path,
-                previous_cls=previous_cls,
-            )
+        for id in ids:
+            path = f"{base_path}{id}"
+            keys = cache.cache._write_client.keys(f"*{path}*")
+            keys = [k.decode("utf8") for k in keys]
+            cache.delete_many(*keys)
 
 
 def cache_key_creator(*args, **kwargs):
@@ -435,8 +471,8 @@ class ObjectView(BaseView):
         q = self.__class__._model.query.filter_by(id=id)
         q = q.options(raiseload("*", sql_only=True))
         # load all the relationships for cache to be cleared
-        q = q.options(*load_endpoint_relationships(self.__class__))
-        # q = q.options(joinedload(self.__class__._model.user))
+        # q = q.options(*load_endpoint_relationships(self.__class__))
+        # q = q.options(selectinload(self.__class__._model.user))
         record = q.one()
 
         current_user = get_current_user()
@@ -445,7 +481,15 @@ class ObjectView(BaseView):
         else:
             db.session.delete(record)
             # clear relevant caches
-            clear_cache(self.__class__, record, request.path)
+            with db.session.no_autoflush:
+                unique_ids = self.get_affected_ids(record.id)
+                clear_cache(unique_ids)
+            
+            
+            db.session.flush() # flush the deletion
+            
+            self.update_base_studies(unique_ids.get("base-studies"))
+  
             db.session.commit()
 
         return 204
@@ -491,7 +535,7 @@ class ListView(BaseView):
     def join_tables(self, q, args):
         if self._model is User:
             return q
-        return q.options(joinedload(self._model.user))
+        return q.options(selectinload(self._model.user))
 
     def serialize_records(self, records, args, exclude=tuple()):
         """serialize records from search"""
@@ -602,6 +646,15 @@ class ListView(BaseView):
         record = self.after_update_or_create(record)
 
         # clear the cache for this endpoint
-        clear_cache(self.__class__, record, request.path)
+        with db.session.no_autoflush:
+                unique_ids = self.get_affected_ids(record.id)
+                clear_cache(unique_ids)
+            
+
+        db.session.flush() # flush the deletion
+        
+        self.update_base_studies(unique_ids.get("base-studies"))
+
+        db.session.commit()
 
         return self.__class__._schema(context=args).dump(record)

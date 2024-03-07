@@ -5,6 +5,7 @@ from webargs import fields
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.orm import joinedload, defaultload, raiseload, subqueryload, selectinload
 from sqlalchemy.sql import func
+from sqlalchemy import select
 
 
 from .utils import view_maker
@@ -80,6 +81,12 @@ class StudysetsView(ObjectView, ListView):
     }
     _multi_search = ("name", "description")
     _search_fields = ("name", "description", "publication", "doi", "pmid")
+
+    def get_affected_ids(self, id):
+        unique_ids = {
+            'studysets': set([id]),
+        }        
+        return unique_ids
 
     @classmethod
     def load_nested_records(cls, data, record=None):
@@ -198,6 +205,12 @@ class AnnotationsView(ObjectView, ListView):
     _multi_search = ("name", "description")
     _search_fields = ("name", "description")
 
+    def get_affected_ids(self, id):
+        unique_ids = {
+            'annotations': set([id]),
+        }        
+        return unique_ids
+
     @classmethod
     def load_nested_records(cls, data, record=None):
         if not data:
@@ -278,7 +291,7 @@ class AnnotationsView(ObjectView, ListView):
             with db.session.no_autoflush:
                 data["studyset"] = (
                     self._model.query.options(
-                        joinedload(self._model.studyset)).filter_by(id=id).first().studyset.id
+                        selectinload(self._model.studyset)).filter_by(id=id).first().studyset.id
                 )
         return data
 
@@ -512,6 +525,41 @@ class StudiesView(ObjectView, ListView):
         "doi",
         "pmid",
     )
+    def get_affected_ids(self, id):
+        query = (
+            select(
+                AnnotationAnalysis.annotation_id,
+                Analysis.id,
+                StudysetStudy.studyset_id,
+                Study.base_study_id,
+            )
+            .join(AnnotationAnalysis, Analysis.id == AnnotationAnalysis.analysis_id)
+            .join(Study, Analysis.study_id == Study.id)
+            .join(StudysetStudy, Study.id == StudysetStudy.study_id)
+            .join(BaseStudy, Study.base_study_id == BaseStudy.id)
+            .filter(Study.id == id)
+    
+        )
+
+        result = db.session.execute(query).fetchall()
+
+        # Initialize dictionaries to store unique IDs
+        unique_ids = {
+            'studies': set([id]),
+            'annotations': set(),
+            'analyses': set(),
+            'studysets': set(),
+            'base-studies': set(),
+        }
+
+        # Iterate over the result and add IDs to the respective sets
+        for annotation_id, analysis_id, studyset_id, base_study_id in result:
+            unique_ids['annotations'].add(annotation_id)
+            unique_ids['analyses'].add(analysis_id)
+            unique_ids['studysets'].add(studyset_id)
+            unique_ids['base-studies'].add(base_study_id)
+        
+        return unique_ids
 
     def eager_load(self, q, args=None):
         args = args or {}
@@ -735,6 +783,42 @@ class AnalysesView(ObjectView, ListView):
     }
     _search_fields = ("name", "description")
 
+    def get_affected_ids(self, id):
+        query = (
+            select(
+                AnnotationAnalysis.annotation_id,
+                Analysis.study_id,
+                StudysetStudy.studyset_id,
+                Study.base_study_id,
+            )
+            .join(AnnotationAnalysis, Analysis.id == AnnotationAnalysis.analysis_id)
+            .join(Study, Analysis.study_id == Study.id)
+            .join(StudysetStudy, Study.id == StudysetStudy.study_id)
+            .join(BaseStudy, Study.base_study_id == BaseStudy.id)
+            .filter(Analysis.id == id)
+    
+        )
+
+        result = db.session.execute(query).fetchall()
+
+        # Initialize dictionaries to store unique IDs
+        unique_ids = {
+            'analyses': set([id]),
+            'annotations': set(),
+            'studies': set(),
+            'studysets': set(),
+            'base-studies': set(),
+        }
+
+        # Iterate over the result and add IDs to the respective sets
+        for annotation_id, study_id, studyset_id, base_study_id in result:
+            unique_ids['annotations'].add(annotation_id)
+            unique_ids['studies'].add(study_id)
+            unique_ids['studysets'].add(studyset_id)
+            unique_ids['base-studies'].add(base_study_id)
+        
+        return unique_ids
+
     def eager_load(self, q, args=None):
         args = args or {}
         if args.get("nested"):
@@ -810,6 +894,46 @@ class ConditionsView(ObjectView, ListView):
             ))
         return q
 
+    def get_affected_ids(self, id):
+        query = (
+            select(
+                AnalysisConditions.analysis_id,
+                Analysis.study_id,
+                StudysetStudy.studyset_id,
+                Study.base_study_id,
+            )
+            .select_from(
+                AnalysisConditions
+            )
+                .join(Condition, AnalysisConditions.condition_id == Condition.id)
+                .join(Analysis, Analysis.id == AnalysisConditions.analysis_id)
+                .join(Study, Analysis.study_id == Study.id)
+                .join(StudysetStudy, Study.id == StudysetStudy.study_id)
+                .join(BaseStudy, Study.base_study_id == BaseStudy.id)
+                .filter(Condition.id == id)
+            )
+
+
+        result = db.session.execute(query).fetchall()
+
+        # Initialize dictionaries to store unique IDs
+        unique_ids = {
+            'conditions': set([id]),
+            'analyses': set(),
+            'studies': set(),
+            'studysets': set(),
+            'base-studies': set(),
+        }
+
+        # Iterate over the result and add IDs to the respective sets
+        for analysis_id, study_id, studyset_id, base_study_id in result:
+            unique_ids['analyses'].add(analysis_id)
+            unique_ids['studies'].add(study_id)
+            unique_ids['studysets'].add(studyset_id)
+            unique_ids['base-studies'].add(base_study_id)
+        
+        return unique_ids
+
 
 @view_maker
 class ImagesView(ObjectView, ListView):
@@ -820,6 +944,42 @@ class ImagesView(ObjectView, ListView):
         "analysis": "AnalysesView",
     }
     _search_fields = ("filename", "space", "value_type", "analysis_name")
+
+    def get_affected_ids(self, id):
+        query = (
+            select(
+                Image.analysis_id,
+                Analysis.study_id,
+                StudysetStudy.studyset_id,
+                Study.base_study_id,
+            )
+            .join(Analysis, Image.analysis_id == Analysis.id)
+            .join(Study, Analysis.study_id == Study.id)
+            .join(StudysetStudy, Study.id == StudysetStudy.study_id)
+            .join(BaseStudy, Study.base_study_id == BaseStudy.id)
+            .filter(Image.id == id)
+    
+        )
+
+        result = db.session.execute(query).fetchall()
+
+        # Initialize dictionaries to store unique IDs
+        unique_ids = {
+            'images': set([id]),
+            'analyses': set(),
+            'studies': set(),
+            'studysets': set(),
+            'base-studies': set(),
+        }
+
+        # Iterate over the result and add IDs to the respective sets
+        for analysis_id, study_id, studyset_id, base_study_id in result:
+            unique_ids['analyses'].add(analysis_id)
+            unique_ids['studies'].add(study_id)
+            unique_ids['studysets'].add(studyset_id)
+            unique_ids['base-studies'].add(base_study_id)
+        
+        return unique_ids
 
     def eager_load(self, q, args=None):
         q = q.options(
@@ -850,6 +1010,43 @@ class PointsView(ObjectView, ListView):
     }
     _search_fields = ("space", "analysis_name")
 
+    def get_affected_ids(self, id):
+        query = (
+            select(
+                Point.analysis_id,
+                Analysis.study_id,
+                StudysetStudy.studyset_id,
+                Study.base_study_id,
+            )
+            .join(Analysis, Point.analysis_id == Analysis.id)
+            .join(Study, Analysis.study_id == Study.id)
+            .join(StudysetStudy, Study.id == StudysetStudy.study_id)
+            .join(BaseStudy, Study.base_study_id == BaseStudy.id)
+            .filter(Point.id == id)
+    
+        )
+
+        result = db.session.execute(query).fetchall()
+
+        # Initialize dictionaries to store unique IDs
+        unique_ids = {
+            'points': set([id]),
+            'analyses': set(),
+            'studies': set(),
+            'studysets': set(),
+            'base-studies': set(),
+        }
+
+        # Iterate over the result and add IDs to the respective sets
+        for analysis_id, study_id, studyset_id, base_study_id in result:
+            unique_ids['analyses'].add(analysis_id)
+            unique_ids['studies'].add(study_id)
+            unique_ids['studysets'].add(studyset_id)
+            unique_ids['base-studies'].add(base_study_id)
+        
+        return unique_ids
+
+        
     def eager_load(self, q, args=None):
         q = q.options(
             selectinload(Point.values).load_only(PointValue.kind, PointValue.value).options(
