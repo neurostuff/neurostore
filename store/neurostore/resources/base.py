@@ -456,6 +456,7 @@ class ObjectView(BaseView):
         # if args["nested"] or self._model is Annotation:
         #     q = nested_load(self, query=q)
         #     q = self.join_tables(q, args)
+        q = self.eager_load(q, args)
 
         record = q.filter_by(id=id).first_or_404()
         if self._model is Studyset and args["nested"]:
