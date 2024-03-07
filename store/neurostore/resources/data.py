@@ -531,14 +531,14 @@ class StudiesView(ObjectView, ListView):
                 AnnotationAnalysis.annotation_id,
                 Analysis.id,
                 StudysetStudy.studyset_id,
-                Study.base_study_id,
-            )
-            .join(AnnotationAnalysis, Analysis.id == AnnotationAnalysis.analysis_id)
-            .join(Study, Analysis.study_id == Study.id)
-            .join(StudysetStudy, Study.id == StudysetStudy.study_id)
-            .join(BaseStudy, Study.base_study_id == BaseStudy.id)
-            .filter(Study.id == id)
-    
+                Study.base_study_id
+                )
+                .select_from(Study)
+                .outerjoin(Analysis, Analysis.study_id == Study.id)
+                .outerjoin(AnnotationAnalysis, Analysis.id == AnnotationAnalysis.analysis_id)
+                .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
+                .outerjoin(BaseStudy, Study.base_study_id == BaseStudy.id)
+                .where(Study.id == id)
         )
 
         result = db.session.execute(query).fetchall()
@@ -554,10 +554,14 @@ class StudiesView(ObjectView, ListView):
 
         # Iterate over the result and add IDs to the respective sets
         for annotation_id, analysis_id, studyset_id, base_study_id in result:
-            unique_ids['annotations'].add(annotation_id)
-            unique_ids['analyses'].add(analysis_id)
-            unique_ids['studysets'].add(studyset_id)
-            unique_ids['base-studies'].add(base_study_id)
+            if annotation_id:
+                unique_ids['annotations'].add(annotation_id)
+            if analysis_id:
+                unique_ids['analyses'].add(analysis_id)
+            if studyset_id:
+                unique_ids['studysets'].add(studyset_id)
+            if base_study_id:
+                unique_ids['base-studies'].add(base_study_id)
         
         return unique_ids
 
@@ -714,7 +718,7 @@ class StudiesView(ObjectView, ListView):
     def pre_nested_record_update(record):
         """Find/create the associated base study"""
         # if the study was cloned and the base_study is already known.
-        if record.base_study is not None:
+        if record.base_study_id is not None:
             return record
 
         query = BaseStudy.query
@@ -791,10 +795,10 @@ class AnalysesView(ObjectView, ListView):
                 StudysetStudy.studyset_id,
                 Study.base_study_id,
             )
-            .join(AnnotationAnalysis, Analysis.id == AnnotationAnalysis.analysis_id)
-            .join(Study, Analysis.study_id == Study.id)
-            .join(StudysetStudy, Study.id == StudysetStudy.study_id)
-            .join(BaseStudy, Study.base_study_id == BaseStudy.id)
+            .outerjoin(AnnotationAnalysis, Analysis.id == AnnotationAnalysis.analysis_id)
+            .outerjoin(Study, Analysis.study_id == Study.id)
+            .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
+            .outerjoin(BaseStudy, Study.base_study_id == BaseStudy.id)
             .filter(Analysis.id == id)
     
         )
@@ -812,10 +816,14 @@ class AnalysesView(ObjectView, ListView):
 
         # Iterate over the result and add IDs to the respective sets
         for annotation_id, study_id, studyset_id, base_study_id in result:
-            unique_ids['annotations'].add(annotation_id)
-            unique_ids['studies'].add(study_id)
-            unique_ids['studysets'].add(studyset_id)
-            unique_ids['base-studies'].add(base_study_id)
+            if annotation_id:
+                unique_ids['annotations'].add(annotation_id)
+            if study_id:
+                unique_ids['studies'].add(study_id)
+            if studyset_id:
+                unique_ids['studysets'].add(studyset_id)
+            if base_study_id:
+                unique_ids['base-studies'].add(base_study_id)
         
         return unique_ids
 
@@ -905,11 +913,11 @@ class ConditionsView(ObjectView, ListView):
             .select_from(
                 AnalysisConditions
             )
-                .join(Condition, AnalysisConditions.condition_id == Condition.id)
-                .join(Analysis, Analysis.id == AnalysisConditions.analysis_id)
-                .join(Study, Analysis.study_id == Study.id)
-                .join(StudysetStudy, Study.id == StudysetStudy.study_id)
-                .join(BaseStudy, Study.base_study_id == BaseStudy.id)
+                .outerjoin(Condition, AnalysisConditions.condition_id == Condition.id)
+                .outerjoin(Analysis, Analysis.id == AnalysisConditions.analysis_id)
+                .outerjoin(Study, Analysis.study_id == Study.id)
+                .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
+                .outerjoin(BaseStudy, Study.base_study_id == BaseStudy.id)
                 .filter(Condition.id == id)
             )
 
@@ -927,10 +935,14 @@ class ConditionsView(ObjectView, ListView):
 
         # Iterate over the result and add IDs to the respective sets
         for analysis_id, study_id, studyset_id, base_study_id in result:
-            unique_ids['analyses'].add(analysis_id)
-            unique_ids['studies'].add(study_id)
-            unique_ids['studysets'].add(studyset_id)
-            unique_ids['base-studies'].add(base_study_id)
+            if analysis_id:
+                unique_ids['analyses'].add(analysis_id)
+            if study_id:
+                unique_ids['studies'].add(study_id)
+            if studyset_id:
+                unique_ids['studysets'].add(studyset_id)
+            if base_study_id:
+                unique_ids['base-studies'].add(base_study_id)
         
         return unique_ids
 
@@ -955,8 +967,8 @@ class ImagesView(ObjectView, ListView):
             )
             .join(Analysis, Image.analysis_id == Analysis.id)
             .join(Study, Analysis.study_id == Study.id)
-            .join(StudysetStudy, Study.id == StudysetStudy.study_id)
-            .join(BaseStudy, Study.base_study_id == BaseStudy.id)
+            .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
+            .outerjoin(BaseStudy, Study.base_study_id == BaseStudy.id)
             .filter(Image.id == id)
     
         )
@@ -974,10 +986,14 @@ class ImagesView(ObjectView, ListView):
 
         # Iterate over the result and add IDs to the respective sets
         for analysis_id, study_id, studyset_id, base_study_id in result:
-            unique_ids['analyses'].add(analysis_id)
-            unique_ids['studies'].add(study_id)
-            unique_ids['studysets'].add(studyset_id)
-            unique_ids['base-studies'].add(base_study_id)
+            if analysis_id:
+                unique_ids['analyses'].add(analysis_id)
+            if study_id:
+                unique_ids['studies'].add(study_id)
+            if studyset_id:
+                unique_ids['studysets'].add(studyset_id)
+            if base_study_id:
+                unique_ids['base-studies'].add(base_study_id)
         
         return unique_ids
 
@@ -1020,8 +1036,8 @@ class PointsView(ObjectView, ListView):
             )
             .join(Analysis, Point.analysis_id == Analysis.id)
             .join(Study, Analysis.study_id == Study.id)
-            .join(StudysetStudy, Study.id == StudysetStudy.study_id)
-            .join(BaseStudy, Study.base_study_id == BaseStudy.id)
+            .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
+            .outerjoin(BaseStudy, Study.base_study_id == BaseStudy.id)
             .filter(Point.id == id)
     
         )

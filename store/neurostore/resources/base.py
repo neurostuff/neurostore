@@ -10,7 +10,7 @@ from flask.views import MethodView
 
 import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
-from sqlalchemy.orm import joinedload, raiseload, selectinload, load_only, subqueryload
+from sqlalchemy.orm import joinedload, raiseload, selectinload, load_only, subqueryload, aliased
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
 from webargs.flaskparser import parser
@@ -79,48 +79,60 @@ class BaseView(MethodView):
         if not base_studies:
             return
 
-        points_subquery = (
-            sa.select(Point.analysis_id)
+        # Subquery for new_has_coordinates
+        new_has_coordinates_subquery = (
+            sa.select(sa.func.coalesce(
+                sa.func.bool_and(Point.analysis_id != None),
+                False)
+            )
             .where(Point.analysis_id == Analysis.id)
-            .correlate(Analysis)
-            .exists()
+            .correlate(Study)
+            .scalar_subquery()
         )
 
-        images_subquery = (
-            sa.select(Image.analysis_id)
+        # Subquery for new_has_images
+        new_has_images_subquery = (
+            sa.select(sa.func.coalesce(
+                sa.func.bool_and(Image.analysis_id != None),
+                False)
+            )
             .where(Image.analysis_id == Analysis.id)
-            .correlate(Analysis)
-            .exists()
+            .correlate(Study)
+            .scalar_subquery()
         )
 
+        # Main query
         query = (
             sa.select(
                 BaseStudy.id,
                 BaseStudy.has_images,
                 BaseStudy.has_coordinates,
-                points_subquery.label("new_has_images"),
-                images_subquery.label("new_has_coordinates"),
+                new_has_coordinates_subquery.label("new_has_coordinates"),
+                new_has_images_subquery.label("new_has_images"),
             )
+            .distinct()
+            .select_from(BaseStudy)
+            .join(Study, Study.base_study_id == BaseStudy.id)
+            .outerjoin(Analysis, Analysis.study_id == Study.id)
             .where(
                 BaseStudy.id.in_(base_studies),
-                Study.base_study_id == BaseStudy.id,
-                Analysis.study_id == Study.id,
             )
         )
 
-        with db.session.no_autoflush:
-            affected_base_studies = db.session.execute(query).fetchall()
-            update_base_studies = []
-            for bs in affected_base_studies:
-                if bs.new_has_images != bs.has_images or bs.new_has_coordinates != bs.has_coordinates:
-                    update_base_studies.append(
-                        {
-                            "id": bs.id,
-                            "has_images": bs.new_has_images,
-                            "has_coordinates": bs.new_has_coordinates
-                        }
-                    )
-                    
+
+        affected_base_studies = db.session.execute(query).fetchall()
+        update_base_studies = []
+        for bs in affected_base_studies:
+            if bs.new_has_images != bs.has_images or bs.new_has_coordinates != bs.has_coordinates:
+                update_base_studies.append(
+                    {
+                        "id": bs.id,
+                        "has_images": bs.new_has_images,
+                        "has_coordinates": bs.new_has_coordinates
+                    }
+                )
+
+        if update_base_studies:        
             db.session.execute(
                 sa.update(BaseStudy),
                 update_base_studies,
@@ -279,7 +291,12 @@ class BaseView(MethodView):
         # Update nested attributes recursively
         for field, res_name in cls._nested.items():
             ResCls = getattr(viewdata, res_name)
+            eager_loaded = False
             if data.get(field) is not None:
+                if not eager_loaded and record.id:
+                    record = cls.eager_load(
+                        cls()._model.query, q).filter_by(id=record.id).one()
+                    eager_loaded = True
                 if isinstance(data.get(field), list):
                     nested = []
                     for rec in data.get(field):
@@ -463,7 +480,16 @@ class ObjectView(BaseView):
 
         record = self.after_update_or_create(record)
         # clear relevant caches
-        clear_cache(self.__class__, record, request.path)
+        # clear the cache for this endpoint
+        with db.session.no_autoflush:
+                unique_ids = self.get_affected_ids(record.id)
+                clear_cache(unique_ids)
+
+        db.session.flush() # flush the deletion
+        
+        self.update_base_studies(unique_ids.get("base-studies"))
+
+        db.session.commit()
 
         return self.__class__._schema().dump(record)
 
