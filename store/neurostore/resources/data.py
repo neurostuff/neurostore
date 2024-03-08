@@ -183,18 +183,11 @@ class StudysetsView(ObjectView, ListView):
                 .load_only(User.name, User.external_id)
                 .options(raiseload("*", sql_only=True)),
             )
-        return q
 
-    def join_tables(self, q, args):
         if args.get("load_annotations"):
             q = q.options(selectinload(Studyset.annotations))
-        q = q.options(selectinload(Studyset.studies))
-        return super().join_tables(q, args)
 
-    def after_update_or_create(self, record):
-        q = self._model.query.filter_by(id=record.id)
-        q = self.join_tables(q, {"load_annotations": True})
-        return q.one()
+        return q
 
     def serialize_records(self, records, args):
         if args.get("nested"):
@@ -257,20 +250,6 @@ class AnnotationsView(ObjectView, ListView):
                 aa["studyset_study"]["preloaded_data"] = studyset_study
         return data
 
-    # def after_update_or_create(self, record):
-    #     q = Annotation.query.filter_by(id=record.id)
-    #     q = q.options(
-    #         selectinload(Annotation.studyset),
-    #         selectinload(Annotation.user),
-    #         selectinload(Annotation.annotation_analyses).options(
-    #             selectinload(AnnotationAnalysis.analysis),
-    #             selectinload(AnnotationAnalysis.studyset_study).options(
-    #                 selectinload(StudysetStudy.study)
-    #             ),
-    #         ),
-    #     )
-    #     return q.first()
-
     def eager_load(self, q, args=None):
         q = q.options(
             selectinload(Annotation.user)
@@ -296,8 +275,6 @@ class AnnotationsView(ObjectView, ListView):
         return q
 
     def view_search(self, q, args):
-        # q = nested_load(self, query=q)
-
         # query annotations for a specific studyset
         if args.get("studyset_id"):
             q = q.filter(self._model.studyset_id == args.get("studyset_id"))

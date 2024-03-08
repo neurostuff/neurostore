@@ -460,27 +460,6 @@ class AnnotationSchema(BaseDataSchema):
 
         return data
 
-    # @pre_dump
-    # def export_annotations(self, data, **kwargs):
-    #     if getattr(data, "annotation_analyses") and self.context.get("export"):
-    #         annotations = pd.DataFrame.from_records(
-    #             [
-    #                 {"study_id": aa.study_id, "analysis_id": aa.analysis_id, **aa.note}
-    #                 for aa in data.annotation_analyses
-    #             ]
-    #         ).to_csv(index=False)
-    #         metadata = {
-    #             "studyset_id": data.studyset_id,
-    #             "annotation_id": data.id,
-    #             "created_at": data.created_at,
-    #         }
-    #         metadata = {**metadata, **data.metadata_} if data.metadata_ else metadata
-    #         export_data = {"metadata_": metadata, "annotation_csv": annotations}
-
-    #         return export_data
-
-    #     return data
-
     @post_load
     def add_id(self, data, **kwargs):
         if isinstance(data.get("studyset_id"), str):

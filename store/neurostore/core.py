@@ -15,21 +15,21 @@ from .database import init_db
 
 # from datetime import datetime
 
-import sqltap.wsgi
-import sqltap
+# import sqltap.wsgi
+# import sqltap
 
 # import yappi
 
 
-class SQLTapMiddleware:
-    def __init__(self, app):
-        self.app = app
+# class SQLTapMiddleware:
+#     def __init__(self, app):
+#         self.app = app
 
-    async def __call__(self, scope, receive, send):
-        profiler = sqltap.start()
-        await self.app(scope, receive, send)
-        statistics = profiler.collect()
-        sqltap.report(statistics, "report.txt", report_format="text")
+#     async def __call__(self, scope, receive, send):
+#         profiler = sqltap.start()
+#         await self.app(scope, receive, send)
+#         statistics = profiler.collect()
+#         sqltap.report(statistics, "report.txt", report_format="text")
 
 
 # class LineProfilerMiddleware:

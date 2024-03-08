@@ -11,7 +11,6 @@ from flask.views import MethodView
 import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
 from sqlalchemy.orm import (
-    joinedload,
     raiseload,
     selectinload,
 )
@@ -215,20 +214,6 @@ class BaseView(MethodView):
         """
         return record
 
-    def post_nested_record_update(record):
-        """
-        Processing of a record after updating nested components (defined in specific classes).
-        """
-        return record
-
-    def after_update_or_create(self, record):
-        """
-        Processing of a record after updating or creating (defined in specific classes).
-        """
-        # q = self._model.query.filter_by(id=record.id)
-        # q = self.join_tables(q, {})
-        return record
-
     @classmethod
     def load_nested_records(cls, data, record=None):
         return data
@@ -346,18 +331,7 @@ class BaseView(MethodView):
         # Update nested attributes recursively
         for field, res_name in cls._nested.items():
             ResCls = getattr(viewdata, res_name)
-            # eager_loaded = False
-            # primary_keys = [key.name for key in sa.inspect(record).mapper.primary_key]
             if data.get(field) is not None:
-                # if not eager_loaded and all(
-                #     [getattr(record, pk) for pk in primary_keys]
-                # ):
-                #     record = (
-                #         cls.eager_load(cls()._model.query, q)
-                #         .filter_by(id=record.id)
-                #         .one()
-                #     )
-                #     eager_loaded = True
                 if isinstance(data.get(field), list):
                     nested = []
                     for rec in data.get(field):
@@ -397,8 +371,6 @@ class BaseView(MethodView):
 
                 setattr(record, field, nested)
 
-        # add other custom update after the nested attributes are handled...
-        record = cls.post_nested_record_update(record)
         if flush:
             db.session.add_all(to_commit)
             try:
@@ -411,57 +383,6 @@ class BaseView(MethodView):
 
 
 CAMEL_CASE_MATCH = re.compile(r"(?<!^)(?=[A-Z])")
-
-
-def load_endpoint_relationships(cls, visited=None, only_m2o=False, prev_cls=None):
-    visited = visited or set()
-
-    if cls in visited:
-        return []
-
-    visited.add(cls)
-
-    options = []
-
-    relationship_dict = {("m2o", k): v for k, v in cls._m2o.items()}
-
-    if not only_m2o:
-        relationship_dict.update({("o2m", k): v for k, v in cls._o2m.items()})
-
-    for (direction, relationship), new_cls_name in relationship_dict.items():
-        parent_class = getattr(viewdata, new_cls_name)
-        if direction == "o2m":
-            # only need to traverse the one-to-many relationships
-            # don't want point -> analysis -> points
-            # exclude circular relationship
-            nested_options = load_endpoint_relationships(
-                parent_class, visited, use_m2o=False, prev_cls=cls
-            )
-            parent_columns = []  # I only want to load ID
-        if direction == "m2o":
-            nested_options = load_endpoint_relationships(
-                parent_class, visited, use_m2o=True, prev_cls=cls
-            )
-            parent_columns = [
-                k for k, v in parent_class._o2m.items() if v != cls.__name__
-            ]
-        # only load necessary parent columns
-        if hasattr(parent_class._model, "id"):
-            parent_columns.append("id")
-        parent_columns = [getattr(parent_class._model, k) for k in parent_columns]
-        if direction == "o2m":
-            options.append(
-                selectinload(getattr(cls._model, relationship))
-                .load_only(*parent_columns)
-                .options(*nested_options)
-            )
-        elif direction == "m2o":
-            options.append(
-                joinedload(getattr(cls._model, relationship))
-                .load_only(*parent_columns)
-                .options(*nested_options)
-            )
-    return options
 
 
 # to clear a cache, I want to invalidate all the o2m of the current class
@@ -507,9 +428,6 @@ class ObjectView(BaseView):
             args["nested"] = request.args.get("nested", False) == "true"
 
         q = self._model.query
-        # if args["nested"] or self._model is Annotation:
-        #     q = nested_load(self, query=q)
-        #     q = self.join_tables(q, args)
         q = self.eager_load(q, args)
 
         record = q.filter_by(id=id).first_or_404()
@@ -533,6 +451,10 @@ class ObjectView(BaseView):
         args = {}
         if set(self._o2m.keys()).intersection(set(data.keys())):
             args["nested"] = True
+
+        if self._model is Studyset:
+            args["load_annotations"] = True
+
         q = self._model.query.filter_by(id=id)
         q = self.eager_load(q, args)
         input_record = q.one()
@@ -541,7 +463,6 @@ class ObjectView(BaseView):
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data, id, record=input_record)
 
-        record = self.after_update_or_create(record)
         # clear relevant caches
         # clear the cache for this endpoint
         with db.session.no_autoflush:
@@ -567,9 +488,6 @@ class ObjectView(BaseView):
     def delete(self, id):
         q = self.__class__._model.query.filter_by(id=id)
         q = q.options(raiseload("*", sql_only=True))
-        # load all the relationships for cache to be cleared
-        # q = q.options(*load_endpoint_relationships(self.__class__))
-        # q = q.options(selectinload(self.__class__._model.user))
         record = q.one()
 
         current_user = get_current_user()
@@ -706,7 +624,6 @@ class ListView(BaseView):
         q = q.order_by(getattr(attr, desc)(), getattr(m.id, desc)())
 
         # join the relevant tables for output
-        # q = self.join_tables(q, args)
         q = self.eager_load(q, args)
 
         pagination_query = q.paginate(
@@ -745,8 +662,6 @@ class ListView(BaseView):
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
 
-        record = self.after_update_or_create(record)
-
         # clear the cache for this endpoint
         with db.session.no_autoflush:
             unique_ids = self.get_affected_ids([record.id])
@@ -762,6 +677,8 @@ class ListView(BaseView):
             db.session.rollback()
             abort(400, description=str(e))
 
+        # dump done before commit to prefent invalidating
+        # the orm object and sending unnecessary queries
         response = self.__class__._schema(context=args).dump(record)
 
         db.session.commit()
