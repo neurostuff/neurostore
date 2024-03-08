@@ -677,7 +677,7 @@ class ListView(BaseView):
             db.session.rollback()
             abort(400, description=str(e))
 
-        # dump done before commit to prefent invalidating
+        # dump done before commit to prevent invalidating
         # the orm object and sending unnecessary queries
         response = self.__class__._schema(context=args).dump(record)
 
