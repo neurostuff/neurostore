@@ -79,7 +79,7 @@ def test_create(auth_client, user_data, endpoint, model, schema, session):
         ("analyses", Analysis, AnalysisSchema),
         ("conditions", Condition, ConditionSchema),
         ("images", Image, ImageSchema),
-        ("points", Point, PointSchema), # user, point_value
+        ("points", Point, PointSchema),  # user, point_value
     ],
 )
 def test_read(auth_client, user_data, endpoint, model, schema, session):

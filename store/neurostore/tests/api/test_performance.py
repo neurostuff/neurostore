@@ -5,14 +5,15 @@ from time import time
 import yappi
 import contextlib
 
+
 @contextlib.contextmanager
-def profiled_yappi(output_file="yappi_profile.prof", sort_type='cumulative'):
+def profiled_yappi(output_file="yappi_profile.prof", sort_type="cumulative"):
     yappi.start()
     try:
         yield
     finally:
         yappi.stop()
-        
+
         stats = yappi.get_func_stats()
         stats.sort("ttot")
         # You might want to include thread stats as well.
@@ -34,6 +35,7 @@ def test_mass_deletion(assign_neurosynth_to_user, auth_client, session):
     total_time = end_time - start_time
     print("Total time to delete all studies: ", total_time)
 
+
 @performance_test
 def test_mass_creation(auth_client, session):
     start_time = time()
@@ -53,6 +55,7 @@ def test_mass_creation(auth_client, session):
     total_time = end_time - start_time
     print("Total time to create 1000 studies: ", total_time)
 
+
 @performance_test
 def test_mass_cloning(auth_client, session):
     start_time = time()
@@ -61,7 +64,9 @@ def test_mass_cloning(auth_client, session):
         "analyses": [
             {
                 "name": "analysis0",
-                "points": [{"x": 0, "y": 0, "z": 0, "space": "mni", "order": 0, "values": []}],
+                "points": [
+                    {"x": 0, "y": 0, "z": 0, "space": "mni", "order": 0, "values": []}
+                ],
                 "order": 0,
             }
         ],
@@ -70,7 +75,8 @@ def test_mass_cloning(auth_client, session):
     source_id = resp.json()["id"]
     for i in range(500):
         resp = auth_client.post(
-            f"/api/studies/?source_id={source_id}", data=data,
+            f"/api/studies/?source_id={source_id}",
+            data=data,
         )
         assert resp.status_code == 200
     end_time = time()

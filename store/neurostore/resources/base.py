@@ -10,7 +10,14 @@ from flask.views import MethodView
 
 import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
-from sqlalchemy.orm import joinedload, raiseload, selectinload, load_only, subqueryload, aliased
+from sqlalchemy.orm import (
+    joinedload,
+    raiseload,
+    selectinload,
+    load_only,
+    subqueryload,
+    aliased,
+)
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
 from webargs.flaskparser import parser
@@ -89,16 +96,22 @@ class BaseView(MethodView):
                 StudysetStudy.studyset_id,
                 StudysetStudy.study_id,
                 Analysis.id.label("analysis_id"),
-                
             )
-            .select_from(
-                Annotation
+            .select_from(Annotation)
+            .join(Studyset, Studyset.id == Annotation.studyset_id)
+            .join(StudysetStudy, StudysetStudy.studyset_id == Studyset.id)
+            .join(Analysis, Analysis.study_id == StudysetStudy.study_id)
+            .outerjoin(
+                AnnotationAnalysis,
+                sa.and_(
+                    AnnotationAnalysis.annotation_id == Annotation.id,
+                    sa.or_(
+                        AnnotationAnalysis.analysis_id == Analysis.id,
+                        AnnotationAnalysis.analysis_id == None,
+                    ),
+                ),
             )
-                .join(Studyset, Studyset.id == Annotation.studyset_id)
-                .join(StudysetStudy, StudysetStudy.studyset_id == Studyset.id)
-                .join(Analysis, Analysis.study_id == StudysetStudy.study_id)
-                .outerjoin(AnnotationAnalysis, sa.and_(AnnotationAnalysis.annotation_id == Annotation.id, sa.or_(AnnotationAnalysis.analysis_id == Analysis.id, AnnotationAnalysis.analysis_id == None)))
-                .where(Annotation.id.in_(annotations))
+            .where(Annotation.id.in_(annotations))
         )
 
         results = db.session.execute(query).fetchall()
@@ -121,12 +134,11 @@ class BaseView(MethodView):
             if not result.annotation_analysis_id:
                 create_annotation_analyses.append(params)
 
-        if create_annotation_analyses:        
+        if create_annotation_analyses:
             db.session.execute(
                 sa.insert(AnnotationAnalysis),
                 create_annotation_analyses,
             )
-
 
     def update_base_studies(self, base_studies):
         # See if any base_studies are affected
@@ -135,9 +147,8 @@ class BaseView(MethodView):
 
         # Subquery for new_has_coordinates
         new_has_coordinates_subquery = (
-            sa.select(sa.func.coalesce(
-                sa.func.bool_and(Point.analysis_id != None),
-                False)
+            sa.select(
+                sa.func.coalesce(sa.func.bool_and(Point.analysis_id != None), False)
             )
             .where(Point.analysis_id == Analysis.id)
             .correlate(Study)
@@ -146,9 +157,8 @@ class BaseView(MethodView):
 
         # Subquery for new_has_images
         new_has_images_subquery = (
-            sa.select(sa.func.coalesce(
-                sa.func.bool_and(Image.analysis_id != None),
-                False)
+            sa.select(
+                sa.func.coalesce(sa.func.bool_and(Image.analysis_id != None), False)
             )
             .where(Image.analysis_id == Analysis.id)
             .correlate(Study)
@@ -173,20 +183,22 @@ class BaseView(MethodView):
             )
         )
 
-
         affected_base_studies = db.session.execute(query).fetchall()
         update_base_studies = []
         for bs in affected_base_studies:
-            if bs.new_has_images != bs.has_images or bs.new_has_coordinates != bs.has_coordinates:
+            if (
+                bs.new_has_images != bs.has_images
+                or bs.new_has_coordinates != bs.has_coordinates
+            ):
                 update_base_studies.append(
                     {
                         "id": bs.id,
                         "has_images": bs.new_has_images,
-                        "has_coordinates": bs.new_has_coordinates
+                        "has_coordinates": bs.new_has_coordinates,
                     }
                 )
 
-        if update_base_studies:        
+        if update_base_studies:
             db.session.execute(
                 sa.update(BaseStudy),
                 update_base_studies,
@@ -271,9 +283,7 @@ class BaseView(MethodView):
             if cls._model is User:
                 q = q.filter_by(id=id)
             else:
-                q = q.options(selectinload(cls._model.user)).filter_by(
-                    id=id
-                )
+                q = q.options(selectinload(cls._model.user)).filter_by(id=id)
             record = q.first()
             if record is None:
                 abort(422)
@@ -348,9 +358,14 @@ class BaseView(MethodView):
             eager_loaded = False
             primary_keys = [key.name for key in sa.inspect(record).mapper.primary_key]
             if data.get(field) is not None:
-                if not eager_loaded and all([getattr(record, pk) for pk in primary_keys]):
-                    record = cls.eager_load(
-                        cls()._model.query, q).filter_by(id=record.id).one()
+                if not eager_loaded and all(
+                    [getattr(record, pk) for pk in primary_keys]
+                ):
+                    record = (
+                        cls.eager_load(cls()._model.query, q)
+                        .filter_by(id=record.id)
+                        .one()
+                    )
                     eager_loaded = True
                 if isinstance(data.get(field), list):
                     nested = []
@@ -406,6 +421,7 @@ class BaseView(MethodView):
 
 CAMEL_CASE_MATCH = re.compile(r"(?<!^)(?=[A-Z])")
 
+
 def load_endpoint_relationships(cls, visited=None, only_m2o=False, prev_cls=None):
     visited = visited or set()
 
@@ -413,57 +429,49 @@ def load_endpoint_relationships(cls, visited=None, only_m2o=False, prev_cls=None
         return []
 
     visited.add(cls)
-    
+
     options = []
 
-    relationship_dict = {
-        ('m2o', k): v for k, v in cls._m2o.items()
-    }
-    
-    if not only_m2o:
-        relationship_dict.update({('o2m', k): v for k, v in cls._o2m.items()})
+    relationship_dict = {("m2o", k): v for k, v in cls._m2o.items()}
 
+    if not only_m2o:
+        relationship_dict.update({("o2m", k): v for k, v in cls._o2m.items()})
 
     for (direction, relationship), new_cls_name in relationship_dict.items():
         parent_class = getattr(viewdata, new_cls_name)
-        if direction == 'o2m':
+        if direction == "o2m":
             # only need to traverse the one-to-many relationships
             # don't want point -> analysis -> points
             # exclude circular relationship
-            nested_options = load_endpoint_relationships(parent_class, visited, use_m2o=False, prev_cls=cls)
-            parent_columns = [] # I only want to load ID
+            nested_options = load_endpoint_relationships(
+                parent_class, visited, use_m2o=False, prev_cls=cls
+            )
+            parent_columns = []  # I only want to load ID
         if direction == "m2o":
-            nested_options = load_endpoint_relationships(parent_class, visited, use_m2o=True, prev_cls=cls)
-            parent_columns = [k for k, v in  parent_class._o2m.items() if v != cls.__name__]
+            nested_options = load_endpoint_relationships(
+                parent_class, visited, use_m2o=True, prev_cls=cls
+            )
+            parent_columns = [
+                k for k, v in parent_class._o2m.items() if v != cls.__name__
+            ]
         # only load necessary parent columns
         if hasattr(parent_class._model, "id"):
             parent_columns.append("id")
         parent_columns = [getattr(parent_class._model, k) for k in parent_columns]
-        if direction == 'o2m':
+        if direction == "o2m":
             options.append(
-                selectinload(
-                    getattr(
-                        cls._model, relationship
-                    )
-                ).load_only(
-                    *parent_columns
-                ).options(
-                    *nested_options
-                    )
+                selectinload(getattr(cls._model, relationship))
+                .load_only(*parent_columns)
+                .options(*nested_options)
             )
-        elif direction == 'm2o':
+        elif direction == "m2o":
             options.append(
-                joinedload(
-                    getattr(
-                        cls._model, relationship
-                    )
-                ).load_only(
-                    *parent_columns
-                ).options(
-                    *nested_options
-                )
+                joinedload(getattr(cls._model, relationship))
+                .load_only(*parent_columns)
+                .options(*nested_options)
             )
     return options
+
 
 # to clear a cache, I want to invalidate all the o2m of the current class
 # and then every m2o of every class above it
@@ -538,11 +546,11 @@ class ObjectView(BaseView):
         # clear relevant caches
         # clear the cache for this endpoint
         with db.session.no_autoflush:
-                unique_ids = self.get_affected_ids([record.id])
-                clear_cache(unique_ids)
+            unique_ids = self.get_affected_ids([record.id])
+            clear_cache(unique_ids)
 
-        db.session.flush() # flush the deletion
-        
+        db.session.flush()  # flush the deletion
+
         self.update_base_studies(unique_ids.get("base-studies"))
 
         try:
@@ -572,10 +580,9 @@ class ObjectView(BaseView):
             with db.session.no_autoflush:
                 unique_ids = self.get_affected_ids([record.id])
                 clear_cache(unique_ids)
-            
-            
-            db.session.flush() # flush the deletion
-            
+
+            db.session.flush()  # flush the deletion
+
             self.update_base_studies(unique_ids.get("base-studies"))
 
             try:
@@ -583,7 +590,7 @@ class ObjectView(BaseView):
             except SQLAlchemyError as e:
                 db.session.rollback()
                 abort(400, description=str(e))
-  
+
             db.session.commit()
 
         return 204
@@ -741,12 +748,11 @@ class ListView(BaseView):
 
         # clear the cache for this endpoint
         with db.session.no_autoflush:
-                unique_ids = self.get_affected_ids([record.id])
-                clear_cache(unique_ids)
-            
+            unique_ids = self.get_affected_ids([record.id])
+            clear_cache(unique_ids)
 
-        db.session.flush() # flush the deletion
-        
+        db.session.flush()  # flush the deletion
+
         self.update_base_studies(unique_ids.get("base-studies"))
 
         try:

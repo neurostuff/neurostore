@@ -3,7 +3,13 @@ from flask import request, abort
 from webargs.flaskparser import parser
 from webargs import fields
 import sqlalchemy.sql.expression as sae
-from sqlalchemy.orm import joinedload, defaultload, raiseload, subqueryload, selectinload
+from sqlalchemy.orm import (
+    joinedload,
+    defaultload,
+    raiseload,
+    subqueryload,
+    selectinload,
+)
 from sqlalchemy.sql import func
 from sqlalchemy import select
 
@@ -68,10 +74,7 @@ class StudysetsView(ObjectView, ListView):
         **LIST_NESTED_ARGS,
     }
     # reorg int o2m and m2o
-    _o2m = {
-        "studies": "StudiesView",
-        "annotations": "AnnotationsView"
-    }
+    _o2m = {"studies": "StudiesView", "annotations": "AnnotationsView"}
 
     _nested = {
         "studies": "StudiesView",
@@ -86,26 +89,26 @@ class StudysetsView(ObjectView, ListView):
         query = (
             select(
                 Annotation.id,
-                ).select_from(Studyset)
-                .outerjoin(Annotation, Annotation.studyset_id == Studyset.id)
-                .where(Studyset.id.in_(ids))
+            )
+            .select_from(Studyset)
+            .outerjoin(Annotation, Annotation.studyset_id == Studyset.id)
+            .where(Studyset.id.in_(ids))
         )
 
         result = db.session.execute(query).fetchall()
 
         # Initialize dictionaries to store unique IDs
         unique_ids = {
-            'studysets': set(ids),
-            'annotations': set(),
+            "studysets": set(ids),
+            "annotations": set(),
         }
 
         # Iterate over the result and add IDs to the respective sets
         for (annotation_id,) in result:
             if annotation_id:
-                unique_ids['annotations'].add(annotation_id)
-        
-        return unique_ids
+                unique_ids["annotations"].add(annotation_id)
 
+        return unique_ids
 
     @classmethod
     def load_nested_records(cls, data, record=None):
@@ -162,9 +165,9 @@ class StudysetsView(ObjectView, ListView):
                         ),
                         selectinload(Analysis.analysis_conditions).options(
                             raiseload("*", sql_only=True),
-                        #     selectinload(AnalysisConditions.condition).options(
-                        #         raiseload("*", sql_only=True)
-                        #     ),
+                            #     selectinload(AnalysisConditions.condition).options(
+                            #         raiseload("*", sql_only=True)
+                            #     ),
                         ),
                     ),
                 ),
@@ -174,12 +177,12 @@ class StudysetsView(ObjectView, ListView):
             )
         else:
             q = q.options(
-                selectinload(Studyset.studies).load_only(Study.id).options(
-                    raiseload("*", sql_only=True)
-                ),
-                selectinload(Studyset.user).load_only(User.name, User.external_id).options(
-                    raiseload("*", sql_only=True)
-                ),
+                selectinload(Studyset.studies)
+                .load_only(Study.id)
+                .options(raiseload("*", sql_only=True)),
+                selectinload(Studyset.user)
+                .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
             )
         return q
 
@@ -226,8 +229,8 @@ class AnnotationsView(ObjectView, ListView):
 
     def get_affected_ids(self, ids):
         unique_ids = {
-            'annotations': set(ids),
-        }        
+            "annotations": set(ids),
+        }
         return unique_ids
 
     @classmethod
@@ -279,17 +282,17 @@ class AnnotationsView(ObjectView, ListView):
 
     def eager_load(self, q, args=None):
         q = q.options(
-            selectinload(Annotation.user).load_only(User.name, User.external_id).options(
-                raiseload("*", sql_only=True)
-            ),
+            selectinload(Annotation.user)
+            .load_only(User.name, User.external_id)
+            .options(raiseload("*", sql_only=True)),
             selectinload(Annotation.annotation_analyses).options(
-                selectinload(AnnotationAnalysis.analysis).load_only(Analysis.id).options(
-                    raiseload("*", sql_only=True)
-                ),
+                selectinload(AnnotationAnalysis.analysis)
+                .load_only(Analysis.id)
+                .options(raiseload("*", sql_only=True)),
                 selectinload(AnnotationAnalysis.studyset_study).options(
-                    selectinload(StudysetStudy.study).load_only(Study.id).options(
-                        raiseload("*", sql_only=True)
-                    )
+                    selectinload(StudysetStudy.study)
+                    .load_only(Study.id)
+                    .options(raiseload("*", sql_only=True))
                 ),
             ),
         )
@@ -309,8 +312,10 @@ class AnnotationsView(ObjectView, ListView):
         if not data.get("studyset"):
             with db.session.no_autoflush:
                 data["studyset"] = (
-                    self._model.query.options(
-                        selectinload(self._model.studyset)).filter_by(id=id).first().studyset.id
+                    self._model.query.options(selectinload(self._model.studyset))
+                    .filter_by(id=id)
+                    .first()
+                    .studyset.id
                 )
         return data
 
@@ -360,7 +365,9 @@ class AnnotationsView(ObjectView, ListView):
     def db_validation(self, data):
         studyset_id = data.get("studyset", {}).get("id")
         q = Studyset.query.filter_by(id=studyset_id)
-        q = q.options(selectinload(Studyset.studies).options(selectinload(Study.analyses)))
+        q = q.options(
+            selectinload(Studyset.studies).options(selectinload(Study.analyses))
+        )
         studyset = q.one()
         ss_analysis_ids = {a.id for s in studyset.studies for a in s.analyses}
         data_analysis_ids = {
@@ -404,21 +411,23 @@ class BaseStudiesView(ObjectView, ListView):
             q = q.options(
                 joinedload(BaseStudy.versions).options(
                     raiseload("*", sql_only=True),
-                    joinedload(Study.user).load_only(User.name, User.external_id).options(
-                        raiseload("*", sql_only=True)
-                    )
+                    joinedload(Study.user)
+                    .load_only(User.name, User.external_id)
+                    .options(raiseload("*", sql_only=True)),
                 ),
-                joinedload(BaseStudy.user).load_only(User.name, User.external_id).options(
-                    raiseload("*", sql_only=True)
-                ),
+                joinedload(BaseStudy.user)
+                .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
             )
         else:
             q = q.options(
-                joinedload(BaseStudy.versions).load_only(Study.id).options(
-                raiseload("*", sql_only=True)),
-                joinedload(BaseStudy.user).load_only(User.name, User.external_id).options(
-                    raiseload("*", sql_only=True)),
-                )
+                joinedload(BaseStudy.versions)
+                .load_only(Study.id)
+                .options(raiseload("*", sql_only=True)),
+                joinedload(BaseStudy.user)
+                .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
+            )
         return q
 
     def view_search(self, q, args):
@@ -559,67 +568,69 @@ class StudiesView(ObjectView, ListView):
         "doi",
         "pmid",
     )
+
     def get_affected_ids(self, ids):
         query = (
             select(
                 Annotation.id.label("annotation_id"),
                 Analysis.id,
                 StudysetStudy.studyset_id,
-                Study.base_study_id
-                )
-                .select_from(Study)
-                .outerjoin(Analysis, Analysis.study_id == Study.id)
-                .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
-                .outerjoin(Annotation, StudysetStudy.studyset_id == Annotation.studyset_id)
-                .where(Study.id.in_(ids))
+                Study.base_study_id,
+            )
+            .select_from(Study)
+            .outerjoin(Analysis, Analysis.study_id == Study.id)
+            .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
+            .outerjoin(Annotation, StudysetStudy.studyset_id == Annotation.studyset_id)
+            .where(Study.id.in_(ids))
         )
 
         result = db.session.execute(query).fetchall()
 
         # Initialize dictionaries to store unique IDs
         unique_ids = {
-            'studies': set(ids),
-            'annotations': set(),
-            'analyses': set(),
-            'studysets': set(),
-            'base-studies': set(),
+            "studies": set(ids),
+            "annotations": set(),
+            "analyses": set(),
+            "studysets": set(),
+            "base-studies": set(),
         }
 
         # Iterate over the result and add IDs to the respective sets
         for annotation_id, analysis_id, studyset_id, base_study_id in result:
             if annotation_id:
-                unique_ids['annotations'].add(annotation_id)
+                unique_ids["annotations"].add(annotation_id)
             if analysis_id:
-                unique_ids['analyses'].add(analysis_id)
+                unique_ids["analyses"].add(analysis_id)
             if studyset_id:
-                unique_ids['studysets'].add(studyset_id)
+                unique_ids["studysets"].add(studyset_id)
             if base_study_id:
-                unique_ids['base-studies'].add(base_study_id)
-        
+                unique_ids["base-studies"].add(base_study_id)
+
         return unique_ids
 
     def eager_load(self, q, args=None):
         args = args or {}
         if args.get("nested"):
             q = q.options(
-                selectinload(Study.user).load_only(User.name, User.external_id).options(
-                        raiseload("*", sql_only=True)),
+                selectinload(Study.user)
+                .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
                 selectinload(Study.analyses).options(
                     raiseload("*", sql_only=True),
-                    selectinload(Analysis.user).load_only(User.name, User.external_id).options(
-                    raiseload("*", sql_only=True)
-                    ),
+                    selectinload(Analysis.user)
+                    .load_only(User.name, User.external_id)
+                    .options(raiseload("*", sql_only=True)),
                     selectinload(Analysis.images).options(
                         raiseload("*", sql_only=True),
-                        selectinload(Image.user).load_only(User.name, User.external_id).options(
-                            raiseload("*", sql_only=True)
-                        ),
+                        selectinload(Image.user)
+                        .load_only(User.name, User.external_id)
+                        .options(raiseload("*", sql_only=True)),
                     ),
                     selectinload(Analysis.points).options(
                         raiseload("*", sql_only=True),
-                        selectinload(Point.user).load_only(User.name, User.external_id).options(
-                            raiseload("*", sql_only=True)
-                        ),
+                        selectinload(Point.user)
+                        .load_only(User.name, User.external_id)
+                        .options(raiseload("*", sql_only=True)),
                         selectinload(Point.values).options(
                             raiseload("*", sql_only=True)
                         ),
@@ -628,30 +639,32 @@ class StudiesView(ObjectView, ListView):
                         raiseload("*", sql_only=True),
                         selectinload(AnalysisConditions.condition).options(
                             raiseload("*", sql_only=True),
-                            selectinload(Condition.user).load_only(User.name, User.external_id).options(
-                                raiseload("*", sql_only=True)
-                            ),
+                            selectinload(Condition.user)
+                            .load_only(User.name, User.external_id)
+                            .options(raiseload("*", sql_only=True)),
                         ),
                     ),
                 ),
             )
         else:
             q = q.options(
-                selectinload(Study.analyses).load_only(Analysis.id).options(
-                raiseload("*", sql_only=True)),
-                selectinload(Study.user).load_only(User.name, User.external_id).options(
-                    raiseload("*", sql_only=True))
-                )
+                selectinload(Study.analyses)
+                .load_only(Analysis.id)
+                .options(raiseload("*", sql_only=True)),
+                selectinload(Study.user)
+                .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
+            )
         return q
 
     def view_search(self, q, args):
         # search studies for data_type
-        q = q.options(defaultload(Study.analyses).options(
-            selectinload(Analysis.images).options(
-                raiseload("*", sql_only=True)),
-            selectinload(Analysis.points).options(
-                raiseload("*", sql_only=True)),
-        ))
+        q = q.options(
+            defaultload(Study.analyses).options(
+                selectinload(Analysis.images).options(raiseload("*", sql_only=True)),
+                selectinload(Analysis.points).options(raiseload("*", sql_only=True)),
+            )
+        )
         if args.get("data_type"):
             if args["data_type"] == "coordinate":
                 q = q.filter(self._model.analyses.any(Analysis.points.any()))
@@ -825,81 +838,78 @@ class AnalysesView(ObjectView, ListView):
             .outerjoin(Studyset, StudysetStudy.studyset_id == Studyset.id)
             .outerjoin(Annotation, Annotation.studyset_id == Studyset.id)
             .where(Analysis.id.in_(ids))
-    
         )
 
         result = db.session.execute(query).fetchall()
 
         # Initialize dictionaries to store unique IDs
         unique_ids = {
-            'analyses': set(ids),
-            'annotations': set(),
-            'studies': set(),
-            'studysets': set(),
-            'base-studies': set(),
+            "analyses": set(ids),
+            "annotations": set(),
+            "studies": set(),
+            "studysets": set(),
+            "base-studies": set(),
         }
 
         # Iterate over the result and add IDs to the respective sets
         for annotation_id, study_id, studyset_id, base_study_id in result:
             if annotation_id:
-                unique_ids['annotations'].add(annotation_id)
+                unique_ids["annotations"].add(annotation_id)
             if study_id:
-                unique_ids['studies'].add(study_id)
+                unique_ids["studies"].add(study_id)
             if studyset_id:
-                unique_ids['studysets'].add(studyset_id)
+                unique_ids["studysets"].add(studyset_id)
             if base_study_id:
-                unique_ids['base-studies'].add(base_study_id)
-        
+                unique_ids["base-studies"].add(base_study_id)
+
         return unique_ids
 
     def eager_load(self, q, args=None):
         args = args or {}
         if args.get("nested"):
             q = q.options(
-                selectinload(Analysis.user).load_only(User.name, User.external_id).options(
-                    raiseload("*", sql_only=True)
-                ),
+                selectinload(Analysis.user)
+                .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
                 selectinload(Analysis.images).options(
                     raiseload("*", sql_only=True),
-                    selectinload(Image.user).load_only(User.name, User.external_id).options(
-                        raiseload("*", sql_only=True)
-                    ),
+                    selectinload(Image.user)
+                    .load_only(User.name, User.external_id)
+                    .options(raiseload("*", sql_only=True)),
                 ),
                 selectinload(Analysis.points).options(
                     raiseload("*", sql_only=True),
-                    selectinload(Point.user).load_only(User.name, User.external_id).options(
-                        raiseload("*", sql_only=True)
-                    ),
-                    selectinload(Point.values).options(
-                        raiseload("*", sql_only=True)
-                    ),
+                    selectinload(Point.user)
+                    .load_only(User.name, User.external_id)
+                    .options(raiseload("*", sql_only=True)),
+                    selectinload(Point.values).options(raiseload("*", sql_only=True)),
                 ),
                 selectinload(Analysis.analysis_conditions).options(
                     raiseload("*", sql_only=True),
                     selectinload(AnalysisConditions.condition).options(
                         raiseload("*", sql_only=True),
-                        selectinload(Condition.user).load_only(User.name, User.external_id).options(
-                            raiseload("*", sql_only=True)
-                        ),
+                        selectinload(Condition.user)
+                        .load_only(User.name, User.external_id)
+                        .options(raiseload("*", sql_only=True)),
                     ),
                 ),
             )
         else:
             q = q.options(
-                selectinload(Analysis.user).load_only(User.name, User.external_id).options(
-                    raiseload("*", sql_only=True)
-                ),
+                selectinload(Analysis.user)
+                .load_only(User.name, User.external_id)
+                .options(raiseload("*", sql_only=True)),
                 selectinload(Analysis.analysis_conditions).options(
-                    selectinload(AnalysisConditions.condition).load_only(Condition.id).options(
-                        raiseload("*", sql_only=True)
-                    )
+                    selectinload(AnalysisConditions.condition)
+                    .load_only(Condition.id)
+                    .options(raiseload("*", sql_only=True))
                 ),
-                selectinload(Analysis.images).load_only(Image.id).options(
-                    raiseload("*", sql_only=True)
-                ),
-                selectinload(Analysis.points).load_only(Point.id).options(
-                    raiseload("*", sql_only=True)
-                ),
+                selectinload(Analysis.images)
+                .load_only(Image.id)
+                .options(raiseload("*", sql_only=True)),
+                selectinload(Analysis.points)
+                .load_only(Point.id)
+                .options(raiseload("*", sql_only=True)),
             )
         # analysis.user
         # analysis.analysis_conditions
@@ -907,7 +917,7 @@ class AnalysesView(ObjectView, ListView):
         # analysis.images
         # analysis.points
         return q
-    
+
     def join_tables(self, q, args):
         if not args.get("nested"):
             q = q.options(
@@ -925,9 +935,9 @@ class ConditionsView(ObjectView, ListView):
     _search_fields = ("name", "description")
 
     def eager_load(self, q, args=None):
-        q = q.options(selectinload(Condition.user).options(
-            raiseload("*", sql_only=True)
-            ))
+        q = q.options(
+            selectinload(Condition.user).options(raiseload("*", sql_only=True))
+        )
         return q
 
     def get_affected_ids(self, ids):
@@ -938,40 +948,37 @@ class ConditionsView(ObjectView, ListView):
                 StudysetStudy.studyset_id,
                 Study.base_study_id,
             )
-            .select_from(
-                AnalysisConditions
-            )
-                .outerjoin(Condition, AnalysisConditions.condition_id == Condition.id)
-                .outerjoin(Analysis, Analysis.id == AnalysisConditions.analysis_id)
-                .outerjoin(Study, Analysis.study_id == Study.id)
-                .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
-                .outerjoin(BaseStudy, Study.base_study_id == BaseStudy.id)
-                .where(Condition.id.in_(ids))
-            )
-
+            .select_from(AnalysisConditions)
+            .outerjoin(Condition, AnalysisConditions.condition_id == Condition.id)
+            .outerjoin(Analysis, Analysis.id == AnalysisConditions.analysis_id)
+            .outerjoin(Study, Analysis.study_id == Study.id)
+            .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
+            .outerjoin(BaseStudy, Study.base_study_id == BaseStudy.id)
+            .where(Condition.id.in_(ids))
+        )
 
         result = db.session.execute(query).fetchall()
 
         # Initialize dictionaries to store unique IDs
         unique_ids = {
-            'conditions': set(ids),
-            'analyses': set(),
-            'studies': set(),
-            'studysets': set(),
-            'base-studies': set(),
+            "conditions": set(ids),
+            "analyses": set(),
+            "studies": set(),
+            "studysets": set(),
+            "base-studies": set(),
         }
 
         # Iterate over the result and add IDs to the respective sets
         for analysis_id, study_id, studyset_id, base_study_id in result:
             if analysis_id:
-                unique_ids['analyses'].add(analysis_id)
+                unique_ids["analyses"].add(analysis_id)
             if study_id:
-                unique_ids['studies'].add(study_id)
+                unique_ids["studies"].add(study_id)
             if studyset_id:
-                unique_ids['studysets'].add(studyset_id)
+                unique_ids["studysets"].add(studyset_id)
             if base_study_id:
-                unique_ids['base-studies'].add(base_study_id)
-        
+                unique_ids["base-studies"].add(base_study_id)
+
         return unique_ids
 
 
@@ -998,41 +1005,40 @@ class ImagesView(ObjectView, ListView):
             .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
             .outerjoin(BaseStudy, Study.base_study_id == BaseStudy.id)
             .where(Image.id.in_(ids))
-    
         )
 
         result = db.session.execute(query).fetchall()
 
         # Initialize dictionaries to store unique IDs
         unique_ids = {
-            'images': set(ids),
-            'analyses': set(),
-            'studies': set(),
-            'studysets': set(),
-            'base-studies': set(),
+            "images": set(ids),
+            "analyses": set(),
+            "studies": set(),
+            "studysets": set(),
+            "base-studies": set(),
         }
 
         # Iterate over the result and add IDs to the respective sets
         for analysis_id, study_id, studyset_id, base_study_id in result:
             if analysis_id:
-                unique_ids['analyses'].add(analysis_id)
+                unique_ids["analyses"].add(analysis_id)
             if study_id:
-                unique_ids['studies'].add(study_id)
+                unique_ids["studies"].add(study_id)
             if studyset_id:
-                unique_ids['studysets'].add(studyset_id)
+                unique_ids["studysets"].add(studyset_id)
             if base_study_id:
-                unique_ids['base-studies'].add(base_study_id)
-        
+                unique_ids["base-studies"].add(base_study_id)
+
         return unique_ids
 
     def eager_load(self, q, args=None):
         q = q.options(
-            selectinload(Image.user).load_only(User.name, User.external_id).options(
-                raiseload("*", sql_only=True)
-            ),
-            selectinload(Image.analysis).load_only(Analysis.name, Analysis.id).options(
-                raiseload("*", sql_only=True)
-            ),
+            selectinload(Image.user)
+            .load_only(User.name, User.external_id)
+            .options(raiseload("*", sql_only=True)),
+            selectinload(Image.analysis)
+            .load_only(Analysis.name, Analysis.id)
+            .options(raiseload("*", sql_only=True)),
         )
         return q
 
@@ -1067,38 +1073,36 @@ class PointsView(ObjectView, ListView):
             .outerjoin(StudysetStudy, Study.id == StudysetStudy.study_id)
             .outerjoin(BaseStudy, Study.base_study_id == BaseStudy.id)
             .where(Point.id.in_(ids))
-    
         )
 
         result = db.session.execute(query).fetchall()
 
         # Initialize dictionaries to store unique IDs
         unique_ids = {
-            'points': set(ids),
-            'analyses': set(),
-            'studies': set(),
-            'studysets': set(),
-            'base-studies': set(),
+            "points": set(ids),
+            "analyses": set(),
+            "studies": set(),
+            "studysets": set(),
+            "base-studies": set(),
         }
 
         # Iterate over the result and add IDs to the respective sets
         for analysis_id, study_id, studyset_id, base_study_id in result:
-            unique_ids['analyses'].add(analysis_id)
-            unique_ids['studies'].add(study_id)
-            unique_ids['studysets'].add(studyset_id)
-            unique_ids['base-studies'].add(base_study_id)
-        
+            unique_ids["analyses"].add(analysis_id)
+            unique_ids["studies"].add(study_id)
+            unique_ids["studysets"].add(studyset_id)
+            unique_ids["base-studies"].add(base_study_id)
+
         return unique_ids
 
-        
     def eager_load(self, q, args=None):
         q = q.options(
-            selectinload(Point.values).load_only(PointValue.kind, PointValue.value).options(
-                raiseload("*", sql_only=True)
-            ),
-            selectinload(Point.user).load_only(User.name, User.external_id).options(
-                raiseload("*", sql_only=True)
-            ),
+            selectinload(Point.values)
+            .load_only(PointValue.kind, PointValue.value)
+            .options(raiseload("*", sql_only=True)),
+            selectinload(Point.user)
+            .load_only(User.name, User.external_id)
+            .options(raiseload("*", sql_only=True)),
         )
         return q
 

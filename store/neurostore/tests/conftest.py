@@ -46,6 +46,7 @@ auth_test = pytest.mark.skipif(
     reason="Only run when --auth is given",
 )
 
+
 def pytest_addoption(parser):
     parser.addoption(
         "--performance",
@@ -213,6 +214,7 @@ def session(db):
     session.close()
     transaction.rollback()
     connection.close()
+
 
 """
 Data population fixtures

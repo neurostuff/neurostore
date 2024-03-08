@@ -34,7 +34,9 @@ def generate_id():
 
 class BaseMixin(object):
     id = db.Column(db.Text, primary_key=True, index=True, default=generate_id)
-    created_at = db.Column(db.DateTime(timezone=True), index=True, server_default=func.now())
+    created_at = db.Column(
+        db.DateTime(timezone=True), index=True, server_default=func.now()
+    )
     updated_at = db.Column(db.DateTime(timezone=True), index=True, onupdate=func.now())
 
     # this _should_ work, but user sometimes is not properly committed,
@@ -363,13 +365,14 @@ class Condition(BaseMixin, db.Model):
     user = relationship(
         "User",
         backref=backref("conditions", cascade_backrefs=False, passive_deletes=True),
-        cascade_backrefs=False)
+        cascade_backrefs=False,
+    )
     analysis_conditions = relationship(
         "AnalysisConditions",
         backref=backref("condition", cascade_backrefs=False),
         passive_deletes=True,
         cascade="all, delete-orphan",
-        cascade_backrefs=False
+        cascade_backrefs=False,
     )
 
 
@@ -429,7 +432,8 @@ class Entity(BaseMixin, db.Model):
     level = db.Column(db.String)
     data = db.Column(JSONB)  # metadata (participants.tsv, or something else)
     analysis = relationship(
-        "Analysis", backref=backref("entities", cascade_backrefs=False, passive_deletes=True),
+        "Analysis",
+        backref=backref("entities", cascade_backrefs=False, passive_deletes=True),
         cascade_backrefs=False,
     )
     __table_args__ = (db.CheckConstraint(level.in_(["group", "meta"])),)

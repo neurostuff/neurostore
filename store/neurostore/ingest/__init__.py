@@ -365,6 +365,7 @@ def ingest_neurosynth(max_rows=None):
             bs.update_has_images_and_points()
         db.session.commit()
 
+
 def ingest_neuroquery(max_rows=None):
     coords_file = (
         Path(__file__).parent.parent
@@ -445,6 +446,7 @@ def ingest_neuroquery(max_rows=None):
     for bs in base_studies:
         bs.update_has_images_and_points()
     db.session.commit()
+
 
 def load_ace_files(coordinates_file, metadata_file, text_file):
     coordinates_df = pd.read_table(coordinates_file, sep=",", dtype={"pmid": str})
