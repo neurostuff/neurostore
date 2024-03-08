@@ -166,9 +166,9 @@ class StudysetsView(ObjectView, ListView):
                         ),
                         selectinload(Analysis.analysis_conditions).options(
                             raiseload("*", sql_only=True),
-                            #     selectinload(AnalysisConditions.condition).options(
-                            #         raiseload("*", sql_only=True)
-                            #     ),
+                            selectinload(AnalysisConditions.condition).options(
+                                raiseload("*", sql_only=True)
+                            ),
                         ),
                     ),
                 ),
