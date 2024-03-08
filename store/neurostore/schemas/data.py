@@ -9,7 +9,6 @@ from marshmallow import (
 )
 import orjson
 from marshmallow.decorators import post_load
-import pandas as pd
 
 # context parameters
 # clone: create a new object with new ids (true or false)
@@ -392,7 +391,7 @@ class StudysetSchema(BaseDataSchema):
         render_module = orjson
 
 
-class AnnotationAnalysisSchema(BaseDataSchema):
+class AnnotationAnalysisSchema(BaseSchema):
     note = fields.Dict()
     annotation = StringOrNested("AnnotationSchema", load_only=True)
     analysis_id = fields.String(

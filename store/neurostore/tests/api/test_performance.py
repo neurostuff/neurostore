@@ -87,11 +87,13 @@ def test_mass_cloning(auth_client, session):
     total_time = end_time - start_time
     print("Total time to create 100 studies: ", total_time)
 
+
 @performance_test
 def test_get_large_annotation(assign_neurosynth_to_user, auth_client, session):
     annotation = Annotation.query.one()
     with profiled_yappi("annotation2.prof"):
         auth_client.get(f"/api/annotations/{annotation.id}")
+
 
 @performance_test
 def test_get_large_nested_studyset(ingest_neurosynth_enormous, auth_client, session):

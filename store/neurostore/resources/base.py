@@ -116,17 +116,14 @@ class BaseView(MethodView):
 
         create_annotation_analyses = []
         for result in results:
-            if result.analysis_id is None:
-                continue
-            params = {
-                "analysis_id": result.analysis_id,
-                "annotation_id": result.id,
-                "note": result.note or {},
-                "study_id": result.study_id,
-                "studyset_id": result.studyset_id,
-            }
-
-            if not result.annotation_analysis_id:
+            if result.analysis_id and not result.annotation_analysis_id:
+                params = {
+                    "analysis_id": result.analysis_id,
+                    "annotation_id": result.id,
+                    "note": result.note or {},
+                    "study_id": result.study_id,
+                    "studyset_id": result.studyset_id,
+                }
                 create_annotation_analyses.append(params)
 
         if create_annotation_analyses:
@@ -202,7 +199,7 @@ class BaseView(MethodView):
     def eager_load(self, q, args):
         return q
 
-    def db_validation(self, data):
+    def db_validation(self, record, data):
         """
         Custom validation for database constraints.
         """
@@ -231,7 +228,6 @@ class BaseView(MethodView):
     @classmethod
     def load_nested_records(cls, data, record=None):
         return data
-
 
     @classmethod
     def update_or_create(cls, data, id=None, user=None, record=None, flush=True):
@@ -530,12 +526,13 @@ class ObjectView(BaseView):
         schema = self.__class__._schema()
         data = schema.load(request_data)
 
-        input_record = None
-        if self._model is Annotation:
-            q = self._model.query.filter_by(id=id)
-            q = self.eager_load(q)
-            input_record = q.one()
-            self.db_validation(input_record, data)
+        args = {}
+        if set(self._o2m.keys()).intersection(set(data.keys())):
+            args['nested'] = True
+        q = self._model.query.filter_by(id=id)
+        q = self.eager_load(q, args)
+        input_record = q.one()
+        self.db_validation(input_record, data)
 
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data, id, record=input_record)
@@ -761,6 +758,8 @@ class ListView(BaseView):
             db.session.rollback()
             abort(400, description=str(e))
 
+        response = self.__class__._schema(context=args).dump(record)
+
         db.session.commit()
 
-        return self.__class__._schema(context=args).dump(record)
+        return response

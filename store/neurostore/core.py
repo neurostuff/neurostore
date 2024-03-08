@@ -19,6 +19,7 @@ import sqltap.wsgi
 import sqltap
 # import yappi
 
+
 class SQLTapMiddleware:
     def __init__(self, app):
         self.app = app
@@ -79,9 +80,9 @@ connexion_app.add_middleware(
 )
 
 # add sqltap
-connexion_app.add_middleware(
-   SQLTapMiddleware,
-)
+# connexion_app.add_middleware(
+#    SQLTapMiddleware,
+# )
 
 # add profiling
 # connexion_app.add_middleware(

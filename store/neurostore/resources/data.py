@@ -179,7 +179,6 @@ class StudysetsView(ObjectView, ListView):
         else:
             q = q.options(
                 selectinload(Studyset.studies)
-                .load_only(Study.id)
                 .options(raiseload("*", sql_only=True)),
                 selectinload(Studyset.user)
                 .load_only(User.name, User.external_id)
@@ -480,13 +479,13 @@ class BaseStudiesView(ObjectView, ListView):
             record = hashed_results.get(lookup_hash)
             if record is None:
                 with db.session.no_autoflush:
-                    record = self.__class__.update_or_create(study_data, commit=False)
+                    record = self.__class__.update_or_create(study_data, flush=False)
                 # track new base studies
                 to_commit.append(record)
             base_studies.append(record)
             versions = record.versions
             if len(versions) == 0:
-                version = StudiesView.update_or_create(study_data, commit=False)
+                version = StudiesView.update_or_create(study_data, flush=False)
                 record.versions.append(version)
                 to_commit.append(version)
             # elif len(versions) == 1:
