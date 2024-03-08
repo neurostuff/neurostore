@@ -206,52 +206,13 @@ def session(db):
     yield session
 
     cache.clear()
-    # session.rollback()
+    try:
+        session.rollback()
+    except:
+        pass
     session.close()
     transaction.rollback()
     connection.close()
-
-
-# @pytest.fixture(scope="function")
-# def session(db):
-#     """Creates a new db session for a test.
-#     Changes in session are rolled back"""
-#     from ..core import cache
-
-#     connection = db.engine.connect()
-#     transaction = connection.begin()
-
-#     options = dict(bind=connection, binds={}, future=True)
-#     if FLASK_SQL_VER.startswith("3."):
-#         session = db._make_scoped_session(options=options)
-#     else:
-#         session = db.create_scoped_session(options=options)
-
-#     # session.begin_nested()
-#     nested = connection.begin_nested()
-
-#     # session is actually a scoped_session
-#     # for the `after_transaction_end` event, we need a session instance to
-#     # listen for, hence the `session()` call
-#     @sa.event.listens_for(session, "after_transaction_end")
-#     def resetart_savepoint(sess, trans):
-#         nonlocal nested
-#         if not nested.is_active:
-#             nested = connection.begin_nested()
-#         # if trans.nested and not trans._parent.nested:
-#         #     session.expire_all()
-#         #     session.begin_nested()
-
-#     db.session = session
-#     cache.clear()
-
-#     yield session
-
-#     cache.clear()
-#     session.remove()
-#     transaction.rollback()
-#     connection.close()
-
 
 """
 Data population fixtures
@@ -543,8 +504,15 @@ def user_data(session, mock_add_users):
                 studyset=studyset,
                 user=user,
             )
-            for aa in annotation.annotation_analyses:
-                aa.note = {"food": "bar"}
+            for ss_s in studyset.studyset_studies:
+                for analysis in ss_s.study.analyses:
+                    aa = AnnotationAnalysis(
+                        studyset_study=ss_s,
+                        annotation=annotation,
+                        analysis=analysis,
+                        note={"food": "bar"},
+                    )
+                    annotation.annotation_analyses.append(aa)
 
             to_commit.append(annotation)
 

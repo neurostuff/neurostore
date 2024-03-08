@@ -230,13 +230,14 @@ def test_mismatched_notes(auth_client, ingest_neurosynth, session):
     # proper post
     auth_client.post("/api/annotations/", data=payload)
 
+    # allowing this behavior now
     # additional key only added to one analysis
     data[0]["note"]["bar"] = "not real!"
-    assert auth_client.post("/api/annotations/", data=payload).status_code == 400
+    assert auth_client.post("/api/annotations/", data=payload).status_code == 200
 
     # incorrect key in one analysis
     data[0]["note"].pop("foo")
-    assert auth_client.post("/api/annotations/", data=payload).status_code == 400
+    assert auth_client.post("/api/annotations/", data=payload).status_code == 200
 
     # update a single analysis with incorrect key
     bad_payload = {"notes": [data[0]]}

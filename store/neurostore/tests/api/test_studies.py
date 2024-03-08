@@ -245,6 +245,7 @@ def test_cache_update(auth_client, user_data, session):
 def test_post_meta_analysis(auth_client, user_data, session):
     study_data = {
         "name": "meta-analysis",
+        "level": "meta",
         "analyses": [
             {
                 "name": "emotion",
@@ -264,11 +265,6 @@ def test_post_meta_analysis(auth_client, user_data, session):
                 "images": [
                     {
                         "url": "https://imagesrus.org/images/1234",
-                    },
-                ],
-                "entities": [
-                    {
-                        "level": "meta",
                     },
                 ],
             },

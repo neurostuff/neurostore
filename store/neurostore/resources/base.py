@@ -16,6 +16,7 @@ from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
 
+from neurostore.models.data import _check_type
 from ..core import cache
 from ..database import db
 from .utils import get_current_user
@@ -67,12 +68,65 @@ class BaseView(MethodView):
     _view_fields = {}
     # _default_exclude = None
 
-    def get_affected_ids(self, id):
+    def get_affected_ids(self, ids):
         """
         Get all the ids that are affected by a change to a record..
         Affected meaning the output from that endpoint would change.
         """
         return {"base-studies": []}
+
+    def update_annotations(self, annotations):
+        if not annotations:
+            return
+
+        query = (
+            sa.select(
+                Annotation.id,
+                Annotation.note_keys,
+                AnnotationAnalysis.analysis_id.label("annotation_analysis_id"),
+                AnnotationAnalysis.annotation_id.label("annotation_id"),
+                AnnotationAnalysis.note,
+                StudysetStudy.studyset_id,
+                StudysetStudy.study_id,
+                Analysis.id.label("analysis_id"),
+                
+            )
+            .select_from(
+                Annotation
+            )
+                .join(Studyset, Studyset.id == Annotation.studyset_id)
+                .join(StudysetStudy, StudysetStudy.studyset_id == Studyset.id)
+                .join(Analysis, Analysis.study_id == StudysetStudy.study_id)
+                .outerjoin(AnnotationAnalysis, sa.and_(AnnotationAnalysis.annotation_id == Annotation.id, sa.or_(AnnotationAnalysis.analysis_id == Analysis.id, AnnotationAnalysis.analysis_id == None)))
+                .where(Annotation.id.in_(annotations))
+        )
+
+        results = db.session.execute(query).fetchall()
+
+        if not results:
+            return
+
+        create_annotation_analyses = []
+        for result in results:
+            if result.analysis_id is None:
+                continue
+            params = {
+                "analysis_id": result.analysis_id,
+                "annotation_id": result.id,
+                "note": result.note or {},
+                "study_id": result.study_id,
+                "studyset_id": result.studyset_id,
+            }
+
+            if not result.annotation_analysis_id:
+                create_annotation_analyses.append(params)
+
+        if create_annotation_analyses:        
+            db.session.execute(
+                sa.insert(AnnotationAnalysis),
+                create_annotation_analyses,
+            )
+
 
     def update_base_studies(self, base_studies):
         # See if any base_studies are affected
@@ -292,8 +346,9 @@ class BaseView(MethodView):
         for field, res_name in cls._nested.items():
             ResCls = getattr(viewdata, res_name)
             eager_loaded = False
+            primary_keys = [key.name for key in sa.inspect(record).mapper.primary_key]
             if data.get(field) is not None:
-                if not eager_loaded and record.id:
+                if not eager_loaded and all([getattr(record, pk) for pk in primary_keys]):
                     record = cls.eager_load(
                         cls()._model.query, q).filter_by(id=record.id).one()
                     eager_loaded = True
@@ -483,12 +538,18 @@ class ObjectView(BaseView):
         # clear relevant caches
         # clear the cache for this endpoint
         with db.session.no_autoflush:
-                unique_ids = self.get_affected_ids(record.id)
+                unique_ids = self.get_affected_ids([record.id])
                 clear_cache(unique_ids)
 
         db.session.flush() # flush the deletion
         
         self.update_base_studies(unique_ids.get("base-studies"))
+
+        try:
+            self.update_annotations(unique_ids.get("annotations"))
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            abort(400, description=str(e))
 
         db.session.commit()
 
@@ -509,13 +570,19 @@ class ObjectView(BaseView):
             db.session.delete(record)
             # clear relevant caches
             with db.session.no_autoflush:
-                unique_ids = self.get_affected_ids(record.id)
+                unique_ids = self.get_affected_ids([record.id])
                 clear_cache(unique_ids)
             
             
             db.session.flush() # flush the deletion
             
             self.update_base_studies(unique_ids.get("base-studies"))
+
+            try:
+                self.update_annotations(unique_ids.get("annotations"))
+            except SQLAlchemyError as e:
+                db.session.rollback()
+                abort(400, description=str(e))
   
             db.session.commit()
 
@@ -674,13 +741,19 @@ class ListView(BaseView):
 
         # clear the cache for this endpoint
         with db.session.no_autoflush:
-                unique_ids = self.get_affected_ids(record.id)
+                unique_ids = self.get_affected_ids([record.id])
                 clear_cache(unique_ids)
             
 
         db.session.flush() # flush the deletion
         
         self.update_base_studies(unique_ids.get("base-studies"))
+
+        try:
+            self.update_annotations(unique_ids.get("annotations"))
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            abort(400, description=str(e))
 
         db.session.commit()
 

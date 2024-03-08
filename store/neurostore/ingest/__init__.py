@@ -208,6 +208,7 @@ def ingest_neurosynth(max_rows=None):
     studies = []
     to_commit = []
     all_studies = {s.pmid: s for s in Study.query.filter_by(source="neurosynth").all()}
+    base_studies = []
     with db.session.no_autoflush:
         for metadata_row, annotation_row in zip(
             metadata.itertuples(), annotations.itertuples(index=False)
@@ -270,6 +271,7 @@ def ingest_neurosynth(max_rows=None):
                     source_attr = getattr(base_study, col)
                     setattr(base_study, col, source_attr or value)
             to_commit.append(base_study)
+            base_studies.append(base_study)
             study_coord_data = coord_data.loc[[id_]]
             md = {
                 "year": int(metadata_row.year),
@@ -341,9 +343,14 @@ def ingest_neurosynth(max_rows=None):
             to_commit.extend([study, studyset_study] + study.analyses)
             for analysis in study.analyses:
                 to_commit.append(analysis)
-                # add note (event automatically created an annotation_analysis object)
-                analysis.annotation_analyses[0].note = annotation_row._asdict()
-                notes.append(analysis.annotation_analyses[0])
+                # add note
+                aa = AnnotationAnalysis(
+                    annotation=annot,
+                    studyset_study=studyset_study,
+                    analysis=analysis,
+                    note=annotation_row._asdict(),
+                )
+                notes.append(aa)
 
         # add notes to annotation
         annot.note_keys = {
@@ -353,8 +360,10 @@ def ingest_neurosynth(max_rows=None):
         for note in notes:
             to_commit.append(note.analysis)
         db.session.add_all([annot] + notes + to_commit + [d])
+        db.session.flush()
+        for bs in base_studies:
+            bs.update_has_images_and_points()
         db.session.commit()
-
 
 def ingest_neuroquery(max_rows=None):
     coords_file = (
@@ -373,6 +382,7 @@ def ingest_neuroquery(max_rows=None):
     metadata = pd.read_table(metadata_file, dtype={"id": str})
     metadata = metadata.set_index("id")
 
+    base_studies = []
     if max_rows is not None:
         metadata = metadata.iloc[:max_rows]
 
@@ -382,7 +392,7 @@ def ingest_neuroquery(max_rows=None):
 
         if base_study is None:
             base_study = BaseStudy(name=metadata_row["title"], level="group", pmid=id_)
-
+        base_studies.append(base_study)
         study_coord_data = coord_data.loc[[id_]]
         s = Study(
             name=metadata_row["title"] or base_study.name,
@@ -431,8 +441,10 @@ def ingest_neuroquery(max_rows=None):
         studies=Study.query.filter_by(source="neuroquery").all(),
     )
     db.session.add(d)
+    db.session.flush()
+    for bs in base_studies:
+        bs.update_has_images_and_points()
     db.session.commit()
-
 
 def load_ace_files(coordinates_file, metadata_file, text_file):
     coordinates_df = pd.read_table(coordinates_file, sep=",", dtype={"pmid": str})
@@ -614,6 +626,9 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
             base_study.versions.append(s)
 
     db.session.add_all(to_commit)
+    db.session.flush()
+    for bs in all_base_studies:
+        bs.update_has_images_and_points()
     db.session.commit()
 
 

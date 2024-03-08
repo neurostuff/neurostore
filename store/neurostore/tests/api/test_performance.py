@@ -23,19 +23,18 @@ def profiled_yappi(output_file="yappi_profile.prof", sort_type='cumulative'):
         yappi.clear_stats()  # Clear stats after writing to file to avoid accumulating results across runs
 
 
-# @performance_test
+@performance_test
 def test_mass_deletion(assign_neurosynth_to_user, auth_client, session):
     studies = Study.query.all()
     start_time = time()
-    with profiled_yappi():
-        for s in studies:
-            resp = auth_client.delete(f"/api/studies/{s.id}")
-            assert resp.status_code == 200
+    for s in studies:
+        resp = auth_client.delete(f"/api/studies/{s.id}")
+        assert resp.status_code == 200
     end_time = time()
     total_time = end_time - start_time
     print("Total time to delete all studies: ", total_time)
 
-# @performance_test
+@performance_test
 def test_mass_creation(auth_client, session):
     start_time = time()
     for i in range(1000):
@@ -52,9 +51,9 @@ def test_mass_creation(auth_client, session):
         assert resp.status_code == 200
     end_time = time()
     total_time = end_time - start_time
-    print("Total time to create 100 studies: ", total_time)
+    print("Total time to create 1000 studies: ", total_time)
 
-# @performance_test
+@performance_test
 def test_mass_cloning(auth_client, session):
     start_time = time()
     data = {

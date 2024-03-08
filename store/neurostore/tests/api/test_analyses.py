@@ -98,7 +98,7 @@ def test_delete_image_analyses(auth_client, ingest_neurovault, session):
 
 
 def test_update_points_analyses(auth_client, ingest_neurovault, session):
-    analysis_db = Analysis.query.first()
+    analysis_db = Analysis.query.where(Analysis.analysis_conditions.any()).first()
     analysis = AnalysisSchema().dump(analysis_db)
     id_ = auth_client.username
     user = User.query.filter_by(external_id=id_).first()

@@ -305,6 +305,7 @@ class StudysetStudy(db.Model):
     annotation_analyses = relationship(
         "AnnotationAnalysis",
         backref=backref("studyset_study", passive_deletes=True),
+        cascade="all, delete-orphan",
         passive_deletes=True,
     )
 
@@ -509,6 +510,6 @@ class PointValue(BaseMixin, db.Model):
     user = relationship("User", backref=backref("point_values", passive_deletes=True))
 
 
-from . import event_listeners  # noqa E402
+# from . import event_listeners  # noqa E402
 
-del event_listeners
+# del event_listeners
