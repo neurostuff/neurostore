@@ -184,7 +184,7 @@ def db(app):
 
 @pytest.fixture(scope="function")
 def session(db):
-    """https://docs.sqlalchemy.org/en/20/orm/session_transaction.html#joining-a-session-into-an-external-transaction-such-as-for-test-suites""" # noqa
+    """https://docs.sqlalchemy.org/en/20/orm/session_transaction.html#joining-a-session-into-an-external-transaction-such-as-for-test-suites"""  # noqa
     from ..core import cache
 
     connection = db.engine.connect()

@@ -178,8 +178,7 @@ class StudysetsView(ObjectView, ListView):
             )
         else:
             q = q.options(
-                selectinload(Studyset.studies)
-                .options(raiseload("*", sql_only=True)),
+                selectinload(Studyset.studies).options(raiseload("*", sql_only=True)),
                 selectinload(Studyset.user)
                 .load_only(User.name, User.external_id)
                 .options(raiseload("*", sql_only=True)),
@@ -283,7 +282,13 @@ class AnnotationsView(ObjectView, ListView):
                 .options(raiseload("*", sql_only=True)),
                 selectinload(AnnotationAnalysis.studyset_study).options(
                     selectinload(StudysetStudy.study)
-                    .load_only(Study.id, Study.name, Study.year, Study.authors, Study.publication)
+                    .load_only(
+                        Study.id,
+                        Study.name,
+                        Study.year,
+                        Study.authors,
+                        Study.publication,
+                    )
                     .options(raiseload("*", sql_only=True))
                 ),
             ),

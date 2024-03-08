@@ -49,7 +49,9 @@ def test_mass_creation(auth_client, session):
                 "analyses": [
                     {
                         "name": f"analysis{i}",
-                        "points": [{"x": 0, "y": 0, "z": 0, "space": "mni", "order": 1}],
+                        "points": [
+                            {"x": 0, "y": 0, "z": 0, "space": "mni", "order": 1}
+                        ],
                     }
                 ],
             }
@@ -109,8 +111,8 @@ def test_updating_annotation(assign_neurosynth_to_user, auth_client, session):
     annotation = q.one()
     annotation_dict = AnnotationSchema().dump(annotation)
     with profiled_yappi("update_annotation_largs.prof"):
-        for i in range(len(annotation_dict['notes'])):
-            annotation_dict['notes'][i]['note']['_5'] = 1.0
+        for i in range(len(annotation_dict["notes"])):
+            annotation_dict["notes"][i]["note"]["_5"] = 1.0
             auth_client.put(f"/api/annotations/{annotation.id}", data=annotation_dict)
 
 
@@ -119,7 +121,7 @@ def test_updating_annotation_one(assign_neurosynth_to_user, auth_client, session
     q = AnnotationsView().eager_load(q)
     annotation = q.one()
     annotation_dict = AnnotationSchema().dump(annotation)
-    annotation_dict['notes'][0]['note']['_5'] = 1.0
+    annotation_dict["notes"][0]["note"]["_5"] = 1.0
 
     resp = auth_client.put(f"/api/annotations/{annotation.id}", data=annotation_dict)
     assert resp.status_code == 200

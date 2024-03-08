@@ -140,7 +140,9 @@ class BaseView(MethodView):
         # Subquery for new_has_coordinates
         new_has_coordinates_subquery = (
             sa.select(
-                sa.func.coalesce(sa.func.bool_and(Point.analysis_id != None), False)  # noqa E711
+                sa.func.coalesce(
+                    sa.func.bool_and(Point.analysis_id != None), False
+                )  # noqa E711
             )
             .where(Point.analysis_id == Analysis.id)
             .correlate(Study)
@@ -150,7 +152,9 @@ class BaseView(MethodView):
         # Subquery for new_has_images
         new_has_images_subquery = (
             sa.select(
-                sa.func.coalesce(sa.func.bool_and(Image.analysis_id != None), False)  # noqa E711
+                sa.func.coalesce(
+                    sa.func.bool_and(Image.analysis_id != None), False
+                )  # noqa E711
             )
             .where(Image.analysis_id == Analysis.id)
             .correlate(Study)
@@ -528,7 +532,7 @@ class ObjectView(BaseView):
 
         args = {}
         if set(self._o2m.keys()).intersection(set(data.keys())):
-            args['nested'] = True
+            args["nested"] = True
         q = self._model.query.filter_by(id=id)
         q = self.eager_load(q, args)
         input_record = q.one()

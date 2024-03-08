@@ -109,7 +109,9 @@ def test_study_removal_from_studyset(auth_client, session, user_data):
     studies.pop()
 
     # update studyset
-    ss_update = auth_client.put(f"/api/studysets/{studyset_id}", data={"studies": studies})
+    ss_update = auth_client.put(
+        f"/api/studysets/{studyset_id}", data={"studies": studies}
+    )
     assert ss_update.status_code == 200
 
     # test if annotations were updated
