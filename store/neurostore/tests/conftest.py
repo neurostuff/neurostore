@@ -340,8 +340,14 @@ def ingest_neurosynth(session):
 
 
 @pytest.fixture(scope="function")
+def ingest_neurosynth_enormous(session):
+    """Add a studyset with 500 subjects"""
+    return ingest.ingest_neurosynth(500)
+
+
+@pytest.fixture(scope="function")
 def ingest_neurosynth_large(session):
-    """Add a studyset with two subjects"""
+    """Add a studyset with 100 subjects"""
     return ingest.ingest_neurosynth(100)
 
 

@@ -232,10 +232,6 @@ class BaseView(MethodView):
     def load_nested_records(cls, data, record=None):
         return data
 
-    def join_tables(self, q, args):
-        if self._model is User:
-            return q
-        return q.options(selectinload("user"))
 
     @classmethod
     def update_or_create(cls, data, id=None, user=None, record=None, commit=True):

@@ -1,5 +1,7 @@
 from neurostore.tests.conftest import performance_test
-from neurostore.models import Study
+from neurostore.models import Studyset, Study, Annotation
+from neurostore.schemas import AnnotationSchema
+from neurostore.resources import AnnotationsView
 from time import time
 
 import yappi
@@ -40,18 +42,19 @@ def test_mass_deletion(assign_neurosynth_to_user, auth_client, session):
 @performance_test
 def test_mass_creation(auth_client, session):
     start_time = time()
-    for i in range(1000):
-        data = {
-            "name": f"study{i}",
-            "analyses": [
-                {
-                    "name": f"analysis{i}",
-                    "points": [{"x": 0, "y": 0, "z": 0, "space": "mni", "order": 1}],
-                }
-            ],
-        }
-        resp = auth_client.post("/api/studies/", data=data)
-        assert resp.status_code == 200
+    with profiled_yappi("mass_creation.prof"):
+        for i in range(1000):
+            data = {
+                "name": f"study{i}",
+                "analyses": [
+                    {
+                        "name": f"analysis{i}",
+                        "points": [{"x": 0, "y": 0, "z": 0, "space": "mni", "order": 1}],
+                    }
+                ],
+            }
+            resp = auth_client.post("/api/studies/", data=data)
+            assert resp.status_code == 200
     end_time = time()
     total_time = end_time - start_time
     print("Total time to create 1000 studies: ", total_time)
@@ -83,3 +86,27 @@ def test_mass_cloning(auth_client, session):
     end_time = time()
     total_time = end_time - start_time
     print("Total time to create 100 studies: ", total_time)
+
+@performance_test
+def test_get_large_annotation(assign_neurosynth_to_user, auth_client, session):
+    annotation = Annotation.query.one()
+    with profiled_yappi("annotation2.prof"):
+        auth_client.get(f"/api/annotations/{annotation.id}")
+
+@performance_test
+def test_get_large_nested_studyset(ingest_neurosynth_enormous, auth_client, session):
+    studyset = Studyset.query.one()
+    with profiled_yappi("nested_studyset_large.prof"):
+        auth_client.get(f"/api/studysets/{studyset.id}?nested=true")
+
+
+@performance_test
+def test_updating_annotation(assign_neurosynth_to_user, auth_client, session):
+    q = Annotation.query
+    q = AnnotationsView().eager_load(q)
+    annotation = q.one()
+    annotation_dict = AnnotationSchema().dump(annotation)
+    with profiled_yappi("update_annotation_largs.prof"):
+        for i in range(len(annotation_dict['notes'])):
+            annotation_dict['notes'][i]['note']['_5'] = 1.0
+            auth_client.put(f"/api/annotations/{annotation.id}", data=annotation_dict)
