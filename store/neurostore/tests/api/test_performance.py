@@ -21,7 +21,8 @@ def profiled_yappi(output_file="yappi_profile.prof", sort_type="cumulative"):
 
         stats.save(output_file, type="pstat")
 
-        yappi.clear_stats()  # Clear stats after writing to file to avoid accumulating results across runs
+        # Clear stats after writing to file to avoid accumulating results across runs
+        yappi.clear_stats()
 
 
 @performance_test

@@ -7,7 +7,6 @@ from sqlalchemy.orm import (
     joinedload,
     defaultload,
     raiseload,
-    subqueryload,
     selectinload,
 )
 from sqlalchemy.sql import func
@@ -16,7 +15,6 @@ from sqlalchemy import select
 
 from .utils import view_maker
 from .base import BaseView, ObjectView, ListView
-from .nested import nested_load
 from ..database import db
 from ..models import (
     User,
@@ -145,18 +143,21 @@ class StudysetsView(ObjectView, ListView):
                     #     raiseload("*", sql_only=True)),
                     selectinload(Study.analyses).options(
                         raiseload("*", sql_only=True),
-                        # selectinload(Analysis.user).load_only(User.name, User.external_id).options(
+                        # selectinload(Analysis.user).load_only(
+                        #     User.name, User.external_id).options(
                         #     raiseload("*", sql_only=True)
                         # ),
                         selectinload(Analysis.images).options(
                             raiseload("*", sql_only=True),
-                            # selectinload(Image.user).load_only(User.name, User.external_id).options(
+                            # selectinload(Image.user).load_only(
+                            #     User.name, User.external_id).options(
                             #     raiseload("*", sql_only=True)
                             # ),
                         ),
                         selectinload(Analysis.points).options(
                             raiseload("*", sql_only=True),
-                            # selectinload(Point.user).load_only(User.name, User.external_id).options(
+                            # selectinload(Point.user).load_only(
+                            #     User.name, User.external_id).options(
                             #     raiseload("*", sql_only=True)
                             # ),
                             selectinload(Point.values).options(
@@ -184,14 +185,6 @@ class StudysetsView(ObjectView, ListView):
                 .load_only(User.name, User.external_id)
                 .options(raiseload("*", sql_only=True)),
             )
-        return q
-
-    def view_search(self, q, args):
-        # check if results should be nested
-        # nested = True if args.get("nested") else False
-        # if nested:
-        #     q = nested_load(self, query=q)
-
         return q
 
     def join_tables(self, q, args):

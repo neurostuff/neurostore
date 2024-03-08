@@ -14,20 +14,15 @@ from sqlalchemy.orm import (
     joinedload,
     raiseload,
     selectinload,
-    load_only,
-    subqueryload,
-    aliased,
 )
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
 
-from neurostore.models.data import _check_type
 from ..core import cache
 from ..database import db
 from .utils import get_current_user
-from .nested import nested_load
 from ..models import (
     StudysetStudy,
     AnnotationAnalysis,
@@ -107,7 +102,7 @@ class BaseView(MethodView):
                     AnnotationAnalysis.annotation_id == Annotation.id,
                     sa.or_(
                         AnnotationAnalysis.analysis_id == Analysis.id,
-                        AnnotationAnalysis.analysis_id == None,
+                        AnnotationAnalysis.analysis_id == None,  # noqa E711
                     ),
                 ),
             )
@@ -148,7 +143,7 @@ class BaseView(MethodView):
         # Subquery for new_has_coordinates
         new_has_coordinates_subquery = (
             sa.select(
-                sa.func.coalesce(sa.func.bool_and(Point.analysis_id != None), False)
+                sa.func.coalesce(sa.func.bool_and(Point.analysis_id != None), False)  # noqa E711
             )
             .where(Point.analysis_id == Analysis.id)
             .correlate(Study)
@@ -158,7 +153,7 @@ class BaseView(MethodView):
         # Subquery for new_has_images
         new_has_images_subquery = (
             sa.select(
-                sa.func.coalesce(sa.func.bool_and(Image.analysis_id != None), False)
+                sa.func.coalesce(sa.func.bool_and(Image.analysis_id != None), False)  # noqa E711
             )
             .where(Image.analysis_id == Analysis.id)
             .correlate(Study)

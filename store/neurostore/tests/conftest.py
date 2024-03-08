@@ -2,9 +2,7 @@ import pytest
 from os import environ
 from neurostore.models.data import Analysis, Condition
 from sqlalchemy.orm import scoped_session, sessionmaker
-from ..database import db as _db
 import sqlalchemy as sa
-from flask_sqlalchemy import __version__ as FLASK_SQL_VER
 from .. import ingest
 from ..models import (
     User,
@@ -34,6 +32,12 @@ Test selection arguments
 
 def pytest_addoption(parser):
     parser.addoption(
+        "--performance",
+        action="store_true",
+        default=False,
+        help="Run performance tests",
+    )
+    parser.addoption(
         "--auth",
         action="store_true",
         default=False,
@@ -45,16 +49,6 @@ auth_test = pytest.mark.skipif(
     "not config.getoption('--auth')",
     reason="Only run when --auth is given",
 )
-
-
-def pytest_addoption(parser):
-    parser.addoption(
-        "--performance",
-        action="store_true",
-        default=False,
-        help="Run performance tests",
-    )
-
 
 performance_test = pytest.mark.skipif(
     "not config.getoption('--performance')",
@@ -190,7 +184,7 @@ def db(app):
 
 @pytest.fixture(scope="function")
 def session(db):
-    """https://docs.sqlalchemy.org/en/20/orm/session_transaction.html#joining-a-session-into-an-external-transaction-such-as-for-test-suites"""
+    """https://docs.sqlalchemy.org/en/20/orm/session_transaction.html#joining-a-session-into-an-external-transaction-such-as-for-test-suites""" # noqa
     from ..core import cache
 
     connection = db.engine.connect()
@@ -209,7 +203,7 @@ def session(db):
     cache.clear()
     try:
         session.rollback()
-    except:
+    except:  # noqa
         pass
     session.close()
     transaction.rollback()
