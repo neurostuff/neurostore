@@ -141,7 +141,7 @@ class BaseView(MethodView):
         new_has_coordinates_subquery = (
             sa.select(
                 sa.func.coalesce(
-                    sa.func.bool_and(Point.analysis_id != None), False
+                    sa.func.bool_and(Point.analysis_id != None), False  # noqa E711
                 )  # noqa E711
             )
             .where(Point.analysis_id == Analysis.id)
@@ -153,7 +153,7 @@ class BaseView(MethodView):
         new_has_images_subquery = (
             sa.select(
                 sa.func.coalesce(
-                    sa.func.bool_and(Image.analysis_id != None), False
+                    sa.func.bool_and(Image.analysis_id != None), False  # noqa E711
                 )  # noqa E711
             )
             .where(Image.analysis_id == Analysis.id)
