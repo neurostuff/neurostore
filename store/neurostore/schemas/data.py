@@ -200,7 +200,7 @@ class ImageSchema(BaseDataSchema):
         allow_none = ("url", "filename", "space", "value_type")
 
 
-class PointValueSchema(BaseDataSchema):
+class PointValueSchema(BaseSchema):
     class Meta:
         additional = allow_none = ("kind", "value")
 
