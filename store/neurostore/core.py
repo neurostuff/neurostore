@@ -9,8 +9,8 @@ import connexion
 # from connexion.json_schema import default_handlers as json_schema_handlers
 from connexion.resolver import MethodResolver
 from flask_caching import Cache
+from flask_orjson import OrjsonProvider
 
-from .or_json import ORJSONDecoder, ORJSONEncoder
 from .database import init_db
 
 # from datetime import datetime
@@ -111,5 +111,5 @@ auth0 = oauth.register(
     },
 )
 
-app.json_encoder = ORJSONEncoder
-app.json_decoder = ORJSONDecoder
+json_provider = OrjsonProvider(app)
+app.json = json_provider
