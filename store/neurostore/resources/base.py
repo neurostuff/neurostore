@@ -224,9 +224,9 @@ class BaseView(MethodView):
         """
         Processing of a record after updating or creating (defined in specific classes).
         """
-        q = self._model.query.filter_by(id=record.id)
-        q = self.join_tables(q, {})
-        return q.one()
+        # q = self._model.query.filter_by(id=record.id)
+        # q = self.join_tables(q, {})
+        return record
 
     @classmethod
     def load_nested_records(cls, data, record=None):
@@ -234,7 +234,7 @@ class BaseView(MethodView):
 
 
     @classmethod
-    def update_or_create(cls, data, id=None, user=None, record=None, commit=True):
+    def update_or_create(cls, data, id=None, user=None, record=None, flush=True):
         """
         scenerios:
         1. cloning a study
@@ -291,10 +291,10 @@ class BaseView(MethodView):
         elif only_ids:
             to_commit.append(record)
 
-            if commit:
+            if flush:
                 db.session.add_all(to_commit)
                 try:
-                    db.session.commit()
+                    db.session.flush()
                 except SQLAlchemyError:
                     db.session.rollback()
                     abort(400)
@@ -346,18 +346,18 @@ class BaseView(MethodView):
         # Update nested attributes recursively
         for field, res_name in cls._nested.items():
             ResCls = getattr(viewdata, res_name)
-            eager_loaded = False
-            primary_keys = [key.name for key in sa.inspect(record).mapper.primary_key]
+            # eager_loaded = False
+            # primary_keys = [key.name for key in sa.inspect(record).mapper.primary_key]
             if data.get(field) is not None:
-                if not eager_loaded and all(
-                    [getattr(record, pk) for pk in primary_keys]
-                ):
-                    record = (
-                        cls.eager_load(cls()._model.query, q)
-                        .filter_by(id=record.id)
-                        .one()
-                    )
-                    eager_loaded = True
+                # if not eager_loaded and all(
+                #     [getattr(record, pk) for pk in primary_keys]
+                # ):
+                #     record = (
+                #         cls.eager_load(cls()._model.query, q)
+                #         .filter_by(id=record.id)
+                #         .one()
+                #     )
+                #     eager_loaded = True
                 if isinstance(data.get(field), list):
                     nested = []
                     for rec in data.get(field):
@@ -375,7 +375,7 @@ class BaseView(MethodView):
                                 rec,
                                 user=current_user,
                                 record=nested_record,
-                                commit=False,
+                                flush=False,
                             )
                         )
                     to_commit.extend(nested)
@@ -391,7 +391,7 @@ class BaseView(MethodView):
                     else:
                         nested_record = None
                     nested = ResCls.update_or_create(
-                        rec, user=current_user, record=nested_record, commit=False
+                        rec, user=current_user, record=nested_record, flush=False
                     )
                     to_commit.append(nested)
 
@@ -399,10 +399,10 @@ class BaseView(MethodView):
 
         # add other custom update after the nested attributes are handled...
         record = cls.post_nested_record_update(record)
-        if commit:
+        if flush:
             db.session.add_all(to_commit)
             try:
-                db.session.commit()
+                db.session.flush()
             except SQLAlchemyError:
                 db.session.rollback()
                 abort(400)
@@ -527,32 +527,41 @@ class ObjectView(BaseView):
 
     def put(self, id):
         request_data = self.insert_data(id, request.json)
-        data = self.__class__._schema().load(request_data)
-        self.db_validation(data)
+        schema = self.__class__._schema()
+        data = schema.load(request_data)
+
+        input_record = None
+        if self._model is Annotation:
+            q = self._model.query.filter_by(id=id)
+            q = self.eager_load(q)
+            input_record = q.one()
+            self.db_validation(input_record, data)
 
         with db.session.no_autoflush:
-            record = self.__class__.update_or_create(data, id)
+            record = self.__class__.update_or_create(data, id, record=input_record)
 
         record = self.after_update_or_create(record)
         # clear relevant caches
         # clear the cache for this endpoint
         with db.session.no_autoflush:
-            unique_ids = self.get_affected_ids([record.id])
+            # unique_ids = self.get_affected_ids([record.id])
+            unique_ids = self.get_affected_ids([id])
             clear_cache(unique_ids)
 
-        db.session.flush()  # flush the deletion
-
-        self.update_base_studies(unique_ids.get("base-studies"))
-
         try:
+            self.update_base_studies(unique_ids.get("base-studies"))
             self.update_annotations(unique_ids.get("annotations"))
         except SQLAlchemyError as e:
             db.session.rollback()
             abort(400, description=str(e))
 
+        db.session.flush()
+
+        response = schema.dump(record)
+
         db.session.commit()
 
-        return self.__class__._schema().dump(record)
+        return response
 
     def delete(self, id):
         q = self.__class__._model.query.filter_by(id=id)

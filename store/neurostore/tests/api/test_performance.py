@@ -110,3 +110,14 @@ def test_updating_annotation(assign_neurosynth_to_user, auth_client, session):
         for i in range(len(annotation_dict['notes'])):
             annotation_dict['notes'][i]['note']['_5'] = 1.0
             auth_client.put(f"/api/annotations/{annotation.id}", data=annotation_dict)
+
+
+def test_updating_annotation_one(assign_neurosynth_to_user, auth_client, session):
+    q = Annotation.query
+    q = AnnotationsView().eager_load(q)
+    annotation = q.one()
+    annotation_dict = AnnotationSchema().dump(annotation)
+    annotation_dict['notes'][0]['note']['_5'] = 1.0
+
+    resp = auth_client.put(f"/api/annotations/{annotation.id}", data=annotation_dict)
+    assert resp.status_code == 200

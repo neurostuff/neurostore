@@ -355,6 +355,7 @@ def ingest_neurosynth_large(session):
 def assign_neurosynth_to_user(session, ingest_neurosynth_large, auth_client):
     """assign the studyset and all studies/analyses/points to the user."""
     studyset = Studyset.query.filter_by(name="neurosynth").first()
+    annotation = Annotation.query.filter_by(name="neurosynth").first()
     user = User.query.filter_by(external_id=auth_client.username).first()
     studyset.user = user
     for study in studyset.studies:
@@ -362,7 +363,10 @@ def assign_neurosynth_to_user(session, ingest_neurosynth_large, auth_client):
         for analysis in study.analyses:
             analysis.user = user
 
-    session.add(studyset)
+    annotation.user = user
+    for aa in annotation.annotation_analyses:
+        aa.user = user
+    session.add_all([studyset, annotation])
     session.commit()
 
 

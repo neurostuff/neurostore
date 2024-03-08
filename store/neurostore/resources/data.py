@@ -236,9 +236,9 @@ class AnnotationsView(ObjectView, ListView):
             return data
         q = Studyset.query.filter_by(id=studyset_id)
         q = q.options(
-            selectinload(Studyset.studyset_studies)
-            .selectinload(StudysetStudy.study)
-            .selectinload(Study.analyses)
+            joinedload(Studyset.studyset_studies)
+            .joinedload(StudysetStudy.study)
+            .joinedload(Study.analyses)
         )
         studyset = q.first()
         data["studyset"]["preloaded_data"] = studyset
@@ -259,19 +259,19 @@ class AnnotationsView(ObjectView, ListView):
                 aa["studyset_study"]["preloaded_data"] = studyset_study
         return data
 
-    def after_update_or_create(self, record):
-        q = Annotation.query.filter_by(id=record.id)
-        q = q.options(
-            selectinload(Annotation.studyset),
-            selectinload(Annotation.user),
-            selectinload(Annotation.annotation_analyses).options(
-                selectinload(AnnotationAnalysis.analysis),
-                selectinload(AnnotationAnalysis.studyset_study).options(
-                    selectinload(StudysetStudy.study)
-                ),
-            ),
-        )
-        return q.first()
+    # def after_update_or_create(self, record):
+    #     q = Annotation.query.filter_by(id=record.id)
+    #     q = q.options(
+    #         selectinload(Annotation.studyset),
+    #         selectinload(Annotation.user),
+    #         selectinload(Annotation.annotation_analyses).options(
+    #             selectinload(AnnotationAnalysis.analysis),
+    #             selectinload(AnnotationAnalysis.studyset_study).options(
+    #                 selectinload(StudysetStudy.study)
+    #             ),
+    #         ),
+    #     )
+    #     return q.first()
 
     def eager_load(self, q, args=None):
         q = q.options(
@@ -280,11 +280,11 @@ class AnnotationsView(ObjectView, ListView):
             .options(raiseload("*", sql_only=True)),
             selectinload(Annotation.annotation_analyses).options(
                 selectinload(AnnotationAnalysis.analysis)
-                .load_only(Analysis.id)
+                .load_only(Analysis.id, Analysis.name)
                 .options(raiseload("*", sql_only=True)),
                 selectinload(AnnotationAnalysis.studyset_study).options(
                     selectinload(StudysetStudy.study)
-                    .load_only(Study.id)
+                    .load_only(Study.id, Study.name, Study.year, Study.authors, Study.publication)
                     .options(raiseload("*", sql_only=True))
                 ),
             ),
@@ -355,18 +355,12 @@ class AnnotationsView(ObjectView, ListView):
             )
         return q
 
-    def db_validation(self, data):
-        studyset_id = data.get("studyset", {}).get("id")
-        q = Studyset.query.filter_by(id=studyset_id)
-        q = q.options(
-            selectinload(Studyset.studies).options(selectinload(Study.analyses))
-        )
-        studyset = q.one()
-        ss_analysis_ids = {a.id for s in studyset.studies for a in s.analyses}
+    def db_validation(self, record, data):
+        db_analysis_ids = {aa.analysis_id for aa in record.annotation_analyses}
         data_analysis_ids = {
             aa["analysis"]["id"] for aa in data.get("annotation_analyses")
         }
-        if ss_analysis_ids != data_analysis_ids:
+        if db_analysis_ids != data_analysis_ids:
             abort(
                 400,
                 description="annotation request must contain all analyses from the studyset.",
