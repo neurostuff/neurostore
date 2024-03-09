@@ -1,8 +1,21 @@
 from sqlalchemy.orm import declarative_base
 from flask_sqlalchemy import SQLAlchemy
+import orjson
 
 
-db = SQLAlchemy(engine_options={"future": True})
+def orjson_serializer(obj):
+    """
+        Note that `orjson.dumps()` return byte array,
+        while sqlalchemy expects string, thus `decode()` call.
+    """
+    return orjson.dumps(obj, option=orjson.OPT_SERIALIZE_NUMPY | orjson.OPT_NAIVE_UTC).decode()
+
+
+db = SQLAlchemy(engine_options={
+    "future": True,
+    "json_serializer": orjson_serializer,
+    "json_deserializer": orjson.loads,
+    })
 Base = declarative_base()
 
 
