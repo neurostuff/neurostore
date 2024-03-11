@@ -10,7 +10,10 @@ from flask.views import MethodView
 
 import sqlalchemy as sa
 import sqlalchemy.sql.expression as sae
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import (
+    raiseload,
+    selectinload,
+)
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func
 from webargs.flaskparser import parser
@@ -19,12 +22,15 @@ from webargs import fields
 from ..core import cache
 from ..database import db
 from .utils import get_current_user
-from .nested import nested_load
 from ..models import (
     StudysetStudy,
     AnnotationAnalysis,
     Studyset,
     BaseStudy,
+    Study,
+    Analysis,
+    Point,
+    Image,
     User,
     Annotation,
 )
@@ -54,6 +60,8 @@ def create_user():
 
 class BaseView(MethodView):
     _model = None
+    _o2m = {}
+    _m2o = {}
     _nested = {}
     _parent = {}
     _linked = {}
@@ -61,7 +69,140 @@ class BaseView(MethodView):
     _view_fields = {}
     # _default_exclude = None
 
-    def db_validation(self, data):
+    def get_affected_ids(self, ids):
+        """
+        Get all the ids that are affected by a change to a record..
+        Affected meaning the output from that endpoint would change.
+        """
+        return {"base-studies": []}
+
+    def update_annotations(self, annotations):
+        if not annotations:
+            return
+
+        query = (
+            sa.select(
+                Annotation.id,
+                Annotation.note_keys,
+                AnnotationAnalysis.analysis_id.label("annotation_analysis_id"),
+                AnnotationAnalysis.annotation_id.label("annotation_id"),
+                AnnotationAnalysis.note,
+                StudysetStudy.studyset_id,
+                StudysetStudy.study_id,
+                Analysis.id.label("analysis_id"),
+            )
+            .select_from(Annotation)
+            .join(Studyset, Studyset.id == Annotation.studyset_id)
+            .join(StudysetStudy, StudysetStudy.studyset_id == Studyset.id)
+            .join(Analysis, Analysis.study_id == StudysetStudy.study_id)
+            .outerjoin(
+                AnnotationAnalysis,
+                sa.and_(
+                    AnnotationAnalysis.annotation_id == Annotation.id,
+                    sa.or_(
+                        AnnotationAnalysis.analysis_id == Analysis.id,
+                        AnnotationAnalysis.analysis_id == None,  # noqa E711
+                    ),
+                ),
+            )
+            .where(Annotation.id.in_(annotations))
+        )
+
+        results = db.session.execute(query).fetchall()
+
+        if not results:
+            return
+
+        create_annotation_analyses = []
+        for result in results:
+            if result.analysis_id and not result.annotation_analysis_id:
+                params = {
+                    "analysis_id": result.analysis_id,
+                    "annotation_id": result.id,
+                    "note": result.note or {},
+                    "study_id": result.study_id,
+                    "studyset_id": result.studyset_id,
+                }
+                create_annotation_analyses.append(params)
+
+        if create_annotation_analyses:
+            db.session.execute(
+                sa.insert(AnnotationAnalysis),
+                create_annotation_analyses,
+            )
+
+    def update_base_studies(self, base_studies):
+        # See if any base_studies are affected
+        if not base_studies:
+            return
+
+        # Subquery for new_has_coordinates
+        new_has_coordinates_subquery = (
+            sa.select(
+                sa.func.coalesce(
+                    sa.func.bool_and(Point.analysis_id != None), False  # noqa E711
+                )  # noqa E711
+            )
+            .where(Point.analysis_id == Analysis.id)
+            .correlate(Study)
+            .scalar_subquery()
+        )
+
+        # Subquery for new_has_images
+        new_has_images_subquery = (
+            sa.select(
+                sa.func.coalesce(
+                    sa.func.bool_and(Image.analysis_id != None), False  # noqa E711
+                )  # noqa E711
+            )
+            .where(Image.analysis_id == Analysis.id)
+            .correlate(Study)
+            .scalar_subquery()
+        )
+
+        # Main query
+        query = (
+            sa.select(
+                BaseStudy.id,
+                BaseStudy.has_images,
+                BaseStudy.has_coordinates,
+                new_has_coordinates_subquery.label("new_has_coordinates"),
+                new_has_images_subquery.label("new_has_images"),
+            )
+            .distinct()
+            .select_from(BaseStudy)
+            .join(Study, Study.base_study_id == BaseStudy.id)
+            .outerjoin(Analysis, Analysis.study_id == Study.id)
+            .where(
+                BaseStudy.id.in_(base_studies),
+            )
+        )
+
+        affected_base_studies = db.session.execute(query).fetchall()
+        update_base_studies = []
+        for bs in affected_base_studies:
+            if (
+                bs.new_has_images != bs.has_images
+                or bs.new_has_coordinates != bs.has_coordinates
+            ):
+                update_base_studies.append(
+                    {
+                        "id": bs.id,
+                        "has_images": bs.new_has_images,
+                        "has_coordinates": bs.new_has_coordinates,
+                    }
+                )
+
+        if update_base_studies:
+            db.session.execute(
+                sa.update(BaseStudy),
+                update_base_studies,
+            )
+
+    def eager_load(self, q, args):
+        return q
+
+    def db_validation(self, record, data):
         """
         Custom validation for database constraints.
         """
@@ -73,31 +214,12 @@ class BaseView(MethodView):
         """
         return record
 
-    def post_nested_record_update(record):
-        """
-        Processing of a record after updating nested components (defined in specific classes).
-        """
-        return record
-
-    def after_update_or_create(self, record):
-        """
-        Processing of a record after updating or creating (defined in specific classes).
-        """
-        q = self._model.query.filter_by(id=record.id)
-        q = self.join_tables(q, {})
-        return q.one()
-
     @classmethod
     def load_nested_records(cls, data, record=None):
         return data
 
-    def join_tables(self, q, args):
-        if self._model is User:
-            return q
-        return q.options(joinedload("user"))
-
     @classmethod
-    def update_or_create(cls, data, id=None, user=None, record=None, commit=True):
+    def update_or_create(cls, data, id=None, user=None, record=None, flush=True):
         """
         scenerios:
         1. cloning a study
@@ -128,16 +250,16 @@ class BaseView(MethodView):
 
         # allow compose bot to make changes
         compose_bot = current_app.config["COMPOSE_AUTH0_CLIENT_ID"] + "@clients"
+        q = cls._model.query
+        q = q.options(raiseload("*", sql_only=True))
         if id is None and record is None:
             record = cls._model()
             record.user = current_user
         elif record is None:
             if cls._model is User:
-                q = cls._model.query.filter_by(id=id)
+                q = q.filter_by(id=id)
             else:
-                q = cls._model.query.options(joinedload(cls._model.user)).filter_by(
-                    id=id
-                )
+                q = q.options(selectinload(cls._model.user)).filter_by(id=id)
             record = q.first()
             if record is None:
                 abort(422)
@@ -154,10 +276,10 @@ class BaseView(MethodView):
         elif only_ids:
             to_commit.append(record)
 
-            if commit:
+            if flush:
                 db.session.add_all(to_commit)
                 try:
-                    db.session.commit()
+                    db.session.flush()
                 except SQLAlchemyError:
                     db.session.rollback()
                     abort(400)
@@ -227,7 +349,7 @@ class BaseView(MethodView):
                                 rec,
                                 user=current_user,
                                 record=nested_record,
-                                commit=False,
+                                flush=False,
                             )
                         )
                     to_commit.extend(nested)
@@ -243,18 +365,16 @@ class BaseView(MethodView):
                     else:
                         nested_record = None
                     nested = ResCls.update_or_create(
-                        rec, user=current_user, record=nested_record, commit=False
+                        rec, user=current_user, record=nested_record, flush=False
                     )
                     to_commit.append(nested)
 
                 setattr(record, field, nested)
 
-        # add other custom update after the nested attributes are handled...
-        record = cls.post_nested_record_update(record)
-        if commit:
+        if flush:
             db.session.add_all(to_commit)
             try:
-                db.session.commit()
+                db.session.flush()
             except SQLAlchemyError:
                 db.session.rollback()
                 abort(400)
@@ -265,75 +385,20 @@ class BaseView(MethodView):
 CAMEL_CASE_MATCH = re.compile(r"(?<!^)(?=[A-Z])")
 
 
-def clear_cache(cls, record, path, previous_cls=None):
-    # redis cache get keys
-    if path.count("/") >= 3:
-        keys = cache.cache._write_client.keys(f"*{path}*")
-        keys = [k.decode("utf8") for k in keys]
-        cache.delete_many(*keys)
-        base_path = "/".join(path.split("/")[:-1]) + "/"
-    else:
-        base_path = path
+# to clear a cache, I want to invalidate all the o2m of the current class
+# and then every m2o of every class above it
+def clear_cache(unique_ids):
+    for resource, ids in unique_ids.items():
+        base_path = f"/api/{resource}/"
+        base_keys = cache.cache._write_client.keys(f"*{base_path}/_*")
+        base_keys = [k.decode("utf8") for k in base_keys]
+        cache.delete_many(*base_keys)
 
-    base_keys = cache.cache._write_client.keys(f"*{base_path}/_*")
-    base_keys = [k.decode("utf8") for k in base_keys]
-    cache.delete_many(*base_keys)
-
-    # clear cache for all parent objects
-    for parent, parent_view_name in cls._parent.items():
-        parent_record = getattr(record, parent)
-        if parent_record:
-            parent_path = (
-                "/api/"
-                + CAMEL_CASE_MATCH.sub("-", parent_view_name.rstrip("View")).lower()
-                + f"/{parent_record.id}"
-            )
-            parent_class = getattr(viewdata, parent_view_name)
-            if previous_cls and parent_class in previous_cls:
-                return
-            if previous_cls is None:
-                previous_cls = [cls]
-            else:
-                previous_cls.append(cls)
-            clear_cache(
-                parent_class,
-                parent_record,
-                parent_path,
-                previous_cls=previous_cls,
-            )
-
-    # clear cache for all linked objects
-    for link, link_view_name in cls._linked.items():
-        linked_records = getattr(record, link)
-        linked_records = (
-            [linked_records] if not isinstance(linked_records, list) else linked_records
-        )
-
-        for linked_record in linked_records:
-            if isinstance(linked_record, StudysetStudy):
-                linked_record = linked_record.studyset
-                link_view_name = "StudysetsView"
-            if isinstance(linked_record, AnnotationAnalysis):
-                linked_record = linked_record.annotation
-                link_view_name = "AnnotationsView"
-            linked_path = (
-                "/api/"
-                + CAMEL_CASE_MATCH.sub("-", link_view_name.rstrip("View")).lower()
-                + f"/{linked_record.id}"
-            )
-            linked_class = getattr(viewdata, link_view_name)
-            if previous_cls and linked_class in previous_cls:
-                return
-            if previous_cls is None:
-                previous_cls = [cls]
-            else:
-                previous_cls.append(cls)
-            clear_cache(
-                linked_class,
-                linked_record,
-                linked_path,
-                previous_cls=previous_cls,
-            )
+        for id in ids:
+            path = f"{base_path}{id}"
+            keys = cache.cache._write_client.keys(f"*{path}*")
+            keys = [k.decode("utf8") for k in keys]
+            cache.delete_many(*keys)
 
 
 def cache_key_creator(*args, **kwargs):
@@ -363,9 +428,7 @@ class ObjectView(BaseView):
             args["nested"] = request.args.get("nested", False) == "true"
 
         q = self._model.query
-        if args["nested"] or self._model is Annotation:
-            q = q.options(nested_load(self))
-        q = self.join_tables(q, args)
+        q = self.eager_load(q, args)
 
         record = q.filter_by(id=id).first_or_404()
         if self._model is Studyset and args["nested"]:
@@ -382,25 +445,49 @@ class ObjectView(BaseView):
 
     def put(self, id):
         request_data = self.insert_data(id, request.json)
-        data = self.__class__._schema().load(request_data)
-        self.db_validation(data)
+        schema = self.__class__._schema()
+        data = schema.load(request_data)
+
+        args = {}
+        if set(self._o2m.keys()).intersection(set(data.keys())):
+            args["nested"] = True
+
+        if self._model is Studyset:
+            args["load_annotations"] = True
+
+        q = self._model.query.filter_by(id=id)
+        q = self.eager_load(q, args)
+        input_record = q.one()
+        self.db_validation(input_record, data)
 
         with db.session.no_autoflush:
-            record = self.__class__.update_or_create(data, id)
+            record = self.__class__.update_or_create(data, id, record=input_record)
 
-        record = self.after_update_or_create(record)
         # clear relevant caches
-        clear_cache(self.__class__, record, request.path)
+        # clear the cache for this endpoint
+        with db.session.no_autoflush:
+            # unique_ids = self.get_affected_ids([record.id])
+            unique_ids = self.get_affected_ids([id])
+            clear_cache(unique_ids)
 
-        return self.__class__._schema().dump(record)
+        try:
+            self.update_base_studies(unique_ids.get("base-studies"))
+            self.update_annotations(unique_ids.get("annotations"))
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            abort(400, description=str(e))
+
+        db.session.flush()
+
+        response = schema.dump(record)
+
+        db.session.commit()
+
+        return response
 
     def delete(self, id):
         q = self.__class__._model.query.filter_by(id=id)
-        if self._model is Annotation:
-            q = self.join_tables(q, {})
-        else:
-            q = q.options(nested_load(self))
-        # q = load_all_relationships(self._model, q)
+        q = q.options(raiseload("*", sql_only=True))
         record = q.one()
 
         current_user = get_current_user()
@@ -408,10 +495,22 @@ class ObjectView(BaseView):
             abort(403)
         else:
             db.session.delete(record)
-            db.session.commit()
+            # clear relevant caches
+            with db.session.no_autoflush:
+                unique_ids = self.get_affected_ids([record.id])
+                clear_cache(unique_ids)
 
-        # clear relevant caches
-        clear_cache(self.__class__, record, request.path)
+            db.session.flush()  # flush the deletion
+
+            self.update_base_studies(unique_ids.get("base-studies"))
+
+            try:
+                self.update_annotations(unique_ids.get("annotations"))
+            except SQLAlchemyError as e:
+                db.session.rollback()
+                abort(400, description=str(e))
+
+            db.session.commit()
 
         return 204
 
@@ -453,6 +552,11 @@ class ListView(BaseView):
     def view_search(self, q, args):
         return q
 
+    def join_tables(self, q, args):
+        if self._model is User:
+            return q
+        return q.options(selectinload(self._model.user))
+
     def serialize_records(self, records, args, exclude=tuple()):
         """serialize records from search"""
         content = self._schema(
@@ -472,6 +576,7 @@ class ListView(BaseView):
 
         m = self._model  # for brevity
         q = m.query
+        # q = q.options(raiseload("*", sql_only=True))
 
         # query items that are owned by a user_id
         if args.get("user_id"):
@@ -491,7 +596,7 @@ class ListView(BaseView):
             q = q.filter_by(pmid=s)
         elif s is not None and self._fulltext_fields:
             tsquery = sa.func.websearch_to_tsquery(s, postgresql_regconfig="english")
-            q = q.filter(m.__ts_vector__.op("@@")(tsquery))
+            q = q.filter(m._ts_vector.op("@@")(tsquery))
 
         # Alternatively (or in addition), search on individual fields.
         for field in self._search_fields:
@@ -519,7 +624,7 @@ class ListView(BaseView):
         q = q.order_by(getattr(attr, desc)(), getattr(m.id, desc)())
 
         # join the relevant tables for output
-        q = self.join_tables(q, args)
+        q = self.eager_load(q, args)
 
         pagination_query = q.paginate(
             page=args["page"],
@@ -557,9 +662,25 @@ class ListView(BaseView):
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data)
 
-        record = self.after_update_or_create(record)
-
         # clear the cache for this endpoint
-        clear_cache(self.__class__, record, request.path)
+        with db.session.no_autoflush:
+            unique_ids = self.get_affected_ids([record.id])
+            clear_cache(unique_ids)
 
-        return self.__class__._schema(context=args).dump(record)
+        db.session.flush()  # flush the deletion
+
+        self.update_base_studies(unique_ids.get("base-studies"))
+
+        try:
+            self.update_annotations(unique_ids.get("annotations"))
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            abort(400, description=str(e))
+
+        # dump done before commit to prevent invalidating
+        # the orm object and sending unnecessary queries
+        response = self.__class__._schema(context=args).dump(record)
+
+        db.session.commit()
+
+        return response

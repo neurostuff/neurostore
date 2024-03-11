@@ -1,9 +1,8 @@
 import pytest
 from os import environ
 from neurostore.models.data import Analysis, Condition
-from ..database import db as _db
+from sqlalchemy.orm import scoped_session, sessionmaker
 import sqlalchemy as sa
-from flask_sqlalchemy import __version__ as FLASK_SQL_VER
 from .. import ingest
 from ..models import (
     User,
@@ -33,6 +32,12 @@ Test selection arguments
 
 def pytest_addoption(parser):
     parser.addoption(
+        "--performance",
+        action="store_true",
+        default=False,
+        help="Run performance tests",
+    )
+    parser.addoption(
         "--auth",
         action="store_true",
         default=False,
@@ -43,6 +48,11 @@ def pytest_addoption(parser):
 auth_test = pytest.mark.skipif(
     "not config.getoption('--auth')",
     reason="Only run when --auth is given",
+)
+
+performance_test = pytest.mark.skipif(
+    "not config.getoption('--performance')",
+    reason="Only run when --performance is given",
 )
 
 """
@@ -115,12 +125,13 @@ def real_app():
 @pytest.fixture(scope="session")
 def real_db(real_app):
     """Session-wide test database."""
-    _db.init_app(real_app)
+    _db = real_app.extensions["sqlalchemy"]
+    _db.drop_all()
     _db.create_all()
 
     yield _db
 
-    _db.session.remove()
+    # _db.session.remove()
     sa.orm.close_all_sessions()
     _db.drop_all()
 
@@ -160,49 +171,41 @@ def app(mock_auth):
 @pytest.fixture(scope="session")
 def db(app):
     """Session-wide test database."""
-    _db.init_app(app)
+    _db = app.extensions["sqlalchemy"]
+    _db.drop_all()
     _db.create_all()
 
     yield _db
 
-    _db.session.remove()
-    sa.orm.close_all_sessions()
-    _db.drop_all()
+    # _db.session.remove()
+    # sa.orm.close_all_sessions()
+    # _db.drop_all()
 
 
 @pytest.fixture(scope="function")
 def session(db):
-    """Creates a new db session for a test.
-    Changes in session are rolled back"""
+    """https://docs.sqlalchemy.org/en/20/orm/session_transaction.html#joining-a-session-into-an-external-transaction-such-as-for-test-suites"""  # noqa
     from ..core import cache
 
     connection = db.engine.connect()
     transaction = connection.begin()
 
-    options = dict(bind=connection, binds={})
-    if FLASK_SQL_VER.startswith("3."):
-        session = db._make_scoped_session(options=options)
-    else:
-        session = db.create_scoped_session(options=options)
-
-    session.begin_nested()
-
-    # session is actually a scoped_session
-    # for the `after_transaction_end` event, we need a session instance to
-    # listen for, hence the `session()` call
-    @sa.event.listens_for(session(), "after_transaction_end")
-    def resetart_savepoint(sess, trans):
-        if trans.nested and not trans._parent.nested:
-            session.expire_all()
-            session.begin_nested()
-
+    session = scoped_session(
+        session_factory=sessionmaker(
+            bind=connection,
+            join_transaction_mode="create_savepoint",
+        )
+    )
     db.session = session
     cache.clear()
-
     yield session
 
     cache.clear()
-    session.remove()
+    try:
+        session.rollback()
+    except:  # noqa
+        pass
+    session.close()
     transaction.rollback()
     connection.close()
 
@@ -233,7 +236,7 @@ def auth_clients(mock_add_users, app):
 
 
 @pytest.fixture(scope="function")
-def mock_add_users(app, db, mock_auth):
+def mock_add_users(app, db, session, mock_auth):
     # from neurostore.resources.auth import decode_token
     from jose.jwt import encode
 
@@ -337,8 +340,14 @@ def ingest_neurosynth(session):
 
 
 @pytest.fixture(scope="function")
+def ingest_neurosynth_enormous(session):
+    """Add a studyset with 500 subjects"""
+    return ingest.ingest_neurosynth(500)
+
+
+@pytest.fixture(scope="function")
 def ingest_neurosynth_large(session):
-    """Add a studyset with two subjects"""
+    """Add a studyset with 100 subjects"""
     return ingest.ingest_neurosynth(100)
 
 
@@ -346,6 +355,7 @@ def ingest_neurosynth_large(session):
 def assign_neurosynth_to_user(session, ingest_neurosynth_large, auth_client):
     """assign the studyset and all studies/analyses/points to the user."""
     studyset = Studyset.query.filter_by(name="neurosynth").first()
+    annotation = Annotation.query.filter_by(name="neurosynth").first()
     user = User.query.filter_by(external_id=auth_client.username).first()
     studyset.user = user
     for study in studyset.studies:
@@ -353,7 +363,10 @@ def assign_neurosynth_to_user(session, ingest_neurosynth_large, auth_client):
         for analysis in study.analyses:
             analysis.user = user
 
-    session.add(studyset)
+    annotation.user = user
+    for aa in annotation.annotation_analyses:
+        aa.user = user
+    session.add_all([studyset, annotation])
     session.commit()
 
 
@@ -497,8 +510,15 @@ def user_data(session, mock_add_users):
                 studyset=studyset,
                 user=user,
             )
-            for aa in annotation.annotation_analyses:
-                aa.note = {"food": "bar"}
+            for ss_s in studyset.studyset_studies:
+                for analysis in ss_s.study.analyses:
+                    aa = AnnotationAnalysis(
+                        studyset_study=ss_s,
+                        annotation=annotation,
+                        analysis=analysis,
+                        note={"food": "bar"},
+                    )
+                    annotation.annotation_analyses.append(aa)
 
             to_commit.append(annotation)
 

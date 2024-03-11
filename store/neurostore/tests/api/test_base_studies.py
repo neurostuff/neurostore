@@ -124,6 +124,7 @@ def test_has_coordinates_images(auth_client, session):
     )
 
     assert analysis_point.status_code == 200
+    session.refresh(base_study)
     assert base_study.has_coordinates is True
 
     # update analysis with points
@@ -133,6 +134,7 @@ def test_has_coordinates_images(auth_client, session):
     )
 
     assert analysis_image.status_code == 200
+    session.refresh(base_study)
     assert base_study.has_images is True
 
     # delete point
@@ -141,6 +143,7 @@ def test_has_coordinates_images(auth_client, session):
     del_point = auth_client.delete(f"/api/points/{point_id}")
 
     assert del_point.status_code == 200
+    session.refresh(base_study)
     assert base_study.has_coordinates is False
 
     # delete image
@@ -149,6 +152,7 @@ def test_has_coordinates_images(auth_client, session):
     del_image = auth_client.delete(f"/api/images/{image_id}")
 
     assert del_image.status_code == 200
+    session.refresh(base_study)
     assert base_study.has_images is False
 
     # create study with existing points and images
@@ -190,18 +194,21 @@ def test_has_coordinates_images(auth_client, session):
 
     del_one_point = auth_client.delete(f"/api/points/{point_analysis.points[0].id}")
     assert del_one_point.status_code == 200
+    session.refresh(base_study_2)
     assert base_study_2.has_coordinates is True
     assert base_study_2.has_images is True
 
     del_point_analysis = auth_client.delete(f"/api/analyses/{point_analysis.id}")
 
     assert del_point_analysis.status_code == 200
+    session.refresh(base_study_2)
     assert base_study_2.has_coordinates is False
     assert base_study_2.has_images is True
 
     del_image_analysis = auth_client.delete(f"/api/analyses/{image_analysis.id}")
 
     assert del_image_analysis.status_code == 200
+    session.refresh(base_study_2)
     assert base_study_2.has_coordinates is False
     assert base_study_2.has_images is False
 
@@ -226,6 +233,7 @@ def test_has_coordinates_images(auth_client, session):
     )
 
     assert create_full_study_again.status_code == 200
+    session.refresh(base_study_2)
     assert base_study_2.has_coordinates is True
     assert base_study_2.has_images is True
 
@@ -235,5 +243,6 @@ def test_has_coordinates_images(auth_client, session):
     )
 
     assert delete_study.status_code == 200
+    session.refresh(base_study_2)
     assert base_study_2.has_coordinates is False
     assert base_study_2.has_images is False

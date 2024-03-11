@@ -10,10 +10,6 @@ from ..models import (
 )
 
 
-def test_ns_ingestion(session, ingest_neurosynth):
-    assert 1
-
-
 def test_Study(app):
     Study()
 

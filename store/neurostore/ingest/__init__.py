@@ -208,6 +208,7 @@ def ingest_neurosynth(max_rows=None):
     studies = []
     to_commit = []
     all_studies = {s.pmid: s for s in Study.query.filter_by(source="neurosynth").all()}
+    base_studies = []
     with db.session.no_autoflush:
         for metadata_row, annotation_row in zip(
             metadata.itertuples(), annotations.itertuples(index=False)
@@ -269,6 +270,8 @@ def ingest_neurosynth(max_rows=None):
                 for col, value in study_info.items():
                     source_attr = getattr(base_study, col)
                     setattr(base_study, col, source_attr or value)
+            to_commit.append(base_study)
+            base_studies.append(base_study)
             study_coord_data = coord_data.loc[[id_]]
             md = {
                 "year": int(metadata_row.year),
@@ -314,7 +317,7 @@ def ingest_neurosynth(max_rows=None):
 
         # add studies to studyset
         d.studies = studies
-        db.session.add(d)
+        db.session.add_all([d] + studies + to_commit)
         db.session.commit()
 
         # create annotation object
@@ -337,24 +340,29 @@ def ingest_neurosynth(max_rows=None):
             studyset_study = StudysetStudy.query.filter_by(
                 study_id=study.id, studyset_id=d.id
             ).one()
-
+            to_commit.extend([study, studyset_study] + study.analyses)
             for analysis in study.analyses:
-                # add annotation
-                notes.append(
-                    AnnotationAnalysis(
-                        note=annotation_row._asdict(),
-                        analysis=analysis,
-                        annotation=annot,
-                        studyset_study=studyset_study,
-                    )
+                to_commit.append(analysis)
+                # add note
+                aa = AnnotationAnalysis(
+                    annotation=annot,
+                    studyset_study=studyset_study,
+                    analysis=analysis,
+                    note=annotation_row._asdict(),
                 )
+                notes.append(aa)
 
         # add notes to annotation
         annot.note_keys = {
             k: _check_type(v) for k, v in annotation_row._asdict().items()
         }
         annot.annotation_analyses = notes
-        db.session.add(annot)
+        for note in notes:
+            to_commit.append(note.analysis)
+        db.session.add_all([annot] + notes + to_commit + [d])
+        db.session.flush()
+        for bs in base_studies:
+            bs.update_has_images_and_points()
         db.session.commit()
 
 
@@ -375,6 +383,7 @@ def ingest_neuroquery(max_rows=None):
     metadata = pd.read_table(metadata_file, dtype={"id": str})
     metadata = metadata.set_index("id")
 
+    base_studies = []
     if max_rows is not None:
         metadata = metadata.iloc[:max_rows]
 
@@ -384,6 +393,7 @@ def ingest_neuroquery(max_rows=None):
 
         if base_study is None:
             base_study = BaseStudy(name=metadata_row["title"], level="group", pmid=id_)
+        base_studies.append(base_study)
         study_coord_data = coord_data.loc[[id_]]
         s = Study(
             name=metadata_row["title"] or base_study.name,
@@ -418,8 +428,8 @@ def ingest_neuroquery(max_rows=None):
                 points.append(point)
                 point_idx += 1
 
-        db.session.add_all([s] + analyses + points)
-        db.session.commit()
+        db.session.add_all([s] + analyses + points + [base_study])
+        # db.session.commit()
 
     # make a neuroquery studyset
     d = Studyset(
@@ -432,6 +442,9 @@ def ingest_neuroquery(max_rows=None):
         studies=Study.query.filter_by(source="neuroquery").all(),
     )
     db.session.add(d)
+    db.session.flush()
+    for bs in base_studies:
+        bs.update_has_images_and_points()
     db.session.commit()
 
 
@@ -615,6 +628,9 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
             base_study.versions.append(s)
 
     db.session.add_all(to_commit)
+    db.session.flush()
+    for bs in all_base_studies:
+        bs.update_has_images_and_points()
     db.session.commit()
 
 

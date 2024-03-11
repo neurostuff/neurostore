@@ -109,7 +109,10 @@ def test_study_removal_from_studyset(auth_client, session, user_data):
     studies.pop()
 
     # update studyset
-    auth_client.put(f"/api/studysets/{studyset_id}", data={"studies": studies})
+    ss_update = auth_client.put(
+        f"/api/studysets/{studyset_id}", data={"studies": studies}
+    )
+    assert ss_update.status_code == 200
 
     # test if annotations were updated
     updated_annotation = auth_client.get(f"/api/annotations/{annotation_id}")
@@ -230,13 +233,14 @@ def test_mismatched_notes(auth_client, ingest_neurosynth, session):
     # proper post
     auth_client.post("/api/annotations/", data=payload)
 
+    # allowing this behavior now
     # additional key only added to one analysis
     data[0]["note"]["bar"] = "not real!"
-    assert auth_client.post("/api/annotations/", data=payload).status_code == 400
+    assert auth_client.post("/api/annotations/", data=payload).status_code == 200
 
     # incorrect key in one analysis
     data[0]["note"].pop("foo")
-    assert auth_client.post("/api/annotations/", data=payload).status_code == 400
+    assert auth_client.post("/api/annotations/", data=payload).status_code == 200
 
     # update a single analysis with incorrect key
     bad_payload = {"notes": [data[0]]}
@@ -336,7 +340,8 @@ def test_correct_note_overwrite(auth_client, ingest_neurosynth, session):
     )
 
     get_resp = auth_client.get(f"/api/annotations/{annot.json()['id']}")
-
+    # get_notes = sorted(get_resp.json()['notes'], key=lambda x: x['analysis'])
+    # put_notes = sorted(put_resp.json()['notes'], key=lambda x: x['analysis'])
     assert len(put_resp.json()["notes"]) == len(data)
     assert get_resp.json() == put_resp.json()
     assert (

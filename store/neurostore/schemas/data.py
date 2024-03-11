@@ -9,7 +9,6 @@ from marshmallow import (
 )
 import orjson
 from marshmallow.decorators import post_load
-import pandas as pd
 
 # context parameters
 # clone: create a new object with new ids (true or false)
@@ -200,7 +199,7 @@ class ImageSchema(BaseDataSchema):
         allow_none = ("url", "filename", "space", "value_type")
 
 
-class PointValueSchema(BaseDataSchema):
+class PointValueSchema(BaseSchema):
     class Meta:
         additional = allow_none = ("kind", "value")
 
@@ -235,10 +234,10 @@ class PointSchema(BaseDataSchema):
 
     @pre_dump
     def pre_dump_process(self, data, **kwargs):
-        if getattr(data, "coordinates", None) or data.get("coordinates"):
+        if hasattr(data, "coordinates") or data.get("coordinates"):
             return data
         if isinstance(data, dict):
-            data["coordinates"] = [data["x"], data["y"], data["z"]]
+            data["coordinates"] = [data.pop("x"), data.pop("y"), data.pop("z")]
         return data
 
 
@@ -306,7 +305,7 @@ class StudySetStudyInfoSchema(Schema):
 class BaseStudySchema(BaseDataSchema):
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
     metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
-    versions = StringOrNested("StudySchema", many=True, use_nested=False)
+    versions = StringOrNested("StudySchema", many=True)
 
     class Meta:
         additional = (
@@ -392,9 +391,9 @@ class StudysetSchema(BaseDataSchema):
         render_module = orjson
 
 
-class AnnotationAnalysisSchema(BaseDataSchema):
+class AnnotationAnalysisSchema(BaseSchema):
     note = fields.Dict()
-    annotation = StringOrNested("AnnotationSchema", use_nested=False, load_only=True)
+    annotation = StringOrNested("AnnotationSchema", load_only=True)
     analysis_id = fields.String(
         data_key="analysis"
     )  # not marked with id_field because it's a primary relationship
@@ -458,27 +457,6 @@ class AnnotationSchema(BaseDataSchema):
         if data.get("studyset") and data.get("notes"):
             for note in data["notes"]:
                 note["studyset"] = data["studyset"]
-
-        return data
-
-    @pre_dump
-    def export_annotations(self, data, **kwargs):
-        if getattr(data, "annotation_analyses") and self.context.get("export"):
-            annotations = pd.DataFrame.from_records(
-                [
-                    {"study_id": aa.study_id, "analysis_id": aa.analysis_id, **aa.note}
-                    for aa in data.annotation_analyses
-                ]
-            ).to_csv(index=False)
-            metadata = {
-                "studyset_id": data.studyset_id,
-                "annotation_id": data.id,
-                "created_at": data.created_at,
-            }
-            metadata = {**metadata, **data.metadata_} if data.metadata_ else metadata
-            export_data = {"metadata_": metadata, "annotation_csv": annotations}
-
-            return export_data
 
         return data
 

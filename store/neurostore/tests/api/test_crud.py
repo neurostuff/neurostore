@@ -79,7 +79,7 @@ def test_create(auth_client, user_data, endpoint, model, schema, session):
         ("analyses", Analysis, AnalysisSchema),
         ("conditions", Condition, ConditionSchema),
         ("images", Image, ImageSchema),
-        ("points", Point, PointSchema),
+        ("points", Point, PointSchema),  # user, point_value
     ],
 )
 def test_read(auth_client, user_data, endpoint, model, schema, session):
@@ -130,7 +130,7 @@ def test_update(auth_client, user_data, endpoint, model, schema, update, session
     resp = auth_client.put(f"/api/{endpoint}/{record.id}", data=update)
 
     assert resp.status_code == 200
-
+    session.refresh(record)
     k, v = list(update.items())[0]
     assert resp.json()[k] == getattr(record, k) == v
 
