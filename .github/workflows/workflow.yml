@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/delete-package-versions@v4
+      - uses: actions/delete-package-versions@v5
         with: 
           package-name: ${{ matrix.package }}
           package-type: 'container'
@@ -24,7 +24,7 @@ jobs:
    steps:
       -
         name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
       -
@@ -33,7 +33,7 @@ jobs:
           cp .env.example .env
       -
         name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       -
         name: Login to GitHub Container Registry
         uses: docker/login-action@v2
@@ -75,7 +75,7 @@ jobs:
    steps:
       -
         name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
       -
@@ -84,7 +84,7 @@ jobs:
           cp .env.example .env
       -
         name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       -
         name: Login to GitHub Container Registry
         uses: docker/login-action@v2
@@ -124,12 +124,12 @@ jobs:
     steps:
       - 
         name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
       -
         name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       -
         name: Configuration
         run: |
@@ -193,12 +193,12 @@ jobs:
     steps:
     - 
       name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     -
       name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v3
     -
       name: Configuration
       run: |
@@ -261,7 +261,7 @@ jobs:
     steps:
     -
       name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     -
@@ -283,12 +283,12 @@ jobs:
     steps:
     - 
       name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     -
       name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v3
     -
       name: Configuration
       run: |
@@ -365,12 +365,12 @@ jobs:
     steps:
     - 
       name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         submodules: recursive
     -
       name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v3
     -
       name: Configuration
       run: |
@@ -473,7 +473,7 @@ jobs:
         docker-compose exec -T compose bash -c "flask create-meta-analyses --n-studysets 1 --neurostore-url http://${ipaddr}:8000"
     -
       name: Frontend Cypress E2E Tests
-      uses: cypress-io/github-action@v4
+      uses: cypress-io/github-action@v6
       env:
         CYPRESS_auth0ClientId: ${{ secrets.REACT_APP_AUTH0_CLIENT_ID }}
         CYPRESS_auth0ClientSecret: ${{ secrets.REACT_APP_AUTH0_CLIENT_SECRET }}
