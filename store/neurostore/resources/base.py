@@ -84,6 +84,7 @@ class BaseView(MethodView):
             sa.select(
                 Annotation.id,
                 Annotation.note_keys,
+                Annotation.user_id,
                 AnnotationAnalysis.analysis_id.label("annotation_analysis_id"),
                 AnnotationAnalysis.annotation_id.label("annotation_id"),
                 AnnotationAnalysis.note,
@@ -120,6 +121,7 @@ class BaseView(MethodView):
                     "analysis_id": result.analysis_id,
                     "annotation_id": result.id,
                     "note": result.note or {},
+                    "user_id": result.user_id,
                     "study_id": result.study_id,
                     "studyset_id": result.studyset_id,
                 }

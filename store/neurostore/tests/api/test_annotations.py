@@ -1,4 +1,4 @@
-from ...models import Studyset, User
+from ...models import Studyset, Annotation, User
 
 
 def test_post_blank_annotation(auth_client, ingest_neurosynth, session):
@@ -13,6 +13,9 @@ def test_post_blank_annotation(auth_client, ingest_neurosynth, session):
     assert len(resp.json()["notes"]) == len(
         [a for study in dset.studies for a in study.analyses]
     )
+    annot = Annotation.query.filter_by(id=resp.json()["id"]).one()
+
+    assert annot.annotation_analyses[0].user_id == annot.user_id
 
 
 def test_post_annotation(auth_client, ingest_neurosynth, session):
@@ -31,6 +34,9 @@ def test_post_annotation(auth_client, ingest_neurosynth, session):
     }
     resp = auth_client.post("/api/annotations/", data=payload)
     assert resp.status_code == 200
+    annot = Annotation.query.filter_by(id=resp.json()["id"]).one()
+
+    assert annot.annotation_analyses[0].user_id == annot.user_id
 
 
 def test_get_annotations(auth_client, ingest_neurosynth, session):
