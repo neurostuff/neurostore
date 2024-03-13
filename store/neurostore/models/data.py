@@ -115,7 +115,7 @@ class Annotation(BaseMixin, db.Model):
     )
 
 
-class AnnotationAnalysis(db.Model):
+class AnnotationAnalysis(BaseMixin, db.Model):
     __tablename__ = "annotation_analyses"
     __table_args__ = (
         ForeignKeyConstraint(
@@ -126,7 +126,6 @@ class AnnotationAnalysis(db.Model):
     )
     __mapper_args__ = {"confirm_deleted_rows": False}
 
-    id = db.Column(db.Text, primary_key=True, index=True, default=generate_id)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     study_id = db.Column(db.Text, nullable=False)
     studyset_id = db.Column(db.Text, nullable=False)

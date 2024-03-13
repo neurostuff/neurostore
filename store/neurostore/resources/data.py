@@ -257,7 +257,7 @@ class AnnotationsView(ObjectView, ListView):
             .options(raiseload("*", sql_only=True)),
             selectinload(Annotation.annotation_analyses).options(
                 joinedload(AnnotationAnalysis.analysis)
-                .load_only(Analysis.id, Analysis.name)
+                .load_only(Analysis.id, Analysis.name, AnnotationAnalysis.id)
                 .options(raiseload("*", sql_only=True)),
                 joinedload(AnnotationAnalysis.studyset_study).options(
                     joinedload(StudysetStudy.study)

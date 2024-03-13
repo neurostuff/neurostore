@@ -76,6 +76,7 @@ def test_create(auth_client, user_data, endpoint, model, schema, session):
     [
         ("studysets", Studyset, StudysetSchema),
         ("annotations", Annotation, AnnotationSchema),
+        ("annotation-analyses", AnnotationAnalysis, AnnotationAnalysisSchema),
         ("base-studies", BaseStudy, BaseStudySchema),
         ("studies", Study, StudySchema),
         ("analyses", Analysis, AnalysisSchema),
