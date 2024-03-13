@@ -331,6 +331,15 @@ class BaseStudySchema(BaseDataSchema):
             "level",
         )
 
+    @pre_load
+    def check_nulls(self, data, **kwargs):
+        """ensure data is not empty string or whitespace"""
+        for attr in ["pmid", "pmcid", "doi"]:
+            val = data.get(attr, None)
+            if val is not None and (val == "" or val.isspace()):
+                data[attr] = None
+        return data
+
 
 class StudySchema(BaseDataSchema):
     metadata = fields.Dict(attribute="metadata_", dump_only=True)
@@ -377,6 +386,15 @@ class StudySchema(BaseDataSchema):
             "year",
             "level",
         )
+
+    @pre_load
+    def check_nulls(self, data, **kwargs):
+        """ensure data is not empty string or whitespace"""
+        for attr in ["pmid", "pmcid", "doi"]:
+            val = data.get(attr, None)
+            if val is not None and (val == "" or val.isspace()):
+                data[attr] = None
+        return data
 
 
 class StudysetSchema(BaseDataSchema):
