@@ -112,6 +112,10 @@ def test_read(auth_client, user_data, endpoint, model, schema, session):
     resp_ids = set([res["id"] for res in resp.json()["results"]])
     assert query_ids == resp_ids
 
+    # get specific record
+    record = expected_results[0]
+    get_resp = auth_client.get(f"/api/{endpoint}/{record.id}")
+    assert get_resp.status_code == 200
 
 @pytest.mark.parametrize(
     "endpoint,model,schema,update",

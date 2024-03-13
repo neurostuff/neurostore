@@ -115,7 +115,7 @@ class Annotation(BaseMixin, db.Model):
     )
 
 
-class AnnotationAnalysis(BaseMixin, db.Model):
+class AnnotationAnalysis(db.Model):
     __tablename__ = "annotation_analyses"
     __table_args__ = (
         ForeignKeyConstraint(
@@ -126,17 +126,24 @@ class AnnotationAnalysis(BaseMixin, db.Model):
     )
     __mapper_args__ = {"confirm_deleted_rows": False}
 
+    created_at = db.Column(
+        db.DateTime(timezone=True), index=True, server_default=func.now()
+    )
+    updated_at = db.Column(db.DateTime(timezone=True), index=True, onupdate=func.now())
+
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     study_id = db.Column(db.Text, nullable=False)
     studyset_id = db.Column(db.Text, nullable=False)
     annotation_id = db.Column(
         db.Text,
         db.ForeignKey("annotations.id", ondelete="CASCADE"),
+        primary_key=True,
         index=True,
     )
     analysis_id = db.Column(
         db.Text,
         db.ForeignKey("analyses.id", ondelete="CASCADE"),
+        primary_key=True,
         index=True,
     )
     note = db.Column(MutableDict.as_mutable(JSONB))
@@ -144,6 +151,14 @@ class AnnotationAnalysis(BaseMixin, db.Model):
     user = relationship(
         "User", backref=backref("annotation_analyses", passive_deletes=True)
     )
+
+    @hybrid_property
+    def id(self):
+        return f"{self.annotation_id}_{self.analysis_id}"
+
+    @id.expression
+    def id(cls):
+        return cls.annotation_id + '_' + cls.analysis_id
 
 
 class BaseStudy(BaseMixin, db.Model):
