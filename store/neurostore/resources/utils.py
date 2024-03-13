@@ -29,7 +29,13 @@ def get_current_user():
 
 def view_maker(cls):
     proc_name = cls.__name__.removesuffix("View").removesuffix("Resource")
-    basename = singularize(proc_name, custom={"MetaAnalyses": "MetaAnalysis"})
+    basename = singularize(
+        proc_name,
+        custom={
+            "MetaAnalyses": "MetaAnalysis",
+            "AnnotationAnalyses": "AnnotationAnalysis",
+        }
+    )
 
     class ClassView(cls):
         _model = getattr(models, basename)

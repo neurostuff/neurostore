@@ -6,6 +6,7 @@ from ...models import (
     BaseStudy,
     Study,
     Annotation,
+    AnnotationAnalysis,
     Analysis,
     Condition,
     Image,
@@ -16,6 +17,7 @@ from ...schemas import (
     BaseStudySchema,
     StudySchema,
     AnnotationSchema,
+    AnnotationAnalysisSchema,
     AnalysisSchema,
     ConditionSchema,
     ImageSchema,
@@ -114,13 +116,16 @@ def test_read(auth_client, user_data, endpoint, model, schema, session):
     "endpoint,model,schema,update",
     [
         ("studysets", Studyset, StudysetSchema, {"description": "mine"}),
-        # ("annotations", Annotation, AnnotationSchema, {'description': 'mine'}), FIX
+        ("annotations", Annotation, AnnotationSchema, {'description': 'mine'}),
+        ("annotation-analyses", AnnotationAnalysis, AnnotationAnalysisSchema,
+         {'note': {"new": "note"}}),
         ("base-studies", BaseStudy, BaseStudySchema, {"description": "mine"}),
         ("studies", Study, StudySchema, {"description": "mine"}),
         ("analyses", Analysis, AnalysisSchema, {"description": "mine"}),
         ("conditions", Condition, ConditionSchema, {"description": "mine"}),
         ("images", Image, ImageSchema, {"filename": "changed"}),
         ("points", Point, PointSchema, {"space": "MNI"}),
+
     ],
 )
 def test_update(auth_client, user_data, endpoint, model, schema, update, session):

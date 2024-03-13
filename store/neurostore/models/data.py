@@ -126,21 +126,23 @@ class AnnotationAnalysis(db.Model):
     )
     __mapper_args__ = {"confirm_deleted_rows": False}
 
+    id = db.Column(db.Text, primary_key=True, index=True, default=generate_id)
+    user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     study_id = db.Column(db.Text, nullable=False)
     studyset_id = db.Column(db.Text, nullable=False)
     annotation_id = db.Column(
         db.Text,
         db.ForeignKey("annotations.id", ondelete="CASCADE"),
         index=True,
-        primary_key=True,
     )
     analysis_id = db.Column(
         db.Text,
         db.ForeignKey("analyses.id", ondelete="CASCADE"),
         index=True,
-        primary_key=True,
     )
     note = db.Column(MutableDict.as_mutable(JSONB))
+
+    user = relationship("User", backref=backref("annotation_analyses", passive_deletes=True))
 
 
 class BaseStudy(BaseMixin, db.Model):

@@ -35,7 +35,6 @@ from ..models.data import StudysetStudy, BaseStudy
 from ..schemas import (
     BooleanOrString,
     AnalysisConditionSchema,
-    AnnotationAnalysisSchema,
     StudysetStudySchema,
     EntitySchema,
 )
@@ -44,6 +43,7 @@ from ..schemas.data import StudysetSnapshot
 __all__ = [
     "StudysetsView",
     "AnnotationsView",
+    "AnnotationAnalysesView",
     "BaseStudiesView",
     "StudiesView",
     "AnalysesView",
@@ -200,10 +200,10 @@ class StudysetsView(ObjectView, ListView):
 @view_maker
 class AnnotationsView(ObjectView, ListView):
     _view_fields = {**LIST_CLONE_ARGS, "studyset_id": fields.String(load_default=None)}
-    _o2m = {"annotation_analyses": "AnnotationAnalysesResource"}
+    _o2m = {"annotation_analyses": "AnnotationAnalysesView"}
     _m2o = {"studyset": "StudysetsView"}
 
-    _nested = {"annotation_analyses": "AnnotationAnalysesResource"}
+    _nested = {"annotation_analyses": "AnnotationAnalysesView"}
     _linked = {
         "studyset": "StudysetsView",
     }
@@ -339,8 +339,12 @@ class AnnotationsView(ObjectView, ListView):
     def db_validation(self, record, data):
         db_analysis_ids = {aa.analysis_id for aa in record.annotation_analyses}
         data_analysis_ids = {
-            aa["analysis"]["id"] for aa in data.get("annotation_analyses")
+            aa.get("analysis", {}).get("id", "") for aa in data.get("annotation_analyses", [])
         }
+
+        if not data_analysis_ids:
+            return
+
         if db_analysis_ids != data_analysis_ids:
             abort(
                 400,
@@ -779,7 +783,7 @@ class AnalysesView(ObjectView, ListView):
         "images": "ImagesView",
         "points": "PointsView",
         "analysis_conditions": "AnalysisConditionsResource",
-        "annotation_analyses": "AnnotationAnalysesResource",
+        "annotation_analyses": "AnnotationAnalysesView",
     }
     _m2o = {
         "study": "StudiesView",
@@ -794,7 +798,7 @@ class AnalysesView(ObjectView, ListView):
         "study": "StudiesView",
     }
     _linked = {
-        "annotation_analyses": "AnnotationAnalysesResource",
+        "annotation_analyses": "AnnotationAnalysesView",
     }
     _search_fields = ("name", "description")
 
@@ -1087,20 +1091,8 @@ class PointValuesView(ObjectView, ListView):
     }
 
 
-# Utility resources for updating data
-class AnalysisConditionsResource(BaseView):
-    _m2o = {
-        "analysis": "AnalysesView",
-        "condition": "ConditionsView",
-    }
-    _nested = {"condition": "ConditionsView"}
-    _parent = {"analysis": "AnalysesView"}
-    _model = AnalysisConditions
-    _schema = AnalysisConditionSchema
-    _composite_key = {}
-
-
-class AnnotationAnalysesResource(BaseView):
+@view_maker
+class AnnotationAnalysesView(ObjectView, ListView):
     _m2o = {
         "annotation": "AnnotationsView",
         "analysis": "AnalysesView",
@@ -1114,8 +1106,18 @@ class AnnotationAnalysesResource(BaseView):
         "analysis": "AnalysesView",
         "studyset_study": "StudysetStudiesResource",
     }
-    _model = AnnotationAnalysis
-    _schema = AnnotationAnalysisSchema
+
+
+# Utility resources for updating data
+class AnalysisConditionsResource(BaseView):
+    _m2o = {
+        "analysis": "AnalysesView",
+        "condition": "ConditionsView",
+    }
+    _nested = {"condition": "ConditionsView"}
+    _parent = {"analysis": "AnalysesView"}
+    _model = AnalysisConditions
+    _schema = AnalysisConditionSchema
     _composite_key = {}
 
 

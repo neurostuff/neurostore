@@ -410,6 +410,7 @@ class StudysetSchema(BaseDataSchema):
 
 
 class AnnotationAnalysisSchema(BaseSchema):
+    id = fields.String(metadata={"info_field": True, "id_field": True})
     note = fields.Dict()
     annotation = StringOrNested("AnnotationSchema", load_only=True)
     analysis_id = fields.String(
@@ -436,7 +437,7 @@ class AnnotationAnalysisSchema(BaseSchema):
 
     @post_load
     def add_id(self, data, **kwargs):
-        if isinstance(data["analysis_id"], str):
+        if isinstance(data.get("analysis_id"), str):
             data["analysis"] = {"id": data.pop("analysis_id")}
         if isinstance(data.get("study_id"), str) and isinstance(
             data.get("studyset_id"), str
