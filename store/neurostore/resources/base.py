@@ -472,7 +472,7 @@ class ObjectView(BaseView):
 
         try:
             self.update_base_studies(unique_ids.get("base-studies"))
-            if self._model is not Annotation:
+            if self._model is not Annotation and self._model is not AnnotationAnalysis:
                 self.update_annotations(unique_ids.get("annotations"))
         except SQLAlchemyError as e:
             db.session.rollback()
