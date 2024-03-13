@@ -4,27 +4,27 @@ from neurostore.schemas import AnnotationSchema
 from neurostore.resources import AnnotationsView
 from time import time
 
-# import yappi
-# import contextlib
+import yappi
+import contextlib
 
 
-# @contextlib.contextmanager
-# def profiled_yappi(output_file="yappi_profile.prof", sort_type="cumulative"):
-#     yappi.start()
-#     try:
-#         yield
-#     finally:
-#         yappi.stop()
+@contextlib.contextmanager
+def profiled_yappi(output_file="yappi_profile.prof", sort_type="cumulative"):
+    yappi.start()
+    try:
+        yield
+    finally:
+        yappi.stop()
 
-#         stats = yappi.get_func_stats()
-#         stats.sort("ttot")
-#         # You might want to include thread stats as well.
-#         # For that, you would use yappi.get_thread_stats()
+        stats = yappi.get_func_stats()
+        stats.sort("ttot")
+        # You might want to include thread stats as well.
+        # For that, you would use yappi.get_thread_stats()
 
-#         stats.save(output_file, type="pstat")
+        stats.save(output_file, type="pstat")
 
-#         # Clear stats after writing to file to avoid accumulating results across runs
-#         yappi.clear_stats()
+        # Clear stats after writing to file to avoid accumulating results across runs
+        yappi.clear_stats()
 
 
 @performance_test
@@ -102,16 +102,16 @@ def test_get_large_nested_studyset(ingest_neurosynth_enormous, auth_client, sess
     auth_client.get(f"/api/studysets/{studyset.id}?nested=true")
 
 
-@performance_test
+# @performance_test
 def test_updating_annotation(assign_neurosynth_to_user, auth_client, session):
     q = Annotation.query
     q = AnnotationsView().eager_load(q)
     annotation = q.one()
     annotation_dict = AnnotationSchema().dump(annotation)
-    # with profiled_yappi("update_annotation_large.prof"):
-    for i in range(len(annotation_dict["notes"])):
-        annotation_dict["notes"][i]["note"]["_5"] = 1.0
-        auth_client.put(f"/api/annotations/{annotation.id}", data=annotation_dict)
+    with profiled_yappi("update_annotation_test_filter_large.prof"):
+        for i in range(len(annotation_dict["notes"])):
+            annotation_dict["notes"][i]["note"]["_5"] = 1.0
+            auth_client.put(f"/api/annotations/{annotation.id}", data=annotation_dict)
 
 @performance_test
 def test_updating_annotation_analysis(assign_neurosynth_to_user, auth_client, session):
@@ -126,13 +126,13 @@ def test_updating_annotation_analysis(assign_neurosynth_to_user, auth_client, se
         aa_id = annotation_analysis["id"]
         auth_client.put(f"/api/annotation-analyses/{aa_id}", data=annotation_analysis)
 
-@performance_test
+# @performance_test
 def test_updating_annotation_one(assign_neurosynth_to_user, auth_client, session):
     q = Annotation.query
     q = AnnotationsView().eager_load(q)
     annotation = q.one()
     annotation_dict = AnnotationSchema().dump(annotation)
     annotation_dict["notes"][0]["note"]["_5"] = 1.0
-
-    resp = auth_client.put(f"/api/annotations/{annotation.id}", data=annotation_dict)
+    with profiled_yappi("update_annotation_one.prof"):
+        resp = auth_client.put(f"/api/annotations/{annotation.id}", data=annotation_dict)
     assert resp.status_code == 200

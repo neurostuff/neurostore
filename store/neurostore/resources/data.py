@@ -11,7 +11,7 @@ from sqlalchemy.orm import (
 )
 from sqlalchemy.sql import func
 from sqlalchemy import select
-
+import orjson
 
 from .utils import view_maker
 from .base import BaseView, ObjectView, ListView
@@ -240,11 +240,11 @@ class AnnotationsView(ObjectView, ListView):
             a.id: a for s in studyset_studies.values() for a in s.study.analyses
         }
         for aa in data.get("annotation_analyses", []):
-            analysis = analyses.get(aa.get("analysis").get("id"))
+            analysis = analyses.get(aa.get("analysis", {}).get("id", None))
             if analysis:
                 aa["analysis"]["preloaded_data"] = analysis
             studyset_study = studyset_studies.get(
-                (studyset.id, aa.get("studyset_study").get("study").get("id"))
+                (studyset.id, aa.get("studyset_study", {}).get("study", {}).get("id", None))
             )
             if studyset_study:
                 aa["studyset_study"]["preloaded_data"] = studyset_study
@@ -352,13 +352,41 @@ class AnnotationsView(ObjectView, ListView):
         }
 
         if not data_analysis_ids:
-            return
+            return data
 
         if db_analysis_ids != data_analysis_ids:
             abort(
                 400,
                 description="annotation request must contain all analyses from the studyset.",
             )
+        # filter data to find which annotation_analyses were actually modified
+        keep_notes = []
+
+        # Create a hash map (dict) of the original notes for quick lookup.
+        # The key is the hash of the note, and the value is the original note dictionary.
+        original_notes = {
+            orjson.dumps(aa.note, option=orjson.OPT_SORT_KEYS): aa.note
+            for aa in record.annotation_analyses
+        }
+        
+        # Iterate through the input data's annotation analyses
+        for aa in data.get("annotation_analyses", []):
+            # Serialize the current note for comparison
+            note = aa.get("note", {})
+            current_note_hash = orjson.dumps(note, option=orjson.OPT_SORT_KEYS)
+            
+            # If the serialized (hashed) note is not in the original notes hash map,
+            # or the note content actually differs (to catch edge cases where different
+            # structures could produce the same hash), it's considered modified.
+            if current_note_hash not in original_notes or note != original_notes[current_note_hash]:
+                keep_notes.append(aa)
+            else:
+                keep_notes.append({"id": aa.get("id")})
+        data['annotation_analyses'] = keep_notes
+        return data
+
+    
+
 
 
 @view_maker

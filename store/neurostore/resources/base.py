@@ -208,7 +208,7 @@ class BaseView(MethodView):
         """
         Custom validation for database constraints.
         """
-        pass
+        return data
 
     def pre_nested_record_update(record):
         """
@@ -266,7 +266,6 @@ class BaseView(MethodView):
             if record is None:
                 abort(422)
 
-        data = cls.load_nested_records(data, record)
 
         if (
             not sa.inspect(record).pending
@@ -288,6 +287,7 @@ class BaseView(MethodView):
 
             return record
 
+        data = cls.load_nested_records(data, record)
         # Update all non-nested attributes
         for k, v in data.items():
             if k in cls._parent and v is not None:
@@ -321,7 +321,8 @@ class BaseView(MethodView):
 
             if k not in cls._nested and k not in ["id", "user"]:
                 try:
-                    setattr(record, k, v)
+                    if getattr(record, k) != v:
+                        setattr(record, k, v)
                 except AttributeError:
                     print(k)
                     raise AttributeError
@@ -460,7 +461,7 @@ class ObjectView(BaseView):
         q = self._model.query.filter_by(id=id)
         q = self.eager_load(q, args)
         input_record = q.one()
-        self.db_validation(input_record, data)
+        data = self.db_validation(input_record, data)
 
         with db.session.no_autoflush:
             record = self.__class__.update_or_create(data, id, record=input_record)
