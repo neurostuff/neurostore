@@ -256,11 +256,11 @@ class AnnotationsView(ObjectView, ListView):
             .load_only(User.name, User.external_id)
             .options(raiseload("*", sql_only=True)),
             selectinload(Annotation.annotation_analyses).options(
-                selectinload(AnnotationAnalysis.analysis)
+                joinedload(AnnotationAnalysis.analysis)
                 .load_only(Analysis.id, Analysis.name)
                 .options(raiseload("*", sql_only=True)),
-                selectinload(AnnotationAnalysis.studyset_study).options(
-                    selectinload(StudysetStudy.study)
+                joinedload(AnnotationAnalysis.studyset_study).options(
+                    joinedload(StudysetStudy.study)
                     .load_only(
                         Study.id,
                         Study.name,
