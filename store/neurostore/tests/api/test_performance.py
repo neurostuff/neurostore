@@ -49,9 +49,7 @@ def test_mass_creation(auth_client, session):
             "analyses": [
                 {
                     "name": f"analysis{i}",
-                    "points": [
-                        {"x": 0, "y": 0, "z": 0, "space": "mni", "order": 1}
-                    ],
+                    "points": [{"x": 0, "y": 0, "z": 0, "space": "mni", "order": 1}],
                 }
             ],
         }

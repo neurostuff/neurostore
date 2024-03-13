@@ -517,6 +517,7 @@ def user_data(session, mock_add_users):
                         annotation=annotation,
                         analysis=analysis,
                         note={"food": "bar"},
+                        user=user,
                     )
                     annotation.annotation_analyses.append(aa)
 

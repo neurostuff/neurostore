@@ -35,7 +35,6 @@ from ..models.data import StudysetStudy, BaseStudy
 from ..schemas import (
     BooleanOrString,
     AnalysisConditionSchema,
-    AnnotationAnalysisSchema,
     StudysetStudySchema,
     EntitySchema,
 )
@@ -44,6 +43,7 @@ from ..schemas.data import StudysetSnapshot
 __all__ = [
     "StudysetsView",
     "AnnotationsView",
+    "AnnotationAnalysesView",
     "BaseStudiesView",
     "StudiesView",
     "AnalysesView",
@@ -200,10 +200,10 @@ class StudysetsView(ObjectView, ListView):
 @view_maker
 class AnnotationsView(ObjectView, ListView):
     _view_fields = {**LIST_CLONE_ARGS, "studyset_id": fields.String(load_default=None)}
-    _o2m = {"annotation_analyses": "AnnotationAnalysesResource"}
+    _o2m = {"annotation_analyses": "AnnotationAnalysesView"}
     _m2o = {"studyset": "StudysetsView"}
 
-    _nested = {"annotation_analyses": "AnnotationAnalysesResource"}
+    _nested = {"annotation_analyses": "AnnotationAnalysesView"}
     _linked = {
         "studyset": "StudysetsView",
     }
@@ -255,7 +255,16 @@ class AnnotationsView(ObjectView, ListView):
             selectinload(Annotation.user)
             .load_only(User.name, User.external_id)
             .options(raiseload("*", sql_only=True)),
-            selectinload(Annotation.annotation_analyses).options(
+            selectinload(Annotation.annotation_analyses)
+            .load_only(
+                AnnotationAnalysis.id,
+                AnnotationAnalysis.analysis_id,
+                AnnotationAnalysis.created_at,
+                AnnotationAnalysis.study_id,
+                AnnotationAnalysis.studyset_id,
+                AnnotationAnalysis.annotation_id,
+            )
+            .options(
                 joinedload(AnnotationAnalysis.analysis)
                 .load_only(Analysis.id, Analysis.name)
                 .options(raiseload("*", sql_only=True)),
@@ -339,8 +348,13 @@ class AnnotationsView(ObjectView, ListView):
     def db_validation(self, record, data):
         db_analysis_ids = {aa.analysis_id for aa in record.annotation_analyses}
         data_analysis_ids = {
-            aa["analysis"]["id"] for aa in data.get("annotation_analyses")
+            aa.get("analysis", {}).get("id", "")
+            for aa in data.get("annotation_analyses", [])
         }
+
+        if not data_analysis_ids:
+            return
+
         if db_analysis_ids != data_analysis_ids:
             abort(
                 400,
@@ -779,7 +793,7 @@ class AnalysesView(ObjectView, ListView):
         "images": "ImagesView",
         "points": "PointsView",
         "analysis_conditions": "AnalysisConditionsResource",
-        "annotation_analyses": "AnnotationAnalysesResource",
+        "annotation_analyses": "AnnotationAnalysesView",
     }
     _m2o = {
         "study": "StudiesView",
@@ -794,7 +808,7 @@ class AnalysesView(ObjectView, ListView):
         "study": "StudiesView",
     }
     _linked = {
-        "annotation_analyses": "AnnotationAnalysesResource",
+        "annotation_analyses": "AnnotationAnalysesView",
     }
     _search_fields = ("name", "description")
 
@@ -1087,20 +1101,8 @@ class PointValuesView(ObjectView, ListView):
     }
 
 
-# Utility resources for updating data
-class AnalysisConditionsResource(BaseView):
-    _m2o = {
-        "analysis": "AnalysesView",
-        "condition": "ConditionsView",
-    }
-    _nested = {"condition": "ConditionsView"}
-    _parent = {"analysis": "AnalysesView"}
-    _model = AnalysisConditions
-    _schema = AnalysisConditionSchema
-    _composite_key = {}
-
-
-class AnnotationAnalysesResource(BaseView):
+@view_maker
+class AnnotationAnalysesView(ObjectView, ListView):
     _m2o = {
         "annotation": "AnnotationsView",
         "analysis": "AnalysesView",
@@ -1114,8 +1116,38 @@ class AnnotationAnalysesResource(BaseView):
         "analysis": "AnalysesView",
         "studyset_study": "StudysetStudiesResource",
     }
-    _model = AnnotationAnalysis
-    _schema = AnnotationAnalysisSchema
+
+    def eager_load(self, q, args=None):
+        q = q.options(
+            joinedload(AnnotationAnalysis.analysis)
+            .load_only(Analysis.id, Analysis.name)
+            .options(raiseload("*", sql_only=True)),
+            joinedload(AnnotationAnalysis.studyset_study).options(
+                joinedload(StudysetStudy.study)
+                .load_only(
+                    Study.id,
+                    Study.name,
+                    Study.year,
+                    Study.authors,
+                    Study.publication,
+                )
+                .options(raiseload("*", sql_only=True))
+            ),
+        )
+
+        return q
+
+
+# Utility resources for updating data
+class AnalysisConditionsResource(BaseView):
+    _m2o = {
+        "analysis": "AnalysesView",
+        "condition": "ConditionsView",
+    }
+    _nested = {"condition": "ConditionsView"}
+    _parent = {"analysis": "AnalysesView"}
+    _model = AnalysisConditions
+    _schema = AnalysisConditionSchema
     _composite_key = {}
 
 
