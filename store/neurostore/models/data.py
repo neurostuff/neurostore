@@ -141,7 +141,9 @@ class AnnotationAnalysis(BaseMixin, db.Model):
     )
     note = db.Column(MutableDict.as_mutable(JSONB))
 
-    user = relationship("User", backref=backref("annotation_analyses", passive_deletes=True))
+    user = relationship(
+        "User", backref=backref("annotation_analyses", passive_deletes=True)
+    )
 
 
 class BaseStudy(BaseMixin, db.Model):

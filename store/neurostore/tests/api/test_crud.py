@@ -30,7 +30,7 @@ from ...schemas.data import StringOrNested
     "endpoint,model,schema",
     [
         ("studysets", Studyset, StudysetSchema),
-        # ("annotations", Annotation, AnnotationSchema), FIX
+        ("annotations", Annotation, AnnotationSchema),
         ("base-studies", BaseStudy, BaseStudySchema),
         ("studies", Study, StudySchema),
         ("analyses", Analysis, AnalysisSchema),
@@ -117,16 +117,19 @@ def test_read(auth_client, user_data, endpoint, model, schema, session):
     "endpoint,model,schema,update",
     [
         ("studysets", Studyset, StudysetSchema, {"description": "mine"}),
-        ("annotations", Annotation, AnnotationSchema, {'description': 'mine'}),
-        ("annotation-analyses", AnnotationAnalysis, AnnotationAnalysisSchema,
-         {'note': {"new": "note"}}),
+        ("annotations", Annotation, AnnotationSchema, {"description": "mine"}),
+        (
+            "annotation-analyses",
+            AnnotationAnalysis,
+            AnnotationAnalysisSchema,
+            {"note": {"new": "note"}},
+        ),
         ("base-studies", BaseStudy, BaseStudySchema, {"description": "mine"}),
         ("studies", Study, StudySchema, {"description": "mine"}),
         ("analyses", Analysis, AnalysisSchema, {"description": "mine"}),
         ("conditions", Condition, ConditionSchema, {"description": "mine"}),
         ("images", Image, ImageSchema, {"filename": "changed"}),
         ("points", Point, PointSchema, {"space": "MNI"}),
-
     ],
 )
 def test_update(auth_client, user_data, endpoint, model, schema, update, session):

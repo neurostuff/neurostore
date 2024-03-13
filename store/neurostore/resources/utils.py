@@ -34,7 +34,7 @@ def view_maker(cls):
         custom={
             "MetaAnalyses": "MetaAnalysis",
             "AnnotationAnalyses": "AnnotationAnalysis",
-        }
+        },
     )
 
     class ClassView(cls):

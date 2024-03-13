@@ -339,7 +339,8 @@ class AnnotationsView(ObjectView, ListView):
     def db_validation(self, record, data):
         db_analysis_ids = {aa.analysis_id for aa in record.annotation_analyses}
         data_analysis_ids = {
-            aa.get("analysis", {}).get("id", "") for aa in data.get("annotation_analyses", [])
+            aa.get("analysis", {}).get("id", "")
+            for aa in data.get("annotation_analyses", [])
         }
 
         if not data_analysis_ids:
