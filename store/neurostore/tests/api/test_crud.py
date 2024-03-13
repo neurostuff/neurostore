@@ -117,6 +117,7 @@ def test_read(auth_client, user_data, endpoint, model, schema, session):
     get_resp = auth_client.get(f"/api/{endpoint}/{record.id}")
     assert get_resp.status_code == 200
 
+
 @pytest.mark.parametrize(
     "endpoint,model,schema,update",
     [

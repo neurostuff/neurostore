@@ -158,7 +158,7 @@ class AnnotationAnalysis(db.Model):
 
     @id.expression
     def id(cls):
-        return cls.annotation_id + '_' + cls.analysis_id
+        return cls.annotation_id + "_" + cls.analysis_id
 
 
 class BaseStudy(BaseMixin, db.Model):
