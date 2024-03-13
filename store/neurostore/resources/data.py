@@ -257,7 +257,6 @@ class AnnotationsView(ObjectView, ListView):
             .options(raiseload("*", sql_only=True)),
             selectinload(Annotation.annotation_analyses)
             .load_only(
-                AnnotationAnalysis.id,
                 AnnotationAnalysis.analysis_id,
                 AnnotationAnalysis.created_at,
                 AnnotationAnalysis.study_id,

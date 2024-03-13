@@ -150,9 +150,6 @@ class BaseSchema(Schema):
     OPTIONS_CLASS = BaseSchemaOpts
     # normal return key
 
-    created_at = fields.DateTime(dump_only=True, metadata={"info_field": True})
-    updated_at = fields.DateTime(dump_only=True, metadata={"info_field": True})
-
     id = fields.String(metadata={"info_field": True, "id_field": True})
 
     def on_bind_field(self, field_name, field_obj):
@@ -171,6 +168,8 @@ class BaseDataSchema(BaseSchema):
         metadata={"info_field": True},
         default=None,
     )
+    created_at = fields.DateTime(dump_only=True, metadata={"info_field": True})
+    updated_at = fields.DateTime(dump_only=True, metadata={"info_field": True})
 
 
 class ConditionSchema(BaseDataSchema):
