@@ -457,8 +457,13 @@ class BaseStudiesView(ObjectView, ListView):
         )
         hashed_results = {(bs.doi or "") + (bs.pmid or ""): bs for bs in results}
         for study_data in data:
-            lookup_hash = study_data.get("doi", "") + study_data.get("pmid", "")
-            record = hashed_results.get(lookup_hash)
+            doi = study_data.get("doi", "") or ""
+            pmid = study_data.get("pmid", "") or ""
+            lookup_hash = doi + pmid
+            if lookup_hash == "" or lookup_hash.isspace():
+                record = None
+            else:
+                record = hashed_results.get(lookup_hash)
             if record is None:
                 with db.session.no_autoflush:
                     record = self.__class__.update_or_create(study_data, flush=False)

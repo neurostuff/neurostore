@@ -178,6 +178,8 @@ class BaseStudy(BaseMixin, db.Model):
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
         db.UniqueConstraint("doi", "pmid", name="doi_pmid"),
+        db.CheckConstraint("pmid ~ '^(?=.*\\S).+$' OR name IS NULL"),
+        db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
         sa.Index("ix_base_study___ts_vector__", _ts_vector, postgresql_using="gin"),
     )
 
@@ -280,6 +282,8 @@ class Study(BaseMixin, db.Model):
 
     __table_args__ = (
         db.CheckConstraint(level.in_(["group", "meta"])),
+        db.CheckConstraint("pmid ~ '^(?=.*\\S).+$' OR name IS NULL"),
+        db.CheckConstraint("doi ~ '^(?=.*\\S).+$' OR name IS NULL"),
         sa.Index("ix_study___ts_vector__", _ts_vector, postgresql_using="gin"),
     )
 

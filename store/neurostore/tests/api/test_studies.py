@@ -126,6 +126,8 @@ def test_clone_studies_with_data(auth_client, ingest_neurosynth, session):
     study_data["analyses"].append(
         {"name": "new analysis", "points": second_analysis_points}
     )
+    study_data["pmid"] = ""
+    study_data["doi"] = ""
 
     resp = auth_client.post(
         f"/api/studies/?source_id={study_entry.id}",
@@ -138,6 +140,8 @@ def test_clone_studies_with_data(auth_client, ingest_neurosynth, session):
     assert data["analyses"][0]["points"][0]["coordinates"] == [0, 0, 0]
     assert data["analyses"][1]["points"][0]["coordinates"] == [0, 0, 0]
     assert "new analysis" in [a["name"] for a in data["analyses"]]
+    assert data["pmid"] is None
+    assert data["doi"] is None
 
 
 def test_private_studies(user_data, auth_clients, session):
