@@ -16,7 +16,7 @@ const AnnotationsPage: React.FC = () => {
     const annotationIdFromProject = useProjectExtractionAnnotationId();
     const projectName = useProjectName();
 
-    const { projectId }: { projectId: string } = useParams();
+    const { projectId } = useParams<{ projectId: string }>();
     const {
         data,
         isLoading: getAnnotationIsLoading,

@@ -1,34 +1,22 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import Navbar from './Navbar';
 import { QueryClient, QueryClientProvider } from 'react-query';
-import { Router } from 'react-router-dom';
+import Navbar from './Navbar';
 
 jest.mock('@auth0/auth0-react');
+jest.mock('react-router-dom');
 jest.mock('components/Navbar/NavDrawer/NavDrawer.tsx');
 jest.mock('components/Navbar/NavToolbar/NavToolbar.tsx');
 jest.mock('hooks');
 
 describe('Navbar', () => {
-    const historyMock = {
-        push: jest.fn(),
-        location: {},
-        listen: jest.fn(),
-    };
-
-    afterAll(() => {
-        jest.clearAllMocks();
-    });
-
     const queryClient = new QueryClient();
 
     it('should render', () => {
         render(
             <QueryClientProvider client={queryClient}>
-                <Router history={historyMock as any}>
-                    <Navbar />
-                </Router>
+                <Navbar />
             </QueryClientProvider>
         );
 
@@ -39,9 +27,7 @@ describe('Navbar', () => {
     it('should call the auth0 login method when logging in', () => {
         render(
             <QueryClientProvider client={queryClient}>
-                <Router history={historyMock as any}>
-                    <Navbar />
-                </Router>
+                <Navbar />
             </QueryClientProvider>
         );
 
@@ -53,9 +39,7 @@ describe('Navbar', () => {
     it('should call the auth0 logout method when logging out', () => {
         render(
             <QueryClientProvider client={queryClient}>
-                <Router history={historyMock as any}>
-                    <Navbar />
-                </Router>
+                <Navbar />
             </QueryClientProvider>
         );
 

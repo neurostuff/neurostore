@@ -1,76 +1,24 @@
-import BookmarkIcon from '@mui/icons-material/Bookmark';
-import CheckIcon from '@mui/icons-material/Check';
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
-import {
-    Box,
-    Button,
-    Card,
-    CardActions,
-    CardContent,
-    CircularProgress,
-    Step,
-    StepContent,
-    StepLabel,
-    StepProps,
-    Typography,
-} from '@mui/material';
-import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
+import { Box, Button, Step, StepContent, StepLabel, StepProps, Typography } from '@mui/material';
 import MoveToExtractionDialog from 'components/Dialogs/MoveToExtractionDialog/MoveToExtractionDialog';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useGetStudysetById } from 'hooks';
-import useGetExtractionSummary, { IExtractionSummary } from 'hooks/useGetExtractionSummary';
 import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
-import {
-    useProjectExtractionSetGivenStudyStatusesAsComplete,
-    useProjectExtractionStudysetId,
-} from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
-import { useHistory, useLocation, useParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import ProjectComponentsStyles from '../../ProjectComponents.styles';
-import ExtractionStepStyles from './ExtractionStep.style';
+import ExtractionStepCard from './ExtractionStepCard';
 
 interface IExtractionStep {
     extractionStepHasBeenInitialized: boolean;
     disabled: boolean;
 }
 
-const getPercentageComplete = (extractionSummary: IExtractionSummary): number => {
-    if (extractionSummary.total === 0) return 0;
-    const percentageComplete = (extractionSummary.completed / extractionSummary.total) * 100;
-    return Math.round(percentageComplete);
-};
-
 const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
-    const { projectId }: { projectId: string } = useParams();
-    const studysetId = useProjectExtractionStudysetId();
-    const setGivenStudyStatusesAsComplete = useProjectExtractionSetGivenStudyStatusesAsComplete();
-    const {
-        data: studyset,
-        isError: getStudysetIsError,
-        isLoading: getStudysetIsLoading,
-    } = useGetStudysetById(studysetId, false);
     const { extractionStepHasBeenInitialized, disabled, ...stepProps } = props;
-    const extractionSummary = useGetExtractionSummary(projectId);
-    const history = useHistory();
-    const location = useLocation<IProjectPageLocationState>();
-    const [
-        markAllAsCompleteConfirmationDialogIsOpen,
-        setMarkAllAsCompleteConfirmationDialogIsOpen,
-    ] = useState(false);
+    const location = useLocation();
 
     const [moveToExtractionDialogIsOpen, setMoveToExtractionDialogIsOpen] = useState(
-        !extractionStepHasBeenInitialized && !!location?.state?.projectPage?.openCurationDialog
+        !extractionStepHasBeenInitialized &&
+            !!(location?.state as IProjectPageLocationState)?.projectPage?.openCurationDialog
     );
-
-    const handleMarkAllAsComplete = (confirm: boolean | undefined) => {
-        if (studyset?.studies && confirm) {
-            setGivenStudyStatusesAsComplete((studyset.studies || []) as string[]);
-        }
-        setMarkAllAsCompleteConfirmationDialogIsOpen(false);
-    };
-
-    const allStudiesAreComplete =
-        extractionSummary.total > 0 && extractionSummary.completed === extractionSummary.total;
 
     return (
         <Step {...stepProps} expanded={true} sx={ProjectComponentsStyles.step}>
@@ -98,123 +46,7 @@ const ExtractionStep: React.FC<IExtractionStep & StepProps> = (props) => {
                     </Typography>
                     <Box sx={{ marginTop: '1rem' }}>
                         {extractionStepHasBeenInitialized ? (
-                            <Box sx={[ProjectComponentsStyles.stepCard]}>
-                                <Card
-                                    sx={{
-                                        width: '100%',
-                                        height: '100%',
-                                        minHeight: '165px',
-                                        padding: '8px',
-                                    }}
-                                >
-                                    <StateHandlerComponent
-                                        isError={getStudysetIsError}
-                                        isLoading={getStudysetIsLoading}
-                                    >
-                                        <CardContent>
-                                            <Box sx={ProjectComponentsStyles.stepTitle}>
-                                                <Typography sx={{ color: 'muted.main' }}>
-                                                    {studyset?.studies?.length || 0} studies
-                                                </Typography>
-                                                <CircularProgress
-                                                    sx={ProjectComponentsStyles.progressCircle}
-                                                    variant="determinate"
-                                                    value={getPercentageComplete(extractionSummary)}
-                                                    color={
-                                                        getPercentageComplete(extractionSummary) ===
-                                                        100
-                                                            ? 'success'
-                                                            : 'secondary'
-                                                    }
-                                                />
-                                            </Box>
-                                            <Typography
-                                                gutterBottom
-                                                variant="h5"
-                                                sx={{ marginRight: '40px' }}
-                                            >
-                                                {studyset?.name || ''}
-                                            </Typography>
-
-                                            <Box sx={ProjectComponentsStyles.statusContainer}>
-                                                <Box
-                                                    sx={ProjectComponentsStyles.statusIconContainer}
-                                                >
-                                                    <QuestionMarkIcon
-                                                        sx={ExtractionStepStyles.uncategorizedIcon}
-                                                    />
-                                                    <Typography sx={{ color: 'warning.dark' }}>
-                                                        {extractionSummary.uncategorized}{' '}
-                                                        uncategorized
-                                                    </Typography>
-                                                </Box>
-                                                <Box
-                                                    sx={ProjectComponentsStyles.statusIconContainer}
-                                                >
-                                                    <BookmarkIcon
-                                                        sx={ExtractionStepStyles.saveForLater}
-                                                    />
-                                                    <Typography sx={{ color: 'info.main' }}>
-                                                        {extractionSummary.savedForLater} saved for
-                                                        later
-                                                    </Typography>
-                                                </Box>
-                                                <Box
-                                                    sx={ProjectComponentsStyles.statusIconContainer}
-                                                >
-                                                    <CheckIcon
-                                                        sx={ExtractionStepStyles.checkIcon}
-                                                    />
-                                                    <Typography sx={{ color: 'success.main' }}>
-                                                        {extractionSummary.completed} completed
-                                                    </Typography>
-                                                </Box>
-                                            </Box>
-                                        </CardContent>
-                                        <CardActions
-                                            sx={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                            }}
-                                        >
-                                            <Button
-                                                color="secondary"
-                                                onClick={() =>
-                                                    history.push(
-                                                        `/projects/${projectId}/extraction`
-                                                    )
-                                                }
-                                                variant="text"
-                                            >
-                                                continue editing
-                                            </Button>
-                                            <ConfirmationDialog
-                                                onCloseDialog={handleMarkAllAsComplete}
-                                                rejectText="Cancel"
-                                                confirmText="Mark all as complete"
-                                                isOpen={markAllAsCompleteConfirmationDialogIsOpen}
-                                                dialogTitle="Are you sure you want to mark all the studies as complete?"
-                                                dialogMessage="You can skip reviewing to expedite the process, but any studies you have not reviewed may have incomplete or inaccurate metadata or coordinates."
-                                            />
-                                            <Button
-                                                sx={{
-                                                    display: allStudiesAreComplete
-                                                        ? 'none'
-                                                        : 'block',
-                                                }}
-                                                onClick={() =>
-                                                    setMarkAllAsCompleteConfirmationDialogIsOpen(
-                                                        true
-                                                    )
-                                                }
-                                                color="success"
-                                            >
-                                                Mark all as complete
-                                            </Button>
-                                        </CardActions>
-                                    </StateHandlerComponent>
-                                </Card>
-                            </Box>
+                            <ExtractionStepCard disabled={disabled} />
                         ) : (
                             <Box
                                 sx={[

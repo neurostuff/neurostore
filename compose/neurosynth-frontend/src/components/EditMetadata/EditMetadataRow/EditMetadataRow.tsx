@@ -8,7 +8,7 @@ import ToggleType from './ToggleType/ToggleType';
 import EditMetadataValue from '../EditMetadataValue/EditMetadataValue';
 
 const EditMetadataRow: React.FC<IEditMetadataRowModel> = React.memo((props) => {
-    const { onMetadataRowEdit, onMetadataRowDelete, metadataRow } = props;
+    const { onMetadataRowEdit, onMetadataRowDelete, metadataRow, disabled = false } = props;
 
     const handleEditMetadataValue = useCallback(
         (event: string | boolean | number) => {
@@ -40,7 +40,11 @@ const EditMetadataRow: React.FC<IEditMetadataRowModel> = React.memo((props) => {
     return (
         <>
             <Box sx={EditMetadataRowStyles.tableRow}>
-                <ToggleType type={props.metadataValueType} onToggle={handleToggle} />
+                <ToggleType
+                    disabled={disabled}
+                    type={props.metadataValueType}
+                    onToggle={handleToggle}
+                />
                 <Box
                     sx={[
                         EditMetadataRowStyles.tableCell,
@@ -57,6 +61,7 @@ const EditMetadataRow: React.FC<IEditMetadataRowModel> = React.memo((props) => {
                         onEditMetadataValue={handleEditMetadataValue}
                         value={props.metadataRow.metadataValue}
                         type={props.metadataValueType}
+                        disabled={disabled}
                     />
                 </Box>
                 <Box sx={EditMetadataRowStyles.tableCell}>
@@ -64,6 +69,7 @@ const EditMetadataRow: React.FC<IEditMetadataRowModel> = React.memo((props) => {
                         sx={EditMetadataRowStyles.updateButton}
                         color="error"
                         onClick={handleDelete}
+                        disabled={disabled}
                     >
                         DELETE
                     </Button>

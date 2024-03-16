@@ -34,11 +34,14 @@ import {
 import {
     useInitProjectStoreIfRequired,
     useProjectName,
+    useProjectUser,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { NeurostoreAnnotation } from 'utils/api';
 import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
+import useUserCanEdit from 'hooks/useUserCanEdit';
+import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 
@@ -64,7 +67,8 @@ const MetaAnalysisPage: React.FC = (props) => {
         projectId: string;
         metaAnalysisId: string;
     }>();
-    const { user } = useAuth0();
+    const projectUser = useProjectUser();
+    const editsAllowed = useUserCanEdit(projectUser || undefined);
 
     useInitProjectStoreIfRequired();
     const projectName = useProjectName();
@@ -102,7 +106,6 @@ const MetaAnalysisPage: React.FC = (props) => {
     const studyset = metaAnalysis?.studyset as StudysetReturn;
     const annotation = metaAnalysis?.annotation as NeurostoreAnnotation;
 
-    const thisUserOwnsThisMetaAnalysis = (metaAnalysis?.user || undefined) === (user?.sub || null);
     const viewingThisPageFromProject = !!projectId;
 
     const [editSpecificationDialogIsOpen, setEditSpecificationDialogIsOpen] = useState(false);
@@ -165,7 +168,7 @@ const MetaAnalysisPage: React.FC = (props) => {
     const metaAnalysisAnnotation = metaAnalysis?.annotation as Annotation | undefined;
     const metaAnalysisStudyset = metaAnalysis?.studyset as Studyset | undefined;
 
-    const canEditSpecification = (metaAnalysis?.results || []).length === 0;
+    const noResultsExist = (metaAnalysis?.results || []).length === 0;
 
     return (
         <>
@@ -201,7 +204,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                 <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
                     <Box sx={{ flexGrow: 1 }}>
                         <TextEdit
-                            editIconIsVisible={thisUserOwnsThisMetaAnalysis}
+                            editIconIsVisible={editsAllowed}
                             isLoading={updateMetaAnalysisNameIsLoading}
                             onSave={updateName}
                             sx={{ input: { fontSize: '1.5rem' } }}
@@ -222,7 +225,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                         </TextEdit>
 
                         <TextEdit
-                            editIconIsVisible={thisUserOwnsThisMetaAnalysis}
+                            editIconIsVisible={editsAllowed}
                             isLoading={updateMetaAnalysisDescriptionIsLoading}
                             onSave={updateDescription}
                             label="description"
@@ -245,7 +248,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                         </TextEdit>
                         {metaAnalysis?.username && (
                             <Typography sx={{ color: 'muted.main' }}>
-                                Analysis Owner: {metaAnalysis.username}
+                                Owner: {metaAnalysis.username}
                             </Typography>
                         )}
                     </Box>
@@ -254,10 +257,13 @@ const MetaAnalysisPage: React.FC = (props) => {
                 <Box data-tour="MetaAnalysisPage-1" sx={{ margin: '1rem 0' }}>
                     <NeurosynthAccordion
                         elevation={0}
-                        expandIconColor={canEditSpecification ? 'secondary.main' : 'primary.main'}
+                        expandIconColor={
+                            noResultsExist && editsAllowed ? 'secondary.main' : 'primary.main'
+                        }
                         sx={{
                             border: '2px solid',
-                            borderColor: canEditSpecification ? 'secondary.main' : 'primary.main',
+                            borderColor:
+                                noResultsExist && editsAllowed ? 'secondary.main' : 'primary.main',
                         }}
                         accordionSummarySx={{
                             ':hover': {
@@ -267,16 +273,19 @@ const MetaAnalysisPage: React.FC = (props) => {
                         TitleElement={
                             <Typography
                                 sx={{
-                                    color: canEditSpecification ? 'secondary.main' : 'primary.main',
+                                    color:
+                                        noResultsExist && editsAllowed
+                                            ? 'secondary.main'
+                                            : 'primary.main',
                                 }}
                             >
-                                {canEditSpecification ? 'View or Edit' : 'View'} Meta-Analysis
-                                Specification
+                                {noResultsExist && editsAllowed ? 'View or Edit' : 'View'}{' '}
+                                Meta-Analysis Specification
                             </Typography>
                         }
                     >
                         <Box>
-                            {canEditSpecification && (
+                            {noResultsExist && (
                                 <Box
                                     sx={{
                                         display: 'flex',
@@ -295,6 +304,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                                         color="secondary"
                                         variant="contained"
                                         disableElevation
+                                        disabled={!editsAllowed}
                                     >
                                         Edit Specification
                                     </Button>
@@ -315,11 +325,20 @@ const MetaAnalysisPage: React.FC = (props) => {
                                 title="studyset id"
                                 value={
                                     <Link
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        href={`/studysets/${
-                                            metaAnalysisStudyset?.neurostore_id || ''
-                                        }`}
+                                        sx={{ cursor: 'pointer' }}
+                                        onClick={() => {
+                                            localStorage.setItem(
+                                                `SELECTED_CHIP-${projectId}`,
+                                                EExtractionStatus.COMPLETED
+                                            );
+                                            window.open(
+                                                `/projects/${projectId}/extraction`,
+                                                '_blank'
+                                            );
+                                        }}
+                                        // target="_blank"
+                                        // rel="noreferrer"
+                                        // href={`/projects/${projectId}/extraction`}
                                     >
                                         {metaAnalysisStudyset?.neurostore_id || ''}
                                     </Link>

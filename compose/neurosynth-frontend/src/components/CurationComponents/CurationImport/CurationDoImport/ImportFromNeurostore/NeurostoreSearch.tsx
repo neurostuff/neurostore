@@ -18,7 +18,7 @@ import {
     getURLFromSearchCriteria,
 } from 'pages/helpers/utils';
 import { useEffect, useState } from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { IImportArgs } from '../CurationDoImport';
 import { studiesToStubs } from './helpers/utils';
 import CurationImportBaseStyles from '../../CurationImportBase.styles';
@@ -29,7 +29,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
     const [importIsLoading, setImportIsLoading] = useState(false);
     const { enqueueSnackbar } = useSnackbar();
 
-    const history = useHistory();
+    const navigate = useNavigate();
     const location = useLocation();
     const projectId = useProjectId();
 
@@ -69,7 +69,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
         // when we search, we want to reset the search criteria as we dont know the
         // page number of number of results in advance
         const searchURL = getURLFromSearchCriteria(searchArgs);
-        history.push(`/projects/${projectId}/curation/import?${searchURL}`);
+        navigate(`/projects/${projectId}/curation/import?${searchURL}`);
     };
 
     const handleRowsPerPageChange = (newRowsPerPage: number) => {
@@ -78,12 +78,12 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
             'pageOfResults',
             '1'
         );
-        history.push(`/projects/${projectId}/curation/import?${searchURL}`);
+        navigate(`/projects/${projectId}/curation/import?${searchURL}`);
     };
 
     const handlePageChange = (page: number) => {
         const searchURL = addKVPToSearch(location.search, 'pageOfResults', `${page}`);
-        history.push(`/projects/${projectId}/curation/import?${searchURL}`);
+        navigate(`/projects/${projectId}/curation/import?${searchURL}`);
     };
 
     const handleButtonClick = async (button: ENavigationButton) => {
@@ -174,7 +174,7 @@ const NeurostoreSearch: React.FC<IImportArgs> = (props) => {
                                 data-tour={index === 0 ? 'StudiesPage-4' : null}
                                 sx={NeurosynthTableStyles.tableRow}
                                 key={studyrow.id || index}
-                                onClick={() => history.push(`/base-studies/${studyrow.id}`)}
+                                onClick={() => navigate(`/base-studies/${studyrow.id}`)}
                             >
                                 <TableCell>
                                     {studyrow?.name || (

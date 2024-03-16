@@ -16,7 +16,7 @@ import {
 import { useStudyBaseStudyId, useStudyId } from 'pages/Studies/StudyStore';
 import { setAnalysesInAnnotationAsIncluded } from 'pages/helpers/utils';
 import { useMemo, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAnnotationId } from 'stores/AnnotationStore.getters';
 
 const EditStudySwapVersionButton: React.FC = (props) => {
@@ -30,7 +30,7 @@ const EditStudySwapVersionButton: React.FC = (props) => {
     const updateStudyListStatusWithNewStudyId = useProjectExtractionReplaceStudyListStatusId();
     const studysetId = useProjectExtractionStudysetId();
     const { data: studyset } = useGetStudysetById(studysetId, false);
-    const history = useHistory();
+    const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
 
     const annotationId = useAnnotationId();
@@ -90,7 +90,7 @@ const EditStudySwapVersionButton: React.FC = (props) => {
             updateStudyListStatusWithNewStudyId(studyId, versionToSwapTo);
             await setAnalysesInAnnotationAsIncluded(annotationId);
 
-            history.push(`/projects/${projectId}/extraction/studies/${versionToSwapTo}`);
+            navigate(`/projects/${projectId}/extraction/studies/${versionToSwapTo}`);
 
             enqueueSnackbar('Updated version', { variant: 'success' });
         } catch (e) {

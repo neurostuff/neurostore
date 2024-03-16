@@ -5,7 +5,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, Button, Toolbar, Typography } from '@mui/material';
 import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
 import NeurosynthAvatar from 'components/Navbar/NeurosynthAvatar/NeurosynthAvatar';
-import { NavLink, useHistory } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { INav } from '../Navbar';
 import NavbarStyles from '../Navbar.styles';
 import NavToolbarStyles from './NavToolbar.styles';
@@ -13,7 +13,7 @@ import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 
 const NavToolbar: React.FC<INav> = (props) => {
     const { isAuthenticated } = useAuth0();
-    const history = useHistory();
+    const navigate = useNavigate();
 
     return (
         <Toolbar disableGutters>
@@ -45,7 +45,7 @@ const NavToolbar: React.FC<INav> = (props) => {
                                 text="NEW PROJECT"
                             />
                             <Button
-                                onClick={() => history.push('/projects')}
+                                onClick={() => navigate('/projects')}
                                 sx={[
                                     NavToolbarStyles.menuItemColor,
                                     NavToolbarStyles.menuItemPadding,
@@ -69,11 +69,11 @@ const NavToolbar: React.FC<INav> = (props) => {
                         options={[
                             {
                                 label: 'STUDIES',
-                                onClick: () => history.push('/base-studies'),
+                                onClick: () => navigate('/base-studies'),
                             },
                             {
                                 label: 'META-ANALYSES',
-                                onClick: () => history.push('/meta-analyses'),
+                                onClick: () => navigate('/meta-analyses'),
                             },
                         ]}
                         buttonLabel="explore"

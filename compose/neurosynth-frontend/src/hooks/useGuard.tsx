@@ -1,25 +1,25 @@
 import { useSnackbar } from 'notistack';
 import { useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const useGuard = (
     navigationLink: string,
     snackbarMessage = 'you must be authenticated to view this page',
     shouldNotSeePage = false
 ) => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
 
     useEffect(() => {
         if (shouldNotSeePage) {
-            history.push(navigationLink || '/');
+            navigate(navigationLink || '/');
             if (snackbarMessage && snackbarMessage.length > 0) {
                 enqueueSnackbar(snackbarMessage, {
                     variant: 'warning',
                 });
             }
         }
-    }, [enqueueSnackbar, history, navigationLink, shouldNotSeePage, snackbarMessage]);
+    }, [enqueueSnackbar, navigate, navigationLink, shouldNotSeePage, snackbarMessage]);
 
     return;
 };

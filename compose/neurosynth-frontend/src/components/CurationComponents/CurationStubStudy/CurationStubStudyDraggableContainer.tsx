@@ -5,6 +5,8 @@ import CurationStubStudy from './CurationStubStudy';
 import CurationStubStudyStyles from './CurationStubStudy.styles';
 import { DraggableProvided, DraggableStateSnapshot, DraggableStyle } from '@hello-pangea/dnd';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import { useProjectUser } from 'pages/Projects/ProjectPage/ProjectStore';
+import useUserCanEdit from 'hooks/useUserCanEdit';
 
 export interface ICurationStubStudy {
     id: string;
@@ -47,6 +49,9 @@ const CurationStubStudyDraggableContainer: React.FC<
         onSelectStubStudy: (stubId: string) => void;
     }
 > = (props) => {
+    const projectUser = useProjectUser();
+    const canEdit = useUserCanEdit(projectUser || undefined);
+
     return (
         <Paper
             onClick={() => props.onSelectStubStudy(props.id)}
@@ -67,14 +72,12 @@ const CurationStubStudyDraggableContainer: React.FC<
             }}
             sx={CurationStubStudyStyles.stubStudyContainer}
         >
-            {!props?.exclusionTag ? (
+            {!props?.exclusionTag && canEdit ? (
                 <Box
-                    // remove drag and drop for now as it is unused
                     {...props.provided.dragHandleProps}
                     sx={{ display: 'flex', alignItems: 'center', width: '30px' }}
                 >
                     <Box>
-                        {/* remove drag and drop for now as it is unused */}
                         {/* // eslint-disable-next-line react/jsx-no-undef */}
                         <DragIndicatorIcon sx={{ color: 'gray' }} />
                     </Box>

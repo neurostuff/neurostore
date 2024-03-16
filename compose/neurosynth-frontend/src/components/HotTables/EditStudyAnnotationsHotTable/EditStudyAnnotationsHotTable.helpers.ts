@@ -35,7 +35,7 @@ export const createStudyAnnotationColHeaders = (noteKeys: NoteKeyType[]): string
     ];
 };
 
-export const createStudyAnnotationColumns = (noteKeys: NoteKeyType[]) =>
+export const createStudyAnnotationColumns = (noteKeys: NoteKeyType[], readonly: boolean) =>
     [
         {
             className: `${styles['study-col']} ${styles['read-only-col']}`,
@@ -49,7 +49,7 @@ export const createStudyAnnotationColumns = (noteKeys: NoteKeyType[]) =>
         },
         ...noteKeys.map((x) => {
             return {
-                readOnly: false,
+                readOnly: readonly,
                 data: `note.${x.key}`,
                 className: styles[x.type],
                 allowInvalid: false,

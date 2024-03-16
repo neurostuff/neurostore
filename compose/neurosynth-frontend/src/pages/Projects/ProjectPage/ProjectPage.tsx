@@ -1,9 +1,9 @@
+import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Tab, Tabs, Typography } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
-import EditMetaAnalyses from 'components/ProjectComponents/EditMetaAnalyses/EditMetaAnalyses';
-import ViewMetaAnalyses from 'components/ProjectComponents/ViewMetaAnalyses/ViewMetaAnalyses';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
+import useUserCanEdit from 'hooks/useUserCanEdit';
 import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
 import {
     useGetProjectIsLoading,
@@ -11,11 +11,12 @@ import {
     useProjectDescription,
     useProjectMetaAnalysisCanEdit,
     useProjectName,
+    useProjectUser,
     useUpdateProjectDescription,
     useUpdateProjectName,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useMemo } from 'react';
-import { Route, Switch, useHistory, useLocation, useParams } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 export interface IProjectPageLocationState {
     projectPage?: {
@@ -27,9 +28,9 @@ export interface IProjectPageLocationState {
 // TODO: for now, we will only be supporting a single meta-analysis, so we only assume there is one. This will change later.
 // const metaAnalysisId = (project?.meta_analyses as MetaAnalysis[]).
 const ProjectPage: React.FC = (props) => {
-    const { projectId }: { projectId: string } = useParams();
+    const { projectId } = useParams<{ projectId: string }>();
     const location = useLocation();
-    const history = useHistory();
+    const navigate = useNavigate();
 
     useInitProjectStoreIfRequired();
 
@@ -38,7 +39,10 @@ const ProjectPage: React.FC = (props) => {
     const metaAnalysesTabEnabled = useProjectMetaAnalysisCanEdit();
     const getProjectIsLoading = useGetProjectIsLoading();
     const projectName = useProjectName();
+    const projectUser = useProjectUser();
     const projectDescription = useProjectDescription();
+
+    const userCanEdit = useUserCanEdit(projectUser || undefined);
 
     const tab = useMemo(
         () => (location.pathname.includes('meta-analyses') ? 1 : 0),
@@ -71,6 +75,7 @@ const ProjectPage: React.FC = (props) => {
                         onSave={(updatedName, label) => updateProjectName(updatedName)}
                         sx={{ input: { fontSize: '1.5rem' } }}
                         textToEdit={projectName || ''}
+                        editIconIsVisible={userCanEdit}
                     >
                         <Typography
                             sx={{ color: projectName ? 'initial' : 'warning.dark' }}
@@ -85,6 +90,7 @@ const ProjectPage: React.FC = (props) => {
                         }
                         sx={{ input: { fontSize: '1.25rem' } }}
                         textToEdit={projectDescription || ''}
+                        editIconIsVisible={userCanEdit}
                         multiline
                     >
                         <Typography
@@ -109,35 +115,28 @@ const ProjectPage: React.FC = (props) => {
                         value={tab}
                     >
                         <Tab
-                            onClick={() => history.push(`/projects/${projectId}/edit`)}
+                            onClick={() => navigate(`/projects/${projectId}/project`)}
                             sx={{
                                 fontSize: '1.2rem',
                                 color: tab === 0 ? '#ef8a24 !important' : 'primary.main',
                                 fontWeight: tab === 0 ? 'bold' : 'normal',
                             }}
-                            label="Edit Project"
+                            label="Project"
                         />
                         <Tab
-                            onClick={() => history.push(`/projects/${projectId}/meta-analyses`)}
+                            onClick={() => navigate(`/projects/${projectId}/meta-analyses`)}
                             disabled={!metaAnalysesTabEnabled}
                             sx={{
                                 fontSize: '1.2rem',
                                 color: tab === 1 ? '#ef8a24 !important' : 'primary.main',
                                 fontWeight: tab === 1 ? 'bold' : 'normal',
                             }}
-                            label="View Meta-Analyses"
+                            label="Meta-Analyses"
                         />
                     </Tabs>
                 </Box>
 
-                <Switch>
-                    <Route exact path={[`/projects/:projectId`, `/projects/:projectId/edit`]}>
-                        <EditMetaAnalyses />
-                    </Route>
-                    <Route path={`/projects/:projectId/meta-analyses`}>
-                        <ViewMetaAnalyses />
-                    </Route>
-                </Switch>
+                <Outlet />
             </Box>
         </StateHandlerComponent>
     );

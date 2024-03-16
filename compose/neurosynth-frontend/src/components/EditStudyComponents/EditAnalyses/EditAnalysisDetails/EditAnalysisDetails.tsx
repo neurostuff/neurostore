@@ -8,7 +8,7 @@ import { IStoreAnalysis } from 'pages/Studies/StudyStore.helpers';
 import { useEffect } from 'react';
 import { useUpdateAnnotationNoteName } from 'stores/AnnotationStore.actions';
 
-const EditAnalysisDetails: React.FC<{ analysisId?: string }> = (props) => {
+const EditAnalysisDetails: React.FC<{ analysisId?: string; disabled: boolean }> = (props) => {
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
     const name = useStudyAnalysisName(props.analysisId);
     const description = useStudyAnalysisDescription(props.analysisId);
@@ -47,6 +47,7 @@ const EditAnalysisDetails: React.FC<{ analysisId?: string }> = (props) => {
                 Analysis Details
             </Typography>
             <TextField
+                disabled={props.disabled}
                 label="name"
                 size="small"
                 sx={{ width: '100%', marginBottom: '1rem' }}
@@ -56,6 +57,7 @@ const EditAnalysisDetails: React.FC<{ analysisId?: string }> = (props) => {
                 }}
             />
             <TextField
+                disabled={props.disabled}
                 onChange={(event) => {
                     handleUpdateAnalysisDetails(
                         'description',

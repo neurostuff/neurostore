@@ -5,7 +5,7 @@ import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import useGetProjects, { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
 import { useIsMutating } from 'react-query';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { generateNewProjectData } from '../ProjectPage/ProjectStore.helpers';
 import { useCreateProject, useGuard } from 'hooks';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
@@ -19,23 +19,23 @@ const ProjectsPage: React.FC = (props) => {
         isFetching,
     } = useGetProjects(user?.sub);
     const createProjectIsFetchingNum = useIsMutating('create-project');
-    const history = useHistory();
+    const navigate = useNavigate();
     const { mutate, isLoading: createProjectIsLoading } = useCreateProject();
     useGuard('/', 'not authenticated', !isAuthenticated);
 
     const handleCreateProject = () => {
         mutate(generateNewProjectData('Untitled', ''), {
             onSuccess: (arg) => {
-                history.push(`/projects/${arg.data.id || ''}`);
+                navigate(`/projects/${arg.data.id || ''}`);
             },
         });
     };
 
     const handleSelectProject = (project: INeurosynthProjectReturn) => {
         if (project?.provenance?.metaAnalysisMetadata?.canEditMetaAnalyses) {
-            history.push(`/projects/${project?.id}/meta-analyses`);
+            navigate(`/projects/${project?.id}/meta-analyses`);
         } else {
-            history.push(`/projects/${project?.id}/edit`);
+            navigate(`/projects/${project?.id}/project`);
         }
     };
 
