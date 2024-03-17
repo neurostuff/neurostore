@@ -1,4 +1,3 @@
-import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Tab, Tabs, Typography } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
@@ -12,6 +11,7 @@ import {
     useProjectMetaAnalysisCanEdit,
     useProjectName,
     useProjectUser,
+    useProjectUsername,
     useUpdateProjectDescription,
     useUpdateProjectName,
 } from 'pages/Projects/ProjectPage/ProjectStore';
@@ -40,6 +40,7 @@ const ProjectPage: React.FC = (props) => {
     const getProjectIsLoading = useGetProjectIsLoading();
     const projectName = useProjectName();
     const projectUser = useProjectUser();
+    const projectUserName = useProjectUsername();
     const projectDescription = useProjectDescription();
 
     const userCanEdit = useUserCanEdit(projectUser || undefined);
@@ -98,11 +99,14 @@ const ProjectPage: React.FC = (props) => {
                                 color: projectDescription ? 'muted.main' : 'warning.dark',
                                 whiteSpace: 'pre-line',
                             }}
-                            variant="h6"
+                            variant="body1"
                         >
                             {projectDescription || 'No description'}
                         </Typography>
                     </TextEdit>
+                    <Typography variant="body1" sx={{ color: 'muted.main' }}>
+                        Owner: {projectUserName || 'No owner'}
+                    </Typography>
                 </Box>
 
                 <Box sx={{ borderBottom: 1, margin: '0.5rem 0 1rem 0', borderColor: 'divider' }}>

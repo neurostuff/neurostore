@@ -87,7 +87,6 @@ const CurationStepCard: React.FC<{ projectId: string | undefined; disabled: bool
                 </CardContent>
                 <CardActions>
                     <Button
-                        disabled={disabled}
                         color={disabled ? 'primary' : 'secondary'}
                         onClick={() => {
                             navigate(`/projects/${projectId}/curation`);

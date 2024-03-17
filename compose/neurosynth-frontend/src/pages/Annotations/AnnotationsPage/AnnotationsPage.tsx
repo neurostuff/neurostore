@@ -62,10 +62,7 @@ const AnnotationsPage: React.FC = () => {
                     </Typography>
                     <Typography sx={{ color: 'muted.main' }}>{data?.description || ''}</Typography>
                 </Box>
-                <EditAnnotationsHotTable
-                    annotationId={annotationIdFromProject || annotationId}
-                    isViewingFromProject={viewingThisPageFromProject}
-                />
+                <EditAnnotationsHotTable annotationId={annotationIdFromProject || annotationId} />
             </StateHandlerComponent>
         </Box>
     );
