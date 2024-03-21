@@ -113,6 +113,7 @@ def test_updating_annotation(assign_neurosynth_to_user, auth_client, session):
         annotation_dict["notes"][i]["note"]["_5"] = 1.0
         auth_client.put(f"/api/annotations/{annotation.id}", data=annotation_dict)
 
+
 @performance_test
 def test_updating_annotation_analysis(assign_neurosynth_to_user, auth_client, session):
     q = Annotation.query
@@ -125,6 +126,7 @@ def test_updating_annotation_analysis(assign_neurosynth_to_user, auth_client, se
         annotation_analysis["note"]["_5"] = 1.0
         aa_id = annotation_analysis["id"]
         auth_client.put(f"/api/annotation-analyses/{aa_id}", data=annotation_analysis)
+
 
 @performance_test
 def test_updating_annotation_one(assign_neurosynth_to_user, auth_client, session):
