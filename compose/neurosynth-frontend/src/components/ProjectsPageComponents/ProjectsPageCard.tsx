@@ -1,0 +1,154 @@
+import { Box, Chip, Link as MuiLink, Stepper, Typography } from '@mui/material';
+import { useGetStudysetById } from 'hooks';
+import { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
+import { getCurationSummary } from 'hooks/useGetCurationSummary';
+import { getExtractionSummary } from 'hooks/useGetExtractionSummary';
+import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import ProjectPageCardStep from './ProjectPageCardStep';
+import ProjectPageCardSummaryCuration from './ProjectPageCardSummaryCuration';
+import ProjectPageCardExtractionSummary from './ProjectPageCardSummaryExtraction';
+import ProjectPageCardSummaryMetaAnalyses from './ProjectPageCardSummaryMetaAnalyses';
+
+const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
+    const { name, description, provenance, updated_at, created_at, id, meta_analyses = [] } = props;
+
+    const { data: studyset, isLoading } = useGetStudysetById(
+        provenance?.extractionMetadata?.studysetId,
+        false
+    );
+
+    const lastUpdateDate = useMemo(() => {
+        const lastUpdated = new Date(updated_at || created_at || '');
+        return `${lastUpdated.toLocaleDateString()} ${lastUpdated.toLocaleTimeString()}`;
+    }, [created_at, updated_at]);
+
+    const curationSummary = useMemo(() => {
+        if (provenance.curationMetadata.columns.length === 0) return;
+
+        return getCurationSummary(provenance.curationMetadata.columns);
+    }, [provenance.curationMetadata.columns]);
+
+    const extractionSummary = useMemo(() => {
+        if (!provenance.extractionMetadata.studysetId) return;
+
+        const studysetStudies = (studyset?.studies || []) as string[];
+        const studyStatusesList = provenance.extractionMetadata.studyStatusList;
+        return getExtractionSummary(studysetStudies, studyStatusesList);
+    }, [
+        provenance.extractionMetadata.studyStatusList,
+        provenance.extractionMetadata.studysetId,
+        studyset?.studies,
+    ]);
+
+    const activeStep = useMemo(() => {
+        if (!curationSummary) return -1;
+        if (!extractionSummary) return 0;
+        if (!provenance?.metaAnalysisMetadata?.canEditMetaAnalyses) return 1;
+        if (
+            provenance?.metaAnalysisMetadata?.canEditMetaAnalyses &&
+            (meta_analyses?.length || 0) === 0
+        )
+            return 2;
+        return 3;
+    }, [
+        curationSummary,
+        extractionSummary,
+        meta_analyses?.length,
+        provenance?.metaAnalysisMetadata?.canEditMetaAnalyses,
+    ]);
+
+    return (
+        <Box sx={{ display: 'flex', padding: '1rem', marginBottom: '0.5rem' }}>
+            <Box sx={{ width: '250px' }}>
+                <Stepper
+                    orientation="vertical"
+                    activeStep={activeStep}
+                    sx={{
+                        '.MuiStepConnector-lineVertical': {
+                            minHeight: '8px !important',
+                        },
+                    }}
+                >
+                    <ProjectPageCardStep
+                        title="Curation"
+                        optionalText={
+                            activeStep < 0
+                                ? 'Not started'
+                                : activeStep === 0
+                                ? 'In progress'
+                                : 'Completed'
+                        }
+                        isActive={activeStep === 0}
+                    />
+                    <ProjectPageCardStep
+                        title="Extraction"
+                        optionalText={
+                            activeStep < 1
+                                ? 'Not started'
+                                : activeStep === 1
+                                ? 'In progress'
+                                : 'Completed'
+                        }
+                        isActive={activeStep === 1}
+                    />
+                    <ProjectPageCardStep
+                        title="Meta Analyses"
+                        optionalText={
+                            activeStep < 2
+                                ? 'Not started'
+                                : activeStep === 2
+                                ? 'In progress'
+                                : `Created ${meta_analyses?.length} meta ${
+                                      (meta_analyses?.length || 0) > 1 ? 'analyses' : 'analysis'
+                                  }`
+                        }
+                        isActive={activeStep === 2}
+                    />
+                </Stepper>
+            </Box>
+            <Box sx={{ flexGrow: 1 }}>
+                <Box mb="0.5rem">
+                    {
+                        <Chip
+                            label={`Last updated ${lastUpdateDate}`}
+                            variant="outlined"
+                            size="small"
+                            sx={{ mr: '6px' }}
+                        />
+                    }
+                    {studyset && (
+                        <Chip
+                            variant="outlined"
+                            size="small"
+                            label={`${(studyset.studies || []).length} studies`}
+                        />
+                    )}
+                </Box>
+                <MuiLink component={Link} to={`/projects/${id}`} underline="hover">
+                    <Typography color="primary" variant="h5" gutterBottom>
+                        {name || ''}
+                    </Typography>
+                </MuiLink>
+                <Typography sx={{ color: description ? 'muted.main' : 'warning.dark' }}>
+                    {description || 'no description'}
+                </Typography>
+                <Box mt="0.5rem">
+                    {activeStep === 0 && curationSummary ? (
+                        <ProjectPageCardSummaryCuration {...curationSummary} />
+                    ) : activeStep === 1 && extractionSummary ? (
+                        <ProjectPageCardExtractionSummary {...extractionSummary} />
+                    ) : activeStep === 2 && meta_analyses ? (
+                        <ProjectPageCardSummaryMetaAnalyses
+                            metaAnalysisIds={meta_analyses as string[]}
+                        />
+                    ) : (
+                        <></>
+                    )}
+                </Box>
+            </Box>
+        </Box>
+    );
+};
+
+export default ProjectsPageCard;
