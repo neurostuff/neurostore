@@ -13,8 +13,8 @@ from sqlalchemy.sql import func
 from sqlalchemy import select
 
 
-from .utils import view_maker
-from .base import BaseView, ObjectView, ListView, clear_cache
+from .utils import view_maker, get_current_user
+from .base import BaseView, ObjectView, ListView, clear_cache, create_user
 from ..database import db
 from ..models import (
     User,
@@ -467,7 +467,16 @@ class BaseStudiesView(ObjectView, ListView):
             )
             .all()
         )
-        hashed_results = {(bs.doi or "") + (bs.pmid or ""): bs for bs in results}
+        hashed_results = {}
+        for bs in results:
+            doi = bs.doi or ""
+            pmid = bs.pmid or ""
+            lookup_hash = doi + pmid
+            if doi:
+                hashed_results[doi] = bs
+            if pmid:
+                hashed_results[pmid] = bs
+            hashed_results[lookup_hash] = bs
         for study_data in data:
             doi = study_data.get("doi", "") or ""
             pmid = study_data.get("pmid", "") or ""
@@ -484,7 +493,16 @@ class BaseStudiesView(ObjectView, ListView):
             base_studies.append(record)
             versions = record.versions
             if len(versions) == 0:
-                version = StudiesView.update_or_create(study_data, flush=False)
+                current_user = get_current_user()
+                if not current_user:
+                    current_user = create_user()
+
+                    db.session.add(current_user)
+                    db.session.commit()
+                version = StudiesView._model()
+                version.base_study = record
+                version.user = current_user
+                version = StudiesView.update_or_create(study_data, record=version, user=current_user, flush=False)
                 record.versions.append(version)
                 to_commit.append(version)
             # elif len(versions) == 1:
@@ -741,7 +759,7 @@ class StudiesView(ObjectView, ListView):
     def pre_nested_record_update(record):
         """Find/create the associated base study"""
         # if the study was cloned and the base_study is already known.
-        if record.base_study_id is not None:
+        if record.base_study_id is not None or record.base_study is not None:
             return record
 
         query = BaseStudy.query
