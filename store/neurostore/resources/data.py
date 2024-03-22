@@ -502,7 +502,9 @@ class BaseStudiesView(ObjectView, ListView):
                 version = StudiesView._model()
                 version.base_study = record
                 version.user = current_user
-                version = StudiesView.update_or_create(study_data, record=version, user=current_user, flush=False)
+                version = StudiesView.update_or_create(
+                    study_data, record=version, user=current_user, flush=False
+                )
                 record.versions.append(version)
                 to_commit.append(version)
             # elif len(versions) == 1:
