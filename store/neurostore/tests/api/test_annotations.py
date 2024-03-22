@@ -381,15 +381,15 @@ def test_annotation_analyses_post(auth_client, ingest_neurosynth, session):
     new_value = "something new"
     data[0]["note"]["doo"] = new_value
     data[1]["note"]["doo"] = new_value
+    data[2]["note"]["doo"] = new_value  # will not be updated
     data[0]["id"] = annot.json()["id"] + "_" + data[0]["analysis"]
     data[1]["annotation"] = annot.json()["id"]
-    post_resp = auth_client.post("/api/annotation-analyses/", data=data[0:2])
+    post_resp = auth_client.post("/api/annotation-analyses/", data=data[0:3])
     assert post_resp.status_code == 200
 
     get_resp = auth_client.get(f"/api/annotations/{annot.json()['id']}")
-    # get_notes = sorted(get_resp.json()['notes'], key=lambda x: x['analysis'])
-    # put_notes = sorted(put_resp.json()['notes'], key=lambda x: x['analysis'])
-    assert len(post_resp.json()) == 2
+
+    assert len(post_resp.json()) == 2  # third input did not have proper id
     assert (
         get_resp.json()["notes"][1]["note"]["doo"]
         == post_resp.json()[1]["note"]["doo"]

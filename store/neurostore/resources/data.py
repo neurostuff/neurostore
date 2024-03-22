@@ -1119,7 +1119,7 @@ class AnnotationAnalysesView(ObjectView, ListView):
         data = parser.parse(self.__class__._schema(many=True), request)
         args = parser.parse(self._user_args, request, location="query")
         schema = self._schema(many=True, context=args)
-        ids = {d.get("id"): d for d in data}
+        ids = {d.get("id"): d for d in data if d.get("id")}
         q = AnnotationAnalysis.query.filter(AnnotationAnalysis.id.in_(ids))
         q = self.eager_load(q, args)
         records = q.all()
