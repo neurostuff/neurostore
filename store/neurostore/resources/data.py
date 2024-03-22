@@ -14,7 +14,7 @@ from sqlalchemy import select
 
 
 from .utils import view_maker
-from .base import BaseView, ObjectView, ListView
+from .base import BaseView, ObjectView, ListView, clear_cache
 from ..database import db
 from ..models import (
     User,
@@ -438,7 +438,6 @@ class BaseStudiesView(ObjectView, ListView):
         return super().join_tables(q, args)
 
     def post(self):
-        from .base import clear_cache
 
         # the request is either a list or a dict
         if isinstance(request.json, dict):
@@ -1115,6 +1114,36 @@ class AnnotationAnalysesView(ObjectView, ListView):
         "analysis": "AnalysesView",
         "studyset_study": "StudysetStudiesResource",
     }
+
+    def post(self):
+        data = parser.parse(self.__class__._schema(many=True), request)
+        args = parser.parse(self._user_args, request, location="query")
+        schema = self._schema(many=True, context=args)
+        ids = {d.get("id"): d for d in data if d.get("id")}
+        q = AnnotationAnalysis.query.filter(AnnotationAnalysis.id.in_(ids))
+        q = self.eager_load(q, args)
+        records = q.all()
+        to_commit = []
+        for input_record in records:
+            with db.session.no_autoflush:
+                d = ids.get(input_record.id)
+                to_commit.append(
+                    self.__class__.update_or_create(d, id, record=input_record)
+                )
+
+        db.session.add_all(to_commit)
+
+        response = schema.dump(to_commit)
+
+        db.session.commit()
+
+        unique_ids = {
+            "annotation-analyses": set(list(ids)),
+            "annotations": {input_record.annotation_id},
+        }
+        clear_cache(unique_ids)
+
+        return response
 
     def eager_load(self, q, args=None):
         q = q.options(
