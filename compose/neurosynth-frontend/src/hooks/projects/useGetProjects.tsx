@@ -1,4 +1,5 @@
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
+import { lastUpdatedAtSortFn } from 'components/Dialogs/MoveToExtractionDialog/MovetoExtractionDialog.helpers';
 import { Project, ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
 import { useQuery } from 'react-query';
@@ -89,7 +90,9 @@ const useGetProjects = (authenticatedUser?: string) => {
         () => API.NeurosynthServices.ProjectsService.projectsGet(),
         {
             select: (axiosResponse) =>
-                (axiosResponse.data.results as INeurosynthProjectReturn[]) || [],
+                ((axiosResponse.data.results as INeurosynthProjectReturn[]) || [])
+                    .sort(lastUpdatedAtSortFn)
+                    .reverse(),
             enabled: !!authenticatedUser,
         }
     );

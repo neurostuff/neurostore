@@ -66,7 +66,8 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                     activeStep={activeStep}
                     sx={{
                         '.MuiStepConnector-lineVertical': {
-                            minHeight: '8px !important',
+                            minHeight: '0px !important',
+                            height: '0px !important',
                         },
                     }}
                 >
@@ -125,8 +126,16 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                         />
                     )}
                 </Box>
-                <MuiLink component={Link} to={`/projects/${id}`} underline="hover">
-                    <Typography color="primary" variant="h5" gutterBottom>
+                <MuiLink
+                    component={Link}
+                    to={
+                        provenance?.metaAnalysisMetadata?.canEditMetaAnalyses
+                            ? `/projects/${id}/meta-analyses`
+                            : `/projects/${id}`
+                    }
+                    underline="hover"
+                >
+                    <Typography color="primary" variant="h5">
                         {name || ''}
                     </Typography>
                 </MuiLink>
@@ -135,15 +144,17 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                 </Typography>
                 <Box mt="0.5rem">
                     {activeStep === 0 && curationSummary ? (
-                        <ProjectPageCardSummaryCuration {...curationSummary} />
+                        <ProjectPageCardSummaryCuration projectId={id || ''} {...curationSummary} />
                     ) : activeStep === 1 && extractionSummary ? (
-                        <ProjectPageCardExtractionSummary {...extractionSummary} />
-                    ) : activeStep === 2 && meta_analyses ? (
-                        <ProjectPageCardSummaryMetaAnalyses
-                            metaAnalysisIds={meta_analyses as string[]}
+                        <ProjectPageCardExtractionSummary
+                            projectId={id || ''}
+                            {...extractionSummary}
                         />
                     ) : (
-                        <></>
+                        <ProjectPageCardSummaryMetaAnalyses
+                            projectId={id || ''}
+                            metaAnalysisIds={meta_analyses as string[]}
+                        />
                     )}
                 </Box>
             </Box>

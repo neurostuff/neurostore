@@ -10,13 +10,11 @@ import {
     Typography,
 } from '@mui/material';
 import { Box } from '@mui/system';
+import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
 import ProjectComponentsStyles from 'components/ProjectComponents/ProjectComponents.styles';
 import useGetCurationSummary, { ICurationSummary } from 'hooks/useGetCurationSummary';
 import { useNavigate } from 'react-router-dom';
 import CurationStepStyles from './CurationStep.style';
-import NeurosynthLoader from 'components/NeurosynthLoader/NeurosynthLoader';
-import { useProjectUser } from 'pages/Projects/ProjectPage/ProjectStore';
-import useUserCanEdit from 'hooks/useUserCanEdit';
 
 const getPercentageComplete = (curationSummary: ICurationSummary): number => {
     if (curationSummary.total === 0) return 0;

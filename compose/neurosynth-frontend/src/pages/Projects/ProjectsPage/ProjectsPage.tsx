@@ -1,25 +1,18 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import SearchIcon from '@mui/icons-material/Search';
-import { Box, Button, InputBase, Link, Paper, Typography } from '@mui/material';
+import { Box, Button, InputBase, Link, Pagination, Paper, Typography } from '@mui/material';
 import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 import SearchBarStyles from 'components/Search/SearchBar/SearchBar.styles';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useCreateProject, useGuard } from 'hooks';
-import useGetProjects, { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
-import { useIsMutating } from 'react-query';
+import useGetProjects from 'hooks/projects/useGetProjects';
 import { useNavigate } from 'react-router-dom';
 import ProjectsPageCard from '../../../components/ProjectsPageComponents/ProjectsPageCard';
 import { generateNewProjectData } from '../ProjectPage/ProjectStore.helpers';
 
 const ProjectsPage: React.FC = (props) => {
     const { user, isAuthenticated } = useAuth0();
-    const {
-        data,
-        isError,
-        isLoading: getProjectsIsLoading,
-        isFetching,
-    } = useGetProjects(user?.sub);
-    const createProjectIsFetchingNum = useIsMutating('create-project');
+    const { data, isError, isLoading: getProjectsIsLoading } = useGetProjects(user?.sub);
     const navigate = useNavigate();
     const { mutate, isLoading: createProjectIsLoading } = useCreateProject();
     useGuard('/', 'not authenticated', !isAuthenticated);
@@ -32,15 +25,6 @@ const ProjectsPage: React.FC = (props) => {
         });
     };
 
-    const handleSelectProject = (project: INeurosynthProjectReturn) => {
-        if (project?.provenance?.metaAnalysisMetadata?.canEditMetaAnalyses) {
-            navigate(`/projects/${project?.id}/meta-analyses`);
-        } else {
-            navigate(`/projects/${project?.id}/project`);
-        }
-    };
-
-    const createProjectIsFetching = createProjectIsFetchingNum > 0;
     const noProjects = (data?.length || []) === 0;
 
     return (
@@ -103,12 +87,18 @@ const ProjectsPage: React.FC = (props) => {
                             Reset
                         </Button>
                     </Box>
+                    <Box>
+                        <Pagination
+                            sx={{ marginTop: '1rem', width: '100%' }}
+                            count={data?.length || 0}
+                        />
+                    </Box>
                     <Box mt="1rem">
                         {(data || []).map((project, index) => (
                             <Box
                                 key={project?.id || ''}
                                 sx={{
-                                    ':nth-child(2n)': {
+                                    ':nth-of-type(2n)': {
                                         backgroundColor: '#f7f7f7',
                                         borderRadius: '4px',
                                     },
