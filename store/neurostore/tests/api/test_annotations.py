@@ -383,7 +383,7 @@ def test_annotation_analyses_post(auth_client, ingest_neurosynth, session):
     data[1]["note"]["doo"] = new_value
     data[0]["id"] = annot.json()["id"] + "_" + data[0]["analysis"]
     data[1]["annotation"] = annot.json()["id"]
-    post_resp = auth_client.post(f"/api/annotation-analyses/", data=data[0:2])
+    post_resp = auth_client.post("/api/annotation-analyses/", data=data[0:2])
     assert post_resp.status_code == 200
 
     get_resp = auth_client.get(f"/api/annotations/{annot.json()['id']}")
