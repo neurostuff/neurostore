@@ -749,6 +749,7 @@ export const useUpdateProjectIsLoading = () =>
     useProjectStore((state) => state.metadata.updateProjectIsLoading);
 export const useProjectIsError = () => useProjectStore((state) => state.metadata.isError);
 export const useProjectUser = () => useProjectStore((state) => state.user);
+export const useProjectUsername = () => useProjectStore((state) => state.username);
 export const useProjectMetaAnalyses = () => useProjectStore((state) => state.meta_analyses);
 
 // curation retrieval hooks

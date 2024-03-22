@@ -18,7 +18,7 @@ import {
     useUpdateProjectMetaAnalyses,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useMemo } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { IAnalysesSelection } from '../CreateMetaAnalysisSpecificationDialogBase.types';
 import { getFilteredAnnotationNotes } from '../CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
 import { getWeightAndConditionsForSpecification } from './CreateMetaAnalysisSpecificationReview.helpers';
@@ -38,7 +38,7 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
         description: string;
     };
 }> = (props) => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const projectId = useProjectId();
     const studysetId = useProjectExtractionStudysetId();
     const annotationId = useProjectExtractionAnnotationId();
@@ -91,7 +91,7 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
             variant: 'success',
         });
 
-        history.push(`/projects/${projectId}/meta-analyses/${metaAnalysis.data.id}`);
+        navigate(`/projects/${projectId}/meta-analyses/${metaAnalysis.data.id}`);
     };
 
     const numSelectedAnnotationsText = useMemo(() => {

@@ -3,10 +3,10 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
 import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
 import { useGetMetaAnalysesPublic } from 'hooks';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const MetaAnalysesPage: React.FC = (props) => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { data, isLoading, isError } = useGetMetaAnalysesPublic();
 
     return (
@@ -51,7 +51,7 @@ const MetaAnalysesPage: React.FC = (props) => {
                         ]}
                         rows={(data || []).map((metaAnalysis, index) => (
                             <TableRow
-                                onClick={() => history.push(`/meta-analyses/${metaAnalysis?.id}`)}
+                                onClick={() => navigate(`/meta-analyses/${metaAnalysis?.id}`)}
                                 key={metaAnalysis?.id || index}
                                 sx={NeurosynthTableStyles.tableRow}
                             >

@@ -24,7 +24,9 @@ const spaceTypeOptions: MapOrSpaceType[] = Object.keys(DefaultSpaceTypes).map((k
     };
 });
 
-const EditAnalysisPointSpaceAndStatistic: React.FC<{ analysisId?: string }> = (props) => {
+const EditAnalysisPointSpaceAndStatistic: React.FC<{ analysisId?: string; disabled: boolean }> = (
+    props
+) => {
     const analysisPointStatistic = useStudyAnalysisPointStatistic(props.analysisId);
     const analysisPointSpace = useStudyAnalysisPointSpace(props.analysisId);
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
@@ -60,6 +62,7 @@ const EditAnalysisPointSpaceAndStatistic: React.FC<{ analysisId?: string }> = (p
             <FormControl sx={{ width: '250px' }} size="small" fullWidth>
                 <InputLabel id="num-col-label">Statistic</InputLabel>
                 <Select
+                    disabled={props.disabled}
                     onChange={handleSelectStatistic}
                     value={analysisPointStatistic?.value || ''}
                     label="Statistic"
@@ -74,6 +77,7 @@ const EditAnalysisPointSpaceAndStatistic: React.FC<{ analysisId?: string }> = (p
             <FormControl sx={{ width: '250px' }} size="small" fullWidth>
                 <InputLabel id="num-col-label">Space</InputLabel>
                 <Select
+                    disabled={props.disabled}
                     onChange={handleSelectSpace}
                     value={analysisPointSpace?.value || ''}
                     label="Space"

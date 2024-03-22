@@ -8,14 +8,16 @@ import ProjectPage from 'pages/Projects/ProjectPage/ProjectPage';
 import BaseStudyPage from 'pages/Studies/BaseStudyPage/BaseStudyPage';
 import UserProfilePage from 'pages/UserProfilePage/UserProfilePage';
 import React, { Suspense } from 'react';
-import { Route, Switch } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import LandingPage from '../LandingPage/LandingPage';
 import BaseNavigationStyles from './BaseNavigation.styles';
+import EditMetaAnalyses from 'components/ProjectComponents/EditMetaAnalyses/EditMetaAnalyses';
+import ViewMetaAnalyses from 'components/ProjectComponents/ViewMetaAnalyses/ViewMetaAnalyses';
+import ForbiddenPage from 'pages/Forbidden/Forbidden';
+import ProtectedProjectRoute from 'pages/Projects/ProjectPage/ProtectedRoute';
 
-const StudysetPage = React.lazy(() => import('../Studysets/StudysetPage/StudysetPage'));
 const EditStudyPage = React.lazy(() => import('../Studies/EditStudyPage/EditStudyPage'));
 const StudiesPage = React.lazy(() => import('../Studies/StudiesPage/StudiesPage'));
-const StudyPage = React.lazy(() => import('../Studies/StudyPage/StudyPage'));
 
 const MetaAnalysesPage = React.lazy(
     () => import('../MetaAnalyses/MetaAnalysesPage/MetaAnalysesPage')
@@ -45,112 +47,152 @@ const BaseNavigation: React.FC = (_props) => {
                 </div>
             }
         >
-            <Switch>
-                <Route path="/" exact>
-                    <LandingPage />
-                </Route>
-                <Route path="/projects" exact>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <ProjectsPage />
-                    </Box>
-                </Route>
+            <Routes>
+                <Route path="/" element={<LandingPage />} />
                 <Route
-                    path={[
-                        '/projects/:projectId',
-                        '/projects/:projectId/meta-analyses',
-                        '/projects/:projectId/edit',
-                    ]}
-                    exact
-                >
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <ProjectPage />
-                    </Box>
-                </Route>
-                <Route path="/projects/:projectId/curation" exact>
-                    <Box sx={BaseNavigationStyles.curationPageContainer}>
-                        <CurationPage />
-                    </Box>
-                </Route>
-                <Route path="/projects/:projectId/curation/import" exact>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <CurationImportPage />
-                    </Box>
-                </Route>
-                <Route path="/projects/:projectId/extraction" exact>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <ExtractionPage />
-                    </Box>
-                </Route>
-                <Route path="/projects/:projectId/extraction/studies/:studyId" exact>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <EditStudyPage />
-                    </Box>
-                </Route>
+                    path="/projects"
+                    element={
+                        <Box sx={BaseNavigationStyles.pagesContainer}>
+                            <ProjectsPage />
+                        </Box>
+                    }
+                />
                 <Route
-                    path={[
-                        '/annotations/:annotationId',
-                        '/projects/:projectId/extraction/annotations',
+                    path="/projects/:projectId"
+                    element={
+                        <Box sx={BaseNavigationStyles.pagesContainer}>
+                            <ProjectPage />
+                        </Box>
+                    }
+                    children={[
+                        <Route
+                            key="project-id-project"
+                            path="project"
+                            element={<EditMetaAnalyses />}
+                        />,
+                        <Route
+                            key="project-id-meta-analyses"
+                            path="meta-analyses"
+                            element={<ViewMetaAnalyses />}
+                        />,
+                        <Route
+                            key="project-id-index"
+                            index
+                            element={<Navigate replace to="project" />}
+                        />,
+                        <Route
+                            key="project-id-*"
+                            path="*"
+                            element={<Navigate replace to="project" />}
+                        />,
                     ]}
-                    exact
-                >
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <AnnotationsPage />
-                    </Box>
-                </Route>
+                />
                 <Route
-                    path={[
-                        `/projects/:projectId/meta-analyses/:metaAnalysisId`,
-                        '/meta-analyses/:metaAnalysisId',
-                    ]}
-                    exact
-                >
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <MetaAnalysisPage />
-                    </Box>
-                </Route>
-                <Route path="/studysets/:studysetId" exact>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <StudysetPage />
-                    </Box>
-                </Route>
-                <Route path="/base-studies" exact>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <StudiesPage />
-                    </Box>
-                </Route>
+                    path="/projects/:projectId/curation"
+                    element={
+                        <Box sx={BaseNavigationStyles.curationPageContainer}>
+                            <CurationPage />
+                        </Box>
+                    }
+                />
                 <Route
-                    path={[
-                        '/base-studies/:baseStudyId',
-                        '/base-studies/:baseStudyId/:studyVersionId',
-                    ]}
-                    exact={true}
-                >
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <BaseStudyPage />
-                    </Box>
-                </Route>
-                {/* This route is used for the studyset page. It can be removed once we add base study Ids to studyset studies */}
-                <Route path={'/studies/:studyId'} exact={true}>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <StudyPage />
-                    </Box>
-                </Route>
-                <Route path="/meta-analyses" exact>
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <MetaAnalysesPage />
-                    </Box>
-                </Route>
-                <Route path="/user-profile">
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <UserProfilePage />
-                    </Box>
-                </Route>
-                <Route path="*">
-                    <Box sx={BaseNavigationStyles.pagesContainer}>
-                        <NotFoundPage />
-                    </Box>
-                </Route>
-            </Switch>
+                    path="/projects/:projectId/curation/import"
+                    element={
+                        <ProtectedProjectRoute>
+                            <Box sx={BaseNavigationStyles.pagesContainer}>
+                                <CurationImportPage />
+                            </Box>
+                        </ProtectedProjectRoute>
+                    }
+                />
+                <Route
+                    path="/projects/:projectId/extraction"
+                    element={
+                        <Box sx={BaseNavigationStyles.pagesContainer}>
+                            <ExtractionPage />
+                        </Box>
+                    }
+                />
+                <Route
+                    path="/projects/:projectId/extraction/studies/:studyId"
+                    element={
+                        <Box sx={BaseNavigationStyles.pagesContainer}>
+                            <EditStudyPage />
+                        </Box>
+                    }
+                />
+                {/* ENSURE THAT PEOPLE CANNOT SEE ANNOTATIONS OUTSIDE OF THE CONTEXT OF A PROJECT */}
+                <Route
+                    path="/projects/:projectId/extraction/annotations"
+                    element={
+                        <Box sx={BaseNavigationStyles.pagesContainer}>
+                            <AnnotationsPage />
+                        </Box>
+                    }
+                />
+                {/* ENSURE THAT PEOPLE CANNOT SEE META ANALYSES OUTSIDE OF THE CONTEXT OF A PROJECT */}
+                <Route
+                    path="/projects/:projectId/meta-analyses/:metaAnalysisId"
+                    element={
+                        <Box sx={BaseNavigationStyles.pagesContainer}>
+                            <MetaAnalysisPage />
+                        </Box>
+                    }
+                />
+                <Route
+                    path="/base-studies"
+                    element={
+                        <Box sx={BaseNavigationStyles.pagesContainer}>
+                            <StudiesPage />
+                        </Box>
+                    }
+                />
+                {['/base-studies/:baseStudyId', '/base-studies/:baseStudyId/:studyVersionId'].map(
+                    (path) => (
+                        <Route
+                            key={path}
+                            path={path}
+                            element={
+                                <Box sx={BaseNavigationStyles.pagesContainer}>
+                                    <BaseStudyPage />
+                                </Box>
+                            }
+                        />
+                    )
+                )}
+                <Route
+                    path="/meta-analyses"
+                    element={
+                        <Box sx={BaseNavigationStyles.pagesContainer}>
+                            <MetaAnalysesPage />
+                        </Box>
+                    }
+                />
+                <Route
+                    path="/user-profile"
+                    element={
+                        <Box sx={BaseNavigationStyles.pagesContainer}>
+                            <UserProfilePage />
+                        </Box>
+                    }
+                />
+                <Route
+                    path="/forbidden"
+                    element={
+                        <Box sx={BaseNavigationStyles.pagesContainer}>
+                            <ForbiddenPage />
+                        </Box>
+                    }
+                />
+                <Route
+                    path="*"
+                    element={
+                        <Box sx={BaseNavigationStyles.pagesContainer}>
+                            <NotFoundPage />
+                        </Box>
+                    }
+                />
+            </Routes>
         </Suspense>
     );
 };

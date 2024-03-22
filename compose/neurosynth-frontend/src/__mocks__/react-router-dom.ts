@@ -1,7 +1,9 @@
+const useNavigate = jest.fn().mockReturnValue(jest.fn());
+
 const useLocation = jest.fn().mockReturnValue({
     location: {
         search: '',
     },
 });
 
-export { useLocation };
+export { useNavigate, useLocation };

@@ -7,14 +7,18 @@ import {
     useProjectId,
     useProjectMetaAnalyses,
     useProjectMetaAnalysisCanEdit,
+    useProjectUser,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { MetaAnalysisReturn } from 'neurosynth-compose-typescript-sdk';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import ViewMetaAnalysis from './ViewMetaAnalysis';
+import useUserCanEdit from 'hooks/useUserCanEdit';
 
 const ViewMetaAnalyses: React.FC = () => {
-    const { projectId }: { projectId: string } = useParams();
+    const { projectId } = useParams<{ projectId: string }>();
+    const projectUser = useProjectUser();
+    const canEdit = useUserCanEdit(projectUser || undefined);
     const projectMetaAnalyses = useProjectMetaAnalyses() || [];
     let metaAnalysisIds: string[] = [];
     if (projectMetaAnalyses.length > 0) {
@@ -51,6 +55,7 @@ const ViewMetaAnalyses: React.FC = () => {
                     variant="contained"
                     startIcon={<Add />}
                     disableElevation
+                    disabled={!canEdit}
                 >
                     Meta-Analysis Specification
                 </Button>

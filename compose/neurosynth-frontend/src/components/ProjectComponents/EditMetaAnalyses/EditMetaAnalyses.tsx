@@ -8,12 +8,16 @@ import ProjectPageStyles from 'pages/Projects/ProjectPage/ProjectPage.styles';
 import {
     useProjectCurationColumns,
     useProjectExtractionMetadata,
+    useProjectUser,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useParams } from 'react-router-dom';
 import DangerZone from './DangerZone/DangerZone';
+import useUserCanEdit from 'hooks/useUserCanEdit';
 
 const EditMetaAnalyses: React.FC = (props) => {
-    const { projectId }: { projectId: string } = useParams();
+    const projectUser = useProjectUser();
+    const canEdit = useUserCanEdit(projectUser || undefined);
+    const { projectId } = useParams<{ projectId: string }>();
     const extractionMetadata = useProjectExtractionMetadata();
     const { total, included, uncategorized } = useGetCurationSummary();
     const { data: studyset } = useGetStudysetById(extractionMetadata?.studysetId || '');
@@ -37,12 +41,15 @@ const EditMetaAnalyses: React.FC = (props) => {
 
     return (
         <Stepper activeStep={activeStep} orientation="vertical" sx={[ProjectPageStyles.stepper]}>
-            <CurationStep curationStepHasBeenInitialized={curationStepHasBeenInitialized} />
+            <CurationStep
+                disabled={!canEdit}
+                curationStepHasBeenInitialized={curationStepHasBeenInitialized}
+            />
             <ExtractionStep
                 extractionStepHasBeenInitialized={extractionStepHasBeenInitialized}
-                disabled={disableExtractionStep}
+                disabled={!canEdit || disableExtractionStep}
             />
-            <SpecificationStep disabled={disableSpecificationStep} />
+            <SpecificationStep disabled={!canEdit || disableSpecificationStep} />
             <DangerZone />
         </Stepper>
     );

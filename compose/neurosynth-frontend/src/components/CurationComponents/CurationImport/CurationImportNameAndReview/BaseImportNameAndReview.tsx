@@ -6,7 +6,7 @@ import {
     useProjectId,
     useUpdateCurationColumns,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { createDuplicateMap } from '../helpers/utils';
 import ResolveProjectDuplicates from './ResolveProjectDuplicates/ResolveProjectDuplicates';
 import { flattenColumns } from './ResolveProjectDuplicates/ResolveProjectDuplicates.helpers';
@@ -32,7 +32,7 @@ const BaseImportNameAndReview: React.FC<{
 
     const columns = useProjectCurationColumns();
     const updateCurationColumns = useUpdateCurationColumns();
-    const history = useHistory();
+    const navigate = useNavigate();
     const projectId = useProjectId();
 
     const hasDuplicates = (stubs: ICurationStubStudy[]) => {
@@ -117,7 +117,7 @@ const BaseImportNameAndReview: React.FC<{
             stubStudies: [...updatedImport, ...updatedColumns[0].stubStudies],
         };
         updateCurationColumns(updatedColumns);
-        history.push(`/projects/${projectId}/curation`);
+        navigate(`/projects/${projectId}/curation`);
     };
 
     if (isResolvingDuplicates) {

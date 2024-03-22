@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useState } from 'react';
-import { NavLink, useHistory } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import NavbarStyles from '../Navbar.styles';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
@@ -26,7 +26,7 @@ const NavDrawer: React.FC<INav> = (props) => {
     const { isAuthenticated } = useAuth0();
     const [isOpen, setIsOpen] = useState(false);
     const [createDetailsDialogIsOpen, setCreateDetailsDialogIsOpen] = useState(false);
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const handleOpenDrawer = (_event: React.MouseEvent<HTMLElement>) => {
         setIsOpen(true);
@@ -79,7 +79,7 @@ const NavDrawer: React.FC<INav> = (props) => {
                                 </ListItemButton>
                             </ListItem>
                             <ListItem>
-                                <ListItemButton onClick={() => history.push('/projects')}>
+                                <ListItemButton onClick={() => navigate('/projects')}>
                                     <ListItemIcon />
                                     <ListItemText primary="MY PROJECTS" />
                                 </ListItemButton>
@@ -89,13 +89,13 @@ const NavDrawer: React.FC<INav> = (props) => {
                     <DrawerToggleMenu labelText="EXPLORE">
                         <List>
                             <ListItem>
-                                <ListItemButton onClick={() => history.push('/base-studies')}>
+                                <ListItemButton onClick={() => navigate('/base-studies')}>
                                     <ListItemIcon />
                                     <ListItemText primary="STUDIES" />
                                 </ListItemButton>
                             </ListItem>
                             <ListItem>
-                                <ListItemButton onClick={() => history.push('/meta-analyses')}>
+                                <ListItemButton onClick={() => navigate('/meta-analyses')}>
                                     <ListItemIcon />
                                     <ListItemText primary="META-ANALYSES" />
                                 </ListItemButton>

@@ -12,7 +12,7 @@ import {
     IEditStudyAnnotationsDataRef,
 } from './EditStudyAnnotationsHotTable.types';
 
-const useEditStudyAnnotationsHotTable = () => {
+const useEditStudyAnnotationsHotTable = (readonly?: boolean) => {
     const studyId = useStudyId();
     const debouncedAnalyses = useDebouncedStudyAnalyses();
     const noteKeys = useAnnotationNoteKeys();
@@ -67,11 +67,11 @@ const useEditStudyAnnotationsHotTable = () => {
 
     const { columns, colHeaders, colWidths } = useMemo<IEditStudyAnnotationsDataRef>(() => {
         return {
-            columns: createStudyAnnotationColumns(noteKeys || []),
+            columns: createStudyAnnotationColumns(noteKeys || [], !!readonly),
             colHeaders: createStudyAnnotationColHeaders(noteKeys || []),
             colWidths: createColWidths(noteKeys || [], 200, 250, 150),
         };
-    }, [noteKeys]);
+    }, [noteKeys, readonly]);
 
     const height = useMemo(() => {
         const MIN_HEIGHT_PX = 50;

@@ -11,19 +11,23 @@ import {
     useProjectExtractionAnnotationId,
     useProjectExtractionStudysetId,
     useProjectName,
+    useProjectUser,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import ProjectIsLoadingText from './ProjectIsLoadingText';
 import { useGetStudysetById, useGetCurationSummary } from 'hooks';
+import useUserCanEdit from 'hooks/useUserCanEdit';
 
 const CurationPage: React.FC = (props) => {
     const [prismaIsOpen, setPrismaIsOpen] = useState(false);
-    const { projectId }: { projectId: string | undefined } = useParams();
+    const { projectId } = useParams<{ projectId: string | undefined }>();
+    const projectUser = useProjectUser();
+    const canEdit = useUserCanEdit(projectUser || undefined);
 
     useInitProjectStoreIfRequired();
 
-    const history = useHistory<IProjectPageLocationState>();
+    const navigate = useNavigate();
 
     const isPrisma = useProjectCurationIsPrisma();
     const studysetId = useProjectExtractionStudysetId();
@@ -34,12 +38,14 @@ const CurationPage: React.FC = (props) => {
 
     const handleMoveToExtractionPhase = () => {
         if (studysetId && annotationId && (studyset?.studies?.length || 0) > 0) {
-            history.push(`/projects/${projectId}/extraction`);
+            navigate(`/projects/${projectId}/extraction`);
         } else {
-            history.push(`/projects/${projectId}`, {
-                projectPage: {
-                    openCurationDialog: true,
-                },
+            navigate(`/projects/${projectId}`, {
+                state: {
+                    projectPage: {
+                        openCurationDialog: true,
+                    },
+                } as IProjectPageLocationState,
             });
         }
     };
@@ -99,7 +105,8 @@ const CurationPage: React.FC = (props) => {
                             variant="contained"
                             disableElevation
                             sx={{ marginRight: '1rem', width: '234px' }}
-                            onClick={() => history.push(`/projects/${projectId}/curation/import`)}
+                            onClick={() => navigate(`/projects/${projectId}/curation/import`)}
+                            disabled={!canEdit}
                         >
                             import studies
                         </Button>
@@ -110,6 +117,7 @@ const CurationPage: React.FC = (props) => {
                                 color="success"
                                 sx={{ width: '234px' }}
                                 disableElevation
+                                disabled={!canEdit}
                             >
                                 Move To Extraction Phase
                             </Button>

@@ -1,13 +1,15 @@
 import { Box, Button, Card, CardActions, CardContent, Typography } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import useGetMetaAnalysisResultById from 'hooks/metaAnalyses/useGetMetaAnalysisResultById';
+import useUserCanEdit from 'hooks/useUserCanEdit';
 import { ColorOptions } from 'index';
 import {
     MetaAnalysisReturn,
     NeurovaultFile,
     ResultReturn,
 } from 'neurosynth-compose-typescript-sdk';
-import { useHistory, useRouteMatch } from 'react-router-dom';
+import { useProjectUser } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useNavigate } from 'react-router-dom';
 
 export const getResultStatus = (
     metaAnalysisObj: MetaAnalysisReturn | undefined,
@@ -47,7 +49,9 @@ export const getResultStatus = (
 };
 
 const ViewMetaAnalysis: React.FC<MetaAnalysisReturn> = (props) => {
-    const { created_at, results, name, description, id } = props;
+    const { created_at, results, name, description, id, project } = props;
+    const projectUser = useProjectUser();
+    const canEdit = useUserCanEdit(projectUser || undefined);
 
     const {
         data: metaAnalysisResult,
@@ -57,15 +61,15 @@ const ViewMetaAnalysis: React.FC<MetaAnalysisReturn> = (props) => {
         results && results.length ? (results[results.length - 1] as ResultReturn).id : undefined
     );
 
-    const path = useRouteMatch();
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const date = new Date(created_at || '');
     const isLocked = (results?.length || 0) > 0;
 
-    const handleUpdate = (id?: string) => {
-        if (!id) return;
-        history.push(`${path.url}/${id}`);
+    const handleUpdate = () => {
+        if (!id || !project) return;
+
+        navigate(`/projects/${project}/meta-analyses/${id}`);
     };
 
     const resultStatus = getResultStatus(props, metaAnalysisResult);
@@ -107,8 +111,8 @@ const ViewMetaAnalysis: React.FC<MetaAnalysisReturn> = (props) => {
                 </StateHandlerComponent>
             </CardContent>
             <CardActions>
-                <Button sx={{ width: '100%' }} onClick={() => handleUpdate(id)}>
-                    {isLocked ? 'view' : 'view and edit'}
+                <Button sx={{ width: '100%' }} onClick={handleUpdate}>
+                    {isLocked || !canEdit ? 'view' : 'view and edit'}
                 </Button>
             </CardActions>
         </Card>

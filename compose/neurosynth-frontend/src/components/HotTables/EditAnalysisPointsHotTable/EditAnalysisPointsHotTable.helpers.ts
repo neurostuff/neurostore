@@ -1,7 +1,6 @@
 import { HotTableProps } from '@handsontable/react';
-import { CellValue } from 'handsontable/common';
 import styles from 'components/HotTables/HotTables.module.css';
-import { ColumnSettings } from 'handsontable/settings';
+import { CellValue } from 'handsontable/common';
 
 const nonEmptyNumericValidator = (value: CellValue, callback: (isValid: boolean) => void) => {
     const isNumber = !isNaN(value);
@@ -19,34 +18,39 @@ const nonEmptyNumericValidator = (value: CellValue, callback: (isValid: boolean)
 };
 
 export const hotTableColHeaders = ['X', 'Y', 'Z', 'Value', 'Cluster Size (mm^3)', 'Subpeak?'];
-export const hotTableColumnSettings: ColumnSettings[] = [
+export const getHotTableColumnSettings = (disabled: boolean) => [
     {
         validator: nonEmptyNumericValidator,
         className: styles.number,
         data: 'x',
         type: 'numeric',
+        readOnly: disabled,
     },
     {
         validator: nonEmptyNumericValidator,
         className: styles.number,
         data: 'y',
         type: 'numeric',
+        readOnly: disabled,
     },
     {
         validator: nonEmptyNumericValidator,
         className: styles.number,
         data: 'z',
         type: 'numeric',
+        readOnly: disabled,
     },
     {
         className: styles.number,
         data: 'value',
         type: 'numeric',
+        readOnly: disabled,
     },
     {
         className: styles.number,
         data: 'cluster_size',
         type: 'numeric',
+        readOnly: disabled,
     },
     {
         validator: (value: CellValue, callback: (isValid: boolean) => void) => {
@@ -55,6 +59,7 @@ export const hotTableColumnSettings: ColumnSettings[] = [
         className: styles.boolean,
         data: 'subpeak',
         type: 'checkbox',
+        readOnly: disabled,
     },
 ];
 

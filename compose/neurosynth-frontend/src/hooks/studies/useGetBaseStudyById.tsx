@@ -1,10 +1,15 @@
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
-const useGetBaseStudyById = (baseStudyId: string) => {
+const useGetBaseStudyById = (baseStudyId: string | undefined) => {
     return useQuery(
         ['studies', baseStudyId],
-        () => API.NeurostoreServices.BaseStudiesService.baseStudiesIdGet(baseStudyId, false, true),
+        () =>
+            API.NeurostoreServices.BaseStudiesService.baseStudiesIdGet(
+                baseStudyId || '',
+                false,
+                true
+            ),
         {
             select: (res) => {
                 return res.data;

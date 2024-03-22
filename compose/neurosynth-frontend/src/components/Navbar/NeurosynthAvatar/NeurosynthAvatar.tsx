@@ -9,11 +9,11 @@ import {
     Menu,
 } from '@mui/material';
 import { useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import NavToolbarStyles from 'components/Navbar/NavToolbar/NavToolbar.styles';
 
 const NeurosynthAvatar: React.FC<{ onLogin: () => void; onLogout: () => void }> = (props) => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { user, isAuthenticated } = useAuth0();
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
 
@@ -26,7 +26,7 @@ const NeurosynthAvatar: React.FC<{ onLogin: () => void; onLogout: () => void }> 
     };
 
     const handleDirectToUserProfile = () => {
-        history.push('/user-profile');
+        navigate('/user-profile');
         handleCloseAvatarMenu();
     };
 

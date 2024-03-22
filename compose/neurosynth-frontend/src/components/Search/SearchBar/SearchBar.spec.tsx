@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { BrowserRouter } from 'react-router-dom';
 import SearchBar from './SearchBar';
 
+jest.mock('react-router-dom');
 describe('SearchBar Component', () => {
     const onSearchMock = jest.fn();
 
@@ -11,11 +11,7 @@ describe('SearchBar Component', () => {
     });
 
     it('should render', () => {
-        render(
-            <BrowserRouter>
-                <SearchBar onSearch={onSearchMock} />
-            </BrowserRouter>
-        );
+        render(<SearchBar onSearch={onSearchMock} />);
 
         const searchBar = screen.getByRole('textbox');
         expect(searchBar).toBeInTheDocument();
@@ -23,11 +19,7 @@ describe('SearchBar Component', () => {
 
     it('should input text', () => {
         // ARRANGE
-        render(
-            <BrowserRouter>
-                <SearchBar onSearch={onSearchMock} />
-            </BrowserRouter>
-        );
+        render(<SearchBar onSearch={onSearchMock} />);
 
         const searchBar = screen.getByRole('textbox');
         userEvent.type(searchBar, 'ABCDEF');
@@ -37,11 +29,7 @@ describe('SearchBar Component', () => {
     });
 
     it('should invoke a search when clicked', () => {
-        render(
-            <BrowserRouter>
-                <SearchBar onSearch={onSearchMock} />
-            </BrowserRouter>
-        );
+        render(<SearchBar onSearch={onSearchMock} />);
 
         const searchBar = screen.getByRole('textbox');
         userEvent.type(searchBar, 'ABCDEF');
@@ -62,11 +50,7 @@ describe('SearchBar Component', () => {
     });
 
     it('should invoke a search when enter is pressed', () => {
-        render(
-            <BrowserRouter>
-                <SearchBar onSearch={onSearchMock} />
-            </BrowserRouter>
-        );
+        render(<SearchBar onSearch={onSearchMock} />);
 
         const searchBar = screen.getByRole('textbox');
         userEvent.type(searchBar, 'ABCDEF{enter}');
@@ -75,11 +59,7 @@ describe('SearchBar Component', () => {
     });
 
     it('should color the search button with the given styling', () => {
-        render(
-            <BrowserRouter>
-                <SearchBar searchButtonColor="#FFFFFF" onSearch={onSearchMock} />
-            </BrowserRouter>
-        );
+        render(<SearchBar searchButtonColor="#FFFFFF" onSearch={onSearchMock} />);
 
         const button = screen.getByTestId('SearchIcon');
         expect(button.parentElement).toHaveStyle({ backgroundColor: 'rgb(255, 255, 255);' }); // equivalent to '#FFFFFF', dont forget semicolon

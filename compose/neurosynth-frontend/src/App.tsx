@@ -13,11 +13,13 @@ import BaseNavigation from './pages/BaseNavigation/BaseNavigation';
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
+            retry: 0,
             // staleTime: 5000, // https://tkdodo.eu/blog/practical-react-query#the-defaults-explained
         },
     },
     queryCache: new QueryCache({
         onError: (error) => {
+            console.log({ error });
             const responseStatus = (error as AxiosError)?.response?.status;
             if (responseStatus && responseStatus === 404) {
                 console.error('could not find resource');

@@ -13,12 +13,14 @@ const EditMetadata: React.FC<IEditMetadataModel> = React.memo((props) => {
         onMetadataRowEdit,
         onMetadataRowDelete,
         onMetadataRowAdd,
+        disabled = false,
     } = props;
 
     return (
         <>
             <Box sx={[EditMetadataStyles.table, { height: '70px' }]}>
                 <AddMetadataRow
+                    disabled={disabled}
                     keyPlaceholderText={keyPlaceholderText}
                     valuePlaceholderText={valuePlaceholderText}
                     onAddMetadataRow={onMetadataRowAdd}
@@ -38,6 +40,7 @@ const EditMetadata: React.FC<IEditMetadataModel> = React.memo((props) => {
                         onMetadataRowEdit={onMetadataRowEdit}
                         onMetadataRowDelete={onMetadataRowDelete}
                         metadataRow={metadataRow}
+                        disabled={disabled}
                     />
                 ))}
             </Box>

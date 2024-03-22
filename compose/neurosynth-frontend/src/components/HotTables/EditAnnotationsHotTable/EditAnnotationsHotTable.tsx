@@ -16,279 +16,280 @@ import { CellChange } from 'handsontable/common';
 import { registerAllModules } from 'handsontable/registry';
 import { SelectionController } from 'handsontable/selection';
 import { useGetWindowHeight, useUpdateAnnotationById } from 'hooks';
+import useUserCanEdit from 'hooks/useUserCanEdit';
 import { useSnackbar } from 'notistack';
+import { useProjectUser } from 'pages/Projects/ProjectPage/ProjectStore';
 import React, { useEffect, useRef } from 'react';
 
 registerAllModules();
 
-const AnnotationsHotTable: React.FC<{ annotationId?: string; isViewingFromProject: boolean }> =
-    React.memo((props) => {
-        const cannotEdit = !props.isViewingFromProject;
+const AnnotationsHotTable: React.FC<{ annotationId?: string }> = React.memo((props) => {
+    const { enqueueSnackbar } = useSnackbar();
+    const { mutate, isLoading: updateAnnotationIsLoading } = useUpdateAnnotationById(
+        props.annotationId
+    );
+    const projectUser = useProjectUser();
+    const canEdit = useUserCanEdit(projectUser || undefined);
+    const hotTableRef = useRef<HotTable>(null);
+    const windowSize = useGetWindowHeight();
+    const {
+        hotColumnHeaders,
+        theUserOwnsThisAnnotation,
+        setAnnotationsHotState,
+        hotData,
+        mergeCells,
+        colWidths,
+        hotColumns,
+        noteKeys,
+        hotDataToStudyMapping,
+        isEdited,
+    } = useEditAnnotationsHotTable(props.annotationId, !canEdit);
 
-        const { enqueueSnackbar } = useSnackbar();
-        const { mutate, isLoading: updateAnnotationIsLoading } = useUpdateAnnotationById(
-            props.annotationId
-        );
-        const hotTableRef = useRef<HotTable>(null);
-        const windowSize = useGetWindowHeight();
-        const {
-            hotColumnHeaders,
-            theUserOwnsThisAnnotation,
-            setAnnotationsHotState,
-            hotData,
-            mergeCells,
-            colWidths,
-            hotColumns,
-            noteKeys,
-            hotDataToStudyMapping,
-            isEdited,
-        } = useEditAnnotationsHotTable(props.annotationId, cannotEdit);
-
-        useEffect(() => {
-            let timeout: any = setTimeout(() => {
-                if (!hotTableRef.current?.hotInstance) return;
-                const sizes = [
-                    '64px', // NAV_HEIGHT
-                    '3rem', // MARGIN_SPACING
-                    '40px', // BREADCRUMBS
-                    '1rem', // ADD_METADATA_INPUT_MARGIN_TOP
-                    '40px', // ADD_METADATA_INPUT
-                    '25px', // ADD_METADATA_INPUT_MARGIN_BOTTOM
-                    '75px', // BOTTOM_BUTTON_CONTAINER
-                    '1rem', // EXTRA SPACE
-                ];
-                const sizeStr = sizes.reduce((acc, curr, index, list) => {
-                    if (index === 0) {
-                        return `calc(${windowSize}px - ${curr} - `;
-                    } else if (index === list.length - 1) {
-                        return `${acc}${curr})`;
-                    } else {
-                        return `${acc}${curr} - `;
-                    }
-                }, '');
-
-                hotTableRef.current.hotInstance.updateSettings({
-                    height: sizeStr,
-                });
-            }, 400);
-
-            return () => {
-                if (timeout) clearTimeout(timeout);
-            };
-        }, [windowSize]);
-
-        const handleClickSave = () => {
-            if (!props.annotationId) return;
-            if (!theUserOwnsThisAnnotation) {
-                enqueueSnackbar('You do not have permission to edit this annotation', {
-                    variant: 'error',
-                });
-                return;
-            }
-
-            const updatedAnnotationNotes = hotDataToAnnotationNotes(
-                hotData,
-                hotDataToStudyMapping,
-                noteKeys
-            );
-            const updatedNoteKeyObj = noteKeyArrToObj(noteKeys);
-
-            mutate(
-                {
-                    argAnnotationId: props.annotationId,
-                    annotation: {
-                        notes: updatedAnnotationNotes.map((annotationNote) => ({
-                            note: annotationNote.note,
-                            analysis: annotationNote.analysis,
-                            study: annotationNote.study,
-                        })),
-                        note_keys: updatedNoteKeyObj,
-                    },
-                },
-                {
-                    onSuccess: () => {
-                        setAnnotationsHotState((prev) => ({ ...prev, isEdited: false }));
-                        enqueueSnackbar('annotation updated successfully', { variant: 'success' });
-                    },
+    useEffect(() => {
+        let timeout: any = setTimeout(() => {
+            if (!hotTableRef.current?.hotInstance) return;
+            const sizes = [
+                '64px', // NAV_HEIGHT
+                '3rem', // MARGIN_SPACING
+                '40px', // BREADCRUMBS
+                '1rem', // ADD_METADATA_INPUT_MARGIN_TOP
+                '40px', // ADD_METADATA_INPUT
+                '25px', // ADD_METADATA_INPUT_MARGIN_BOTTOM
+                '75px', // BOTTOM_BUTTON_CONTAINER
+                '1rem', // EXTRA SPACE
+            ];
+            const sizeStr = sizes.reduce((acc, curr, index, list) => {
+                if (index === 0) {
+                    return `calc(${windowSize}px - ${curr} - `;
+                } else if (index === list.length - 1) {
+                    return `${acc}${curr})`;
+                } else {
+                    return `${acc}${curr} - `;
                 }
-            );
-        };
+            }, '');
 
-        const handleRemoveHotColumn = (colKey: string) => {
-            const foundIndex = noteKeys.findIndex((x) => x.key === colKey && x.key !== 'included');
-            if (foundIndex < 0) return;
-
-            setAnnotationsHotState((prev) => {
-                const updatedNoteKeys = [...prev.noteKeys];
-                updatedNoteKeys.splice(foundIndex, 1);
-
-                return {
-                    ...prev,
-                    isEdited: true,
-                    noteKeys: updatedNoteKeys,
-                    hotColumns: createColumns(updatedNoteKeys),
-                    hotData: [...prev.hotData].map((row) => {
-                        const updatedRow = [...row];
-                        updatedRow.splice(foundIndex + 2, 1);
-                        return updatedRow;
-                    }),
-                };
+            hotTableRef.current.hotInstance.updateSettings({
+                height: sizeStr,
             });
-        };
+        }, 400);
 
-        const handleCellMouseUp = (
-            event: MouseEvent,
-            coords: CellCoords,
-            TD: HTMLTableCellElement
-        ): void => {
-            const target = event.target as HTMLButtonElement;
-            if (coords.row < 0 && (target.tagName === 'svg' || target.tagName === 'path')) {
-                handleRemoveHotColumn(TD.innerText);
+        return () => {
+            if (timeout) clearTimeout(timeout);
+        };
+    }, [windowSize]);
+
+    const handleClickSave = () => {
+        if (!props.annotationId) return;
+        if (!theUserOwnsThisAnnotation) {
+            enqueueSnackbar('You do not have permission to edit this annotation', {
+                variant: 'error',
+            });
+            return;
+        }
+
+        const updatedAnnotationNotes = hotDataToAnnotationNotes(
+            hotData,
+            hotDataToStudyMapping,
+            noteKeys
+        );
+        const updatedNoteKeyObj = noteKeyArrToObj(noteKeys);
+
+        mutate(
+            {
+                argAnnotationId: props.annotationId,
+                annotation: {
+                    notes: updatedAnnotationNotes.map((annotationNote) => ({
+                        note: annotationNote.note,
+                        analysis: annotationNote.analysis,
+                        study: annotationNote.study,
+                    })),
+                    note_keys: updatedNoteKeyObj,
+                },
+            },
+            {
+                onSuccess: () => {
+                    setAnnotationsHotState((prev) => ({ ...prev, isEdited: false }));
+                    enqueueSnackbar('annotation updated successfully', { variant: 'success' });
+                },
             }
-        };
+        );
+    };
 
-        /**
-         * NOTE: there is a bug where fixed, mergedCells (such as the cells showing our studies) get messed up when you scroll to the right. I think that this is
-         * due to virtualization - as we scroll to the right, the original heights of the cells are no longer in the DOM and so the calculated row heights are lost and
-         * they revert to the default.
-         *
-         * What ended up fixing this issue was adding row headers...I think this is because their heights are calculated and maintained regardless of virtualization.
-         * In conclusion, implementing the following solved this issue:
-         * 1. adding autoRowSize: true
-         * 2. implementing afterGetRowHeaderRenderers to remove the top and bottom borders for stylistic reasons as they dont look good next to the merged cells
-         *      the row headers themselves are not merged
-         * 3. add handleCellMouseDown to prevent the user from selecting an entire row - for stylistic reasons but also theres no reason for them to select a row
-         */
-        const handleCellMouseDown = (
-            event: MouseEvent,
-            coords: CellCoords,
-            TD: HTMLTableCellElement,
-            controller: SelectionController
-        ): void => {
-            const isRowHeader = coords.col === -1;
-            if (isRowHeader) {
-                event.stopImmediatePropagation();
-                return;
-            }
-        };
+    const handleRemoveHotColumn = (colKey: string) => {
+        const foundIndex = noteKeys.findIndex((x) => x.key === colKey && x.key !== 'included');
+        if (foundIndex < 0) return;
 
-        const handleAddHotColumn = (row: IMetadataRowModel) => {
-            const trimmedKey = row.metadataKey.trim();
-            if (noteKeys.find((x) => x.key === trimmedKey)) return false;
+        setAnnotationsHotState((prev) => {
+            const updatedNoteKeys = [...prev.noteKeys];
+            updatedNoteKeys.splice(foundIndex, 1);
 
-            setAnnotationsHotState((prev) => {
-                const updatedNoteKeys = [
-                    { key: trimmedKey, type: getType(row.metadataValue) },
-                    ...prev.noteKeys,
-                ];
+            return {
+                ...prev,
+                isEdited: true,
+                noteKeys: updatedNoteKeys,
+                hotColumns: createColumns(updatedNoteKeys),
+                hotData: [...prev.hotData].map((row) => {
+                    const updatedRow = [...row];
+                    updatedRow.splice(foundIndex + 2, 1);
+                    return updatedRow;
+                }),
+            };
+        });
+    };
 
-                return {
-                    ...prev,
-                    isEdited: true,
-                    noteKeys: updatedNoteKeys,
-                    hotColumns: createColumns(updatedNoteKeys),
-                    hotData: [...prev.hotData].map((row) => {
-                        const updatedRow = [...row];
-                        updatedRow.splice(2, 0, null);
-                        return updatedRow;
-                    }),
-                };
+    const handleCellMouseUp = (
+        event: MouseEvent,
+        coords: CellCoords,
+        TD: HTMLTableCellElement
+    ): void => {
+        const target = event.target as HTMLButtonElement;
+        if (coords.row < 0 && (target.tagName === 'svg' || target.tagName === 'path')) {
+            handleRemoveHotColumn(TD.innerText);
+        }
+    };
+
+    /**
+     * NOTE: there is a bug where fixed, mergedCells (such as the cells showing our studies) get messed up when you scroll to the right. I think that this is
+     * due to virtualization - as we scroll to the right, the original heights of the cells are no longer in the DOM and so the calculated row heights are lost and
+     * they revert to the default.
+     *
+     * What ended up fixing this issue was adding row headers...I think this is because their heights are calculated and maintained regardless of virtualization.
+     * In conclusion, implementing the following solved this issue:
+     * 1. adding autoRowSize: true
+     * 2. implementing afterGetRowHeaderRenderers to remove the top and bottom borders for stylistic reasons as they dont look good next to the merged cells
+     *      the row headers themselves are not merged
+     * 3. add handleCellMouseDown to prevent the user from selecting an entire row - for stylistic reasons but also theres no reason for them to select a row
+     */
+    const handleCellMouseDown = (
+        event: MouseEvent,
+        coords: CellCoords,
+        TD: HTMLTableCellElement,
+        controller: SelectionController
+    ): void => {
+        const isRowHeader = coords.col === -1;
+        if (isRowHeader) {
+            event.stopImmediatePropagation();
+            return;
+        }
+    };
+
+    const handleAddHotColumn = (row: IMetadataRowModel) => {
+        const trimmedKey = row.metadataKey.trim();
+        if (noteKeys.find((x) => x.key === trimmedKey)) return false;
+
+        setAnnotationsHotState((prev) => {
+            const updatedNoteKeys = [
+                { key: trimmedKey, type: getType(row.metadataValue) },
+                ...prev.noteKeys,
+            ];
+
+            return {
+                ...prev,
+                isEdited: true,
+                noteKeys: updatedNoteKeys,
+                hotColumns: createColumns(updatedNoteKeys),
+                hotData: [...prev.hotData].map((row) => {
+                    const updatedRow = [...row];
+                    updatedRow.splice(2, 0, null);
+                    return updatedRow;
+                }),
+            };
+        });
+
+        return true;
+    };
+
+    /**
+     * On top of being triggered when a change occurs, this hook is also triggered during initial mergeCells and on initial update.
+     */
+    const handleChangeOccurred = (changes: CellChange[] | null, source: any) => {
+        if (!changes) return;
+        const isDoingMergeCellOperation = changes.some((x) => x[1] === 0);
+        if (isDoingMergeCellOperation) return; // We don't want update to occur when handsontable is merging cells, only when a user update occurs
+
+        setAnnotationsHotState((prev) => {
+            const updatedHotData = [...prev.hotData];
+            changes.forEach(([row, col, _valChangedFrom, valChangedTo]) => {
+                updatedHotData[row] = [...updatedHotData[row]];
+                updatedHotData[row][col as number] = valChangedTo;
             });
 
-            return true;
-        };
+            return {
+                ...prev,
+                hotData: updatedHotData,
+                isEdited: true,
+            };
+        });
+    };
 
-        /**
-         * On top of being triggered when a change occurs, this hook is also triggered during initial mergeCells and on initial update.
-         */
-        const handleChangeOccurred = (changes: CellChange[] | null, source: any) => {
-            if (!changes) return;
-            const isDoingMergeCellOperation = changes.some((x) => x[1] === 0);
-            if (isDoingMergeCellOperation) return; // We don't want update to occur when handsontable is merging cells, only when a user update occurs
-
-            setAnnotationsHotState((prev) => {
-                const updatedHotData = [...prev.hotData];
-                changes.forEach(([row, col, _valChangedFrom, valChangedTo]) => {
-                    updatedHotData[row] = [...updatedHotData[row]];
-                    updatedHotData[row][col as number] = valChangedTo;
-                });
-
-                return {
-                    ...prev,
-                    hotData: updatedHotData,
-                    isEdited: true,
-                };
-            });
-        };
-
-        return (
-            <Box>
-                {theUserOwnsThisAnnotation && !cannotEdit && (
-                    <Box
-                        className="neurosynth-annotation-component"
-                        sx={[AnnotationsHotTableStyles.addMetadataRow]}
-                    >
-                        <AddMetadataRow
-                            keyPlaceholderText="New Annotation Key"
-                            onAddMetadataRow={handleAddHotColumn}
-                            showMetadataValueInput={false}
-                            allowNumber={false}
-                            allowNone={false}
-                            errorMessage="cannot add annotation - this key may already exist"
-                        />
-                    </Box>
-                )}
-                <Box className="hot-container" style={{ width: '100%', marginBottom: '1rem' }}>
-                    {hotData.length > 0 ? (
-                        <HotTable
-                            {...hotSettings}
-                            afterChange={handleChangeOccurred}
-                            ref={hotTableRef}
-                            mergeCells={mergeCells}
-                            disableVisualSelection={cannotEdit}
-                            colHeaders={hotColumnHeaders}
-                            colWidths={colWidths}
-                            columns={hotColumns}
-                            data={JSON.parse(JSON.stringify(hotData))}
-                            afterOnCellMouseUp={handleCellMouseUp}
-                            beforeOnCellMouseDown={handleCellMouseDown}
-                        />
-                    ) : (
-                        <Typography sx={{ color: 'warning.dark' }}>
-                            There are no analyses to annotate. Get started by adding analyses to
-                            your studies.
-                        </Typography>
-                    )}
-                </Box>
+    return (
+        <Box>
+            {theUserOwnsThisAnnotation && !canEdit && (
                 <Box
-                    sx={{
-                        bottom: 0,
-                        padding: '1rem 0',
-                        backgroundColor: 'white',
-                        position: 'fixed',
-                        display: cannotEdit ? 'none' : 'flex',
-                        justifyContent: 'flex-end',
-                        width: {
-                            xs: '90%',
-                            md: '80%',
-                        },
-                        zIndex: 1000,
-                    }}
+                    className="neurosynth-annotation-component"
+                    sx={[AnnotationsHotTableStyles.addMetadataRow]}
                 >
-                    <LoadingButton
-                        size="large"
-                        text="save"
-                        disabled={!isEdited || cannotEdit}
-                        isLoading={updateAnnotationIsLoading}
-                        loaderColor="secondary"
-                        color="primary"
-                        variant="contained"
-                        sx={{ width: '300px' }}
-                        onClick={handleClickSave}
+                    <AddMetadataRow
+                        keyPlaceholderText="New Annotation Key"
+                        onAddMetadataRow={handleAddHotColumn}
+                        showMetadataValueInput={false}
+                        allowNumber={false}
+                        allowNone={false}
+                        errorMessage="cannot add annotation - this key may already exist"
                     />
                 </Box>
+            )}
+            <Box className="hot-container" style={{ width: '100%', marginBottom: '1rem' }}>
+                {hotData.length > 0 ? (
+                    <HotTable
+                        {...hotSettings}
+                        afterChange={handleChangeOccurred}
+                        ref={hotTableRef}
+                        mergeCells={mergeCells}
+                        disableVisualSelection={!canEdit}
+                        colHeaders={hotColumnHeaders}
+                        colWidths={colWidths}
+                        columns={hotColumns}
+                        data={JSON.parse(JSON.stringify(hotData))}
+                        afterOnCellMouseUp={handleCellMouseUp}
+                        beforeOnCellMouseDown={handleCellMouseDown}
+                    />
+                ) : (
+                    <Typography sx={{ color: 'warning.dark' }}>
+                        There are no analyses to annotate. Get started by adding analyses to your
+                        studies.
+                    </Typography>
+                )}
             </Box>
-        );
-    });
+            <Box
+                sx={{
+                    bottom: 0,
+                    padding: '1rem 0',
+                    backgroundColor: 'white',
+                    position: 'fixed',
+                    display: !canEdit ? 'none' : 'flex',
+                    justifyContent: 'flex-end',
+                    width: {
+                        xs: '90%',
+                        md: '80%',
+                    },
+                    zIndex: 1000,
+                }}
+            >
+                <LoadingButton
+                    size="large"
+                    text="save"
+                    disabled={!isEdited || !canEdit}
+                    isLoading={updateAnnotationIsLoading}
+                    loaderColor="secondary"
+                    color="primary"
+                    variant="contained"
+                    sx={{ width: '300px' }}
+                    onClick={handleClickSave}
+                />
+            </Box>
+        </Box>
+    );
+});
 
 export default AnnotationsHotTable;

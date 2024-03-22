@@ -1,10 +1,10 @@
 import { useAuth0 } from '@auth0/auth0-react';
 import { render, RenderResult, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { BrowserRouter } from 'react-router-dom';
 import NavDrawer from './NavDrawer';
 
 jest.mock('@auth0/auth0-react');
+jest.mock('react-router-dom');
 jest.mock('components/Dialogs/CreateDetailsDialog/CreateDetailsDialog');
 
 describe('NavDrawer component', () => {
@@ -18,13 +18,11 @@ describe('NavDrawer component', () => {
         useAuth0().isAuthenticated = false;
 
         renderResult = render(
-            <BrowserRouter>
-                <NavDrawer
-                    onCreateProject={mockOnCreateProject}
-                    onLogin={mockOnLogin}
-                    onLogout={mockOnLogout}
-                />
-            </BrowserRouter>
+            <NavDrawer
+                onCreateProject={mockOnCreateProject}
+                onLogin={mockOnLogin}
+                onLogout={mockOnLogout}
+            />
         );
 
         userEvent.click(screen.getByTestId('MenuIcon'));
@@ -32,13 +30,11 @@ describe('NavDrawer component', () => {
 
     it('should render', () => {
         render(
-            <BrowserRouter>
-                <NavDrawer
-                    onCreateProject={mockOnCreateProject}
-                    onLogin={mockOnLogin}
-                    onLogout={mockOnLogout}
-                />
-            </BrowserRouter>
+            <NavDrawer
+                onCreateProject={mockOnCreateProject}
+                onLogin={mockOnLogin}
+                onLogout={mockOnLogout}
+            />
         );
     });
 
@@ -60,13 +56,11 @@ describe('NavDrawer component', () => {
         useAuth0().isAuthenticated = true;
 
         renderResult.rerender(
-            <BrowserRouter>
-                <NavDrawer
-                    onCreateProject={mockOnCreateProject}
-                    onLogin={mockOnLogin}
-                    onLogout={mockOnLogout}
-                />
-            </BrowserRouter>
+            <NavDrawer
+                onCreateProject={mockOnCreateProject}
+                onLogin={mockOnLogin}
+                onLogout={mockOnLogout}
+            />
         );
 
         expect(screen.queryByText('NEW PROJECT')).toBeInTheDocument();
@@ -87,13 +81,11 @@ describe('NavDrawer component', () => {
         useAuth0().isAuthenticated = true;
 
         renderResult.rerender(
-            <BrowserRouter>
-                <NavDrawer
-                    onCreateProject={mockOnCreateProject}
-                    onLogin={mockOnLogin}
-                    onLogout={mockOnLogout}
-                />
-            </BrowserRouter>
+            <NavDrawer
+                onCreateProject={mockOnCreateProject}
+                onLogin={mockOnLogin}
+                onLogout={mockOnLogout}
+            />
         );
 
         userEvent.click(screen.getByText('LOGOUT'));
@@ -104,13 +96,11 @@ describe('NavDrawer component', () => {
         useAuth0().isAuthenticated = true;
 
         renderResult.rerender(
-            <BrowserRouter>
-                <NavDrawer
-                    onCreateProject={mockOnCreateProject}
-                    onLogin={mockOnLogin}
-                    onLogout={mockOnLogout}
-                />
-            </BrowserRouter>
+            <NavDrawer
+                onCreateProject={mockOnCreateProject}
+                onLogin={mockOnLogin}
+                onLogout={mockOnLogout}
+            />
         );
 
         userEvent.click(screen.getByText('NEW PROJECT'));
@@ -122,13 +112,11 @@ describe('NavDrawer component', () => {
         useAuth0().isAuthenticated = true;
 
         renderResult.rerender(
-            <BrowserRouter>
-                <NavDrawer
-                    onCreateProject={mockOnCreateProject}
-                    onLogin={mockOnLogin}
-                    onLogout={mockOnLogout}
-                />
-            </BrowserRouter>
+            <NavDrawer
+                onCreateProject={mockOnCreateProject}
+                onLogin={mockOnLogin}
+                onLogout={mockOnLogout}
+            />
         );
 
         userEvent.click(screen.getByText('NEW PROJECT'));
@@ -140,13 +128,11 @@ describe('NavDrawer component', () => {
 
     it('should show the menu with the given menu items', () => {
         render(
-            <BrowserRouter>
-                <NavDrawer
-                    onCreateProject={mockOnCreateProject}
-                    onLogin={mockOnLogin}
-                    onLogout={mockOnLogout}
-                />
-            </BrowserRouter>
+            <NavDrawer
+                onCreateProject={mockOnCreateProject}
+                onLogin={mockOnLogin}
+                onLogout={mockOnLogout}
+            />
         );
 
         expect(screen.queryByText('STUDIES')).not.toBeInTheDocument();
@@ -158,13 +144,11 @@ describe('NavDrawer component', () => {
 
     it('should hide the menu with the given menu items', () => {
         render(
-            <BrowserRouter>
-                <NavDrawer
-                    onCreateProject={mockOnCreateProject}
-                    onLogin={mockOnLogin}
-                    onLogout={mockOnLogout}
-                />
-            </BrowserRouter>
+            <NavDrawer
+                onCreateProject={mockOnCreateProject}
+                onLogin={mockOnLogin}
+                onLogout={mockOnLogout}
+            />
         );
 
         expect(screen.queryByText('STUDIES')).not.toBeInTheDocument();

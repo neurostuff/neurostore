@@ -14,7 +14,7 @@ import {
     defaultExclusionTags,
 } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { createDuplicateMap } from '../helpers/utils';
 import DuplicateCase from '../CurationImportNameAndReview/ResolveProjectDuplicates/DuplicateCase';
 
@@ -60,7 +60,7 @@ const CurationImportResolveDuplicates: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
 }> = (props) => {
     const updateCurationColumns = useUpdateCurationColumns();
-    const history = useHistory();
+    const navigate = useNavigate();
     const projectId = useProjectId();
     const [duplicates, setDuplicates] = useState<
         {
@@ -250,7 +250,7 @@ const CurationImportResolveDuplicates: React.FC<{
                 stubStudies: [...updatedImport, ...updatedColumns[0].stubStudies],
             };
             updateCurationColumns(updatedColumns);
-            history.push(`/projects/${projectId}/curation`);
+            navigate(`/projects/${projectId}/curation`);
         }
     };
 

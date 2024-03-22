@@ -1,5 +1,5 @@
 import { Button, ButtonProps } from '@mui/material';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 interface IBackButton {
@@ -8,10 +8,10 @@ interface IBackButton {
 }
 
 const BackButton: React.FC<IBackButton & ButtonProps> = (props) => {
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const handleOnClick = (_event: React.MouseEvent) => {
-        history.push(props.path);
+        navigate(props.path);
     };
 
     return (

@@ -46,7 +46,7 @@ export const sortMetadataArrayFn = (a: string, b: string) => {
     return lowerCaseA < lowerCaseB ? -1 : lowerCaseA > lowerCaseB ? 1 : 0;
 };
 
-const EditStudyMetadata: React.FC = (props) => {
+const EditStudyMetadata: React.FC<{ disabled: boolean }> = ({ disabled }) => {
     const metadata = useStudyMetadata();
     const addOrUpdateMetadata = useAddOrUpdateMetadata();
     const deleteMetadataRow = useDeleteMetadataRow();
@@ -95,6 +95,7 @@ const EditStudyMetadata: React.FC = (props) => {
         >
             <Box sx={{ margin: '1rem 0 0.5rem 0' }}>
                 <EditMetadata
+                    disabled={disabled}
                     onMetadataRowAdd={handleMetadataRowAdd}
                     onMetadataRowEdit={handleMetadataRowEdit}
                     onMetadataRowDelete={handleMetadataRowDelete}

@@ -30,6 +30,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
         allowNone = true,
         showToggleType = true,
         showMetadataValueInput = true,
+        disabled = false,
     } = props;
 
     const [currType, setCurrType] = useState(EPropertyType.STRING);
@@ -102,6 +103,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
                         allowNumber={allowNumber}
                         onToggle={handleToggle}
                         allowNone={allowNone}
+                        disabled={disabled}
                     />
                 </Box>
             )}
@@ -114,6 +116,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
             >
                 <TextField
                     size="small"
+                    disabled={disabled}
                     sx={EditMetadataRowStyles.addMetadataTextfield}
                     onChange={handleMetadataKeyChange}
                     variant="outlined"
@@ -147,7 +150,7 @@ const AddMetadataRow: React.FC<IAddMetadataRowModel> = (props) => {
             <Box sx={EditMetadataRowStyles.tableCell}>
                 <Button
                     sx={EditMetadataRowStyles.updateButton}
-                    disabled={!(metadataRow.metadataKey.length > 0)}
+                    disabled={!(metadataRow.metadataKey.length > 0) || disabled}
                     onClick={handleAdd}
                     variant="contained"
                     color="primary"

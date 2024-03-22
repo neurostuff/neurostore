@@ -13,7 +13,7 @@ export interface IExtractionSummary {
     total: number;
 }
 
-const useGetExtractionSummary = (projectId: string) => {
+const useGetExtractionSummary = (projectId: string | undefined) => {
     const studysetId = useProjectExtractionStudysetId();
     const studyStatusList = useProjectExtractionStudyStatusList();
     const { data: studyset } = useGetStudysetById(studysetId, false);

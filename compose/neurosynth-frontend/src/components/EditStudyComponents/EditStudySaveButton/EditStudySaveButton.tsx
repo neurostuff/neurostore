@@ -27,7 +27,7 @@ import {
 import { storeAnalysesToStudyAnalyses } from 'pages/Studies/StudyStore.helpers';
 import React, { useState } from 'react';
 import { useQueryClient } from 'react-query';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useUpdateAnnotationInDB, useUpdateAnnotationNotes } from 'stores/AnnotationStore.actions';
 import {
     useAnnotationIsEdited,
@@ -43,7 +43,7 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
     const { user } = useAuth0();
     const queryClient = useQueryClient();
     const { enqueueSnackbar } = useSnackbar();
-    const history = useHistory();
+    const navigate = useNavigate();
 
     // project stuff
     const replaceStudyWithNewClonedStudy = useProjectExtractionReplaceStudyListStatusId();
@@ -227,7 +227,7 @@ const EditStudySaveButton: React.FC = React.memo((props) => {
                 },
             });
 
-            history.push(`/projects/${projectId}/extraction/studies/${clonedStudyId}`);
+            navigate(`/projects/${projectId}/extraction/studies/${clonedStudyId}`);
             enqueueSnackbar('Saved successfully. You are now the owner of this study', {
                 variant: 'success',
             });

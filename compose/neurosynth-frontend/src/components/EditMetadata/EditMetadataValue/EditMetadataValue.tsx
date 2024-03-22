@@ -3,11 +3,12 @@ import { EPropertyType, IEditMetadataValue } from 'components/EditMetadata';
 import EditMetadataValueStyles from './EditMetadata.styles';
 
 const EditMetadataValue: React.FC<IEditMetadataValue> = (props) => {
-    const { onEditMetadataValue, value, type } = props;
+    const { onEditMetadataValue, value, type, disabled = false } = props;
 
     const map = {
         [EPropertyType.NUMBER]: (
             <TextField
+                disabled={disabled}
                 size="small"
                 sx={EditMetadataValueStyles.field}
                 onBlur={(event) => {
@@ -35,6 +36,7 @@ const EditMetadataValue: React.FC<IEditMetadataValue> = (props) => {
         [EPropertyType.BOOLEAN]: (
             <FormGroup>
                 <FormControlLabel
+                    disabled={disabled}
                     sx={
                         value
                             ? EditMetadataValueStyles.checkedTrue
@@ -56,6 +58,7 @@ const EditMetadataValue: React.FC<IEditMetadataValue> = (props) => {
         ),
         [EPropertyType.STRING]: (
             <TextField
+                disabled={disabled}
                 size="small"
                 placeholder={props.placeholderText || 'New metadata value'}
                 onChange={(event) => {

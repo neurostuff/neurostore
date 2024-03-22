@@ -21,6 +21,7 @@ import {
     useProjectCurationExclusionTags,
     useProjectCurationInfoTags,
     useProjectCurationPrismaConfig,
+    useProjectUser,
     usePromoteAllUncategorized,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { ENeurosynthTagIds } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
@@ -28,6 +29,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import CurationColumnStyles from './CurationColumn.styles';
 import { ITag, indexToPRISMAMapping } from 'hooks/projects/useGetProjects';
+import useUserCanEdit from 'hooks/useUserCanEdit';
 
 export interface ICurationColumn {
     name: string;
@@ -59,13 +61,15 @@ const FixedSizeListRow: React.FC<
         selectedTag: ITag | undefined;
     }>
 > = (props) => {
+    const projectUser = useProjectUser();
+    const canEdit = useUserCanEdit(projectUser || undefined);
     const stub = props.data.stubs[props.index];
 
     return (
         <Draggable
             draggableId={stub.id}
             index={props.index}
-            isDragDisabled={!!stub?.exclusionTag}
+            isDragDisabled={!!stub?.exclusionTag || !canEdit}
             key={stub.id}
         >
             {(provided, snapshot) => (

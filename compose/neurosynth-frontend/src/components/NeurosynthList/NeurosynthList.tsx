@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { SystemStyleObject } from '@mui/system';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 interface INeurosynthList {
     listIcon?: JSX.Element;
@@ -30,7 +30,7 @@ interface INeurosynthList {
 }
 
 const NeurosynthList: React.FC<INeurosynthList> = (props) => {
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const {
         isLoading = false,
@@ -41,7 +41,7 @@ const NeurosynthList: React.FC<INeurosynthList> = (props) => {
     } = props;
 
     const handleNavigate = (link: string) => {
-        history.push(link);
+        navigate(link);
     };
 
     return (
