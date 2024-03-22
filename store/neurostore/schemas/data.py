@@ -434,6 +434,13 @@ class AnnotationAnalysisSchema(BaseSchema):
         lambda aa: aa.studyset_study.study.publication, dump_only=True
     )
 
+    @pre_load
+    def create_id(self, data, **kwargs):
+        if not data.get("id") and data.get("annotation") and data.get("analysis"):
+            data["id"] = "_".join([data["annotation"], data["analysis"]])
+            data.pop("annotation")  # do not need to load/update annotation
+        return data
+
     @post_load
     def add_id(self, data, **kwargs):
         if isinstance(data.get("analysis_id"), str):

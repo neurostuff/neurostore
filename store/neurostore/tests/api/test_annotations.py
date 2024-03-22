@@ -336,6 +336,7 @@ def test_correct_note_overwrite(auth_client, ingest_neurosynth, session):
 
     # proper post
     annot = auth_client.post("/api/annotations/", data=payload)
+    assert annot.status_code == 200
 
     # have to pass all the notes even if only updating one attribute
     new_value = "something new"
@@ -353,5 +354,44 @@ def test_correct_note_overwrite(auth_client, ingest_neurosynth, session):
     assert (
         get_resp.json()["notes"][0]["note"]["doo"]
         == put_resp.json()["notes"][0]["note"]["doo"]
+        == new_value
+    )
+
+
+def test_annotation_analyses_post(auth_client, ingest_neurosynth, session):
+    dset = Studyset.query.first()
+    # y for x in non_flat for y in x
+    data = [
+        {"study": s.id, "analysis": a.id, "note": {"foo": a.id, "doo": s.id}}
+        for s in dset.studies
+        for a in s.analyses
+    ]
+    payload = {
+        "studyset": dset.id,
+        "notes": data,
+        "note_keys": {"foo": "string", "doo": "string"},
+        "name": "mah notes",
+    }
+
+    # proper post
+    annot = auth_client.post("/api/annotations/", data=payload)
+    assert annot.status_code == 200
+
+    # have to pass all the notes even if only updating one attribute
+    new_value = "something new"
+    data[0]["note"]["doo"] = new_value
+    data[1]["note"]["doo"] = new_value
+    data[0]["id"] = annot.json()["id"] + "_" + data[0]["analysis"]
+    data[1]["annotation"] = annot.json()["id"]
+    post_resp = auth_client.post(f"/api/annotation-analyses/", data=data[0:2])
+    assert post_resp.status_code == 200
+
+    get_resp = auth_client.get(f"/api/annotations/{annot.json()['id']}")
+    # get_notes = sorted(get_resp.json()['notes'], key=lambda x: x['analysis'])
+    # put_notes = sorted(put_resp.json()['notes'], key=lambda x: x['analysis'])
+    assert len(post_resp.json()) == 2
+    assert (
+        get_resp.json()["notes"][1]["note"]["doo"]
+        == post_resp.json()[1]["note"]["doo"]
         == new_value
     )
