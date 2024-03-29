@@ -79,7 +79,9 @@ const ProjectPage: React.FC = (props) => {
                         editIconIsVisible={userCanEdit}
                     >
                         <Typography
-                            sx={{ color: projectName ? 'initial' : 'warning.dark' }}
+                            sx={{
+                                color: projectName ? 'initial' : 'warning.dark',
+                            }}
                             variant="h5"
                         >
                             {projectName || 'No name'}

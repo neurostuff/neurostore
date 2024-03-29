@@ -1,7 +1,7 @@
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
-import { lastUpdatedAtSortFn } from 'components/Dialogs/MoveToExtractionDialog/MovetoExtractionDialog.helpers';
 import { Project, ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
+import { SortBy } from 'pages/Studies/StudiesPage/models';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
@@ -84,16 +84,39 @@ export const indexToPRISMAMapping = (
     }
 };
 
-const useGetProjects = (authenticatedUser?: string) => {
+export class ProjectSearchCriteria {
+    constructor(
+        public page: number | undefined = undefined,
+        public pageSize: number | undefined = undefined,
+        public nameSearch: string | undefined = undefined,
+        public genericSearchStr: string | undefined = undefined,
+        public descriptionSearch: string | undefined = undefined,
+        public sortBy: SortBy | undefined = undefined,
+        public descOrder: boolean = true
+    ) {}
+}
+
+export const projectsSearchHelper = (projectSearchCriteria: Partial<ProjectSearchCriteria>) => {
+    return API.NeurosynthServices.ProjectsService.projectsGet(
+        projectSearchCriteria.page || undefined,
+        projectSearchCriteria.pageSize,
+        projectSearchCriteria.nameSearch,
+        projectSearchCriteria.genericSearchStr,
+        projectSearchCriteria.descriptionSearch,
+        projectSearchCriteria.sortBy === SortBy.RELEVANCE
+            ? undefined
+            : projectSearchCriteria.sortBy,
+        projectSearchCriteria.descOrder
+    );
+};
+
+const useGetProjects = (projectSearchCriteria: ProjectSearchCriteria) => {
     return useQuery(
-        ['projects', authenticatedUser],
-        () => API.NeurosynthServices.ProjectsService.projectsGet(),
+        ['projects', { ...projectSearchCriteria }],
+        () => projectsSearchHelper(projectSearchCriteria),
         {
             select: (axiosResponse) =>
-                ((axiosResponse.data.results as INeurosynthProjectReturn[]) || [])
-                    .sort(lastUpdatedAtSortFn)
-                    .reverse(),
-            enabled: !!authenticatedUser,
+                (axiosResponse.data.results as INeurosynthProjectReturn[]) || [],
         }
     );
 };

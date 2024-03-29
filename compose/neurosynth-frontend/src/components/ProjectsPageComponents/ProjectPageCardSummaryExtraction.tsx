@@ -14,17 +14,19 @@ const ProjectPageCardExtractionSummary: React.FC<IExtractionSummary & { projectI
         <Box>
             <Typography fontWeight="bold">Extraction Summary:</Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', margin: '0.2rem 0 0.4rem 0' }}>
-                <Box sx={{ width: '200px', display: 'flex' }}>
+                <Box sx={{ display: 'flex' }}>
                     <QuestionMarkIcon color="warning" fontSize="small" />
-                    <Typography color="warning.dark">{uncategorized} uncategorized</Typography>
+                    <Typography color="warning.dark" mr="2rem">
+                        {uncategorized} uncategorized
+                    </Typography>
                 </Box>
-                <Box sx={{ width: '200px', display: 'flex' }}>
+                <Box sx={{ display: 'flex' }}>
                     <BookmarkIcon color="info" fontSize="small" />
                     <Typography color="info.dark" mr="2rem">
                         {savedForLater} saved for later
                     </Typography>
                 </Box>
-                <Box sx={{ width: '200px', display: 'flex' }}>
+                <Box sx={{ display: 'flex' }}>
                     <CheckIcon color="success" />
                     <Typography color="success.main">{completed} completed</Typography>
                 </Box>

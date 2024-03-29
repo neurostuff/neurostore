@@ -60,7 +60,7 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
 
     return (
         <Box sx={{ display: 'flex', padding: '1rem', marginBottom: '0.5rem' }}>
-            <Box sx={{ width: '250px' }}>
+            <Box sx={{ width: '250px', maxWidth: '250px', minWidth: '250px' }}>
                 <Stepper
                     orientation="vertical"
                     activeStep={activeStep}
@@ -109,7 +109,7 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                 </Stepper>
             </Box>
             <Box sx={{ flexGrow: 1 }}>
-                <Box mb="0.5rem">
+                <Box mb="0.5rem" sx={{ width: '100%' }}>
                     {
                         <Chip
                             label={`Last updated ${lastUpdateDate}`}
@@ -134,12 +134,29 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                             : `/projects/${id}`
                     }
                     underline="hover"
+                    sx={{
+                        wordBreak: 'break-all',
+                        wordWrap: 'break-word',
+                    }}
                 >
-                    <Typography color="primary" variant="h5">
+                    <Typography
+                        sx={{
+                            wordBreak: 'break-all',
+                            wordWrap: 'break-word',
+                        }}
+                        color="primary"
+                        variant="h5"
+                    >
                         {name || ''}
                     </Typography>
                 </MuiLink>
-                <Typography sx={{ color: description ? 'muted.main' : 'warning.dark' }}>
+                <Typography
+                    sx={{
+                        color: description ? 'muted.main' : 'warning.dark',
+                        wordBreak: 'break-all',
+                        wordWrap: 'break-word',
+                    }}
+                >
                     {description || 'no description'}
                 </Typography>
                 <Box mt="0.5rem">

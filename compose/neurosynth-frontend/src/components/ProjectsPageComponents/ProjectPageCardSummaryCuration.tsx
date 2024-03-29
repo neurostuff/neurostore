@@ -14,19 +14,19 @@ const ProjectPageCardSummaryCuration: React.FC<ICurationSummary & { projectId: s
         <Box>
             <Typography fontWeight="bold">Curation Summary:</Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', margin: '0.2rem 0 0.4rem 0' }}>
-                <Box sx={{ width: '200px', display: 'flex' }}>
+                <Box sx={{ display: 'flex' }}>
                     <QuestionMarkIcon color="warning" fontSize="small" />
                     <Typography mr="2rem" color="warning.dark">
                         {uncategorized} uncategorized
                     </Typography>
                 </Box>
-                <Box sx={{ width: '200px', display: 'flex' }}>
+                <Box sx={{ display: 'flex' }}>
                     <CloseIcon color="error" fontSize="small" />
                     <Typography color="error.dark" mr="2rem">
                         {excluded} excluded
                     </Typography>
                 </Box>
-                <Box sx={{ width: '200px', display: 'flex' }}>
+                <Box sx={{ display: 'flex' }}>
                     <PlaylistAddCheckIcon color="success" />
                     <Typography color="success.main">{included} included</Typography>
                 </Box>
