@@ -5,7 +5,6 @@ const useUserCanEdit = (user: string | undefined) => {
     const { user: currentAuthenticatedUser, isAuthenticated } = useAuth0();
     return useMemo(() => {
         if (!isAuthenticated) return false;
-
         return (currentAuthenticatedUser?.sub || undefined) === (user || null);
     }, [currentAuthenticatedUser?.sub, isAuthenticated, user]);
 };

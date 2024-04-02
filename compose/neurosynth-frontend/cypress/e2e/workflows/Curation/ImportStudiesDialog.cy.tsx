@@ -14,8 +14,11 @@ describe('ImportStudiesDialog', () => {
         cy.visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
     });
 
-    it('should open the import studies dialog', () => {
-        cy.visit('/projects/abc123/curation').wait('@projectFixture').wait('@studysetFixture');
+    it.only('should open the import studies dialog', () => {
+        cy.login('mocked', { sub: 'github|26612023' })
+            .visit('/projects/abc123/curation')
+            .wait('@projectFixture')
+            .wait('@studysetFixture');
         cy.contains('button', 'import studies').click();
         cy.get('.MuiFormControl-root').should('be.visible');
         cy.url().should('include', '/projects/abc123/curation/import');

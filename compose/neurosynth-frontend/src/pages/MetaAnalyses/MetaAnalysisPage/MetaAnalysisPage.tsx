@@ -1,7 +1,6 @@
-import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
-import { useAuth0 } from '@auth0/auth0-react';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { Box, Button, Link, Paper, Typography } from '@mui/material';
+import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
 import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
 import { isMultiGroupAlgorithm } from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
 import SelectAnalysesSummaryComponent from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesSummaryComponent';
@@ -23,6 +22,7 @@ import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecificatio
 import useGetMetaAnalysisResultById from 'hooks/metaAnalyses/useGetMetaAnalysisResultById';
 import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById';
 import useUpdateMetaAnalysis from 'hooks/metaAnalyses/useUpdateMetaAnalysis';
+import useUserCanEdit from 'hooks/useUserCanEdit';
 import {
     Annotation,
     ResultReturn,
@@ -31,6 +31,7 @@ import {
     Studyset,
     StudysetReturn,
 } from 'neurosynth-compose-typescript-sdk';
+import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
 import {
     useInitProjectStoreIfRequired,
     useProjectName,
@@ -40,8 +41,6 @@ import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { NeurostoreAnnotation } from 'utils/api';
 import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
-import useUserCanEdit from 'hooks/useUserCanEdit';
-import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 

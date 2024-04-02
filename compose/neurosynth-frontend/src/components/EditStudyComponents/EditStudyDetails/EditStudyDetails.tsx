@@ -1,9 +1,10 @@
-import { Typography, Box, TextField } from '@mui/material';
-import React from 'react';
+import { Box, TextField, Typography } from '@mui/material';
+import EditStudyComponentsStyles from 'components/EditStudyComponents/EditStudyComponents.styles';
+import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
 import {
     useStudyAuthors,
-    useStudyDescription,
     useStudyDOI,
+    useStudyDescription,
     useStudyName,
     useStudyPMCID,
     useStudyPMID,
@@ -12,10 +13,7 @@ import {
     useUpdateStudyDetails,
 } from 'pages/Studies/StudyStore';
 import { StudyDetails } from 'pages/Studies/StudyStore.helpers';
-import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
-import EditStudyComponentsStyles from 'components/EditStudyComponents/EditStudyComponents.styles';
-import { useProjectUser } from 'pages/Projects/ProjectPage/ProjectStore';
-import useUserCanEdit from 'hooks/useUserCanEdit';
+import React from 'react';
 
 const EditStudyDetails: React.FC<{ disabled: boolean }> = React.memo(({ disabled }) => {
     const name = useStudyName();
