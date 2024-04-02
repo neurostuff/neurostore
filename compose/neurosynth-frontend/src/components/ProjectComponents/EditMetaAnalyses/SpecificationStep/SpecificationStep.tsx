@@ -6,7 +6,7 @@ import {
     useProjectMetaAnalysisCanEdit,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useEffect } from 'react';
-import { useHistory, useLocation, useParams } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import ProjectComponentsStyles from '../../ProjectComponents.styles';
 
 interface ISpecificationStep {
@@ -15,23 +15,24 @@ interface ISpecificationStep {
 
 const SpecificationStep: React.FC<ISpecificationStep & StepProps> = (props) => {
     const { disabled, ...stepProps } = props;
-    const history = useHistory();
+    const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string }>();
-    const location = useLocation<IProjectPageLocationState>();
+    const location = useLocation();
     const allowEditMetaAnalyses = useAllowEditMetaAnalyses();
     const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
 
     useEffect(() => {
         if (disabled) return;
-        const shouldScrollDown = location?.state?.projectPage?.scrollToMetaAnalysisProceed;
+        const shouldScrollDown = (location?.state as IProjectPageLocationState)?.projectPage
+            ?.scrollToMetaAnalysisProceed;
         if (shouldScrollDown) {
             window.scrollTo(0, document.body.scrollHeight);
         }
-    }, [disabled, location?.state?.projectPage?.scrollToMetaAnalysisProceed]);
+    }, [disabled, location?.state]);
 
     const handleClickProceed = () => {
         allowEditMetaAnalyses();
-        history.push(`/projects/${projectId}/meta-analyses`);
+        navigate(`/projects/${projectId}/meta-analyses`);
     };
 
     return (

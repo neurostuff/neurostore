@@ -4,9 +4,9 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import CheckIcon from '@mui/icons-material/Check';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import { Box, CircularProgress, IconButton, Tooltip } from '@mui/material';
-import { useGetStudysetById, useGetExtractionSummary } from 'hooks';
+import { useGetExtractionSummary, useGetStudysetById } from 'hooks';
+import { StudyReturn } from 'neurostore-typescript-sdk';
 import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
-import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
 import {
     useProjectExtractionAddOrUpdateStudyListStatus,
     useProjectExtractionStudyStatus,
@@ -17,9 +17,9 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useStudyId } from 'pages/Studies/StudyStore';
 import { useCallback, useMemo } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import EditStudyToolbarStyles from './EditStudyToolbar.styles';
-import { StudyReturn } from 'neurostore-typescript-sdk';
+import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
 
 const getCurrSelectedChipText = (selectedChip: EExtractionStatus) => {
     switch (selectedChip) {
@@ -41,7 +41,7 @@ const getCurrSelectedChip = (projectId: string | undefined) => {
     );
 };
 
-const EditStudyToolbar: React.FC = (props) => {
+const EditStudyToolbar: React.FC<{ disabled?: boolean }> = ({ disabled = false }) => {
     const projectId = useProjectId();
     const studyId = useStudyId();
     const extractionStatus = useProjectExtractionStudyStatus(studyId || '');
@@ -51,7 +51,7 @@ const EditStudyToolbar: React.FC = (props) => {
     // if nested is false, we do not have access to study names and so will be given study Ids in random order
     const { data: studyset } = useGetStudysetById(studysetId, true);
     const studyStatusList = useProjectExtractionStudyStatusList();
-    const history = useHistory<IProjectPageLocationState>();
+    const navigate = useNavigate();
     const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
 
     const updateStudyListStatus = useProjectExtractionAddOrUpdateStudyListStatus();
@@ -113,7 +113,7 @@ const EditStudyToolbar: React.FC = (props) => {
     const handleMoveToPreviousStudy = () => {
         const prevId = getValidPrevStudyId();
         if (prevId) {
-            history.push(`/projects/${projectId}/extraction/studies/${prevId}`);
+            navigate(`/projects/${projectId}/extraction/studies/${prevId}`);
         } else {
             throw new Error('no studies before this one');
         }
@@ -122,7 +122,7 @@ const EditStudyToolbar: React.FC = (props) => {
     const handleMoveToNextStudy = () => {
         const nextId = getValidNextStudyId();
         if (nextId) {
-            history.push(`/projects/${projectId}/extraction/studies/${nextId}`);
+            navigate(`/projects/${projectId}/extraction/studies/${nextId}`);
         } else {
             throw new Error('no studies after this one');
         }
@@ -130,12 +130,14 @@ const EditStudyToolbar: React.FC = (props) => {
 
     const handleContinueToMetaAnalysisCreation = () => {
         if (canEditMetaAnalyses) {
-            history.push(`/projects/${projectId}/meta-analyses`);
+            navigate(`/projects/${projectId}/meta-analyses`);
         } else {
-            history.push(`/projects/${projectId}/edit`, {
-                projectPage: {
-                    scrollToMetaAnalysisProceed: true,
-                },
+            navigate(`/projects/${projectId}/edit`, {
+                state: {
+                    projectPage: {
+                        scrollToMetaAnalysisProceed: true,
+                    },
+                } as IProjectPageLocationState,
             });
         }
     };
@@ -232,6 +234,7 @@ const EditStudyToolbar: React.FC = (props) => {
                     <Box sx={{ marginBottom: '1rem' }}>
                         <Tooltip placement="right" title="move to completed">
                             <IconButton
+                                disabled={disabled}
                                 sx={{
                                     backgroundColor:
                                         extractionStatus?.status === EExtractionStatus.COMPLETED
@@ -242,13 +245,16 @@ const EditStudyToolbar: React.FC = (props) => {
                                     handleClickStudyListStatus(EExtractionStatus.COMPLETED)
                                 }
                             >
-                                <CheckIcon color="success" />
+                                <CheckIcon
+                                    sx={{ color: disabled ? 'muted.main' : 'success.main' }}
+                                />
                             </IconButton>
                         </Tooltip>
                     </Box>
                     <Box sx={{ marginBottom: '1rem' }}>
                         <Tooltip placement="right" title="move to save for later">
                             <IconButton
+                                disabled={disabled}
                                 sx={{
                                     backgroundColor:
                                         extractionStatus?.status === EExtractionStatus.SAVEDFORLATER
@@ -259,7 +265,9 @@ const EditStudyToolbar: React.FC = (props) => {
                                     handleClickStudyListStatus(EExtractionStatus.SAVEDFORLATER)
                                 }
                             >
-                                <BookmarkIcon color="info" />
+                                <BookmarkIcon
+                                    sx={{ color: disabled ? 'muted.main' : 'info.main' }}
+                                />
                             </IconButton>
                         </Tooltip>
                     </Box>

@@ -1,33 +1,24 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useGetExtractionSummary, useGetStudysetById } from 'hooks';
+import { IStudyExtractionStatus } from 'hooks/projects/useGetProjects';
 import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
 import {
     useProjectExtractionAddOrUpdateStudyListStatus,
     useProjectExtractionStudyStatusList,
 } from 'pages/Projects/ProjectPage/ProjectStore';
-import { Router } from 'react-router-dom';
-import EditStudyToolbar from './EditStudyToolbar';
-import { IStudyExtractionStatus } from 'hooks/projects/useGetProjects';
 import { useStudyId } from 'pages/Studies/StudyStore';
+import { useNavigate } from 'react-router-dom';
+import EditStudyToolbar from './EditStudyToolbar';
 
 jest.mock('hooks');
+jest.mock('react-router-dom');
 jest.mock('pages/Projects/ProjectPage/ProjectStore.ts');
 jest.mock('pages/Studies/StudyStore.ts');
 
 describe('EditStudyToolbar Component', () => {
-    const historyMock = {
-        push: jest.fn(),
-        location: {},
-        listen: jest.fn(),
-    };
-
     it('should render', () => {
-        render(
-            <Router history={historyMock as any}>
-                <EditStudyToolbar />
-            </Router>
-        );
+        render(<EditStudyToolbar />);
     });
 
     it.each([
@@ -41,11 +32,7 @@ describe('EditStudyToolbar Component', () => {
             const extractionSummary = useGetExtractionSummary('');
             extractionSummary.completed = completed;
             extractionSummary.total = total;
-            render(
-                <Router history={historyMock as any}>
-                    <EditStudyToolbar />
-                </Router>
-            );
+            render(<EditStudyToolbar />);
             expect(screen.getByText(`${expectedPercentage}%`)).toBeInTheDocument();
 
             userEvent.hover(screen.getByText(`${expectedPercentage}%`));
@@ -60,32 +47,20 @@ describe('EditStudyToolbar Component', () => {
     it('should show the done all icon', () => {
         useGetExtractionSummary('').completed = 21;
         useGetExtractionSummary('').total = 21;
-        render(
-            <Router history={historyMock as any}>
-                <EditStudyToolbar />
-            </Router>
-        );
+        render(<EditStudyToolbar />);
         expect(screen.getByTestId('DoneAllIcon')).toBeInTheDocument();
     });
 
     it('should move on to the specification phase', () => {
         useGetExtractionSummary('').completed = 21;
         useGetExtractionSummary('').total = 21;
-        render(
-            <Router history={historyMock as any}>
-                <EditStudyToolbar />
-            </Router>
-        );
+        render(<EditStudyToolbar />);
         userEvent.click(screen.getByTestId('DoneAllIcon'));
-        expect(historyMock.push).toHaveBeenCalledWith('/projects/project-id/meta-analyses');
+        expect(useNavigate()).toHaveBeenCalledWith('/projects/project-id/meta-analyses');
     });
 
     it('should set to completed', () => {
-        render(
-            <Router history={historyMock as any}>
-                <EditStudyToolbar />
-            </Router>
-        );
+        render(<EditStudyToolbar />);
         const checkIcon = screen.getByTestId('CheckIcon');
         userEvent.click(checkIcon);
         expect(useProjectExtractionAddOrUpdateStudyListStatus()).toHaveBeenCalledWith(
@@ -95,11 +70,7 @@ describe('EditStudyToolbar Component', () => {
     });
 
     it('should set to saved for later', () => {
-        render(
-            <Router history={historyMock as any}>
-                <EditStudyToolbar />
-            </Router>
-        );
+        render(<EditStudyToolbar />);
         const bookmarkIcon = screen.getByTestId('BookmarkIcon');
         userEvent.click(bookmarkIcon);
         expect(useProjectExtractionAddOrUpdateStudyListStatus()).toHaveBeenCalledWith(
@@ -138,15 +109,11 @@ describe('EditStudyToolbar Component', () => {
             },
         ] as IStudyExtractionStatus[]);
 
-        render(
-            <Router history={historyMock as any}>
-                <EditStudyToolbar />
-            </Router>
-        );
+        render(<EditStudyToolbar />);
         // ACT
         userEvent.click(screen.getByTestId('ArrowBackIcon'));
         // ASSERT
-        expect(historyMock.push).toHaveBeenCalledWith(
+        expect(useNavigate()).toHaveBeenCalledWith(
             '/projects/project-id/extraction/studies/study-0'
         );
     });
@@ -173,11 +140,7 @@ describe('EditStudyToolbar Component', () => {
             },
         ] as IStudyExtractionStatus[]);
 
-        render(
-            <Router history={historyMock as any}>
-                <EditStudyToolbar />
-            </Router>
-        );
+        render(<EditStudyToolbar />);
         // ACT
         const arrowBackIcon = screen.getByTestId('ArrowBackIcon').parentElement;
         // ASSERT
@@ -220,15 +183,11 @@ describe('EditStudyToolbar Component', () => {
             },
         ] as IStudyExtractionStatus[]);
 
-        render(
-            <Router history={historyMock as any}>
-                <EditStudyToolbar />
-            </Router>
-        );
+        render(<EditStudyToolbar />);
         // ACT
         userEvent.click(screen.getByTestId('ArrowForwardIcon'));
         // ASSERT
-        expect(historyMock.push).toHaveBeenCalledWith(
+        expect(useNavigate()).toHaveBeenCalledWith(
             '/projects/project-id/extraction/studies/study-5'
         );
     });
@@ -255,11 +214,7 @@ describe('EditStudyToolbar Component', () => {
             },
         ] as IStudyExtractionStatus[]);
 
-        render(
-            <Router history={historyMock as any}>
-                <EditStudyToolbar />
-            </Router>
-        );
+        render(<EditStudyToolbar />);
         // ACT
         const arrowBackIcon = screen.getByTestId('ArrowForwardIcon').parentElement;
         // ASSERT

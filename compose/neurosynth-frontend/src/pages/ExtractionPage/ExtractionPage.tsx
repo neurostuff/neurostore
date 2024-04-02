@@ -10,6 +10,7 @@ import TextEdit from 'components/TextEdit/TextEdit';
 import { useGetStudysetById, useUpdateStudyset } from 'hooks';
 import useGetExtractionSummary from 'hooks/useGetExtractionSummary';
 import useGetWindowHeight from 'hooks/useGetWindowHeight';
+import useUserCanEdit from 'hooks/useUserCanEdit';
 import { StudyReturn } from 'neurostore-typescript-sdk';
 import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
 import { IProjectPageLocationState } from 'pages/Projects/ProjectPage/ProjectPage';
@@ -21,10 +22,11 @@ import {
     useProjectMetaAnalysisCanEdit,
     useProjectName,
     useProjectNumCurationColumns,
+    useProjectUser,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { resolveStudysetAndCurationDifferences } from 'pages/helpers/utils';
 import { useEffect, useMemo, useState } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 
 export enum EExtractionStatus {
@@ -34,14 +36,20 @@ export enum EExtractionStatus {
 }
 
 const ReadOnlyStudySummaryFixedSizeListRow: React.FC<
-    ListChildComponentProps<{ studies: StudyReturn[]; currentSelectedChip: EExtractionStatus }>
+    ListChildComponentProps<{
+        studies: StudyReturn[];
+        currentSelectedChip: EExtractionStatus;
+        canEdit: boolean;
+    }>
 > = (props) => {
     const study = props.data.studies[props.index];
     const currentSelectedChip = props.data.currentSelectedChip;
+    const canEdit = props.data.canEdit;
 
     return (
         <ReadOnlyStudySummaryVirtualizedItem
             {...study}
+            canEdit={canEdit}
             currentSelectedChip={currentSelectedChip}
             style={props.style}
         />
@@ -49,8 +57,8 @@ const ReadOnlyStudySummaryFixedSizeListRow: React.FC<
 };
 
 const ExtractionPage: React.FC = (props) => {
-    const { projectId }: { projectId: string | undefined } = useParams();
-    const history = useHistory<IProjectPageLocationState>();
+    const { projectId } = useParams<{ projectId: string | undefined }>();
+    const navigate = useNavigate();
     const windowHeight = useGetWindowHeight();
 
     useInitProjectStoreIfRequired();
@@ -62,6 +70,8 @@ const ExtractionPage: React.FC = (props) => {
     const curationIncludedStudies = useProjectCurationColumn(numColumns - 1);
     const extractionSummary = useGetExtractionSummary(projectId || '');
     const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
+    const projectUser = useProjectUser();
+    const canEdit = useUserCanEdit(projectUser || undefined);
 
     const {
         data: studyset,
@@ -169,12 +179,14 @@ const ExtractionPage: React.FC = (props) => {
 
     const handleMoveToSpecificationPhase = () => {
         if (canEditMetaAnalyses) {
-            history.push(`/projects/${projectId}/meta-analyses`);
+            navigate(`/projects/${projectId}/meta-analyses`);
         } else {
-            history.push(`/projects/${projectId}/edit`, {
-                projectPage: {
-                    scrollToMetaAnalysisProceed: true,
-                },
+            navigate(`/projects/${projectId}/project`, {
+                state: {
+                    projectPage: {
+                        scrollToMetaAnalysisProceed: true,
+                    },
+                } as IProjectPageLocationState,
             });
         }
     };
@@ -234,7 +246,7 @@ const ExtractionPage: React.FC = (props) => {
                             variant="contained"
                             disableElevation
                             onClick={() =>
-                                history.push(`/projects/${projectId}/extraction/annotations`)
+                                navigate(`/projects/${projectId}/extraction/annotations`)
                             }
                         >
                             View Annotations
@@ -246,6 +258,7 @@ const ExtractionPage: React.FC = (props) => {
                                 color="success"
                                 variant="contained"
                                 disableElevation
+                                disabled={!canEdit}
                             >
                                 Move to Specification Phase
                             </Button>
@@ -256,7 +269,7 @@ const ExtractionPage: React.FC = (props) => {
                 <Box>
                     <Box>
                         <TextEdit
-                            editIconIsVisible={true}
+                            editIconIsVisible={canEdit}
                             isLoading={fieldBeingUpdated === 'name'}
                             label="Studyset Name"
                             sx={{ input: { fontSize: '1.5rem' } }}
@@ -275,7 +288,7 @@ const ExtractionPage: React.FC = (props) => {
                     </Box>
                     <Box>
                         <TextEdit
-                            editIconIsVisible={true}
+                            editIconIsVisible={canEdit}
                             isLoading={fieldBeingUpdated === 'description'}
                             multiline
                             fieldName="description"
@@ -363,6 +376,7 @@ const ExtractionPage: React.FC = (props) => {
                             itemData={{
                                 studies: studiesDisplayed,
                                 currentSelectedChip: currentChip,
+                                canEdit: canEdit,
                             }}
                             layout="vertical"
                             overscanCount={3}

@@ -2,7 +2,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { AppBar, Box } from '@mui/material';
 import { useCreateProject } from 'hooks';
 import { generateNewProjectData } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import NavDrawer from './NavDrawer/NavDrawer';
 import NavToolbar from './NavToolbar/NavToolbar';
 import NavbarStyles from './Navbar.styles';
@@ -18,16 +18,16 @@ export const NAVBAR_HEIGHT = 64;
 const AUTH0_AUDIENCE = process.env.REACT_APP_AUTH0_AUDIENCE;
 
 const Navbar: React.FC = (_props) => {
+    const navigate = useNavigate();
     const { loginWithPopup, logout } = useAuth0();
     const { mutate, isLoading: createProjectIsLoading } = useCreateProject();
-    const history = useHistory();
 
     const handleLogin = async () => {
         await loginWithPopup({
             audience: AUTH0_AUDIENCE,
             scope: 'openid profile email offline_access',
         });
-        history.push('/');
+        navigate('/');
     };
 
     const handleLogout = () => logout({ returnTo: window.location.origin });
@@ -35,7 +35,7 @@ const Navbar: React.FC = (_props) => {
     const handleCreateProject = () => {
         mutate(generateNewProjectData('Untitled', ''), {
             onSuccess: (arg) => {
-                history.push(`/projects/${arg.data.id || ''}`);
+                navigate(`/projects/${arg.data.id || ''}`);
             },
         });
     };

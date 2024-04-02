@@ -11,6 +11,7 @@ const ToggleType: React.FC<IToggleTypeModel> = React.memo((props) => {
         allowBoolean = true,
         allowNumber = true,
         allowString = true,
+        disabled = false,
     } = props;
 
     const handleSetType = (event: SelectChangeEvent<EPropertyType>, child: ReactNode) => {
@@ -24,6 +25,7 @@ const ToggleType: React.FC<IToggleTypeModel> = React.memo((props) => {
         <Box sx={ToggleTypeStyles.toggleItemContainer}>
             <FormControl variant="outlined">
                 <Select
+                    disabled={disabled}
                     sx={[ToggleTypeStyles[myClass], ToggleTypeStyles.toggle_item]}
                     value={type}
                     onChange={handleSetType}

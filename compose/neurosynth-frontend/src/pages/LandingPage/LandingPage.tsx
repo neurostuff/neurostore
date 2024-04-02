@@ -10,13 +10,13 @@ import { useGuard } from 'hooks';
 import { LOGOS } from 'pages/LandingPage/LandingPage.helpers';
 import LandingPageStyles from './LandingPage.styles';
 import PlatformComparisonTable from './PlatformComparisonTable';
-import { useHistory } from 'react-router';
+import { useNavigate } from 'react-router';
 
 const AUTH0_AUDIENCE = process.env.REACT_APP_AUTH0_AUDIENCE;
 
 const LandingPage = () => {
     const { isAuthenticated, loginWithPopup } = useAuth0();
-    const history = useHistory();
+    const navigate = useNavigate();
     useGuard('/projects', '', isAuthenticated);
 
     const handleLogin = async () => {
@@ -24,7 +24,7 @@ const LandingPage = () => {
             audience: AUTH0_AUDIENCE,
             scope: 'openid profile email offline_access',
         });
-        history.push('/');
+        navigate('/');
     };
 
     return (

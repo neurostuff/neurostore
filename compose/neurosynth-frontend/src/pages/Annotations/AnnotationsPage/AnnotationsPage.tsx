@@ -16,7 +16,7 @@ const AnnotationsPage: React.FC = () => {
     const annotationIdFromProject = useProjectExtractionAnnotationId();
     const projectName = useProjectName();
 
-    const { projectId }: { projectId: string } = useParams();
+    const { projectId } = useParams<{ projectId: string }>();
     const {
         data,
         isLoading: getAnnotationIsLoading,
@@ -62,10 +62,7 @@ const AnnotationsPage: React.FC = () => {
                     </Typography>
                     <Typography sx={{ color: 'muted.main' }}>{data?.description || ''}</Typography>
                 </Box>
-                <EditAnnotationsHotTable
-                    annotationId={annotationIdFromProject || annotationId}
-                    isViewingFromProject={viewingThisPageFromProject}
-                />
+                <EditAnnotationsHotTable annotationId={annotationIdFromProject || annotationId} />
             </StateHandlerComponent>
         </Box>
     );

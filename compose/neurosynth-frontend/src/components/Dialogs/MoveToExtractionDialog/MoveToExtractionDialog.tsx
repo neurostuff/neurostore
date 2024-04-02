@@ -17,7 +17,7 @@ import {
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { setAnalysesInAnnotationAsIncluded } from 'pages/helpers/utils';
 import { useMemo, useState } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import BaseDialog, { IDialog } from '../BaseDialog';
 import MoveToExtractionIntroduction from './MoveToExtractionIntroduction';
 import { selectBestVersionsForStudyset } from './MovetoExtractionDialog.helpers';
@@ -37,7 +37,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
     const { mutateAsync: asyncIngest } = useIngest();
     const { mutateAsync: asyncUpdateStudyset } = useUpdateStudyset();
 
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const [isLoadingPhase, setIsLoadingPhase] = useState(false);
     const [isError, setIsError] = useState(false);
@@ -202,7 +202,7 @@ const MoveToExtractionDialog: React.FC<IDialog> = (props) => {
         // small delay so that user can see the completed progress bar and final message
         setTimeout(() => {
             props.onCloseDialog();
-            history.push(`/projects/${projectId}/extraction`);
+            navigate(`/projects/${projectId}/extraction`);
         }, 1000);
     };
 

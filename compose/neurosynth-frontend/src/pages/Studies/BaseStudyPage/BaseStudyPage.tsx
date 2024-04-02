@@ -5,19 +5,18 @@ import { useGetStudyById } from 'hooks';
 import useGetBaseStudyById from 'hooks/studies/useGetBaseStudyById';
 import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import React, { useEffect } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useInitStudyStore } from '../StudyStore';
 import { studyAnalysesToStoreAnalyses } from '../StudyStore.helpers';
 
 const BaseStudyPage: React.FC = (props) => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const initStudyStore = useInitStudyStore();
 
-    const { baseStudyId, studyVersionId }: { baseStudyId: string; studyVersionId?: string } =
-        useParams<{
-            baseStudyId: string;
-            studyVersionId?: string;
-        }>();
+    const { baseStudyId, studyVersionId } = useParams<{
+        baseStudyId: string;
+        studyVersionId?: string;
+    }>();
     const {
         data: baseStudy,
         isLoading: baseStudyIsLoading,
@@ -34,17 +33,21 @@ const BaseStudyPage: React.FC = (props) => {
 
     // init the study store with the given version when a new one is set
     useEffect(() => {
+        // if theres no study, that means it probably doesnt exist or there was an error retrieving. We dont want to
+        // init the study store as it will make a request that will return an error
+        if (!study) return;
         initStudyStore(studyVersionId);
-    }, [initStudyStore, studyVersionId]);
+    }, [initStudyStore, study, studyVersionId]);
 
     // on initial load, we keep trying to set the URL with the study version until one is set
     useEffect(() => {
         if (baseStudy && baseStudy.versions && baseStudy.versions.length > 0 && !studyVersionId) {
-            history.replace(
-                `/base-studies/${baseStudyId}/${(baseStudy.versions as StudyReturn[])[0].id}`
+            navigate(
+                `/base-studies/${baseStudyId}/${(baseStudy.versions as StudyReturn[])[0].id}`,
+                { replace: true }
             );
         }
-    }, [baseStudy, baseStudyId, history, studyVersionId]);
+    }, [baseStudy, baseStudyId, navigate, studyVersionId]);
 
     const analyses = studyAnalysesToStoreAnalyses((study?.analyses || []) as Array<AnalysisReturn>);
     return (
@@ -59,7 +62,7 @@ const BaseStudyPage: React.FC = (props) => {
                     <Select
                         onChange={(event) => {
                             const selectedVersionId = event.target.value;
-                            history.push(`/base-studies/${baseStudyId}/${selectedVersionId}`);
+                            navigate(`/base-studies/${baseStudyId}/${selectedVersionId}`);
                         }}
                         value={studyVersionId || ''}
                         label="Select version to view"

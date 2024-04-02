@@ -6,6 +6,7 @@ export interface IEditMetadataModel {
     keyPlaceholderText?: string;
     valuePlaceholderText?: string;
     metadata: IMetadataRowModel[];
+    disabled?: boolean;
     onMetadataRowEdit: (update: IMetadataRowModel) => void;
     onMetadataRowDelete: (update: IMetadataRowModel) => void;
     onMetadataRowAdd: (update: IMetadataRowModel) => boolean;
@@ -22,9 +23,11 @@ export interface IAddMetadataRowModel {
     valuePlaceholderText?: string;
     showMetadataValueInput?: boolean;
     onAddMetadataRow: (row: IMetadataRowModel) => boolean;
+    disabled?: boolean;
 }
 
 export interface IEditMetadataRowModel {
+    disabled?: boolean;
     metadataValueType: EPropertyType;
     metadataRow: IMetadataRowModel;
     onMetadataRowEdit: (metadataRow: IMetadataRowModel) => void;
@@ -33,6 +36,7 @@ export interface IEditMetadataRowModel {
 
 export interface IEditMetadataValue {
     onEditMetadataValue: (newValue: string | number | boolean) => void;
+    disabled?: boolean;
     placeholderText?: string;
     type: EPropertyType;
     value: string | number | boolean;
@@ -45,6 +49,7 @@ export interface IToggleTypeModel {
     allowString?: boolean;
     allowNumber?: boolean;
     allowBoolean?: boolean;
+    disabled?: boolean;
 }
 
 export interface IMetadataRowModel {
