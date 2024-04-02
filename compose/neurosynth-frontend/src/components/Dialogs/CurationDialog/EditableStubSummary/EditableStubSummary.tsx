@@ -1,4 +1,3 @@
-import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Button, Typography } from '@mui/material';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
@@ -6,9 +5,11 @@ import DisplayStudyChipLinks from 'components/DisplayStudy/DisplayStudyChipLinks
 import TextEdit from 'components/TextEdit/TextEdit';
 import { PUBMED_ARTICLE_URL_PREFIX } from 'hooks/external/useGetPubMedIds';
 import { ISource } from 'hooks/projects/useGetProjects';
+import useUserCanEdit from 'hooks/useUserCanEdit';
 import {
     useDeleteStub,
     useProjectCurationColumns,
+    useProjectUser,
     useUpdateStubField,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import React, { useState } from 'react';
@@ -21,13 +22,15 @@ interface IEditableStubSummary {
 }
 
 const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
-    const { isAuthenticated } = useAuth0();
     const updateStubField = useUpdateStubField();
     const curationColumns = useProjectCurationColumns();
     const deleteStub = useDeleteStub();
     const [deleteStubConfirmationIsOpen, setDeleteStubConfirmationIsOpen] = useState(false);
+    const projectUser = useProjectUser();
+    const canEdit = useUserCanEdit(projectUser || undefined);
 
     const handleUpdateStub = (updatedText: string | number | ISource, label: string) => {
+        if (!canEdit) return;
         const stubKey = label as unknown as keyof ICurationStubStudy;
 
         if (props.stub?.id) {
@@ -100,6 +103,7 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                     onSave={handleUpdateStub}
                     label="title"
                     textToEdit={props.stub.title}
+                    editIconIsVisible={canEdit}
                 >
                     <Typography
                         sx={{
@@ -142,6 +146,7 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                     textToEdit={props.stub.pmid}
                     label="pmid"
                     onSave={handleUpdateStub}
+                    editIconIsVisible={canEdit}
                 >
                     <Typography
                         sx={{ color: props.stub.pmid ? 'initial' : 'warning.dark' }}
@@ -160,6 +165,7 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                     textToEdit={props.stub.pmcid}
                     label="pmcid"
                     onSave={handleUpdateStub}
+                    editIconIsVisible={canEdit}
                 >
                     <Typography
                         sx={{ color: props.stub.pmid ? 'initial' : 'warning.dark' }}
@@ -178,6 +184,7 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                     onSave={handleUpdateStub}
                     label="doi"
                     textToEdit={props.stub.doi}
+                    editIconIsVisible={canEdit}
                 >
                     {props.stub.doi && (
                         <Typography
@@ -229,7 +236,7 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                     onClick={() => setDeleteStubConfirmationIsOpen(true)}
                     variant="contained"
                     disableElevation
-                    disabled={!isAuthenticated}
+                    disabled={!canEdit}
                     color="error"
                 >
                     Delete study

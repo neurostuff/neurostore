@@ -7,7 +7,11 @@ import { useState } from 'react';
 import { useDeleteAnnotationNote } from 'stores/AnnotationStore.actions';
 import EditAnalysisPoints from '../EditAnalysisPoints/EditAnalysisPoints/EditAnalysisPoints';
 
-const EditAnalysis: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void }> = (props) => {
+const EditAnalysis: React.FC<{
+    analysisId?: string;
+    onDeleteAnalysis: () => void;
+    disabled: boolean;
+}> = (props) => {
     const deleteAnalysis = useDeleteAnalysis();
     const deleteAnnotationNote = useDeleteAnnotationNote();
 
@@ -29,8 +33,8 @@ const EditAnalysis: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void
     return (
         <Box sx={{ marginBottom: '2rem', width: '100%' }}>
             <DisplayAnalysisWarnings analysisId={props.analysisId} />
-            <EditAnalysisDetails analysisId={props.analysisId} />
-            <EditAnalysisPoints analysisId={props.analysisId} />
+            <EditAnalysisDetails disabled={props.disabled} analysisId={props.analysisId} />
+            <EditAnalysisPoints disabled={props.disabled} analysisId={props.analysisId} />
             {/* TODO: This can be added back later when we have a better understanding of where it fits in as currently, all meta-analysis algorithms do not use this */}
             {/* <Box sx={{ marginTop: '2rem' }}>
                 <Typography sx={{ marginBottom: '1rem', fontWeight: 'bold' }}>
@@ -51,6 +55,7 @@ const EditAnalysis: React.FC<{ analysisId?: string; onDeleteAnalysis: () => void
                     onClick={() => setDialogIsOpen(true)}
                     disableElevation
                     color="error"
+                    disabled={props.disabled}
                 >
                     Delete Analysis
                 </Button>

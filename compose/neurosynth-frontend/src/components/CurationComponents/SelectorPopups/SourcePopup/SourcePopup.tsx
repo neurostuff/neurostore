@@ -41,7 +41,7 @@ interface ISourceSelectorPopup {
 }
 
 const IdentificationSourcePopup: React.FC<ISourceSelectorPopup> = (props) => {
-    const { projectId }: { projectId: string | undefined } = useParams();
+    const { projectId } = useParams<{ projectId: string | undefined }>();
     const [selectedValue, setSelectedValue] = useState<AutoSelectOption | null>(
         props.initialValue || null
     );

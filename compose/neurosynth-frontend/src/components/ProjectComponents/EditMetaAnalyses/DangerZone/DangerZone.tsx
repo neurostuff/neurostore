@@ -1,20 +1,24 @@
 import { Box, Button, Typography } from '@mui/material';
 import ConfirmationDialog from 'components/Dialogs/ConfirmationDialog/ConfirmationDialog';
 import useDeleteProject from 'hooks/projects/useDeleteProject';
-import { useClearProvenance } from 'pages/Projects/ProjectPage/ProjectStore';
+import { useClearProvenance, useProjectUser } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import { useSnackbar } from 'notistack';
+import useUserCanEdit from 'hooks/useUserCanEdit';
 
 const env = process.env.REACT_APP_ENV as 'DEV' | 'STAGING' | 'PROD';
 
 const DangerZone: React.FC = (props) => {
-    const { projectId }: { projectId: string } = useParams<{ projectId: string }>();
+    const { projectId } = useParams<{ projectId: string }>();
+    const projectUser = useProjectUser();
     const { mutate: deleteProject } = useDeleteProject();
     const clearProvenance = useClearProvenance();
-    const history = useHistory();
+    const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
+
+    const userCanEdit = useUserCanEdit(projectUser || undefined);
 
     const [confirmationDialogIsOpen, setConfirmationDialogIsOpen] = useState(false);
 
@@ -25,13 +29,17 @@ const DangerZone: React.FC = (props) => {
             deleteProject(projectId, {
                 onSuccess: () => {
                     enqueueSnackbar('Deleted project successfully', { variant: 'success' });
-                    history.push('/projects');
+                    navigate('/projects');
                 },
             });
         }
 
         setConfirmationDialogIsOpen(false);
     };
+
+    if (!userCanEdit) {
+        return <></>;
+    }
 
     return (
         <>

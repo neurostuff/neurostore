@@ -7,12 +7,12 @@ import { useAnnotationNoteKeys, useUpdateAnnotationNotes } from 'stores/Annotati
 import { sanitizePaste } from '../HotTables.utils';
 import useEditStudyAnnotationsHotTable from './useEditStudyAnnotationsHotTable';
 
-const EditStudyAnnotationsHotTable: React.FC = (props) => {
+const EditStudyAnnotationsHotTable: React.FC<{ readonly: boolean }> = ({ readonly }) => {
     const hotTableRef = useRef<HotTable>(null);
     const noteKeys = useAnnotationNoteKeys();
     const updateNotes = useUpdateAnnotationNotes();
     const { colWidths, colHeaders, columns, hiddenRows, data, height } =
-        useEditStudyAnnotationsHotTable();
+        useEditStudyAnnotationsHotTable(readonly);
 
     const handleAfterChange = (changes: CellChange[] | null, source: ChangeSource) => {
         if (!data || !noteKeys || !changes) return;

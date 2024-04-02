@@ -14,7 +14,7 @@ import {
 } from 'pages/Studies/StudyStore';
 import { useMemo } from 'react';
 
-const EditStudyPageHeader: React.FC = (props) => {
+const EditStudyPageHeader: React.FC<{ disabled: boolean }> = ({ disabled }) => {
     const studyId = useStudyId();
     const projectId = useProjectId();
     const studyName = useStudyName();
@@ -31,7 +31,7 @@ const EditStudyPageHeader: React.FC = (props) => {
 
     return (
         <>
-            <EditStudyToolbar />
+            <EditStudyToolbar disabled={disabled} />
             <Box sx={{ marginBottom: '0.5rem' }}>
                 <Box sx={{ display: 'flex' }}>
                     <NeurosynthBreadcrumbs

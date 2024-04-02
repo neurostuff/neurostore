@@ -1,9 +1,15 @@
-import { AnalysisReturn } from 'neurostore-typescript-sdk';
+import { AxiosError, AxiosResponse } from 'axios';
+import { AnalysisReturn, StudyReturn } from 'neurostore-typescript-sdk';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
 const useGetStudyById = (studyId: string | undefined) => {
-    return useQuery(
+    return useQuery<
+        AxiosResponse<StudyReturn>,
+        AxiosError,
+        StudyReturn,
+        [string, string | undefined]
+    >(
         ['studies', studyId],
         () => API.NeurostoreServices.StudiesService.studiesIdGet(studyId || '', true),
         {
@@ -21,6 +27,9 @@ const useGetStudyById = (studyId: string | undefined) => {
 
                 res.data.analyses = sortedAnalyses;
                 return res.data;
+            },
+            onError: (err) => {
+                console.log(err);
             },
             enabled: !!studyId,
         }

@@ -9,6 +9,7 @@ import StateHandlerComponent from 'components/StateHandlerComponent/StateHandler
 import {
     useInitProjectStoreIfRequired,
     useProjectExtractionAnnotationId,
+    useProjectUser,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
@@ -22,6 +23,7 @@ import {
 } from '../StudyStore';
 import EditStudyPageStyles from './EditStudyPage.styles';
 import EditStudySwapVersionButton from 'components/EditStudyComponents/EditStudySwapVersionButton/EditStudySwapVersionButton';
+import useUserCanEdit from 'hooks/useUserCanEdit';
 
 const EditStudyPage: React.FC = (props) => {
     const { studyId } = useParams<{ studyId: string }>();
@@ -37,6 +39,8 @@ const EditStudyPage: React.FC = (props) => {
     const clearAnnotationStore = useClearAnnotationStore();
     const initAnnotationStore = useInitAnnotationStore();
     const getAnnotationIsLoading = useGetAnnotationIsLoading();
+    const projectUser = useProjectUser();
+    const canEdit = useUserCanEdit(projectUser || undefined);
 
     useInitProjectStoreIfRequired();
     // instead of the useInitStudyStoreIfRequired hook,
@@ -63,17 +67,19 @@ const EditStudyPage: React.FC = (props) => {
                 !studyStoreId || !annotationStoreId || getStudyIsLoading || getAnnotationIsLoading
             }
         >
-            <EditStudyPageHeader />
-            <EditStudyAnnotations />
-            <EditAnalyses />
-            <EditStudyDetails />
+            <EditStudyPageHeader disabled={!canEdit} />
+            <EditStudyAnnotations disabled={!canEdit} />
+            <EditAnalyses disabled={!canEdit} />
+            <EditStudyDetails disabled={!canEdit} />
             <Box sx={{ marginBottom: '5rem' }}>
-                <EditStudyMetadata />
+                <EditStudyMetadata disabled={!canEdit} />
             </Box>
-            <Box sx={EditStudyPageStyles.loadingButtonContainer}>
-                <EditStudySwapVersionButton />
-                <EditStudySaveButton />
-            </Box>
+            {canEdit && (
+                <Box sx={EditStudyPageStyles.loadingButtonContainer}>
+                    <EditStudySwapVersionButton />
+                    <EditStudySaveButton />
+                </Box>
+            )}
         </StateHandlerComponent>
     );
 };

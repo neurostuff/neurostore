@@ -3,20 +3,24 @@ import { StudyReturn } from 'neurostore-typescript-sdk';
 import StudyListItemStyles from './ReadOnlyStudySummary.styles';
 import CheckIcon from '@mui/icons-material/Check';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
-import { useHistory, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
 import { useProjectExtractionAddOrUpdateStudyListStatus } from 'pages/Projects/ProjectPage/ProjectStore';
 
 const ReadOnlyStudySummaryVirtualizedItem: React.FC<
-    StudyReturn & { currentSelectedChip: EExtractionStatus; style: React.CSSProperties }
+    StudyReturn & {
+        currentSelectedChip: EExtractionStatus;
+        canEdit: boolean;
+        style: React.CSSProperties;
+    }
 > = (props) => {
-    const { projectId }: { projectId: string } = useParams();
-    const history = useHistory();
+    const { projectId } = useParams<{ projectId: string }>();
+    const navigate = useNavigate();
     const addOrUpdateStudyListStatus = useProjectExtractionAddOrUpdateStudyListStatus();
 
     const handleClick = (_event: React.MouseEvent) => {
         if (props?.id) {
-            history.push(`/projects/${projectId}/extraction/studies/${props.id}`);
+            navigate(`/projects/${projectId}/extraction/studies/${props.id}`);
         }
     };
 
@@ -49,54 +53,56 @@ const ReadOnlyStudySummaryVirtualizedItem: React.FC<
                     </Box>
                     <Typography noWrap>{props.description}</Typography>
                 </Box>
-                <Box
-                    sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '70px',
-                    }}
-                >
-                    {showMarkAsCompleteButton && (
-                        <Box sx={{ marginBottom: '1rem' }}>
-                            <Tooltip placement="right" title="move to complete">
-                                <IconButton
-                                    size="large"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleUpdateStatus(
-                                            props.id || '',
-                                            EExtractionStatus.COMPLETED
-                                        );
-                                    }}
-                                >
-                                    <CheckIcon color="success" />
-                                </IconButton>
-                            </Tooltip>
-                        </Box>
-                    )}
-                    {showMarkAsSaveForLaterButton && (
-                        <Box>
-                            <Tooltip placement="right" title="move to save for later">
-                                <IconButton
-                                    size="large"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleUpdateStatus(
-                                            props.id || '',
-                                            EExtractionStatus.SAVEDFORLATER
-                                        );
-                                    }}
-                                >
-                                    <BookmarkIcon color="info" />
-                                </IconButton>
-                            </Tooltip>
-                        </Box>
-                    )}
-                </Box>
+                {props.canEdit && (
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '70px',
+                        }}
+                    >
+                        {showMarkAsCompleteButton && (
+                            <Box sx={{ marginBottom: '1rem' }}>
+                                <Tooltip placement="right" title="move to complete">
+                                    <IconButton
+                                        size="large"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleUpdateStatus(
+                                                props.id || '',
+                                                EExtractionStatus.COMPLETED
+                                            );
+                                        }}
+                                    >
+                                        <CheckIcon color="success" />
+                                    </IconButton>
+                                </Tooltip>
+                            </Box>
+                        )}
+                        {showMarkAsSaveForLaterButton && (
+                            <Box>
+                                <Tooltip placement="right" title="move to save for later">
+                                    <IconButton
+                                        size="large"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleUpdateStatus(
+                                                props.id || '',
+                                                EExtractionStatus.SAVEDFORLATER
+                                            );
+                                        }}
+                                    >
+                                        <BookmarkIcon color="info" />
+                                    </IconButton>
+                                </Tooltip>
+                            </Box>
+                        )}
+                    </Box>
+                )}
             </Box>
         </Box>
     );

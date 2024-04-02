@@ -8,7 +8,7 @@ import { useCreateAnnotationNote } from 'stores/AnnotationStore.actions';
 import EditAnalysesList from './EditAnalysesList/EditAnalysesList';
 import EditAnalysis from './EditAnalysis/EditAnalysis';
 
-const EditAnalyses: React.FC = React.memo((props) => {
+const EditAnalyses: React.FC<{ disabled: boolean }> = React.memo(({ disabled }) => {
     const analyses = useStudyAnalyses();
     const studyId = useStudyId();
     const addOrUpdateAnalysis = useAddOrUpdateAnalysis();
@@ -79,6 +79,7 @@ const EditAnalyses: React.FC = React.memo((props) => {
                         sx={{ width: '150px' }}
                         variant="contained"
                         disableElevation
+                        disabled={disabled}
                         startIcon={<Add />}
                     >
                         analysis
@@ -100,6 +101,7 @@ const EditAnalyses: React.FC = React.memo((props) => {
                                 }}
                             >
                                 <EditAnalysis
+                                    disabled={disabled}
                                     onDeleteAnalysis={handleAfterAnalysisDeleted}
                                     analysisId={selectedAnalysisId}
                                 />
