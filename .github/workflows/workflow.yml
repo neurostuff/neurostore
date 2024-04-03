@@ -150,7 +150,7 @@ jobs:
         name: spin up backend
         run: |
           docker network create nginx-proxy
-          docker compose pull
+          docker compose pull --ignore-buildable 
           docker compose \
             -f docker-compose.yml \
             -f docker-compose.dev.yml \
@@ -220,7 +220,7 @@ jobs:
       name: Spin up backend
       run: |
         docker network create nginx-proxy
-        docker compose pull
+        docker compose pull --ignore-buildable 
         docker compose \
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
@@ -310,7 +310,7 @@ jobs:
       name: Spin up backend
       run: |
         docker network create nginx-proxy
-        docker compose pull
+        docker compose pull --ignore-buildable 
         docker compose \
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
@@ -406,7 +406,7 @@ jobs:
       run: |
         cd compose
         docker network create nginx-proxy
-        docker compose pull
+        docker compose pull --ignore-buildable 
         docker compose \
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
@@ -415,7 +415,7 @@ jobs:
       name: Spin up store backend
       run: |
         cd store
-        docker compose pull
+        docker compose pull --ignore-buildable 
         docker compose \
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
