@@ -40,7 +40,6 @@ import {
 import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
 
 export type ProjectStoreMetadata = {
-    shouldUpdate: boolean; // this flag is for the debouncer
     enqueueSnackbar:
         | undefined
         | ((message: SnackbarMessage, options?: OptionsObject | undefined) => SnackbarKey);
@@ -49,6 +48,7 @@ export type ProjectStoreMetadata = {
     prevUpdatedProjectId: undefined | string;
     getProjectIsLoading: boolean;
     updateProjectIsLoading: boolean;
+    hasUnsavedChanges: boolean;
     isError: boolean;
     error: string | undefined;
     updateProject:
@@ -144,7 +144,6 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
         },
 
         metadata: {
-            shouldUpdate: false,
             enqueueSnackbar: undefined,
             updateProject: undefined,
             logout: undefined,
@@ -154,6 +153,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
             updateProjectIsLoading: false,
             isError: false,
             error: undefined,
+            hasUnsavedChanges: false,
         },
 
         // just for testing purposes
@@ -267,6 +267,10 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                             set((state) => ({
                                 ...state,
                                 updated_at: res.data.updated_at,
+                                metadata: {
+                                    ...state.metadata,
+                                    hasUnsavedChanges: false,
+                                },
                             }));
                         },
                         onError: (err) => {
@@ -326,6 +330,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     ...state.metadata,
                     prevUpdatedProjectId: oldDebouncedStoreData.id,
                     debounceTimeout: newTimeout,
+                    hasUnsavedChanges: true,
                 },
             }));
         },
@@ -384,7 +389,6 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     },
                 },
                 metadata: {
-                    shouldUpdate: false,
                     enqueueSnackbar: undefined,
                     logout: undefined,
                     updateProject: undefined,
@@ -394,6 +398,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     updateProjectIsLoading: false,
                     isError: false,
                     error: undefined,
+                    hasUnsavedChanges: false,
                 },
             }));
         },
@@ -406,10 +411,6 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                         ...state.provenance.curationMetadata,
                         ...initCurationHelper(cols, isPrisma),
                     },
-                },
-                metadata: {
-                    ...state.metadata,
-                    shouldUpdate: true,
                 },
             }));
 
@@ -749,6 +750,10 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
     };
 });
 
+// project metadata retrieval hooks
+export const useProjectMetadataHasUnsavedchanges = () =>
+    useProjectStore((state) => state.metadata.hasUnsavedChanges);
+
 // higher level project retrieval hooks
 export const useProjectIsPublic = () => useProjectStore((state) => state.public);
 export const useProjectCreatedAt = () =>
@@ -850,7 +855,6 @@ export const useInitProjectStoreIfRequired = () => {
                 updateProject: mutate,
                 logout: logout,
                 enqueueSnackbar: enqueueSnackbar,
-                shouldUpdate: true,
                 getProjectIsLoading: getProjectIsLoading,
                 updateProjectIsLoading: useUpdateProjectIsLoading,
                 isError: isError,
