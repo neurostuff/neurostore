@@ -369,7 +369,7 @@ class ListView(BaseView):
             error_out=False,
         )
         records = pagination_query.items
-        metadata = {'total_count': pagination_query.total}
+        metadata = {"total_count": pagination_query.total}
         content = self.__class__._schema(
             only=self._only,
             many=True,

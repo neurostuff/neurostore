@@ -61,9 +61,9 @@ def test_delete_project(session, app, auth_client, user_data):
 
 
 def test_total_count(session, app, auth_client, user_data):
-    response = auth_client.get('/api/projects')
+    response = auth_client.get("/api/projects")
     assert response.status_code == 200
-    assert 'total_count' in response.json['metadata']
+    assert "total_count" in response.json["metadata"]
 
 
 def test_filter_by_user_id(session, app, auth_client, user_data):
@@ -71,15 +71,16 @@ def test_filter_by_user_id(session, app, auth_client, user_data):
     # ...
 
     user_id = auth_client.username
-    response = auth_client.get(f'/api/projects?user_id={user_id}')
+    response = auth_client.get(f"/api/projects?user_id={user_id}")
     assert response.status_code == 200
-    for project in response.json['results']:
-        assert project['user'] == user_id
+    for project in response.json["results"]:
+        assert project["user"] == user_id
+
 
 def test_search_capabilities(session, app, auth_client, user_data):
     # Add some projects to the database
     # ...
 
-    search_term = 'test'
-    response = auth_client.get(f'/api/projects?search={search_term}')
+    search_term = "test"
+    response = auth_client.get(f"/api/projects?search={search_term}")
     assert response.status_code == 200
