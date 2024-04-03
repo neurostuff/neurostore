@@ -150,18 +150,18 @@ jobs:
         name: spin up backend
         run: |
           docker network create nginx-proxy
-          docker-compose pull
-          docker-compose \
+          docker compose pull --ignore-buildable 
+          docker compose \
             -f docker-compose.yml \
             -f docker-compose.dev.yml \
             up -d --no-build
       - 
         name: Create Test Database
         run: |
-          until docker-compose exec -T \
+          until docker compose exec -T \
           store_pgsql pg_isready -U postgres; do sleep 1; done
 
-          docker-compose exec -T \
+          docker compose exec -T \
           store_pgsql \
           psql -U postgres -c "create database test_db"
       -
@@ -173,7 +173,7 @@ jobs:
           AUTH0_ACCESS_TOKEN_URL: ${{ secrets.AUTH0_ACCESS_TOKEN_URL }}
           AUTH0_AUTH_URL: ${{ secrets.AUTH0_AUTH_URL }}
         run: |
-          docker-compose run \
+          docker compose run \
             -e "APP_SETTINGS=neurostore.config.DockerTestConfig" \
             -e "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
             -e "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
@@ -220,18 +220,18 @@ jobs:
       name: Spin up backend
       run: |
         docker network create nginx-proxy
-        docker-compose pull
-        docker-compose \
+        docker compose pull --ignore-buildable 
+        docker compose \
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
           up -d --no-build
     -
       name: Create Test Database
       run: |
-        until docker-compose exec -T \
+        until docker compose exec -T \
         compose_pgsql pg_isready -U postgres; do sleep 1; done
 
-        docker-compose exec -T \
+        docker compose exec -T \
         compose_pgsql \
         psql -U postgres -c "create database test_db"
     -
@@ -244,7 +244,7 @@ jobs:
         AUTH0_AUTH_URL: ${{ secrets.AUTH0_AUTH_URL }}
         NEUROVAULT_ACCESS_TOKEN: ${{ secrets.NEUROVAULT_ACCESS_TOKEN }}
       run: |
-        docker-compose run \
+        docker compose run \
           -e "APP_SETTINGS=neurosynth_compose.config.DockerTestConfig" \
           -e "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
           -e "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
@@ -310,18 +310,18 @@ jobs:
       name: Spin up backend
       run: |
         docker network create nginx-proxy
-        docker-compose pull
-        docker-compose \
+        docker compose pull --ignore-buildable 
+        docker compose \
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
           up -d --no-build
     -
       name: Create Test Database
       run: |
-        until docker-compose exec -T \
+        until docker compose exec -T \
         compose_pgsql pg_isready -U postgres; do sleep 1; done
 
-        docker-compose exec -T \
+        docker compose exec -T \
         compose_pgsql \
         psql -U postgres -c "create database test_db"
     -
@@ -337,7 +337,7 @@ jobs:
         REACT_APP_AUTH0_CLIENT_SECRET: ${{ secrets.REACT_APP_AUTH0_CLIENT_SECRET }}
       run: |
         cp neurosynth-frontend/.env.example neurosynth-frontend/.env.dev && \
-        docker-compose run \
+        docker compose run \
           -e "APP_SETTINGS=neurosynth_compose.config.DockerTestConfig" \
           -e "AUTH0_CLIENT_ID=${AUTH0_CLIENT_ID}" \
           -e "AUTH0_CLIENT_SECRET=${AUTH0_CLIENT_SECRET}" \
@@ -406,8 +406,8 @@ jobs:
       run: |
         cd compose
         docker network create nginx-proxy
-        docker-compose pull
-        docker-compose \
+        docker compose pull --ignore-buildable 
+        docker compose \
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
           up -d --no-build
@@ -415,8 +415,8 @@ jobs:
       name: Spin up store backend
       run: |
         cd store
-        docker-compose pull
-        docker-compose \
+        docker compose pull --ignore-buildable 
+        docker compose \
           -f docker-compose.yml \
           -f docker-compose.dev.yml \
           up -d --no-build
@@ -424,27 +424,27 @@ jobs:
       name: Create Compose Database
       run: |
         cd compose
-        until docker-compose exec -T \
+        until docker compose exec -T \
         compose_pgsql pg_isready -U postgres; do sleep 1; done
 
-        docker-compose exec -T \
+        docker compose exec -T \
         compose_pgsql \
         psql -U postgres -c "create database compose"
     -
       name: Create Store Database
       run: |
         cd store
-        until docker-compose exec -T \
+        until docker compose exec -T \
         store_pgsql pg_isready -U postgres; do sleep 1; done
 
-        docker-compose exec -T \
+        docker compose exec -T \
         store_pgsql \
         psql -U postgres -c "create database neurostore"
     -
       name: Initialize Compose Database
       run: |
         cd compose
-        docker-compose exec -T compose \
+        docker compose exec -T compose \
         bash -c \
             "flask db merge heads && \
              flask db stamp head && \
@@ -454,7 +454,7 @@ jobs:
       name: Initialize Store Database
       run: |
         cd store
-        docker-compose exec -T neurostore \
+        docker compose exec -T neurostore \
         bash -c \
             "flask db merge heads && \
              flask db stamp head && \
@@ -464,13 +464,13 @@ jobs:
       name: Ingest data into Store
       run: |
         cd store
-        docker-compose exec -T neurostore bash -c "flask ingest-neurosynth --max-rows 100"
+        docker compose exec -T neurostore bash -c "flask ingest-neurosynth --max-rows 100"
     -
       name: Ingest data into Compose
       run: |
         cd compose
         ipaddr=$(docker inspect neurostore | python3 -c "import sys, json; print(json.load(sys.stdin)[0]['NetworkSettings']['Networks']['nginx-proxy']['IPAddress'])")
-        docker-compose exec -T compose bash -c "flask create-meta-analyses --n-studysets 1 --neurostore-url http://${ipaddr}:8000"
+        docker compose exec -T compose bash -c "flask create-meta-analyses --n-studysets 1 --neurostore-url http://${ipaddr}:8000"
     -
       name: Frontend Cypress E2E Tests
       uses: cypress-io/github-action@v6
