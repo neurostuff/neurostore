@@ -11,7 +11,7 @@ const ProjectIsLoadingText: React.FC<{ isLoading?: boolean }> = (props) => {
             <Typography
                 sx={{
                     color: 'muted.main',
-                    fontSize: '1.5rem',
+                    fontSize: '1.25rem',
                     display: isLoading ? 'inline' : 'none',
                 }}
             >

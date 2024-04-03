@@ -100,7 +100,7 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                         }}
                         onClick={() => setEditMode(true)}
                     >
-                        <EditIcon sx={{ fontSize: '20px' }} color="primary" />
+                        <EditIcon sx={{ fontSize: '20px' }} color="secondary" />
                     </IconButton>
                 )}
             </Box>

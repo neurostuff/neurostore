@@ -1,4 +1,6 @@
-import { Box, Tab, Tabs, Typography } from '@mui/material';
+import LockIcon from '@mui/icons-material/Lock';
+import PublicIcon from '@mui/icons-material/Public';
+import { Box, Chip, Tab, Tabs, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
@@ -7,12 +9,15 @@ import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
 import {
     useGetProjectIsLoading,
     useInitProjectStoreIfRequired,
+    useProjectCreatedAt,
     useProjectDescription,
+    useProjectIsPublic,
     useProjectMetaAnalysisCanEdit,
     useProjectName,
     useProjectUser,
     useProjectUsername,
     useUpdateProjectDescription,
+    useUpdateProjectIsPublic,
     useUpdateProjectName,
 } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useMemo } from 'react';
@@ -36,12 +41,15 @@ const ProjectPage: React.FC = (props) => {
 
     const updateProjectName = useUpdateProjectName();
     const updateProjectDescription = useUpdateProjectDescription();
+    const updateProjectIsPublic = useUpdateProjectIsPublic();
     const metaAnalysesTabEnabled = useProjectMetaAnalysisCanEdit();
     const getProjectIsLoading = useGetProjectIsLoading();
     const projectName = useProjectName();
+    const createdAt = useProjectCreatedAt();
     const projectUser = useProjectUser();
     const projectUserName = useProjectUsername();
     const projectDescription = useProjectDescription();
+    const isPublic = useProjectIsPublic();
 
     const userCanEdit = useUserCanEdit(projectUser || undefined);
 
@@ -72,41 +80,93 @@ const ProjectPage: React.FC = (props) => {
                 </Box>
 
                 <Box sx={{ marginBottom: '0.5rem' }}>
-                    <TextEdit
-                        onSave={(updatedName, label) => updateProjectName(updatedName)}
-                        sx={{ input: { fontSize: '1.5rem' } }}
-                        textToEdit={projectName || ''}
-                        editIconIsVisible={userCanEdit}
-                    >
-                        <Typography
-                            sx={{ color: projectName ? 'initial' : 'warning.dark' }}
-                            variant="h5"
-                        >
-                            {projectName || 'No name'}
-                        </Typography>
-                    </TextEdit>
-                    <TextEdit
-                        onSave={(updatedDescription, label) =>
-                            updateProjectDescription(updatedDescription)
-                        }
-                        sx={{ input: { fontSize: '1.25rem' } }}
-                        textToEdit={projectDescription || ''}
-                        editIconIsVisible={userCanEdit}
-                        multiline
-                    >
-                        <Typography
-                            sx={{
-                                color: projectDescription ? 'muted.main' : 'warning.dark',
-                                whiteSpace: 'pre-line',
+                    <Box sx={{ marginBottom: '0.5rem' }}>
+                        <ToggleButtonGroup
+                            exclusive
+                            onChange={(event, newVal) => {
+                                // do not update if newVal is the same as the current value or if it doesnt exist
+                                if (newVal === null || newVal === isPublic) return;
+                                updateProjectIsPublic(newVal === 'PUBLIC');
                             }}
-                            variant="body1"
+                            color="primary"
+                            value={isPublic ? 'PUBLIC' : 'PRIVATE'}
+                            size="small"
                         >
-                            {projectDescription || 'No description'}
-                        </Typography>
-                    </TextEdit>
-                    <Typography variant="body1" sx={{ color: 'muted.main' }}>
-                        Owner: {projectUserName || 'No owner'}
-                    </Typography>
+                            <ToggleButton
+                                value="PUBLIC"
+                                sx={{ borderRadius: '8px', paddingLeft: '14px', height: '30px' }}
+                            >
+                                Public <PublicIcon sx={{ marginLeft: '10px', fontSize: '20px' }} />
+                            </ToggleButton>
+                            <ToggleButton
+                                value="PRIVATE"
+                                sx={{ borderRadius: '8px', paddingLeft: '14px', height: '30px' }}
+                            >
+                                Private <LockIcon sx={{ marginLeft: '10px', fontSize: '20px' }} />
+                            </ToggleButton>
+                        </ToggleButtonGroup>
+                    </Box>
+                    <Box>
+                        <TextEdit
+                            onSave={(updatedName, label) => updateProjectName(updatedName)}
+                            sx={{ input: { fontSize: '1.5rem' } }}
+                            textToEdit={projectName || ''}
+                            editIconIsVisible={userCanEdit}
+                        >
+                            <Typography
+                                sx={{ color: projectName ? 'initial' : 'warning.dark' }}
+                                variant="h5"
+                            >
+                                {projectName || 'No name'}
+                            </Typography>
+                        </TextEdit>
+                        <TextEdit
+                            onSave={(updatedDescription, label) =>
+                                updateProjectDescription(updatedDescription)
+                            }
+                            sx={{ input: { fontSize: '1.25rem' } }}
+                            textToEdit={projectDescription || ''}
+                            editIconIsVisible={userCanEdit}
+                            multiline
+                        >
+                            <Typography
+                                sx={{
+                                    color: projectDescription ? 'muted.main' : 'warning.dark',
+                                    whiteSpace: 'pre-line',
+                                }}
+                                variant="body1"
+                            >
+                                {projectDescription || 'No description'}
+                            </Typography>
+                        </TextEdit>
+                        <Box
+                            sx={{
+                                marginTop: '0.2rem',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                            }}
+                        >
+                            <Box>
+                                {projectUserName && (
+                                    <Chip
+                                        size="small"
+                                        label={`Owner: ${projectUserName}`}
+                                        variant="outlined"
+                                        sx={{ marginRight: '0.5rem' }}
+                                    />
+                                )}
+                                {createdAt && (
+                                    <Chip
+                                        size="small"
+                                        label={`Created: ${
+                                            createdAt.getMonth() + 1
+                                        }/${createdAt.getDate()}/${createdAt.getFullYear()} ${createdAt.getHours()}:${createdAt.getMinutes()}`}
+                                        variant="outlined"
+                                    />
+                                )}
+                            </Box>
+                        </Box>
+                    </Box>
                 </Box>
 
                 <Box sx={{ borderBottom: 1, margin: '0.5rem 0 1rem 0', borderColor: 'divider' }}>

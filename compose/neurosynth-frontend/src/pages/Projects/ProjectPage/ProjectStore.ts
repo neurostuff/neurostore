@@ -64,6 +64,7 @@ export type ProjectStoreMetadata = {
 export type ProjectStoreActions = {
     updateProjectInDBDebounced: () => void;
     updateProjectName: (name: string) => void;
+    updateProjectIsPublic: (isPublic: boolean) => void;
     updateProjectDescription: (description: string) => void;
     initProjectStore: (project: INeurosynthProjectReturn | undefined) => void;
     updateProjectMetaAnalyses: (meta_analyses: string[]) => void;
@@ -253,6 +254,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                 const update: INeurosynthProject = {
                     name: oldDebouncedStoreData.name,
                     description: oldDebouncedStoreData.description,
+                    public: oldDebouncedStoreData.public,
                     provenance: {
                         ...oldDebouncedStoreData.provenance,
                     },
@@ -417,6 +419,14 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
             set((state) => ({
                 ...state,
                 name: name,
+            }));
+
+            get().updateProjectInDBDebounced();
+        },
+        updateProjectIsPublic: (isPublic: boolean) => {
+            set((state) => ({
+                ...state,
+                public: isPublic,
             }));
 
             get().updateProjectInDBDebounced();
@@ -740,6 +750,9 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
 });
 
 // higher level project retrieval hooks
+export const useProjectIsPublic = () => useProjectStore((state) => state.public);
+export const useProjectCreatedAt = () =>
+    useProjectStore((state) => new Date(state.created_at || ''));
 export const useProjectName = () => useProjectStore((state) => state.name);
 export const useProjectDescription = () => useProjectStore((state) => state.description);
 export const useProjectProvenance = () => useProjectStore((state) => state.provenance);
@@ -776,6 +789,8 @@ export const useProjectCurationExclusionTags = () =>
     useProjectStore((state) => state.provenance.curationMetadata.exclusionTags);
 
 // curation updater hooks
+export const useUpdateProjectIsPublic = () =>
+    useProjectStore((state) => state.updateProjectIsPublic);
 export const useUpdateProjectName = () => useProjectStore((state) => state.updateProjectName);
 export const useUpdateProjectDescription = () =>
     useProjectStore((state) => state.updateProjectDescription);
