@@ -473,7 +473,7 @@ jobs:
         docker compose exec -T compose bash -c "flask create-meta-analyses --n-studysets 1 --neurostore-url http://${ipaddr}:8000"
     -
       name: Frontend Cypress E2E Tests
-      uses: cypress-io/github-action@v6f
+      uses: cypress-io/github-action@v6
       env:
         CYPRESS_auth0ClientId: ${{ secrets.REACT_APP_AUTH0_CLIENT_ID }}
         CYPRESS_auth0ClientSecret: ${{ secrets.REACT_APP_AUTH0_CLIENT_SECRET }}
