@@ -2,7 +2,7 @@
 
 export {};
 
-const PATH = '/studies/mock-study-id';
+const PATH = '/base-studies/mock-study-id';
 const PAGE_NAME = 'StudyPage';
 
 describe(PAGE_NAME, () => {
@@ -19,10 +19,9 @@ describe(PAGE_NAME, () => {
      */
     it('should load successfully', () => {
         cy.intercept('GET', `**/api/projects*`).as('realProjectsRequest');
-        cy.intercept('GET', `**/api/studies/**`, {
+        cy.intercept('GET', `**/api/base-studies/**`, {
             fixture: 'study',
         }).as('studyFixture');
-
         cy.visit(PATH).wait('@semanticScholarFixture').wait('@studyFixture');
         // .get('tr')
         // .eq(2)

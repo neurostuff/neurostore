@@ -9,7 +9,7 @@ import useSearchProjects from './useSearchProjects';
 
 const ProjectsPage: React.FC = (props) => {
     const { isAuthenticated } = useAuth0();
-    useGuard('/', 'not authenticated', !isAuthenticated);
+    useGuard('/', 'Please log in', !isAuthenticated);
 
     const {
         handlePageChange,
@@ -19,8 +19,6 @@ const ProjectsPage: React.FC = (props) => {
         isLoading,
         projects,
     } = useSearchProjects();
-
-    const noProjects = (projects?.results?.length || []) === 0;
 
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>

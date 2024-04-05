@@ -363,18 +363,24 @@ class ListView(BaseView):
         #     q = q.join(*attr.attr)
         q = q.order_by(getattr(attr, desc)(), getattr(m.id, desc)())
 
-        records = q.paginate(
-            page=args["page"], per_page=args["page_size"], error_out=False
-        ).items
+        pagination_query = q.paginate(
+            page=args["page"],
+            per_page=args["page_size"],
+            error_out=False,
+        )
+        records = pagination_query.items
+        metadata = {"total_count": pagination_query.total}
         content = self.__class__._schema(
             only=self._only,
             many=True,
             context=args,
         ).dump(records)
+
         response = {
-            "metadata": {},
+            "metadata": metadata,
             "results": content,
         }
+
         return jsonify(response), 200
 
     def post(self):
@@ -586,6 +592,7 @@ class NeurostoreStudiesView(ObjectView, ListView):
 
 @view_maker
 class ProjectsView(ObjectView, ListView):
+    _search_fields = ("name", "description")
     _nested = {
         "meta_analyses": "MetaAnalysesView",
     }

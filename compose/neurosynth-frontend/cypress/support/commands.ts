@@ -30,8 +30,8 @@ const createMockRequest = async (
         iss: 'https://dev-mui7zm42.us.auth0.com/',
         sub: 'auth0|62e0e6c9dd47048572613b4d',
         aud: ['https://dev-mui7zm42.us.auth0.com/userinfo', audience],
-        iat: 1659719697,
-        exp: 1659806097,
+        iat: Math.floor(Date.now() / 1000 + 86400),
+        exp: Math.floor(Date.now() / 1000 + 86400),
         azp: 'EmcOFhu0XAINM4EyslaKpZ3u09QlBvef',
         scope: scope,
     });
@@ -124,7 +124,9 @@ Cypress.Commands.add('login', (loginMode = 'mocked', extraClaims = {}) => {
                         signature,
                     },
                     header: jwtObject.header,
-                    user: jwtObject.sub,
+                    user: {
+                        sub: jwtObject.sub,
+                    },
                 },
                 expires_in,
                 id_token,

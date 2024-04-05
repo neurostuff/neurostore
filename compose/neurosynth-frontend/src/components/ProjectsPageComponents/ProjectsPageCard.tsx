@@ -13,7 +13,7 @@ import ProjectPageCardSummaryMetaAnalyses from './ProjectPageCardSummaryMetaAnal
 const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
     const { name, description, provenance, updated_at, created_at, id, meta_analyses = [] } = props;
 
-    const { data: studyset, isLoading } = useGetStudysetById(
+    const { data: studyset } = useGetStudysetById(
         provenance?.extractionMetadata?.studysetId,
         false
     );
