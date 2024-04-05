@@ -21,9 +21,14 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
     const { data: metaAnalyses } = useGetMetaAnalysesByIds(meta_analyses as string[]);
 
     const lastUpdateDate = useMemo(() => {
-        const lastUpdated = new Date(updated_at || created_at || '');
+        const lastUpdated = new Date(updated_at || '');
         return `${lastUpdated.toLocaleDateString()} ${lastUpdated.toLocaleTimeString()}`;
-    }, [created_at, updated_at]);
+    }, [updated_at]);
+
+    const createdDate = useMemo(() => {
+        const created = new Date(created_at || '');
+        return `${created.toLocaleDateString()} ${created.toLocaleTimeString()}`;
+    }, [created_at]);
 
     const curationSummary = useMemo(() => {
         if (provenance.curationMetadata.columns.length === 0) return;
@@ -68,7 +73,7 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
             (analysis) => (analysis.results?.length || 0) > 0
         );
         if (metaAnalysesWithResultsList.length === 0) {
-            return 'In progress';
+            return 'In progress. No runs detected';
         } else {
             return `Ran ${metaAnalysesWithResultsList.length}/${metaAnalyses.length} meta-analyses`;
         }
@@ -84,6 +89,7 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                     position: 'sticky',
                     top: '1rem',
                     height: '100%',
+                    marginRight: '20px',
                 }}
             >
                 <Stepper
@@ -127,14 +133,22 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
             </Box>
             <Box sx={{ flexGrow: 1 }}>
                 <Box mb="0.5rem" sx={{ width: '100%' }}>
-                    {
+                    {updated_at && (
                         <Chip
                             label={`Last updated ${lastUpdateDate}`}
                             variant="outlined"
                             size="small"
                             sx={{ mr: '6px' }}
                         />
-                    }
+                    )}
+                    {created_at && (
+                        <Chip
+                            label={`Created ${createdDate}`}
+                            variant="outlined"
+                            size="small"
+                            sx={{ mr: '6px' }}
+                        />
+                    )}
                     {studyset && (
                         <Chip
                             variant="outlined"
@@ -173,14 +187,15 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                         wordBreak: 'break-all',
                         wordWrap: 'break-word',
                     }}
+                    my="0.25rem"
                 >
                     {description || 'no description'}
                 </Typography>
-                <Box mt="0.5rem">
+                <Box>
                     {activeStep < 0 ? (
                         <Box sx={{ color: 'warning.dark' }}>
-                            This project has not been initialized. <br />
-                            Click the name of this project above to get started
+                            This project has not been initialized. Click the name of this project
+                            (above) to get started
                         </Box>
                     ) : activeStep === 0 && curationSummary ? (
                         <ProjectPageCardSummaryCuration projectId={id || ''} {...curationSummary} />
