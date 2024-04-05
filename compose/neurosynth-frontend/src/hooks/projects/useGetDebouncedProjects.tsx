@@ -6,17 +6,18 @@ import { ProjectSearchCriteria, projectsSearchHelper } from './useGetProjects';
 let debounce: NodeJS.Timeout;
 const useGetDebouncedProjects = (
     projectsearchCriteria: Partial<ProjectSearchCriteria>,
+    userId?: string,
     enabled?: boolean
 ) => {
     return useQuery(
-        ['projects', { ...projectsearchCriteria }],
+        ['projects', { ...projectsearchCriteria }, userId],
         () => {
             if (debounce) clearTimeout(debounce);
 
             return new Promise<AxiosResponse<ProjectList>>((resolve, reject) => {
                 debounce = setTimeout(async () => {
                     try {
-                        const res = await projectsSearchHelper(projectsearchCriteria);
+                        const res = await projectsSearchHelper(projectsearchCriteria, userId);
                         resolve(res);
                     } catch (e) {
                         reject(e);

@@ -8,8 +8,8 @@ import ProjectsPageCard from '../../../components/ProjectsPageComponents/Project
 import useSearchProjects from './useSearchProjects';
 
 const ProjectsPage: React.FC = (props) => {
-    const { isAuthenticated } = useAuth0();
-    useGuard('/', 'Please log in', !isAuthenticated);
+    const { isAuthenticated, isLoading: authIsLoading, user } = useAuth0();
+    useGuard('/', 'Please log in', !authIsLoading && !isAuthenticated);
 
     const {
         handlePageChange,
@@ -17,8 +17,10 @@ const ProjectsPage: React.FC = (props) => {
         handleSearch,
         isError,
         isLoading,
-        projects,
-    } = useSearchProjects();
+        projectsResponse,
+        pageSize,
+        pageOfResults,
+    } = useSearchProjects(user?.sub);
 
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>
@@ -33,12 +35,12 @@ const ProjectsPage: React.FC = (props) => {
                 onPageChange={handlePageChange}
                 onRowsPerPageChange={handleRowsPerPageChange}
                 onSearch={handleSearch}
-                totalCount={projects?.results?.length || 0}
-                pageSize={10}
-                pageOfResults={1}
+                totalCount={(projectsResponse?.metadata as any)?.total_count || 0}
+                pageSize={pageSize}
+                pageOfResults={(projectsResponse?.results || []).length === 0 ? 1 : pageOfResults}
             >
                 <StateHandlerComponent isLoading={isLoading} isError={isError}>
-                    {(projects?.results || []).map((project) => (
+                    {(projectsResponse?.results || []).map((project) => (
                         <Box
                             key={project?.id || ''}
                             sx={{
@@ -58,79 +60,3 @@ const ProjectsPage: React.FC = (props) => {
 };
 
 export default ProjectsPage;
-
-// {/* {noProjects ? (
-//     <Typography>
-//         You haven't created a project yet.{' '}
-//         {createProjectIsLoading ? (
-//             <ProgressLoader size={20} sx={{ marginLeft: '1rem' }} />
-//         ) : (
-//             <Link
-//                 onClick={handleCreateProject}
-//                 underline="hover"
-//                 sx={{ fontWeight: 'bold', cursor: 'pointer' }}
-//             >
-//                 Click here to get started
-//             </Link>
-//         )}
-//     </Typography>
-// ) : (
-//     <Box>
-//         <Box sx={SearchBarStyles.searchContainer}>
-//             <Paper sx={[SearchBarStyles.paper]} variant="outlined">
-//                 <InputBase
-//                     value={''}
-//                     onChange={(event) => {}}
-//                     placeholder="search for projects and meta-analyses"
-//                     sx={SearchBarStyles.textfield}
-//                 />
-//             </Paper>
-//             <Button
-//                 disableElevation
-//                 type="submit"
-//                 sx={{
-//                     borderTopLeftRadius: '0px',
-//                     borderBottomLeftRadius: '0px',
-//                     width: '150px',
-//                 }}
-//                 variant="contained"
-//                 startIcon={<SearchIcon />}
-//             >
-//                 Search
-//             </Button>
-//             <Button
-//                 sx={{
-//                     borderTopLeftRadius: '0px',
-//                     borderBottomLeftRadius: '0px',
-//                     borderLeft: '0px !important',
-//                     width: '100px',
-//                 }}
-//                 disableElevation
-//                 variant="text"
-//             >
-//                 Reset
-//             </Button>
-//         </Box>
-//         <Box>
-//             <Pagination
-//                 sx={{ marginTop: '1rem', width: '100%' }}
-//                 count={data?.length || 0}
-//             />
-//         </Box>
-//         <Box mt="1rem">
-//             {(data || []).map((project, index) => (
-//                 <Box
-//                     key={project?.id || ''}
-//                     sx={{
-//                         ':nth-of-type(2n)': {
-//                             backgroundColor: '#f7f7f7',
-//                             borderRadius: '4px',
-//                         },
-//                     }}
-//                 >
-//                     <ProjectsPageCard {...project} />
-//                 </Box>
-//             ))}
-//         </Box> */}
-// {/* </Box> */}
-// {/* )} */}

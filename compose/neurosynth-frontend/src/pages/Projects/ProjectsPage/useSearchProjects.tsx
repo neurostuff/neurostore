@@ -10,7 +10,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-const useSearchProjects = () => {
+const useSearchProjects = (userId?: string) => {
     const { isLoading } = useAuth0();
     const navigate = useNavigate();
     const location = useLocation();
@@ -20,13 +20,13 @@ const useSearchProjects = () => {
         ...getSearchCriteriaFromURL(location?.search),
     });
 
-    const [projects, setProjects] = useState<ProjectList>();
+    const [projectsResponse, setProjects] = useState<ProjectList>();
 
     const {
         data,
         isLoading: debouncedProjectIsLoading,
         isError,
-    } = useGetDebouncedProjects({ ...searchCriteria }, !isLoading);
+    } = useGetDebouncedProjects({ ...searchCriteria }, userId, !isLoading);
 
     /**
      * the data variable itself is undefined when refetching, so we need to save it
@@ -69,7 +69,7 @@ const useSearchProjects = () => {
     };
 
     return {
-        projects,
+        projectsResponse,
         isLoading: isLoading || debouncedProjectIsLoading,
         isError,
         handleSearch,

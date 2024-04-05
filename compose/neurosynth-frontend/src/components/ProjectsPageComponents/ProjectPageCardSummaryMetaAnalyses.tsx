@@ -1,14 +1,14 @@
-import { Box, List, ListItem, ListItemButton, ListItemText, Typography } from '@mui/material';
+import { Box, Divider, List, Typography } from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import { useGetMetaAnalysesByIds } from 'hooks';
 import React from 'react';
-import { Link } from 'react-router-dom';
+import ProjectPageCardSummaryMetaAnalysesListItem from './ProjectPageCardSummaryMetaAnalysesListItem';
 
 const ProjectPageCardSummaryMetaAnalyses: React.FC<{
     metaAnalysisIds: string[];
     projectId: string;
 }> = (props) => {
-    const { metaAnalysisIds, projectId } = props;
+    const { metaAnalysisIds } = props;
 
     const {
         data: metaAnalyses,
@@ -17,7 +17,9 @@ const ProjectPageCardSummaryMetaAnalyses: React.FC<{
     } = useGetMetaAnalysesByIds(metaAnalysisIds as string[]);
     return (
         <StateHandlerComponent isLoading={isLoading} isError={isError}>
-            <Typography fontWeight="bold">Meta Analyses:</Typography>
+            <Typography sx={{ marginBottom: '0.5rem' }} fontWeight="bold">
+                Meta Analyses:
+            </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', margin: '0.2rem 0 0.4rem 0' }}>
                 {(metaAnalyses || []).length === 0 ? (
                     <Box>
@@ -25,20 +27,12 @@ const ProjectPageCardSummaryMetaAnalyses: React.FC<{
                     </Box>
                 ) : (
                     <List sx={{ width: '100%' }} disablePadding>
+                        <Divider />
                         {(metaAnalyses || []).map((metaAnalysis) => (
-                            <ListItem disablePadding disableGutters key={metaAnalysis.id} divider>
-                                <ListItemButton
-                                    component={Link}
-                                    to={`/projects/${projectId}/meta-analyses/${metaAnalysis.id}`}
-                                >
-                                    <ListItemText
-                                        sx={{ minHeight: '44px' }}
-                                        primaryTypographyProps={{ color: 'primary.dark' }}
-                                        primary={metaAnalysis.name}
-                                        secondary={metaAnalysis.description}
-                                    />
-                                </ListItemButton>
-                            </ListItem>
+                            <ProjectPageCardSummaryMetaAnalysesListItem
+                                key={metaAnalysis.id}
+                                metaAnalysis={metaAnalysis}
+                            />
                         ))}
                     </List>
                 )}

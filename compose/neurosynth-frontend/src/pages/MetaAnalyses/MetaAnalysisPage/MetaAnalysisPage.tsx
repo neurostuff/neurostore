@@ -1,5 +1,5 @@
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import { Box, Button, Link, Paper, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, Link, Paper, Typography } from '@mui/material';
 import metaAnalysisSpec from 'assets/config/meta_analysis_params.json';
 import CodeSnippet from 'components/CodeSnippet/CodeSnippet';
 import { isMultiGroupAlgorithm } from 'components/Dialogs/CreateMetaAnalysisSpecificationDialog/CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
@@ -41,6 +41,7 @@ import { useParams } from 'react-router-dom';
 import { NeurostoreAnnotation } from 'utils/api';
 import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
 import useUserCanEdit from 'hooks/useUserCanEdit';
+import { getResultStatus } from 'components/ProjectComponents/ViewMetaAnalyses/ViewMetaAnalysis';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;
 
@@ -167,6 +168,10 @@ const MetaAnalysisPage: React.FC = (props) => {
     const metaAnalysisAnnotation = metaAnalysis?.annotation as Annotation | undefined;
     const metaAnalysisStudyset = metaAnalysis?.studyset as Studyset | undefined;
 
+    const resultStatus = useMemo(() => {
+        return getResultStatus(metaAnalysis, metaAnalysisResult);
+    }, [metaAnalysis, metaAnalysisResult]);
+
     const noResultsExist = (metaAnalysis?.results || []).length === 0;
 
     return (
@@ -177,7 +182,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                 errorMessage="There was an error getting your meta-analysis"
             >
                 {viewingThisPageFromProject && (
-                    <Box sx={{ marginBottom: '1rem' }}>
+                    <Box sx={{ marginBottom: '0.5rem' }}>
                         <NeurosynthBreadcrumbs
                             breadcrumbItems={[
                                 {
@@ -201,7 +206,24 @@ const MetaAnalysisPage: React.FC = (props) => {
                 )}
 
                 <Box sx={{ display: 'flex', marginBottom: '1rem' }}>
-                    <Box sx={{ flexGrow: 1 }}>
+                    <Box sx={{ width: '100%' }}>
+                        {
+                            <Alert
+                                severity={resultStatus.severity}
+                                color={resultStatus.color}
+                                sx={{ padding: '4px 10px', marginBottom: '1rem' }}
+                            >
+                                {resultStatus.statusText}
+                            </Alert>
+                        }
+                        {metaAnalysis?.username && (
+                            <Chip
+                                variant="filled"
+                                size="small"
+                                label={`Owner: ${metaAnalysis.username}`}
+                                sx={{ color: 'muted.main', marginBottom: '0.25rem' }}
+                            />
+                        )}
                         <TextEdit
                             editIconIsVisible={editsAllowed}
                             isLoading={updateMetaAnalysisNameIsLoading}
@@ -245,11 +267,6 @@ const MetaAnalysisPage: React.FC = (props) => {
                                 </Typography>
                             </Box>
                         </TextEdit>
-                        {metaAnalysis?.username && (
-                            <Typography sx={{ color: 'muted.main' }}>
-                                Owner: {metaAnalysis.username}
-                            </Typography>
-                        )}
                     </Box>
                 </Box>
 
@@ -335,9 +352,6 @@ const MetaAnalysisPage: React.FC = (props) => {
                                                 '_blank'
                                             );
                                         }}
-                                        // target="_blank"
-                                        // rel="noreferrer"
-                                        // href={`/projects/${projectId}/extraction`}
                                     >
                                         {metaAnalysisStudyset?.neurostore_id || ''}
                                     </Link>

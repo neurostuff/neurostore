@@ -1,5 +1,5 @@
 import { Box, Chip, Link as MuiLink, Stepper, Typography } from '@mui/material';
-import { useGetStudysetById } from 'hooks';
+import { useGetMetaAnalysesByIds, useGetStudysetById } from 'hooks';
 import { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
 import { getCurationSummary } from 'hooks/useGetCurationSummary';
 import { getExtractionSummary } from 'hooks/useGetExtractionSummary';
@@ -9,6 +9,7 @@ import ProjectPageCardStep from './ProjectPageCardStep';
 import ProjectPageCardSummaryCuration from './ProjectPageCardSummaryCuration';
 import ProjectPageCardExtractionSummary from './ProjectPageCardSummaryExtraction';
 import ProjectPageCardSummaryMetaAnalyses from './ProjectPageCardSummaryMetaAnalyses';
+import { MetaAnalysis } from 'neurosynth-compose-typescript-sdk';
 
 const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
     const { name, description, provenance, updated_at, created_at, id, meta_analyses = [] } = props;
@@ -17,6 +18,7 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
         provenance?.extractionMetadata?.studysetId,
         false
     );
+    const { data: metaAnalyses } = useGetMetaAnalysesByIds(meta_analyses as string[]);
 
     const lastUpdateDate = useMemo(() => {
         const lastUpdated = new Date(updated_at || created_at || '');
@@ -45,22 +47,45 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
         if (!curationSummary) return -1;
         if (!extractionSummary) return 0;
         if (!provenance?.metaAnalysisMetadata?.canEditMetaAnalyses) return 1;
-        if (
-            provenance?.metaAnalysisMetadata?.canEditMetaAnalyses &&
-            (meta_analyses?.length || 0) === 0
-        )
-            return 2;
-        return 3;
+
+        const metaAnalysesWithResults = ((metaAnalyses || []) as Array<MetaAnalysis>).filter(
+            (analysis) => (analysis.results?.length || 0) > 0
+        );
+        if (metaAnalyses?.length === 0 || metaAnalysesWithResults.length === 0) return 2;
+        return 3; // getting here means that at least one meta-analysis has been run
     }, [
         curationSummary,
         extractionSummary,
-        meta_analyses?.length,
+        metaAnalyses,
         provenance?.metaAnalysisMetadata?.canEditMetaAnalyses,
     ]);
 
+    const metaAnalysisOptionalText = useMemo(() => {
+        if (!metaAnalyses || metaAnalyses.length === 0) {
+            return 'Not started';
+        }
+        const metaAnalysesWithResultsList = ((metaAnalyses || []) as Array<MetaAnalysis>).filter(
+            (analysis) => (analysis.results?.length || 0) > 0
+        );
+        if (metaAnalysesWithResultsList.length === 0) {
+            return 'In progress';
+        } else {
+            return `Ran ${metaAnalysesWithResultsList.length}/${metaAnalyses.length} meta-analyses`;
+        }
+    }, [metaAnalyses]);
+
     return (
         <Box sx={{ display: 'flex', padding: '1rem', marginBottom: '0.5rem' }}>
-            <Box sx={{ width: '250px', maxWidth: '250px', minWidth: '250px' }}>
+            <Box
+                sx={{
+                    width: '250px',
+                    maxWidth: '250px',
+                    minWidth: '250px',
+                    position: 'sticky',
+                    top: '1rem',
+                    height: '100%',
+                }}
+            >
                 <Stepper
                     orientation="vertical"
                     activeStep={activeStep}
@@ -95,15 +120,7 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                     />
                     <ProjectPageCardStep
                         title="Meta Analyses"
-                        optionalText={
-                            activeStep < 2
-                                ? 'Not started'
-                                : activeStep === 2
-                                ? 'In progress'
-                                : `Created ${meta_analyses?.length} meta ${
-                                      (meta_analyses?.length || 0) > 1 ? 'analyses' : 'analysis'
-                                  }`
-                        }
+                        optionalText={metaAnalysisOptionalText}
                         isActive={activeStep === 2}
                     />
                 </Stepper>
@@ -160,7 +177,12 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                     {description || 'no description'}
                 </Typography>
                 <Box mt="0.5rem">
-                    {activeStep === 0 && curationSummary ? (
+                    {activeStep < 0 ? (
+                        <Box sx={{ color: 'warning.dark' }}>
+                            This project has not been initialized. <br />
+                            Click the name of this project above to get started
+                        </Box>
+                    ) : activeStep === 0 && curationSummary ? (
                         <ProjectPageCardSummaryCuration projectId={id || ''} {...curationSummary} />
                     ) : activeStep === 1 && extractionSummary ? (
                         <ProjectPageCardExtractionSummary

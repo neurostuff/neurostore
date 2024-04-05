@@ -86,8 +86,8 @@ export const indexToPRISMAMapping = (
 
 export class ProjectSearchCriteria {
     constructor(
-        public page: number | undefined = undefined,
-        public pageSize: number | undefined = undefined,
+        public pageOfResults: number = 1,
+        public pageSize: number = 10,
         public nameSearch: string | undefined = undefined,
         public genericSearchStr: string | undefined = undefined,
         public descriptionSearch: string | undefined = undefined,
@@ -96,9 +96,12 @@ export class ProjectSearchCriteria {
     ) {}
 }
 
-export const projectsSearchHelper = (projectSearchCriteria: Partial<ProjectSearchCriteria>) => {
+export const projectsSearchHelper = (
+    projectSearchCriteria: Partial<ProjectSearchCriteria>,
+    userId?: string
+) => {
     return API.NeurosynthServices.ProjectsService.projectsGet(
-        projectSearchCriteria.page || undefined,
+        projectSearchCriteria.pageOfResults || undefined,
         projectSearchCriteria.pageSize,
         projectSearchCriteria.nameSearch,
         projectSearchCriteria.genericSearchStr,
@@ -106,7 +109,8 @@ export const projectsSearchHelper = (projectSearchCriteria: Partial<ProjectSearc
         projectSearchCriteria.sortBy === SortBy.RELEVANCE
             ? undefined
             : projectSearchCriteria.sortBy,
-        projectSearchCriteria.descOrder
+        projectSearchCriteria.descOrder,
+        userId
     );
 };
 
