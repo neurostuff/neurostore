@@ -9,7 +9,8 @@ def test_get_all_projects(session, app, auth_client, user_data):
         [
             m.id
             for m in projects
-            if (m.public and not m.draft) or getattr(m.user, "external_id", None) == auth_client.username
+            if (m.public and not m.draft)
+            or getattr(m.user, "external_id", None) == auth_client.username
         ]
     )
 
