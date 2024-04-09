@@ -17,7 +17,7 @@ def test_page_and_page_size(session, app, auth_client, user_data, endpoint, mode
             [
                 m.id
                 for m in objects
-                if m.public
+                if (m.public and not m.draft)
                 or getattr(m.user, "external_id", None) == auth_client.username
             ]
         )
