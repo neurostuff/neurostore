@@ -331,7 +331,7 @@ class ListView(BaseView):
         # query items that are drafts
         if hasattr(m, "draft"):
             current_user = get_current_user()
-            q = q.filter(sae.or_(m.draft == False, m.user == current_user))
+            q = q.filter(sae.or_(m.draft == False, m.user == current_user))  # noqa E712
 
         # query annotations for a specific dataset
         if args.get("dataset_id"):

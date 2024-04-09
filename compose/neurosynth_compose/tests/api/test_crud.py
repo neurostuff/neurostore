@@ -81,8 +81,8 @@ def test_read(session, auth_client, user_data, endpoint, model, schema):
     user = User.query.filter_by(name="user1").first()
     if hasattr(model, "public"):
         query = (model.user == user) | (
-            (model.public == True) & (model.draft == False)
-        )  # noqa E712
+            (model.public == True) & (model.draft == False)  # noqa E712
+        )
     else:
         query = True
     expected_results = model.query.filter(query).all()
