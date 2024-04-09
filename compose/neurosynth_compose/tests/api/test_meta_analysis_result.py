@@ -10,8 +10,11 @@ def test_create_meta_analysis_result(session, app, auth_client, user_data):
         "meta_analysis_id": meta_analysis.id,
     }
     auth_client.token = None
+    # project should be a draft before running
+    assert meta_analysis.project.draft is True
     resp = auth_client.post("/api/meta-analysis-results", data=data, headers=headers)
-
+    # project should be not be a draft after running
+    assert meta_analysis.project.draft is False
     assert resp.status_code == 200
 
     # view the meta_analysis
