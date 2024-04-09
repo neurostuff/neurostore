@@ -44,6 +44,8 @@ def test_create(session, auth_client, user_data, endpoint, model, schema):
             del payload["neurostore_study"]
         if "username" in payload:
             del payload["username"]
+        if "draft" in payload:
+            del payload["draft"]
 
         if isinstance(example, MetaAnalysis):
             del payload["neurostore_analysis"]
