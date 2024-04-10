@@ -21,4 +21,4 @@ jobs:
       - name: Codespell
         uses: codespell-project/actions-codespell@master
         with:
-          exclude_file: "**/fixtures/**/*.json"
+          exclude_file: '**/fixtures/**/*.json'
