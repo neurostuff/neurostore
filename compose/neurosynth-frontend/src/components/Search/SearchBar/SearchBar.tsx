@@ -6,7 +6,9 @@ import {
     SearchByMapping,
     SearchCriteria,
     SearchDataType,
+    SearchDataTypeEnumToString,
     SortBy,
+    SortByEnumToString,
     Source,
 } from 'pages/Studies/StudiesPage/models';
 import { getSearchCriteriaFromURL } from 'pages/helpers/utils';
@@ -15,11 +17,12 @@ import { useLocation } from 'react-router-dom';
 import SearchBarFilters from './SearchBarAccessories/SearchBarFilters';
 import SearchSelectChip from './SearchBarAccessories/SearchSelectChip';
 import SearchSelectSortChip from './SearchBarAccessories/SearchSelectSortChip';
+import { ProjectSearchCriteria } from 'hooks/projects/useGetProjects';
 
 export interface ISearchBar {
-    onSearch: (searchArgs: Partial<SearchCriteria>) => void;
+    onSearch: (searchArgs: Partial<SearchCriteria | ProjectSearchCriteria>) => void;
     searchButtonColor?: string;
-    searchMode?: 'study-search' | 'studyset-search';
+    searchMode?: 'study-search' | 'project-search';
 }
 
 const searchPlaceholderExamples = [
@@ -35,17 +38,27 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
     const [placeholder, setPlaceholder] = useState(searchPlaceholderExamples[0]);
     const location = useLocation();
 
-    const [searchState, setSearchState] = useState<Partial<SearchCriteria>>({
-        genericSearchStr: undefined, // this defaults to undefined if empty in useGetBaseStudies
-        dataType: SearchDataType.ALL,
-        source: Source.ALL,
-        sortBy: SortBy.RELEVANCE,
-        descOrder: true,
-        nameSearch: undefined, // this defaults to undefined if empty in useGetBaseStudies
-        descriptionSearch: undefined, // this defaults to undefined if empty in useGetBaseStudies
-        journalSearch: undefined, // this defaults to undefined if empty in useGetBaseStudies
-        authorSearch: undefined,
-    });
+    const [searchState, setSearchState] = useState<Partial<ProjectSearchCriteria | SearchCriteria>>(
+        searchMode === 'study-search'
+            ? {
+                  genericSearchStr: undefined, // this defaults to undefined if empty in useGetBaseStudies
+                  dataType: SearchDataType.ALL,
+                  source: Source.ALL,
+                  sortBy: SortBy.RELEVANCE,
+                  descOrder: true,
+                  nameSearch: undefined, // this defaults to undefined if empty in useGetBaseStudies
+                  descriptionSearch: undefined, // this defaults to undefined if empty in useGetBaseStudies
+                  journalSearch: undefined, // this defaults to undefined if empty in useGetBaseStudies
+                  authorSearch: undefined,
+              }
+            : {
+                  nameSearch: '',
+                  genericSearchStr: '',
+                  descriptionSearch: '',
+                  sortBy: SortBy.RELEVANCE,
+                  descOrder: true,
+              }
+    );
 
     // set new placeholder on reload
     useEffect(() => {
@@ -56,36 +69,57 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                 ];
             setPlaceholder(placeholder);
         } else {
-            setPlaceholder('Enter a studyset name...');
+            setPlaceholder('Enter a project name...');
         }
     }, [searchMode]);
 
     useEffect(() => {
-        const searchCriteria = getSearchCriteriaFromURL(location.search);
-        setSearchState({
-            genericSearchStr: searchCriteria.genericSearchStr,
-            dataType: searchCriteria.dataType || SearchDataType.COORDINATE,
-            source: searchCriteria.source || Source.ALL,
-            sortBy: searchCriteria.sortBy || SortBy.RELEVANCE,
-            descOrder: searchCriteria.descOrder,
-            nameSearch: searchCriteria.nameSearch,
-            descriptionSearch: searchCriteria.descriptionSearch,
-            journalSearch: searchCriteria.journalSearch,
-            authorSearch: searchCriteria.authorSearch,
-        });
-    }, [location.search]);
+        if (searchMode === 'study-search') {
+            const searchCriteria = getSearchCriteriaFromURL(location.search);
+            setSearchState({
+                genericSearchStr: searchCriteria.genericSearchStr,
+                dataType: searchCriteria.dataType || SearchDataType.COORDINATE,
+                source: searchCriteria.source || Source.ALL,
+                sortBy: searchCriteria.sortBy || SortBy.RELEVANCE,
+                descOrder: searchCriteria.descOrder,
+                nameSearch: searchCriteria.nameSearch,
+                descriptionSearch: searchCriteria.descriptionSearch,
+                journalSearch: searchCriteria.journalSearch,
+                authorSearch: searchCriteria.authorSearch,
+            } as SearchCriteria);
+        } else {
+            const searchCriteria = getSearchCriteriaFromURL(location.search);
+            setSearchState({
+                genericSearchStr: searchCriteria.genericSearchStr,
+                sortBy: searchCriteria.sortBy || SortBy.RELEVANCE,
+                descOrder: searchCriteria.descOrder,
+                nameSearch: searchCriteria.nameSearch,
+                descriptionSearch: searchCriteria.descriptionSearch,
+            } as ProjectSearchCriteria);
+        }
+    }, [location.search, searchMode]);
 
     const handleReset = () => {
+        if (searchMode === 'study-search') {
+            onSearch({
+                genericSearchStr: undefined,
+                dataType: SearchDataType.ALL,
+                source: Source.ALL,
+                sortBy: SortBy.RELEVANCE,
+                descOrder: true,
+                nameSearch: undefined,
+                descriptionSearch: undefined,
+                journalSearch: undefined,
+                authorSearch: undefined,
+            });
+            return;
+        }
         onSearch({
+            nameSearch: undefined,
             genericSearchStr: undefined,
-            dataType: SearchDataType.ALL,
-            source: Source.ALL,
+            descriptionSearch: undefined,
             sortBy: SortBy.RELEVANCE,
             descOrder: true,
-            nameSearch: undefined,
-            descriptionSearch: undefined,
-            journalSearch: undefined,
-            authorSearch: undefined,
         });
     };
 
@@ -159,12 +193,19 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                             </Button>
                         </Box>
                     </Box>
-                    {searchMode === 'study-search' && (
+                    {searchMode === 'study-search' ? (
                         <Box sx={{ marginTop: '10px' }}>
                             <SearchSelectChip
-                                chipLabel={`Study Data Type: ${searchState.dataType || ''}`}
+                                chipLabel={`Study Data Type: ${
+                                    SearchDataTypeEnumToString[
+                                        (searchState as SearchCriteria).dataType as SearchDataType
+                                    ]
+                                }`}
                                 onSelectSearch={(selectedDataType) =>
-                                    onSearch({ ...searchState, dataType: selectedDataType })
+                                    onSearch({
+                                        ...(searchState as SearchCriteria),
+                                        dataType: selectedDataType,
+                                    })
                                 }
                                 options={[
                                     { value: SearchDataType.ALL, label: 'All' },
@@ -173,18 +214,66 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                                 ]}
                             />
                             <SearchSelectSortChip
-                                chipLabel={`Sort By: ${searchState.sortBy}`}
-                                descOrderChipLabel={searchState.descOrder ? 'DESC' : 'ASC'}
-                                onSelectDescOrder={(descOrder) =>
-                                    onSearch({ ...searchState, descOrder })
+                                searchMode="study-search"
+                                chipLabel={`Sort By: ${
+                                    SortByEnumToString[
+                                        (searchState as SearchCriteria).sortBy as SortBy
+                                    ]
+                                }`}
+                                descOrderChipLabel={
+                                    (searchState as SearchCriteria).descOrder ? 'DESC' : 'ASC'
                                 }
-                                onSelectSort={(sortBy) => onSearch({ ...searchState, sortBy })}
+                                onSelectDescOrder={(descOrder) =>
+                                    onSearch({ ...(searchState as SearchCriteria), descOrder })
+                                }
+                                onSelectSort={(sortBy) =>
+                                    onSearch({ ...(searchState as SearchCriteria), sortBy })
+                                }
                             />
                             <SearchBarFilters
-                                nameSearch={searchState.nameSearch}
-                                descriptionSearch={searchState.descriptionSearch}
-                                journalSearch={searchState.journalSearch}
-                                authorSearch={searchState.authorSearch}
+                                searchMode="study-search"
+                                nameSearch={(searchState as SearchCriteria).nameSearch}
+                                descriptionSearch={
+                                    (searchState as SearchCriteria).descriptionSearch
+                                }
+                                journalSearch={(searchState as SearchCriteria).journalSearch}
+                                authorSearch={(searchState as SearchCriteria).authorSearch}
+                                onAddFilter={handleAddFilter}
+                                onRemoveFilter={handleRemoveFilter}
+                            />
+                        </Box>
+                    ) : (
+                        <Box sx={{ marginTop: '10px' }}>
+                            <SearchSelectSortChip
+                                searchMode="project-search"
+                                chipLabel={`Sort By: ${
+                                    SortByEnumToString[
+                                        (searchState as ProjectSearchCriteria).sortBy as SortBy
+                                    ]
+                                }`}
+                                descOrderChipLabel={
+                                    (searchState as ProjectSearchCriteria).descOrder
+                                        ? 'DESC'
+                                        : 'ASC'
+                                }
+                                onSelectDescOrder={(descOrder) =>
+                                    onSearch({
+                                        ...(searchState as ProjectSearchCriteria),
+                                        descOrder,
+                                    })
+                                }
+                                onSelectSort={(sortBy) =>
+                                    onSearch({ ...(searchState as ProjectSearchCriteria), sortBy })
+                                }
+                            />
+                            <SearchBarFilters
+                                searchMode="project-search"
+                                nameSearch={(searchState as ProjectSearchCriteria).nameSearch}
+                                descriptionSearch={
+                                    (searchState as ProjectSearchCriteria).descriptionSearch
+                                }
+                                journalSearchAllowed={false}
+                                authorSearchAllowed={false}
                                 onAddFilter={handleAddFilter}
                                 onRemoveFilter={handleRemoveFilter}
                             />

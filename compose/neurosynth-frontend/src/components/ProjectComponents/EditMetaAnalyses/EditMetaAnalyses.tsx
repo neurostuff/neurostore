@@ -19,7 +19,6 @@ const EditMetaAnalyses: React.FC = (props) => {
     const canEdit = useUserCanEdit(projectUser || undefined);
     const { projectId } = useParams<{ projectId: string }>();
     const extractionMetadata = useProjectExtractionMetadata();
-    const { total, included, uncategorized } = useGetCurationSummary();
     const { data: studyset } = useGetStudysetById(extractionMetadata?.studysetId || '');
 
     const curationStepHasBeenInitialized = useProjectCurationColumns().length > 0;
@@ -29,6 +28,7 @@ const EditMetaAnalyses: React.FC = (props) => {
         !!extractionMetadata.studysetId &&
         (studyset?.studies?.length || 0) > 0;
 
+    const { total, included, uncategorized } = useGetCurationSummary();
     const disableExtractionStep =
         (total === 0 || included === 0 || uncategorized > 0) && !extractionStepHasBeenInitialized;
 

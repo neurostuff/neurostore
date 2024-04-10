@@ -8,6 +8,16 @@ export enum SortBy {
     JOURNAL = 'journal',
 }
 
+export const SortByEnumToString = {
+    [SortBy.RELEVANCE]: 'Relevance',
+    [SortBy.TITLE]: 'Name',
+    [SortBy.AUTHORS]: 'Authors',
+    [SortBy.DESCRIPTION]: 'Description',
+    [SortBy.CREATEDAT]: 'Created At',
+    [SortBy.SOURCE]: 'Source',
+    [SortBy.JOURNAL]: 'Journal',
+};
+
 export enum Source {
     NEUROSTORE = 'neurostore',
     NEUROVAULT = 'neurovault',
@@ -29,6 +39,12 @@ export enum SearchDataType {
     IMAGE = 'image',
     ALL = 'all',
 }
+
+export const SearchDataTypeEnumToString = {
+    [SearchDataType.COORDINATE]: 'Coordinates',
+    [SearchDataType.ALL]: 'All',
+    [SearchDataType.IMAGE]: 'Images',
+};
 
 export const SearchByMapping = {
     [SearchBy.ALL]: 'genericSearchStr',

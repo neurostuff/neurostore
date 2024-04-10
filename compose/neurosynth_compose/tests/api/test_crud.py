@@ -44,6 +44,8 @@ def test_create(session, auth_client, user_data, endpoint, model, schema):
             del payload["neurostore_study"]
         if "username" in payload:
             del payload["username"]
+        if "draft" in payload:
+            del payload["draft"]
 
         if isinstance(example, MetaAnalysis):
             del payload["neurostore_analysis"]
@@ -80,7 +82,9 @@ def test_create(session, auth_client, user_data, endpoint, model, schema):
 def test_read(session, auth_client, user_data, endpoint, model, schema):
     user = User.query.filter_by(name="user1").first()
     if hasattr(model, "public"):
-        query = (model.user == user) | (model.public == True)  # noqa E712
+        query = (model.user == user) | (
+            (model.public == True) & (model.draft == False)  # noqa E712
+        )
     else:
         query = True
     expected_results = model.query.filter(query).all()

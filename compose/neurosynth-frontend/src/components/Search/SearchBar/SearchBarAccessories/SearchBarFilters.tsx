@@ -11,21 +11,31 @@ import {
 } from '@mui/material';
 import NeurosynthPopper from 'components/NeurosynthPopper/NeurosynthPopper';
 import { SearchBy } from 'pages/Studies/StudiesPage/models';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 const SearchBarFilters: React.FC<{
-    nameSearch: string | undefined;
-    journalSearch: string | undefined;
-    descriptionSearch: string | undefined;
-    authorSearch: string | undefined;
+    searchMode: 'study-search' | 'project-search';
+    nameSearch?: string | undefined;
+    nameSearchAllowed?: boolean;
+    journalSearch?: string | undefined;
+    journalSearchAllowed?: boolean;
+    descriptionSearch?: string | undefined;
+    descriptionSearchAllowed?: boolean;
+    authorSearch?: string | undefined;
+    authorSearchAllowed?: boolean;
     onAddFilter: (newFilter: { filter: SearchBy; value: string }) => void;
     onRemoveFilter: (filter: { filter: SearchBy; value: string }) => void;
 }> = (props) => {
     const {
+        searchMode,
         nameSearch,
+        nameSearchAllowed = true,
         journalSearch,
+        journalSearchAllowed = true,
         descriptionSearch,
+        descriptionSearchAllowed = true,
         authorSearch,
+        authorSearchAllowed = true,
         onAddFilter,
         onRemoveFilter,
     } = props;
@@ -43,13 +53,21 @@ const SearchBarFilters: React.FC<{
         []
     );
 
-    const filterOptions = Object.keys(SearchBy)
-        .map((filterOption) => SearchBy[filterOption as keyof typeof SearchBy])
-        .filter(
+    const filterOptions = useMemo(() => {
+        let filterOptions;
+        if (searchMode === 'study-search') {
+            filterOptions = Object.keys(SearchBy).map(
+                (filterOption) => SearchBy[filterOption as keyof typeof SearchBy]
+            );
+        } else {
+            filterOptions = [SearchBy.TITLE, SearchBy.DESCRIPTION];
+        }
+        return filterOptions.filter(
             (filterOption) =>
                 filterOption !== SearchBy.ALL &&
                 existingFilters.every((existingFilter) => existingFilter.filter !== filterOption)
         );
+    }, [existingFilters, searchMode]);
 
     // used when creating a new filter in the popup
     const [newFilter, setNewFilter] = useState<{
@@ -63,14 +81,26 @@ const SearchBarFilters: React.FC<{
     useEffect(() => {
         setExistingFilters(() => {
             const filters = [];
-            if (nameSearch) filters.push({ filter: SearchBy.TITLE, value: nameSearch });
-            if (journalSearch) filters.push({ filter: SearchBy.JOURNAL, value: journalSearch });
-            if (descriptionSearch)
+            if (nameSearch && nameSearchAllowed)
+                filters.push({ filter: SearchBy.TITLE, value: nameSearch });
+            if (journalSearch && journalSearchAllowed)
+                filters.push({ filter: SearchBy.JOURNAL, value: journalSearch });
+            if (descriptionSearch && descriptionSearchAllowed)
                 filters.push({ filter: SearchBy.DESCRIPTION, value: descriptionSearch });
-            if (authorSearch) filters.push({ filter: SearchBy.AUTHORS, value: authorSearch });
+            if (authorSearch && authorSearchAllowed)
+                filters.push({ filter: SearchBy.AUTHORS, value: authorSearch });
             return filters;
         });
-    }, [nameSearch, journalSearch, descriptionSearch, authorSearch]);
+    }, [
+        nameSearch,
+        journalSearch,
+        descriptionSearch,
+        authorSearch,
+        nameSearchAllowed,
+        journalSearchAllowed,
+        descriptionSearchAllowed,
+        authorSearchAllowed,
+    ]);
 
     const handleAddFilter = () => {
         if (newFilter.filter !== undefined && newFilter.value) {

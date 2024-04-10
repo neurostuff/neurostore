@@ -50,7 +50,6 @@ const ProjectPage: React.FC = (props) => {
     const projectUserName = useProjectUsername();
     const projectDescription = useProjectDescription();
     const isPublic = useProjectIsPublic();
-
     const userCanEdit = useUserCanEdit(projectUser || undefined);
 
     const tab = useMemo(

@@ -328,6 +328,11 @@ class ListView(BaseView):
             current_user = get_current_user()
             q = q.filter(sae.or_(m.public == True, m.user == current_user))  # noqa E712
 
+        # query items that are drafts
+        if hasattr(m, "draft"):
+            current_user = get_current_user()
+            q = q.filter(sae.or_(m.draft == False, m.user == current_user))  # noqa E712
+
         # query annotations for a specific dataset
         if args.get("dataset_id"):
             q = q.filter(m.dataset_id == args.get("dataset_id"))
@@ -363,18 +368,24 @@ class ListView(BaseView):
         #     q = q.join(*attr.attr)
         q = q.order_by(getattr(attr, desc)(), getattr(m.id, desc)())
 
-        records = q.paginate(
-            page=args["page"], per_page=args["page_size"], error_out=False
-        ).items
+        pagination_query = q.paginate(
+            page=args["page"],
+            per_page=args["page_size"],
+            error_out=False,
+        )
+        records = pagination_query.items
+        metadata = {"total_count": pagination_query.total}
         content = self.__class__._schema(
             only=self._only,
             many=True,
             context=args,
         ).dump(records)
+
         response = {
-            "metadata": {},
+            "metadata": metadata,
             "results": content,
         }
+
         return jsonify(response), 200
 
     def post(self):
@@ -502,6 +513,8 @@ class MetaAnalysisResultsView(ObjectView, ListView):
             # create neurovault collection
             nv_collection = NeurovaultCollection(result=record)
             create_neurovault_collection(nv_collection)
+            meta.project.draft = False
+            db.session.add(meta)
             db.session.add(nv_collection)
             db.session.commit()
         return self.__class__._schema().dump(record)
@@ -586,6 +599,7 @@ class NeurostoreStudiesView(ObjectView, ListView):
 
 @view_maker
 class ProjectsView(ObjectView, ListView):
+    _search_fields = ("name", "description")
     _nested = {
         "meta_analyses": "MetaAnalysesView",
     }
