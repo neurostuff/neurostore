@@ -22,6 +22,7 @@ import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecificatio
 import useGetMetaAnalysisResultById from 'hooks/metaAnalyses/useGetMetaAnalysisResultById';
 import useGetSpecificationById from 'hooks/metaAnalyses/useGetSpecificationById';
 import useUpdateMetaAnalysis from 'hooks/metaAnalyses/useUpdateMetaAnalysis';
+import useUserCanEdit from 'hooks/useUserCanEdit';
 import {
     Annotation,
     ResultReturn,
@@ -40,7 +41,6 @@ import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { NeurostoreAnnotation } from 'utils/api';
 import MetaAnalysisPageStyles from './MetaAnalysisPage.styles';
-import useUserCanEdit from 'hooks/useUserCanEdit';
 import { getResultStatus } from 'components/ProjectComponents/ViewMetaAnalyses/ViewMetaAnalysis';
 
 const metaAnalysisSpecification: IMetaAnalysisParamsSpecification = metaAnalysisSpec;

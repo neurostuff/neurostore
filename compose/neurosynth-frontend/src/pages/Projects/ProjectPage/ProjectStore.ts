@@ -40,7 +40,6 @@ import {
 import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
 
 export type ProjectStoreMetadata = {
-    shouldUpdate: boolean; // this flag is for the debouncer
     enqueueSnackbar:
         | undefined
         | ((message: SnackbarMessage, options?: OptionsObject | undefined) => SnackbarKey);
@@ -49,6 +48,7 @@ export type ProjectStoreMetadata = {
     prevUpdatedProjectId: undefined | string;
     getProjectIsLoading: boolean;
     updateProjectIsLoading: boolean;
+    hasUnsavedChanges: boolean;
     isError: boolean;
     error: string | undefined;
     updateProject:
@@ -64,6 +64,7 @@ export type ProjectStoreMetadata = {
 export type ProjectStoreActions = {
     updateProjectInDBDebounced: () => void;
     updateProjectName: (name: string) => void;
+    updateProjectIsPublic: (isPublic: boolean) => void;
     updateProjectDescription: (description: string) => void;
     initProjectStore: (project: INeurosynthProjectReturn | undefined) => void;
     updateProjectMetaAnalyses: (meta_analyses: string[]) => void;
@@ -143,7 +144,6 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
         },
 
         metadata: {
-            shouldUpdate: false,
             enqueueSnackbar: undefined,
             updateProject: undefined,
             logout: undefined,
@@ -153,6 +153,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
             updateProjectIsLoading: false,
             isError: false,
             error: undefined,
+            hasUnsavedChanges: false,
         },
 
         // just for testing purposes
@@ -253,6 +254,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                 const update: INeurosynthProject = {
                     name: oldDebouncedStoreData.name,
                     description: oldDebouncedStoreData.description,
+                    public: oldDebouncedStoreData.public,
                     provenance: {
                         ...oldDebouncedStoreData.provenance,
                     },
@@ -265,6 +267,10 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                             set((state) => ({
                                 ...state,
                                 updated_at: res.data.updated_at,
+                                metadata: {
+                                    ...state.metadata,
+                                    hasUnsavedChanges: false,
+                                },
                             }));
                         },
                         onError: (err) => {
@@ -324,6 +330,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     ...state.metadata,
                     prevUpdatedProjectId: oldDebouncedStoreData.id,
                     debounceTimeout: newTimeout,
+                    hasUnsavedChanges: true,
                 },
             }));
         },
@@ -382,7 +389,6 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     },
                 },
                 metadata: {
-                    shouldUpdate: false,
                     enqueueSnackbar: undefined,
                     logout: undefined,
                     updateProject: undefined,
@@ -392,6 +398,7 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                     updateProjectIsLoading: false,
                     isError: false,
                     error: undefined,
+                    hasUnsavedChanges: false,
                 },
             }));
         },
@@ -405,10 +412,6 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
                         ...initCurationHelper(cols, isPrisma),
                     },
                 },
-                metadata: {
-                    ...state.metadata,
-                    shouldUpdate: true,
-                },
             }));
 
             get().updateProjectInDBDebounced();
@@ -417,6 +420,14 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
             set((state) => ({
                 ...state,
                 name: name,
+            }));
+
+            get().updateProjectInDBDebounced();
+        },
+        updateProjectIsPublic: (isPublic: boolean) => {
+            set((state) => ({
+                ...state,
+                public: isPublic,
             }));
 
             get().updateProjectInDBDebounced();
@@ -739,7 +750,14 @@ const useProjectStore = create<TProjectStore>()((set, get) => {
     };
 });
 
+// project metadata retrieval hooks
+export const useProjectMetadataHasUnsavedchanges = () =>
+    useProjectStore((state) => state.metadata.hasUnsavedChanges);
+
 // higher level project retrieval hooks
+export const useProjectIsPublic = () => useProjectStore((state) => state.public);
+export const useProjectCreatedAt = () =>
+    useProjectStore((state) => new Date(state.created_at || ''));
 export const useProjectName = () => useProjectStore((state) => state.name);
 export const useProjectDescription = () => useProjectStore((state) => state.description);
 export const useProjectProvenance = () => useProjectStore((state) => state.provenance);
@@ -776,6 +794,8 @@ export const useProjectCurationExclusionTags = () =>
     useProjectStore((state) => state.provenance.curationMetadata.exclusionTags);
 
 // curation updater hooks
+export const useUpdateProjectIsPublic = () =>
+    useProjectStore((state) => state.updateProjectIsPublic);
 export const useUpdateProjectName = () => useProjectStore((state) => state.updateProjectName);
 export const useUpdateProjectDescription = () =>
     useProjectStore((state) => state.updateProjectDescription);
@@ -835,7 +855,6 @@ export const useInitProjectStoreIfRequired = () => {
                 updateProject: mutate,
                 logout: logout,
                 enqueueSnackbar: enqueueSnackbar,
-                shouldUpdate: true,
                 getProjectIsLoading: getProjectIsLoading,
                 updateProjectIsLoading: useUpdateProjectIsLoading,
                 isError: isError,
