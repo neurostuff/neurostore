@@ -15,7 +15,7 @@ export interface ISearchContainer {
     searchButtonColor?: string;
     paginationSelectorStyles?: SystemStyleObject;
     tablePaginationSelectorStyles?: SystemStyleObject;
-    searchMode?: 'study-search' | 'studyset-search';
+    searchMode?: 'study-search' | 'project-search';
 }
 
 const getNumTotalPages = (totalCount: number | undefined, pageSize: number | undefined) => {

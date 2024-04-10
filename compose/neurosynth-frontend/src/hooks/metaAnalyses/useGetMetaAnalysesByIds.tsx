@@ -1,3 +1,4 @@
+import { lastUpdatedAtSortFn } from 'components/Dialogs/MoveToExtractionDialog/MovetoExtractionDialog.helpers';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
@@ -9,7 +10,7 @@ const useGetMetaAnalysesByIds = (metaAnalysisIds: string[] | undefined) => {
         () => API.NeurosynthServices.MetaAnalysisService.metaAnalysesGet(false, metaAnalysisIds),
         {
             select: (axiosResponse) => {
-                const res = axiosResponse.data.results || [];
+                const res = (axiosResponse.data.results || []).sort(lastUpdatedAtSortFn).reverse();
                 return res;
             },
             enabled: shouldFetch,

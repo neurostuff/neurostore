@@ -1,8 +1,16 @@
-import { Box, Button, Card, CardActions, CardContent, Typography } from '@mui/material';
+import {
+    Alert,
+    Box,
+    Button,
+    Card,
+    CardActions,
+    CardContent,
+    Chip,
+    Typography,
+} from '@mui/material';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import useGetMetaAnalysisResultById from 'hooks/metaAnalyses/useGetMetaAnalysisResultById';
 import useUserCanEdit from 'hooks/useUserCanEdit';
-import { ColorOptions } from 'index';
 import {
     MetaAnalysisReturn,
     NeurovaultFile,
@@ -16,36 +24,51 @@ export const getResultStatus = (
     metaAnalysisResult: ResultReturn | undefined
 ): {
     statusText: string;
-    color: ColorOptions | 'muted';
+    color: 'success' | 'info' | 'warning' | 'error';
+    severity: 'success' | 'info' | 'warning' | 'error';
 } => {
     if ((metaAnalysisObj?.results || []).length === 0)
-        return { statusText: 'No run detected', color: 'muted' };
+        return { statusText: 'No run detected', color: 'info', severity: 'info' };
 
     if (!metaAnalysisResult)
         return {
-            statusText: 'No result found',
+            statusText: 'No result found. Run may be in progress',
             color: 'warning',
+            severity: 'info',
         };
 
     if (!metaAnalysisResult?.neurovault_collection?.collection_id)
-        return { statusText: 'Run complete but Neurovault upload failed', color: 'error' };
+        return {
+            statusText: 'Run complete but Neurovault upload failed',
+            color: 'error',
+            severity: 'error',
+        };
 
     if (
         metaAnalysisResult.neurovault_collection?.files &&
         metaAnalysisResult.neurovault_collection.files.length === 0
     )
-        return { statusText: 'No result found', color: 'warning' };
+        return {
+            statusText: 'Detected run but no result found',
+            color: 'warning',
+            severity: 'warning',
+        };
 
     const allFilesAreValid = (
         metaAnalysisResult.neurovault_collection.files as Array<NeurovaultFile>
     ).every((file) => !!file.image_id);
-    if (!allFilesAreValid) return { statusText: 'Latest Run Failed', color: 'error' };
+    if (!allFilesAreValid)
+        return { statusText: 'Latest Run Failed', color: 'error', severity: 'error' };
 
     if (!metaAnalysisObj?.neurostore_analysis?.neurostore_id) {
-        return { statusText: 'Run complete but Neurostore upload failed', color: 'error' };
+        return {
+            statusText: 'Run complete but Neurostore upload failed',
+            color: 'error',
+            severity: 'error',
+        };
     }
 
-    return { statusText: 'Run successful', color: 'success' };
+    return { statusText: 'Run successful', color: 'success', severity: 'success' };
 };
 
 const ViewMetaAnalysis: React.FC<MetaAnalysisReturn> = (props) => {
@@ -91,22 +114,31 @@ const ViewMetaAnalysis: React.FC<MetaAnalysisReturn> = (props) => {
                     isLoading={getMetaAnalysisResultIsLoading}
                 >
                     <Box>
-                        <Typography
-                            variant="body2"
-                            sx={{ color: 'muted.main', marginBottom: '5px' }}
+                        <Alert
+                            severity={resultStatus.severity}
+                            color={resultStatus.color}
+                            sx={{ padding: '2px 10px' }}
+                            variant="standard"
                         >
-                            {`${date.toLocaleDateString()} ${date.toLocaleTimeString()}`}
-                        </Typography>
-                        <Typography color={`${resultStatus.color}.main`} variant="body2">
                             {resultStatus.statusText}
-                        </Typography>
+                        </Alert>
                     </Box>
 
-                    <Box sx={{ marginTop: '5px' }}>
+                    <Box sx={{ marginTop: '1rem' }}>
+                        <Chip
+                            sx={{ marginBottom: '0.5rem' }}
+                            size="small"
+                            label={`Created: ${date.toLocaleDateString()} ${date.toLocaleTimeString()}`}
+                        />
                         <Typography variant="h6" gutterBottom>
                             {name || ''}
                         </Typography>
-                        <Typography sx={{ color: 'muted.main' }}>{description || ''}</Typography>
+                        <Typography
+                            variant="body2"
+                            sx={{ color: 'muted.main', marginTop: '0.5rem' }}
+                        >
+                            {description || ''}
+                        </Typography>
                     </Box>
                 </StateHandlerComponent>
             </CardContent>

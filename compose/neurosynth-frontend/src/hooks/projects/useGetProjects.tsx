@@ -1,6 +1,7 @@
 import { ICurationColumn } from 'components/CurationComponents/CurationColumn/CurationColumn';
 import { Project, ProjectReturn } from 'neurosynth-compose-typescript-sdk';
 import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
+import { SortBy } from 'pages/Studies/StudiesPage/models';
 import { useQuery } from 'react-query';
 import API from 'utils/api';
 
@@ -83,14 +84,43 @@ export const indexToPRISMAMapping = (
     }
 };
 
-const useGetProjects = (authenticatedUser?: string) => {
+export class ProjectSearchCriteria {
+    constructor(
+        public pageOfResults: number = 1,
+        public pageSize: number = 10,
+        public nameSearch: string | undefined = undefined,
+        public genericSearchStr: string | undefined = undefined,
+        public descriptionSearch: string | undefined = undefined,
+        public sortBy: SortBy | undefined = undefined,
+        public descOrder: boolean = true
+    ) {}
+}
+
+export const projectsSearchHelper = (
+    projectSearchCriteria: Partial<ProjectSearchCriteria>,
+    userId?: string
+) => {
+    return API.NeurosynthServices.ProjectsService.projectsGet(
+        projectSearchCriteria.pageOfResults || undefined,
+        projectSearchCriteria.pageSize,
+        projectSearchCriteria.nameSearch,
+        projectSearchCriteria.genericSearchStr,
+        projectSearchCriteria.descriptionSearch,
+        projectSearchCriteria.sortBy === SortBy.RELEVANCE
+            ? undefined
+            : projectSearchCriteria.sortBy,
+        projectSearchCriteria.descOrder,
+        userId
+    );
+};
+
+const useGetProjects = (projectSearchCriteria: ProjectSearchCriteria) => {
     return useQuery(
-        ['projects', authenticatedUser],
-        () => API.NeurosynthServices.ProjectsService.projectsGet(),
+        ['projects', { ...projectSearchCriteria }],
+        () => projectsSearchHelper(projectSearchCriteria),
         {
             select: (axiosResponse) =>
                 (axiosResponse.data.results as INeurosynthProjectReturn[]) || [],
-            enabled: !!authenticatedUser,
         }
     );
 };

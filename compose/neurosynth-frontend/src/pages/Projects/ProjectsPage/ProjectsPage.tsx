@@ -1,46 +1,26 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import { Box, Link, TableCell, TableRow, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
+import SearchContainer from 'components/Search/SearchContainer/SearchContainer';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import NeurosynthTable from 'components/Tables/NeurosynthTable/NeurosynthTable';
-import NeurosynthTableStyles from 'components/Tables/NeurosynthTable/NeurosynthTable.styles';
-import useGetProjects, { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
-import { useIsMutating } from 'react-query';
-import { useNavigate } from 'react-router-dom';
-import { generateNewProjectData } from '../ProjectPage/ProjectStore.helpers';
-import { useCreateProject, useGuard } from 'hooks';
-import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
+import { useGuard } from 'hooks';
+import { INeurosynthProjectReturn } from 'hooks/projects/useGetProjects';
+import ProjectsPageCard from '../../../components/ProjectsPageComponents/ProjectsPageCard';
+import useSearchProjects from './useSearchProjects';
 
 const ProjectsPage: React.FC = (props) => {
-    const { user, isAuthenticated } = useAuth0();
+    const { isAuthenticated, isLoading: authIsLoading, user } = useAuth0();
+    useGuard('/', 'Please log in', !authIsLoading && !isAuthenticated);
+
     const {
-        data,
+        handlePageChange,
+        handleRowsPerPageChange,
+        handleSearch,
         isError,
-        isLoading: getProjectsIsLoading,
-        isFetching,
-    } = useGetProjects(user?.sub);
-    const createProjectIsFetchingNum = useIsMutating('create-project');
-    const navigate = useNavigate();
-    const { mutate, isLoading: createProjectIsLoading } = useCreateProject();
-    useGuard('/', 'not authenticated', !isAuthenticated);
-
-    const handleCreateProject = () => {
-        mutate(generateNewProjectData('Untitled', ''), {
-            onSuccess: (arg) => {
-                navigate(`/projects/${arg.data.id || ''}`);
-            },
-        });
-    };
-
-    const handleSelectProject = (project: INeurosynthProjectReturn) => {
-        if (project?.provenance?.metaAnalysisMetadata?.canEditMetaAnalyses) {
-            navigate(`/projects/${project?.id}/meta-analyses`);
-        } else {
-            navigate(`/projects/${project?.id}/project`);
-        }
-    };
-
-    const createProjectIsFetching = createProjectIsFetchingNum > 0;
-    const noProjects = (data?.length || []) === 0;
+        isLoading,
+        projectsResponse,
+        pageSize,
+        pageOfResults,
+    } = useSearchProjects(user?.sub);
 
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>
@@ -50,64 +30,31 @@ const ProjectsPage: React.FC = (props) => {
                 </Typography>
             </Box>
 
-            {noProjects ? (
-                <Typography>
-                    You haven't created a project yet.{' '}
-                    {createProjectIsLoading ? (
-                        <ProgressLoader size={20} sx={{ marginLeft: '1rem' }} />
-                    ) : (
-                        <Link
-                            onClick={handleCreateProject}
-                            underline="hover"
-                            sx={{ fontWeight: 'bold', cursor: 'pointer' }}
+            <SearchContainer
+                searchMode="project-search"
+                onPageChange={handlePageChange}
+                onRowsPerPageChange={handleRowsPerPageChange}
+                onSearch={handleSearch}
+                totalCount={(projectsResponse?.metadata as any)?.total_count || 0}
+                pageSize={pageSize}
+                pageOfResults={(projectsResponse?.results || []).length === 0 ? 1 : pageOfResults}
+            >
+                <StateHandlerComponent isLoading={isLoading} isError={isError}>
+                    {(projectsResponse?.results || []).map((project) => (
+                        <Box
+                            key={project?.id || ''}
+                            sx={{
+                                ':nth-of-type(2n)': {
+                                    backgroundColor: '#f7f7f7',
+                                    borderRadius: '4px',
+                                },
+                            }}
                         >
-                            Click here to get started
-                        </Link>
-                    )}
-                </Typography>
-            ) : (
-                <NeurosynthTable
-                    tableConfig={{
-                        isLoading: getProjectsIsLoading || isFetching || createProjectIsFetching,
-                        loaderColor: 'secondary',
-                        tableHeaderBackgroundColor: 'secondary.main',
-                        noDataDisplay: (
-                            <Box sx={{ color: 'warning.dark', padding: '1rem' }}>
-                                No projects found
-                            </Box>
-                        ),
-                    }}
-                    headerCells={[
-                        {
-                            text: 'Name',
-                            key: 'name',
-                            styles: { color: 'primary.contrastText', fontWeight: 'bold' },
-                        },
-                        {
-                            text: 'Description',
-                            key: 'description',
-                            styles: { color: 'primary.contrastText', fontWeight: 'bold' },
-                        },
-                    ]}
-                    rows={(data || []).map((project, index) => (
-                        <TableRow
-                            data-tour={index === 0 ? 'StudiesPage-4' : null}
-                            sx={NeurosynthTableStyles.tableRow}
-                            key={project?.id || index}
-                            onClick={() => handleSelectProject(project)}
-                        >
-                            <TableCell>
-                                {project?.name || <Box sx={{ color: 'warning.dark' }}>No name</Box>}
-                            </TableCell>
-                            <TableCell>
-                                {project?.description || (
-                                    <Box sx={{ color: 'warning.dark' }}>No description</Box>
-                                )}
-                            </TableCell>
-                        </TableRow>
+                            <ProjectsPageCard {...(project as INeurosynthProjectReturn)} />
+                        </Box>
                     ))}
-                />
-            )}
+                </StateHandlerComponent>
+            </SearchContainer>
         </StateHandlerComponent>
     );
 };
