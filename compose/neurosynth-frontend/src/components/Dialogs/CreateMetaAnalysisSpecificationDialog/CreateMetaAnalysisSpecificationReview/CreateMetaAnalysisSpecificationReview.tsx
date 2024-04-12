@@ -23,6 +23,15 @@ import { IAnalysesSelection } from '../CreateMetaAnalysisSpecificationDialogBase
 import { getFilteredAnnotationNotes } from '../CreateMetaAnalysisSpecificationSelectionStep/SelectAnalysesComponent/SelectAnalysesComponent.helpers';
 import { getWeightAndConditionsForSpecification } from './CreateMetaAnalysisSpecificationReview.helpers';
 
+const triggerAppziFeedbackPopup = () => {
+    const windowAppziObj = (window as any).appzi;
+    const alreadyPrompted = localStorage.getItem('APPZI_FEEDBACK_PROMPTED') === 'true';
+    if (windowAppziObj && !alreadyPrompted) {
+        localStorage.setItem('APPZI_FEEDBACK_PROMPTED', 'true');
+        windowAppziObj.openSurvey('03c0bd6a-d53d-4457-aae4-64d3cbc346d1');
+    }
+};
+
 const CreateMetaAnalysisSpecificationReview: React.FC<{
     onNavigate: (button: ENavigationButton) => void;
     onClose: () => void;
@@ -92,6 +101,8 @@ const CreateMetaAnalysisSpecificationReview: React.FC<{
         });
 
         navigate(`/projects/${projectId}/meta-analyses/${metaAnalysis.data.id}`);
+
+        triggerAppziFeedbackPopup();
     };
 
     const numSelectedAnnotationsText = useMemo(() => {
