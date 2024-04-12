@@ -1,15 +1,14 @@
 import { useAuth0 } from '@auth0/auth0-react';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { Box, Button, Toolbar, Typography } from '@mui/material';
-import NavToolbarPopupSubMenu from 'components/Navbar/NavSubMenu/NavToolbarPopupSubMenu';
+import CreateProjectButton from 'components/Buttons/CreateProjectButton/CreateProjectButton';
 import NeurosynthAvatar from 'components/Navbar/NeurosynthAvatar/NeurosynthAvatar';
+import NeurosynthPopupMenu from 'components/NeurosynthPopupMenu/NeurosynthPopupMenu';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { INav } from '../Navbar';
 import NavbarStyles from '../Navbar.styles';
 import NavToolbarStyles from './NavToolbar.styles';
-import LoadingButton from 'components/Buttons/LoadingButton/LoadingButton';
 
 const NavToolbar: React.FC<INav> = (props) => {
     const { isAuthenticated } = useAuth0();
@@ -31,19 +30,7 @@ const NavToolbar: React.FC<INav> = (props) => {
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     {isAuthenticated && (
                         <>
-                            <LoadingButton
-                                variant="contained"
-                                loaderColor="primary"
-                                isLoading={props.createProjectIsLoading || false}
-                                onClick={() => props.onCreateProject('Untitled', '')}
-                                sx={[
-                                    NavToolbarStyles.menuItem,
-                                    { margin: '0 15px', width: '170px' },
-                                ]}
-                                color="secondary"
-                                startIcon={<AddCircleOutlineIcon />}
-                                text="NEW PROJECT"
-                            />
+                            <CreateProjectButton />
                             <Button
                                 onClick={() => navigate('/projects')}
                                 sx={[
@@ -57,27 +44,28 @@ const NavToolbar: React.FC<INav> = (props) => {
                         </>
                     )}
 
-                    <NavToolbarPopupSubMenu
-                        buttonProps={{
-                            sx: [
-                                NavToolbarStyles.menuItemColor,
-                                NavToolbarStyles.menuItemPadding,
-                                NavToolbarStyles.menuItem,
-                            ],
-                            endIcon: <KeyboardArrowDownIcon />,
-                        }}
+                    <NeurosynthPopupMenu
+                        sx={[
+                            NavToolbarStyles.menuItemColor,
+                            NavToolbarStyles.menuItemPadding,
+                            NavToolbarStyles.menuItem,
+                        ]}
+                        buttonLabel="explore"
+                        endIcon={<KeyboardArrowDownIcon />}
                         options={[
                             {
-                                label: 'STUDIES',
+                                label: 'Studies',
+                                value: 'studies',
                                 onClick: () => navigate('/base-studies'),
                             },
                             {
-                                label: 'META-ANALYSES',
+                                label: 'Meta-Analyses',
+                                value: 'meta-analyses',
                                 onClick: () => navigate('/meta-analyses'),
                             },
                         ]}
-                        buttonLabel="explore"
                     />
+
                     <Button
                         sx={[
                             NavToolbarStyles.menuItemColor,

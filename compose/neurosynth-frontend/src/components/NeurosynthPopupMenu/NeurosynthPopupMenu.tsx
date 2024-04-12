@@ -2,8 +2,8 @@ import { Menu, Button, ButtonProps, MenuItem } from '@mui/material';
 import { useState } from 'react';
 
 export interface INeurosynthPopupMenu {
-    buttonProps: ButtonProps;
-    buttonLabel: string;
+    buttonLabel: string | React.ReactNode;
+    anchorEl?: HTMLElement | null;
     options: {
         label: string;
         value: string | number;
@@ -11,12 +11,13 @@ export interface INeurosynthPopupMenu {
     }[];
 }
 
-const NeurosynthPopupMenu: React.FC<INeurosynthPopupMenu> = (props) => {
-    const [anchorEl, setAnchorEl] = useState<null | HTMLButtonElement>(null);
+const NeurosynthPopupMenu: React.FC<INeurosynthPopupMenu & ButtonProps> = (props) => {
+    const { buttonLabel, options, anchorEl: anchorElFromProps = null, ...buttonProps } = props;
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(anchorElFromProps);
     const open = Boolean(anchorEl);
 
     const handleButtonPress = (event: React.MouseEvent<HTMLButtonElement>) => {
-        setAnchorEl(event.currentTarget);
+        setAnchorEl(anchorElFromProps || event.currentTarget);
     };
 
     const handleCloseNavMenu = () => {
@@ -25,14 +26,20 @@ const NeurosynthPopupMenu: React.FC<INeurosynthPopupMenu> = (props) => {
 
     return (
         <>
-            <Button {...props.buttonProps} onClick={handleButtonPress}>
-                {props.buttonLabel}
+            <Button {...buttonProps} onClick={handleButtonPress}>
+                {buttonLabel}
             </Button>
             <Menu open={open} onClose={handleCloseNavMenu} anchorEl={anchorEl}>
-                {props.options.map((option) => (
+                {options.map((option) => (
                     <MenuItem
                         key={option.label}
                         value={option.value}
+                        sx={{
+                            fontSize: {
+                                xs: '0.7rem',
+                                lg: '1rem',
+                            },
+                        }}
                         onClick={() => {
                             option.onClick(option.value);
                             handleCloseNavMenu();
