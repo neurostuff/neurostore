@@ -20,7 +20,7 @@ const useSearchProjects = (userId?: string) => {
         ...getSearchCriteriaFromURL(location?.search),
     });
 
-    const [projectsResponse, setProjects] = useState<ProjectList>();
+    const [projectsResponse, setProjectsResponse] = useState<ProjectList>();
 
     const {
         data,
@@ -34,7 +34,7 @@ const useSearchProjects = (userId?: string) => {
      * This is especially noticable when paginating
      */
     useEffect(() => {
-        if (data) setProjects(data);
+        if (data) setProjectsResponse(data);
     }, [data]);
 
     // runs every time the URL changes, to create a URL driven search.

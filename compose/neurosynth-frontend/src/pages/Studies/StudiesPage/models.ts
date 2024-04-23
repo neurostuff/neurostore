@@ -6,6 +6,7 @@ export enum SortBy {
     CREATEDAT = 'created_at',
     SOURCE = 'source',
     JOURNAL = 'journal',
+    LASTUPDATED = 'last_updated',
 }
 
 export const SortByEnumToString = {
@@ -16,6 +17,7 @@ export const SortByEnumToString = {
     [SortBy.CREATEDAT]: 'Created At',
     [SortBy.SOURCE]: 'Source',
     [SortBy.JOURNAL]: 'Journal',
+    [SortBy.LASTUPDATED]: 'Last Updated',
 };
 
 export enum Source {

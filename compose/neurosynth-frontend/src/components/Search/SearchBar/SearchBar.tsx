@@ -55,7 +55,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
                   nameSearch: '',
                   genericSearchStr: '',
                   descriptionSearch: '',
-                  sortBy: SortBy.RELEVANCE,
+                  sortBy: SortBy.LASTUPDATED,
                   descOrder: true,
               }
     );
@@ -91,7 +91,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
             const searchCriteria = getSearchCriteriaFromURL(location.search);
             setSearchState({
                 genericSearchStr: searchCriteria.genericSearchStr,
-                sortBy: searchCriteria.sortBy || SortBy.RELEVANCE,
+                sortBy: searchCriteria.sortBy || SortBy.LASTUPDATED,
                 descOrder: searchCriteria.descOrder,
                 nameSearch: searchCriteria.nameSearch,
                 descriptionSearch: searchCriteria.descriptionSearch,
@@ -118,7 +118,7 @@ const SearchBar: React.FC<ISearchBar> = (props) => {
             nameSearch: undefined,
             genericSearchStr: undefined,
             descriptionSearch: undefined,
-            sortBy: SortBy.RELEVANCE,
+            sortBy: SortBy.LASTUPDATED,
             descOrder: true,
         });
     };
