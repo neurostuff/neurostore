@@ -22,10 +22,11 @@ describe(PAGE_NAME, () => {
         cy.visit(PATH).wait('@projectFixture');
     });
 
-    it('should set the project from private to public', () => {
-        cy.intercept('GET', `**/api/projects/*`, { fixture: 'projects/projectExtractionStep' }).as(
-            'projectFixture'
-        );
+    it.only('should set the project from private to public when logged in and you own the project', () => {
+        cy.login('mocked');
+        cy.intercept('GET', `**/api/projects/*`, {
+            fixture: 'projects/projectExtractionStep',
+        }).as('projectFixture');
         cy.visit(PATH).wait('@projectFixture');
         cy.contains('button', 'Public').click();
         cy.wait('@updateProjectFixture').then((res) => {
@@ -34,16 +35,13 @@ describe(PAGE_NAME, () => {
         });
     });
 
-    it.only('should set the project from public to private', () => {
+    it('should set the project from public to private when logged in and you own the project', () => {
+        cy.login('mocked');
         cy.fixture('projects/projectExtractionStep').then((projectFixture) => {
             projectFixture.public = true;
             cy.intercept('GET', `**/api/projects/*`, projectFixture).as('projectFixturePublic');
         });
-        cy.visit(PATH)
-            .wait('@projectFixturePublic')
-            .then((res) => {
-                console.log({ res });
-            });
+        cy.visit(PATH).wait('@projectFixturePublic');
         cy.contains('button', 'Private').click();
         cy.wait('@updateProjectFixture').then((res) => {
             assert.exists(res.request.body.public);

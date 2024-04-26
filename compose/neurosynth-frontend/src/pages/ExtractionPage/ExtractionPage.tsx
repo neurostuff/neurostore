@@ -272,7 +272,7 @@ const ExtractionPage: React.FC = (props) => {
                             editIconIsVisible={canEdit}
                             isLoading={fieldBeingUpdated === 'name'}
                             label="Studyset Name"
-                            sx={{ input: { fontSize: '1.5rem' } }}
+                            textFieldSx={{ input: { fontSize: '1.5rem' } }}
                             fieldName="name"
                             onSave={handleUpdateStudyset}
                             textToEdit={studyset?.name || ''}
@@ -293,7 +293,7 @@ const ExtractionPage: React.FC = (props) => {
                             multiline
                             fieldName="description"
                             label="Studyset Description"
-                            sx={{ fontSize: '1rem' }}
+                            textFieldSx={{ fontSize: '1rem' }}
                             onSave={handleUpdateStudyset}
                             textToEdit={studyset?.description || ''}
                         >

@@ -33,7 +33,7 @@ const SearchSelectSortChip: React.FC<{
             return Object.keys(SortBy).map((sortBy) => SortBy[sortBy as keyof typeof SortBy]);
         }
 
-        return [SortBy.RELEVANCE, SortBy.TITLE, SortBy.CREATEDAT, SortBy.DESCRIPTION];
+        return [SortBy.LASTUPDATED, SortBy.TITLE, SortBy.CREATEDAT, SortBy.DESCRIPTION];
     }, [props.searchMode]);
 
     return (
@@ -67,7 +67,7 @@ const SearchSelectSortChip: React.FC<{
                 sx={{
                     borderTopRightRadius: 0,
                     borderBottomRightRadius: 0,
-                    width: '160px',
+                    width: '170px',
                     marginLeft: '5px',
                 }}
                 label={props.chipLabel}

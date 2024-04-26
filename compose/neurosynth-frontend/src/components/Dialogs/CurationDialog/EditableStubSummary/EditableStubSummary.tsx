@@ -99,7 +99,7 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
 
             <Box>
                 <TextEdit
-                    sx={{ input: { fontSize: '1.25rem' } }}
+                    textFieldSx={{ input: { fontSize: '1.25rem' } }}
                     onSave={handleUpdateStub}
                     label="title"
                     textToEdit={props.stub.title}
@@ -142,7 +142,7 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                     PMID:
                 </Typography>
                 <TextEdit
-                    sx={{ input: { padding: 0, fontSize: '1.25rem' } }}
+                    textFieldSx={{ input: { padding: 0, fontSize: '1.25rem' } }}
                     textToEdit={props.stub.pmid}
                     label="pmid"
                     onSave={handleUpdateStub}
@@ -161,7 +161,7 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                     PMCID:
                 </Typography>
                 <TextEdit
-                    sx={{ input: { padding: 0, fontSize: '1.25rem' } }}
+                    textFieldSx={{ input: { padding: 0, fontSize: '1.25rem' } }}
                     textToEdit={props.stub.pmcid}
                     label="pmcid"
                     onSave={handleUpdateStub}
@@ -180,7 +180,7 @@ const EditableStubSummary: React.FC<IEditableStubSummary> = (props) => {
                     DOI:
                 </Typography>
                 <TextEdit
-                    sx={{ input: { padding: 0, fontSize: '1.25rem' } }}
+                    textFieldSx={{ input: { padding: 0, fontSize: '1.25rem' } }}
                     onSave={handleUpdateStub}
                     label="doi"
                     textToEdit={props.stub.doi}

@@ -8,6 +8,7 @@ import ProgressLoader from 'components/ProgressLoader/ProgressLoader';
 export interface ITextEdit {
     textToEdit: string;
     sx?: SystemStyleObject;
+    textFieldSx?: SystemStyleObject;
     multiline?: boolean;
     fieldName?: string;
     placeholder?: string;
@@ -24,6 +25,7 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
     const {
         textToEdit = '',
         sx = {},
+        textFieldSx = {},
         multiline = false,
         placeholder = '',
         label = '',
@@ -44,7 +46,7 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
 
     if (editMode) {
         return (
-            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+            <Box sx={[{ display: 'flex', flexDirection: 'column' }, sx]}>
                 <TextField
                     variant="standard"
                     multiline={!!multiline}
@@ -52,7 +54,7 @@ const TextEdit: React.FC<ITextEdit> = (props) => {
                     label={label}
                     placeholder={placeholder}
                     onChange={(event) => setEditedValue(event.target.value)}
-                    sx={[{ minWidth: '350px' }, sx]}
+                    sx={[{ minWidth: '350px' }, textFieldSx]}
                 />
                 <Box>
                     <Button

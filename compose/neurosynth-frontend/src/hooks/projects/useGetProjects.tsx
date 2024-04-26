@@ -106,7 +106,7 @@ export const projectsSearchHelper = (
         projectSearchCriteria.nameSearch,
         projectSearchCriteria.genericSearchStr,
         projectSearchCriteria.descriptionSearch,
-        projectSearchCriteria.sortBy === SortBy.RELEVANCE
+        projectSearchCriteria.sortBy === SortBy.LASTUPDATED
             ? undefined
             : projectSearchCriteria.sortBy,
         projectSearchCriteria.descOrder,
