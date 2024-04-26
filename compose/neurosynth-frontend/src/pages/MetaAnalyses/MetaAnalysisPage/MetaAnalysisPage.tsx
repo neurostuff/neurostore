@@ -228,7 +228,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                             editIconIsVisible={editsAllowed}
                             isLoading={updateMetaAnalysisNameIsLoading}
                             onSave={updateName}
-                            sx={{ input: { fontSize: '1.5rem' } }}
+                            textFieldSx={{ input: { fontSize: '1.5rem' } }}
                             label="name"
                             textToEdit={metaAnalysis?.name || ''}
                         >
@@ -250,7 +250,7 @@ const MetaAnalysisPage: React.FC = (props) => {
                             isLoading={updateMetaAnalysisDescriptionIsLoading}
                             onSave={updateDescription}
                             label="description"
-                            sx={{ input: { fontSize: '1rem' } }}
+                            textFieldSx={{ input: { fontSize: '1rem' } }}
                             textToEdit={metaAnalysis?.description || ''}
                         >
                             <Box sx={MetaAnalysisPageStyles.displayedText}>

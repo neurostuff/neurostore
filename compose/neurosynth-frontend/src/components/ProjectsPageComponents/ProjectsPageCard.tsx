@@ -11,6 +11,15 @@ import ProjectPageCardExtractionSummary from './ProjectPageCardSummaryExtraction
 import ProjectPageCardSummaryMetaAnalyses from './ProjectPageCardSummaryMetaAnalyses';
 import { MetaAnalysis } from 'neurosynth-compose-typescript-sdk';
 
+const isToday = (date: Date) => {
+    const today = new Date();
+    return (
+        date.getDate() === today.getDate() &&
+        date.getMonth() === today.getMonth() &&
+        date.getFullYear() === today.getFullYear()
+    );
+};
+
 const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
     const { name, description, provenance, updated_at, created_at, id, meta_analyses = [] } = props;
 
@@ -22,12 +31,18 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
 
     const lastUpdateDate = useMemo(() => {
         const lastUpdated = new Date(updated_at || '');
-        return `${lastUpdated.toLocaleDateString()} ${lastUpdated.toLocaleTimeString()}`;
+        if (isToday(lastUpdated)) {
+            return 'Today';
+        }
+        return `${lastUpdated.toLocaleDateString()}`;
     }, [updated_at]);
 
     const createdDate = useMemo(() => {
         const created = new Date(created_at || '');
-        return `${created.toLocaleDateString()} ${created.toLocaleTimeString()}`;
+        if (isToday(created)) {
+            return 'Today';
+        }
+        return `${created.toLocaleDateString()}`;
     }, [created_at]);
 
     const curationSummary = useMemo(() => {
@@ -73,7 +88,7 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
             (analysis) => (analysis.results?.length || 0) > 0
         );
         if (metaAnalysesWithResultsList.length === 0) {
-            return 'In progress. No runs detected';
+            return 'In progress.';
         } else {
             return `Ran ${metaAnalysesWithResultsList.length}/${metaAnalyses.length} meta-analyses`;
         }
@@ -105,22 +120,14 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                     <ProjectPageCardStep
                         title="Curation"
                         optionalText={
-                            activeStep < 0
-                                ? 'Not started'
-                                : activeStep === 0
-                                ? 'In progress'
-                                : 'Completed'
+                            activeStep < 0 ? 'Not started' : activeStep === 0 ? 'In progress' : ''
                         }
                         isActive={activeStep === 0}
                     />
                     <ProjectPageCardStep
                         title="Extraction"
                         optionalText={
-                            activeStep < 1
-                                ? 'Not started'
-                                : activeStep === 1
-                                ? 'In progress'
-                                : 'Completed'
+                            activeStep < 1 ? 'Not started' : activeStep === 1 ? 'In progress' : ''
                         }
                         isActive={activeStep === 1}
                     />
@@ -135,7 +142,7 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                 <Box mb="0.5rem" sx={{ width: '100%' }}>
                     {updated_at && (
                         <Chip
-                            label={`Last updated ${lastUpdateDate}`}
+                            label={`Last updated: ${lastUpdateDate}`}
                             variant="outlined"
                             size="small"
                             sx={{ mr: '6px' }}
@@ -143,7 +150,7 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                     )}
                     {created_at && (
                         <Chip
-                            label={`Created ${createdDate}`}
+                            label={`Created: ${createdDate}`}
                             variant="outlined"
                             size="small"
                             sx={{ mr: '6px' }}
@@ -187,9 +194,9 @@ const ProjectsPageCard: React.FC<INeurosynthProjectReturn> = (props) => {
                         wordBreak: 'break-all',
                         wordWrap: 'break-word',
                     }}
-                    my="0.25rem"
+                    my="0.4rem"
                 >
-                    {description || 'no description'}
+                    {description || ''}
                 </Typography>
                 <Box>
                     {activeStep < 0 ? (

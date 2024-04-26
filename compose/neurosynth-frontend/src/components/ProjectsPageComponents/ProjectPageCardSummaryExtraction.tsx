@@ -13,7 +13,7 @@ const ProjectPageCardExtractionSummary: React.FC<IExtractionSummary & { projectI
     return (
         <Box>
             <Typography fontWeight="bold">Extraction Summary:</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', margin: '0.2rem 0 0.4rem 0' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', margin: '0.5rem 0 0.7rem 0' }}>
                 <Box sx={{ display: 'flex' }}>
                     <QuestionMarkIcon color="warning" fontSize="small" />
                     <Typography color="warning.dark" mr="2rem">
@@ -40,16 +40,6 @@ const ProjectPageCardExtractionSummary: React.FC<IExtractionSummary & { projectI
                 disableElevation
             >
                 Go to extraction
-            </Button>
-            <Button
-                component={Link}
-                to={`/projects/${projectId}/extraction/annotations`}
-                variant="outlined"
-                size="small"
-                sx={{ marginRight: '1rem', width: '180px' }}
-                disableElevation
-            >
-                Go to annotations
             </Button>
         </Box>
     );

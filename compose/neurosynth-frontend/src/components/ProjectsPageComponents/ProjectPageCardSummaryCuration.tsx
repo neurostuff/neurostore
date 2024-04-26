@@ -13,7 +13,7 @@ const ProjectPageCardSummaryCuration: React.FC<ICurationSummary & { projectId: s
     return (
         <Box>
             <Typography fontWeight="bold">Curation Summary:</Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', margin: '0.2rem 0 0.4rem 0' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', margin: '0.5rem 0 0.7rem 0' }}>
                 <Box sx={{ display: 'flex' }}>
                     <QuestionMarkIcon color="warning" fontSize="small" />
                     <Typography mr="2rem" color="warning.dark">
@@ -36,20 +36,10 @@ const ProjectPageCardSummaryCuration: React.FC<ICurationSummary & { projectId: s
                 to={`/projects/${projectId}/curation`}
                 variant="outlined"
                 size="small"
-                sx={{ marginRight: '1rem', width: '180px' }}
-                disableElevation
-            >
-                Go to curation board
-            </Button>
-            <Button
-                component={Link}
-                to={`/projects/${projectId}/curation/import`}
-                variant="outlined"
-                size="small"
                 sx={{ width: '180px' }}
                 disableElevation
             >
-                Import into curation
+                Go to curation board
             </Button>
         </Box>
     );
