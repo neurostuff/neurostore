@@ -1,12 +1,27 @@
 import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import SleuthImportWizardBuild from 'components/SleuthImportWizard/SleuthImportWizardBuild';
+import SleuthImportWizardIntroduction from 'components/SleuthImportWizard/SleuthImportWizardIntroduction';
 import SleuthImportWizardReview from 'components/SleuthImportWizard/SleuthImportWizardReview';
 import SleuthImportWizardUpload from 'components/SleuthImportWizard/SleuthImportWizardUpload';
 import { useState } from 'react';
 
 const ImportSleuthPage: React.FC = (props) => {
     const [activeStep, setActiveStep] = useState(0);
+    const [uploadedSleuthFiles, setUploadedSleuthFiles] = useState<string[]>([]);
+
+    const handleNextFromIntroduction = () => {
+        setActiveStep((prev) => prev + 1);
+    };
+
+    const handlePrevious = () => {
+        setActiveStep((prev) => prev - 1);
+    };
+
+    const handleNextFromUpload = (sleuthFiles: string[]) => {
+        setUploadedSleuthFiles(sleuthFiles);
+        setActiveStep((prev) => prev + 1);
+    };
 
     return (
         <Box>
@@ -28,6 +43,9 @@ const ImportSleuthPage: React.FC = (props) => {
             </Box>
             <Stepper activeStep={activeStep}>
                 <Step>
+                    <StepLabel>Introduction</StepLabel>
+                </Step>
+                <Step>
                     <StepLabel>Upload Sleuth File(s)</StepLabel>
                 </Step>
                 <Step>
@@ -39,9 +57,17 @@ const ImportSleuthPage: React.FC = (props) => {
             </Stepper>
 
             <Box sx={{ margin: '2rem 0' }}>
-                {activeStep === 0 && <SleuthImportWizardUpload />}
-                {activeStep === 1 && <SleuthImportWizardBuild />}
-                {activeStep === 2 && <SleuthImportWizardReview />}
+                {activeStep === 0 && (
+                    <SleuthImportWizardIntroduction onNext={handleNextFromIntroduction} />
+                )}
+                {activeStep === 1 && (
+                    <SleuthImportWizardUpload
+                        onNext={handleNextFromUpload}
+                        onPrevious={handlePrevious}
+                    />
+                )}
+                {activeStep === 2 && <SleuthImportWizardBuild />}
+                {activeStep === 3 && <SleuthImportWizardReview />}
             </Box>
         </Box>
     );

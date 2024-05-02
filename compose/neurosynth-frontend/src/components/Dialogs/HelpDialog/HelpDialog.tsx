@@ -1,5 +1,5 @@
 import HelpIcon from '@mui/icons-material/Help';
-import { IconButton } from '@mui/material';
+import { Button, IconButton } from '@mui/material';
 import React, { useState } from 'react';
 import BaseDialog from '../BaseDialog';
 
@@ -19,6 +19,15 @@ const HelpDialog: React.FC<{ dialogTitle: string }> = (props) => {
                 onCloseDialog={() => setIsOpen(false)}
             >
                 {props.children}
+
+                <Button
+                    onClick={() => setIsOpen(false)}
+                    variant="contained"
+                    disableElevation
+                    sx={{ marginTop: '1rem' }}
+                >
+                    Close
+                </Button>
             </BaseDialog>
         </>
     );
