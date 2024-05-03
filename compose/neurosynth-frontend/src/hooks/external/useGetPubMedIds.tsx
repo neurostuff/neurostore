@@ -364,7 +364,6 @@ const splitIdsIntoSeparateRequests = (
                 if (!articleList) return [];
 
                 return articleList.map((article) => {
-                    console.log({ article });
                     const pubmedArticleRef = article?.MedlineCitation?.Article;
                     const pubmedArticleIdRef = article?.PubmedData?.ArticleIdList;
 

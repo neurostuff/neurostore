@@ -1,5 +1,6 @@
 import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
+import { ISleuthFileUploadStubs } from 'components/SleuthImportWizard/SleuthImportWizard.utils';
 import SleuthImportWizardBuild from 'components/SleuthImportWizard/SleuthImportWizardBuild';
 import SleuthImportWizardIntroduction from 'components/SleuthImportWizard/SleuthImportWizardIntroduction';
 import SleuthImportWizardReview from 'components/SleuthImportWizard/SleuthImportWizardReview';
@@ -8,7 +9,7 @@ import { useState } from 'react';
 
 const ImportSleuthPage: React.FC = (props) => {
     const [activeStep, setActiveStep] = useState(0);
-    const [uploadedSleuthFiles, setUploadedSleuthFiles] = useState<string[]>([]);
+    const [uploadedSleuthFiles, setUploadedSleuthFiles] = useState<ISleuthFileUploadStubs[]>([]);
 
     const handleNextFromIntroduction = () => {
         setActiveStep((prev) => prev + 1);
@@ -18,10 +19,12 @@ const ImportSleuthPage: React.FC = (props) => {
         setActiveStep((prev) => prev - 1);
     };
 
-    const handleNextFromUpload = (sleuthFiles: string[]) => {
+    const handleNextFromUpload = (sleuthFiles: ISleuthFileUploadStubs[]) => {
         setUploadedSleuthFiles(sleuthFiles);
         setActiveStep((prev) => prev + 1);
     };
+
+    const handleNextFromBuild = () => {};
 
     return (
         <Box>
@@ -66,7 +69,13 @@ const ImportSleuthPage: React.FC = (props) => {
                         onPrevious={handlePrevious}
                     />
                 )}
-                {activeStep === 2 && <SleuthImportWizardBuild />}
+                {activeStep === 2 && (
+                    <SleuthImportWizardBuild
+                        sleuthUploads={uploadedSleuthFiles}
+                        onPrevious={handlePrevious}
+                        onNext={handleNextFromBuild}
+                    />
+                )}
                 {activeStep === 3 && <SleuthImportWizardReview />}
             </Box>
         </Box>

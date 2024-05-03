@@ -30,7 +30,14 @@ const SearchSelectSortChip: React.FC<{
     // get string values of the ENUM instead of the enum keys
     const sortByList = useMemo(() => {
         if (props.searchMode === 'study-search') {
-            return Object.keys(SortBy).map((sortBy) => SortBy[sortBy as keyof typeof SortBy]);
+            return [
+                SortBy.RELEVANCE,
+                SortBy.TITLE,
+                SortBy.AUTHORS,
+                SortBy.DESCRIPTION,
+                SortBy.CREATEDAT,
+                SortBy.JOURNAL,
+            ];
         }
 
         return [SortBy.LASTUPDATED, SortBy.TITLE, SortBy.CREATEDAT, SortBy.DESCRIPTION];
