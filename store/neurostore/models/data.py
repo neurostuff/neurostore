@@ -342,6 +342,7 @@ class Analysis(BaseMixin, db.Model):
     )
     name = db.Column(db.String)
     description = db.Column(db.String)
+    metadata_ = db.Column(JSONB)
     order = db.Column(db.Integer)
     # used to keep track of neurosynth analyses (in case of neurosynth/ace updates)
     table_id = db.Column(db.String)

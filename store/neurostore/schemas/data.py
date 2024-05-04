@@ -254,6 +254,8 @@ class StudysetStudySchema(BaseDataSchema):
 class AnalysisSchema(BaseDataSchema):
     # serialization
     study_id = fields.String(data_key="study", metadata={"id_field": True})
+    metadata = fields.Dict(attribute="metadata_", dump_only=True)
+    metadata_ = fields.Dict(data_key="metadata", load_only=True, allow_none=True)
     # study = fields.Pluck("StudySchema", "id", metadata={"id_field": True})
     conditions = StringOrNested(ConditionSchema, many=True, dump_only=True)
     order = fields.Integer()
@@ -560,6 +562,7 @@ class AnalysisSnapshot(BaseSnapshot):
             "id": a.id,
             "user": a.user_id,
             "name": a.name,
+            "metadata": a.metadata_,
             "description": a.description,
             "conditions": [ac_schema.dump(ac) for ac in a.analysis_conditions],
             "weights": list(a.weights),
