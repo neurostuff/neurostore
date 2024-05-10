@@ -1,41 +1,57 @@
-import { Box, CircularProgress, LinearProgress, Typography } from '@mui/material';
+import { useAuth0 } from '@auth0/auth0-react';
+import { Box, Button, CircularProgress, LinearProgress, Typography } from '@mui/material';
+import { AxiosResponse } from 'axios';
+import { EPropertyType } from 'components/EditMetadata';
+import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
+import {
+    useCreateAnnotation,
+    useCreateProject,
+    useCreateStudy,
+    useCreateStudyset,
+    useUpdateStudy,
+} from 'hooks';
+import { ICurationMetadata, IProvenance } from 'hooks/projects/useGetProjects';
 import useIngest from 'hooks/studies/useIngest';
 import {
-    AnalysisRequest,
-    BaseStudiesPost200Response,
     BaseStudy,
     BaseStudyReturn,
-    BaseStudyVersions,
+    NoteCollectionReturn,
     StudyReturn,
 } from 'neurostore-typescript-sdk';
+import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
+import {
+    generateNewProjectData,
+    initCurationHelper,
+} from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 import { useEffect, useRef, useState } from 'react';
 import {
     ISleuthFileUploadStubs,
-    ISleuthStub,
-    extractAuthorsFromString,
-    extractYearFromString,
+    createUpdateRequestForEachSleuthStudy,
+    executeHTTPRequestsAsBatches,
+    sleuthIngestedStudiesToStubs,
     sleuthStubsToBaseStudies,
 } from './SleuthImportWizard.utils';
-import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
-import { useCreateStudy } from 'hooks';
-import {
-    lastUpdatedAtSortFn,
-    selectBestVersionsForStudyset,
-} from 'components/Dialogs/MoveToExtractionDialog/MovetoExtractionDialog.helpers';
+import CurationImportBaseStyles from 'components/CurationComponents/CurationImport/CurationImportBase.styles';
 
 const SleuthImportWizardBuild: React.FC<{
     sleuthUploads: ISleuthFileUploadStubs[];
-    onPrevious: () => void;
     onNext: () => void;
 }> = (props) => {
+    const { user } = useAuth0();
+    const [progressValue, setProgressValue] = useState(0);
+    const [progressText, setProgressText] = useState('');
     const { mutateAsync: ingestAsync } = useIngest();
     const { mutateAsync: createStudyVersion } = useCreateStudy();
+    const { mutateAsync: updateStudy } = useUpdateStudy();
+    const { mutateAsync: createStudyset } = useCreateStudyset();
+    const { mutateAsync: createAnnotation } = useCreateAnnotation();
+    const { mutateAsync: createProject } = useCreateProject();
     const loadingState = useRef<{
         started: boolean;
     }>({
         started: false,
     });
-    const { sleuthUploads, onPrevious, onNext } = props;
+    const { sleuthUploads, onNext } = props;
     const [isLoadingState, setIsLoadingState] = useState(false);
     const [isError, setIsError] = useState(false);
 
@@ -46,73 +62,200 @@ const SleuthImportWizardBuild: React.FC<{
         loadingState.current.started = true;
         setIsLoadingState(true);
 
-        const createProject = async () => {};
+        const handleCreateProject = async (
+            studysetId: string,
+            annotationId: string,
+            ingestRes: {
+                responses: AxiosResponse<StudyReturn>[];
+                fileName: string;
+            }[]
+        ) => {
+            const fileNames = sleuthUploads.reduce((acc, curr, index) => {
+                return index === 0 ? `${curr.fileName}` : `${acc}, ${curr.fileName}`;
+            }, '');
 
-        const createAnnotation = async () => {};
+            const newProjectData = generateNewProjectData(
+                'Untitled sleuth project',
+                `New project generated from files: ${fileNames}`
+            );
 
-        const createStudyset = async () => {};
+            const curationMetadata: ICurationMetadata = initCurationHelper(
+                ['not included', 'included'],
+                false
+            );
+
+            curationMetadata.columns[curationMetadata.columns.length - 1].stubStudies =
+                sleuthIngestedStudiesToStubs(ingestRes);
+
+            const setStudyStatusesAsComplete = ingestRes
+                .reduce((acc, curr) => {
+                    return [...acc, ...curr.responses.map((x) => x.data.id as string)];
+                }, [] as string[])
+                .map((x) => ({
+                    id: x,
+                    status: EExtractionStatus.COMPLETED,
+                }));
+
+            createProject({
+                ...newProjectData,
+                provenance: {
+                    ...newProjectData.provenance,
+                    curationMetadata: curationMetadata,
+                    extractionMetadata: {
+                        studyStatusList: setStudyStatusesAsComplete,
+                        annotationId: annotationId,
+                        studysetId: studysetId,
+                    },
+                    metaAnalysisMetadata: {
+                        canEditMetaAnalyses: true,
+                    },
+                } as IProvenance,
+            });
+        };
+
+        const handleCreateAnnotation = async (
+            studysetId: string,
+            ingestRes: {
+                responses: AxiosResponse<StudyReturn>[];
+                fileName: string;
+            }[]
+        ) => {
+            // We want to use each filename as an inclusion column
+            const noteKeys = ingestRes.reduce(
+                (acc, curr) => {
+                    acc[curr.fileName] = EPropertyType.BOOLEAN;
+                    return acc;
+                },
+                { included: EPropertyType.BOOLEAN } as { [key: string]: EPropertyType }
+            );
+
+            const notes = ingestRes.reduce((acc, curr) => {
+                const analysisStudyList: { analysisId: string; studyId: string }[] = [];
+                for (const response of curr.responses) {
+                    for (const analysis of response.data.analyses || []) {
+                        analysisStudyList.push({
+                            analysisId: analysis as string,
+                            studyId: response.data.id as string,
+                        });
+                    }
+                }
+
+                const responsesToNotes: NoteCollectionReturn[] = analysisStudyList.map(
+                    (studyAnalysis) => ({
+                        analysis: studyAnalysis.analysisId,
+                        study: studyAnalysis.studyId,
+                        note: {
+                            included: true,
+                            [curr.fileName]: true,
+                        },
+                    })
+                );
+
+                return [...acc, ...responsesToNotes];
+            }, [] as NoteCollectionReturn[]);
+
+            return await createAnnotation({
+                source: 'neurosynth',
+                sourceId: undefined,
+                annotation: {
+                    name: 'Annotation for Untitled sleuth project',
+                    description: '',
+                    note_keys: noteKeys,
+                    notes: notes,
+                    studyset: studysetId,
+                },
+            });
+        };
+
+        const handleCreateStudyset = async (studyIds: string[]) => {
+            return await createStudyset({
+                name: `Studyset for Untitled sleuth project`,
+                description: '',
+                studies: studyIds,
+            });
+        };
 
         const ingest = async (
             baseStudies: BaseStudy[],
             sleuthUploads: ISleuthFileUploadStubs[]
         ) => {
-            const allSleuthStudies = sleuthUploads.reduce((acc, curr) => {
-                return [
-                    ...acc,
-                    ...curr.sleuthStubs.map((sleuthStub) => ({ ...sleuthStub, space: curr.space })),
-                ];
-            }, [] as (ISleuthStub & { space: string })[]);
             const res = await ingestAsync(baseStudies);
-            const createVersionForEachSleuthStudyRequest = (res.data as BaseStudyReturn[]).map(
-                (baseStudy) => {
-                    const sourceId = ((baseStudy.versions || []) as StudyReturn[]).sort(
-                        lastUpdatedAtSortFn
-                    )[0].id;
-                    const sleuthStudy = allSleuthStudies.find(
-                        (sleuthStudy) =>
-                            sleuthStudy.doi === baseStudy.doi || sleuthStudy.pmid === baseStudy.pmid
-                    );
-                    if (!sleuthStudy)
-                        throw new Error(`No sleuth study found for base study: ${baseStudy.id}`);
-
-                    const newAnalysis: AnalysisRequest = {
-                        name: sleuthStudy.analysisName,
-                        points: sleuthStudy.coordinates.map(({ x, y, z }) => ({
-                            x,
-                            y,
-                            z,
-                            space: sleuthStudy.space,
-                        })),
-                    };
-
-                    if (!sourceId)
-                        throw new Error(`No valid version ID for base study: ${baseStudy.id}`);
-
-                    return createStudyVersion({
-                        sourceId: sourceId,
-                        data: {
-                            analyses: [newAnalysis],
-                        },
-                    });
-                }
-            );
-
-            return Promise.all(createVersionForEachSleuthStudyRequest);
+            const databaseResponses: {
+                responses: AxiosResponse<StudyReturn>[];
+                fileName: string;
+            }[] = [];
+            for (const sleuthUpload of sleuthUploads) {
+                const requestList = createUpdateRequestForEachSleuthStudy(
+                    res.data as BaseStudyReturn[],
+                    sleuthUpload,
+                    user!.sub as string
+                );
+                const responses = await executeHTTPRequestsAsBatches(requestList, (progress) => {
+                    setProgressValue(Math.round((progress / 100) * 25));
+                });
+                databaseResponses.push({
+                    responses: responses,
+                    fileName: sleuthUpload.fileName,
+                });
+            }
+            return databaseResponses;
         };
 
         const build = async (sleuthUploads: ISleuthFileUploadStubs[]) => {
+            if (!user?.sub) return;
             const baseStudies = sleuthStubsToBaseStudies(sleuthUploads);
             try {
-                await ingest(baseStudies, sleuthUploads);
+                setProgressValue(0);
+                setProgressText('Ingesting...');
+                const ingestRes = await ingest(baseStudies, sleuthUploads);
+                console.log({ ingestRes });
+                const responsesToIds = ingestRes.reduce((acc, curr) => {
+                    return [...acc, ...curr.responses.map((x) => x.data.id as string)];
+                }, [] as string[]);
+                setProgressValue(25);
+                setProgressText('Creating studyset...');
+                console.log({ responsesToIds });
+                const createdStudyset = await handleCreateStudyset(responsesToIds);
+                console.log({ createdStudyset });
+                if (!createdStudyset.data.id) throw new Error('Created studyset but found no ID');
+                setProgressValue(50);
+                setProgressText('Creating annotation...');
+                const createdAnnotation = await handleCreateAnnotation(
+                    createdStudyset.data.id as string,
+                    ingestRes
+                );
+                setProgressValue(75);
+                setProgressText('Finalizing project...');
+                console.log({ createdAnnotation });
+                if (!createdAnnotation.data.id)
+                    throw new Error('Created annotation but found no ID');
+                const createdProject = await handleCreateProject(
+                    createdStudyset.data.id,
+                    createdAnnotation.data.id,
+                    ingestRes
+                );
+                setProgressValue(100);
+                setProgressText('Complete...');
+                console.log({ createdProject });
+                setIsLoadingState(false);
+                // onNext();
             } catch (e) {
                 setIsError(true);
             }
         };
 
         build(sleuthUploads);
-    }, [ingestAsync, sleuthUploads]);
-
-    console.log({ sleuthUploads });
+    }, [
+        createProject,
+        createStudyVersion,
+        createStudyset,
+        ingestAsync,
+        onNext,
+        updateStudy,
+        createAnnotation,
+        sleuthUploads,
+        user,
+    ]);
 
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>
@@ -131,7 +274,7 @@ const SleuthImportWizardBuild: React.FC<{
                             <LinearProgress
                                 sx={{ height: '10px', marginTop: '2rem', marginBottom: '1rem' }}
                                 variant="determinate"
-                                value={20}
+                                value={progressValue}
                             />
                         </Box>
                         <Box
@@ -142,7 +285,7 @@ const SleuthImportWizardBuild: React.FC<{
                             }}
                         >
                             <CircularProgress />
-                            <Typography>abc def</Typography>
+                            <Typography>{progressText}</Typography>
                             <Typography sx={{ marginTop: '1rem' }}>
                                 (This may take a minute)
                             </Typography>
@@ -151,26 +294,25 @@ const SleuthImportWizardBuild: React.FC<{
                         <div></div>
                     </Box>
                 ) : (
-                    <></>
+                    <Box sx={CurationImportBaseStyles.fixedContainer}>
+                        <Box
+                            sx={[
+                                CurationImportBaseStyles.fixedButtonsContainer,
+                                { justifyContent: 'flex-end' },
+                            ]}
+                        >
+                            <Button
+                                variant="contained"
+                                sx={CurationImportBaseStyles.nextButton}
+                                disableElevation
+                                onClick={() => {}}
+                            >
+                                next
+                            </Button>
+                        </Box>
+                    </Box>
                 )}
             </Box>
-            {/* <Box sx={CurationImportBaseStyles.fixedContainer}>
-                <Box
-                    sx={[
-                        CurationImportBaseStyles.fixedButtonsContainer,
-                        { justifyContent: 'flex-end' },
-                    ]}
-                >
-                    <Button
-                        variant="contained"
-                        sx={CurationImportBaseStyles.nextButton}
-                        disableElevation
-                        onClick={() => {}}
-                    >
-                        next
-                    </Button>
-                </Box>
-            </Box> */}
         </StateHandlerComponent>
     );
 };

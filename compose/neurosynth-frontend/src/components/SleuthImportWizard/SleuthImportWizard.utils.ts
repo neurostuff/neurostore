@@ -1,6 +1,19 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { AxiosResponse } from 'axios';
 import { ICurationStubStudy } from 'components/CurationComponents/CurationStubStudy/CurationStubStudyDraggableContainer';
-import { BaseStudy } from 'neurostore-typescript-sdk';
+import { selectBestBaseStudyVersion } from 'components/Dialogs/MoveToExtractionDialog/MovetoExtractionDialog.helpers';
+import { ITag } from 'hooks/projects/useGetProjects';
+import {
+    AnalysisRequest,
+    BaseStudy,
+    BaseStudyReturn,
+    StudyRequest,
+    StudyReturn,
+} from 'neurostore-typescript-sdk';
+import { defaultIdentificationSources } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
+import { DefaultSpaceTypes } from 'pages/Studies/StudyStore.helpers';
+import API from 'utils/api';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface ISleuthStub {
     doi?: string;
@@ -143,7 +156,7 @@ export const stringsAreValidFileFormat = (
     if (!containsDOI && !containsPMID) {
         return {
             isValid: false,
-            errorMessage: `Either DOI or PMID is required: Encountered error at: ${sleuthStudy.slice(
+            errorMessage: `Either DOI or PMID is required. Encountered error at: ${sleuthStudy.slice(
                 0,
                 100
             )}...`,
@@ -174,6 +187,13 @@ export const validateFileContents = (
         };
     }
     if (!expectedReferenceString.toLocaleLowerCase().includes('reference')) {
+        return {
+            isValid: false,
+            errorMessage: 'File does not have a reference',
+        };
+    }
+    const space = expectedReferenceString.split('=')[1].trim();
+    if (!space) {
         return {
             isValid: false,
             errorMessage: 'File does not have a reference',
@@ -258,7 +278,7 @@ export const sleuthUploadToStubs = (
         .map((sleuthStudy) => extractStubFromSleuthStudy(sleuthStudy));
 
     return {
-        space: expectedReferenceString,
+        space: expectedReferenceString.split('=')[1].trim(),
         sleuthStubs,
     };
 };
@@ -315,4 +335,183 @@ export const sleuthStubsToBaseStudies = (sleuthFiles: ISleuthFileUploadStubs[]) 
         };
     });
     return baseStudies;
+};
+
+/**
+ * This function takes each sleuth study and returns either a POST request to create a new study version,
+ * or a PUT request to update an existing version. This is because a new version may have been created already
+ * during the baseStudiesPost (ingestion) call.
+ *
+ * If multiple sleuth studies refer to the same study, then we will combine them into a single study with multiple analyses.
+ */
+export const createUpdateRequestForEachSleuthStudy = (
+    returnedBaseStudies: BaseStudyReturn[],
+    sleuthUpload: ISleuthFileUploadStubs,
+    currUser: string
+) => {
+    const baseStudyMap = new Map<
+        string,
+        { studyId: string; data: StudyRequest; request: 'UPDATE' | 'CREATE' }
+    >();
+    const allSleuthStudies = sleuthUpload.sleuthStubs.map((sleuthStub) => ({
+        ...sleuthStub,
+        space: sleuthUpload.space,
+        fileName: sleuthUpload.fileName,
+    }));
+
+    allSleuthStudies.forEach((sleuthStudy) => {
+        // step 1: validate that we have either a valid DOI or a valid PMID
+        // validate that we have a corresponding base study
+        const sleuthStudyDOI = sleuthStudy.doi;
+        const sleuthStudyPMID = sleuthStudy.pmid;
+        if (!sleuthStudyDOI && !sleuthStudyPMID) throw new Error('No doi or pmid for sleuth study');
+        const sleuthStudyIdentifier = sleuthStudyDOI ? sleuthStudyDOI : (sleuthStudyPMID as string);
+
+        const correspondingBaseStudy = returnedBaseStudies.find(
+            (baseStudy) => baseStudy.doi === sleuthStudyDOI || baseStudy.pmid === sleuthStudyPMID
+        );
+        if (!correspondingBaseStudy) {
+            throw new Error(
+                `No corresponding base study found for sleuth study: PMID: ${sleuthStudyPMID}, DOI: ${sleuthStudyDOI}`
+            );
+        }
+        if (correspondingBaseStudy.versions?.length === 0)
+            throw new Error('No versions found for base study');
+
+        // step 2: create the correct request type based on whether the user owns the study version or not
+        const request = { studyId: '', data: {}, request: 'CREATE' as 'CREATE' | 'UPDATE' };
+        const userCreatedVersion = ((correspondingBaseStudy.versions as StudyReturn[]) || []).find(
+            (version) => version.user === currUser
+        );
+        if (userCreatedVersion && userCreatedVersion.id) {
+            request.studyId = userCreatedVersion.id;
+            request.request = 'UPDATE';
+        } else {
+            request.studyId = selectBestBaseStudyVersion(
+                correspondingBaseStudy.versions as StudyReturn[]
+            ).id!;
+            request.request = 'CREATE';
+        }
+
+        // step 3: formulate the correct data for the request body.
+        // this is where we add multiple analyses if there are multiple sleuth studies connected to the same study
+        const space = sleuthStudy.space.toLocaleLowerCase();
+        const newAnalysis: AnalysisRequest = {
+            id: undefined,
+            name: sleuthStudy.analysisName,
+            points: sleuthStudy.coordinates.map(({ x, y, z }) => ({
+                id: undefined,
+                x,
+                y,
+                z,
+                values: [], // this is necessary for the POST request
+                space:
+                    space === DefaultSpaceTypes.MNI.label
+                        ? DefaultSpaceTypes.MNI.value
+                        : space === DefaultSpaceTypes.TAL.label
+                        ? DefaultSpaceTypes.TAL.value
+                        : sleuthStudy.space,
+            })),
+        };
+
+        if (baseStudyMap.has(sleuthStudyIdentifier)) {
+            const existingRequest = baseStudyMap.get(sleuthStudyIdentifier)!;
+            (existingRequest.data.analyses as AnalysisRequest[])!.push(newAnalysis);
+        } else {
+            baseStudyMap.set(sleuthStudyIdentifier, {
+                ...request,
+                data: {
+                    analyses: [newAnalysis],
+                },
+            });
+        }
+    });
+
+    return Array.from(baseStudyMap).map(([_key, value]) => value);
+};
+
+export const executeHTTPRequestsAsBatches = async (
+    requestList: {
+        studyId: string;
+        data: StudyRequest;
+        request: 'UPDATE' | 'CREATE';
+    }[],
+    // called after every batch has been executed
+    callbackFunc?: (progress: number) => void
+) => {
+    const arrayOfRequestArrays = [];
+    for (let i = 0; i < requestList.length; i += 5) {
+        arrayOfRequestArrays.push(requestList.slice(i, i + 5));
+    }
+
+    const batchedResList = [];
+    for (const requests of arrayOfRequestArrays) {
+        /**
+         * I have to do the mapping from object to HTTP request here because
+         * the promises are not lazy. The HTTP requests are launched as soon as
+         * the function is called regardless of whether a .then() is added
+         */
+        const batchedRes = await Promise.all(
+            requests.map((request) => {
+                return request.request === 'CREATE'
+                    ? API.NeurostoreServices.StudiesService.studiesPost(
+                          undefined,
+                          request.studyId,
+                          request.data
+                      )
+                    : API.NeurostoreServices.StudiesService.studiesIdPut(
+                          request.studyId,
+                          request.data
+                      );
+            })
+        );
+        batchedResList.push(...batchedRes);
+        if (callbackFunc) {
+            callbackFunc(Math.round((batchedResList.length / requestList.length) * 100));
+        }
+    }
+    return batchedResList;
+};
+
+export const sleuthIngestedStudiesToStubs = (
+    ingestedSleuthStudyResponses: {
+        responses: AxiosResponse<StudyReturn>[];
+        fileName: string;
+    }[]
+) => {
+    const stubs: ICurationStubStudy[] = [];
+
+    for (const sleuthResponses of ingestedSleuthStudyResponses) {
+        const tag: ITag = {
+            label: sleuthResponses.fileName,
+            id: uuidv4(),
+            isExclusionTag: false,
+            isAssignable: true,
+        };
+
+        const responsesToStubs: ICurationStubStudy[] = sleuthResponses.responses.map(
+            (response) => ({
+                id: uuidv4(),
+                title: response.data.name || '',
+                authors: response.data.authors || '',
+                keywords: '',
+                pmid: response.data.pmid || '',
+                pmcid: response.data.pmcid || '',
+                doi: response.data.doi || '',
+                articleYear: response.data.year?.toString() || '',
+                journal: response.data.publication || '',
+                abstractText: response.data.description || '',
+                articleLink: '',
+                exclusionTag: null,
+                identificationSource: defaultIdentificationSources.sleuth,
+                tags: [tag],
+                neurostoreId: response.data.id,
+                searchTerm: '',
+            })
+        );
+
+        stubs.push(...responsesToStubs);
+    }
+
+    return stubs;
 };

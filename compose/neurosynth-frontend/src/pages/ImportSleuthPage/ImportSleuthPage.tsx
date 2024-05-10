@@ -72,7 +72,6 @@ const ImportSleuthPage: React.FC = (props) => {
                 {activeStep === 2 && (
                     <SleuthImportWizardBuild
                         sleuthUploads={uploadedSleuthFiles}
-                        onPrevious={handlePrevious}
                         onNext={handleNextFromBuild}
                     />
                 )}

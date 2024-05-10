@@ -190,7 +190,7 @@ const ImportStandardFormat: React.FC<{
                     start typing in the input to add it.
                 </Typography>
                 <IdentificationSourcePopup
-                    excludeSources={[ENeurosynthSourceIds.NEUROSTORE]}
+                    excludeSources={[ENeurosynthSourceIds.NEUROSTORE, ENeurosynthSourceIds.SLEUTH]}
                     sx={{ width: '100%', maxWidth: '600px' }}
                     onAddSource={handleAddSource}
                     label="enter data source (i.e. PubMed, Scopus)"

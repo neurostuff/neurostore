@@ -284,7 +284,7 @@ const SleuthImportWizardUpload: React.FC<{
                         disabled={nextButtonDisabled}
                         onClick={handleClickNext}
                     >
-                        next
+                        Create project
                     </Button>
                 </Box>
             </Box>
