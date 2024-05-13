@@ -23,19 +23,22 @@ import {
     generateNewProjectData,
     initCurationHelper,
 } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
     ISleuthFileUploadStubs,
+    ISleuthStub,
     createUpdateRequestForEachSleuthStudy,
     executeHTTPRequestsAsBatches,
     sleuthIngestedStudiesToStubs,
     sleuthStubsToBaseStudies,
+    updateUploadSummary,
 } from './SleuthImportWizard.utils';
 import CurationImportBaseStyles from 'components/CurationComponents/CurationImport/CurationImportBase.styles';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 
 const SleuthImportWizardBuild: React.FC<{
     sleuthUploads: ISleuthFileUploadStubs[];
-    onNext: () => void;
+    onNext: (projectId: string) => void;
 }> = (props) => {
     const { user } = useAuth0();
     const [progressValue, setProgressValue] = useState(0);
@@ -52,7 +55,8 @@ const SleuthImportWizardBuild: React.FC<{
         started: false,
     });
     const { sleuthUploads, onNext } = props;
-    const [isLoadingState, setIsLoadingState] = useState(false);
+    const [createdProjectId, setCreatedProjectId] = useState('');
+    const [isLoadingState, setIsLoadingState] = useState(true);
     const [isError, setIsError] = useState(false);
 
     useEffect(() => {
@@ -96,7 +100,7 @@ const SleuthImportWizardBuild: React.FC<{
                     status: EExtractionStatus.COMPLETED,
                 }));
 
-            createProject({
+            return createProject({
                 ...newProjectData,
                 provenance: {
                     ...newProjectData.provenance,
@@ -207,26 +211,26 @@ const SleuthImportWizardBuild: React.FC<{
             try {
                 setProgressValue(0);
                 setProgressText('Ingesting...');
+
                 const ingestRes = await ingest(baseStudies, sleuthUploads);
-                console.log({ ingestRes });
                 const responsesToIds = ingestRes.reduce((acc, curr) => {
                     return [...acc, ...curr.responses.map((x) => x.data.id as string)];
                 }, [] as string[]);
                 setProgressValue(25);
                 setProgressText('Creating studyset...');
-                console.log({ responsesToIds });
+
                 const createdStudyset = await handleCreateStudyset(responsesToIds);
-                console.log({ createdStudyset });
                 if (!createdStudyset.data.id) throw new Error('Created studyset but found no ID');
                 setProgressValue(50);
                 setProgressText('Creating annotation...');
+
                 const createdAnnotation = await handleCreateAnnotation(
                     createdStudyset.data.id as string,
                     ingestRes
                 );
                 setProgressValue(75);
                 setProgressText('Finalizing project...');
-                console.log({ createdAnnotation });
+
                 if (!createdAnnotation.data.id)
                     throw new Error('Created annotation but found no ID');
                 const createdProject = await handleCreateProject(
@@ -234,11 +238,12 @@ const SleuthImportWizardBuild: React.FC<{
                     createdAnnotation.data.id,
                     ingestRes
                 );
+                if (!createdProject.data.id) throw new Error('Created project but found no ID');
+
+                setCreatedProjectId(createdProject.data.id);
                 setProgressValue(100);
                 setProgressText('Complete...');
-                console.log({ createdProject });
                 setIsLoadingState(false);
-                // onNext();
             } catch (e) {
                 setIsError(true);
             }
@@ -257,10 +262,16 @@ const SleuthImportWizardBuild: React.FC<{
         user,
     ]);
 
+    const handleNext = () => {
+        if (!createdProjectId) return;
+
+        onNext(createdProjectId);
+    };
+
     return (
         <StateHandlerComponent isLoading={false} isError={isError}>
             <Box>
-                {true ? (
+                {isLoadingState ? (
                     <Box
                         sx={{
                             height: '300px',
@@ -294,21 +305,53 @@ const SleuthImportWizardBuild: React.FC<{
                         <div></div>
                     </Box>
                 ) : (
-                    <Box sx={CurationImportBaseStyles.fixedContainer}>
-                        <Box
-                            sx={[
-                                CurationImportBaseStyles.fixedButtonsContainer,
-                                { justifyContent: 'flex-end' },
-                            ]}
-                        >
-                            <Button
-                                variant="contained"
-                                sx={CurationImportBaseStyles.nextButton}
-                                disableElevation
-                                onClick={() => {}}
+                    <Box>
+                        <Box>
+                            <Typography variant="h5" sx={{ marginBottom: '2rem' }}>
+                                Import Complete
+                            </Typography>
+                            {sleuthUploads.map((upload, index) => {
+                                const { numAnalyses, numCoordinates } = updateUploadSummary(upload);
+
+                                return (
+                                    <Box key={index} marginBottom="1rem">
+                                        <Typography
+                                            variant="h6"
+                                            display="flex"
+                                            gutterBottom
+                                            alignItems="center"
+                                            color="primary"
+                                        >
+                                            <InsertDriveFileIcon
+                                                color="primary"
+                                                sx={{ marginRight: '10px' }}
+                                            />
+                                            {upload.fileName}
+                                        </Typography>
+                                        <Typography>
+                                            Successfully extracted and imported {numCoordinates}{' '}
+                                            coordinates across {numAnalyses} analyses
+                                        </Typography>
+                                    </Box>
+                                );
+                            })}
+                        </Box>
+                        <Box sx={CurationImportBaseStyles.fixedContainer}>
+                            <Box
+                                sx={[
+                                    CurationImportBaseStyles.fixedButtonsContainer,
+                                    { justifyContent: 'flex-end' },
+                                ]}
                             >
-                                next
-                            </Button>
+                                <Button
+                                    variant="contained"
+                                    sx={CurationImportBaseStyles.nextButton}
+                                    disableElevation
+                                    onClick={handleNext}
+                                >
+                                    next
+                                </Button>
+                            </Box>
                         </Box>
                     </Box>
                 )}

@@ -515,3 +515,14 @@ export const sleuthIngestedStudiesToStubs = (
 
     return stubs;
 };
+
+export const updateUploadSummary = (sleuthUpload: ISleuthFileUploadStubs) => {
+    const numCoordinatesImported = sleuthUpload.sleuthStubs.reduce((acc, curr) => {
+        return acc + curr.coordinates.length;
+    }, 0);
+
+    return {
+        numAnalyses: sleuthUpload.sleuthStubs.length,
+        numCoordinates: numCoordinatesImported,
+    };
+};

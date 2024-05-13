@@ -2,14 +2,15 @@ import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import { ISleuthFileUploadStubs } from 'components/SleuthImportWizard/SleuthImportWizard.utils';
 import SleuthImportWizardBuild from 'components/SleuthImportWizard/SleuthImportWizardBuild';
+import SleuthImportWizardCreateMetaAnalyses from 'components/SleuthImportWizard/SleuthImportWizardCreateMetaAnalyses';
 import SleuthImportWizardIntroduction from 'components/SleuthImportWizard/SleuthImportWizardIntroduction';
-import SleuthImportWizardReview from 'components/SleuthImportWizard/SleuthImportWizardReview';
 import SleuthImportWizardUpload from 'components/SleuthImportWizard/SleuthImportWizardUpload';
 import { useState } from 'react';
 
 const ImportSleuthPage: React.FC = (props) => {
-    const [activeStep, setActiveStep] = useState(0);
+    const [activeStep, setActiveStep] = useState(3);
     const [uploadedSleuthFiles, setUploadedSleuthFiles] = useState<ISleuthFileUploadStubs[]>([]);
+    const [projectId, setProjectId] = useState('');
 
     const handleNextFromIntroduction = () => {
         setActiveStep((prev) => prev + 1);
@@ -24,7 +25,10 @@ const ImportSleuthPage: React.FC = (props) => {
         setActiveStep((prev) => prev + 1);
     };
 
-    const handleNextFromBuild = () => {};
+    const handleNextFromBuild = (createdProjectId: string) => {
+        setProjectId(createdProjectId);
+        setActiveStep((prev) => prev + 1);
+    };
 
     return (
         <Box>
@@ -55,7 +59,7 @@ const ImportSleuthPage: React.FC = (props) => {
                     <StepLabel>Build Project</StepLabel>
                 </Step>
                 <Step>
-                    <StepLabel>Review</StepLabel>
+                    <StepLabel>Meta Analyses</StepLabel>
                 </Step>
             </Stepper>
 
@@ -75,7 +79,12 @@ const ImportSleuthPage: React.FC = (props) => {
                         onNext={handleNextFromBuild}
                     />
                 )}
-                {activeStep === 3 && <SleuthImportWizardReview />}
+                {activeStep === 3 && (
+                    <SleuthImportWizardCreateMetaAnalyses
+                        projectId={projectId}
+                        sleuthImports={uploadedSleuthFiles}
+                    />
+                )}
             </Box>
         </Box>
     );
