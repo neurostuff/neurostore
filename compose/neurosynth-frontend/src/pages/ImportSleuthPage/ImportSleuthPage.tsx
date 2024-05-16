@@ -8,7 +8,7 @@ import SleuthImportWizardUpload from 'components/SleuthImportWizard/SleuthImport
 import { useState } from 'react';
 
 const ImportSleuthPage: React.FC = (props) => {
-    const [activeStep, setActiveStep] = useState(3);
+    const [activeStep, setActiveStep] = useState(0);
     const [uploadedSleuthFiles, setUploadedSleuthFiles] = useState<ISleuthFileUploadStubs[]>([]);
     const [projectId, setProjectId] = useState('');
 
