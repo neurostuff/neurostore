@@ -189,14 +189,16 @@ export const validateFileContents = (
     if (!expectedReferenceString.toLocaleLowerCase().includes('reference')) {
         return {
             isValid: false,
-            errorMessage: 'File does not have a reference',
+            errorMessage:
+                'No coordinate reference space specified (e.g. expecting REFERENCE property)',
         };
     }
     const space = expectedReferenceString.split('=')[1].trim();
     if (!space) {
         return {
             isValid: false,
-            errorMessage: 'File does not have a reference',
+            errorMessage:
+                'No coordinate reference space specified (e.g. expecting REFERENCE property)',
         };
     }
 

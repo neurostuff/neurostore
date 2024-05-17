@@ -7,6 +7,7 @@ import {
     Box,
     Button,
     IconButton,
+    Link,
     List,
     ListItem,
     ListItemIcon,
@@ -91,8 +92,9 @@ const SleuthImportWizardUpload: React.FC<{
     return (
         <Box>
             <Box mb="1rem" sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography color="muted.main">
-                    Please ensure that your sleuth files are in the correct format before uploading
+                <Typography>
+                    Please ensure that your sleuth files are in the <Link>correct format</Link>{' '}
+                    before uploading
                 </Typography>
                 <Box ml="10px">
                     <HelpDialog dialogTitle="Compatible sleuth files">

@@ -2,13 +2,13 @@ import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import { ISleuthFileUploadStubs } from 'components/SleuthImportWizard/SleuthImportWizard.utils';
 import SleuthImportWizardBuild from 'components/SleuthImportWizard/SleuthImportWizardBuild';
-import SleuthImportWizardCreateMetaAnalyses from 'components/SleuthImportWizard/SleuthImportWizardCreateMetaAnalyses';
+import SleuthImportWizardCreateMetaAnalysesBase from 'components/SleuthImportWizard/SleuthImportWizardCreateMetaAnalysesBase';
 import SleuthImportWizardIntroduction from 'components/SleuthImportWizard/SleuthImportWizardIntroduction';
 import SleuthImportWizardUpload from 'components/SleuthImportWizard/SleuthImportWizardUpload';
 import { useState } from 'react';
 
 const ImportSleuthPage: React.FC = (props) => {
-    const [activeStep, setActiveStep] = useState(0);
+    const [activeStep, setActiveStep] = useState(3);
     const [uploadedSleuthFiles, setUploadedSleuthFiles] = useState<ISleuthFileUploadStubs[]>([]);
     const [projectId, setProjectId] = useState('');
 
@@ -80,7 +80,7 @@ const ImportSleuthPage: React.FC = (props) => {
                     />
                 )}
                 {activeStep === 3 && (
-                    <SleuthImportWizardCreateMetaAnalyses
+                    <SleuthImportWizardCreateMetaAnalysesBase
                         projectId={projectId}
                         sleuthImports={uploadedSleuthFiles}
                     />

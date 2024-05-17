@@ -1,31 +1,19 @@
 import { Box, ListItem, ListItemText, Typography } from '@mui/material';
-import { IDynamicValueType } from 'components/MetaAnalysisConfigComponents';
-import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
-import NeurosynthAutocomplete, {
-    IAutocompleteObject,
-} from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
-import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
 import DynamicForm from 'components/MetaAnalysisConfigComponents/DynamicForm/DynamicForm';
+import NeurosynthAccordion from 'components/NeurosynthAccordion/NeurosynthAccordion';
+import NeurosynthAutocomplete from 'components/NeurosynthAutocomplete/NeurosynthAutocomplete';
+import { EAnalysisType } from 'hooks/metaAnalyses/useCreateAlgorithmSpecification';
 import CreateMetaAnalysisSpecificationDialogBaseStyles from '../../CreateMetaAnalysisSpecificationDialogBase.styles';
+import { IAlgorithmSelection } from '../../CreateMetaAnalysisSpecificationDialogBase.types';
 import {
+    correctorOptions,
     getDefaultValuesForTypeAndParameter,
     metaAnalyticAlgorithms,
-    correctorOptions,
 } from '../../CreateMetaAnalysisSpecificationDialogConstants';
 
 const SelectSpecificationComponent: React.FC<{
-    onSelectSpecification: (algorithm: {
-        estimator: IAutocompleteObject | null;
-        estimatorArgs: IDynamicValueType;
-        corrector: IAutocompleteObject | null;
-        correctorArgs: IDynamicValueType;
-    }) => void;
-    algorithm: {
-        estimator: IAutocompleteObject | null;
-        estimatorArgs: IDynamicValueType;
-        corrector: IAutocompleteObject | null;
-        correctorArgs: IDynamicValueType;
-    };
+    onSelectSpecification: (algorithm: IAlgorithmSelection) => void;
+    algorithm: IAlgorithmSelection;
 }> = (props) => {
     return (
         <Box>
