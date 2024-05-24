@@ -5,7 +5,7 @@ set -e
 /usr/local/bin/docker-entrypoint.sh postgres &
 
 # Wait for PostgreSQL to start
-until pg_isready -h localhost -p 5432 -U "$POSTGRES_USER"; do
+until pg_isready -p 5432 -U "$POSTGRES_USER"; do
     echo "$(date) - waiting for database to start"
     sleep 2
 done
