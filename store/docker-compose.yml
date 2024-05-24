@@ -49,6 +49,7 @@ services:
       - '5432'
     env_file:
       - .env
+    entrypoint: ["/usr/local/bin/custom-entrypoint.sh"]
 
 volumes:
   postgres_data:
