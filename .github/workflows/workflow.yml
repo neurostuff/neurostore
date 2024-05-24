@@ -163,11 +163,15 @@ jobs:
           store_pgsql pg_isready -U postgres; do sleep 1; done
 
           sleep 1
-          docker compose logs store_pgsql
-          
+
           docker compose exec -T \
           store_pgsql \
-          psql -U postgres -c "create database test_db"
+          psql -U postgres -c "create database test_db;"
+
+          docker compose exec -T \
+          store_pgsql \
+          psql -U postgres -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
       -
         name: Backend Tests
         env:
@@ -238,6 +242,10 @@ jobs:
         docker compose exec -T \
         compose_pgsql \
         psql -U postgres -c "create database test_db"
+
+        docker compose exec -T \
+          store_pgsql \
+          psql -U postgres -c "CREATE EXTENSION IF NOT EXISTS vector;"
     -
       name: Backend Tests
       env:
@@ -445,6 +453,10 @@ jobs:
         docker compose exec -T \
         store_pgsql \
         psql -U postgres -c "create database neurostore"
+
+        docker compose exec -T \
+          store_pgsql \
+          psql -U postgres -c "CREATE EXTENSION IF NOT EXISTS vector;"
     -
       name: Initialize Compose Database
       run: |
