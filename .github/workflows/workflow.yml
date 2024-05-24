@@ -162,6 +162,9 @@ jobs:
           until docker compose exec -T \
           store_pgsql pg_isready -U postgres; do sleep 1; done
 
+          sleep 1
+          docker compose logs store_pgsql
+          
           docker compose exec -T \
           store_pgsql \
           psql -U postgres -c "create database test_db"
