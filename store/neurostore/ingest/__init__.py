@@ -469,9 +469,6 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
     # see if there are duplicates for the newly created base_studies
     all_base_studies = []
     with db.session.no_autoflush:
-        all_studies = {
-            s.pmid: s for s in Study.query.filter_by(source="neurosynth").all()
-        }
         for metadata_row, text_row in zip(
             metadata_df.itertuples(), text_df.itertuples()
         ):
@@ -561,76 +558,86 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
 
             # append base study to commit
             to_commit.append(base_study)
+            # keep track of all created/modified base studies
+            all_base_studies.append(base_study)
 
-            s = all_studies.get(pmid, Study())
+            relevant_studies = base_study.versions
+            if not relevant_studies:
+                relevant_studies.append(Study())
 
-            # try to update the study if information is missing
-            study_info = {
-                "name": metadata_row.title,
-                "doi": doi,
-                "pmid": pmid,
-                "description": text_row.abstract,
-                "authors": metadata_row.authors,
-                "publication": metadata_row.journal,
-                "year": year,
-                "level": "group",
-                "source": "neurosynth",
-            }
-            for col, value in study_info.items():
-                source_attr = getattr(s, col)
-                setattr(s, col, source_attr or value)
+            # if all studies have a user,
+            # add a new study version to incorporate the new data
+            if all(s.user is not None for s in relevant_studies):
+                relevant_studies.append(Study())
 
-            analyses = []
-            points = []
+            for s in relevant_studies:
+                # try to update the study if information is missing
+                study_info = {
+                    "name": metadata_row.title,
+                    "doi": doi,
+                    "pmid": pmid,
+                    "description": text_row.abstract,
+                    "authors": metadata_row.authors,
+                    "publication": metadata_row.journal,
+                    "year": year,
+                    "level": "group",
+                    "source": "neurosynth",
+                }
+                for col, value in study_info.items():
+                    source_attr = getattr(s, col)
+                    setattr(s, col, source_attr or value)
+                if s.user is not None:
+                    # do not edit studies that are user owned
+                    continue
+                analyses = []
+                points = []
 
-            try:
-                study_coord_data = coordinates_df.loc[[id_]]
-            except KeyError:
-                print(f"pmid: {id_} has no coordinates")
-                continue
-            for order, (t_id, df) in enumerate(study_coord_data.groupby("table_id")):
-                a = (
-                    Analysis.query.filter_by(table_id=str(t_id)).one_or_none()
-                    or Analysis()
-                )
-                a.name = df["table_label"][0] or str(t_id)
-                a.table_id = str(t_id)
-                a.order = a.order or order
-                a.description = (
-                    df["table_caption"][0]
-                    if not df["table_caption"].isna()[0]
-                    else None
-                )
-                if not a.study:
-                    a.study = s
-                analyses.append(a)
-                point_idx = 0
-                for _, p in df.iterrows():
-                    point = Point(
-                        x=p["x"],
-                        y=p["y"],
-                        z=p["z"],
-                        space=metadata_row.coordinate_space,
-                        kind=(
-                            df["statistic"][0]
-                            if not df["statistic"].isna()[0]
-                            else "unknown"
-                        ),
-                        analysis=a,
-                        entities=[Entity(label=a.name, level="group", analysis=a)],
-                        order=point_idx,
+                try:
+                    study_coord_data = coordinates_df.loc[[id_]]
+                except KeyError:
+                    print(f"pmid: {id_} has no coordinates")
+                    continue
+                for order, (t_id, df) in enumerate(study_coord_data.groupby("table_id")):
+                    a = (
+                        Analysis.query.filter_by(table_id=str(t_id)).one_or_none()
+                        or Analysis()
                     )
-                    points.append(point)
-                    point_idx += 1
-            to_commit.extend(points)
-            to_commit.extend(analyses)
-            # append study as version of study
-            base_study.versions.append(s)
+                    a.name = df["table_label"][0] or str(t_id)
+                    a.table_id = str(t_id)
+                    a.order = a.order or order
+                    a.description = (
+                        df["table_caption"][0]
+                        if not df["table_caption"].isna()[0]
+                        else None
+                    )
+                    if not a.study:
+                        a.study = s
+                    analyses.append(a)
+                    point_idx = 0
+                    for _, p in df.iterrows():
+                        point = Point(
+                            x=p["x"],
+                            y=p["y"],
+                            z=p["z"],
+                            space=metadata_row.coordinate_space,
+                            kind=(
+                                df["statistic"][0]
+                                if not df["statistic"].isna()[0]
+                                else "unknown"
+                            ),
+                            analysis=a,
+                            entities=[Entity(label=a.name, level="group", analysis=a)],
+                            order=point_idx,
+                        )
+                        points.append(point)
+                        point_idx += 1
+                to_commit.extend(points)
+                to_commit.extend(analyses)
 
-    db.session.add_all(to_commit)
-    db.session.flush()
-    for bs in all_base_studies:
-        bs.update_has_images_and_points()
+        db.session.add_all(to_commit)
+        db.session.flush()
+        for bs in all_base_studies:
+            bs.update_has_images_and_points()
     db.session.commit()
 
 

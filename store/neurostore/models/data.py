@@ -8,9 +8,10 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql import func
+
 import shortuuid
 
-from .migration_types import TSVector
+from .migration_types import TSVector, PGVector
 from ..database import db
 
 
@@ -178,6 +179,7 @@ class BaseStudy(BaseMixin, db.Model):
     has_coordinates = db.Column(db.Boolean, default=False, nullable=False)
     has_images = db.Column(db.Boolean, default=False, nullable=False)
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
+    ada_openai_vector = db.Column(PGVector(1536))  # length of openai ada vector
     _ts_vector = db.Column(
         "__ts_vector__",
         TSVector(),
