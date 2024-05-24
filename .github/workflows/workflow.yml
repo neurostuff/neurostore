@@ -446,9 +446,9 @@ jobs:
         until docker compose exec -T \
         store_pgsql pg_isready -U postgres; do sleep 1; done
 
-        docker compose exec -T \
-        store_pgsql \
-        psql -U postgres -c "create database neurostore"
+        # docker compose exec -T \
+        # store_pgsql \
+        # psql -U postgres -c "create database neurostore"
 
         docker compose exec -T \
           store_pgsql \
