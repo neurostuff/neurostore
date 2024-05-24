@@ -170,7 +170,7 @@ jobs:
 
           docker compose exec -T \
           store_pgsql \
-          psql -U postgres -c "CREATE EXTENSION IF NOT EXISTS vector;"
+          psql -U postgres -d test_db -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
       -
         name: Backend Tests
@@ -452,7 +452,7 @@ jobs:
 
         docker compose exec -T \
           store_pgsql \
-          psql -U postgres -c "CREATE EXTENSION IF NOT EXISTS vector;"
+          psql -U postgres -d neurostore -c "CREATE EXTENSION IF NOT EXISTS vector;"
     -
       name: Initialize Compose Database
       run: |
