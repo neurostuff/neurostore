@@ -10,6 +10,8 @@ until pg_isready -p 5432 -U "$POSTGRES_USER"; do
     sleep 2
 done
 
+sleep 1
+
 # Enable the pgvector extension
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
     CREATE EXTENSION IF NOT EXISTS vector;
