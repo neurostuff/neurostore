@@ -20,10 +20,6 @@ RUN curl -L https://github.com/pgvector/pgvector/archive/refs/tags/v0.7.0.tar.gz
 # Copy initialization script
 COPY init-vector-extension.sql /docker-entrypoint-initdb.d/
 
-# Copy custom entrypoint script
-COPY custom-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/custom-entrypoint.sh
-
 # Copy scripts and set permissions
 COPY pg_dump-to-s3 /home
 RUN chmod +x /home/pg_dump-to-s3.sh /home/s3-autodelete.sh
@@ -35,7 +31,3 @@ RUN service cron start
 # Convert scripts to Unix format
 RUN dos2unix /home/pg_dump-to-s3.sh
 RUN dos2unix /home/s3-autodelete.sh
-
-# Set the entrypoint to the custom script
-ENTRYPOINT ["custom-entrypoint.sh"]
-CMD ["postgres"]
