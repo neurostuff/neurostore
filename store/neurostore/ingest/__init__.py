@@ -597,7 +597,9 @@ def ace_ingestion_logic(coordinates_df, metadata_df, text_df):
                 except KeyError:
                     print(f"pmid: {id_} has no coordinates")
                     continue
-                for order, (t_id, df) in enumerate(study_coord_data.groupby("table_id")):
+                for order, (t_id, df) in enumerate(
+                    study_coord_data.groupby("table_id")
+                ):
                     a = (
                         Analysis.query.filter_by(table_id=str(t_id)).one_or_none()
                         or Analysis()

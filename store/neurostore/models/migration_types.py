@@ -2,8 +2,10 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from pgvector.sqlalchemy import Vector
 
+
 class PGVector(sa.types.TypeDecorator):
     """class for semantic search"""
+
     cache_ok = True
     impl = Vector
 
