@@ -33,18 +33,20 @@ const SleuthImportWizardCreateMetaAnalysesBase: React.FC<{
     const navigate = useNavigate();
     const [currView, setCurrView] = useState<'CONFIG' | 'CREATE'>('CONFIG');
 
-    const handleCreateMetaAnalyses = () => {
-        // if (shouldCreateMetaAnalyses === false) {
-        //     navigate(`/projects/${projectId}/meta-analyses`);
-        // } else {
-        //     setCurrView('CREATE');
-        // }
+    const handleCreateMetaAnalysisDetails = (selectedAlgorithm: IAlgorithmSelection | null) => {
+        if (selectedAlgorithm === null) {
+            navigate(`/projects/${projectId}/meta-analyses`);
+        } else {
+            setCurrView('CREATE');
+        }
     };
 
     return (
         <StateHandlerComponent isLoading={isLoading} isError={isError}>
             {currView === 'CONFIG' ? (
-                <SleuthImportWizardCreateMetaAnalysesDetails onNext={() => {}} />
+                <SleuthImportWizardCreateMetaAnalysesDetails
+                    onNext={handleCreateMetaAnalysisDetails}
+                />
             ) : (
                 <SleuthImportWizardCreateMetaAnalysesCreate />
             )}

@@ -24,7 +24,7 @@ function SleuthImportWizardCreateMetaAnalysesDetails({
 }: {
     onNext: (selectedAlgorithm: IAlgorithmSelection | null) => void;
 }) {
-    const [shouldCreateMetaAnalyses, setCreateMetaAnalyses] = useState<boolean>();
+    const [shouldCreateMetaAnalyses, setShouldCreateMetaAnalyses] = useState<boolean>();
     const [selectedMetaAnalysisAlgorithm, setSelectedMetaAnalysisAlgorithm] =
         useState<IAlgorithmSelection>({
             estimator: null,
@@ -48,7 +48,9 @@ function SleuthImportWizardCreateMetaAnalysesDetails({
         return metaAnalyticAlgorithms.filter((x) => x.label === 'MKDADensity' || x.label === 'ALE');
     }, []);
 
-    const handleNext = () => {};
+    const handleNext = () => {
+        onNext(shouldCreateMetaAnalyses ? selectedMetaAnalysisAlgorithm : null);
+    };
 
     return (
         <Box>
@@ -64,7 +66,7 @@ function SleuthImportWizardCreateMetaAnalysesDetails({
                     value={shouldCreateMetaAnalyses}
                     exclusive
                     onChange={(e, value) => {
-                        setCreateMetaAnalyses(value);
+                        setShouldCreateMetaAnalyses(value);
                         if (!value) {
                             return setSelectedMetaAnalysisAlgorithm({
                                 estimator: null,
