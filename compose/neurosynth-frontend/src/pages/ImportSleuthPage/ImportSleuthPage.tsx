@@ -2,7 +2,7 @@ import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import { ISleuthFileUploadStubs } from 'components/SleuthImportWizard/SleuthImportWizard.utils';
 import SleuthImportWizardBuild from 'components/SleuthImportWizard/SleuthImportWizardBuild';
-import SleuthImportWizardCreateMetaAnalysesBase from 'components/SleuthImportWizard/SleuthImportWizardCreateMetaAnalysesBase';
+import SleuthImportWizardCreateMetaAnalyses from 'components/SleuthImportWizard/SleuthImportWizardCreateMetaAnalyses';
 import SleuthImportWizardIntroduction from 'components/SleuthImportWizard/SleuthImportWizardIntroduction';
 import SleuthImportWizardUpload from 'components/SleuthImportWizard/SleuthImportWizardUpload';
 import { useState } from 'react';
@@ -10,7 +10,11 @@ import { useState } from 'react';
 const ImportSleuthPage: React.FC = (props) => {
     const [activeStep, setActiveStep] = useState(0);
     const [uploadedSleuthFiles, setUploadedSleuthFiles] = useState<ISleuthFileUploadStubs[]>([]);
-    const [projectId, setProjectId] = useState('');
+    const [projectComponents, setProjectComponents] = useState({
+        projectId: '',
+        studysetId: '',
+        annotationId: '',
+    });
 
     const handleNextFromIntroduction = () => {
         setActiveStep((prev) => prev + 1);
@@ -25,8 +29,16 @@ const ImportSleuthPage: React.FC = (props) => {
         setActiveStep((prev) => prev + 1);
     };
 
-    const handleNextFromBuild = (createdProjectId: string) => {
-        setProjectId(createdProjectId);
+    const handleNextFromBuild = (
+        createdProjectId: string,
+        createdStudysetId: string,
+        createdAnnotationId: string
+    ) => {
+        setProjectComponents({
+            projectId: createdProjectId,
+            studysetId: createdStudysetId,
+            annotationId: createdAnnotationId,
+        });
         setActiveStep((prev) => prev + 1);
     };
 
@@ -80,8 +92,10 @@ const ImportSleuthPage: React.FC = (props) => {
                     />
                 )}
                 {activeStep === 3 && (
-                    <SleuthImportWizardCreateMetaAnalysesBase
-                        projectId={projectId}
+                    <SleuthImportWizardCreateMetaAnalyses
+                        projectId={projectComponents.projectId}
+                        studysetId={projectComponents.studysetId}
+                        annotationId={projectComponents.annotationId}
                         sleuthImports={uploadedSleuthFiles}
                     />
                 )}

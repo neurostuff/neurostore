@@ -30,7 +30,12 @@ const ViewMetaAnalyses: React.FC = () => {
                 .filter((id): id is string => id !== undefined);
         }
     }
-    const { data, isLoading, isError } = useGetMetaAnalysesByIds(metaAnalysisIds);
+    const {
+        data = [],
+        isLoading,
+        isError,
+        isRefetching,
+    } = useGetMetaAnalysesByIds(metaAnalysisIds);
     const canEditMetaAnalyses = useProjectMetaAnalysisCanEdit();
     const projectIdFromProject = useProjectId();
     const [createMetaAnalysisDialogIsOpen, setCreateMetaAnalysisDialogIsOpen] = useState(false);
@@ -44,7 +49,7 @@ const ViewMetaAnalyses: React.FC = () => {
     );
 
     return (
-        <StateHandlerComponent isLoading={isLoading} isError={isError}>
+        <StateHandlerComponent isLoading={isLoading || isRefetching} isError={isError}>
             <CreateMetaAnalysisSpecificationDialogBase
                 isOpen={createMetaAnalysisDialogIsOpen}
                 onCloseDialog={() => setCreateMetaAnalysisDialogIsOpen(false)}
@@ -59,14 +64,14 @@ const ViewMetaAnalyses: React.FC = () => {
                 >
                     Meta-Analysis Specification
                 </Button>
-                {(data || []).length === 0 && (
+                {data.length === 0 && (
                     <Typography sx={{ marginTop: '1rem' }} color="warning.dark">
                         No Meta-Analyses for this project. Get started by clicking the button above
                     </Typography>
                 )}
             </Box>
             <Box sx={{ padding: '0.5rem 0', display: 'flex', flexWrap: 'wrap' }}>
-                {(data || []).map((metaAnalysis, index) => (
+                {data.map((metaAnalysis, index) => (
                     <ViewMetaAnalysis key={metaAnalysis.id || index} {...metaAnalysis} />
                 ))}
             </Box>

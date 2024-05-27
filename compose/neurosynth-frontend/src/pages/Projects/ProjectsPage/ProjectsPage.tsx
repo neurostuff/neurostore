@@ -56,8 +56,7 @@ const ProjectsPage: React.FC = (props) => {
                         ))
                     ) : (
                         <Typography sx={{ margin: '0 10px' }} color="warning.dark">
-                            You have not created a project yet. Click the "NEW PROJECT" button above
-                            to create a new project.
+                            No projects
                         </Typography>
                     )}
                 </StateHandlerComponent>

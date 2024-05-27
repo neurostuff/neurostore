@@ -90,7 +90,7 @@ export const stringsAreValidFileFormat = (
                 };
             }
         } else {
-            if (line.toLocaleLowerCase().includes('subjects')) {
+            if (line.toLocaleLowerCase().includes('subjects=')) {
                 const [_, numSubjects] = line.split('=');
                 const { isValid } = stringToNumber(numSubjects);
                 if (!isValid) {

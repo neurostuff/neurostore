@@ -1,6 +1,8 @@
 import { useAuth0 } from '@auth0/auth0-react';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import { Box, Button, CircularProgress, LinearProgress, Typography } from '@mui/material';
 import { AxiosResponse } from 'axios';
+import CurationImportBaseStyles from 'components/CurationComponents/CurationImport/CurationImportBase.styles';
 import { EPropertyType } from 'components/EditMetadata';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import {
@@ -23,22 +25,19 @@ import {
     generateNewProjectData,
     initCurationHelper,
 } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     ISleuthFileUploadStubs,
-    ISleuthStub,
     createUpdateRequestForEachSleuthStudy,
     executeHTTPRequestsAsBatches,
     sleuthIngestedStudiesToStubs,
     sleuthStubsToBaseStudies,
     updateUploadSummary,
 } from './SleuthImportWizard.utils';
-import CurationImportBaseStyles from 'components/CurationComponents/CurationImport/CurationImportBase.styles';
-import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 
 const SleuthImportWizardBuild: React.FC<{
     sleuthUploads: ISleuthFileUploadStubs[];
-    onNext: (projectId: string) => void;
+    onNext: (projectId: string, studysetId: string, annotationId: string) => void;
 }> = (props) => {
     const { user } = useAuth0();
     const [progressValue, setProgressValue] = useState(0);
@@ -55,7 +54,11 @@ const SleuthImportWizardBuild: React.FC<{
         started: false,
     });
     const { sleuthUploads, onNext } = props;
-    const [createdProjectId, setCreatedProjectId] = useState('');
+    const [createdProjectComponents, setCreatedProjectComponents] = useState({
+        projectId: '',
+        studysetId: '',
+        annotationId: '',
+    });
     const [isLoadingState, setIsLoadingState] = useState(true);
     const [isError, setIsError] = useState(false);
 
@@ -188,19 +191,27 @@ const SleuthImportWizardBuild: React.FC<{
                 responses: AxiosResponse<StudyReturn>[];
                 fileName: string;
             }[] = [];
+            let index = 0;
             for (const sleuthUpload of sleuthUploads) {
                 const requestList = createUpdateRequestForEachSleuthStudy(
                     res.data as BaseStudyReturn[],
                     sleuthUpload,
                     user!.sub as string
                 );
+                const percentageIncrement = 25 / sleuthUploads.length;
+                const percentageAlreadyComplete = percentageIncrement * index;
                 const responses = await executeHTTPRequestsAsBatches(requestList, (progress) => {
-                    setProgressValue(Math.round((progress / 100) * 25));
+                    setProgressValue(
+                        Math.round(
+                            (progress / 100) * percentageIncrement + percentageAlreadyComplete
+                        )
+                    );
                 });
                 databaseResponses.push({
                     responses: responses,
                     fileName: sleuthUpload.fileName,
                 });
+                index++;
             }
             return databaseResponses;
         };
@@ -240,7 +251,11 @@ const SleuthImportWizardBuild: React.FC<{
                 );
                 if (!createdProject.data.id) throw new Error('Created project but found no ID');
 
-                setCreatedProjectId(createdProject.data.id);
+                setCreatedProjectComponents({
+                    projectId: createdProject.data.id,
+                    studysetId: createdStudyset.data.id,
+                    annotationId: createdAnnotation.data.id,
+                });
                 setProgressValue(100);
                 setProgressText('Complete...');
                 setIsLoadingState(false);
@@ -263,9 +278,13 @@ const SleuthImportWizardBuild: React.FC<{
     ]);
 
     const handleNext = () => {
-        if (!createdProjectId) return;
+        if (!createdProjectComponents) return;
 
-        onNext(createdProjectId);
+        onNext(
+            createdProjectComponents.projectId,
+            createdProjectComponents.studysetId,
+            createdProjectComponents.annotationId
+        );
     };
 
     return (
@@ -329,8 +348,9 @@ const SleuthImportWizardBuild: React.FC<{
                                             {upload.fileName}
                                         </Typography>
                                         <Typography>
-                                            Successfully extracted and imported {numCoordinates}{' '}
-                                            coordinates across {numAnalyses} analyses
+                                            Successfully extracted and imported{' '}
+                                            <b>{numCoordinates} coordinates </b>
+                                            across <b>{numAnalyses} analyses</b>
                                         </Typography>
                                     </Box>
                                 );
