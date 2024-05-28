@@ -6,7 +6,6 @@ import useUserCanEdit from 'hooks/useUserCanEdit';
 import { useSnackbar } from 'notistack';
 import { useClearProvenance, useProjectUser } from 'pages/Projects/ProjectPage/ProjectStore';
 import { useState } from 'react';
-import { useQueryClient } from 'react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 
 const env = process.env.REACT_APP_ENV as 'DEV' | 'STAGING' | 'PROD';

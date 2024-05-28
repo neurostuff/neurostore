@@ -36,7 +36,7 @@ const SleuthImportWizardCreateMetaAnalyses: React.FC<{
 }> = ({ projectId, studysetId, annotationId, sleuthImports }) => {
     const { isLoading: getProjectIsLoading, isError: getProjectIsError } =
         useGetProjectById(projectId);
-    const { isLoading, error, isError, createMetaAnalysis } = useCreateAlgorithmSpecification();
+    const { createMetaAnalysis } = useCreateAlgorithmSpecification();
     const [buttonIsLoading, setButtonIsLoading] = useState(false);
     const { enqueueSnackbar } = useSnackbar();
     const navigate = useNavigate();
@@ -120,6 +120,13 @@ const SleuthImportWizardCreateMetaAnalyses: React.FC<{
                 <Typography gutterBottom variant="h6">
                     Would you like to create a meta-analysis for each file you've uploaded?
                 </Typography>
+                <Typography gutterBottom sx={{ marginBottom: '1rem', color: 'muted.main' }}>
+                    This will automatically create a new meta-analysis specification for each
+                    separate file assuming they are distinct sets of coordinates.
+                    <br />
+                    This step is optional. You can skip this and create a custom meta-analysis
+                    later.
+                </Typography>
                 <Box>
                     <ToggleButtonGroup
                         sx={{ width: '300px' }}
@@ -150,8 +157,8 @@ const SleuthImportWizardCreateMetaAnalyses: React.FC<{
                     <Box>
                         <Typography variant="h6">Which algorithm would you like to use?</Typography>
                         <Typography gutterBottom color="muted.main">
-                            This option can always be changed later. If you are unsure, we suggest
-                            starting with MKDA as a default
+                            Default parameters will be used. If you are unsure, we suggest starting
+                            with MKDADensity. To replicate GingerALE, select ALE.
                         </Typography>
                         <FormControl>
                             <RadioGroup
