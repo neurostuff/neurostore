@@ -432,18 +432,16 @@ export const createUpdateRequestForEachSleuthStudy = (
     return Array.from(baseStudyMap).map(([_key, value]) => value);
 };
 
-export const executeHTTPRequestsAsBatches = async (
-    requestList: {
-        studyId: string;
-        data: StudyRequest;
-        request: 'UPDATE' | 'CREATE';
-    }[],
-    // called after every batch has been executed
+export const executeHTTPRequestsAsBatches = async <T, Y>(
+    requestList: T[],
+    mapFunc: (request: T) => Promise<AxiosResponse<Y>>,
+    rateLimit: number,
+    delayInMS?: number,
     callbackFunc?: (progress: number) => void
 ) => {
     const arrayOfRequestArrays = [];
-    for (let i = 0; i < requestList.length; i += 5) {
-        arrayOfRequestArrays.push(requestList.slice(i, i + 5));
+    for (let i = 0; i < requestList.length; i += rateLimit) {
+        arrayOfRequestArrays.push(requestList.slice(i, i + rateLimit));
     }
 
     const batchedResList = [];
@@ -453,23 +451,17 @@ export const executeHTTPRequestsAsBatches = async (
          * the promises are not lazy. The HTTP requests are launched as soon as
          * the function is called regardless of whether a .then() is added
          */
-        const batchedRes = await Promise.all(
-            requests.map((request) => {
-                return request.request === 'CREATE'
-                    ? API.NeurostoreServices.StudiesService.studiesPost(
-                          undefined,
-                          request.studyId,
-                          request.data
-                      )
-                    : API.NeurostoreServices.StudiesService.studiesIdPut(
-                          request.studyId,
-                          request.data
-                      );
-            })
-        );
+        const batchedRes = await Promise.all(requests.map(mapFunc));
         batchedResList.push(...batchedRes);
         if (callbackFunc) {
             callbackFunc(Math.round((batchedResList.length / requestList.length) * 100));
+        }
+        if (delayInMS) {
+            await new Promise((res) => {
+                setTimeout(() => {
+                    res(null);
+                }, delayInMS);
+            });
         }
     }
     return batchedResList;

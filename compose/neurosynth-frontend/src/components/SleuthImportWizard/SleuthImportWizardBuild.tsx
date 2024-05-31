@@ -12,6 +12,7 @@ import {
     useCreateStudyset,
     useUpdateStudy,
 } from 'hooks';
+import useGetPubMedIdFromDOI, { IESearchResult } from 'hooks/external/useGetPubMedIdFromDOI';
 import { ICurationMetadata, IProvenance } from 'hooks/projects/useGetProjects';
 import useIngest from 'hooks/studies/useIngest';
 import {
@@ -26,6 +27,7 @@ import {
     initCurationHelper,
 } from 'pages/Projects/ProjectPage/ProjectStore.helpers';
 import { useEffect, useRef, useState } from 'react';
+import API from 'utils/api';
 import {
     ISleuthFileUploadStubs,
     createUpdateRequestForEachSleuthStudy,
@@ -34,12 +36,15 @@ import {
     sleuthStubsToBaseStudies,
     updateUploadSummary,
 } from './SleuthImportWizard.utils';
+import useGetPubmedIDs from 'hooks/external/useGetPubMedIds';
 
 const SleuthImportWizardBuild: React.FC<{
     sleuthUploads: ISleuthFileUploadStubs[];
     onNext: (projectId: string, studysetId: string, annotationId: string) => void;
 }> = (props) => {
     const { user } = useAuth0();
+    const { queryImperatively } = useGetPubmedIDs([], false);
+    const { mutateAsync: getPubMedIdFromDOI } = useGetPubMedIdFromDOI();
     const [progressValue, setProgressValue] = useState(0);
     const [progressText, setProgressText] = useState('');
     const { mutateAsync: ingestAsync } = useIngest();
@@ -199,14 +204,31 @@ const SleuthImportWizardBuild: React.FC<{
                     user!.sub as string
                 );
                 const percentageIncrement = 25 / sleuthUploads.length;
-                const percentageAlreadyComplete = percentageIncrement * index;
-                const responses = await executeHTTPRequestsAsBatches(requestList, (progress) => {
-                    setProgressValue(
-                        Math.round(
-                            (progress / 100) * percentageIncrement + percentageAlreadyComplete
-                        )
-                    );
-                });
+                const percentageAlreadyComplete = 50 + percentageIncrement * index;
+                const responses = await executeHTTPRequestsAsBatches(
+                    requestList,
+                    (requestObject) => {
+                        return requestObject.request === 'CREATE'
+                            ? API.NeurostoreServices.StudiesService.studiesPost(
+                                  undefined,
+                                  requestObject.studyId,
+                                  requestObject.data
+                              )
+                            : API.NeurostoreServices.StudiesService.studiesIdPut(
+                                  requestObject.studyId,
+                                  requestObject.data
+                              );
+                    },
+                    5,
+                    undefined,
+                    (progress) => {
+                        setProgressValue(
+                            Math.round(
+                                (progress / 100) * percentageIncrement + percentageAlreadyComplete
+                            )
+                        );
+                    }
+                );
                 databaseResponses.push({
                     responses: responses,
                     fileName: sleuthUpload.fileName,
@@ -216,49 +238,101 @@ const SleuthImportWizardBuild: React.FC<{
             return databaseResponses;
         };
 
+        const hydrateStudiesWithStudyDetails = async (baseStudies: BaseStudy[]) => {
+            const responses = await executeHTTPRequestsAsBatches(
+                baseStudies,
+                (baseStudy) => {
+                    if (baseStudy.pmid) {
+                        return new Promise<AxiosResponse<IESearchResult>>((res) => {
+                            const fakeAxiosResponse: AxiosResponse = {
+                                data: {
+                                    esearchresult: {
+                                        count: '1',
+                                        idlist: [baseStudy.pmid],
+                                    },
+                                    header: {
+                                        type: 'NEUROSTORE_MOCK',
+                                        version: 'NA',
+                                    },
+                                },
+                                status: 200,
+                                statusText: 'OK',
+                                headers: {},
+                                config: {},
+                            };
+                            res(fakeAxiosResponse);
+                        });
+                    } else {
+                        // we know that if a study does not have a PMID, then it must at least have a DOI because
+                        // we have already validated the uploaded files
+                        return getPubMedIdFromDOI(baseStudy.doi as string);
+                    }
+                },
+                3,
+                1200,
+                (progress) => {
+                    setProgressValue(Math.round((progress / 100) * 50));
+                }
+            );
+
+            const pubmedIds = responses.map((response) => {
+                return response.data.esearchresult.idlist[0];
+            });
+
+            const pubmedStudyDetails = await queryImperatively(pubmedIds);
+            console.log({ pubmedStudyDetails });
+        };
+
         const build = async (sleuthUploads: ISleuthFileUploadStubs[]) => {
             if (!user?.sub) return;
             const baseStudies = sleuthStubsToBaseStudies(sleuthUploads);
             try {
                 setProgressValue(0);
-                setProgressText('Ingesting...');
+                setProgressText('Fetching study details...');
 
-                const ingestRes = await ingest(baseStudies, sleuthUploads);
-                const responsesToIds = ingestRes.reduce((acc, curr) => {
-                    return [...acc, ...curr.responses.map((x) => x.data.id as string)];
-                }, [] as string[]);
-                setProgressValue(25);
-                setProgressText('Creating studyset...');
+                const hydratedBaseStudies = await hydrateStudiesWithStudyDetails(baseStudies);
 
-                const createdStudyset = await handleCreateStudyset(responsesToIds);
-                if (!createdStudyset.data.id) throw new Error('Created studyset but found no ID');
-                setProgressValue(50);
-                setProgressText('Creating annotation...');
+                return;
 
-                const createdAnnotation = await handleCreateAnnotation(
-                    createdStudyset.data.id as string,
-                    ingestRes
-                );
-                setProgressValue(75);
-                setProgressText('Finalizing project...');
+                // setProgressValue(50);
+                // setProgressText('Ingesting...');
 
-                if (!createdAnnotation.data.id)
-                    throw new Error('Created annotation but found no ID');
-                const createdProject = await handleCreateProject(
-                    createdStudyset.data.id,
-                    createdAnnotation.data.id,
-                    ingestRes
-                );
-                if (!createdProject.data.id) throw new Error('Created project but found no ID');
+                // const ingestRes = await ingest(baseStudies, sleuthUploads);
+                // const responsesToIds = ingestRes.reduce((acc, curr) => {
+                //     return [...acc, ...curr.responses.map((x) => x.data.id as string)];
+                // }, [] as string[]);
+                // setProgressValue(75);
+                // setProgressText('Creating studyset...');
 
-                setCreatedProjectComponents({
-                    projectId: createdProject.data.id,
-                    studysetId: createdStudyset.data.id,
-                    annotationId: createdAnnotation.data.id,
-                });
-                setProgressValue(100);
-                setProgressText('Complete...');
-                setIsLoadingState(false);
+                // const createdStudyset = await handleCreateStudyset(responsesToIds);
+                // if (!createdStudyset.data.id) throw new Error('Created studyset but found no ID');
+                // setProgressValue(80);
+                // setProgressText('Creating annotation...');
+
+                // const createdAnnotation = await handleCreateAnnotation(
+                //     createdStudyset.data.id as string,
+                //     ingestRes
+                // );
+                // setProgressValue(90);
+                // setProgressText('Finalizing project...');
+
+                // if (!createdAnnotation.data.id)
+                //     throw new Error('Created annotation but found no ID');
+                // const createdProject = await handleCreateProject(
+                //     createdStudyset.data.id,
+                //     createdAnnotation.data.id,
+                //     ingestRes
+                // );
+                // if (!createdProject.data.id) throw new Error('Created project but found no ID');
+
+                // setCreatedProjectComponents({
+                //     projectId: createdProject.data.id,
+                //     studysetId: createdStudyset.data.id,
+                //     annotationId: createdAnnotation.data.id,
+                // });
+                // setProgressValue(100);
+                // setProgressText('Complete...');
+                // setIsLoadingState(false);
             } catch (e) {
                 setIsError(true);
             }
@@ -275,6 +349,8 @@ const SleuthImportWizardBuild: React.FC<{
         createAnnotation,
         sleuthUploads,
         user,
+        queryImperatively,
+        getPubMedIdFromDOI,
     ]);
 
     const handleNext = () => {
