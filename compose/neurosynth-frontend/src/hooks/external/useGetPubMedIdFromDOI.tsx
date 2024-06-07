@@ -11,6 +11,14 @@ export interface IESearchResult {
     esearchresult: {
         count: string;
         idlist: string[];
+        retmax?: string;
+        retstart?: string;
+        errorlist?: {
+            phrasesnotfound?: string[];
+            fieldsnotfound?: string[];
+        };
+        translationset?: any[];
+        querytranslation?: string;
     };
     header: {
         type: string;
@@ -21,14 +29,20 @@ export interface IESearchResult {
 }
 
 const ESEARCH_UR = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi';
+const PUBMED_API_KEY = process.env.REACT_APP_PUBMED_API_KEY as string;
 
 const useGetPubMedIdFromDOI = () => {
     return useMutation<AxiosResponse<IESearchResult>, AxiosError, string, unknown>((doi) =>
-        axios.get<IESearchResult>(`${ESEARCH_UR}?db=pubmed&retmode=json&term=${doi}`, {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            },
-        })
+        axios.get<IESearchResult>(
+            `${ESEARCH_UR}?db=pubmed&retmode=json&term=${doi}${
+                PUBMED_API_KEY ? `&api_key=${PUBMED_API_KEY}` : ''
+            }`,
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                },
+            }
+        )
     );
 };
 

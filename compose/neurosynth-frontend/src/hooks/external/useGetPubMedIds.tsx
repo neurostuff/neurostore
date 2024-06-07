@@ -283,7 +283,7 @@ const hexCodeToHTMLEntity = (hexCode: string): string => {
 
 // Documentation: https://dataguide.nlm.nih.gov/eutilities/utilities.html#efetch
 const EFETCH_URL = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi';
-
+const PUBMED_API_KEY = process.env.REACT_APP_PUBMED_KEY as string;
 export const PUBMED_ARTICLE_URL_PREFIX = 'https://pubmed.ncbi.nlm.nih.gov/';
 export const PUBMED_CENTRAL_ARTICLE_URL_PREFIX = 'https://ncbi.nlm.nih.gov/pmc/articles/';
 
@@ -319,7 +319,9 @@ const parser = new XMLParser({
 const getQueryFn = (ids: string, startIndex: number) =>
     axios.post(
         `${EFETCH_URL}`,
-        `db=pubmed&rettype=abstract&retmode=xml&retmax=500&retstart=${startIndex}&id=${ids}`,
+        `db=pubmed&rettype=abstract&retmode=xml&retmax=500&retstart=${startIndex}&id=${ids}${
+            PUBMED_API_KEY ? `&api_key=${PUBMED_API_KEY}` : ''
+        }`,
         {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
@@ -414,6 +416,8 @@ const splitIdsIntoSeparateRequests = (
     return queries;
 };
 
+// for a regular query using react-query, pass in the pubmedIds and set enabled appropriately.
+// to imperatively query, set pubmedIds to be an empty array, and enabled to be false. This query is triggered manually.
 const useGetPubmedIDs = (pubmedIds: string[], enabled: boolean) => {
     // the pubmed API only supports 500 ids per request and only 3 requests per second.
     // TODO: for those with a valid API key, this increases to 10 requests per second. We should
