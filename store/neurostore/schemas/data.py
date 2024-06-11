@@ -5,10 +5,15 @@ from marshmallow import (
     post_dump,
     pre_dump,
     pre_load,
+    post_load,
     EXCLUDE,
 )
+
+from sqlalchemy import func
 import orjson
-from marshmallow.decorators import post_load
+
+from neurostore.core import db
+from neurostore.models import Analysis, Point
 
 # context parameters
 # clone: create a new object with new ids (true or false)
@@ -229,6 +234,17 @@ class PointSchema(BaseDataSchema):
         if data.get("coordinates"):
             coords = [float(c) for c in data.pop("coordinates")]
             data["x"], data["y"], data["z"] = coords
+
+        if data.get("order") is None:
+            if data.get("analysis_id") is not None:
+                max_order = (
+                    db.session.query(func.max(Point.order))
+                    .filter_by(analysis_id=data["analysis_id"])
+                    .scalar()
+                )
+                data["order"] = 1 if max_order is None else max_order + 1
+            else:
+                data["order"] = 1
         return data
 
     @pre_dump
@@ -285,6 +301,17 @@ class AnalysisSchema(BaseDataSchema):
 
         data.pop("conditions", None)
         data.pop("weights", None)
+
+        if data.get("order") is None:
+            if data.get("study_id") is not None:
+                max_order = (
+                    db.session.query(func.max(Analysis.order))
+                    .filter_by(study_id=data["study_id"])
+                    .scalar()
+                )
+                data["order"] = 1 if max_order is None else max_order + 1
+            else:
+                data["order"] = 1
         return data
 
     @post_dump
