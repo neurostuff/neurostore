@@ -4,8 +4,6 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import ForeignKeyConstraint
 from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy import event
-from sqlalchemy.orm import Session
 
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import relationship, backref
