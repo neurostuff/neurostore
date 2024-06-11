@@ -378,19 +378,6 @@ class Analysis(BaseMixin, db.Model):
         cascade_backrefs=False,
     )
 
-    def save(self):
-        if self.study_id is not None:
-            max_order = (
-                db.session.query(func.max(Analysis.order))
-                .filter_by(study_id=self.study_id)
-                .scalar()
-            )
-            self.order = 1 if max_order is None else max_order + 1
-        else:
-            self.order = 1
-
-        super().save()
-
 
 class Condition(BaseMixin, db.Model):
     __tablename__ = "conditions"
@@ -508,18 +495,6 @@ class Point(BaseMixin, db.Model):
     )
     user_id = db.Column(db.Text, db.ForeignKey("users.external_id"), index=True)
     user = relationship("User", backref=backref("points", passive_deletes=True))
-
-    def save(self):
-        if self.analysis_id is not None:
-            max_order = (
-                db.session.query(func.max(Point.order))
-                .filter_by(analysis_id=self.analysis_id)
-                .scalar()
-            )
-            self.order = 1 if max_order is None else max_order + 1
-        else:
-            self.order = 1
-        super().save()
 
 
 class Image(BaseMixin, db.Model):
