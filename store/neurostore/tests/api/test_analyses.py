@@ -130,3 +130,24 @@ def test_update_points_analyses(auth_client, ingest_neurovault, session):
         == set(p for p in get.json()["points"])
         == set(p for p in payload["points"])
     )
+
+
+def test_post_analysis_without_order(auth_client, ingest_neurosynth, session):
+    # Get an existing analysis from the database
+    analysis_db = Analysis.query.first()
+    analysis = AnalysisSchema().dump(analysis_db)
+
+    # Remove the 'order' field from the analysis
+    analysis.pop("order", None)
+
+    # Submit a POST request without the 'order' field
+    resp = auth_client.post("/api/analyses/", data=analysis)
+
+    # Check if the response status code is 200 (OK)
+    assert resp.status_code == 200
+
+    # Check if the 'order' field is in the response
+    assert "order" in resp.json()
+
+    # Check if the 'order' field is not None
+    assert resp.json()["order"] is not None
