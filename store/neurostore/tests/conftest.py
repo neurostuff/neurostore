@@ -427,6 +427,8 @@ def user_data(session, mock_add_users):
         )
         public_studies = []
         for user_info in mock_add_users.values():
+            if user_info["external_id"] == "newuser-id":
+                continue
             user = User.query.filter_by(id=user_info["id"]).first()
             for level in ["group", "meta"]:
                 entity = Entity(level=level)
