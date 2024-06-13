@@ -219,7 +219,9 @@ def session(db):
 
 @pytest.fixture(scope="session")
 def mock_auth0_auth():
-    with patch.object(Users, 'userinfo', return_value={'name': 'newuser', 'nickname': 'new user'}):
+    with patch.object(
+        Users, "userinfo", return_value={"name": "newuser", "nickname": "new user"}
+    ):
         yield
 
 
@@ -294,7 +296,7 @@ def mock_add_users(app, db, session, mock_auth):
             "external_id": token_info["sub"],
         }
 
-        if u['name'] != "newuser":
+        if u["name"] != "newuser":
             user = User(
                 name=u["name"],
                 external_id=token_info["sub"],
@@ -303,7 +305,9 @@ def mock_add_users(app, db, session, mock_auth):
                 db.session.add(user)
                 db.session.commit()
 
-            tokens[u["name"]]['id'] = User.query.filter_by(external_id=token_info["sub"]).first().id
+            tokens[u["name"]]["id"] = (
+                User.query.filter_by(external_id=token_info["sub"]).first().id
+            )
 
     yield tokens
 
