@@ -17,6 +17,10 @@ from ..models import (
     Entity,
 )
 from auth0.v3.authentication import GetToken
+from auth0.v3.authentication.users import Users
+from unittest.mock import patch
+
+
 import shortuuid
 import vcr
 
@@ -81,6 +85,9 @@ def mock_decode_token(token):
         algorithm="HS256",
     ):
         return {"sub": os.environ.get("COMPOSE_AUTH0_CLIENT_ID") + "@clients"}
+    # new user not in the database
+    elif token == encode({"sub": "newuser-id"}, "789", algorithm="HS256"):
+        return {"sub": "newuser-id"}
 
 
 @pytest.fixture(scope="session")
@@ -210,6 +217,12 @@ def session(db):
     connection.close()
 
 
+@pytest.fixture(scope="session")
+def mock_auth0_auth():
+    with patch.object(Users, 'userinfo', return_value={'name': 'newuser', 'nickname': 'new user'}):
+        yield
+
+
 """
 Data population fixtures
 """
@@ -219,6 +232,12 @@ Data population fixtures
 def auth_client(auth_clients):
     """Return authorized client wrapper"""
     return auth_clients[0]
+
+
+@pytest.fixture(scope="function")
+def new_user_client(auth_clients):
+    """Return authorized client wrapper for new user"""
+    return next(c for c in auth_clients if c.username == "newuser-id")
 
 
 @pytest.fixture(scope="function")
@@ -260,24 +279,31 @@ def mock_add_users(app, db, session, mock_auth):
                 algorithm="HS256",
             ),
         },
+        {
+            "name": "newuser",
+            "password": "newpassword",
+            "access_token": encode({"sub": "newuser-id"}, "789", algorithm="HS256"),
+        },
     ]
 
     tokens = {}
     for u in users:
         token_info = mock_decode_token(u["access_token"])
-        user = User(
-            name=u["name"],
-            external_id=token_info["sub"],
-        )
-        if User.query.filter_by(external_id=token_info["sub"]).first() is None:
-            db.session.add(user)
-            db.session.commit()
-
         tokens[u["name"]] = {
             "token": u["access_token"],
             "external_id": token_info["sub"],
-            "id": User.query.filter_by(external_id=token_info["sub"]).first().id,
         }
+
+        if u['name'] != "newuser":
+            user = User(
+                name=u["name"],
+                external_id=token_info["sub"],
+            )
+            if User.query.filter_by(external_id=token_info["sub"]).first() is None:
+                db.session.add(user)
+                db.session.commit()
+
+            tokens[u["name"]]['id'] = User.query.filter_by(external_id=token_info["sub"]).first().id
 
     yield tokens
 
