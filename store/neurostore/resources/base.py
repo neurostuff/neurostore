@@ -14,7 +14,7 @@ from sqlalchemy.orm import (
     raiseload,
     selectinload,
 )
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy import func
 from webargs.flaskparser import parser
 from webargs import fields
@@ -242,9 +242,12 @@ class BaseView(MethodView):
         current_user = user or get_current_user()
         if not current_user:
             current_user = create_user()
-
-            db.session.add(current_user)
-            db.session.commit()
+            try:
+                db.session.add(current_user)
+                db.session.commit()
+            except (SQLAlchemyError, IntegrityError):
+                db.session.rollback()
+                current_user = User.query.filter_by(external_id=context["user"]).first()
 
         id = id or data.get("id", None)  # want to handle case of {"id": "asdfasf"}
 
