@@ -240,6 +240,7 @@ const SleuthImportWizardUpload: React.FC<{
                                         color: sleuthFile.isValidFile
                                             ? 'primary.main'
                                             : 'error.main',
+                                        overflowWrap: 'break-word',
                                     }}
                                     secondaryTypographyProps={{
                                         color: sleuthFile.isValidFile ? 'inherit' : 'error',
@@ -286,7 +287,7 @@ const SleuthImportWizardUpload: React.FC<{
                         disabled={nextButtonDisabled}
                         onClick={handleClickNext}
                     >
-                        Create project
+                        create project
                     </Button>
                 </Box>
             </Box>

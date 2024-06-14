@@ -153,7 +153,7 @@ export const stringsAreValidFileFormat = (
                 if (!experimentName?.trim()) {
                     return {
                         isValid: false,
-                        errorMessage: `Invalid experiment name. (Hint: Did you use a semi colon instead of a colon?) Encountered error at: ${line}`,
+                        errorMessage: `Unexpected format. (Hint: Did you omit a colon or use a semi colon instead of a colon?) Encountered error at: ${line}`,
                     };
                 }
 
@@ -172,7 +172,7 @@ export const stringsAreValidFileFormat = (
     if (!containsDOI && !containsPMID) {
         return {
             isValid: false,
-            errorMessage: `Either DOI or PMID is required. Encountered error at: ${sleuthStudy.slice(
+            errorMessage: `Either DOI or PMID is required. (Hint: is it in the right format?) Encountered error at: ${sleuthStudy.slice(
                 0,
                 100
             )}...`,
@@ -461,14 +461,14 @@ export const executeHTTPRequestsAsBatches = async <T, Y>(
     mapFunc: (request: T) => Promise<AxiosResponse<Y>>,
     rateLimit: number,
     delayInMS?: number,
-    callbackFunc?: (progress: number) => void
+    progressCallbackFunc?: (progress: number) => void
 ) => {
     const arrayOfRequestArrays = [];
     for (let i = 0; i < requestList.length; i += rateLimit) {
         arrayOfRequestArrays.push(requestList.slice(i, i + rateLimit));
     }
 
-    const batchedResList = [];
+    const batchedResList: AxiosResponse<Y>[] = [];
     for (const requests of arrayOfRequestArrays) {
         /**
          * I have to do the mapping from object to HTTP request here because
@@ -477,8 +477,8 @@ export const executeHTTPRequestsAsBatches = async <T, Y>(
          */
         const batchedRes = await Promise.all(requests.map(mapFunc));
         batchedResList.push(...batchedRes);
-        if (callbackFunc) {
-            callbackFunc(Math.round((batchedResList.length / requestList.length) * 100));
+        if (progressCallbackFunc) {
+            progressCallbackFunc(Math.round((batchedResList.length / requestList.length) * 100));
         }
         if (delayInMS) {
             await new Promise((res) => {

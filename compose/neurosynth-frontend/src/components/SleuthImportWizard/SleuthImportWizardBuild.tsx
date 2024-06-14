@@ -26,6 +26,7 @@ import {
     sleuthStubsToBaseStudies,
     updateUploadSummary,
 } from './SleuthImportWizard.utils';
+import { EExtractionStatus } from 'pages/ExtractionPage/ExtractionPage';
 
 const SleuthImportWizardBuild: React.FC<{
     sleuthUploads: ISleuthFileUploadStubs[];
@@ -211,6 +212,10 @@ const SleuthImportWizardBuild: React.FC<{
                     studysetId: createdStudyset.data.id,
                     annotationId: createdAnnotation.data.id,
                 });
+
+                // set chip to completed in extraction page so that user is automatically brought to completed studies by default
+                const selectedChipLocalStorageKey = `SELECTED_CHIP-${createdProject.data.id}`;
+                localStorage.setItem(selectedChipLocalStorageKey, EExtractionStatus.COMPLETED);
 
                 setProgressValue(100);
                 setProgressText('Complete...');
