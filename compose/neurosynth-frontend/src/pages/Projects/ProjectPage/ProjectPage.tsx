@@ -3,6 +3,7 @@ import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBr
 import ProjectComponentsEditPrivacyToggle from 'components/ProjectComponents/ProjectComponentsEditPrivacyToggle';
 import StateHandlerComponent from 'components/StateHandlerComponent/StateHandlerComponent';
 import TextEdit from 'components/TextEdit/TextEdit';
+import { useGuard } from 'hooks';
 import useUserCanEdit from 'hooks/useUserCanEdit';
 import ProjectIsLoadingText from 'pages/CurationPage/ProjectIsLoadingText';
 import {
@@ -10,6 +11,7 @@ import {
     useInitProjectStoreIfRequired,
     useProjectCreatedAt,
     useProjectDescription,
+    useProjectIsError,
     useProjectMetaAnalysisCanEdit,
     useProjectName,
     useProjectUser,
@@ -46,6 +48,13 @@ const ProjectPage: React.FC = (props) => {
     const projectUserName = useProjectUsername();
     const projectDescription = useProjectDescription();
     const userCanEdit = useUserCanEdit(projectUser || undefined);
+    const getProjectIsError = useProjectIsError();
+
+    useGuard(
+        '/',
+        'No project found with id: ' + projectId,
+        !getProjectIsLoading && getProjectIsError
+    );
 
     const tab = useMemo(
         () => (location.pathname.includes('meta-analyses') ? 1 : 0),

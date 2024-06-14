@@ -116,7 +116,7 @@ export const stringsAreValidFileFormat = (
                     };
                 }
                 hasReachedCoordinates = true; // we assume that subjects is last before coordinates
-            } else if (line.toLocaleLowerCase().includes('doi')) {
+            } else if (line.toLocaleLowerCase().includes('doi=')) {
                 const [_, id] = line.split('=');
                 if (!id) {
                     return {
@@ -132,7 +132,7 @@ export const stringsAreValidFileFormat = (
                 } else {
                     containsDOI = true;
                 }
-            } else if (line.toLocaleLowerCase().includes('pubmedid')) {
+            } else if (line.toLocaleLowerCase().includes('pubmedid=')) {
                 const [_, id] = line.split('=');
                 if (!id) {
                     return {
@@ -246,10 +246,10 @@ const extractStubFromSleuthStudy = (sleuthStudy: string): ISleuthStub => {
             if (curr.toLocaleLowerCase().includes('subjects=')) {
                 const [_, numSubjects] = curr.split('=');
                 acc.subjects = stringToNumber(numSubjects).value;
-            } else if (curr.toLocaleLowerCase().includes('doi')) {
+            } else if (curr.toLocaleLowerCase().includes('doi=')) {
                 const [_, doi] = curr.split('=');
                 acc.doi = doi;
-            } else if (curr.toLocaleLowerCase().includes('pubmedid')) {
+            } else if (curr.toLocaleLowerCase().includes('pubmedid=')) {
                 const [_, pmid] = curr.split('=');
                 acc.pmid = pmid;
             } else if (/^(-?\d*(\.\d+)?\t?){3}$/.test(curr)) {
@@ -405,9 +405,9 @@ export const organizeSleuthStubsIntoHTTPRequests = (
                 z,
                 values: [], // this is necessary for the POST request
                 space:
-                    space === DefaultSpaceTypes.MNI.label
+                    space === DefaultSpaceTypes.MNI.label.toLocaleLowerCase()
                         ? DefaultSpaceTypes.MNI.value
-                        : space === DefaultSpaceTypes.TAL.label
+                        : space === DefaultSpaceTypes.TAL.label.toLocaleLowerCase()
                         ? DefaultSpaceTypes.TAL.value
                         : space,
             })),

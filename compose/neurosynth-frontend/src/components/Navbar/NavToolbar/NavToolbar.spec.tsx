@@ -66,7 +66,7 @@ describe('NavToolbar Component', () => {
         render(<NavToolbar onLogin={mockLogin} onLogout={mockLogout} />);
 
         userEvent.click(screen.getByTestId('mock-trigger-show-popup'));
-        expect(screen.getByText('STUDIES')).toBeInTheDocument();
-        expect(screen.getByText('META-ANALYSES')).toBeInTheDocument();
+        expect(screen.getByText('Studies')).toBeInTheDocument();
+        expect(screen.getByText('Meta-Analyses')).toBeInTheDocument();
     });
 });

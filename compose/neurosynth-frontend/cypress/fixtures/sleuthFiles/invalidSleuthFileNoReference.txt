@@ -1,0 +1,31 @@
+// PubMedId=37958087
+// Henrich J, 1996: Testing multiple contrasts new study 1
+// Henrich J, 1996: Testing multiple contrasts new study 2
+// Subjects=9
+-33	-46	38
+-17	-60	45
+-42	17	22
+-28	1	52
+-26	-67	-50
+-6	3	54
+12	-64	47
+26	-55	50
+24	3	52
+1	-64	-25
+
+// DOI=10.1109/TIP.2021.3055627
+// Raghu A, 2019: Testing new study vs coordinates are parsed 1
+// Subjects=3
+12	-64	47
+26	-55	50
+24	3	52
+
+// DOI=10.1109/TIP.2021.3055627
+// Raghu A, 2019: Testing new study vs coordinates are parsed 2
+// Subjects=10
+12	-64	47
+26	-55	50
+24	3	52
+12	-64	47
+26	-55	50
+24	3	52

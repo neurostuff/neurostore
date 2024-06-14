@@ -183,7 +183,7 @@ const SleuthImportWizardUpload: React.FC<{
                     </HelpDialog>
                 </Box>
             </Box>
-            <Box sx={{ display: 'flex', height: '350px' }}>
+            <Box sx={{ display: 'flex', height: '350px', marginBottom: '6rem' }}>
                 <Box
                     sx={{
                         width: '50%',

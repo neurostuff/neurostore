@@ -1,3 +1,4 @@
+import { useAuth0 } from '@auth0/auth0-react';
 import { Box, Step, StepLabel, Stepper } from '@mui/material';
 import NeurosynthBreadcrumbs from 'components/NeurosynthBreadcrumbs/NeurosynthBreadcrumbs';
 import { ISleuthFileUploadStubs } from 'components/SleuthImportWizard/SleuthImportWizard.utils';
@@ -5,6 +6,7 @@ import SleuthImportWizardBuild from 'components/SleuthImportWizard/SleuthImportW
 import SleuthImportWizardCreateMetaAnalyses from 'components/SleuthImportWizard/SleuthImportWizardCreateMetaAnalyses';
 import SleuthImportWizardIntroduction from 'components/SleuthImportWizard/SleuthImportWizardIntroduction';
 import SleuthImportWizardUpload from 'components/SleuthImportWizard/SleuthImportWizardUpload';
+import { useGuard } from 'hooks';
 import { useState } from 'react';
 
 const ImportSleuthPage: React.FC = (props) => {
@@ -15,6 +17,8 @@ const ImportSleuthPage: React.FC = (props) => {
         studysetId: '',
         annotationId: '',
     });
+    const { isLoading, isAuthenticated } = useAuth0();
+    useGuard(`/`, 'You must be signed in to access this page.', !isAuthenticated && !isLoading);
 
     const handleNextFromIntroduction = () => {
         setActiveStep((prev) => prev + 1);

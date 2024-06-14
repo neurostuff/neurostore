@@ -9,6 +9,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { INav } from '../Navbar';
 import NavbarStyles from '../Navbar.styles';
 import NavToolbarStyles from './NavToolbar.styles';
+import NavToolbarPopupSubMenu from '../NavSubMenu/NavToolbarPopupSubMenu';
 
 const NavToolbar: React.FC<INav> = (props) => {
     const { isAuthenticated } = useAuth0();
@@ -44,26 +45,26 @@ const NavToolbar: React.FC<INav> = (props) => {
                         </>
                     )}
 
-                    <NeurosynthPopupMenu
-                        sx={[
-                            NavToolbarStyles.menuItemColor,
-                            NavToolbarStyles.menuItemPadding,
-                            NavToolbarStyles.menuItem,
-                        ]}
-                        buttonLabel="explore"
-                        endIcon={<KeyboardArrowDownIcon />}
+                    <NavToolbarPopupSubMenu
+                        buttonProps={{
+                            sx: [
+                                NavToolbarStyles.menuItemColor,
+                                NavToolbarStyles.menuItemPadding,
+                                NavToolbarStyles.menuItem,
+                            ],
+                            endIcon: <KeyboardArrowDownIcon />,
+                        }}
                         options={[
                             {
                                 label: 'Studies',
-                                value: 'studies',
                                 onClick: () => navigate('/base-studies'),
                             },
                             {
                                 label: 'Meta-Analyses',
-                                value: 'meta-analyses',
                                 onClick: () => navigate('/meta-analyses'),
                             },
                         ]}
+                        buttonLabel="explore"
                     />
 
                     <Button
