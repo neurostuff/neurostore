@@ -28,5 +28,7 @@ export default defineConfig({
         auth0ClientSecret: process.env.REACT_APP_AUTH0_CLIENT_SECRET,
         auth0Domain: process.env.REACT_APP_AUTH0_DOMAIN,
         auth0Audience: process.env.REACT_APP_AUTH0_AUDIENCE,
+        neurostoreAPIBaseURL: process.env.REACT_APP_NEUROSTORE_API_DOMAIN,
+        neurosynthAPIBaseURL: process.env.REACT_APP_NEUROSYNTH_API_DOMAIN,
     },
 });
